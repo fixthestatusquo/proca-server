@@ -20,7 +20,7 @@ defmodule Proca.MixProject do
   def application do
     [
       mod: {Proca.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :absinthe_plug]
     ]
   end
 
@@ -44,6 +44,7 @@ defmodule Proca.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:absinthe, "~> 1.4.16"},
+      {:absinthe_phoenix, "~> 1.4.4"},
       {:absinthe_plug, "~> 1.4.7"},
       {:absinthe_ecto, "~> 0.1.3"}
     ]

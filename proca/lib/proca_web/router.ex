@@ -19,8 +19,9 @@ defmodule ProcaWeb.Router do
     get "/", PageController, :index
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ProcaWeb do
-  #   pipe_through :api
-  # end
+  forward "/api", Absinthe.Plug,
+    schema: ProcaWeb.Schema
+
+  forward "/graphiql", Absinthe.Plug.GraphiQL,
+    schema: ProcaWeb.Schema, interface: :playground
 end
