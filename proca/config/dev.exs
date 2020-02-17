@@ -1,13 +1,24 @@
 use Mix.Config
 
 # Configure your database
-config :proca, Proca.Repo,
-  username: "proca",
-  password: "proca",
-  database: "proca",
-  hostname: "localhost",
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+
+case System.get_env("DATABASE_URL") do
+  nil -> 
+    config :proca, Proca.Repo,
+      username: "proca",
+      password: "proca",
+      database: "proca",
+      hostname: "localhost",
+      show_sensitive_data_on_connection_error: true,
+      pool_size: 10
+
+  database_url ->
+    config :proca, Proca.Repo,
+      # ssl: true,
+      url: database_url,
+      pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+      ssl: true
+end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
