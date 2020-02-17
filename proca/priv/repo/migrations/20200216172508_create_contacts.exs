@@ -8,7 +8,7 @@ defmodule Proca.Repo.Migrations.CreateContacts do
       add :email, :string
       add :phone, :string
       add :address, :string
-      add :encrypted, :string
+      add :encrypted, :text
       add :public_key_id, references(:public_keys, on_delete: :nothing)
 
 
