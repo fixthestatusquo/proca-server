@@ -5,7 +5,7 @@ defmodule Proca.ActionPage do
   schema "action_pages" do
     field :locale, :string
     field :url, :string
-    field :campaign_id, :id
+    belongs_to :campaign, Proca.Campaign
 
     timestamps()
   end

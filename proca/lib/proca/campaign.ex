@@ -6,6 +6,7 @@ defmodule Proca.Campaign do
     field :name, :string
     field :title, :string
     field :org_id, :id
+    has_many :action_pages, Proca.ActionPage
 
     timestamps()
   end
