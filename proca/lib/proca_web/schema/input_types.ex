@@ -16,8 +16,8 @@ defmodule ProcaWeb.Schema.InputTypes do
   end
 
   input_object :custom_field_input do
-    field :key
-    field :value
+    field :key, :string
+    field :value, :string
   end
 
   input_object :signature_input do
