@@ -3,8 +3,8 @@ defmodule Proca.Repo.Migrations.CreateContactSignatures do
 
   def change do
     create table(:contact_signatures, primary_key: false) do
-      add :contact_id, references(:contacts, on_delete: :nothing)
-      add :signature_id, references(:signatures, on_delete: :nothing)
+      add :contact_id, references(:contacts, on_delete: :nothing), null: false
+      add :signature_id, references(:signatures, on_delete: :nothing), null: false
 
       timestamps()
     end

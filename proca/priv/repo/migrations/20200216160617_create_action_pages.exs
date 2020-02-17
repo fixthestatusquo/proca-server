@@ -5,7 +5,7 @@ defmodule Proca.Repo.Migrations.CreateActionPages do
     create table(:action_pages) do
       add :url, :string
       add :locale, :string
-      add :campaign_id, references(:campaigns, on_delete: :delete_all)
+      add :campaign_id, references(:campaigns, on_delete: :delete_all), null: false
 
       timestamps()
     end

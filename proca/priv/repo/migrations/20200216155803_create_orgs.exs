@@ -3,8 +3,8 @@ defmodule Proca.Repo.Migrations.CreateOrgs do
 
   def change do
     create table(:orgs) do
-      add :name, :string
-      add :title, :string
+      add :name, :string, null: false
+      add :title, :string, null: false
 
       timestamps()
     end

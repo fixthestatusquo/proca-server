@@ -3,8 +3,8 @@ defmodule Proca.Repo.Migrations.CreateCampaigns do
 
   def change do
     create table(:campaigns) do
-      add :name, :string
-      add :title, :string
+      add :name, :string, null: false
+      add :title, :string, null: false
       add :org_id, references(:orgs, on_delete: :nilify_all)
 
       timestamps()

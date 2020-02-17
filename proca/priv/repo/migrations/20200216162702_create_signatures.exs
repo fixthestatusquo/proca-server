@@ -3,7 +3,7 @@ defmodule Proca.Repo.Migrations.CreateSignatures do
 
   def change do
     create table(:signatures) do
-      add :campaign_id, references(:campaigns, on_delete: :delete_all)
+      add :campaign_id, references(:campaigns, on_delete: :delete_all), null: false
 
       timestamps()
     end

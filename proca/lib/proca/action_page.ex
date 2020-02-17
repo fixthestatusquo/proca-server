@@ -6,7 +6,8 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :url, :string
     belongs_to :campaign, Proca.Campaign
-
+    belongs_to :org, Proca.Org
+    
     timestamps()
   end
 

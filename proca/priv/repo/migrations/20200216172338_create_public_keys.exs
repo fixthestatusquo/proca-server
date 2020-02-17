@@ -3,9 +3,9 @@ defmodule Proca.Repo.Migrations.CreatePublicKeys do
 
   def change do
     create table(:public_keys) do
-      add :name, :string
-      add :key, :string
-      add :org_id, references(:orgs, on_delete: :nothing)
+      add :name, :string, null: false
+      add :key, :string, null: false
+      add :org_id, references(:orgs, on_delete: :nothing), null: false
 
       timestamps()
     end

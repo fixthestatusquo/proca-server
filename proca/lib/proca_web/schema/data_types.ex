@@ -8,10 +8,10 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   object :action_page do
+    field :id, :id
     field :locale, :string
     field :url, :string
     field :campaign, :campaign
   end
-
 
 end

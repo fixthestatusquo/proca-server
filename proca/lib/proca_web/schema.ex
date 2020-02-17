@@ -12,5 +12,14 @@ defmodule ProcaWeb.Schema do
       arg :id, :integer
       resolve &Resolvers.Campaign.list/3
     end
+
+    @desc "Get action page"
+    field :action_page, :action_page do
+      arg :url, :string
+      arg :id, :integer
+      resolve &Resolvers.ActionPage.find/3
+    end
   end
+
+  # addSignature(action_page_id, details, tracking)
 end
