@@ -3,11 +3,12 @@ defmodule Proca.Signature do
   import Ecto.Changeset
 
   schema "signatures" do
-    field :campaign_id, :id
+    belongs_to :campaign, Proca.Campaign
+    belongs_to :action_page, Proca.ActionPage
     
     many_to_many(
       :contacts,
-      Contact,
+      Proca.Contact,
       join_through: "contact_signatures",
       on_replace: :delete
     )

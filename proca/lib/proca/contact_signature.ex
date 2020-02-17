@@ -5,8 +5,6 @@ defmodule Proca.ContactSignature do
   schema "contact_signatures" do
     field :contact_id, :id
     field :signature_id, :id
-
-    timestamps()
   end
 
   @doc false

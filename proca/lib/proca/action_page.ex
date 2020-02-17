@@ -1,6 +1,10 @@
 defmodule Proca.ActionPage do
   use Ecto.Schema
+
   import Ecto.Changeset
+  import Ecto.Query
+
+  alias Proca.Repo
 
   schema "action_pages" do
     field :locale, :string
@@ -16,5 +20,9 @@ defmodule Proca.ActionPage do
     action_page
     |> cast(attrs, [:url, :locale])
     |> validate_required([:url, :locale])
+  end
+
+  def find(id) do
+    Repo.one from a in Proca.ActionPage, where: a.id == ^id, preload: [:campaign]
   end
 end

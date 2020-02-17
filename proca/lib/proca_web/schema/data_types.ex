@@ -13,5 +13,4 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :url, :string
     field :campaign, :campaign
   end
-
 end
