@@ -9,6 +9,10 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     query |> where([x], x.url == ^url)
   end
 
+  def find(_, %{}, _) do
+    {:error, "You must pass either id or url to query for ActionPage"}
+  end
+
   def find(_, args, _) do
     query = (from p in Proca.ActionPage, preload: [:campaign])
     |> find_criteria(args)
