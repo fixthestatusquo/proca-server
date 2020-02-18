@@ -20,6 +20,7 @@ secret_key_base =
   """
 
 config :proca, ProcaWeb.Endpoint,
+  url: [host: System.get_env("DOMAIN"), port: 80],
   http: [
     port: String.to_integer(System.get_env("PORT") || "4000"),
     transport_options: [socket_opts: [:inet6]]
