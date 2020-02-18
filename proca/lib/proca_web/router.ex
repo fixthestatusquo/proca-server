@@ -11,6 +11,7 @@ defmodule ProcaWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug CORSPlug, origin: "*"
   end
 
   scope "/", ProcaWeb do
@@ -19,8 +20,12 @@ defmodule ProcaWeb.Router do
     get "/", PageController, :index
   end
 
-  forward "/api", Absinthe.Plug,
-    schema: ProcaWeb.Schema
+  scope "/api" do
+    pipe_through :api
+
+    forward "/", Absinthe.Plug,
+      schema: ProcaWeb.Schema
+  end
 
   forward "/graphiql", Absinthe.Plug.GraphiQL,
     schema: ProcaWeb.Schema, interface: :playground

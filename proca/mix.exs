@@ -46,7 +46,8 @@ defmodule Proca.MixProject do
       {:absinthe, "~> 1.4.16"},
       {:absinthe_phoenix, "~> 1.4.4"},
       {:absinthe_plug, "~> 1.4.7"},
-      {:absinthe_ecto, "~> 0.1.3"}
+      {:absinthe_ecto, "~> 0.1.3"},
+      {:cors_plug, "~> 2.0"}
     ]
   end
 
