@@ -6,6 +6,7 @@ defmodule ProcaWeb.Resolvers.Contact do
   alias Proca.Signature
   alias Proca.Contact
   alias Proca.Repo
+  alias ProcaWeb.Helper
 
   defp create_signature(action_page, %{contact: contact}) do
     contact_changes = Contact.from_contact_input(contact)
@@ -29,17 +30,10 @@ defmodule ProcaWeb.Resolvers.Contact do
           {:ok, %Signature{id: signature_id}} ->
             {:ok, signature_id}
           {:error, %Ecto.Changeset{} = changeset} ->
-            {:error, format_errors(changeset)}
+            {:error, Helper.format_errors(changeset)}
           _ ->
             {:error, "other error?"}
         end
     end
-  end
-
-  def format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn {field, {msg, _}} ->
-      "#{field}: #{msg}"
-    end)
   end
 end
