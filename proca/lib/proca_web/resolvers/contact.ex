@@ -24,7 +24,7 @@ defmodule ProcaWeb.Resolvers.Contact do
   def add_signature(_, signature = %{action_page_id: id}, _) do
     case ActionPage.find(id) do
       nil -> 
-        {:error, "Cannot find Action Page with id=#{id}"}
+        {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
       action_page ->
         case create_signature(action_page, signature) do
           {:ok, %Signature{id: signature_id}} ->
