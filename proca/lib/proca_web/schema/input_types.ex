@@ -14,7 +14,7 @@ defmodule ProcaWeb.Schema.InputTypes do
     @desc "Postcode, in format correct for country locale"
     field :postcode, :string
     @desc "List of areas this address belongs to"
-    field :areas, list_of(:area_input)
+    field :areas, list_of(non_null(:area_input))
 
     field :latitute, :float
     field :longitute, :float
@@ -26,21 +26,47 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :value, :string
   end
 
-  @desc "Petition signature data. Only name is mandatory.
-Email and phone will be checked for format.
-For address, you can pass none or many different fields that specify it.
-All other fields should come in custom fields as key-value pairs.
-"
-  input_object :signature_input do
-    @desc "Contacts name, first name first"
+
+  # NAME
+  input_object :split_name_input do
+    field :first_name, :string
+    field :last_name, :string
+  end
+
+  input_object :full_name_input do
+    field :full_name, :string
+  end
+
+
+  @desc "Contact information"
+  input_object :contact_input do
+    @desc "Full name"
     field :name, :string
-    @desc "Contacts email address"
+    @desc "First name (when you provide full name split into first and last)"
+    field :first_name, :string
+    @desc "Last name (when you provide full name split into first and last)"
+    field :last_name, :string
+    @dest "Email"
     field :email, :string
     @desc "Contacts phone number"
     field :phone, :string
     @desc "Contacts address"
+    @desc "Address object"
     field :address, :address_input
+  end
+
+  @desc "Extra data added to signature.
+  Has optional comment and custom fields."
+  input_object :signature_extra_input do
+    @desc "Comment to signature"
+    field :comment, :string
     @desc "Other fields that accompany the signature"
-    field :custom_fields, list_of(:custom_field_input)
+    field :custom_fields, list_of(non_null(:custom_field_input))
+  end
+
+  @desc "GDPR consent data structure"
+  input_object :consent_input do
+    @desc "Has contact consented to receiving communication from widget owner?"
+    field :optin, non_null(:boolean)
   end
 end

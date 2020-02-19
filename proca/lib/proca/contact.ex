@@ -30,6 +30,36 @@ defmodule Proca.Contact do
     |> validate_required([:name, :first_name, :email, :phone, :address, :encrypted])
   end
 
+
+  def normalize_names_attr(attr = %{first_name: _, name: _}) do
+    attr
+  end
+
+  def normalize_names_attr(attr = %{first_name: fst, last_name: lst}) do
+    attr
+    |> Map.put(:name, String.trim "#{fst} #{lst}")
+  end
+
+  def normalize_names_attr(attr = %{name: n}) do
+    attr
+    |> Map.put(:first_name, hd(String.split(n, " ")))
+  end
+
+  def normalize_names_attr(attr) do
+    attr
+  end
+
+  def from_contact_input(contact_input) do
+    attrs = contact_input |> normalize_names_attr
+    %Proca.Contact{}
+    |> cast(attrs, [:name, :first_name, :email, :phone])
+    |> validate_required([:name, :first_name])
+    |> validate_format(:email, @email_format)
+    |> validate_format(:phone, ~r{[0-9+ -]+})
+
+  end
+
+
   def from_sig_data(sig_data) do
     sig_data2 = Map.put(sig_data, :first_name, guess_first_name(sig_data[:name]))
     %Proca.Contact{}

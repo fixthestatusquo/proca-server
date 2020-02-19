@@ -32,9 +32,13 @@ defmodule ProcaWeb.Schema do
     field :add_signature, type: :id do
       @desc "ID of ActionPage of widget adding signature"
       arg :action_page_id, non_null(:id)
-      @desc "Signature data"
-      arg :signature, :signature_input
-
+      @desc "Contact data"
+      arg :contact, non_null(:contact_input)
+      @desc "Signature action data"
+      arg :action, :signature_extra_input
+      @desc "GDPR communication opt"
+      arg :privacy, non_null(:consent_input)
+      
       resolve &Resolvers.Contact.add_signature/3
     end
   end
