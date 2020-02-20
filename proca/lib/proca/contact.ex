@@ -5,7 +5,8 @@ defmodule Proca.Contact do
   schema "contacts" do
     field :address, :string
     field :email, :string
-    field :encrypted, :string
+    field :encrypted, :binary
+    field :encrypted_nonce, :binary
     field :first_name, :string
     field :name, :string
     field :phone, :string

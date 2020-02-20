@@ -3,9 +3,10 @@ defmodule Proca.PublicKey do
   import Ecto.Changeset
 
   schema "public_keys" do
-    field :key, :string
     field :name, :string
-    field :org_id, :id
+    field :public, :binary
+    field :private, :binary
+    belongs_to :org, Proca.Org
 
     timestamps()
   end
@@ -15,5 +16,17 @@ defmodule Proca.PublicKey do
     public_key
     |> cast(attrs, [:name, :key])
     |> validate_required([:name, :key])
+  end
+
+
+  def build_for(org) do
+    {priv, pub} = Kcl.generate_key_pair
+    %Proca.PublicKey{}
+    |> cast(%{
+          name: "generated",
+          private: priv,
+          public: pub
+            }, [:name, :private, :public])
+            |> put_assoc(:org, org)
   end
 end

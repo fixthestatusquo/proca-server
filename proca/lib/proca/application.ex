@@ -11,7 +11,8 @@ defmodule Proca.Application do
       # Start the Ecto repository
       Proca.Repo,
       # Start the endpoint when the application starts
-      ProcaWeb.Endpoint
+      ProcaWeb.Endpoint,
+      {Proca.Server.Encrypt, 1}
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},
     ]
