@@ -1,6 +1,5 @@
 defmodule Proca.Server.Encrypt do
   use GenServer
-  import Ecto.Query
   alias Proca.Org
 
   def start_link(org_id) do
@@ -8,10 +7,13 @@ defmodule Proca.Server.Encrypt do
   end
 
   @impl true
-  def init(org_id) do
-    case from(o in Org, preload: [:public_keys]) |> Proca.Repo.get(org_id) do
-      nil ->
-        {:stop, "Missing Org for my party in encryption. Please create an Org for app and set it as ORG_ID environment val"}
+  def init(nil) do
+    {:stop, "Please set ORG_NAME to specify name of my org"}
+  end
+
+  @impl true
+  def init(org_name) do
+    case Org.get_by_name(org_name, [:public_keys]) do
       %Org{public_keys: [], name: org_name} ->
         {:stop, "Missing encryption keys in org #{org_name}"}
       %Org{public_keys: l} when length(l) > 1 ->

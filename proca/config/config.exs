@@ -18,6 +18,9 @@ config :proca, ProcaWeb.Endpoint,
   pubsub: [name: Proca.PubSub, adapter: Phoenix.PubSub.PG2],
   live_view: [signing_salt: "0rjUZihJ"]
 
+config :proca, Proca,
+  org_name: System.get_env("ORG_NAME")
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -29,3 +32,4 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
+
