@@ -38,6 +38,8 @@ defmodule ProcaWeb.Schema do
       arg :action, :signature_extra_input
       @desc "GDPR communication opt"
       arg :privacy, non_null(:consent_input)
+      @desc "Tracking codes (UTM_*)"
+      arg :tracking, :tracking_input
       
       resolve &Resolvers.Contact.add_signature/3
     end

@@ -6,15 +6,28 @@ defmodule ProcaWeb.Resolvers.Contact do
   alias Proca.Signature
   alias Proca.Contact
   alias Proca.Repo
+  alias Proca.Source
   alias ProcaWeb.Helper
 
-  defp create_signature(action_page, %{contact: contact}) do
+
+  defp create_or_get_source(%{tracking: t}) do
+    Source.get_or_create_by(t)
+  end
+
+  defp create_or_get_source(_) do
+    {:ok, nil}   # no source but fine
+  end
+
+  defp create_signature(action_page, signature = %{contact: contact}) do
     contact_changes = Contact.from_contact_input(contact)
-    with {:ok, cr} <- Repo.insert contact_changes do
+    with {:ok, cr} <- Repo.insert(contact_changes),
+         {:ok, src} <- create_or_get_source(signature)
+      do
       change(%Signature{}, %{})
       |> put_assoc(:campaign, action_page.campaign)
       |> put_assoc(:action_page, action_page)
       |> put_assoc(:contacts, [cr])
+      |> put_assoc(:source, src)
       |> Repo.insert
     else
       insert_error -> insert_error

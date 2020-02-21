@@ -69,4 +69,12 @@ defmodule ProcaWeb.Schema.InputTypes do
     @desc "Has contact consented to receiving communication from widget owner?"
     field :optin, non_null(:boolean)
   end
+
+  @desc "Tracking codes"
+  input_object :tracking_input do
+    field :source, non_null(:string)
+    field :medium, non_null(:string)
+    field :campaign, non_null(:string)
+    field :content, :string
+  end
 end
