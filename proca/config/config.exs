@@ -19,7 +19,7 @@ config :proca, ProcaWeb.Endpoint,
   live_view: [signing_salt: "0rjUZihJ"]
 
 config :proca, Proca,
-  org_name: System.get_env("ORG_NAME")
+  org_name: "test"
 
 # Configures Elixir's Logger
 config :logger, :console,
