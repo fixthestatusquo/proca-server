@@ -67,7 +67,7 @@ defmodule ProcaWeb.Schema.InputTypes do
   @desc "GDPR consent data structure"
   input_object :consent_input do
     @desc "Has contact consented to receiving communication from widget owner?"
-    field :optin, non_null(:boolean)
+    field :opt_in, non_null(:boolean)
   end
 
   @desc "Tracking codes"
