@@ -13,11 +13,11 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :country, :string
     @desc "Postcode, in format correct for country locale"
     field :postcode, :string
-    @desc "List of areas this address belongs to"
-    field :areas, list_of(non_null(:area_input))
+    # @desc "List of areas this address belongs to"
+    # field :areas, list_of(non_null(:area_input))
 
-    field :latitute, :float
-    field :longitute, :float
+    # field :latitute, :float
+    # field :longitute, :float
   end
 
   @desc "Custom field with a key and value. Both are strings."

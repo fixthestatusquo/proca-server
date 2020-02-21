@@ -23,6 +23,6 @@ defmodule Proca.ActionPage do
   end
 
   def find(id) do
-    Repo.one from a in Proca.ActionPage, where: a.id == ^id, preload: [:campaign]
+    Repo.one from a in Proca.ActionPage, where: a.id == ^id, preload: [:campaign, :org]
   end
 end

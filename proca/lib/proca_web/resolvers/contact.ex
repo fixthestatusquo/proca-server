@@ -19,7 +19,7 @@ defmodule ProcaWeb.Resolvers.Contact do
   end
 
   defp create_signature(action_page, signature = %{contact: contact}) do
-    contact_changes = Contact.from_contact_input(contact)
+    contact_changes = Contact.from_contact_input(contact, action_page)
     with {:ok, cr} <- Repo.insert(contact_changes),
          {:ok, src} <- create_or_get_source(signature)
       do
