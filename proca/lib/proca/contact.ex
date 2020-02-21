@@ -11,6 +11,7 @@ defmodule Proca.Contact do
     field :name, :string
     field :phone, :string
     belongs_to :public_key, Proca.PublicKey
+    has_one :consent, Proca.Consent
 
     many_to_many(
       :signatures,

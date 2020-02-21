@@ -7,7 +7,7 @@ defmodule Proca.Consent do
     field :delivery, :boolean, default: false
     field :given_at, :naive_datetime
     field :scopes, {:array, :string}
-    field :contact_id, :id
+    belongs_to :contact, Proca.Contact
 
     timestamps()
   end
@@ -17,5 +17,15 @@ defmodule Proca.Consent do
     consent
     |> cast(attrs, [:given_at, :communication, :delivery, :scopes])
     |> validate_required([:given_at, :communication, :delivery, :scopes])
+  end
+
+  def from_opt_in(opt_in) do
+    %Proca.Consent{}
+    |> cast(%{
+          communication: opt_in,
+          delivery: true,
+          given_at: DateTime.utc_now,
+          scopes: ["email"]
+            }, [:communication, :delivery, :given_at, :scopes])
   end
 end

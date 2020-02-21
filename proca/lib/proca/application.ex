@@ -14,8 +14,7 @@ defmodule Proca.Application do
       ProcaWeb.Endpoint,
       {
         Proca.Server.Encrypt,
-        "tttp"
-        # Application.get_env(:proca, Proca)[:org_name]
+        Application.get_env(:proca, Proca)[:org_name]
       }
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},

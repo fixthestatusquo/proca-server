@@ -7,8 +7,8 @@ defmodule ProcaWeb.Resolvers.Contact do
   alias Proca.Contact
   alias Proca.Repo
   alias Proca.Source
+  alias Proca.Consent
   alias ProcaWeb.Helper
-
 
   defp create_or_get_source(%{tracking: t}) do
     Source.get_or_create_by(t)
@@ -18,9 +18,11 @@ defmodule ProcaWeb.Resolvers.Contact do
     {:ok, nil}   # no source but fine
   end
 
-  defp create_signature(action_page, signature = %{contact: contact}) do
+  def create_signature(action_page, signature = %{contact: contact, privacy: cons}) do
     contact_changes = Contact.from_contact_input(contact, action_page)
-    with {:ok, cr} <- Repo.insert(contact_changes),
+
+    with {:ok, cr} <- contact_changes |> Repo.insert(),
+         {:ok, _} <- Consent.from_opt_in(cons.opt_in) |> put_assoc(:contact, cr) |> Repo.insert,
          {:ok, src} <- create_or_get_source(signature)
       do
       change(%Signature{}, %{})

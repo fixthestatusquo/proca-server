@@ -13,7 +13,10 @@ defmodule Proca.Server.Encrypt do
 
   @impl true
   def init(org_name) do
+    IO.inspect org_name
     case Org.get_by_name(org_name, [:public_keys]) do
+      nil ->
+        {:stop, "Can't find org #{org_name}. Please create an Org for app and set it as ORG_NAME environment"}
       %Org{public_keys: [], name: org_name} ->
         {:stop, "Missing encryption keys in org #{org_name}"}
       %Org{public_keys: l} when length(l) > 1 ->

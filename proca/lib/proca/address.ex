@@ -5,8 +5,8 @@ defmodule Proca.Address do
   defstruct country: nil, postcode: nil
   @address_schema %{country: :string, postcode: :string}
 
-  def from_input(nil) do
-    nil
+  def from_input(nil, _action_page) do
+    change {%Address{}, @address_schema}
   end
 
   def from_input(address, _action_page) do
