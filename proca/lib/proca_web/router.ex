@@ -16,16 +16,28 @@ defmodule ProcaWeb.Router do
     plug CORSPlug, origin: "*"
   end
 
+  pipeline :auth do
+    plug Pow.Plug.RequireAuthenticated, error_handler: Pow.Phoenix.PlugErrorHandler
+  end
+
+  pipeline :org do
+    plug ProcaWeb.Plugs.StafferAuthPlug, org_param: "org_name"
+  end
+
   scope "/" do
     pipe_through :browser
 
+    # For keeping the session from expiring when user is just using websocket (in liveview)
+    get "/keep-alive", ProcaWeb.HelperController, :noop
+
+    get "/", ProcaWeb.PageController, :index
     pow_routes()
   end
 
-  scope "/", ProcaWeb do
-    pipe_through :browser
+  scope "/dash/:org_name", ProcaWeb do
+    pipe_through [:browser, :auth, :org]
 
-    live "/", PageController
+    live "/", DashController
   end
 
   scope "/api" do

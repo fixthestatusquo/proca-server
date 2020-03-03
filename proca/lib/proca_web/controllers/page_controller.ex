@@ -1,13 +1,7 @@
 defmodule ProcaWeb.PageController do
-  use Phoenix.LiveView
+  use ProcaWeb, :controller
 
-  def render(assigns) do
-    ~L"""
-    Hello @test
-    """
-  end
-
-  def mount(_params, _o, socket) do
-    {:ok, assign(socket, :test, "world")}
+  def index(conn, _p) do
+    render(conn, "index.html")
   end
 end

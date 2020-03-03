@@ -1,6 +1,11 @@
 defmodule Proca.Staffer do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+  alias Proca.Repo
+  alias Proca.Users.User
+  alias Proca.Staffer
+  alias Proca.Org
 
   schema "staffers" do
     field :perms, :integer
@@ -15,5 +20,13 @@ defmodule Proca.Staffer do
     staffer
     |> cast(attrs, [:perms])
     |> validate_required([:perms])
+  end
+
+  def for_user_in_org(%User{id: id}, org_name) when is_binary(org_name) do
+    from(s in Staffer,
+      join: o in Org,
+      where: s.user_id == ^id and o.name == ^org_name,
+      preload: [:org])
+    |> Repo.one
   end
 end
