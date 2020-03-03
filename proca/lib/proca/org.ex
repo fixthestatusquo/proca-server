@@ -7,6 +7,7 @@ defmodule Proca.Org do
     field :name, :string
     field :title, :string
     has_many :public_keys, Proca.PublicKey
+    has_many :staffers, Proca.Staffer
 
     timestamps()
   end

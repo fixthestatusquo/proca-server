@@ -51,7 +51,8 @@ defmodule Proca.MixProject do
       {:kcl, "~> 1.2.0"},
       {:json, "~> 1.3.0"},
       {:phoenix_live_view, "~> 0.8.0"},
-      {:floki, ">= 0.0.0", only: :test}
+      {:floki, ">= 0.0.0", only: :test},
+      {:pow, "~> 1.0.18"}
     ]
   end
 

@@ -1,6 +1,7 @@
 defmodule ProcaWeb.Router do
   use ProcaWeb, :router
   import Phoenix.LiveView.Router
+  use Pow.Phoenix.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -13,6 +14,12 @@ defmodule ProcaWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug CORSPlug, origin: "*"
+  end
+
+  scope "/" do
+    pipe_through :browser
+
+    pow_routes()
   end
 
   scope "/", ProcaWeb do
