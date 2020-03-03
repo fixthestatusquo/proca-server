@@ -5,7 +5,6 @@ defmodule Proca.Staffer do
   alias Proca.Repo
   alias Proca.Users.User
   alias Proca.Staffer
-  alias Proca.Org
 
   schema "staffers" do
     field :perms, :integer
