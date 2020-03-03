@@ -15,8 +15,11 @@ defmodule ProcaWeb.Plugs.StafferAuthPlug do
   def call(%{ params: params } = conn, org_param) do
     org_name = Map.get(params, org_param)
     user = Plug.current_user(conn)
+    IO.inspect "org is #{org_name}"
     case Proca.Staffer.for_user_in_org(user, org_name) do
-      none when is_nil(none) -> not_a_staffer(conn, org_name)
+      none when is_nil(none) ->
+        IO.puts "NOT A STAFFER"
+        not_a_staffer(conn, org_name)
       staffer ->
         IO.puts "OK GOT STAFFER #{staffer.id}"
         Conn.put_session(conn, :staffer, staffer)
@@ -25,8 +28,8 @@ defmodule ProcaWeb.Plugs.StafferAuthPlug do
 
   defp not_a_staffer(conn, org_name) do
     conn
-    |> Controller.put_flash(:error, "You are not a staffer of #{org_name}")
-    |> Controller.redirect(to: Routes.page_path(conn, :index)) 
+    |> Phoenix.Controller.put_flash(:error, "You are not a staffer of #{org_name}")
+    |> Phoenix.Controller.redirect(to: Routes.page_path(conn, :index)) 
   end
 
   @spec raise_no_error_handler :: no_return

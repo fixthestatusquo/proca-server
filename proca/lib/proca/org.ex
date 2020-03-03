@@ -26,4 +26,8 @@ defmodule Proca.Org do
   def get_public_keys(org) do
     Ecto.assoc(org, :public_keys) |> Proca.Repo.all
   end
+
+  def list() do
+    Proca.Repo.all from o in Proca.Org
+  end
 end

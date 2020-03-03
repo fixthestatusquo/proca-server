@@ -17,7 +17,6 @@ Generate a random 24 bytes for nonce.
 Succeed with the state of: public/private key pair for our party, (current) nonce
 "
   def init(org_name) do
-    IO.inspect org_name
     case Org.get_by_name(org_name, [:public_keys]) do
       nil ->
         {:stop, "Can't find org #{org_name}. Please create an Org for app and set it as ORG_NAME environment"}

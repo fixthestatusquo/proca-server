@@ -57,8 +57,6 @@ defmodule ProcaWeb.Live.AuthHelper do
   def mount_user(socket, pid, session, config) do
     session_id  = Map.fetch!(session, config[:session_id_key])
 
-    IO.inspect session
-
     case credentials_by_session_id(session_id) do
       {user, meta} ->
         socket = socket

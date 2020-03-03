@@ -12,7 +12,9 @@
     <header>
       <section class="container">
         <nav role="navigation">
-🍔
+          <a class="navbar-brand" href="/">
+            <img width="60" height="60" src="<%= Routes.static_path(@conn, "/images/proca-logo.svg") %>" onerror="this.src='fixme.png'">
+          </a>
         </nav>
       </section>
     </header>
