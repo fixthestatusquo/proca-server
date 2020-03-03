@@ -49,7 +49,9 @@ defmodule Proca.MixProject do
       {:absinthe_ecto, "~> 0.1.3"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.2.0"},
-      {:json, "~> 1.3.0"}
+      {:json, "~> 1.3.0"},
+      {:phoenix_live_view, "~> 0.8.0"},
+      {:floki, ">= 0.0.0", only: :test}
     ]
   end
 

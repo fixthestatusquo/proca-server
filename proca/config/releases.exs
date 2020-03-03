@@ -19,6 +19,13 @@ secret_key_base =
   You can generate one by calling: mix phx.gen.secret
   """
 
+live_view_signing_salt =
+  System.get_env("SIGNING_SALT") ||
+  raise """
+  environment variable SIGNING_SALT is missing.
+  You can generate one by calling: mix phx.gen.secret
+  """
+
 config :proca, ProcaWeb.Endpoint,
   url: [host: System.get_env("DOMAIN"), port: 80],
   http: [

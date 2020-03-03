@@ -16,7 +16,7 @@ config :proca, ProcaWeb.Endpoint,
   secret_key_base: "AW/2W3wBPlNgOj39H7IGyyI9Ycp+hScpt/oaQTvE6m2fGnrxHKVUR3AVhLRDq/QL",
   render_errors: [view: ProcaWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Proca.PubSub, adapter: Phoenix.PubSub.PG2],
-  live_view: [signing_salt: "0rjUZihJ"]
+  live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"]
 
 config :proca, Proca,
   org_name: "test"
