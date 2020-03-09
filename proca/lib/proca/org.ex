@@ -27,7 +27,7 @@ defmodule Proca.Org do
     Ecto.assoc(org, :public_keys) |> Proca.Repo.all
   end
 
-  def list() do
-    Proca.Repo.all from o in Proca.Org
+  def list(preloads \\ []) do
+    Proca.Repo.all from o in Proca.Org, preload: ^preloads
   end
 end

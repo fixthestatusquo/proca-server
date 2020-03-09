@@ -5,24 +5,60 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><%= assigns[:page_title] || "Proca" %></title>
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/fontawesome-free/css/all.min.css") %>">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
     <%= csrf_meta_tag() %>
   </head>
-  <body>
-    <header>
-      <section class="container">
-        <nav role="navigation">
-          <a class="navbar-brand" href="/">
-            <img width="60" height="60" src="<%= Routes.static_path(@conn, "/images/proca-logo.svg") %>" onerror="this.src='fixme.png'">
-          </a>
-        </nav>
-      </section>
-    </header>
-    <main role="main" class="container">
-      <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-      <%= render @view_module, @view_template, assigns %>
-    </main>
+
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+      <%= render ProcaWeb.PageView, "sidebar.html", assigns %>
+
+      <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+          <!-- Topbar -->
+          <!-- <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"> -->
+
+            <!-- Sidebar Toggle (Topbar) -->
+          <!-- <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"> -->
+              <!-- <i class="fa fa-bars"></i> -->
+          <!-- </button> -->
+          <!-- </nav> -->
+
+          <!-- Falsh msg (should be live view b/c what about live alerts? -->
+          <div id="flash" class="container-fluid">
+            <% if get_flash(@conn, :info) do %>
+              <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+            <% end %>
+
+            <% if get_flash(@conn, :error) do %>
+              <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+            <% end %>
+          </div>
+          <!-- End Falsh msg -->
+          
+          <div class="container-fluid mt-sm-3">
+            <%= render @view_module, @view_template, assigns %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- End Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded hidden" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

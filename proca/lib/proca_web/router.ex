@@ -37,6 +37,7 @@ defmodule ProcaWeb.Router do
   scope "/dash/:org_name", ProcaWeb do
     pipe_through [:browser, :auth, :org]
 
+    live "/orgs", OrgsController
     live "/", DashController
   end
 
