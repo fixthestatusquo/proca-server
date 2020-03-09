@@ -19,11 +19,11 @@
 </ul>
 
 <%= if editing? @current_org do %>
-  <div class="modal active d-block" role="dialog">
+  <div class="modal active d-block border-primary" role="dialog">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
 
-        <div class="modal-header">
+        <div class="modal-header bg-success text-white">
           <%=  if new_record? @current_org do %>
             <h5 class="modal-title">Add new organisation</h5>
           <% else %>
@@ -39,11 +39,11 @@
           <form>
             <div class="form-group">
               <label for="orgTitle">Title &mdash; how is the organisation called?</label>
-              <input type="text" name="title" id="orgTitle" />
+              <input type="text" name="title" id="orgTitle" class="form-control" />
             </div>
             <div class="form-group">    
-              <label for="orgName">Short name &mdash short, alphanumeric name without spaces</label>
-              <input type="text" name="name" id="orgName" pattern="^[\w_-]{3,}$" />
+              <label for="orgName">Short name &mdash; short, alphanumeric name without spaces</label>
+              <input type="text" name="name" id="orgName" pattern="^[\w_-]{3,}$" class="form-control" />
             </div>
           </form>
         </div>
