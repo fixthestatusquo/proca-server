@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><%= assigns[:page_title] || "Proca" %></title>
 
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/fontawesome-free/css/all.min.css") %>">
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/fontawesome.min.css") %>">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
     <%= csrf_meta_tag() %>
