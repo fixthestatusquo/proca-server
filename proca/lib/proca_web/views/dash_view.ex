@@ -2,25 +2,23 @@ defmodule ProcaWeb.DashView do
   use ProcaWeb, :view
 
   def has_public_key?(org) do
-    IO.puts "#{org.name}: #{Enum.count(org.public_keys)}"
     Enum.count(org.public_keys) > 0
   end
 
-  def editing?(struct) when is_nil(struct) do
-    IO.puts "not editing"
+  def editing?(changeset) when is_nil(changeset) do
+    IO.inspect(changeset)
     false
   end
 
   def editing?(_) do
-    IO.puts "editing"
     true
   end
 
-  def new_record?(%{id: id}) when is_nil(id) do
-    true
-  end
-
-  def new_record?(%{}) do
+  def new_record?(%{data: %{id: id}}) when not is_nil(id) do
     false
+  end
+
+  def new_record?(%{data: %{}}) do
+    true
   end
 end
