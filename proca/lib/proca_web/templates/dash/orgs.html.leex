@@ -1,0 +1,63 @@
+<div class="d-flex align-items-center justify-content-between">
+  <h1 class="h3">Organisations</h1>
+  <a href="#" phx-click="org_new" class="btn btn-primary btn-sm d-none d-sm-inline-block text-light">
+    <i class="fas fa-fw fa-plus"></i>
+    Add organisation
+  </a>
+</div>
+
+<ul class="list-group">
+  <%= for org <- @orgs do %>
+      <li class="list-group-item">
+        <h3><%= org.title %></h3>
+        <%= if has_public_key? org do %>
+        <span class="float-right badge badge-success">encryption</span>
+        <% end %>
+        <p>Shortname: <%= org.name %></p>
+      </li>
+  <% end %>
+</ul>
+
+<%= if editing? @current_org do %>
+  <div class="modal active d-block" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <%=  if new_record? @current_org do %>
+            <h5 class="modal-title">Add new organisation</h5>
+          <% else %>
+            <h5 class="modal-title">Edit <%= @current_org.title %></h5>
+          <% end %>
+
+          <button phx-click="org_discard" type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <form>
+            <div class="form-group">
+              <label for="orgTitle">Title &mdash; how is the organisation called?</label>
+              <input type="text" name="title" id="orgTitle" />
+            </div>
+            <div class="form-group">    
+              <label for="orgName">Short name &mdash short, alphanumeric name without spaces</label>
+              <input type="text" name="name" id="orgName" pattern="^[\w_-]{3,}$" />
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary">Save</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
+     
+
+

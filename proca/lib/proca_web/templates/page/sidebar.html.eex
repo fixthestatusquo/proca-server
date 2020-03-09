@@ -1,0 +1,59 @@
+<!-- Sidebar -->
+<ul class="navbar-nav bg-gradient-info sidebar sidebar-dark accordion" id="sidebar">
+
+  <!-- Sidebar - Brand -->
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+    <div class="sidebar-brand-icon">
+      <img src="<%= Routes.static_path(@conn, "/images/proca-logo.svg") %>" onerror="this.src='fixme.png'" style="width: 50px; height: 50px">
+    </div>
+  </a>
+
+
+  <!-- Nav Item - Dashboard -->
+  <li class="nav-item active">
+    <a class="nav-link" href="/orgs">
+      <i class="fas fa-fw fa-fist-raised"></i>
+      <span>Organisations</span></a>
+  </li>
+
+  <li class="nav-item ">
+    <a class="nav-link" href="/orgs">
+      <i class="fas fa-fw fa-flag"></i>
+      <span>Campaigns</span></a>
+  </li>
+
+
+  <!-- Divider -->
+  <hr class="sidebar-divider">
+
+  <!-- Heading -->
+  <!-- <div class="sidebar-heading">
+       Interface
+       </div>
+  -->
+  <!-- Nav Item - Pages Collapse Menu -->
+  <li class="nav-item">
+    <a class="nav-link collapsed" href="#sidebar-settings" data-toggle="collapse" aria-expanded="true" aria-controls="sidebar-settings" data-parent="#sidebar">
+      <i class="fas fa-fw fa-cog"></i>
+      <span>Settings</span>
+    </a>
+    <div id="sidebar-settings" class="collapse" aria-labelledby="headingTwo" >
+      <div class="bg-white py-2 collapse-inner rounded">
+        <h6 class="collapse-header">Settings:</h6>
+        <a class="collapse-item" href="cards.html">Team</a>
+        <a class="collapse-item" href="buttons.html">Encryption</a>
+      </div>
+    </div>
+  </li>
+
+
+  <!-- Divider -->
+  <hr class="sidebar-divider d-none d-md-block">
+
+  <!-- Sidebar Toggler (Sidebar) -->
+  <div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+  </div>
+
+</ul>
+<!-- End of Sidebar -->
