@@ -6,8 +6,8 @@ defmodule Proca.Org do
   schema "orgs" do
     field :name, :string
     field :title, :string
-    has_many :public_keys, Proca.PublicKey
-    has_many :staffers, Proca.Staffer
+    has_many :public_keys, Proca.PublicKey, on_delete: :delete_all
+    has_many :staffers, Proca.Staffer, on_delete: :delete_all
 
     timestamps()
   end
@@ -17,6 +17,7 @@ defmodule Proca.Org do
     org
     |> cast(attrs, [:name, :title])
     |> validate_required([:name, :title])
+    |> validate_format(:name, ~r/^([\w\d_-]+$)/)
   end
 
   def get_by_name(name, preload \\ []) do

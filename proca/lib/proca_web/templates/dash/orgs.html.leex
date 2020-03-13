@@ -9,6 +9,7 @@
 <ul class="list-group">
   <%= for org <- @orgs do %>
       <li class="list-group-item">
+        <button phx-click="org_edit" phx-value-id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i></button>
         <h3><%= org.title %></h3>
         <%= if has_public_key? org do %>
         <span class="float-right badge badge-success">encryption</span>
@@ -48,8 +49,27 @@
             <%= text_input f, :name, class: "form-control" %>
             <%= error_tag f, :name %>
             </div>
-
-            <%= submit "Save", class: "btn btn-primary float-right" %>
+            
+            <div class="d-flex justify-content-between">
+              <div class="input-group">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">
+                    <label>
+                      <input type="checkbox" aria-label="Unlock delete"
+                             phx-click="org_remove_lock" <%= if @can_remove_org, do: "checked" %>>
+                      <i class="fas fa-fw fa-unlock-alt"></i> I am sure I want to:
+                    </label>
+                  </div>
+                </div>
+                <button class="btn btn-danger" aria-label="Remove"
+                        phx-click="org_remove" phx-value-id="<%= @change_org.data.id %>"
+                        <%= if not @can_remove_org, do: "disabled" %> >
+                  Remove
+                </button>
+              
+              </div>
+              <%= submit "Save", class: "btn btn-primary float-right" %>
+            </div>
           <% end %>
 
         </div>

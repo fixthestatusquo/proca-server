@@ -6,7 +6,6 @@ defmodule ProcaWeb.DashView do
   end
 
   def editing?(changeset) when is_nil(changeset) do
-    IO.inspect(changeset)
     false
   end
 
