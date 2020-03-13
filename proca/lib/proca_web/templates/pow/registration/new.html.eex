@@ -1,28 +1,38 @@
-<h1>Register</h1>
+<h1 class="h3">Register</h1>
 
-<%= form_for @changeset, @action, [as: :user], fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
-    </div>
-  <% end %>
+<div class="row">
+  <div class="col-lg-6">
+    <%= form_for @changeset, @action, [as: :user], fn f -> %>
+      <%= if @changeset.action do %>
+        <div class="alert alert-danger">
+          <p>Oops, something went wrong! Please check the errors below.</p>
+        </div>
+      <% end %>
 
-  <%= label f, Pow.Ecto.Schema.user_id_field(@changeset) %>
-  <%= text_input f, Pow.Ecto.Schema.user_id_field(@changeset) %>
-  <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+      <div class="form-group">
+        <%= label f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+        <%= text_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control" %>
+        <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+      </div>
 
-  <%= label f, :password %>
-  <%= password_input f, :password %>
-  <%= error_tag f, :password %>
+      
+      <div class="form-group">
+        <%= label f, :password %>
+        <%= password_input f, :password, class: "form-control"%>
+        <%= error_tag f, :password %>
+      </div>
+      <div class="form-group">
+        <%= label f, :password_confirmation %>
+        <%= password_input f, :password_confirmation, class: "form-control" %>
+        <%= error_tag f, :password_confirmation %>
+      </div>
 
-  <%= label f, :password_confirmation %>
-  <%= password_input f, :password_confirmation %>
-  <%= error_tag f, :password_confirmation %>
+      <div class="mt-3">
+        <%= submit "Register", class: "btn btn-primary" %>
+        <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-light float-right" %>
 
-  <div>
-    <%= submit "Register" %>
+      </div>
+    <% end %>
   </div>
-<% end %>
+</div>
 
-
-<span><%= link "Sign in", to: Routes.pow_session_path(@conn, :new) %></span>
