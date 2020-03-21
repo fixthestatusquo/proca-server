@@ -21,4 +21,16 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl = Proca.Repo.all Proca.Campaign
     {:ok, cl}
   end
+
+  def stats(campaign, _, _) do
+    sig_ct = Proca.Repo.one(from c in Proca.Signature,
+      where: c.campaign_id == ^campaign.id,
+      select: count(c.id))
+
+    {:ok,
+     %{
+       signature_count: sig_ct
+     }
+    }
+  end
 end

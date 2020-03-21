@@ -1,5 +1,6 @@
 defmodule ProcaWeb.Resolvers.ActionPage do
   import Ecto.Query
+  alias Proca.Repo
 
   defp by_id(query, id) do
     query |> where([x], x.id == ^id)
@@ -31,5 +32,12 @@ defmodule ProcaWeb.Resolvers.ActionPage do
 
   def find(_, %{}, _) do
     {:error, "You must pass either id or url to query for ActionPage"}
+  end
+
+  def campaign(ap, %{}, _) do
+    {
+      :ok,
+      Ecto.assoc(ap, :campaign) |> Repo.one
+    }
   end
 end
