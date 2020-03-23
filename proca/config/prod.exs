@@ -10,7 +10,6 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :proca, ProcaWeb.Endpoint,
-  url: [host: "proca.cahoots.pl", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json",
   server: true
 
