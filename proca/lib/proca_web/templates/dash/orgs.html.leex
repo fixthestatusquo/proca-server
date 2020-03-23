@@ -39,13 +39,13 @@
         <div class="modal-body">
           <%= form_for @change_org, "#", [phx_submit: :org_save], fn f -> %>
             <div class="form-group">
-            <%= label f, :title, "Title &mdash; how is the organisation called?" %>
+            <%= label f, :title, "Title – how is the organisation called?" %>
             <%= text_input f, :title, class: "form-control" %>
             <%= error_tag f, :title %>
-            </div>
+            </div>M
             
             <div class="form-group">
-            <%= label f, :name, "Short name &mdash; short, alphanumeric name without spaces" %>
+            <%= label f, :name, "Short name – short, alphanumeric name without spaces" %>
             <%= text_input f, :name, class: "form-control" %>
             <%= error_tag f, :name %>
             </div>
