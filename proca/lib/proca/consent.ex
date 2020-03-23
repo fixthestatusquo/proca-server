@@ -5,7 +5,7 @@ defmodule Proca.Consent do
   schema "consents" do
     field :communication, :boolean, default: false
     field :delivery, :boolean, default: false
-    field :given_at, :naive_datetime
+    field :given_at, :utc_datetime
     field :scopes, {:array, :string}
     belongs_to :contact, Proca.Contact
 

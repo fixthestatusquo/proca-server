@@ -2,18 +2,26 @@
 <ul class="navbar-nav bg-gradient-info sidebar sidebar-dark accordion" id="sidebar">
 
   <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/">
     <div class="sidebar-brand-icon">
-      <img src="<%= Routes.static_path(@conn, "/images/proca-logo.svg") %>" onerror="this.src='fixme.png'" style="width: 50px; height: 50px">
+      <img src="<%= Routes.static_path(@conn, "/images/proca-logo.png") %>" onerror="this.src='fixme.png'" style="width: 50px; height: 50px">
     </div>
   </a>
 
+  <%= if @user do %>
+  <li class="nav-item"> 
+    <%=  link to: Routes.live_path(@conn, ProcaWeb.DashController), class: 'nav-link' do %>
+      <i class="fas fa-fw fa-couch"></i>
+      <span>Dashboard</span></a>
+    <% end %>
+  </li>
 
   <!-- Nav Item - Dashboard -->
-  <li class="nav-item active">
-    <a class="nav-link" href="/orgs">
+  <li class="nav-item"> <%# XXX add support for active class here %>
+    <%=  link to: Routes.live_path(@conn, ProcaWeb.OrgsController), class: 'nav-link' do %>
       <i class="fas fa-fw fa-fist-raised"></i>
       <span>Organisations</span></a>
+    <% end %>
   </li>
 
   <li class="nav-item ">
@@ -49,6 +57,24 @@
 
   <!-- Divider -->
   <hr class="sidebar-divider d-none d-md-block">
+  <% end %>
+
+  <!-- Sign in and out -->
+  <%= if is_nil(@user) do %>
+  <li class="nav-item">
+    <%= link to: Routes.pow_session_path(@conn, :new), class: "nav-link" do %>
+      <i class="fas fa-fw fa-sign-in-alt"></i>
+      <span>Sign in</span>
+    <% end %>
+  </li>
+  <% else %>
+  <li class="nav-item">
+    <%= link to: Routes.pow_session_path(@conn, :delete), method: "delete", class: "nav-link" do %>
+      <i class="fas fa-fw fa-sign-out-alt"></i>
+      <span>Sign out</span>
+    <% end %>
+  </li>
+  <% end %>
 
   <!-- Sidebar Toggler (Sidebar) -->
   <div class="text-center d-none d-md-inline">

@@ -5,7 +5,7 @@
   </p>
   <ul>
   <%= for org <- @org_list do %>
-    <li><a href="/dash/<%= org.name  %>"><%= org.title %></a></li>
+    <li><a href="/?org_name=<%= org.name  %>"><%= org.title %></a></li>
   <% end %>
   </ul>
 </section>

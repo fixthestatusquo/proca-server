@@ -3,7 +3,7 @@ defmodule Proca.Repo.Migrations.CreateConsents do
 
   def change do
     create table(:consents) do
-      add :given_at, :naive_datetime, null: false
+      add :given_at, :utc_datetime, null: false
       add :communication, :boolean, default: false, null: false
       add :delivery, :boolean, default: false, null: false
       add :scopes, {:array, :string}

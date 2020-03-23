@@ -21,7 +21,7 @@ defmodule ProcaWeb.Router do
   end
 
   pipeline :org do
-    plug ProcaWeb.Plugs.StafferAuthPlug, org_param: "org_name"
+    plug ProcaWeb.Plugs.StafferAuthPlug, session_key: :staffer
   end
 
   scope "/" do
@@ -34,7 +34,7 @@ defmodule ProcaWeb.Router do
     pow_routes()
   end
 
-  scope "/dash/:org_name", ProcaWeb do
+  scope "/dash", ProcaWeb do
     pipe_through [:browser, :auth, :org]
 
     live "/orgs", OrgsController

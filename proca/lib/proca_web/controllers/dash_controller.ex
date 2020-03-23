@@ -8,12 +8,14 @@ defmodule ProcaWeb.DashController do
     """
   end
 
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     socket = mount_user(socket, session)
+
     {:ok, assign(socket, :test, "pe")}
   end
 
   def session_expired(socket) do
     {:noreply, socket}
   end
+
 end

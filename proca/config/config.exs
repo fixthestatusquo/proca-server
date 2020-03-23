@@ -32,7 +32,8 @@ config :phoenix, :json_library, Jason
 config :proca, :pow,
   user: Proca.Users.User,
   repo: Proca.Repo,
-  web_module: ProcaWeb
+  web_module: ProcaWeb,
+  current_user_assigns_key: :user
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
