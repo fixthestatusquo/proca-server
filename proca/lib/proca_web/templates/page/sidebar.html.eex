@@ -67,6 +67,14 @@
       <span>Sign in</span>
     <% end %>
   </li>
+
+  <li class="nav-item">
+    <%= link to: Routes.pow_registration_path(@conn, :new), class: "nav-link" do %>
+      <i class="fas fa-fw fa-user-plus"></i>
+      <span>Register</span>
+    <% end %>
+  </li>
+
   <% else %>
   <li class="nav-item">
     <%= link to: Routes.pow_session_path(@conn, :delete), method: "delete", class: "nav-link" do %>
