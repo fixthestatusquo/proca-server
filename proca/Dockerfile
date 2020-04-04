@@ -35,7 +35,8 @@ RUN apt-get update && apt-get install -y openssl libtinfo6
 RUN useradd --create-home app
 WORKDIR /home/app
 COPY --from=builder /app/_build .
-RUN chown -R app: ./prod
+RUN echo 'export PATH="$PATH:/home/app/prod/rel/proca/bin"' > /home/app/.bashrc 
+RUN chown -R app: ./prod ./.bashrc
 USER app
 
 CMD ["./prod/rel/proca/bin/proca", "start"]
