@@ -22,8 +22,8 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def find(_, %{name: name}, ctx) do
-    {:error, "meh"}
+  def find(_, %{name: name}, _ctx) do
+    {:error, "You need to authorize with Basic auth"}
   end
 
   def campaign(org, %{id: camp_id}, _) do
