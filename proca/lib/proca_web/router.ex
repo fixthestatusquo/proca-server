@@ -14,6 +14,7 @@ defmodule ProcaWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug CORSPlug, origin: "*"
+    plug ProcaWeb.Plugs.ApiAuthPlug
   end
 
   pipeline :auth do
@@ -50,5 +51,5 @@ defmodule ProcaWeb.Router do
   end
 
   forward "/graphiql", Absinthe.Plug.GraphiQL,
-    schema: ProcaWeb.Schema, interface: :playground
+    schema: ProcaWeb.Schema, interface: :playground, default_url: "/api"
 end

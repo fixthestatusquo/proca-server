@@ -4,7 +4,8 @@ defmodule Proca.Staffer.Permission do
   @bits [
     admin: 1 <<< 0,
     access_data: 1 <<< 1,
-    signoff: 1 <<< 2
+    signoff: 1 <<< 2,
+    api: 1 <<< 3
   ]
 
   def can?(staffer, permission) when is_atom(permission) do

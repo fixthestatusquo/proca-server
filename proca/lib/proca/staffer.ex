@@ -30,6 +30,15 @@ defmodule Proca.Staffer do
     |> Repo.one
   end
 
+  def for_user_in_org(%User{id: id}, org_id) when is_integer(org_id) do
+    from(s in Staffer,
+      join: o in assoc(s, :org),
+      where: s.user_id == ^id and o.id == ^org_id,
+      preload: [org: o])
+      |> Repo.one
+  end
+
+
   def for_user(%User{id: id}) do
     from(s in Staffer,
       join: o in assoc(s, :org),

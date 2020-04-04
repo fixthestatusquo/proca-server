@@ -82,6 +82,13 @@ Returns cleartext
     end
   end
 
+  def handle_call({:get_keys}, _from, state = {my_keys, _}) do
+    {:reply,
+     {:ok, my_keys},
+     state
+    }
+  end
+
   @doc "Start Encrypt server"
   def start_link(org_name) do
     GenServer.start_link(__MODULE__, org_name, name: __MODULE__)
@@ -95,5 +102,13 @@ Returns cleartext
   @doc "Decrypt ciphertext with nonce encrypted for party with keys pk"
   def decrypt(%Proca.PublicKey{} = pk, encrypted, nonce) do
     GenServer.call(__MODULE__, {:decrypt, pk, encrypted, nonce})
+  end
+
+  @doc "Get public key used by this Encrypt server"
+  def get_keys() do
+    case GenServer.call(__MODULE__, {:get_keys}) do
+      {:ok, pk} -> pk
+      _ -> raise "Cannot get key of Encrypt Server"
+    end
   end
 end

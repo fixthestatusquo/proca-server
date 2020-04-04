@@ -2,6 +2,20 @@ defmodule ProcaWeb.Schema.DataTypes do
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
 
+  scalar :datetime do
+    parse fn input ->
+      case DateTime.from_iso8601(input.value) do
+        {:ok, datetime, _} -> {:ok, datetime}
+        _ -> :error
+      end
+    end
+
+    serialize fn datetime ->
+      DateTime.from_naive!(datetime, "Etc/UTC")
+      |> DateTime.to_iso8601()
+    end
+  end
+
   @desc "Campaign statistics"
   object :campaign_stats do
     @desc "Signature count (naive at the moment)"
@@ -31,5 +45,56 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :campaign, :campaign do
       resolve &Resolvers.ActionPage.campaign/3
     end
+  end
+
+  object :org do
+    @desc "Organization id"
+    field :id, :integer
+
+    @desc "List campaigns this org is running (owns or has action page)"
+    field :campaigns, list_of(:campaign) do
+      resolve &Resolvers.Org.campaigns/3
+    end
+
+    @desc "Get campaign this org is running by id"
+    field :campaign, :campaign do
+      arg :id, :integer
+      resolve &Resolvers.Org.campaign/3
+    end
+
+    @desc "Get signatures this org has collected.
+Provide campaign_id to only get signatures for a campaign
+
+"
+    field :signatures, :signature_list do
+      @desc "return only signatures for campaign id"
+      arg :campaign_id, :integer
+      @desc "return only signatures with id starting from this argument (inclusive)"
+      arg :start, :integer
+      @desc "return only signatures created at date time from this argument (inclusive)"
+      arg :after, :datetime
+      @desc "Limit the number of returned signatures"
+      arg :limit, :integer
+
+      resolve &Resolvers.Org.signatures/3
+    end
+  end
+
+  object :signature_list do
+    @desc "Public key of sender (proca app), in Base64"
+    field :public_key, :string
+    @desc "List of returned signatures"
+    field :list, list_of(:signature)
+  end
+
+  object :signature do
+    @desc "Signature id"
+    field :id, :integer
+    @desc "DateTime of signature (UTC)"
+    field :created, :datetime
+    @desc "Encryption nonce in Base64"
+    field :nonce, :string
+    @desc "Encrypted contact data in Base64"
+    field :contact, :string
   end
 end

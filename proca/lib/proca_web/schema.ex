@@ -25,6 +25,14 @@ defmodule ProcaWeb.Schema do
       arg :url, :string
       resolve &Resolvers.ActionPage.find/3
     end
+
+    @desc "Organization api (authenticated)"
+    field :org, :org do
+      @desc "Name of organisation"
+      arg :name, :string
+
+      resolve &Resolvers.Org.find/3
+    end
   end
 
   mutation do
