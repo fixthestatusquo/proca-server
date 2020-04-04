@@ -38,6 +38,7 @@ defmodule ProcaWeb.Router do
     pipe_through [:browser, :auth, :org]
 
     live "/orgs", OrgsController
+    live "/settings/encryption", EncryptionController
     live "/", DashController
   end
 

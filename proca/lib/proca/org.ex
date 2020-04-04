@@ -24,6 +24,10 @@ defmodule Proca.Org do
     Proca.Repo.one from o in Proca.Org, where: o.name == ^name, preload: ^preload
   end
 
+  def get_by_id(id, preload \\ []) do
+    Proca.Repo.one from o in Proca.Org, where: o.id == ^id, preload: ^preload
+  end
+
   def get_public_keys(org) do
     Ecto.assoc(org, :public_keys) |> Proca.Repo.all
   end

@@ -49,7 +49,7 @@
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Settings:</h6>
         <a class="collapse-item" href="cards.html">Team</a>
-        <a class="collapse-item" href="buttons.html">Encryption</a>
+        <%= link "Encryption", to: Routes.live_path(@conn, ProcaWeb.EncryptionController), class: "collapse-item" %>
       </div>
     </div>
   </li>

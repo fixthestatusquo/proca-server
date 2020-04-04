@@ -1,11 +1,13 @@
 defmodule Proca.PublicKey do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Proca.Repo
 
   schema "public_keys" do
     field :name, :string
     field :public, :binary
     field :private, :binary
+    field :expired_at, :utc_datetime
     belongs_to :org, Proca.Org
 
     timestamps()
@@ -14,11 +16,14 @@ defmodule Proca.PublicKey do
   @doc false
   def changeset(public_key, attrs) do
     public_key
-    |> cast(attrs, [:name])
-    |> validate_required([:name])
+    |> cast(attrs, [:name, :expired_at, :public])
+    |> validate_required([:name, :public])
     |> put_assoc(:org, Map.get(attrs, :org))
   end
 
+  def expire(public_key) do
+    changeset(public_key, %{expired_at: DateTime.utc_now()})
+  end
 
   def build_for(org, name \\ "generated") do
     {priv, pub} = Kcl.generate_key_pair
