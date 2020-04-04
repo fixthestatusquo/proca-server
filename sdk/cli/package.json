@@ -1,0 +1,16 @@
+{
+  "name": "proca-gw",
+  "version": "1.0.0",
+  "description": "client for proca",
+  "main": "index.js",
+  "repository": "git@github.com:TechToThePeople/proca-gw.git",
+  "author": "xavier.dutoit <xavier@tttp.eu>",
+  "license": "aGPL3",
+  "engines": {
+    "node": ">=12.x"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.0"
+  }
+}
