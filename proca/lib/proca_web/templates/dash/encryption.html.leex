@@ -1,0 +1,56 @@
+
+<h1 class="h3">Settings » Encryption</h1>
+
+<div class="row">
+  <div class="col-lg-6">
+    <ul class="list-group">
+      <%= for pk <- @org.public_keys do %>
+        <li class="list-group-item"> 
+          <p>
+            <strong><%= pk.name %></strong>
+            Public:
+            <code>
+              <%= Base.encode64(pk.public) %>
+            </code>
+            <%= if pk.expired_at do %>
+              <span class="float-right badge badge-secondary">expired</span>
+            <% else %>
+              <span class="float-right badge badge-warning">active</span>
+            <% end %>
+          </p>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div class="col-lg-6">
+
+    <h4 class="h4">Generete new keypair</h4>
+    <p>You can generate new encryption keypair for organisation. Only the public key will be saved in Proca. <em>It is your responsibility to store both public and private key safely</em>, to be able to decrypt signature data.
+    </p>
+    <p>Generating a new key pair will expire previously active encryption keys</p>
+
+    <%= form_for @new_pk, "#", [phx_submit: :pk_save], fn f -> %>
+      <div class="form-group">
+        <%= label f, :name, "Key pair name" %>
+        <%= text_input f, :name, class: "form-control" %>
+        <%= error_tag f, :name %>
+      </div>
+      <div class="form-group">
+        <%= label f, :public, "Public key" %>
+        <%= text_input f, :public, class: "form-control" %>
+      </div>
+      <div class="form-group">
+        <%= label f, :private, "Private key" %>
+        <%=  text_input f, :private, class: "form-control", readonly: true %>
+      </div>
+
+      <%= if !Map.has_key?(@new_pk.changes, :public) || !Map.has_key?(@new_pk.changes, :private) do %>
+        <%= submit "Generate", class: "btn btn-primary" %>
+      <% else %>
+        <%= submit "Save", class: "btn btn-primary float-right" %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
