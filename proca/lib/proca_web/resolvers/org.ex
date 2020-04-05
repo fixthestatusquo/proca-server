@@ -22,7 +22,7 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def find(_, %{name: name}, _ctx) do
+  def find(_, %{name: _name}, _ctx) do
     {:error, "You need to authorize with Basic auth"}
   end
 

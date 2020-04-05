@@ -39,17 +39,15 @@
       <div class="form-group">
         <%= label f, :public, "Public key" %>
         <%= text_input f, :public, class: "form-control" %>
+        <%= error_tag f, :public %>
       </div>
       <div class="form-group">
         <%= label f, :private, "Private key" %>
         <%=  text_input f, :private, class: "form-control", readonly: true %>
       </div>
 
-      <%= if !Map.has_key?(@new_pk.changes, :public) || !Map.has_key?(@new_pk.changes, :private) do %>
-        <%= submit "Generate", class: "btn btn-primary" %>
-      <% else %>
-        <%= submit "Save", class: "btn btn-primary float-right" %>
-      <% end %>
+      <a href="#" class="btn btn-warning" phx-click="pk_generate">Generate</a>
+      <%= submit "Save", class: "btn btn-primary float-right" %>
     <% end %>
   </div>
 </div>

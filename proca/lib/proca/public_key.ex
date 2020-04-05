@@ -16,7 +16,7 @@ defmodule Proca.PublicKey do
   @doc false
   def changeset(public_key, attrs) do
     public_key
-    |> cast(attrs, [:name, :expired_at, :public])
+    |> cast(attrs, [:name, :expired_at, :public, :private])
     |> validate_required([:name, :public])
     |> put_assoc(:org, Map.get(attrs, :org))
   end
@@ -27,12 +27,9 @@ defmodule Proca.PublicKey do
 
   def build_for(org, name \\ "generated") do
     {priv, pub} = Kcl.generate_key_pair
+
     %Proca.PublicKey{}
-    |> changeset(%{name: name, org: org})
-    |> cast(%{
-          private: priv,
-          public: pub
-            }, [:private, :public])
+    |> changeset(%{name: name, org: org, public: pub, private: priv})
   end
 
   def import_private_for(org, private, name \\ "imported") do
