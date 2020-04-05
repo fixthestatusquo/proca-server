@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Proca.{ActionPage,Campaign,Contact,ContactSignature,Signature,Source}
+  alias Proca.{ActionPage,Campaign,Contact,Consent,ContactSignature,Signature,Source}
   alias Proca.{Org,Staffer,PublicKey}
 
   alias Proca.Repo
@@ -52,6 +52,7 @@ defmodule ProcaWeb.Resolvers.Org do
     from(s in Signature,
       join: x in ContactSignature, on: x.signature_id == s.id,
       join: c in Contact, on: x.contact_id == c.id,
+      join: g in Consent, on: g.contact_id == c.id,
       join: pk in PublicKey, on: pk.id == c.public_key_id,
       where: pk.org_id == ^org.id
     )
@@ -73,13 +74,14 @@ defmodule ProcaWeb.Resolvers.Org do
           lim -> query |> limit(^lim)
         end
 
-    q = select(q, [s, x, c, pk, ap], %{
+    q = select(q, [s, x, c, g, pk, ap], %{
           id: s.id,
           created: s.inserted_at,
           nonce: c.encrypted_nonce,
           contact: c.encrypted,
           action_page_id: ap.id,
-          campaign_id: ap.campaign_id
+          campaign_id: ap.campaign_id,
+          opt_in: g.communication
                })
 
     sigs = Repo.all q

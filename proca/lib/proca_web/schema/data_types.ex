@@ -100,6 +100,7 @@ Provide campaign_id to only get signatures for a campaign
     field :campaign_id, :integer
     @desc "Action page id"
     field :action_page_id, :integer
-
+    @desc "Opt in given when adding sig"
+    field :opt_in, :boolean
   end
 end
