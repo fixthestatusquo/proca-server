@@ -5,17 +5,23 @@ async function graphQL (operation, query, options) {
   if (!options.apiUrl) options.apiUrl = process.env.REACT_APP_API_URL || process.env.API_URL;
 
   let data = null;
-
-  await fetch(process.env.REACT_APP_API_URL || process.env.API_URL, {
-    method: "POST",
-    headers: {
+  let headers = {
       "Content-Type": "application/json",
       Accept: "application/json"
-    },
+  };
+  console.log(options);
+  if (options.authorization) {
+//    var auth = 'Basic ' + Buffer.from(options.authorization.username + ':' + options.authorization.username.password).toString('base64');
+    headers.Authorization = 'Basic '+options.authorization;
+    console.log(headers);
+  }
+  await fetch(process.env.REACT_APP_API_URL || process.env.API_URL, {
+    method: "POST",
+    headers: headers,
     body: JSON.stringify({
       query:query,
       variables: options.variables,
-      operationName: operation
+      operationName: operation || "missing"
     })
   })
   .then (res => {
@@ -52,7 +58,7 @@ async function getCount(actionPage) {
  return data.actionPage.campaign.stats.signatureCount;
 }
 
-async function getSignature(campaign) {
+async function getSignature(options) {
   var query = 
 `query getSignatures($campaign: ID!,$organisation:String!,$limit: Int)
 {
@@ -67,8 +73,7 @@ org(name: $organisation) {
 }
 }
 `;
- console.log(query);
- const data = await graphQL ("getSignature",query,{variables:{ campaign: Number(2), organisation:"tttp",limit:Number(3) }});
+ const data = await graphQL ("getSignatures",query,{variables:{ campaign: Number(2), organisation:"tttp",limit:Number(3)}, authorization:options.authorization });
  if (!data) return null;
  return data;
 }
