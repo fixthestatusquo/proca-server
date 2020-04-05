@@ -1,4 +1,4 @@
-# --- Build 
+# --- Build --------------------------------------------
 FROM elixir AS builder
 
 ENV MIX_ENV=prod \
@@ -23,7 +23,7 @@ RUN mix deps.compile
 RUN mix phx.digest
 RUN mix release
 
-# --- APP
+# --- APP ----------------------------------------------
 FROM debian:buster AS app
 
 ENV LANG=C.UTF-8
@@ -34,9 +34,19 @@ RUN apt-get update && apt-get install -y openssl libtinfo6
 # Copy over the build artifact from the previous step and create a non root user
 RUN useradd --create-home app
 WORKDIR /home/app
+
+# add app
 COPY --from=builder /app/_build .
+
+# add setup script
+COPY rel/bin/setup ./prod/rel/proca/bin/setup
+RUN chmod +x ./prod/rel/proca/bin/setup
+
+# add path to shell
 RUN echo 'export PATH="$PATH:/home/app/prod/rel/proca/bin"' > /home/app/.bashrc 
-RUN chown -R app: ./prod ./.bashrc
+
+# own it 
+# RUN chown -R app: ./prod ./.bashrc
 USER app
 
 CMD ["./prod/rel/proca/bin/proca", "start"]
