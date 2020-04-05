@@ -54,6 +54,8 @@ defmodule ProcaWeb.Resolvers.Org do
       join: c in Contact, on: x.contact_id == c.id,
       join: g in Consent, on: g.contact_id == c.id,
       join: pk in PublicKey, on: pk.id == c.public_key_id,
+      join: ap in ActionPage, on: s.action_page_id == ap.id,
+      order_by: [asc: s.id],
       where: pk.org_id == ^org.id
     )
 
@@ -61,9 +63,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   defp org_signatures_for_campaign(org, campaign_id) do
     org_signatures(org)
-    |> join(:inner, [s], ap in ActionPage, on: s.action_page_id == ap.id)
     |> where([ap], ap.campaign_id == ^campaign_id)
-    |> order_by([s], asc: s.id)
   end
 
   defp signatures_list(query, limit_sigs) do
