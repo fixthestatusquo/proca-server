@@ -28,7 +28,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   def campaign(org, %{id: camp_id}, _) do
     c = from(c in Campaign,
-      join: ap in ActionPage,
+      left_join: ap in ActionPage,
       on: c.id == ap.campaign_id,
       where: c.id == ^camp_id and (ap.org_id == ^org.id or c.org_id == ^org.id ))
     |> distinct(true)
@@ -39,7 +39,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   def campaigns(org, _, _) do
     cl = from(c in Campaign,
-      join: ap in ActionPage,
+      left_join: ap in ActionPage,
       on: c.id == ap.campaign_id,
       where: ap.org_id == ^org.id or c.org_id == ^org.id)
     |> distinct(true)
