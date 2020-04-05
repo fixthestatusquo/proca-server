@@ -24,12 +24,12 @@
     <% end %>
   </li>
 
-  <li class="nav-item ">
-    <a class="nav-link" href="/orgs">
-      <i class="fas fa-fw fa-flag"></i>
-      <span>Campaigns</span></a>
-  </li>
-
+  <!-- <li class="nav-item ">
+       <a class="nav-link" href="/orgs">
+       <i class="fas fa-fw fa-flag"></i>
+       <span>Campaigns</span></a>
+       </li>
+  -->
 
   <!-- Divider -->
   <hr class="sidebar-divider">
@@ -48,7 +48,7 @@
     <div id="sidebar-settings" class="collapse" aria-labelledby="headingTwo" >
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Settings:</h6>
-        <a class="collapse-item" href="cards.html">Team</a>
+        <!-- <a class="collapse-item" href="cards.html">Team</a> -->
         <%= link "Encryption", to: Routes.live_path(@conn, ProcaWeb.EncryptionController), class: "collapse-item" %>
       </div>
     </div>
