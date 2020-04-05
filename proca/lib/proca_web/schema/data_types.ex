@@ -96,5 +96,10 @@ Provide campaign_id to only get signatures for a campaign
     field :nonce, :string
     @desc "Encrypted contact data in Base64"
     field :contact, :string
+    @desc "Campaign id"
+    field :campaign_id, :integer
+    @desc "Action page id"
+    field :action_page_id, :integer
+
   end
 end

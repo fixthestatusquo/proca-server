@@ -53,13 +53,8 @@ defmodule ProcaWeb.Resolvers.Org do
       join: x in ContactSignature, on: x.signature_id == s.id,
       join: c in Contact, on: x.contact_id == c.id,
       join: pk in PublicKey, on: pk.id == c.public_key_id,
-      where: pk.org_id == ^org.id,
-      select: %{
-                id: s.id,
-                created: s.inserted_at,
-                nonce: c.encrypted_nonce,
-                contact: c.encrypted
-              })
+      where: pk.org_id == ^org.id
+    )
 
   end
 
@@ -77,6 +72,15 @@ defmodule ProcaWeb.Resolvers.Org do
           nil -> query
           lim -> query |> limit(^lim)
         end
+
+    q = select(q, [s, x, c, pk, ap], %{
+          id: s.id,
+          created: s.inserted_at,
+          nonce: c.encrypted_nonce,
+          contact: c.encrypted,
+          action_page_id: ap.id,
+          campaign_id: ap.campaign_id
+               })
 
     sigs = Repo.all q
 
