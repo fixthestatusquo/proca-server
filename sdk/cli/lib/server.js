@@ -1,5 +1,41 @@
 const fetch = require("node-fetch");
 
+async function graphQL (operation, query, options) {
+  if (!options) options = {};
+  if (!options.apiUrl) options.apiUrl = process.env.REACT_APP_API_URL || process.env.API_URL;
+
+  let data = null;
+
+  await fetch(process.env.REACT_APP_API_URL || process.env.API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify({
+      query:query,
+      variables: options.variables,
+      operationName: operation
+    })
+  })
+  .then (res => {
+    if (!res.ok) {
+      return {errors:[{message:res.statusText,code: "http_error",status:res.status}]};
+    }
+    return res.json();
+  }).then (response => {
+    if (response.errors) {
+      response.errors.forEach( (error) => console.log(error.message));
+      return;
+    }
+    data = response.data;
+  }).catch(error =>{
+    console.log(error);
+    return;
+  });
+  return data;
+}
+
 async function getCount(actionPage) {
   var query = 
 `query getCount($actionPage: ID!)
@@ -11,32 +47,33 @@ async function getCount(actionPage) {
   }
 }}
 `;
-  let count=null;
-  await fetch(process.env.REACT_APP_API_URL || process.env.API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
-    body: JSON.stringify({
-      query,
-      variables: { actionPage: Number(actionPage) },
-      operationName: "getCount"
-    })
-  })
-  .then (res => {
-    return res.json();
-  }).then (response => {
-    if (response.errors) {
-      response.errors.forEach( (error) => console.log(error.message));
-      count = null;
-      return;
-    }
-    count = response.data.actionPage.campaign.stats.signatureCount;
-  });
-  return count;
-
+ const data = await graphQL ("getCount",query,{variables:{ actionPage: Number(actionPage) }});
+ if (!data) return null;
+ return data.actionPage.campaign.stats.signatureCount;
 }
+
+async function getSignature(campaign) {
+  var query = 
+`query getSignatures($campaign: ID!,$organisation:String!,$limit: Int)
+{
+org(name: $organisation) {
+  id, campaigns { id, name },
+  signatures(campaign_id: $campaign, limit: $limit) {
+    public_key, 
+    list {
+      id, created,
+      contact, nonce     }
+  }
+}
+}
+`;
+ console.log(query);
+ const data = await graphQL ("getSignature",query,{variables:{ campaign: Number(2), organisation:"tttp",limit:Number(3) }});
+ if (!data) return null;
+ return data;
+}
+
+
 async function addSignature(data) {
   var query = `
 mutation push($action: SignatureExtraInput,
@@ -70,21 +107,14 @@ mutation push($action: SignatureExtraInput,
   if (Object.keys(data.tracking).length) {
     variables.tracking = data.tracking;
   }
-  const response = await fetch(process.env.REACT_APP_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // to prevent the prefetch OPTION, but doesn't work 'Content-Type': 'text/plain',
-      Accept: "application/json"
-    },
-    body: JSON.stringify({
-      query,
-      variables: variables
-    })
-  });
-  return response;
+
+ const data = await graphQL ("addSignature",query,{variables:variables});
+ if (!data) return null;
+ return data;
 }
+
 module.exports = {
   addSignature:addSignature,
+  getSignature:getSignature,
   getCount:getCount
 };
