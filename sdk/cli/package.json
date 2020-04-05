@@ -6,9 +6,6 @@
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
   "author": "xavier.dutoit <xavier@tttp.eu>",
   "license": "aGPL3",
-  "engines": {
-    "node": ">=12.x"
-  },
   "dependencies": {
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.0"
