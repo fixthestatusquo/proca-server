@@ -1,6 +1,7 @@
 defmodule Proca.PublicKey do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Proca.Repo
 
   schema "public_keys" do
@@ -23,6 +24,11 @@ defmodule Proca.PublicKey do
 
   def expire(public_key) do
     changeset(public_key, %{expired_at: DateTime.utc_now()})
+  end
+
+  def active_keys_for(org) do
+    from(pk in Proca.PublicKey, where: pk.org_id == ^org.id and is_nil(pk.expired_at))
+    |> Repo.all
   end
 
   def build_for(org, name \\ "generated") do

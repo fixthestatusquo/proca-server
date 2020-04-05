@@ -20,12 +20,15 @@ Succeed with the state of: public/private key pair for our party, (current) nonc
     case Org.get_by_name(org_name, [:public_keys]) do
       nil ->
         {:stop, "Can't find org #{org_name}. Please create an Org for app and set it as ORG_NAME environment"}
-      %Org{public_keys: [], name: org_name} ->
-        {:stop, "Missing encryption keys in org #{org_name}"}
-      %Org{public_keys: l} when length(l) > 1 ->
-        {:stop, "Cannot use more then one our key for encryption"}
-      %Org{public_keys: [pk]} ->
-        {:ok, {pk, :crypto.strong_rand_bytes(24)}}
+      o = %Org{name: org_name} ->
+        case Org.active_public_keys(o) do
+          [] -> 
+            {:stop, "Missing encryption keys in org #{org_name}"}
+          l when length(l) > 1 ->
+            {:stop, "Cannot use more then one our key for encryption"}
+          [pk] -> 
+            {:ok, {pk, :crypto.strong_rand_bytes(24)}}
+        end
     end
   end
 
