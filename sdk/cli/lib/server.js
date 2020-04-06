@@ -9,11 +9,9 @@ async function graphQL (operation, query, options) {
       "Content-Type": "application/json",
       Accept: "application/json"
   };
-  console.log(options);
   if (options.authorization) {
 //    var auth = 'Basic ' + Buffer.from(options.authorization.username + ':' + options.authorization.username.password).toString('base64');
     headers.Authorization = 'Basic '+options.authorization;
-    console.log(headers);
   }
   await fetch(process.env.REACT_APP_API_URL || process.env.API_URL, {
     method: "POST",
@@ -53,12 +51,13 @@ async function getCount(actionPage) {
   }
 }}
 `;
+// ah? it can be a get call api?query=query getCount($id:ID!){actionPage(id:$id){campaign{stats{signatureCount }}}}&variables={"id":1}
  const data = await graphQL ("getCount",query,{variables:{ actionPage: Number(actionPage) }});
  if (!data) return null;
  return data.actionPage.campaign.stats.signatureCount;
 }
 
-async function getSignature(options) {
+async function getSignature(organisation,campaign,options) {
   var query = 
 `query getSignatures($campaign: ID!,$organisation:String!,$limit: Int)
 {
@@ -73,7 +72,7 @@ org(name: $organisation) {
 }
 }
 `;
- const data = await graphQL ("getSignatures",query,{variables:{ campaign: Number(2), organisation:"tttp",limit:Number(3)}, authorization:options.authorization });
+ const data = await graphQL ("getSignatures",query,{variables:{ campaign: Number(campaign), organisation:organisation,limit:Number(3)}, authorization:options.authorization });
  if (!data) return null;
  return data;
 }
