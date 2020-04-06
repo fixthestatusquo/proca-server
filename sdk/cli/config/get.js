@@ -1,5 +1,5 @@
 if (!process.env.PRIVATE_KEY && !process.env.BASIC_AUTHORIZATION) {
-  console.log("getting config from .env");
+//  console.log("getting config from .env");
   const dotenv=require('dotenv').config();
   if (dotenv.error) {
     console.log(dotenv.error);
