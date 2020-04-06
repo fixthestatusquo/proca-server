@@ -56,6 +56,11 @@ defmodule ProcaWeb.Schema.DataTypes do
       resolve &Resolvers.Org.campaigns/3
     end
 
+    @desc "List action pages this org has"
+    field :action_pages, list_of(:action_page) do
+      resolve &Resolvers.Org.action_pages/3
+    end
+
     @desc "Get campaign this org is running by id"
     field :campaign, :campaign do
       arg :id, :integer

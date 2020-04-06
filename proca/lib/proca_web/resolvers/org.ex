@@ -48,6 +48,14 @@ defmodule ProcaWeb.Resolvers.Org do
     {:ok, cl}
   end
 
+  def action_pages(org, _, _) do
+    c = from(ap in ActionPage, where: ap.org_id == ^org.id)
+    |> Repo.all
+
+    {:ok, c}
+  end
+
+
   defp org_signatures(org) do
     from(s in Signature,
       join: x in ContactSignature, on: x.signature_id == s.id,
