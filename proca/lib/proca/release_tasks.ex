@@ -1,7 +1,8 @@
 defmodule Proca.ReleaseTasks do
   @start_apps [
     :postgrex,
-    :ecto
+    :ecto,
+    :ecto_sql
   ]
   
   @myapps [
