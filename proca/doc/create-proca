@@ -1,0 +1,31 @@
+#!/bin/bash
+set -u
+set -e 
+
+DATABASE_URL=postgres://proca:XXX@172.17.0.1/proca
+
+
+env="
+  -e DOMAIN=api.proca.foundation 
+  -e PORT=4000 
+  -e DATABASE_URL=$DATABASE_URL 
+  -e ORG_NAME=tttp 
+  -e POOL_SIZE=20 
+  -e SECRET_KEY_BASE=YYYY
+  -e SIGNING_SALT=ZZZZ
+"
+
+docker network create --subnet=172.18.0.0/16 proca || echo "network exists"
+
+image=movonw/proca-backend
+
+if [ $# -gt 0 ]; then
+
+  docker run -ti --rm $env  $image "$@"
+else
+  docker run --name proca -d  --net proca --ip 172.18.0.2  \
+	$env \
+  movonw/proca-backend \
+  /home/app/prod/rel/proca/bin/proca start
+fi
+

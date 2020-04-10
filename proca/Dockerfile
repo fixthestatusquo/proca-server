@@ -40,7 +40,10 @@ COPY --from=builder /app/_build .
 
 # add setup script
 COPY rel/bin/setup ./prod/rel/proca/bin/setup
-RUN chmod +x ./prod/rel/proca/bin/setup
+COPY .iex.exs ./.iex.exs
+RUN mkdir ./prod/rel/proca/tmp && chmod 0777 ./prod/rel/proca/tmp \
+    && chmod +x ./prod/rel/proca/bin/setup \
+    && find . -type f -a -perm /u=x -exec chmod +x {} \;
 
 # add path to shell
 RUN echo 'export PATH="$PATH:/home/app/prod/rel/proca/bin"' > /home/app/.bashrc 
