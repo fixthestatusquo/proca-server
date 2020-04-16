@@ -19,6 +19,7 @@ defmodule Proca.DataCase do
   using do
     quote do
       alias Proca.Repo
+      alias Proca.Factory
 
       import Ecto
       import Ecto.Changeset
@@ -51,5 +52,11 @@ defmodule Proca.DataCase do
         opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
       end)
     end)
+  end
+
+  def create_org(name) do
+    case Proca.Org.changeset(%Proca.Org{}, %{name: name, title: name}) |> Proca.Repo.insert do
+      {:ok, org} -> org
+    end
   end
 end

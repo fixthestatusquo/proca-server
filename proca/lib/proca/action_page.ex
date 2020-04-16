@@ -25,4 +25,8 @@ defmodule Proca.ActionPage do
   def find(id) do
     Repo.one from a in Proca.ActionPage, where: a.id == ^id, preload: [:campaign, :org]
   end
+
+  def data_module(_ap) do
+    Proca.Contact.BasicData
+  end
 end

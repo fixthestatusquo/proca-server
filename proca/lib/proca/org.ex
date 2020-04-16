@@ -38,7 +38,7 @@ defmodule Proca.Org do
     Proca.Repo.all from o in Proca.Org, preload: ^preloads
   end
 
-  def active_public_keys(org) do
-    Enum.filter(org.public_keys, fn pk -> is_nil(pk.expired_at) end)
+  def active_public_keys(public_keys) do
+    Enum.filter(public_keys, fn pk -> is_nil(pk.expired_at) end)
   end
 end

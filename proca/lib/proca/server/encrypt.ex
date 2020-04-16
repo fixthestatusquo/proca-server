@@ -17,17 +17,22 @@ Generate a random 24 bytes for nonce.
 Succeed with the state of: public/private key pair for our party, (current) nonce
 "
   def init(org_name) do
+    {:ok, org_name, {:continue, :get_keys}}
+  end
+
+  @impl true
+  def handle_continue(:get_keys, org_name) do
     case Org.get_by_name(org_name, [:public_keys]) do
       nil ->
         {:stop, "Can't find org #{org_name}. Please create an Org for app and set it as ORG_NAME environment"}
       o = %Org{name: org_name} ->
-        case Org.active_public_keys(o) do
-          [] -> 
+        case Org.active_public_keys(o.public_keys) do
+          [] ->
             {:stop, "Missing encryption keys in org #{org_name}"}
           l when length(l) > 1 ->
             {:stop, "Cannot use more then one our key for encryption"}
           [pk] -> 
-            {:ok, {pk, :crypto.strong_rand_bytes(24)}}
+            {:noreply, {pk, :crypto.strong_rand_bytes(24)}}
         end
     end
   end

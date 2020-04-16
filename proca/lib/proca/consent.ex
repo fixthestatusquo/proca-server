@@ -12,6 +12,10 @@ defmodule Proca.Consent do
     timestamps()
   end
 
+  @moduledoc """
+  Represents the consent given by user on signature. The consent is attached to contact data. If contact data is duplicated for many recipients, all get the same copy of the consent.
+  """
+
   @doc false
   def changeset(consent, attrs) do
     consent
@@ -28,4 +32,5 @@ defmodule Proca.Consent do
           scopes: ["email"]
             }, [:communication, :delivery, :given_at, :scopes])
   end
+
 end

@@ -18,22 +18,24 @@ defmodule ProcaWeb.Resolvers.Contact do
     {:ok, nil}   # no source but fine
   end
 
-  def create_signature(action_page, signature = %{contact: contact, privacy: cons}) do
-    contact_changes = Contact.from_contact_input(contact, action_page)
 
-    with {:ok, cr} <- contact_changes |> Repo.insert(),
-         {:ok, _} <- Consent.from_opt_in(cons.opt_in) |> put_assoc(:contact, cr) |> Repo.insert,
-         {:ok, src} <- create_or_get_source(signature)
-      do
-      change(%Signature{}, %{})
-      |> put_assoc(:campaign, action_page.campaign)
-      |> put_assoc(:action_page, action_page)
-      |> put_assoc(:contacts, [cr])
-      |> put_assoc(:source, src)
-      |> Repo.insert
-    else
-      insert_error -> insert_error
+  def create_signature(action_page, signature = %{contact: contact, privacy: cons}) do
+    data_mod = ActionPage.data_module(action_page)
+
+    case apply(data_mod, :from_input, [contact]) do
+      %{valid?: true} = data ->
+        with contact = %{valid?: true} <- apply(data_mod, :to_contact, [data, action_page]),
+             sig = Signature.build(contact, action_page, cons)
+          do
+          case signature do
+            %{tracking: tr} -> put_assoc(sig, :source, Source.get_or_create_by(tr))
+            _ -> sig
+          end
+          |> Repo.insert
+        end
+      invalid_data -> {:error, invalid_data}
     end
+
   end
 
   def add_signature(_, signature = %{action_page_id: id}, _) do
@@ -51,4 +53,5 @@ defmodule ProcaWeb.Resolvers.Contact do
         end
     end
   end
+
 end

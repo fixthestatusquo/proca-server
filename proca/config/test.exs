@@ -2,8 +2,8 @@ use Mix.Config
 
 # Configure your database
 config :proca, Proca.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "proca",
+  password: "proca",
   database: "proca_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
@@ -16,3 +16,5 @@ config :proca, ProcaWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :proca, Proca, org_name: "hq"
