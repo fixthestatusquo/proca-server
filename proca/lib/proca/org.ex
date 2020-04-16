@@ -8,6 +8,8 @@ defmodule Proca.Org do
     field :title, :string
     has_many :public_keys, Proca.PublicKey, on_delete: :delete_all
     has_many :staffers, Proca.Staffer, on_delete: :delete_all
+    has_many :campaigns, Proca.Campaign, on_delete: :nilify_all
+    has_many :action_pages, Proca.Campaign, on_delete: :nilify_all
 
     timestamps()
   end
