@@ -23,7 +23,7 @@ defmodule Proca.Consent do
     |> validate_required([:given_at, :communication, :delivery, :scopes])
   end
 
-  def from_opt_in(opt_in) do
+  def from_opt_in(opt_in) when is_boolean(opt_in) do
     %Proca.Consent{}
     |> cast(%{
           communication: opt_in,

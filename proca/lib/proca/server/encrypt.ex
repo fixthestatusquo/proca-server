@@ -31,7 +31,7 @@ Succeed with the state of: public/private key pair for our party, (current) nonc
             {:stop, "Missing encryption keys in org #{org_name}"}
           l when length(l) > 1 ->
             {:stop, "Cannot use more then one our key for encryption"}
-          [pk] -> 
+          [pk = %{private: priv}] when not is_nil(priv) -> 
             {:noreply, {pk, :crypto.strong_rand_bytes(24)}}
         end
     end
@@ -104,6 +104,8 @@ Returns cleartext
 
   @doc "Encrypt text using recpieint public key pk"
   def encrypt(%Proca.PublicKey{} = pk, text) do
+    IO.inspect(pk, label: "PKs")
+    IO.inspect(text, label: "text")
     GenServer.call(__MODULE__, {:encrypt, pk, text})
   end
 

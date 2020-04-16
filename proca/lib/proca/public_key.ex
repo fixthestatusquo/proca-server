@@ -19,7 +19,6 @@ defmodule Proca.PublicKey do
     public_key
     |> cast(attrs, [:name, :expired_at, :public, :private])
     |> validate_required([:name, :public])
-    |> put_assoc(:org, Map.get(attrs, :org))
   end
 
   def expire(public_key) do
@@ -35,7 +34,8 @@ defmodule Proca.PublicKey do
     {priv, pub} = Kcl.generate_key_pair
 
     %Proca.PublicKey{}
-    |> changeset(%{name: name, org: org, public: pub, private: priv})
+    |> changeset(%{name: name, public: pub, private: priv})
+    |> put_assoc(:org, org)
   end
 
   def import_private_for(org, private, name \\ "imported") do
@@ -56,7 +56,8 @@ defmodule Proca.PublicKey do
 
   def import_public_for(org, public, name \\ "imported") do
     pk = %Proca.PublicKey{}
-    |> changeset(%{name: name, org: org})
+    |> changeset(%{name: name})
+    |> put_assoc(:org, org)
 
     case Base.decode64(public) do
       {:ok, key} when is_binary(key) ->

@@ -10,12 +10,18 @@ defmodule ProcaWeb.Resolvers.Contact do
   alias Proca.Consent
   alias ProcaWeb.Helper
 
-  defp create_or_get_source(%{tracking: t}) do
-    Source.get_or_create_by(t)
+  defp add_tracking(sig, %{tracking: tr}) do
+    with {:ok, src} <- Source.get_or_create_by(tr) do
+      put_assoc(sig, :source, src) 
+    else
+      # XXX report this somehow? This is a strange situation where we could not insert Source.
+      # even though we retried 2 times
+      {:error, _m} -> sig
+    end
   end
 
-  defp create_or_get_source(_) do
-    {:ok, nil}   # no source but fine
+  defp add_tracking(sig, %{}) do
+    sig
   end
 
 
@@ -25,15 +31,17 @@ defmodule ProcaWeb.Resolvers.Contact do
     case apply(data_mod, :from_input, [contact]) do
       %{valid?: true} = data ->
         with contact = %{valid?: true} <- apply(data_mod, :to_contact, [data, action_page]),
-             sig = Signature.build(contact, action_page, cons)
+             sig = %{valid?: true} <- Signature.build(contact, action_page, cons)
           do
-          case signature do
-            %{tracking: tr} -> put_assoc(sig, :source, Source.get_or_create_by(tr))
-            _ -> sig
-          end
+          IO.inspect(sig)
+          sig
+          |> add_tracking(signature)
           |> Repo.insert
+          else
+            invalid_data ->
+              IO.inspect(invalid_data, label: "Error")
+              {:error, invalid_data}
         end
-      invalid_data -> {:error, invalid_data}
     end
 
   end

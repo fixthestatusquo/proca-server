@@ -34,11 +34,11 @@ defmodule Proca.Signature do
   end
 
   def build(contact, action_page, consents) do
+    # could be 2 consents here for AP and Camp owners...
     with keys <- Org.get_public_keys(action_page.org) |> Org.active_public_keys(),
-         [cch] <- maybe_encrypt(contact, keys),
-      # could be 2 consents here for AP and Camp owners...
-           cons <- Consent.from_opt_in(consents),
-           cch2 <- put_assoc(cch, :consent, cons)
+         [cch] <- maybe_encrypt(contact, keys), 
+         cons <- Consent.from_opt_in(consents.opt_in),
+         cch2 <- put_assoc(cch, :consent, cons)
       do
       changeset(%Signature{}, %{})
       |> put_assoc(:campaign, action_page.campaign)

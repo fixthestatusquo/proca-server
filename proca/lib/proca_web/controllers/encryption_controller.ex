@@ -30,6 +30,7 @@ defmodule ProcaWeb.EncryptionController do
     org = socket.assigns.org
 
     pk = PublicKey.changeset(%PublicKey{}, Map.delete(data, "private"))
+    |> Changeset.put_assoc(:org, org)
     |> Map.put(:action, :insert)
 
     socket = if pk.valid? do
@@ -41,7 +42,6 @@ defmodule ProcaWeb.EncryptionController do
 
         socket
         |> put_flash(:info, "Key saved")
-        |> assign_org(org.id)
         |> assign(:new_pk, empty_pk)
         else
           {:error, chst} -> assign(socket, :new_pk, chst)
