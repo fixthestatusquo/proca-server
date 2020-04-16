@@ -12,5 +12,9 @@
 
 
 org_name = Application.get_env(:proca, Proca)[:org_name]
-{:ok, org} = Proca.Repo.insert(%Proca.Org{name: org_name, title: org_name})
-Proca.PublicKey.build_for(org, "seeded keys") |> Proca.Repo.insert()
+
+if !Proca.Repo.get_by(Proca.Org, name: org_name) do
+  IO.puts "Seeding DB with #{org_name} Org."
+  {:ok, org} = Proca.Repo.insert(%Proca.Org{name: org_name, title: org_name})
+  Proca.PublicKey.build_for(org, "seeded keys") |> Proca.Repo.insert()
+end
