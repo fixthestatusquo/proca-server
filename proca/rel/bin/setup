@@ -1,3 +1,4 @@
 #!/bin/sh
 
-proca eval Proca.ReleaseTasks.setup
+proca eval Proca.ReleaseTasks.migrate
+proca eval Proca.ReleaseTasks.seed

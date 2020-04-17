@@ -27,6 +27,7 @@ RUN mix release
 FROM debian:buster AS app
 
 ENV LANG=C.UTF-8
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/app/prod/rel/proca/bin
 
 # Install openssl
 RUN apt-get update && apt-get install -y openssl libtinfo6
@@ -45,11 +46,6 @@ RUN mkdir ./prod/rel/proca/tmp && chmod 0777 ./prod/rel/proca/tmp \
     && chmod +x ./prod/rel/proca/bin/setup \
     && find . -type f -a -perm /u=x -exec chmod +x {} \;
 
-# add path to shell
-RUN echo 'export PATH="$PATH:/home/app/prod/rel/proca/bin"' > /home/app/.bashrc 
-
-# own it 
-# RUN chown -R app: ./prod ./.bashrc
 USER app
 
 CMD ["./prod/rel/proca/bin/proca", "start"]

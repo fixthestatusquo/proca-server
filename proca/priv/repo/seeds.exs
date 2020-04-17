@@ -13,8 +13,15 @@
 
 org_name = Application.get_env(:proca, Proca)[:org_name]
 
-if !Proca.Repo.get_by(Proca.Org, name: org_name) do
+org = Proca.Org.get_by_name(org_name, [:public_keys])
+
+if !org do
   IO.puts "Seeding DB with #{org_name} Org."
   {:ok, org} = Proca.Repo.insert(%Proca.Org{name: org_name, title: org_name})
   Proca.PublicKey.build_for(org, "seeded keys") |> Proca.Repo.insert()
+else
+  case org.public_keys |> Proca.Org.active_public_keys() do
+    [%Proca.PublicKey{private: p} = pk] when not is_nil(p) -> {:ok, pk}
+    _ -> Proca.PublicKey.build_for(org, "seeded keys (because were missing)") |> Proca.Repo.insert()
+  end
 end
