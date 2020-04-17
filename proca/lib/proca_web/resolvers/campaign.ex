@@ -23,9 +23,9 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def stats(campaign, _, _) do
-    sig_ct = Proca.Repo.one(from c in Proca.Signature,
-      where: c.campaign_id == ^campaign.id,
-      select: count(c.id))
+    sig_ct = Proca.Repo.one(from s in Proca.Signature,
+      where: s.campaign_id == ^campaign.id,
+      select: count(s.fingerprint, :distinct))
 
     {:ok,
      %{

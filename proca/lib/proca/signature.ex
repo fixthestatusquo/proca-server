@@ -15,6 +15,8 @@ defmodule Proca.Signature do
       on_replace: :delete
     )
 
+    field :fingerprint, :binary
+
     timestamps()
   end
 

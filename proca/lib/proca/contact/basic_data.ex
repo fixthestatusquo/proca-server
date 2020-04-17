@@ -58,4 +58,13 @@ defmodule Proca.Contact.BasicData do
       |> Map.put(:payload, payload))
   end
 
+  @impl Data
+  def add_fingerprint(signature, chst) do
+    with %{changes: %{email: email}} <- chst,
+         hash <- :crypto.hash(:sha256, email) do
+      put_change(signature, :fingerprint, hash)
+    else
+      _ -> add_error(signature, :fingerprint, "Can't generate fingerprint (no email field in data)")
+    end
+  end
 end

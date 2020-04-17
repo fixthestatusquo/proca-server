@@ -4,6 +4,7 @@ defmodule Proca.Contact.Data do
 
     @callback from_input(map()) :: Changeset.t
     @callback to_contact(Changeset.t, ActionPage.t) :: Contact.t
+    @callback add_fingerprint(Changeset.t, Changeset.t) :: Changeset.t
 
     # Helper functions
     @doc "Given params with name or split name, recompute others"
