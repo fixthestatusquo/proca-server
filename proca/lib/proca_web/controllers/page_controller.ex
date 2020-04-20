@@ -3,8 +3,6 @@ defmodule ProcaWeb.PageController do
 
 
   def index(conn, params) do
-    IO.inspect params
-
     conn = switch_org(params, conn)
     ol = Proca.Org.list
     render(conn, "index.html", %{ org_list: ol })

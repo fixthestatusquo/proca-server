@@ -51,7 +51,7 @@ defmodule ProcaWeb.OrgsController do
     }
   end
 
-  def handle_event("org_remove_lock", v, socket) do
+  def handle_event("org_remove_lock", _v, socket) do
     {
       :noreply,
       socket
@@ -63,7 +63,7 @@ defmodule ProcaWeb.OrgsController do
     ch = socket.assigns[:change_org].data
     |> Org.changeset(org)
 
-    IO.inspect ch
+    # IO.inspect ch
 
     case Repo.insert_or_update(ch) do
       {:ok, _ch} ->
