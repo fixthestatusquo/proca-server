@@ -30,6 +30,10 @@
     </p>
     <p>Generating a new key pair will expire previously active encryption keys</p>
 
+    <p>
+      <a href="#" class="btn btn-warning" phx-click="pk_generate">Generate</a> or <strong>paste in your NaCl public key</strong>, Base64 encoded, and it's name
+    </p>
+
     <%= form_for @new_pk, "#", [phx_submit: :pk_save], fn f -> %>
       <div class="form-group">
         <%= label f, :name, "Key pair name" %>
@@ -42,11 +46,10 @@
         <%= error_tag f, :public %>
       </div>
       <div class="form-group">
-        <%= label f, :private, "Private key" %>
+        <%= label f, :private, "Private key" %> (won't be saved! Please write down)
         <%=  text_input f, :private, class: "form-control", readonly: true %>
       </div>
 
-      <a href="#" class="btn btn-warning" phx-click="pk_generate">Generate</a>
       <%= submit "Save", class: "btn btn-primary float-right" %>
     <% end %>
   </div>
