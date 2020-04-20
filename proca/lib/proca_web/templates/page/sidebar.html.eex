@@ -48,7 +48,7 @@
     <div id="sidebar-settings" class="collapse" aria-labelledby="headingTwo" >
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Settings:</h6>
-        <!-- <a class="collapse-item" href="cards.html">Team</a> -->
+        <%= link "Team", to: Routes.live_path(@conn, ProcaWeb.TeamController), class: "collapse-item" %>
         <%= link "Encryption", to: Routes.live_path(@conn, ProcaWeb.EncryptionController), class: "collapse-item" %>
       </div>
     </div>

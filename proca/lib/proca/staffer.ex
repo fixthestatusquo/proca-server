@@ -49,4 +49,8 @@ defmodule Proca.Staffer do
     )
     |> Repo.one
   end
+
+  def get_by_org(org_id, preload \\ [:user]) when is_integer(org_id) do
+    Proca.Repo.all from s in Proca.Staffer, where: s.org_id == ^org_id, preload: ^preload
+  end
 end

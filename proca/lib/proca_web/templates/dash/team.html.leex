@@ -1,0 +1,22 @@
+
+<h1 class="h3">Settings » Team</h1>
+
+<section>
+  <ul class="list-group">
+    <%= for staff <- @staffers do %>
+      <li class="list-group-item"> 
+        <div class="row">
+          <div class="col-lg-6">
+            <p>
+              <strong><%= staff.user.email %></strong>
+            </p>
+          </div class="col-lg-6">
+          <div class="col-lg-6">
+🎪
+            (permission buttons)
+          </div>
+      </li>
+    <% end %>
+  </ul>
+</section>
+

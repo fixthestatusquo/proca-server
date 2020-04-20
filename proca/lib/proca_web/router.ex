@@ -40,6 +40,7 @@ defmodule ProcaWeb.Router do
 
     live "/orgs", OrgsController
     live "/settings/encryption", EncryptionController
+    live "/settings/team", TeamController
     live "/", DashController
   end
 
