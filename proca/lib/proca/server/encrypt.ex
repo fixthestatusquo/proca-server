@@ -104,8 +104,6 @@ Returns cleartext
 
   @doc "Encrypt text using recpieint public key pk"
   def encrypt(%Proca.PublicKey{} = pk, text) do
-    IO.inspect(pk, label: "PKs")
-    IO.inspect(text, label: "text")
     GenServer.call(__MODULE__, {:encrypt, pk, text})
   end
 
