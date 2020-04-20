@@ -42,6 +42,7 @@ defmodule ProcaWeb.EncryptionController do
 
         socket
         |> put_flash(:info, "Key saved")
+        |> assign(:org, socket.assigns[:org].id)
         |> assign(:new_pk, empty_pk)
         else
           {:error, chst} -> assign(socket, :new_pk, chst)
