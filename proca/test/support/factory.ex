@@ -29,4 +29,18 @@ defmodule Proca.Factory do
     }
   end
 
+  def user_factory do
+    %Proca.Users.User{
+      email: sequence("email", &"member-#{&1}@example.org"),
+      password_hash: sequence("password") |>  Pow.Ecto.Schema.Password.pbkdf2_hash(iterations: 1)
+    }
+  end
+
+  def staffer_factory do
+    %Proca.Staffer{
+      user: build(:user),
+      org: build(:org),
+      perms: 0
+    }
+  end
 end

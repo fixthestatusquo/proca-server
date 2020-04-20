@@ -1,11 +1,21 @@
 defmodule Proca.Staffer.Permission do
   use Bitwise
 
+  @moduledoc """
+  Permission bits used in proca.
+  Should be named with a verb.
+  """
+
   @bits [
-    admin: 1 <<< 0,
-    access_data: 1 <<< 1,
-    signoff: 1 <<< 2,
-    api: 1 <<< 3
+    manage_orgs: 1 <<< 0,
+    join_orgs: 1 <<< 1,
+
+    use_api: 1 <<< 8,
+    
+    change_org_settings: 1 <<< 16,
+    manage_campaigns: 1 <<< 17,
+    manage_action_pages: 1 <<< 18,
+    signoff_action_page: 1 <<< 19
   ]
 
   def can?(staffer, permission) when is_atom(permission) do
