@@ -1,0 +1,4 @@
+#!/bin/bash
+
+heroku container:push web -a proca-dev && heroku container:release web -a proca-dev
+docker build -t movonw/proca-backend . && docker push movonw/proca-backend 
