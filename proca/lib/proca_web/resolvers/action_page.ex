@@ -11,7 +11,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   defp find_one(criteria) do
-    query = (from p in Proca.ActionPage, preload: [:campaign])
+    query = (from p in Proca.ActionPage, preload: [[campaign: :org], :org])
     |> criteria.()
 
     case Proca.Repo.one query do

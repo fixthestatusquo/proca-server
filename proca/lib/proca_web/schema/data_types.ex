@@ -33,6 +33,8 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :stats, :campaign_stats do
       resolve &Resolvers.Campaign.stats/3
     end
+
+    field :org, :public_org
   end
 
   object :action_page do
@@ -45,6 +47,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :campaign, :campaign do
       resolve &Resolvers.ActionPage.campaign/3
     end
+    field :org, :public_org
   end
 
   object :org do
@@ -107,5 +110,9 @@ Provide campaign_id to only get signatures for a campaign
     field :action_page_id, :integer
     @desc "Opt in given when adding sig"
     field :opt_in, :boolean
+  end
+
+  object :public_org do
+    field :title, :string
   end
 end
