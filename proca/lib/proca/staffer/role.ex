@@ -1,6 +1,8 @@
 defmodule Proca.Staffer.Role do
   alias Proca.Staffer.Permission
+  alias Proca.Staffer
   use Bitwise
+  alias Ecto.Changeset
 
   @moduledoc """
   What roles do we need right now?
@@ -38,14 +40,31 @@ defmodule Proca.Staffer.Role do
     robot: [:use_api]
   ]
 
-  def change(staffer, role) do
+  def from_string(rs) when is_bitstring(rs) do
+    Keyword.keys(@roles)
+    |> Enum.find(fn r -> Atom.to_string(r) == rs end)
+  end
+
+  def change(staffer = %Staffer{perms: perms}, role) do
     np = Keyword.keys(@roles)
     |> List.keydelete(role, 0)
-    |> Enum.reduce(staffer.perms, fn r, p ->
+    |> Enum.reduce(perms, fn r, p ->
       Permission.remove(p, @roles[r])
     end)
     |> Permission.add(@roles[role])
 
-    %{staffer | perms: np}
+    Changeset.change(staffer, perms: np)
+  end
+
+  def findrole(%Staffer{}, []) do
+    nil
+  end
+
+  def findrole(staffer = %Staffer{}, [role | other_roles]) do
+    if Permission.can?(staffer, @roles[role]) do
+      role
+    else
+      findrole(staffer, other_roles)
+    end
   end
 end
