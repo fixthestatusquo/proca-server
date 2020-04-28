@@ -18,7 +18,7 @@ defmodule Proca.Staffer do
   @doc false
   def changeset(staffer, attrs) do
     staffer
-    |> cast(attrs, [:perms, :last_signin_at])
+    |> cast(attrs, [:perms, :last_signin_at, :org_id, :user_id])
     |> validate_required([:perms])
   end
 
@@ -52,5 +52,13 @@ defmodule Proca.Staffer do
 
   def get_by_org(org_id, preload \\ [:user]) when is_integer(org_id) do
     Proca.Repo.all from s in Proca.Staffer, where: s.org_id == ^org_id, preload: ^preload
+  end
+
+  def not_in_org(org_id) do
+    from(u in User,
+      left_join: st in Staffer, on: u.id == st.user_id and st.org_id == ^org_id,
+      where: is_nil(st.id))
+      |> distinct(true)
+      |> Repo.all
   end
 end

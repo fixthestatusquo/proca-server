@@ -1,5 +1,7 @@
 defmodule ProcaWeb.DashView do
   use ProcaWeb, :view
+  alias Proca.Staffer
+  alias Praca.Staffer.Role
 
   def has_public_key?(org) do
     Enum.count(org.public_keys) > 0

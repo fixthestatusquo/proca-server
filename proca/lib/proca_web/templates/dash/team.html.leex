@@ -1,5 +1,35 @@
 
-<h1 class="h3">Settings » Team</h1>
+<header class="d-flex align-items-center justify-content-between">
+  <h1 class="h3">Settings » Team</h1>
+  <a href="#" phx-click="show_invite" class="btn btn-primary btn-sm d-none d-sm-inline-block text-light">
+    <i class="fas fa-fw fa-user-plus"></i>
+    Invite to team
+  </a>
+</header>
+
+<!-- - TODO add form -->
+<%= if not is_nil(@invitable_users) do %>
+  <section class="card border-bottom-success shadow">
+    <div class="card-body container">
+      <form phx-submit="invite" class="form-inline">
+        <!-- <div class="row"> -->
+        <!-- <div class="col-md-10"> -->
+            <label class="mr-2" for="user_select">e-mail: </label>
+            <select class="form-control w-50 mr-2" name="user" id="user_select" required>
+              <option value="">Choose user to invite</option>
+              <%= for user <- @invitable_users do %>
+                <option value="<%= user.id %>"><%= user.email %></option>
+              <% end %>
+            </select>
+            <!-- </div> -->
+            <!-- <div class="col-md-2"> -->
+            <button class="form-control btn-success float-right" type="submit">Invite</button>
+            <!-- </div> -->
+            <!-- </div> -->
+      </form>
+    </div>
+  </section>
+<% end %>
 
 <section>
   <ul class="list-group">
@@ -11,9 +41,35 @@
               <strong><%= staff.user.email %></strong>
             </p>
           </div class="col-lg-6">
-          <div class="col-lg-6">
-🎪
-            (permission buttons)
+          <div class="col-lg-6 d-flex">
+            <%= for role <- @roles do %>
+              <a href="#"
+                 alt="<%= case role do
+                      :campaign_manager -> "Campaign manager"
+                      :campaigner -> "Campaigner"
+                      :mechanic -> "Tech"
+                      :robot -> "API"
+                      end %>"
+                 phx-click="change_role"
+                 phx-value-staffer="<%= staff.id %>"
+                 phx-value-role="<%= role %>"
+                 class='btn-circle role-icon
+                       <%= if role == @team_roles[staff.id], do: "selected btn-warning", else: "btn-light" %>'
+              >
+                <span>
+                <%= case role do 
+                   :campaign_manager -> "👩‍✈"
+                   :campaigner -> "🤹"
+                   :mechanic -> "👩‍🔧"
+                   :robot -> "🤖"
+                end %>
+                </span>
+              </a>
+            <% end %>
+
+            <%= if staff.id != @staffer.id do %>
+            <a href="#" phx-click="remove_staffer" phx-value-staffer="<%= staff.id %>" class="btn btn-light border-danger border-3 align-self-center ml-auto "> <i class="fas fa-user-times"></i> </a>
+            <% end %>
           </div>
       </li>
     <% end %>

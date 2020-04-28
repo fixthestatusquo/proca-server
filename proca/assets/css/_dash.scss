@@ -1,0 +1,19 @@
+.role-icon:hover {
+    text-decoration: none;
+}
+
+.role-icon span {
+    filter: grayscale(80%);
+}
+
+.role-icon.selected span {
+    filter: inherit;
+}
+
+.btn-danger {
+    color: black;
+}
+
+.border-3 {
+    border-width: 3px;
+}
