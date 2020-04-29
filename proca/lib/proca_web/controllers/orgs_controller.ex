@@ -1,7 +1,8 @@
 defmodule ProcaWeb.OrgsController do
   use Phoenix.LiveView
   use ProcaWeb.Live.AuthHelper, otp_app: :proca
-  alias Proca.Org
+  alias Proca.{Org,Staffer}
+  alias Proca.Users.User
   alias Proca.Repo
   import Ecto.Query
 
@@ -82,10 +83,47 @@ defmodule ProcaWeb.OrgsController do
     end
   end
 
+  def handle_event("org_join", %{"org_id" => org_id}, socket = %{ assigns: assigns}) do
+    with attrs <- %{
+          org_id: org_id,
+          user_id: assigns[:staffer].user_id,
+          perms: assigns[:staffer].perms
+               },
+         st <- Staffer.changeset(%Staffer{}, attrs) do
+      {:ok, _new_st} = Repo.insert(st)
+    end
+
+    {
+      :noreply,
+      socket
+      |> assign_user_staffers
+    }
+  end
+
+  def handle_event("org_leave", %{"org_id" => org_id}, socket = %{ assigns: assigns }) do
+    {1, _s} = from(st in Staffer, where: st.org_id == ^org_id and st.user_id == ^assigns[:staffer].user_id)
+    |> Repo.delete_all
+
+    {
+      :noreply,
+      socket
+      |> assign_user_staffers
+    }
+  end
+
   def assign_org_list(socket) do
     orgs = Org.list([:public_keys])
     socket
     |> assign(:orgs, orgs)
+  end
+
+  def assign_user_staffers(socket) do
+    me = socket.assigns[:staffer]
+    orgs_im_in = from(s in Staffer, where: s.user_id == ^me.user_id, select: s.org_id)
+    |> Repo.all
+
+    socket
+    |> assign(:orgs_joined, orgs_im_in)
   end
 
   def mount(_params, session, socket) do
@@ -94,6 +132,7 @@ defmodule ProcaWeb.OrgsController do
     {:ok,
      socket
      |> assign_org_list
+     |> assign_user_staffers
      |> assign(:change_org, nil)
      |> assign(:can_remove_org, false)
     }
