@@ -9,14 +9,18 @@
 <ul class="list-group">
   <%= for org <- @orgs do %>
       <li class="list-group-item">
+
         <%= if can? @staffer, :join_orgs do %>
           <%= if Enum.find(@orgs_joined, fn oid -> oid == org.id end) do %> 
           <button phx-click="org_leave" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-warning float-right"><i class="fa-user-minus fa"></i> leave</button>
           <% else %>
           <button phx-click="org_join" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-user-plus fa"></i> join</button>
+          |> assign(:can_remove_org, false)
           <% end %>
         <% end %>
-        <button phx-click="org_edit" phx-value-id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i></button>
+
+        <button phx-click="org_edit" phx-value-id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+
         <h3><%= org.title %></h3>
         <%= if has_public_key? org do %>
         <span class="float-right badge badge-success">encryption</span>

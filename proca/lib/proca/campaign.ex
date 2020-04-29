@@ -16,5 +16,6 @@ defmodule Proca.Campaign do
     campaign
     |> cast(attrs, [:name, :title])
     |> validate_required([:name, :title])
+    |> validate_format(:name, ~r/^([\w\d_-]+$)/)
   end
 end

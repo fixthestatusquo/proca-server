@@ -24,12 +24,12 @@
     <% end %>
   </li>
 
-  <!-- <li class="nav-item ">
-       <a class="nav-link" href="/orgs">
-       <i class="fas fa-fw fa-flag"></i>
-       <span>Campaigns</span></a>
-       </li>
-  -->
+  <li class="nav-item ">
+    <%=  link to: Routes.live_path(@conn, ProcaWeb.CampaignsController), class: 'nav-link' do %>
+      <i class="fas fa-fw fa-flag"></i>
+      <span>Campaigns</span></a>
+    <% end %>
+  </li>
 
   <!-- Divider -->
   <hr class="sidebar-divider">
