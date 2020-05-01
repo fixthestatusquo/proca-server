@@ -5,6 +5,7 @@ defmodule Proca.ActionPage do
   import Ecto.Query
 
   alias Proca.Repo
+  alias Proca.ActionPage
 
   schema "action_pages" do
     field :locale, :string
@@ -18,12 +19,17 @@ defmodule Proca.ActionPage do
   @doc false
   def changeset(action_page, attrs) do
     action_page
-    |> cast(attrs, [:url, :locale])
-    |> validate_required([:url, :locale])
+    |> cast(attrs, [:url, :locale, :org_id])
+    |> validate_required([:url, :locale, :org_id])
+    |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+  end
+
+  def changeset(attrs) do
+    changeset(%ActionPage{}, attrs)
   end
 
   def find(id) do
-    Repo.one from a in Proca.ActionPage, where: a.id == ^id, preload: [:campaign, :org]
+    Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]
   end
 
   def data_module(_ap) do

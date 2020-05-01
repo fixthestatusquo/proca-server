@@ -6,24 +6,40 @@
   </a>
 </div>
 
-<ul class="list-group">
-  <%= for camp <- @campaigns do %>
-      <li class="list-group-item">
-        <button phx-click="campaign_edit" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+<div class="row">
+  <div class="col-lg-6">
+    <ul class="list-group">
+      <%= for camp <- @campaigns do %>
+        <li class="list-group-item">
+          <button phx-click="campaign_edit" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+          <button phx-click="action_page_new" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-success float-right"><i class="fa-plus-square fa"></i> add action page</button>
 
-        <h3><%= camp.title %></h3>
-        <p>codename: <code><%= camp.name %></code></p>
-        <%= if length(camp.action_pages) > 0 do %>
-          <h4>Action pages:</h4>
-          <ul>
-            <%= for ap <- camp.action_pages do %>
-              <li><code><a href="<%= ap.url %>"><%= ap.url %></a></code></li>
-            <% end %>
-          </ul>
-        <% end %>
-      </li>
-  <% end %>
-</ul>
+          <h3><%= camp.title %></h3>
+          <p>codename: <code><%= camp.name %></code></p>
+          <%= if length(camp.action_pages) > 0 do %>
+            <h4>Action pages:</h4>
+            <ul>
+              <%= for ap <- camp.action_pages do %>
+                <li>
+                  <code><a href="<%= ap.url %>" target="_blank"><%= ap.url %></a></code>
+                  <%= if ap.org_id != camp.org_id do %><span>by: <%= ap.org.title %></span><% end %>
+                  <a href="#" phx-click="action_page_edit" phx-value-id="<%= ap.id %>" class="text-primary float-right ml-2"> edit </a>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+  </div>
+  <div class="col-lg-6">
+    <p>
+      Here you can see the list of campaigns that you run.
+    </p>
+  </div>
+</div>
+
 
 <%= if editing? @campaign do %>
   <div class="modal active d-block border-primary" role="dialog">
@@ -37,7 +53,7 @@
             <h5 class="modal-title">Edit campaign "<%= @campaign.data.title %>"</h5>
           <% end %>
 
-          <button phx-click="campaign_discard" type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button phx-click="modal_discard" phx-value-modal="campaign" type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -57,11 +73,13 @@
             </div>
             
             <div class="d-flex justify-content-between">
+              <%= if @campaign.data.id do %>
               <a class="btn btn-danger" aria-label="Remove"
                       phx-click="campaign_remove" phx-value-id="<%= @campaign.data.id %>"
               >
                 Remove
               </a>
+              <% end %>
               
               <%= submit "Save", class: "btn btn-primary float-right" %>
             </div>
@@ -73,5 +91,62 @@
       </div>
     </div>
   </div>
+<% end %>
 
+<%= if editing? @action_page do %>
+  <div class="modal active d-block border-primary" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+
+        <div class="modal-header bg-success text-white">
+          <%=  if new_record? @action_page do %>
+            <h5 class="modal-title">Add action page for <%= @selected_campaign.title %></h5>
+          <% else %>
+            <h5 class="modal-title">Edit action page</h5>
+          <% end %>
+
+          <button phx-click="modal_discard" phx-value-modal="action_page" type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <%= form_for @action_page, "#", [phx_submit: :action_page_save], fn f -> %>
+            <div class="form-group">
+              <%= label f, :org_id, "Organisation" %>
+              <%= select f, :org_id, @partners,  class: "form-control" %>
+              <%= error_tag f, :org_id %>
+            </div>
+
+            <div class="form-group">
+            <%= label f, :url, "URL of widget" %>
+            <%= text_input f, :url, class: "form-control" %>
+            <%= error_tag f, :url %>
+            </div>
+            
+            <div class="form-group">
+            <%= label f, :locale, "Language for Action Page" %>
+            <%= select f, :locale, supported_languages(), class: "form-control" %>
+            <%= error_tag f, :locale %>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+              <%= if @action_page.data.id do %>
+              <a class="btn btn-danger" aria-label="Remove"
+                      phx-click="action_page_remove" phx-value-id="<%= @action_page.data.id %>"
+              >
+                Remove
+              </a>
+              <% end %>
+              
+              <%= submit "Save", class: "btn btn-primary float-right" %>
+            </div>
+          <% end %>
+
+        </div>
+
+
+      </div>
+    </div>
+  </div>
 <% end %>

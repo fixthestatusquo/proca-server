@@ -15,7 +15,6 @@
           <button phx-click="org_leave" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-warning float-right"><i class="fa-user-minus fa"></i> leave</button>
           <% else %>
           <button phx-click="org_join" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-user-plus fa"></i> join</button>
-          |> assign(:can_remove_org, false)
           <% end %>
         <% end %>
 

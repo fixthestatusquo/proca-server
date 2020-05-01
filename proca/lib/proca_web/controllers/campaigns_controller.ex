@@ -16,6 +16,56 @@ defmodule ProcaWeb.CampaignsController do
     }
   end
 
+  def handle_event("action_page_new", %{"campaign_id" => campaign_id}, socket) do
+    ch = ActionPage.changeset(%{})
+    |> put_change(:org_id, socket.assigns[:staffer].org_id)
+
+    IO.inspect(ch, label: "apch")
+    {
+      :noreply,
+      socket
+      |> assign(:action_page, ch)
+      |> assign_selected_campaign(campaign_id)
+      |> assign_partners
+    }
+  end
+
+  def handle_event("action_page_edit", %{"id" => ap_id}, socket) do
+    with ap <- ActionPage.find(ap_id) do
+      {
+        :noreply,
+        socket
+        |> assign(:action_page, ActionPage.changeset(ap, %{}))
+        |> assign_selected_campaign(ap.campaign_id)
+        |> assign_partners
+      }
+    end
+  end
+
+
+  def handle_event("action_page_save", %{"action_page" => attrs}, socket) do
+    ch = socket.assigns[:action_page]
+    new_ch = ch.data
+    |> ActionPage.changeset(attrs)
+    |> put_assoc(:campaign, socket.assigns[:selected_campaign])
+
+    case Repo.insert_or_update(new_ch) do
+      {:ok, _ap} ->
+        {
+          :noreply,
+         socket
+         |> assign(:action_page, nil)
+         |> assign_campaigns
+        }
+      {:error, bad_ch} ->
+        {
+          :noreply,
+          socket |> assign(:action_page, bad_ch)
+        }
+    end
+  end
+
+
   def handle_event("campaign_edit", %{"campaign_id" => cid}, socket) do
     {
       :noreply,
@@ -24,10 +74,13 @@ defmodule ProcaWeb.CampaignsController do
     }
   end
 
-  def handle_event("campaign_discard", _value, socket) do
+  def handle_event("modal_discard", %{"modal" => modal}, socket) do
+    s2 = case modal do
+           "campaign" -> assign(socket, :campaign, nil)
+           "action_page" -> assign(socket, :action_page, nil)
+         end
     {:noreply,
-     socket
-     |> assign(:campaign, nil)
+     s2
     }
   end
 
@@ -77,6 +130,8 @@ defmodule ProcaWeb.CampaignsController do
      socket
      |> assign_campaigns
      |> assign(:campaign, nil)
+     |> assign(:action_page, nil)
+     |> assign(:partners, nil)
     }
   end
 
@@ -84,12 +139,28 @@ defmodule ProcaWeb.CampaignsController do
     org_id = socket.assigns[:staffer].org_id
     cs = from(c in Campaign,
       where: c.org_id == ^org_id,
-      preload: [:action_pages],
+      preload: [action_pages: :org],
       order_by: [desc: c.inserted_at])
     |> Repo.all
 
     socket
     |> assign(:campaigns, cs)
+  end
+
+  def assign_partners(socket) do
+    partners = Org.list |> Enum.map(fn o -> {o.name, o.id} end)
+    assign(socket, :partners, partners)
+  end
+
+  def assign_selected_campaign(socket, campaign_id) when is_bitstring(campaign_id) do
+    assign_selected_campaign(socket, String.to_integer(campaign_id))
+  end
+
+  def assign_selected_campaign(socket, campaign_id) when is_integer(campaign_id) do
+    socket
+    |> assign(:selected_campaign, Enum.find(
+          socket.assigns[:campaigns],
+        fn c -> c.id == campaign_id end))
   end
 
   def session_expired(socket) do
