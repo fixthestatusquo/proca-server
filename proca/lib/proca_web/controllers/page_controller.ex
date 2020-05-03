@@ -6,18 +6,22 @@ defmodule ProcaWeb.PageController do
 
   def index(conn, params) do
     conn = switch_org(params, conn)
-    staffer = Plug.Conn.get_session(conn, :staffer)
 
-    IO.inspect(staffer, label: "staffer")
     orgs = Proca.Org.list
 
-    user_orgs = if Map.has_key?(conn.assigns, :user) do
+    user_orgs = if conn.assigns.user do
       from(st in Staffer, where: st.user_id == ^conn.assigns.user.id, select: st.org_id)
       |> Repo.all
     else
       []
     end
 
+    staffer = if conn.assigns.user do
+      Plug.Conn.get_session(conn, :staffer)
+    else
+      nil
+    end
+    
     render(conn, "index.html", %{
           staffer: staffer,
           orgs: orgs,
