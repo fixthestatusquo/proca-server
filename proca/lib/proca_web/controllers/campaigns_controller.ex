@@ -45,9 +45,13 @@ defmodule ProcaWeb.CampaignsController do
 
   def handle_event("action_page_save", %{"action_page" => attrs}, socket) do
     ch = socket.assigns[:action_page]
+
+    org_id = socket.assigns[:staffer].org_id
+
     new_ch = ch.data
-    |> ActionPage.changeset(attrs)
+    |> ActionPage.changeset(Map.merge(%{"org_id" => org_id}, attrs))
     |> put_assoc(:campaign, socket.assigns[:selected_campaign])
+
 
     case Repo.insert_or_update(new_ch) do
       {:ok, _ap} ->
@@ -63,6 +67,12 @@ defmodule ProcaWeb.CampaignsController do
           socket |> assign(:action_page, bad_ch)
         }
     end
+  end
+
+  def handle_event("action_page_remove", %{"id" => id}, socket) do
+    org_id = socket.assigns[:staffer].org_id
+    from(ap in ActionPage, where: ap.id == ^id and ap.org_id == ^org_id)
+    |> Repo.delete_all
   end
 
 
@@ -137,14 +147,29 @@ defmodule ProcaWeb.CampaignsController do
 
   def assign_campaigns(socket) do
     org_id = socket.assigns[:staffer].org_id
+
     cs = from(c in Campaign,
       where: c.org_id == ^org_id,
-      preload: [action_pages: :org],
+      preload: [:org, action_pages: :org],
       order_by: [desc: c.inserted_at])
     |> Repo.all
 
+    partner_cs = from(c in Campaign,
+      join: ap in ActionPage, on: c.id == ap.campaign_id,
+      where: c.org_id != ^org_id and ap.org_id == ^org_id,
+      preload: [:org, action_pages: :org],
+      order_by: [desc: c.inserted_at],
+      distinct: true)
+    |> Repo.all
+    |> Enum.map(fn c ->
+      case c.org_id do
+        ^org_id -> c
+        _ -> %{c | action_pages: Enum.filter(c.action_pages, fn ap -> ap.org_id == org_id end)}
+      end
+    end)
+
     socket
-    |> assign(:campaigns, cs)
+    |> assign(:campaigns, cs ++ partner_cs)
   end
 
   def assign_partners(socket) do

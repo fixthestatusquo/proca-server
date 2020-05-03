@@ -11,10 +11,15 @@
     <ul class="list-group">
       <%= for camp <- @campaigns do %>
         <li class="list-group-item">
-          <button phx-click="campaign_edit" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+          <%= if camp.org_id == @staffer.org_id do %> 
+            <button phx-click="campaign_edit" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+          <% end %>
           <button phx-click="action_page_new" phx-value-campaign_id="<%= camp.id %>" class="btn btn-sm btn-success float-right"><i class="fa-plus-square fa"></i> add action page</button>
 
           <h3><%= camp.title %></h3>
+          <%= if camp.org_id != @staffer.org_id do %>
+            <p>Run by <%=  camp.org.title %>.</p>
+          <% end %>
           <p>codename: <code><%= camp.name %></code></p>
           <%= if length(camp.action_pages) > 0 do %>
             <h4>Action pages:</h4>
@@ -112,11 +117,13 @@
 
         <div class="modal-body">
           <%= form_for @action_page, "#", [phx_submit: :action_page_save], fn f -> %>
-            <div class="form-group">
-              <%= label f, :org_id, "Organisation" %>
-              <%= select f, :org_id, @partners,  class: "form-control" %>
-              <%= error_tag f, :org_id %>
-            </div>
+            <%= if @selected_campaign.org_id == @staffer.org_id do %>
+              <div class="form-group">
+                <%= label f, :org_id, "Organisation" %>
+                <%= select f, :org_id, @partners,  class: "form-control" %>
+                <%= error_tag f, :org_id %>
+              </div>
+            <% end %>
 
             <div class="form-group">
             <%= label f, :url, "URL of widget" %>
@@ -131,7 +138,7 @@
             </div>
             
             <div class="d-flex justify-content-between">
-              <%= if @action_page.data.id do %>
+              <%= if not is_nil(@action_page.data.id) && @action_page.data.org_id == @staffer.org_id do %>
               <a class="btn btn-danger" aria-label="Remove"
                       phx-click="action_page_remove" phx-value-id="<%= @action_page.data.id %>"
               >
