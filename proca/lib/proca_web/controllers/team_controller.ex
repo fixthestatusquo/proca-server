@@ -80,7 +80,9 @@ defmodule ProcaWeb.TeamController do
   end
 
   def assign_staffers(socket, org_id) do
-    staffers = Staffer.get_by_org(org_id)
+    staffers = Staffer.get_by_org(org_id, [:user])
+    |> Enum.sort_by(&(&1.user.email))
+
     socket
     |> assign(:staffers, staffers)
     |> assign(:roles, roles())

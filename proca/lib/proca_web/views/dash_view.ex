@@ -30,4 +30,9 @@ defmodule ProcaWeb.DashView do
       {"English", "en"}
     ]
   end
+
+  def owned_by(items, staffer) do
+    items
+    |> Enum.filter(fn i -> i.org_id == staffer.org_id end)
+  end
 end

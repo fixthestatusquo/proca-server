@@ -6,28 +6,46 @@
   </a>
 </div>
 
-<ul class="list-group">
-  <%= for org <- @orgs do %>
-      <li class="list-group-item">
+<article class="row">
+  <div class="col-lg-6">
 
-        <%= if can? @staffer, :join_orgs do %>
-          <%= if Enum.find(@orgs_joined, fn oid -> oid == org.id end) do %> 
-          <button phx-click="org_leave" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-warning float-right"><i class="fa-user-minus fa"></i> leave</button>
-          <% else %>
-          <button phx-click="org_join" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-user-plus fa"></i> join</button>
+    <ul class="list-group">
+      <%= for org <- @orgs do %>
+        <li class="list-group-item">
+
+          <%= if can? @staffer, :join_orgs do %>
+            <%= if Enum.find(@orgs_joined, fn oid -> oid == org.id end) do %> 
+              <button phx-click="org_leave" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-warning float-right"><i class="fa-user-minus fa"></i> leave</button>
+            <% else %>
+              <button phx-click="org_join" phx-value-org_id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-user-plus fa"></i> join</button>
+            <% end %>
           <% end %>
-        <% end %>
 
-        <button phx-click="org_edit" phx-value-id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
+          <button phx-click="org_edit" phx-value-id="<%= org.id %>" class="btn btn-sm btn-light float-right"><i class="fa-cog fa"></i> edit</button>
 
-        <h3><%= org.title %></h3>
-        <%= if has_public_key? org do %>
-        <span class="float-right badge badge-success">encryption</span>
-        <% end %>
-        <p>Shortname: <%= org.name %></p>
-      </li>
-  <% end %>
-</ul>
+          <h3><%= org.title %></h3>
+          <%= if has_public_key? org do %>
+            <span class="float-right badge badge-success">encryption</span>
+          <% end %>
+          <p>Shortname: <%= org.name %></p>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  <div class="col-lg-6">
+    <p>
+      Here you can manage orgs in this instance. Add a new one using button on the top.
+    </p>
+    <p>
+      Using the <i>join</i> or <i>leave</i> button you can add yourself to the
+      org's team, for instance to help with setting things up.
+    </p>
+    <p>
+      The <span class="badge badge-success">encryption</span> tag shows
+      if encryption keys are present and orgs data will be encrypted.
+    </p>
+  </div>
+</article>
 
 <%= if editing? @change_org do %>
   <div class="modal active d-block border-primary" role="dialog">

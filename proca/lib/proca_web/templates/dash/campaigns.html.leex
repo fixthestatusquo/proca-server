@@ -40,7 +40,16 @@
   </div>
   <div class="col-lg-6">
     <p>
-      Here you can see the list of campaigns that you run.
+      Here you can see the list of campaigns that you run, or which you are a
+      partner of.
+    </p>
+    <p>
+      Add a new campaign using <i>New campaign</i> button on the top.
+    </p>
+    <p>
+      If campaign is yours, you can add new action pages and
+      delegate them to other organisations. If you are a partner, You can add
+      new action pages for yourself.
     </p>
   </div>
 </div>
@@ -79,7 +88,7 @@
             
             <div class="d-flex justify-content-between">
               <%= if @campaign.data.id do %>
-              <a class="btn btn-danger" aria-label="Remove"
+              <a class="btn btn-danger" aria-label="Remove" href="#"
                       phx-click="campaign_remove" phx-value-id="<%= @campaign.data.id %>"
               >
                 Remove
@@ -139,7 +148,7 @@
             
             <div class="d-flex justify-content-between">
               <%= if not is_nil(@action_page.data.id) && @action_page.data.org_id == @staffer.org_id do %>
-              <a class="btn btn-danger" aria-label="Remove"
+              <a class="btn btn-danger" aria-label="Remove" href="#"
                       phx-click="action_page_remove" phx-value-id="<%= @action_page.data.id %>"
               >
                 Remove

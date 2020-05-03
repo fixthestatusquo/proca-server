@@ -1,11 +1,28 @@
+<article>
+  <heading>
+    <h1>Welcome to Proca!</h1>
+  </heading>
 
-<section>
-  <p>
-    Log in to the oranisation dashboard (<%= length(@org_list) %>):
-  </p>
-  <ul>
-  <%= for org <- @org_list do %>
-    <li><a href="/?org_name=<%= org.name  %>"><%= org.title %></a></li>
-  <% end %>
-  </ul>
-</section>
+  <section>
+    <h3>Orgs in this instance:</h3>
+
+    <div class="card-group">
+      <%= for org <- @orgs do %>
+        <div class="card w-25 m-3 <%= if @staffer.org_id == org.id, do: "bg-warning" %>">
+          <div class="card-body">
+            <h5 class="card-title"><%= org.title %></h5>
+            <p class="card-text"><code><%= org.name %></code></p>
+
+            <%= if Enum.member?(@user_orgs, org.id) do %>
+              <%= if @staffer.org_id == org.id do %>
+                <p><strong>You are signed in here</strong></p>
+              <% else %>
+                <a href="/?org_name=<%= org.name %>" class="btn btn-primary">Sign in</a>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</article>

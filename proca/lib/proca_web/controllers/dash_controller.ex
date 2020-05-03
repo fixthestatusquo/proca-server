@@ -3,9 +3,7 @@ defmodule ProcaWeb.DashController do
   use ProcaWeb.Live.AuthHelper, otp_app: :proca
 
   def render(assigns) do
-    ~L"""
-    You are logged in as <%= @user.email %> for org <%= @staffer.org.name %>
-    """
+    Phoenix.View.render(ProcaWeb.DashView, "index.html", assigns)
   end
 
   def mount(params, session, socket) do
