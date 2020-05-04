@@ -2,20 +2,20 @@
 set -u
 set -e 
 
-DATABASE_URL=postgres://proca:XXX@172.17.0.1/proca
+DATABASE_URL=postgres://proca:proca@172.17.0.1/proca
 
 
 env="
-  -e DOMAIN=api.proca.foundation 
+  -e DOMAIN=proca.ftw
   -e PORT=4000 
   -e DATABASE_URL=$DATABASE_URL 
-  -e ORG_NAME=tttp 
-  -e POOL_SIZE=20 
-  -e SECRET_KEY_BASE=YYYY
-  -e SIGNING_SALT=ZZZZ
+  -e ORG_NAME=test
+  -e POOL_SIZE=10
+  -e SECRET_KEY_BASE=olMM+82vsv8HHwwRptuLRrrLrtUKrXBcjfRUGEibpZTZ1e1F35m8XhdzOwtz8881
+  -e SIGNING_SALT=VBxSbYRp2FcAX6nKxHI2M/ldx2pZN91Ni0mGC8H/G0dC5JF/NXo5gUZOsv3ZSh3n912939
 "
 
-docker network create --subnet=172.18.0.0/16 proca || echo "network exists"
+docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 'proca' already exists"
 
 image=movonw/proca-backend
 
@@ -23,8 +23,9 @@ if [ $# -gt 0 ]; then
 
   docker run -ti --rm $env  $image "$@"
 else
-  docker run --name proca -d  --net proca --ip 172.18.0.2  \
+  docker run --name proca -d  --net proca --ip 172.19.0.2  \
 	$env \
+	-p 4000:4000 \
   movonw/proca-backend \
   /home/app/prod/rel/proca/bin/proca start
 fi
