@@ -14,7 +14,7 @@
             <p class="card-text"><code><%= org.name %></code></p>
 
             <%= if Enum.member?(@user_orgs, org.id) do %>
-              <%= if @staffer.org_id == org.id do %>
+              <%= if @staffer != nil && @staffer.org_id == org.id do %>
                 <p><strong>You are signed in here</strong></p>
               <% else %>
                 <a href="/?org_name=<%= org.name %>" class="btn btn-primary">Sign in</a>
