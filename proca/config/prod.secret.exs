@@ -34,6 +34,10 @@ config :proca, ProcaWeb.Endpoint,
   secret_key_base: secret_key_base,
   url: [host: System.get_env("DOMAIN"), port: 80]
 
+
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN") || nil
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix
