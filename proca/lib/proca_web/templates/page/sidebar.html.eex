@@ -4,7 +4,7 @@
   <!-- Sidebar - Brand -->
   <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/">
     <div class="sidebar-brand-icon">
-      <img src="<%= Routes.static_path(@conn, "/images/proca-logo.png") %>" onerror="this.src='fixme.png'" style="width: 50px; height: 50px">
+      <img src="<%= Routes.static_path(@conn, "/images/proca-logo.png") %>" style="width: 50px; height: 50px">
     </div>
   </a>
 
