@@ -19,7 +19,17 @@ docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 
 
 image=movonw/proca-backend
 
+remove_container()
+{
+    echo Stopping and removing proca...
+    docker stop proca && docker rm proca
+}
+
 if [ $# -gt 0 ]; then
+  if [ "$1" = "-d" ]; then
+	shift
+      remove_container
+  fi
 
   docker run -ti --rm $env  $image "$@"
 else
