@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title><%= assigns[:page_title] || "Proca" %></title>
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/fontawesome/all.min.css") %>">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <%= csrf_meta_tag() %>
+  </head>
+
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+      <%= render ProcaWeb.PageView, "sidebar.html", assigns %>
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <%= @inner_content %>
+      </div>
+    </div>
+    <!-- End Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded hidden" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </body>
+</html>

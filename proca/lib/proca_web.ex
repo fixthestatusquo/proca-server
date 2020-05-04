@@ -47,6 +47,13 @@ defmodule ProcaWeb do
     end
   end
 
+  def live_view do
+    quote do
+      use Phoenix.LiveView, layout: {ProcaWeb.LayoutView, "live.html"}
+      use ProcaWeb.Live.AuthHelper, otp_app: :proca
+    end
+  end
+
   def router do
     quote do
       use Phoenix.Router

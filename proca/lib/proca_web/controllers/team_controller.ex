@@ -1,6 +1,5 @@
 defmodule ProcaWeb.TeamController do
-  use Phoenix.LiveView
-  use ProcaWeb.Live.AuthHelper, otp_app: :proca
+  use ProcaWeb, :live_view
   alias Proca.{Org,Staffer}
   alias Proca.Staffer.Role
   alias Proca.Users.User

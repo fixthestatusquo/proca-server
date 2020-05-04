@@ -1,126 +1,120 @@
 defmodule ProcaWeb.Live.AuthHelper do
   @moduledoc """
-  Handle pow user in LiveView.
+    Will assign the user and staffer from the session token, to the live view socket.
 
-  Will assign the current user and periodically check that the session is still
-  active. `session_expired/1` will be called when session expires.
+    defmodule AppNameWeb.SomeViewLive do
+        use PhoenixLiveView
+        use AppNameWeb.LiveViewPowHelper
 
-  Configuration options:
+        def mount(session, socket) do
+          socket = mount_user(socket, session)
 
-  * `:otp_app` - the app name
-  * `:interval` - how often the session has to be checked, defaults 60s
+          # ...
+        end
+    end
 
-  defmodule LendingWeb.SomeViewLive do
-  use PhoenixLiveView
-  use LendingWeb.Live.AuthHelper, otp_app: :otp_app
-
-  def mount(session, socket) do
-  socket = mount_user(socket, session)
-
-  # ...
-  end
-
-  def session_expired(socket) do
-  # handle session expiration
-
-  {:noreply, socket}
-  end
-  end
   """
+
+  alias Proca.Users.User
+  alias Proca.Staffer
+  alias Phoenix.LiveView.Socket
+  alias Pow.Store.CredentialsCache
+
   require Logger
 
-  import Phoenix.LiveView, only: [assign: 3]
-
   defmacro __using__(opts) do
-    config              = [otp_app: opts[:otp_app]]
-    session_id_key      = Pow.Plug.prepend_with_namespace(config, "auth")
-    auth_check_interval = Keyword.get(opts, :auth_check_interval, :timer.seconds(1))
-
-    config = [
-      session_id_key: session_id_key,
-      auth_check_interval: auth_check_interval,
-    ]
+    # Customise this for your app
+    # You'll also need to replace the references to "app_name_auth"
+    renewal_config      = [renew_session: true, interval: :timer.seconds(5)]
+    pow_config  = [otp_app: opts[:otp_app]]
 
     quote do
-      @config unquote(Macro.escape(config)) ++ [
-        live_view_module: __MODULE__,
-      ]
+      
+      @pow_config unquote(Macro.escape(pow_config)) ++ [module: __MODULE__]
+      @renewal_config unquote(Macro.escape(renewal_config)) ++ [module: __MODULE__]
 
-      def mount_user(socket, session),
-          do: unquote(__MODULE__).mount_user(socket, self(), session, @config)
-
-      def handle_info(:pow_auth_ttl, socket),
-          do: unquote(__MODULE__).handle_auth_ttl(socket, self(), @config)
+      def mount_user(socket, session), do: unquote(__MODULE__).mount_user(socket, self(), session, @pow_config, @renewal_config)
+      def handle_info({:renew_pow_session, session}, socket), do: unquote(__MODULE__).handle_renew_pow_session(socket, self(), session, @pow_config, @renewal_config)
     end
   end
 
-  def mount_user(socket, pid, session, config) do
-    session_id  = Map.fetch!(session, config[:session_id_key])
-
-    case credentials_by_session_id(session_id) do
-      {user, meta} ->
-        socket = socket
-        |> assign(:credentials_meta, meta)
-        |> assign(:user, user)
-        |> assign(:staffer, Map.get(session, "staffer"))
-
-        if Phoenix.LiveView.connected?(socket) do
-          init_auth_check(pid)
-        end
-
-        socket
-
-      _everything_else ->
-        socket
+  @doc """
+  Retrieves the currently-logged-in user from the Pow credentials cache.
+  """
+  def get_user(socket, session, pow_config) do
+    with {:ok, token} <- verify_token(socket, session, pow_config),
+         {user, _metadata} = pow_credential <- CredentialsCache.get(pow_config, token) do
+          user
+    else
+      _any -> nil
     end
   end
 
-  defp init_auth_check(pid) do
-    Process.send_after(pid, :pow_auth_ttl, 0)
+  # Convienience to assign straight into the socket
+  def mount_user(socket, pid, %{"proca_auth" => signed_token} = session, pow_config, renewal_config) do
+    case get_user(socket, session, pow_config) do
+      %User{} = user -> maybe_init_session_renewal(
+                          socket,
+                          pid,
+                          session,
+                          renewal_config |> Keyword.get(:renew_session),
+                          renewal_config |> Keyword.get(:interval)
+                        )
+                        assign_current_user(socket, user, Map.get(session, "staffer", nil))
+      _ -> assign_current_user(socket, nil, nil) #We didn't get a current_user for the token
+    end
+  end
+  def maybe_assign_current_user(_, _, _), do: nil
+
+  # assigns the current_user to the socket with the key current_user
+  def assign_current_user(socket, user, staffer) do
+    socket
+    |> Phoenix.LiveView.assign(user: user)
+    |> Phoenix.LiveView.assign(staffer: staffer)
   end
 
-  def handle_auth_ttl(socket, pid, config) do
-    auth_check_interval = Pow.Config.get(config, :auth_check_interval)
-
-    case session_id_by_credentials(socket.assigns[:user], socket.assigns[:credentials_meta]) do
-      x when is_nil(x) ->
-        # Logger.info("[#{__MODULE__}] User session no longer active")
-
-        {
-          :noreply,
-          socket
-          |> assign(:credentials_meta, nil)
-          |> assign(:user, nil)
-          |> assign(:staffer, nil)
-        }
-
-      _session_id ->
-        # Logger.info("[#{__MODULE__}] User session still active")
-
-        Process.send_after(pid, :pow_auth_ttl, auth_check_interval)
-
-        {:noreply, socket}
+  # Session Renewal Logic
+  def maybe_init_session_renewal(_, _, _, false, _), do: nil
+  def maybe_init_session_renewal(socket, pid, session, true, interval) do
+    if Phoenix.LiveView.connected?(socket) do
+      Process.send_after(pid, {:renew_pow_session, session}, interval)
     end
   end
 
-  defp session_id_by_credentials(nil, nil), do: nil
-  defp session_id_by_credentials(user, meta) do
-    all_user_session_ids = Pow.Store.CredentialsCache.sessions(
-      [backend: Pow.Store.Backend.EtsCache],
-      user
-    )
+  def handle_renew_pow_session(socket, pid, session, pow_config, renewal_config) do
+    with  {:ok, token} <- verify_token(socket, session, pow_config),
+          {_user, _metadata} = pow_credential <- CredentialsCache.get(pow_config, token),
+          :ok <- update_session_ttl(pow_config, token, pow_credential)  do
 
-    all_user_session_ids |> Enum.find(fn session_id ->
-      {_, session_meta} = credentials_by_session_id(session_id)
+        # Successfully updates so queue up another renewal
+        Process.send_after(pid, {:renew_pow_session, session}, renewal_config |> Keyword.get(:interval))
+    else
+      _any -> nil
+    end
 
-      session_meta[:fingerprint] == meta[:fingerprint]
-    end)
+    {:noreply, socket}
   end
 
-  defp credentials_by_session_id(session_id) do
-    Pow.Store.CredentialsCache.get(
-      [backend: Pow.Store.Backend.EtsCache],
-      session_id
-    )
+  # Verifies the session token
+  defp verify_token(socket, %{"proca_auth" => signed_token}, pow_config) do
+    conn = struct!(Plug.Conn, secret_key_base: socket.endpoint.config(:secret_key_base))
+    salt = Atom.to_string(Pow.Plug.Session)
+    Pow.Plug.verify_token(conn, salt, signed_token, pow_config)
   end
+  defp verify_token(_, _, _), do: nil
+
+  # Updates the TTL on POW credential in the cache
+  def update_session_ttl(pow_config, session_token, {%User{} = user, _metadata} = pow_credential) do
+
+    sessions = CredentialsCache.sessions(pow_config, user)
+
+    # Do we have an available session which matches the fingerprint?
+    case sessions |> Enum.find(& &1 == session_token) do
+      nil -> Logger.debug("No Matching Session Found")
+      _available_session ->  # We have an available session. Now lets update it's TTL by passing the previously fetched credential
+                            Logger.debug("Matching Session Found. Updating TTL")
+                            CredentialsCache.put(pow_config, session_token, pow_credential)
+    end
+  end
+
 end

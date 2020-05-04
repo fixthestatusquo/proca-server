@@ -1,6 +1,5 @@
 defmodule ProcaWeb.CampaignsController do
-  use Phoenix.LiveView
-  use ProcaWeb.Live.AuthHelper, otp_app: :proca
+  use ProcaWeb, :live_view
   alias Proca.{Org,Staffer,Campaign,ActionPage}
   alias Proca.Users.User
   alias Proca.Repo

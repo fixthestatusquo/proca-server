@@ -1,19 +1,15 @@
 defmodule ProcaWeb.DashController do
-  use Phoenix.LiveView
-  use ProcaWeb.Live.AuthHelper, otp_app: :proca
+  use ProcaWeb, :live_view
 
   def render(assigns) do
     Phoenix.View.render(ProcaWeb.DashView, "index.html", assigns)
   end
 
-  def mount(params, session, socket) do
+  def mount(_params, session, socket) do
+    IO.inspect(session, label: "Session in dash")
     socket = mount_user(socket, session)
+    IO.inspect(socket.assigns, label: "Live assigns")
 
     {:ok, assign(socket, :test, "pe")}
   end
-
-  def session_expired(socket) do
-    {:noreply, socket}
-  end
-
 end

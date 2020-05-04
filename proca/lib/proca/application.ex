@@ -10,6 +10,8 @@ defmodule Proca.Application do
     children = [
       # Start the Ecto repository
       Proca.Repo,
+      # Start the PubSub server
+      {Phoenix.PubSub, name: Proca.PubSub},
       # Start the endpoint when the application starts
       ProcaWeb.Endpoint,
       {

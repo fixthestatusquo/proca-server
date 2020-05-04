@@ -1,6 +1,5 @@
 defmodule ProcaWeb.EncryptionController do
-  use Phoenix.LiveView
-  use ProcaWeb.Live.AuthHelper, otp_app: :proca
+  use ProcaWeb, :live_view
   alias Proca.Org
   alias Proca.PublicKey
   alias Proca.Repo

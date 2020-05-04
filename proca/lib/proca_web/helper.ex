@@ -16,17 +16,18 @@ defmodule ProcaWeb.Helper do
     |> flatten_errors()
   end
 
-  defp flatten_errors(%{message: msg}, lastkey) do
-    [%{message: "#{lastkey}: #{msg}"}]
-  end
 
-  defp flatten_errors(%{} = map, lastkey \\ "input") do
+  defp flatten_errors(%{} = map) when is_map(map) do
     map
     |> Map.keys()
     |> Enum.map(fn k ->
       flatten_errors(Map.get(map, k), k)
     end)
     |> Enum.concat()
+  end
+
+  defp flatten_errors(%{message: msg} = map, lastkey) when is_map(map) do
+    [%{message: "#{lastkey}: #{msg}"}]
   end
 
   defp flatten_errors(lst, lastkey) when is_list(lst) do
