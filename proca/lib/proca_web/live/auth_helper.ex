@@ -109,11 +109,9 @@ defmodule ProcaWeb.Live.AuthHelper do
     sessions = CredentialsCache.sessions(pow_config, user)
 
     # Do we have an available session which matches the fingerprint?
-    case sessions |> Enum.find(& &1 == session_token) do
-      nil -> Logger.debug("No Matching Session Found")
-      _available_session ->  # We have an available session. Now lets update it's TTL by passing the previously fetched credential
-                            Logger.debug("Matching Session Found. Updating TTL")
-                            CredentialsCache.put(pow_config, session_token, pow_credential)
+    # If yes, lets update it's TTL by passing the previously fetched credential
+    if sessions |> Enum.find(& &1 == session_token) do
+      CredentialsCache.put(pow_config, session_token, pow_credential)
     end
   end
 
