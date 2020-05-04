@@ -50,7 +50,7 @@ defmodule Proca.MixProject do
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
       {:json, "~> 1.3.0"},
-      {:phoenix_live_view, "~> 0.8.0"},
+      {:phoenix_live_view, "~> 0.12.1"},
       {:pow, "~> 1.0.18"},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.4", only: :test}
