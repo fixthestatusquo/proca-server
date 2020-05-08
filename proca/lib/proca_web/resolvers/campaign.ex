@@ -3,23 +3,36 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
 
   def list(_, %{id: id}, _) do
-    cl = Proca.Repo.all from x in Proca.Campaign, where: x.id == ^id
+    cl = list_query()
+    |> where([x], x.id == ^id)
+    |> Proca.Repo.all
+
     {:ok, cl}
   end
 
   def list(_, %{name: name}, _) do
-    cl = Proca.Repo.all from x in Proca.Campaign, where: x.name == ^name
+    cl = list_query()
+    |> where([x], x.name == ^name)
+    |> Proca.Repo.all
+
     {:ok, cl}
   end
 
   def list(_, %{title: title}, _) do
-    cl = Proca.Repo.all from x in Proca.Campaign, where: like(x.title, ^title)
+    cl = list_query()
+    |> where([x], like(x.title, ^title))
+    |> Proca.Repo.all
+
     {:ok, cl}
   end
 
   def list(_, _, _) do
-    cl = Proca.Repo.all Proca.Campaign
+    cl = Proca.Repo.all list_query()
     {:ok, cl}
+  end
+
+  defp list_query() do
+    from(x in Proca.Campaign, preload: [:org])
   end
 
   def stats(campaign, _, _) do

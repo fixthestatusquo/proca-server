@@ -37,7 +37,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   def campaign(ap, %{}, _) do
     {
       :ok,
-      Ecto.assoc(ap, :campaign) |> Repo.one
+      Repo.preload(ap, [campaign: :org]).campaign
     }
   end
 end
