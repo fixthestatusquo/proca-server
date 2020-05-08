@@ -61,7 +61,8 @@ defmodule Proca.Contact.BasicData do
   @impl Data
   def add_fingerprint(signature, chst) do
     with %{changes: %{email: email}} <- chst,
-         hash <- :crypto.hash(:sha256, email) do
+    seed <- Application.get_env(:proca, Proca.Signature)[:fpr_seed],
+         hash <- :crypto.hash(:sha256, seed <> email) do
       put_change(signature, :fingerprint, hash)
     else
       _ -> add_error(signature, :fingerprint, "Can't generate fingerprint (no email field in data)")

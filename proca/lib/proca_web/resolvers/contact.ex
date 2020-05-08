@@ -42,6 +42,7 @@ defmodule ProcaWeb.Resolvers.Contact do
               IO.inspect(invalid_data, label: "Error")
               {:error, invalid_data}
         end
+      %{valid?: false} = invalid_data -> {:error, invalid_data}
     end
 
   end
@@ -52,8 +53,8 @@ defmodule ProcaWeb.Resolvers.Contact do
         {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
       action_page ->
         case create_signature(action_page, signature) do
-          {:ok, %Signature{id: signature_id}} ->
-            {:ok, signature_id}
+          {:ok, %Signature{id: _signature_id, fingerprint: fpr}} ->
+            {:ok, Base.encode64(fpr)}
           {:error, %Ecto.Changeset{} = changeset} ->
             {:error, Helper.format_errors(changeset)}
           _ ->

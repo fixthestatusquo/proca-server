@@ -115,4 +115,9 @@ Provide campaign_id to only get signatures for a campaign
   object :public_org do
     field :title, :string
   end
+
+  object :signature_reference do
+    @desc "Signature fingerprint"
+    field :ref, :string
+  end
 end

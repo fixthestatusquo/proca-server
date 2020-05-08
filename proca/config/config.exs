@@ -21,6 +21,9 @@ config :proca, ProcaWeb.Endpoint,
 config :proca, Proca,
   org_name: "test"
 
+config :proca, Proca.Signature,
+  fpr_seed: "4xFc6MsafPEwc6ME"
+
 # Configures Elixir's Logger
 config :logger,
   backends: [:console, Sentry.LoggerBackend],
