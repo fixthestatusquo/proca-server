@@ -1,7 +1,7 @@
 defmodule Proca.Supporter do
   use Ecto.Schema
   alias Proca.Repo
-  alias Proca.{Org, Consent, Supporter, Contact, ActionPage}
+  alias Proca.{Consent, Supporter, Contact, ActionPage}
   import Ecto.Changeset
   import Ecto.Query
 
