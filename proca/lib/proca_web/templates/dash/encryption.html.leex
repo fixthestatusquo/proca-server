@@ -10,7 +10,7 @@
             <strong><%= pk.name %></strong>
             Public:
             <code>
-              <%= Base.encode64(pk.public) %>
+              <%= Proca.PublicKey.base_encode(pk.public) %>
             </code>
             <%= if pk.expired_at do %>
               <span class="float-right badge badge-secondary">expired</span>
@@ -31,7 +31,7 @@
     <p>Generating a new key pair will expire previously active encryption keys</p>
 
     <p>
-      <a href="#" class="btn btn-warning" phx-click="pk_generate">Generate</a> or <strong>paste in your NaCl public key</strong>, Base64 encoded, and it's name
+      <a href="#" class="btn btn-warning" phx-click="pk_generate">Generate</a> or <strong>paste in your NaCl public key</strong>, Base64url encoded, and it's name
     </p>
 
     <%= form_for @new_pk, "#", [phx_submit: :pk_save], fn f -> %>

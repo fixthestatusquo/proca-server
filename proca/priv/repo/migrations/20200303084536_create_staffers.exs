@@ -10,8 +10,9 @@ defmodule Proca.Repo.Migrations.CreateStaffers do
       timestamps()
     end
 
-    create index(:staffers, [:org_id])
-    create index(:staffers, [:user_id])
+    # XXX these are added automatically
+    # create index(:staffers, [:org_id])
+    # create index(:staffers, [:user_id])
     create unique_index(:staffers, [:org_id, :user_id])
   end
 end

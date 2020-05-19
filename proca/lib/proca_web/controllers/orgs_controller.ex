@@ -51,14 +51,6 @@ defmodule ProcaWeb.OrgsController do
     }
   end
 
-  def handle_event("org_remove_lock", _v, socket) do
-    {
-      :noreply,
-      socket
-      |> assign(:can_remove_org, not socket.assigns[:can_remove_org])
-    }
-  end
-
   def handle_event("org_save", %{"org" => org}, socket) do
     ch = socket.assigns[:change_org].data
     |> Org.changeset(org)

@@ -17,7 +17,6 @@ defmodule ProcaWeb.EncryptionController do
     |> changeset_to_base64
     |> Map.put(:action, :insert)
 
-    IO.inspect(new_pk, label: "generate")
     {
       :noreply,
       socket
@@ -41,13 +40,12 @@ defmodule ProcaWeb.EncryptionController do
 
         socket
         |> put_flash(:info, "Key saved")
-        |> assign(:org, socket.assigns[:org].id)
+        |> assign_org(socket.assigns[:org].id)
         |> assign(:new_pk, empty_pk)
         else
           {:error, chst} -> assign(socket, :new_pk, chst)
       end
     else
-      IO.inspect(pk, label: "non valid")
       socket
       |> assign(:new_pk, pk)
     end
@@ -60,7 +58,6 @@ defmodule ProcaWeb.EncryptionController do
 
     case Repo.insert(ch) do
       {:ok, saved} ->
-        IO.inspect(saved, label: "saved pk")
         now = DateTime.utc_now()
         Repo.update_all(
           from(pk in PublicKey, where: pk.org_id == ^org.id and pk.id != ^saved.id),
@@ -95,14 +92,14 @@ defmodule ProcaWeb.EncryptionController do
 
   def changeset_to_base64(ch = %{changes: pk}) do
     %{ch | changes:
-      %{pk | private: Base.encode64(pk.private),
-        public: Base.encode64(pk.public)}
+      %{pk | private: PublicKey.base_encode(pk.private),
+        public: PublicKey.base_encode(pk.public)}
     }
   end
 
   def changeset_from_base64(ch = %{changes: pk = %{public: public}}) do
-    bad_format_err = "must be 32 bytes, Base64 encoded"
-    with {:ok, pub} <- Base.decode64(public),
+    bad_format_err = "must be 32 bytes, Base64url encoded (RFC4648, no padding)"
+    with {:ok, pub} <- PublicKey.base_decode(public),
          32 <- byte_size(pub) do
           {
             :ok,

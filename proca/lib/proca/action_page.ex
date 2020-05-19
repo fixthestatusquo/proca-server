@@ -10,6 +10,7 @@ defmodule Proca.ActionPage do
   schema "action_pages" do
     field :locale, :string
     field :url, :string
+    field :delivery, :boolean
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org
     

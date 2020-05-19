@@ -36,4 +36,5 @@ config :proca, ProcaWeb.Endpoint,
   secret_key_base: secret_key_base
 
 config :proca, Proca,
-  org_name: System.get_env("ORG_NAME")
+  org_name: System.get_env("ORG_NAME"),
+  stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "5000")

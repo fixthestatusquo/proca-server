@@ -89,7 +89,7 @@ Provide campaign_id to only get signatures for a campaign
   end
 
   object :signature_list do
-    @desc "Public key of sender (proca app), in Base64"
+    @desc "Public key of sender (proca app), in Base64url encoding (RFC 4648 5.)"
     field :public_key, :string
     @desc "List of returned signatures"
     field :list, list_of(:signature)
@@ -100,9 +100,9 @@ Provide campaign_id to only get signatures for a campaign
     field :id, :integer
     @desc "DateTime of signature (UTC)"
     field :created, :datetime
-    @desc "Encryption nonce in Base64"
+    @desc "Encryption nonce in Base64url"
     field :nonce, :string
-    @desc "Encrypted contact data in Base64"
+    @desc "Encrypted contact data in Base64url"
     field :contact, :string
     @desc "Campaign id"
     field :campaign_id, :integer
@@ -119,5 +119,13 @@ Provide campaign_id to only get signatures for a campaign
   object :signature_reference do
     @desc "Signature fingerprint"
     field :ref, :string
+  end
+
+  object :contact_reference do
+    @desc "Contacts data fingerprint"
+    field :fingerprint, :string
+
+    @desc "Contacts first name"
+    field :first_name, :string
   end
 end

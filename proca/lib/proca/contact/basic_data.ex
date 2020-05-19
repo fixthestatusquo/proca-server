@@ -49,23 +49,15 @@ defmodule Proca.Contact.BasicData do
   @impl Data
   def to_contact(chst = %{valid?: true}, _action_page) do
     # XXX here we should check action_page.split_names
-    {:ok, payload} = chst.changes
+    attrs = chst.changes
     |> Map.delete(:name)
-    |> JSON.encode()
 
-    Contact.changeset(%Contact{},
-      chst.changes
-      |> Map.put(:payload, payload))
+    {Contact.build(attrs), fingerprint(chst)}
   end
 
-  @impl Data
-  def add_fingerprint(signature, chst) do
-    with %{changes: %{email: email}} <- chst,
-    seed <- Application.get_env(:proca, Proca.Signature)[:fpr_seed],
-         hash <- :crypto.hash(:sha256, seed <> email) do
-      put_change(signature, :fingerprint, hash)
-    else
-      _ -> add_error(signature, :fingerprint, "Can't generate fingerprint (no email field in data)")
-    end
+  def fingerprint(%{changes: %{email: email}}) do
+    seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
+    hash = :crypto.hash(:sha256, seed <> email)
+    hash
   end
 end

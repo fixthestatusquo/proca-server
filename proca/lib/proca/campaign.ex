@@ -5,6 +5,7 @@ defmodule Proca.Campaign do
   schema "campaigns" do
     field :name, :string
     field :title, :string
+    field :force_delivery, :boolean
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
 

@@ -103,12 +103,14 @@ Returns cleartext
   end
 
   @doc "Encrypt text using recpieint public key pk"
+  @spec encrypt(Proca.PublicKey, binary()) :: {binary(), binary()} | {:error, String.t()}
   def encrypt(%Proca.PublicKey{} = pk, text) do
     GenServer.call(__MODULE__, {:encrypt, pk, text})
   end
 
   @doc "Decrypt ciphertext with nonce encrypted for party with keys pk"
-  def decrypt(%Proca.PublicKey{} = pk, encrypted, nonce) do
+  @spec decrypt(Proca.PublicKey, binary(), binary()) :: binary() | {:error, String.t()}
+  def decrypt(%Proca.PublicKey{} = pk, encrypted, nonce) do 
     GenServer.call(__MODULE__, {:decrypt, pk, encrypted, nonce})
   end
 
