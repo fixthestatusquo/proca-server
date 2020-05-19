@@ -7,7 +7,7 @@ defmodule Proca.Consent do
     field :delivery, :boolean, default: false
     field :given_at, :utc_datetime
     field :scopes, {:array, :string}
-    belongs_to :contact, Proca.Contact
+    belongs_to :supporter, Proca.Supporter
 
     timestamps()
   end
@@ -31,6 +31,10 @@ defmodule Proca.Consent do
           given_at: DateTime.utc_now,
           scopes: ["email"]
             }, [:communication, :delivery, :given_at, :scopes])
+  end
+
+  def from_privacy(%{opt_in: opt_in}) do
+    from_opt_in(opt_in)
   end
 
 end

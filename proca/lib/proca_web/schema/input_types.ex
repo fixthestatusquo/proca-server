@@ -46,7 +46,7 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :first_name, :string
     @desc "Last name (when you provide full name split into first and last)"
     field :last_name, :string
-    @dest "Email"
+    @desc "Email"
     field :email, :string
     @desc "Contacts phone number"
     field :phone, :string
@@ -68,6 +68,7 @@ defmodule ProcaWeb.Schema.InputTypes do
   input_object :consent_input do
     @desc "Has contact consented to receiving communication from widget owner?"
     field :opt_in, non_null(:boolean)
+    field :lead_opt_in, :boolean
   end
 
   @desc "Tracking codes"
@@ -76,5 +77,13 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :medium, non_null(:string)
     field :campaign, non_null(:string)
     field :content, :string
+  end
+
+  @desc "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
+  input_object :action_extra_input do
+    @desc "Action Type"
+    field :action_type, non_null(:string)
+    @desc "Other fields that accompany the signature"
+    field :fields, list_of(non_null(:custom_field_input))
   end
 end

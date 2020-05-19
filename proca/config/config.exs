@@ -19,9 +19,10 @@ config :proca, ProcaWeb.Endpoint,
   live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"]
 
 config :proca, Proca,
-  org_name: "test"
+  org_name: "test",
+  stats_sync_interval: 0
 
-config :proca, Proca.Signature,
+config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
 # Configures Elixir's Logger

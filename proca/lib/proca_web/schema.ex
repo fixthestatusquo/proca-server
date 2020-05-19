@@ -51,7 +51,40 @@ defmodule ProcaWeb.Schema do
       
       resolve &Resolvers.Contact.add_signature/3
     end
+
+    @desc "Adds an action referencing contact data via contactRef"
+    field :add_action, type: :contact_reference do
+      arg :action_page_id, non_null(:id)
+      @desc "Action data"
+      arg :action, non_null(:action_extra_input)
+
+      @desc "Contact reference"
+      arg :contact_ref, :id
+
+      @desc "Tracking codes (UTM_*)"
+      arg :tracking, :tracking_input
+
+      resolve &Resolvers.Action.add_action/3
+    end
+
+    @desc "Adds an action with contact data"
+    field :add_action_contact, type: :contact_reference do
+      arg :action_page_id, non_null(:id)
+      @desc "Action data"
+      arg :action, :action_extra_input
+      @desc "GDPR communication opt"
+
+      arg :contact, non_null(:contact_input)
+      @desc "Signature action data"
+      arg :privacy, non_null(:consent_input)
+
+      @desc "Tracking codes (UTM_*)"
+      arg :tracking, :tracking_input
+
+      resolve &Resolvers.Action.add_action_contact/3
+    end
   end
 
   # addSignature(action_page_id, details, tracking)
+
 end

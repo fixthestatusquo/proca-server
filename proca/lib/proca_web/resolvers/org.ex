@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Proca.{ActionPage,Campaign,Contact,Consent,ContactSignature,Signature,Source}
+  alias Proca.{ActionPage,Campaign,Contact,Consent,Supporter,Source}
   alias Proca.{Org,Staffer,PublicKey}
 
   alias Proca.Repo
@@ -14,7 +14,7 @@ defmodule ProcaWeb.Resolvers.Org do
   def find(_, %{name: name}, %{context: %{user: user}}) when not is_nil(user) do
     with %Org{} = org <- Org.get_by_name(name),
          %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
-           true <- can?(s, :api)
+           true <- can?(s, :use_api)
       do
       {:ok, org}
     else
@@ -57,10 +57,9 @@ defmodule ProcaWeb.Resolvers.Org do
 
 
   defp org_signatures(org) do
-    from(s in Signature,
-      join: x in ContactSignature, on: x.signature_id == s.id,
-      join: c in Contact, on: x.contact_id == c.id,
-      join: g in Consent, on: g.contact_id == c.id,
+    from(s in Supporter,
+      join: c in Contact, on: c.supporter_id == s.id,
+      join: g in Consent, on: g.supporter_id == s.id,
       join: pk in PublicKey, on: pk.id == c.public_key_id,
       join: ap in ActionPage, on: s.action_page_id == ap.id,
       order_by: [asc: s.id],
@@ -97,10 +96,11 @@ defmodule ProcaWeb.Resolvers.Org do
     {
       :ok,
       %{
-        public_key: Base.encode64(my_pk.public),
+        public_key: PublicKey.base_encode(my_pk.public),
         list: Enum.map(sigs, fn s -> %{s |
-                                       nonce: Base.encode64(s.nonce),
-                                       contact: Base.encode64(s.contact)}
+                                       nonce: Contact.base_encode(s.nonce),
+                                       contact: Contact.base_encode(s.contact)
+                                      }
         end)
       }
     }

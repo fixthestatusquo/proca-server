@@ -35,3 +35,6 @@ npm-debug.log
 
 # language server workdir for Elixir
 .elixir_ls
+
+# do not commit auto-generated doc right now, as it's still work in progress
+doc

@@ -42,7 +42,7 @@ defmodule Proca.PublicKey do
     pk = %Proca.PublicKey{}
     |> changeset(%{name: name, org: org})
 
-    case Base.decode64(private) do
+    case base_decode(private) do
       {:ok, key} when is_binary(key) ->
         with public <- Kcl.derive_public_key(key) do
           pk
@@ -50,7 +50,7 @@ defmodule Proca.PublicKey do
           |> put_change(:public, public)
         end
       :error ->
-        add_error(pk, :private, "Cannot decode private key using Base64")
+        add_error(pk, :private, "Cannot decode private key using Base64url (RFC4648, no padding)")
     end
   end
 
@@ -59,12 +59,20 @@ defmodule Proca.PublicKey do
     |> changeset(%{name: name})
     |> put_assoc(:org, org)
 
-    case Base.decode64(public) do
+    case base_decode(public) do
       {:ok, key} when is_binary(key) ->
         pk
         |> put_change(:public, key)
       :error ->
         add_error(pk, :public, "Cannot decode public key using Base64")
     end
+  end
+
+  def base_encode(data) when is_bitstring(data) do
+    Base.url_encode64(data, padding: false)
+  end
+
+  def base_decode(encoded) when is_bitstring(encoded) do
+    Base.url_decode64(encoded, padding: false)
   end
 end

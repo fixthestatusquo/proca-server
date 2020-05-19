@@ -17,6 +17,10 @@ defmodule Proca.Application do
       {
         Proca.Server.Encrypt,
         Application.get_env(:proca, Proca)[:org_name]
+      },
+      {
+        Proca.Server.Stats,
+        Application.get_env(:proca, Proca)[:stats_sync_interval]
       }
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},
