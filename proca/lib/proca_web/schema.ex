@@ -84,7 +84,7 @@ defmodule ProcaWeb.Schema do
       arg(:tracking, :tracking_input)
 
       @desc "Link actions with these references (if unlinked to supporter)"
-      arg(:link_refs, list_of(non_null(:string)))
+      arg(:contact_ref, :id)
 
       resolve(&Resolvers.Action.add_action_contact/3)
     end
