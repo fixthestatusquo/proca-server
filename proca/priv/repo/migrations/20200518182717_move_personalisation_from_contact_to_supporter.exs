@@ -21,6 +21,8 @@ defmodule Proca.Repo.Migrations.MovePersonalisationFromContactToSupporter do
     WHERE supporters.id = contacts.supporter_id
     """
 
+    execute(copy_from_contacs, copy_to_contacs)
+
     alter table(:contacts) do
       remove :address
       remove :email
