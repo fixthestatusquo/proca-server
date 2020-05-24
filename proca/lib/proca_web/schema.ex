@@ -58,7 +58,7 @@ defmodule ProcaWeb.Schema do
     field :add_action, type: :contact_reference do
       arg(:action_page_id, non_null(:id))
       @desc "Action data"
-      arg(:action, non_null(:action_extra_input))
+      arg(:action, non_null(:action_input))
 
       @desc "Contact reference"
       arg(:contact_ref, :id)
@@ -73,7 +73,7 @@ defmodule ProcaWeb.Schema do
     field :add_action_contact, type: :contact_reference do
       arg(:action_page_id, non_null(:id))
       @desc "Action data"
-      arg(:action, :action_extra_input)
+      arg(:action, :action_input)
       @desc "GDPR communication opt"
 
       arg(:contact, non_null(:contact_input))
