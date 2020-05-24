@@ -38,22 +38,6 @@ defmodule ProcaWeb.Schema do
   end
 
   mutation do
-    @desc "Adds a signature"
-    field :add_signature, type: :id do
-      @desc "ID of ActionPage of widget adding signature"
-      arg(:action_page_id, non_null(:id))
-      @desc "Contact data"
-      arg(:contact, non_null(:contact_input))
-      @desc "Signature action data"
-      arg(:action, :signature_extra_input)
-      @desc "GDPR communication opt"
-      arg(:privacy, non_null(:consent_input))
-      @desc "Tracking codes (UTM_*)"
-      arg(:tracking, :tracking_input)
-
-      resolve(&Resolvers.Contact.add_signature/3)
-    end
-
     @desc "Adds an action referencing contact data via contactRef"
     field :add_action, type: :contact_reference do
       arg(:action_page_id, non_null(:id))
