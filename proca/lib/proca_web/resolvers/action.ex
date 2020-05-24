@@ -35,18 +35,18 @@ defmodule ProcaWeb.Resolvers.Action do
   defp output(%{first_name: first_name, fingerprint: fpr}) do
     %{
       first_name: first_name,
-      fingerprint: Supporter.base_encode(fpr)
+      contact_ref: Supporter.base_encode(fpr)
     }
   end
 
   defp output(%{fingerprint: fpr}) do
     %{
-      fingerprint: Supporter.base_encode(fpr)
+      contact_ref: Supporter.base_encode(fpr)
     }
   end
 
   defp output(contact_ref) when is_bitstring(contact_ref) do
-    %{fingerprint: contact_ref}
+    %{contact_ref: contact_ref}
   end
 
   def get_supporter(action_page, %{contact_ref: cref}) do
@@ -62,6 +62,13 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
+  def link_references(supporter, %{link_refs: refs}) do
+    Action.link_refs_to_supporter(refs, supporter)
+  end
+
+  def link_references(_supporter, %{}) do
+  end
+
   def add_action_contact(_, params = %{action: action}, _) do
     with {:ok, action_page} <- get_action_page(params),
          create_supporter = %{valid?: true} <-
@@ -71,9 +78,9 @@ defmodule ProcaWeb.Resolvers.Action do
          change = %{valid?: true} <-
            Action.create_for_supporter(action, supporter, action_page) |> add_tracking(params),
          {:ok, new_action} <- Repo.insert(change) do
-      increment_counter(new_action)
 
-      IO.inspect(supporter, label: "wtf")
+      link_references(supporter, params)
+      increment_counter(new_action)
 
       # format return value 
       {:ok, output(supporter)}
@@ -108,6 +115,17 @@ defmodule ProcaWeb.Resolvers.Action do
 
       _ ->
         {:error, "other error?"}
+    end
+  end
+
+  def link_actions(_, params = %{link_refs: refs}, _) do
+    with {:ok, action_page} <- get_action_page(params),
+         {:ok, supporter = %Supporter{}} <- get_supporter(action_page, params)
+      do
+      Action.link_refs_to_supporter(refs, supporter)
+      {:ok, output(supporter)}
+      else
+        _ -> {:error, "ActionPage or contact not found"}
     end
   end
 end

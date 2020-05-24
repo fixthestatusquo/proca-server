@@ -117,13 +117,13 @@ Provide campaign_id to only get signatures for a campaign
   end
 
   object :signature_reference do
-    @desc "Signature fingerprint"
+    @desc "Signature contact reference"
     field :ref, :string
   end
 
   object :contact_reference do
-    @desc "Contacts data fingerprint"
-    field :fingerprint, :string
+    @desc "Contact's reference"
+    field :contact_ref, :string
 
     @desc "Contacts first name"
     field :first_name, :string

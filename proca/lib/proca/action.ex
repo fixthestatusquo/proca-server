@@ -3,6 +3,7 @@ defmodule Proca.Action  do
   import Ecto.Changeset
   import Ecto.Query
   alias Proca.{Action, Supporter, Field}
+  alias Proca.Repo
 
 
   schema "actions" do
@@ -40,5 +41,10 @@ defmodule Proca.Action  do
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
     |> put_assoc(:fields, Field.changesets(attrs.fields))
+  end
+
+  def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
+    from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
+    |> Repo.update_all(set: [supporter_id: id, ref: nil])
   end
 end
