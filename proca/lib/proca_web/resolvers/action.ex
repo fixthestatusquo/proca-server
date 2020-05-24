@@ -62,8 +62,8 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
-  def link_references(supporter, %{link_refs: refs}) do
-    Action.link_refs_to_supporter(refs, supporter)
+  def link_references(supporter, %{contact_ref: ref}) do
+    Action.link_refs_to_supporter([ref], supporter)
   end
 
   def link_references(_supporter, %{}) do
