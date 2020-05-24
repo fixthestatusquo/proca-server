@@ -57,9 +57,9 @@ defmodule ProcaWeb.Schema do
     field :add_action_contact, type: :contact_reference do
       arg(:action_page_id, non_null(:id))
       @desc "Action data"
-      arg(:action, :action_input)
-      @desc "GDPR communication opt"
+      arg(:action, non_null(:action_input))
 
+      @desc "GDPR communication opt"
       arg(:contact, non_null(:contact_input))
       @desc "Signature action data"
       arg(:privacy, non_null(:consent_input))
@@ -67,7 +67,7 @@ defmodule ProcaWeb.Schema do
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
 
-      @desc "Link actions with these references (if unlinked to supporter)"
+      @desc "Links to previous contact reference"
       arg(:contact_ref, :id)
 
       resolve(&Resolvers.Action.add_action_contact/3)
