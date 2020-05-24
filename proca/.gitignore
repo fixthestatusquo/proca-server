@@ -38,3 +38,6 @@ npm-debug.log
 
 # do not commit auto-generated doc right now, as it's still work in progress
 doc
+
+# logs
+log
