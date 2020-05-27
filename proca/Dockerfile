@@ -28,6 +28,7 @@ FROM debian:buster AS app
 
 ENV LANG=C.UTF-8
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/app/prod/rel/proca/bin
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install openssl
 RUN apt-get update && apt-get install -y openssl libtinfo6
