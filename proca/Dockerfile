@@ -1,13 +1,14 @@
 # --- Build --------------------------------------------
 FROM elixir AS builder
 
+
 ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
+RUN apt-get update && apt-get install -y npm
 
 RUN mix local.hex --force  && \
     mix local.rebar --force
-
 
 RUN mkdir /app
 WORKDIR /app
@@ -19,8 +20,9 @@ COPY mix.exs .
 COPY mix.lock .
 
 RUN mix deps.get
-RUN mix phx.digest
 RUN mix deps.compile
+RUN npm run deploy --prefix ./assets
+RUN mix phx.digest
 RUN mix release
 
 # --- APP ----------------------------------------------
