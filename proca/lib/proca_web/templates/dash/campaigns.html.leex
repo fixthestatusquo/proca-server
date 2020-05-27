@@ -27,6 +27,7 @@
               <%= for ap <- camp.action_pages do %>
                 <li>
                   <code><a href="<%= ap.url %>" target="_blank"><%= ap.url %></a></code>
+                  (id: <code><%= ap.id %></code>)
                   <%= if ap.org_id != camp.org_id do %><span>by: <%= ap.org.title %></span><% end %>
                   <a href="#" phx-click="action_page_edit" phx-value-id="<%= ap.id %>" class="text-primary float-right ml-2"> edit </a>
                 </li>
