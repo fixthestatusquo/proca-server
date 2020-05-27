@@ -18,9 +18,9 @@ COPY priv ./priv
 COPY mix.exs .
 COPY mix.lock .
 
+RUN mix phx.digest
 RUN mix deps.get
 RUN mix deps.compile
-RUN mix phx.digest
 RUN mix release
 
 # --- APP ----------------------------------------------
