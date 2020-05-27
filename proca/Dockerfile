@@ -22,7 +22,7 @@ COPY mix.lock .
 
 RUN mix deps.get
 RUN mix deps.compile
-RUN npm run deploy --prefix ./assets
+RUN npm install --prefix ./assets && npm run deploy --prefix ./assets
 RUN mix phx.digest
 RUN mix release
 
