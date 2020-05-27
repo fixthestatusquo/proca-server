@@ -14,6 +14,7 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY config ./config
+COPY assets ./assets
 COPY lib ./lib
 COPY priv ./priv
 COPY mix.exs .
