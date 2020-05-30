@@ -53,21 +53,27 @@ defmodule ProcaWeb.Live.AuthHelper do
   # Convienience to assign straight into the socket
   def mount_user(socket, pid, %{"proca_auth" => signed_token} = session, pow_config, renewal_config) do
     case get_user(socket, session, pow_config) do
-      %User{} = user -> maybe_init_session_renewal(
-                          socket,
-                          pid,
-                          session,
-                          renewal_config |> Keyword.get(:renew_session),
-                          renewal_config |> Keyword.get(:interval)
-                        )
-                        assign_current_user(socket, user, Map.get(session, "staffer", nil))
+      %User{} = user ->
+        maybe_init_session_renewal(
+          socket,
+          pid,
+          session,
+          renewal_config |> Keyword.get(:renew_session),
+          renewal_config |> Keyword.get(:interval)
+        )
+        assign_current_user(socket, user, session)
       _ -> assign_current_user(socket, nil, nil) #We didn't get a current_user for the token
     end
   end
   def maybe_assign_current_user(_, _, _), do: nil
 
   # assigns the current_user to the socket with the key current_user
-  def assign_current_user(socket, user, staffer) do
+  def assign_current_user(socket, user, session) do
+    user_id = user.id
+    staffer = case Map.get(session, "staffer", nil) do
+                staffer = %Staffer{user_id: ^user_id} -> staffer
+                _ -> nil
+              end
     socket
     |> Phoenix.LiveView.assign(user: user)
     |> Phoenix.LiveView.assign(staffer: staffer)
