@@ -13,6 +13,8 @@ defmodule Proca.ActionPage do
     field :delivery, :boolean
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org
+
+    field :extra_supporters, :integer, default: 0
     
     timestamps()
   end
@@ -20,7 +22,7 @@ defmodule Proca.ActionPage do
   @doc false
   def changeset(action_page, attrs) do
     action_page
-    |> cast(attrs, [:url, :locale, :org_id])
+    |> cast(attrs, [:url, :locale, :org_id, :extra_supporters])
     |> validate_required([:url, :locale, :org_id])
     |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
   end

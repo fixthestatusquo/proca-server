@@ -146,6 +146,12 @@
             <%= select f, :locale, supported_languages(), class: "form-control" %>
             <%= error_tag f, :locale %>
             </div>
+
+            <div class="form-group">
+              <%= label f, :extra_supporters, "Extra supporters (signatures)" %>
+              <%= number_input f, :extra_supporters,  class: "form-control", min: "0", step: "1" %>
+              <%= error_tag f, :extra_supporters %>
+            </div>
             
             <div class="d-flex justify-content-between">
               <%= if not is_nil(@action_page.data.id) && @action_page.data.org_id == @staffer.org_id do %>

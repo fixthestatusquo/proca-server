@@ -1,6 +1,6 @@
 defmodule Proca.Server.Stats do
   use GenServer
-  alias Proca.Supporter
+  alias Proca.{Action,Supporter,ActionPage}
   alias Proca.Repo
   import Ecto.Query
 
@@ -12,6 +12,14 @@ defmodule Proca.Server.Stats do
   - second element is a key list mapping action page id to count for this action page
   - XXX later: add extra signatories from ActionPage
   - XXX later: add counts for other actions (convert count to keylist)
+
+  ## State structure:
+
+  interval: int - calculation interval in ms
+  query_runs: boolean - a flag saying calculation is running now and we shouldn't run new calculation
+  campaign:
+    campaign_id ->  (map)
+       {deduped supporters, [action_type: count]}
   """
   def init(sync_every_ms) do
     {
@@ -57,16 +65,17 @@ defmodule Proca.Server.Stats do
   end
 
   @impl true
-  def handle_cast({:increment, campaign_id, action_page_id}, state = %{campaign: campaign}) do
-    campaign = with {camp_ct, ap_lst} <- Map.get(campaign, campaign_id, {0, []}),
-                    {action_page_id, ap_ct} <- List.keyfind(ap_lst, action_page_id, 0, {action_page_id, 0})
+  def handle_cast({:increment, campaign_id, action_type, new_supporter},
+    state = %{campaign: campaign}) do
+    campaign = with {sup_ct, types_ct} <- Map.get(campaign, campaign_id, {0, []}),
+                    {action_type, at_ct} <- List.keyfind(types_ct, action_type, 0, {action_type, 0})
       do
       Map.put(campaign, campaign_id,
         {
-          camp_ct + 1,
-          List.keystore(ap_lst,
-            action_page_id, 0,
-            {action_page_id, ap_ct + 1})
+          (sup_ct + if new_supporter, do: 1, else: 0),
+          List.keystore(types_ct,
+            action_type, 0,
+            {action_type, at_ct + 1})
         })
 
     end
@@ -78,20 +87,20 @@ defmodule Proca.Server.Stats do
   Get stats for campaign
   """
   def handle_call({:stats, c_id}, _f, stats = %{campaign: camp}) do
-    {cct, _apcs} = Map.get(camp, c_id, {0, nil})
+    cst = Map.get(camp, c_id, {0, []})
 
-    {:reply, cct, stats}
+    {:reply, cst, stats}
   end
 
   @impl true
   @doc """
-  Get stats for action page
+  Get stats for types
   """
-  def handle_call({:stats, c_id, ap_id}, _f, stats = %{campaign: camp}) do
-    with {_all, aps} <- Map.get(camp, c_id, {0, []}),
-         {_ap_id, apct} = List.keyfind(aps, ap_id, 0, {ap_id, 0})
+  def handle_call({:stats, c_id, types}, _f, stats = %{campaign: camp}) do
+    with {sup, types_ct} <- Map.get(camp, c_id, {0, []}),
+         counts <- Enum.map(types, fn t -> List.keyfind(types_ct, t, 0, {t, 0}) end)
       do
-      {:reply, apct, stats}
+      {:reply, {sup, counts}, stats}
     end
   end
 
@@ -99,22 +108,35 @@ defmodule Proca.Server.Stats do
     query = from(s in Supporter, order_by: s.inserted_at)
     |> distinct([s], s.fingerprint)
     |> subquery()
-    |> group_by([s], [s.campaign_id, s.action_page_id])
-    |> select([s], [s.campaign_id, s.action_page_id, count(s.fingerprint)])
+    |> group_by([s], [s.campaign_id])
+    |> select([s], [s.campaign_id, count(s.fingerprint)])
 
-    query
+    supporters = query
     |> Repo.all()
-    |> Enum.reduce(%{}, &row_to_state/2)
+    |> Enum.reduce(%{}, fn [c_id, sup_ct], acc -> Map.put(acc, c_id, {sup_ct, []}) end)
+
+    extra_supporters = from(ap in ActionPage, group_by: ap.campaign_id,
+      where: ap.extra_supporters > 0, select: [ap.campaign_id, sum(ap.extra_supporters)])
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn [c_id, ex_ct], acc -> Map.put(acc, c_id, {ex_ct, []}) end)
+
+    # merge supporters and extra_supporters
+
+    action_counts =  from(a in Action, group_by: [a.campaign_id, a.action_type],
+      select: [a.campaign_id, a.action_type, count(a.id)])
+      |> Repo.all()
+      |> Enum.reduce(%{}, &add_action_type_counts/2)
+
+    supporters
+    |> Map.merge(extra_supporters, fn _c_id, {su, []}, {ex, []} -> {su+ex, []} end)
+    |> Map.merge(action_counts, fn _c_id, {su, []}, {_x, ats} -> {su, ats} end )
   end
 
-  defp row_to_state([c_id, ap_id, sig_ct], acc) do
-    {camp_sum, ap_lst} = Map.get(acc, c_id, {0, []})
-
-    Map.put(acc, c_id, {
-          camp_sum + sig_ct,
-          [{ap_id, sig_ct} | ap_lst]
-            })
+  defp add_action_type_counts([c_id, at, ct], acc) do
+    {_sc, ats} = Map.get(acc, c_id, {0, []})
+    Map.put(acc, c_id, {0, List.keystore(ats, at, 0, {at, ct})})
   end
+
 
   # Client side
   def start_link(args) do

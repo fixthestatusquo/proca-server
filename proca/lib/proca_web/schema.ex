@@ -25,6 +25,7 @@ defmodule ProcaWeb.Schema do
       arg(:id, :integer)
       @desc "Get action page by url the widget is displayed on"
       arg(:url, :string)
+
       resolve(&Resolvers.ActionPage.find/3)
     end
 
