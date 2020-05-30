@@ -35,10 +35,15 @@ defmodule ProcaWeb.Resolvers.Campaign do
     from(x in Proca.Campaign, preload: [:org])
   end
 
-  def stats(campaign, _, _) do
+  def stats(campaign, a, c) do
+    IO.inspect(campaign, label: "Campaign")
+    IO.inspect(a, label: "args")
+    IO.inspect(c, label: "context")
+    {supporters, at_cts} = Proca.Server.Stats.stats(campaign.id)
     {:ok,
      %{
-       signature_count: Proca.Server.Stats.stats(campaign.id)
+       supporter_count: supporters,
+       action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct} end)
      }
     }
   end

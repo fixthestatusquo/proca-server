@@ -19,7 +19,19 @@ defmodule ProcaWeb.Schema.DataTypes do
   @desc "Campaign statistics"
   object :campaign_stats do
     @desc "Signature count (naive at the moment)"
-    field :signature_count, :integer
+    field :supporter_count, :integer
+
+    @desc "Action counts for selected action types"
+    field :action_count, list_of(non_null(:action_type_count))
+  end
+
+  @desc "Count of actions for particular action type"
+  object :action_type_count do
+    @desc "action type"
+    field :action_type, non_null(:string)
+
+    @desc "count of actions of action type"
+    field :count, non_null(:integer)
   end
 
   object :campaign do
