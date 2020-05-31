@@ -4,7 +4,7 @@ const nacl = require ('tweetnacl');
 const util = require("tweetnacl-util");
 
 async function start (actionPage) {
-  const data= await getSignature("realgreendeal",3,{authorization:config.authorization});
+  const data= await getSignature("realgreendeal",3,{limit:100,authorization:config.authorization});
   const key=util.decodeBase64(data.org.signatures.public_key);
   const private_key=util.decodeBase64(config.private_key);
 //  console.log(data.org.campaigns);
@@ -21,4 +21,4 @@ async function start (actionPage) {
 
 }
 
-start (2);
+start (3);
