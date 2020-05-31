@@ -72,7 +72,7 @@ org(name: $organisation) {
 }
 }
 `;
- const data = await graphQL ("getSignatures",query,{variables:{ campaign: Number(campaign), organisation:organisation,limit:Number(3)}, authorization:options.authorization });
+ const data = await graphQL ("getSignatures",query,{variables:{ campaign: Number(campaign), organisation:organisation,limit:options.limit || 10}, authorization:options.authorization });
  if (!data) return null;
  return data;
 }
@@ -85,7 +85,7 @@ mutation push($action: SignatureExtraInput,
   $privacy:ConsentInput,
   $tracking:TrackingInput
 ){
-  addSignature(actionPageId: 1, 
+  addSignature(actionPageId: data.actionPage, 
     action: $action,
     contact:$contact,
     privacy:$privacy,
