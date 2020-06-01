@@ -51,12 +51,14 @@ defmodule Proca.Supporter.Privacy do
   """
 
   alias Proca.PublicKey
+  alias Proca.Repo
 
   @doc """
   privacy - for now, a simple privacy map is: %{ opt_in: :boolean, lead_opt_in: :boolean }. Exactly what we have in the API
   """
   @spec recipients(Proca.ActionPage, map()) :: [Proca.Org]
   def recipients(action_page, privacy) do
+    action_page = Repo.preload(action_page, [:org, campaign: :org])
     partner_delivery = action_page.delivery
     lead_delivery = not partner_delivery or action_page.campaign.force_delivery
 
