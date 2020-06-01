@@ -36,9 +36,6 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def stats(campaign, a, c) do
-    IO.inspect(campaign, label: "Campaign")
-    IO.inspect(a, label: "args")
-    IO.inspect(c, label: "context")
     {supporters, at_cts} = Proca.Server.Stats.stats(campaign.id)
     {:ok,
      %{
