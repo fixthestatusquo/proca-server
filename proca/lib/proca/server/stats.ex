@@ -137,7 +137,6 @@ defmodule Proca.Server.Stats do
     Map.put(acc, c_id, {0, List.keystore(ats, at, 0, {at, ct})})
   end
 
-
   # Client side
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -151,7 +150,7 @@ defmodule Proca.Server.Stats do
     GenServer.call(__MODULE__, {:stats, campaign_id, action_page_id})
   end
 
-  def increment(campaign_id, action_page_id) do
-    GenServer.cast(__MODULE__, {:increment, campaign_id, action_page_id})
+  def increment(campaign_id, action_type, new_supporter) do
+    GenServer.cast(__MODULE__, {:increment, campaign_id, action_type, new_supporter})
   end
 end
