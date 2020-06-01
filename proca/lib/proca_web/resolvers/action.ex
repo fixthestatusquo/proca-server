@@ -28,8 +28,8 @@ defmodule ProcaWeb.Resolvers.Action do
     sig
   end
 
-  defp increment_counter(%{campaign_id: cid, action_page_id: apid}) do
-    Proca.Server.Stats.increment(cid, apid)
+  defp increment_counter(%{campaign_id: cid, action_type: atype}, new_supporter) do
+    Proca.Server.Stats.increment(cid, atype, new_supporter)
   end
 
   defp output(%{first_name: first_name, fingerprint: fpr}) do
@@ -80,7 +80,7 @@ defmodule ProcaWeb.Resolvers.Action do
          {:ok, new_action} <- Repo.insert(change) do
 
       link_references(supporter, params)
-      increment_counter(new_action)
+      increment_counter(new_action, true)
 
       # format return value 
       {:ok, output(supporter)}
@@ -103,7 +103,7 @@ defmodule ProcaWeb.Resolvers.Action do
            Action.create_for_supporter(action_attrs, supporter, action_page)
            |> add_tracking(params),
          {:ok, new_action} <- Repo.insert(change) do
-      increment_counter(new_action)
+      increment_counter(new_action, false)
 
       {:ok, output(supporter)}
     else
