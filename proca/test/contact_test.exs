@@ -7,10 +7,8 @@ defmodule ContactTest do
   test "can be encrypted for 2 keys" do
     # some pauload and Contact changeset
     payload = "{ \"test\": true }"
-    c = Contact.changeset(%Contact{}, %{
-          name: "Hans Castorp", first_name: "Hans", email: "littlehans@flo.pl",
-          payload: payload
-                          })
+
+    c = Ecto.Changeset.change(%Contact{}, payload: payload)
 
     # Create recipient org with two keys
     o = create_org("test_org")
@@ -40,11 +38,8 @@ defmodule ContactTest do
                                })
     assert chg.valid?
 
-    con_chg = BasicData.to_contact(chg, ap)
-    %{valid?: true, changes: cd} = con_chg
+    {con_chg, _fpr} = BasicData.to_contact(chg, ap)
+    assert %{valid?: true} = con_chg
 
-    assert cd.first_name == "Hans"
-    assert cd.name == "Hans Castorp"
-    assert cd.email == "hans@castorp.net"
   end
 end

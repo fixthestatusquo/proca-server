@@ -43,4 +43,16 @@ defmodule Proca.Factory do
       perms: 0
     }
   end
+
+
+  def contact_factory do
+    {:ok, payload} = %{
+      first_name: "John", last_name: "Brown", email: "john.brown@gmail.com",
+      country: "GB", postcode: "012345"
+    } |> JSON.encode()
+
+    %Proca.Contact{
+      payload: payload
+    }
+  end
 end

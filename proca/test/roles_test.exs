@@ -10,7 +10,6 @@ defmodule RolesTest do
     staffer = Factory.build(:staffer)
 
     {:ok, manager} = Role.change(staffer, :campaign_manager) |> Changeset.apply_action(:update)
-    IO.inspect manager
     assert manager |> can?([:change_org_settings, :signoff_action_page])
     refute manager |> can?(:manage_orgs)
 
