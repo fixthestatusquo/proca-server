@@ -2,6 +2,7 @@ defmodule Proca.Source do
   use Ecto.Schema
   import Ecto.Query
   import Ecto.Changeset
+  import Proca.Changeset
   alias Proca.Repo
   alias Proca.Source
   
@@ -25,6 +26,10 @@ defmodule Proca.Source do
     %Proca.Source{}
     |> cast(attrs, [:source, :medium, :campaign, :content])
     |> validate_required([:source, :medium, :campaign])
+    |> trim(:source, 255)
+    |> trim(:medium, 255)
+    |> trim(:campaign, 255)
+    |> trim(:content, 255)
   end
 
 
