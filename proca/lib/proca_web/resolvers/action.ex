@@ -72,9 +72,8 @@ defmodule ProcaWeb.Resolvers.Action do
   def add_action_contact(_, params = %{action: action}, _) do
     with {:ok, action_page} <- get_action_page(params),
          create_supporter = %{valid?: true} <-
-           Supporter.create_supporter(action_page, params)
-           |> add_tracking(params),
-         {:ok, supporter} <- Repo.insert(create_supporter),
+           Supporter.create_supporter(action_page, params),
+         {:ok, supporter} <- Repo.insert(create_supporter |> add_tracking(params)),
          change = %{valid?: true} <-
            Action.create_for_supporter(action, supporter, action_page) |> add_tracking(params),
          {:ok, new_action} <- Repo.insert(change) do
