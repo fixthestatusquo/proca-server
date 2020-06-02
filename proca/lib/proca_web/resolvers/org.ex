@@ -81,11 +81,11 @@ defmodule ProcaWeb.Resolvers.Org do
           lim -> query |> limit(^lim)
         end
 
-    q = select(q, [s, x, c, g, pk, ap], %{
+    q = select(q, [s, c, g, pk, ap], %{
           id: s.id,
           created: s.inserted_at,
-          nonce: c.encrypted_nonce,
-          contact: c.encrypted,
+          nonce: c.crypto_nonce,
+          contact: c.payload,
           action_page_id: ap.id,
           campaign_id: ap.campaign_id,
           opt_in: g.communication
