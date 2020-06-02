@@ -32,7 +32,7 @@ defmodule ProcaWeb.Schema do
     @desc "Organization api (authenticated)"
     field :org, :org do
       @desc "Name of organisation"
-      arg(:name, :string)
+      arg(:name, non_null(:string))
 
       resolve(&Resolvers.Org.find/3)
     end
