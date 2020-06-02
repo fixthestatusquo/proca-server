@@ -1,7 +1,6 @@
 defmodule Proca.Field do
   use Ecto.Schema
   import Ecto.Changeset
-  import Proca.Changeset
   alias Proca.Field
 
   schema "fields" do
@@ -20,7 +19,8 @@ defmodule Proca.Field do
   def changeset(attr = %{key: _key, value: _value}) do
     %Field{}
     |> cast(attr, [:key, :value])
-    |> trim(:key, 255)
-    |> trim(:value, 255)
+    |> validate_format(:key, ~r/^([\w\d_-]+$)/)
+    |> validate_length(:key, min: 1, max: 64)
+    |> validate_length(:value, max: 1024)
   end
 end
