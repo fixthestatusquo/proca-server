@@ -12,7 +12,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
 
   def find(_, %{name: name}, %{context: %{user: user}}) when not is_nil(user) do
-    with %Org{} = org <- Org.get_by_name(name),
+    with %Org{} = org <- Org.get_by_name(name, [[campaigns: :org], :action_pages]),
          %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
            true <- can?(s, :use_api)
       do
@@ -41,7 +41,8 @@ defmodule ProcaWeb.Resolvers.Org do
     cl = from(c in Campaign,
       left_join: ap in ActionPage,
       on: c.id == ap.campaign_id,
-      where: ap.org_id == ^org.id or c.org_id == ^org.id)
+      where: ap.org_id == ^org.id or c.org_id == ^org.id,
+      preload: [:org])
     |> distinct(true)
     |> Repo.all
 
@@ -49,7 +50,7 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def action_pages(org, _, _) do
-    c = from(ap in ActionPage, where: ap.org_id == ^org.id)
+    c = from(ap in ActionPage, where: ap.org_id == ^org.id, preload: [:org])
     |> Repo.all
 
     {:ok, c}
