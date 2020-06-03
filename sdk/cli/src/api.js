@@ -60,12 +60,6 @@ export async function streamSignatures(client, org, campaignId, cb) {
   return
 }
 
-module.exports = {
-  client,
-  campaigns,
-  streamSignatures
-}
-
 /*
 query Li {
   org(name:"test") {

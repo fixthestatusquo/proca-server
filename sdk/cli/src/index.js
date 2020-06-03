@@ -1,10 +1,3 @@
-import api from './api'
-import config from './config'
-import cli from './cli'
-import crypto from './crypto'
+require = require("esm")(module/*, options*/)
+module.exports = require("./main.js")
 
-module.exports = {
-  api,
-  config,
-  cli
-}
