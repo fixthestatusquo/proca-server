@@ -19,6 +19,7 @@
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
     "email-validator": "^2.0.4",
+    "esm": "^3.2.25",
     "graphql-request": "^2.0.0",
     "inquirer": "^7.1.0",
     "node-fetch": "^2.6.0",
@@ -26,7 +27,5 @@
     "tweetnacl-util": "^0.15.1",
     "yargs": "^15.3.1"
   },
-  "devDependencies": {
-    "parcel-bundler": "^1.12.4"
-  }
+  "devDependencies": {}
 }

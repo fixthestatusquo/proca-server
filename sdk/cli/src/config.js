@@ -72,6 +72,7 @@ async function setup() {
   storeConfig(info, '.env')
 }
 
+export default Object.assign(config, {setup: setup});
 
 module.exports = Object.assign(config, {
   setup: setup
