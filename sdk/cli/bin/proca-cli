@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+var procaCli = require('proca_cli')
+
+procaCli.cli.main()

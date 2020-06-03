@@ -1,16 +1,32 @@
 {
-  "name": "proca-gw",
-  "version": "1.0.0",
-  "description": "client for proca",
-  "main": "index.js",
+  "name": "proca_cli",
+  "version": "1.1.0",
+  "description": "cli[ent] for Proca",
+  "main": "dist/index.js",
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
   "author": "xavier.dutoit <xavier@tttp.eu>",
   "license": "aGPL3",
+  "bin": {
+    "proca-cli": "bin/proca-cli"
+  },
+  "scripts": {
+    "install": "npm run build",
+    "build": "npx parcel build src/index.js --target=node",
+    "watch": "npx parcel src/index.js --target=node"
+  },
   "dependencies": {
+    "base64url": "^3.0.1",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
+    "email-validator": "^2.0.4",
+    "graphql-request": "^2.0.0",
+    "inquirer": "^7.1.0",
     "node-fetch": "^2.6.0",
     "tweetnacl": "^1.0.3",
-    "tweetnacl-util": "^0.15.1"
+    "tweetnacl-util": "^0.15.1",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4"
   }
 }
