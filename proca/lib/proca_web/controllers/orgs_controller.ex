@@ -120,13 +120,17 @@ defmodule ProcaWeb.OrgsController do
   def mount(_params, session, socket) do
     socket = mount_user(socket, session)
 
-    {:ok,
-     socket
-     |> assign_org_list
-     |> assign_user_staffers
-     |> assign(:change_org, nil)
-     |> assign(:can_remove_org, false)
-    }
+    if socket.redirected do
+      {:ok, socket}
+    else
+      {:ok,
+       socket
+       |> assign_org_list
+       |> assign_user_staffers
+       |> assign(:change_org, nil)
+       |> assign(:can_remove_org, false)
+      }
+    end
   end
 
   def session_expired(socket) do
