@@ -1,5 +1,4 @@
 #!/usr/bin/env node
 require = require('esm')(module /*, options*/);
-require('../src/cli').cli(process.argv);
-//var procaCli = require('proca_cli')
-//procaCli.cli.main()
+cli = require('../src/cli').default;
+cli(process.argv);

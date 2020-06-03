@@ -58,7 +58,7 @@ async function showToken(argv) {
   console.log(c.options.headers)
 }
 
-export function cli () {
+export default function cli () {
   const argv = yargs.scriptName("proca-cli")
         .command('setup', 'configure proca CLI (generates .env file)', y => y, setup)
         .option('o', {
@@ -94,6 +94,3 @@ export function cli () {
         .argv
 }
 
-module.exports = {
-  cli
-}
