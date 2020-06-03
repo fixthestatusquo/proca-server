@@ -29,7 +29,12 @@ const actionTypeOtherEmoji = "👉"
 
 async function listCampaigns(argv) {
   const c = argv2client(argv)
-  const resp = await campaigns(c, argv.org)
+  try {
+    const resp = await campaigns(c, argv.org);
+  } catch (e) {
+    e.response.errors.map (msg =>(console.error(msg.message)))
+    process.exit(1);
+  }
   resp.data.org.campaigns.forEach((camp) => {
     console.log(`🏁 ${camp.name} [ID ${camp.id}]: ${camp.title} [${camp.org.title}] (🧑‍ ${camp.stats.supporterCount} supporters)`)
     camp.stats.actionCount.forEach(({actionType, count}) => {
@@ -53,7 +58,7 @@ async function showToken(argv) {
   console.log(c.options.headers)
 }
 
-export function main() {
+export function cli () {
   const argv = yargs.scriptName("proca-cli")
         .command('setup', 'configure proca CLI (generates .env file)', y => y, setup)
         .option('o', {
@@ -85,9 +90,10 @@ export function main() {
         .command('supporters', 'Downloads supporters',  (yargs) => {
           return yargs.option('c', {alias: 'campaignId', type: 'integer', describe: 'campaign id'})
         }, getSupporters)
+        .demandCommand()
         .argv
 }
 
 module.exports = {
-  main
+  cli
 }
