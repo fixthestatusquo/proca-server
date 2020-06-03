@@ -134,14 +134,17 @@ defmodule ProcaWeb.CampaignsController do
 
   def mount(_params, session, socket) do
     socket = mount_user(socket, session)
-
-    {:ok,
-     socket
-     |> assign_campaigns
-     |> assign(:campaign, nil)
-     |> assign(:action_page, nil)
-     |> assign(:partners, nil)
-    }
+    if socket.redirected do
+      {:ok, socket}
+    else
+      {:ok,
+       socket
+       |> assign_campaigns
+       |> assign(:campaign, nil)
+       |> assign(:action_page, nil)
+       |> assign(:partners, nil)
+      }
+    end
   end
 
   def assign_campaigns(socket) do

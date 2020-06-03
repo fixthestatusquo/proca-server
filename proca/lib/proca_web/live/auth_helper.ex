@@ -62,7 +62,7 @@ defmodule ProcaWeb.Live.AuthHelper do
           renewal_config |> Keyword.get(:interval)
         )
         assign_current_user(socket, user, session)
-      _ -> socket
+      _ -> socket |> Phoenix.LiveView.redirect(to: "/dash")
     end
   end
   def maybe_assign_current_user(_, _, _), do: nil

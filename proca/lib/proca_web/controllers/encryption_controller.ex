@@ -72,12 +72,15 @@ defmodule ProcaWeb.EncryptionController do
   def mount(_params, session, socket) do
     socket = mount_user(socket, session)
 
-
-    {:ok,
-     socket
-     |> assign_org(socket.assigns[:staffer].org_id)
-     |> assign(:new_pk, PublicKey.changeset(%PublicKey{}, %{}))
-    }
+    if socket.redirected do
+      {:ok, socket}
+    else
+      {:ok,
+       socket
+       |> assign_org(socket.assigns[:staffer].org_id)
+       |> assign(:new_pk, PublicKey.changeset(%PublicKey{}, %{}))
+      }
+    end
   end
 
   def assign_org(socket, org_id) do
