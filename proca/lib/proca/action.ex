@@ -11,7 +11,6 @@ defmodule Proca.Action  do
     belongs_to :supporter, Proca.Supporter
 
     field :action_type, :string
-    field :delivery, :boolean
 
     belongs_to :campaign, Proca.Campaign
     belongs_to :action_page, Proca.ActionPage
