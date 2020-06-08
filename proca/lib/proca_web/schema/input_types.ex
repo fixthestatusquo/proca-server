@@ -86,4 +86,29 @@ defmodule ProcaWeb.Schema.InputTypes do
     @desc "Other fields that accompany the signature"
     field :fields, list_of(non_null(:custom_field_input))
   end
+
+  @desc "ActionPage declaration"
+  input_object :action_page_input do
+    @desc """
+    Unique URL identifying ActionPage.
+
+    Does not have to exist, must be unique. Can be a 'technical' identifier
+    scoped to particular organization, so it does not have to change when the
+    slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
+    ask for ActionPage by it's current location.href, in which case it is useful
+    to make this url match the real idwget location.
+    """
+    field :url, non_null(:string)
+
+    @desc "2-letter, lowercase, code of ActionPage language"
+    field :locale, non_null(:string)
+
+    @desc "A reference to thank you email template of this ActionPage"
+    field :thank_you_template_ref, :string
+
+    @desc """
+    Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. 
+    """
+    field :extra_supporters, :integer
+  end
 end

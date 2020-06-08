@@ -22,6 +22,11 @@ defmodule Proca.Staffer do
     |> validate_required([:perms])
   end
 
+  def build_for_user(%User{id: id}, org_id, perms) do
+    %Staffer{}
+    |> change(org_id: org_id, user_id: id, perms: Proca.Staffer.Permission.add(0, perms))
+  end
+
   def for_user_in_org(%User{id: id}, org_name) when is_binary(org_name) do
     from(s in Staffer,
       join: o in assoc(s, :org),

@@ -11,11 +11,14 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :url, :string
     field :delivery, :boolean
+
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org
 
     field :extra_supporters, :integer, default: 0
-    
+
+    field :thank_you_template_ref, :string
+
     timestamps()
   end
 

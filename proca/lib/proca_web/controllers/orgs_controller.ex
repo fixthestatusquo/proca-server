@@ -52,25 +52,29 @@ defmodule ProcaWeb.OrgsController do
   end
 
   def handle_event("org_save", %{"org" => org}, socket) do
-    ch = socket.assigns[:change_org].data
-    |> Org.changeset(org)
+    with %{data: data} <- socket.assigns[:change_org] do
+      ch = Org.changeset(data, org)
+      
+      case Repo.insert_or_update(ch) do
+        {:ok, saved_org} ->
 
-    # IO.inspect ch
+          org_after_save(saved_org)
 
-    case Repo.insert_or_update(ch) do
-      {:ok, _ch} ->
-        {
-          :noreply,
-          socket
-          |> assign(:change_org, nil)
-          |> assign_org_list
-        }
-      {:error, ch} ->
-        {
-          :noreply,
-          socket
-          |> assign(:change_org, ch)
-        }
+          {
+            :noreply,
+            socket
+            |> assign(:change_org, nil)
+            |> assign_org_list
+          }
+        {:error, ch} ->
+          {
+            :noreply,
+            socket
+            |> assign(:change_org, ch)
+          }
+      end
+    else
+      _ -> {:noreply, socket}
     end
   end
 
@@ -115,6 +119,11 @@ defmodule ProcaWeb.OrgsController do
 
     socket
     |> assign(:orgs_joined, orgs_im_in)
+  end
+
+  def org_after_save(org) do
+    c = Proca.Server.Plumbing.connection()
+    Proca.Server.Plumbing.setup_org_queues(c, org)
   end
 
   def mount(_params, session, socket) do

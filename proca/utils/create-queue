@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+set -u
+
+VOL=/tmp/proca-queue
+mkdir $VOL || true
+docker run -d --hostname mq.proca.ftw \
+       --name rabbitmq \
+       -v $VOL:/var/lib/rabbitmq \
+       --net proca --ip 172.19.0.3 \
+       rabbitmq:3-management "$@"
+
+# rabbitmq management at port 15672
+# rabbitmqadmin help:
+# list users
+# 
+
+

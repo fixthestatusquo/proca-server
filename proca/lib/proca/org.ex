@@ -11,6 +11,14 @@ defmodule Proca.Org do
     has_many :campaigns, Proca.Campaign, on_delete: :nilify_all
     has_many :action_pages, Proca.Campaign, on_delete: :nilify_all
 
+    # services and delivery options
+    has_many :services, Proca.Service, on_delete: :delete_all
+
+    field :custom_supporter_confirm, :boolean
+    field :custom_action_confirm, :boolean
+    field :custom_action_deliver, :boolean
+    field :system_sqs_deliver, :boolean
+
     timestamps()
   end
 
