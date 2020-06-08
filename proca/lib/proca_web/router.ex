@@ -24,10 +24,6 @@ defmodule ProcaWeb.Router do
     plug Pow.Plug.RequireAuthenticated, error_handler: Pow.Phoenix.PlugErrorHandler
   end
 
-  pipeline :org do
-    plug ProcaWeb.Plugs.StafferAuthPlug, session_key: :staffer
-  end
-
   scope "/" do
     pipe_through :browser
 
@@ -39,7 +35,7 @@ defmodule ProcaWeb.Router do
   end
 
   scope "/dash", ProcaWeb do
-    pipe_through [:browser, :auth, :org]
+    pipe_through [:browser, :auth]
 
     live "/orgs", OrgsController
     live "/campaigns", CampaignsController
