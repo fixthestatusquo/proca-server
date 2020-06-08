@@ -27,10 +27,12 @@ defmodule ProcaWeb.PageController do
 
   defp signin(conn, org_name) do
     pow_config = Application.get_env(:proca, :pow)
-    {user, staffer} = AuthHelper.current_user(conn, get_session(conn), pow_config, org_name)
-
-    conn
-    |> assign(:user, user)
-    |> assign(:staffer, staffer)
+    with {user, staffer} <- AuthHelper.current_user(conn, get_session(conn), pow_config, org_name) do
+      conn
+      |> assign(:user, user)
+      |> assign(:staffer, staffer)
+    else
+      _ -> conn
+    end
   end
 end
