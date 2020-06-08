@@ -18,6 +18,8 @@ defmodule Proca.Action  do
 
     has_many :fields, Proca.Field
 
+    field :processing_status, ProcessingStatus, default: :new
+
     timestamps()
   end
 
@@ -39,11 +41,21 @@ defmodule Proca.Action  do
     |> put_supporter_or_ref(supporter, action_page)
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
-    |> put_assoc(:fields, Field.changesets(attrs.fields))
+    |> put_assoc(:fields, case attrs do
+                            %{fields: fields} -> Field.changesets(fields)
+                            _ -> []
+                          end)
   end
 
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
     |> Repo.update_all(set: [supporter_id: id, ref: nil])
+  end
+
+  def get_by_id(action_id) do
+    from(a in Action, where: a.id == ^action_id,
+      preload: [:campaign, [action_page: :org], [supporter: :consent]],
+      limit: 1)
+    |> Repo.one
   end
 end

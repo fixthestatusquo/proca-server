@@ -6,9 +6,11 @@ defmodule ContactTest do
 
   test "can be encrypted for 2 keys" do
     # some pauload and Contact changeset
-    payload = "{ \"test\": true }"
 
-    c = Ecto.Changeset.change(%Contact{}, payload: payload)
+    payload = %{ "test" => true }
+    {:ok, payload_json} = JSON.encode(payload)
+    
+    c = Contact.build(payload)
 
     # Create recipient org with two keys
     o = create_org("test_org")
@@ -25,8 +27,8 @@ defmodule ContactTest do
     end)
     [{p1, cn1}, {p2, cn2}] = crypted
 
-    assert Encrypt.decrypt(pk1, p1, cn1) == payload
-    assert Encrypt.decrypt(pk2, p2, cn2) == payload
+    assert Encrypt.decrypt(pk1, p1, cn1) == payload_json
+    assert Encrypt.decrypt(pk2, p2, cn2) == payload_json
   end
 
   test "basic data creates contact changeset" do
@@ -38,8 +40,9 @@ defmodule ContactTest do
                                })
     assert chg.valid?
 
-    {con_chg, _fpr} = BasicData.to_contact(chg, ap)
-    assert %{valid?: true} = con_chg
+    con_chg = BasicData.to_contact(chg, ap)
+    {%{valid?: true, changes: cd}, fpr} = con_chg
 
+    assert byte_size(fpr) > 0
   end
 end

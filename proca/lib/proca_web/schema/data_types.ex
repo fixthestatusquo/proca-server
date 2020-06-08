@@ -55,6 +55,8 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :locale, :string
     @desc "Url where the widget is hosted"
     field :url, :string
+    @desc "Reference to thank you email templated of this Action Page"
+    field :thank_you_template_ref, :string
     @desc "Campaign this widget belongs to"
     field :campaign, :campaign do
       resolve &Resolvers.ActionPage.campaign/3

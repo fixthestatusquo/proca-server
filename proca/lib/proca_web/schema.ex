@@ -87,5 +87,26 @@ defmodule ProcaWeb.Schema do
 
       resolve(&Resolvers.Action.link_actions/3)
     end
+
+    @desc """
+    Declares a campaign.
+
+    Creates or appends campaign and it's action pages. In case of append, it
+    will change the campaign with the matching name, and action pages with
+    matching urls. It will create new action pages if you pass a new urls. No
+    Action Pages will be removed (principle of not removing signature data).
+    """
+    field :declare_campaign, type: :campaign do
+      @desc "Campaign unchanging identifier"
+      arg(:name, non_null(:string))
+
+      @desc "Campaign human readable title"
+      arg(:title, non_null(:string))
+
+      @desc "Action pages of this campaign"
+      arg(:action_pages, non_null(list_of(:action_page_input)))
+
+      resolve(&Resolvers.Campaign.declare/3)
+    end
   end
 end

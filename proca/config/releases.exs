@@ -12,6 +12,9 @@ config :proca, Proca.Repo,
   url: database_url,
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
 
+config :proca, Proca.Server.Plumbing,
+  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL")
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
   raise """

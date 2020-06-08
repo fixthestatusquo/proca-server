@@ -44,4 +44,8 @@ defmodule ProcaWeb.Resolvers.Campaign do
      }
     }
   end
+
+  def declare(_, _p, _) do
+    {:ok, %{}}
+  end
 end

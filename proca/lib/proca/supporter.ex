@@ -19,6 +19,8 @@ defmodule Proca.Supporter do
     field :first_name, :string
     field :email, :string
 
+    field :processing_status, ProcessingStatus, default: :new
+
     timestamps()
   end
 

@@ -25,6 +25,9 @@ config :proca, Proca,
 config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
+config :proca, Proca.Server.Plumbing,
+  url: "amqp://proca:proca@rabbitmq.docker/proca"
+
 # Configures Elixir's Logger
 config :logger,
   backends: [:console, Sentry.LoggerBackend],
@@ -39,6 +42,13 @@ config :proca, :pow,
   repo: Proca.Repo,
   web_module: ProcaWeb,
   current_user_assigns_key: :user
+
+config :ex_aws, :hackney_opts,
+  follow_redirect: true,
+  recv_timeout: 10_000
+
+config :ex_aws_sqs, parser: ExAws.SQS.SweetXmlParser
+
 
 config :sentry,
   environment_name: Mix.env(),
