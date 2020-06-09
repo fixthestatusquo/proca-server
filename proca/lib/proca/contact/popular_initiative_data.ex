@@ -40,12 +40,14 @@ defmodule Proca.Contact.PopularInitiativeData do
 
   @impl Data
   def to_contact(%{valid?: true, changes: data}, _action_page) do
+    data = data |> Map.put(:birth_date, Date.to_string(data.birth_date))
     {Contact.build(data), fingerprint(data)}
   end
 
-  defp fingerprint(%{first_name: fname, last_name: lname, birth_date: bd}) do
+  defp fingerprint(%{first_name: fname, last_name: lname, email: eml, birth_date: bd}) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
-    hash = :crypto.hash(:sha256, seed <> fname <> (lname || "") <> Date.to_string(bd))
+    x = fname <> (lname || "") <> eml <> bd
+    hash = :crypto.hash(:sha256, seed <> x)
     hash
   end
 
