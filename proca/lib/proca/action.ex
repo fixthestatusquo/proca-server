@@ -9,6 +9,7 @@ defmodule Proca.Action  do
   schema "actions" do
     field :ref, :binary
     belongs_to :supporter, Proca.Supporter
+    field :with_consent, :boolean, default: false
 
     field :action_type, :string
 
