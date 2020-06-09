@@ -1,4 +1,9 @@
 defmodule Proca.Org do
+  @moduledoc """
+  Represents an organisation in Proca. `Org` can have many `Staffers`, `Campaigns` and `ActionPage`'s.
+
+  Org can have one or more `PublicKey`'s. Only one of them is active at a particular time. Others are expired.
+  """
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
