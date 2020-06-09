@@ -61,7 +61,7 @@ defmodule Proca.Stage.SQS do
       |> Service.aws_request(service)
       do
       {:ok, status} -> msgs |> mark_failed(status)
-      _ -> msgs |> Enum.map(fn m -> Message.failed("Cannot call SQS.SendMessageBatch") end)
+      _ -> msgs |> Enum.map(fn m -> Message.failed(m, "Cannot call SQS.SendMessageBatch") end)
       end
     else
       _ -> {:error, "SQS service not configured for org_id #{org_id}"}
