@@ -16,6 +16,8 @@ defmodule Proca.Org do
     has_many :campaigns, Proca.Campaign, on_delete: :nilify_all
     has_many :action_pages, Proca.Campaign, on_delete: :nilify_all
 
+    field :contact_schema, ContactSchema, default: :basic
+    
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
 

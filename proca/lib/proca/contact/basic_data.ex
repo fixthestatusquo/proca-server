@@ -47,15 +47,15 @@ defmodule Proca.Contact.BasicData do
   end
 
   @impl Data
-  def to_contact(chst = %{valid?: true}, _action_page) do
+  def to_contact(%{valid?: true, changes: data}, _action_page) do
     # XXX here we should check action_page.split_names
-    attrs = chst.changes
+    data = data
     |> Map.delete(:name)
 
-    {Contact.build(attrs), fingerprint(chst)}
+    {Contact.build(data), fingerprint(data)}
   end
 
-  def fingerprint(%{changes: %{email: email}}) do
+  defp fingerprint(%{email: email}) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
     hash = :crypto.hash(:sha256, seed <> email)
     hash

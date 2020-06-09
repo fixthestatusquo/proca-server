@@ -10,7 +10,7 @@ defmodule ProcaWeb.Resolvers.Action do
   def get_action_page(%{action_page_id: id}) do
     case ActionPage.find(id) do
       nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
-      action_page -> {:ok, action_page}
+      action_page -> {:ok, action_page |> Repo.preload([:org, [campaign: :org]])}
     end
   end
 

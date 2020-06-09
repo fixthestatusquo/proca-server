@@ -66,10 +66,10 @@ defmodule Proca.Supporter do
   @doc """
   """
   def create_supporter(action_page, %{contact: contact, privacy: privacy}) do
-    data_mod = ActionPage.data_module(action_page)
+    contact_schema = ActionPage.contact_schema(action_page)
 
-    with data = %{valid?: true} = data <- apply(data_mod, :from_input, [contact]),
-         {new_contact = %{valid?: true}, fpr} <- apply(data_mod, :to_contact, [data, action_page]),
+    with data = %{valid?: true} = data <- apply(contact_schema, :from_input, [contact]),
+         {new_contact = %{valid?: true}, fpr} <- apply(contact_schema, :to_contact, [data, action_page]),
            new_supporter = %{valid?: true} <- from_contact_data(data, action_page)
            |> distribute_personal_data(new_contact, action_page, privacy_defaults(privacy))
            |> put_change(:fingerprint, fpr)
