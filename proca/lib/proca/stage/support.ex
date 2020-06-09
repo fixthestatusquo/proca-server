@@ -93,7 +93,7 @@ defmodule Proca.Stage.Support do
       "actionPage" => %{
         "locale" => action.action_page.locale,
         "url" => action.action_page.url,
-        "thankYouYemplateRef" => action.action_page.thank_you_template_ref
+        "thankYouTemplateRef" => action.action_page.thank_you_template_ref
       },
       "campaign" => %{
         "name" => action.campaign.name
