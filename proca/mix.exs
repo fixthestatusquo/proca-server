@@ -10,7 +10,8 @@ defmodule Proca.MixProject do
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      docs: docs()
     ]
   end
 
@@ -95,5 +96,32 @@ defmodule Proca.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      logo: "assets/static/images/proca-logo.png",
+      extras: [
+        "README.md",
+        "code_of_conduct.md"
+      ] ++ Path.wildcard("guides/*.md"),
+      extra_section: "Guides"
+    ]
+      # Example from broadway:
+      # groups_for_extras: [
+      #   Examples: Path.wildcard("guides/examples/*.md"),
+      #   Internals: Path.wildcard("guides/internals/*.md")
+      # ],
+      # groups_for_modules: [
+      #   Acknowledgement: [
+      #     Broadway.Acknowledger,
+      #     Broadway.CallerAcknowledger,
+      #     Broadway.NoopAcknowledger
+      #   ],
+      #   Producers: [
+      #     Broadway.DummyProducer,
+      #     Broadway.TermStorage
+      #   ]
   end
 end

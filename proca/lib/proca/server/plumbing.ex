@@ -12,20 +12,21 @@ defmodule Proca.Server.Plumbing do
   Proca uses RabbitMQ queues and Broadway to process signatures, while updating
   the record to mark that it was processed in each stage.
 
-  ## Processing dynamics (XXX finish)
-
-  1. Different orgs processing should not clog one anothers queues, so every org
-  needs at least its own set of queues.
-
   ## Stages:
 
-  For each Supporter
-  For each Action
+  `Proca.Supporter` is always connected to one or more `Proca.Action`s, but in
+  case of confirming we first confirm the supporter, and then we confirm action.
 
-  1. Confirmation stage. Entities are supposed only in one queue (because of routing key design)
-     a. Supporter -> confirm if needed(double-opt-in)
-     b. Action -> confirm if needed(moderation of types)
-  2. Delivery stage - copied to many queues as needed (routing keys with wildcards)
+  1. Confirmation stage. Entities are supposed only to be confirmed by one
+  mechanism, so they land in one queue (because of routing key design)
+
+     a. Supporter - confirm if needed(double-opt-in)
+     b. Action - confirm if needed(moderation of types)
+
+  2. Delivery stage. Entities are processed in parallel by many delivery
+  mechanisms, and are copied to many queues as needed (routing keys with
+  wildcards)
+
      a. Action only, but with supporter info.
 
   ## Routing:
@@ -46,7 +47,7 @@ defmodule Proca.Server.Plumbing do
     - Supporter (encrypted, with personalisation data)
   2. Action
     - Contains campaign and action_page data/reference
-    - Action with type, 
+    - Action with type, fields
 
   ## Queues:
 
@@ -54,14 +55,14 @@ defmodule Proca.Server.Plumbing do
                ___ *.system.supporter        -> system.email.confirm (double opt in)
               /
   confirm ---*---- ORG_NAME.custom.supporter -> ORG_NAME.confirm
-              \___ ORG_NAME.custom.action    -> ORG_NAME.moderate
+              \\___ ORG_NAME.custom.action    -> ORG_NAME.moderate
 
 
                ___ *.system.* -> system.email.thankyou
               /
   deliver ---*---- ORG_NAME.*.* -> ORG_NAME.crm
-              \____ ORG1,ORG2,ORG3.system.* -> system.sqs
-  
+              \\____ ORG1,ORG2,ORG3.system.* -> system.sqs
+  ```
 
   Some queues will by read by external consumer, actually all the ORG* queues.
   They need full data. OTOH, system queues will be able to deal with a simple
@@ -69,7 +70,6 @@ defmodule Proca.Server.Plumbing do
 
   XXX maybe system.email.confirm can be merged with system.email.thankyou ?
 
-  ```
   """
   @impl true
   def init(url) do

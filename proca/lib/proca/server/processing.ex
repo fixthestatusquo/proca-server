@@ -8,34 +8,39 @@ defmodule Proca.Server.Processing do
   import Ecto.Query, only: [from: 2]
 
   @moduledoc """
-  Processing:
+  For these cases:
   1. We receive Actions with Supporter or with unbound ref.
-  2. Action with supporter may have new or resolved supporter (by ref)
-  3. Action with unbound ref will be bound later () 
+  2. Action with supporter may have new or resolved supporter (by ref).
+  3. Action with unbound ref will be bound later.
 
-  So:
-  1. Process supporter, then action
-  2. Process supporter
+  Processing works in following way:
+  1. Process supporter, then action.
+  2. Process supporter.
   3. ignore. This is a case where we store action for counts (share, tweet
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right? 
 
+  State diagram below shows transitions while processing. `A` stands for Action,
+  `S` for supporter. States are enumerated in `ProcessingStatus`, and supporter
+  and action track its status separately.
+
+  ```
       [ A(NEW) / nil ]
           | linked?
           v
       [ A(NEW) / S(NEW) ]           <-----.
           |                                |  On new action bound to rejected contact
           v                                |  Do we reset?
-      [ A(NEW) / S(CONFIRMING)] -> [ A(REJECTED) / S(REJECTED) ]   - - - > (remove the cookie?!)
+      [ A(NEW) / S(CONFIRMING)] -> [ A(REJECTED) / S(REJECTED) ] --> stop (and remove the cookie?!)
           |
           v
     ,->[ A(NEW) / S(ACCEPTED)]
     |     |
   n |     v
-  e |  [ A(CONFIRMING) / S(ACCEPTED)] -> [ A(REJECTED) / S(ACCEPTED)] --> x
+  e |  [ A(CONFIRMING) / S(ACCEPTED)] -> [ A(REJECTED) / S(ACCEPTED)] --> stop
   w |     |
     |     v
-    `--[ A(ACCEPTED) / S(ACCEPTED)] -> [ A(DELIVERED) / S(ACCEPTED)]
-
+    '--[ A(ACCEPTED) / S(ACCEPTED)] -> [ A(DELIVERED) / S(ACCEPTED)] --> stop
+  ```
   This mechanism is supposed to be able to run many times with same result if
   action and supporter bits do not change.
 
@@ -46,7 +51,8 @@ defmodule Proca.Server.Processing do
   - action.confirmed
   - action.delivered
 
-  XXX for starters, we assume:
+  XXX for MVP, we assume:
+
   ActionPage does not require Supporter confirmation, supporter :new -> :accepted
   ActionPage does not require Action confirmation, goes from :new -> :accepted
   But it is pushed to delivery queue and chnaged to :delivered (after processing in Broadway?)
