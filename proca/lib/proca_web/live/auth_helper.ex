@@ -94,7 +94,7 @@ defmodule ProcaWeb.Live.AuthHelper do
   # Convienience to assign straight into the socket
   def mount_user(socket, pid, session, pow_config, renewal_config) do
     case current_user(socket, session, pow_config) do
-      {%User{} = user, staffer} ->
+      {%User{} = user, staffer} when not is_nil(staffer) ->
         maybe_init_session_renewal(
           socket, 
           pid,
@@ -103,7 +103,7 @@ defmodule ProcaWeb.Live.AuthHelper do
           renewal_config |> Keyword.get(:interval)
         )
         assign_current_user(socket, user, staffer)
-      _ -> socket |> Phoenix.LiveView.redirect(to: "/dash")
+      _ -> socket |> Phoenix.LiveView.redirect(to: "/")
     end
   end
   def maybe_assign_current_user(_, _, _), do: nil
