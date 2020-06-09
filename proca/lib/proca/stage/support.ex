@@ -79,6 +79,14 @@ defmodule Proca.Stage.Support do
         :fields
       ])
     contact = hd(action.supporter.contacts)
+    privacy = if action.with_consent do
+      %{
+        "communication" => action.supporter.consent.communication,
+        "givenAt" => (action.supporter.consent.given_at |> DateTime.to_iso8601())
+      }
+    else
+      nil
+    end
 
     %{
       "actionId" => action.id,
@@ -99,10 +107,7 @@ defmodule Proca.Stage.Support do
         "name" => action.campaign.name
       },
       "contact" => action_data_contact(action.supporter, contact),
-      "privacy" => %{
-        "communication" => action.supporter.consent.communication,
-        "givenAt" => (action.supporter.consent.given_at |> DateTime.to_iso8601())
-      },
+      "privacy" => privacy,
       "source" => action_data_source(action)
     }
     |> put_action_meta(stage)
