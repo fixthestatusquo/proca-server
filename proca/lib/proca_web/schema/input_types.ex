@@ -13,6 +13,11 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :country, :string
     @desc "Postcode, in format correct for country locale"
     field :postcode, :string
+    @desc "Locality, which can be a city/town/village"
+    field :locality, :string
+    @desc "Region, being province, voyevodship, county"
+    field :region, :string
+
     # @desc "List of areas this address belongs to"
     # field :areas, list_of(non_null(:area_input))
 
@@ -50,8 +55,9 @@ defmodule ProcaWeb.Schema.InputTypes do
     field :email, :string
     @desc "Contacts phone number"
     field :phone, :string
+    @desc "Date of birth in format YYYY-MM-DD"
+    field :birth_date, :string
     @desc "Contacts address"
-    @desc "Address object"
     field :address, :address_input
   end
 

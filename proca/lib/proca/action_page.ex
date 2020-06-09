@@ -5,7 +5,7 @@ defmodule Proca.ActionPage do
   import Ecto.Query
 
   alias Proca.Repo
-  alias Proca.ActionPage
+  alias Proca.{ActionPage,Campaign,Org}
 
   schema "action_pages" do
     field :locale, :string
@@ -38,7 +38,10 @@ defmodule Proca.ActionPage do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]
   end
 
-  def data_module(_ap) do
-    Proca.Contact.BasicData
+  def contact_schema(%ActionPage{campaign: %Campaign{org: %Org{contact_schema: cs}}}) do
+    case cs do
+      :basic -> Proca.Contact.BasicData
+      :popular_initiative -> Proca.Contact.PopularInitiativeData
+    end
   end
 end
