@@ -25,9 +25,18 @@ defmodule Proca.ActionPage do
   @doc false
   def changeset(action_page, attrs) do
     action_page
-    |> cast(attrs, [:url, :locale, :org_id, :extra_supporters])
+    |> cast(attrs, [:url, :locale, :org_id, :delivery, :extra_supporters])
     |> validate_required([:url, :locale, :org_id])
     |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+  end
+
+  def upsert(org, campaign, attrs) do
+    (Repo.get_by(ActionPage, campaign_id: campaign.id, url: attrs.url) || %ActionPage{})
+    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref])
+    |> validate_required([:url, :locale])
+    |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+    |> put_change(:campaign_id, campaign.id)
+    |> put_change(:org_id, org.id)
   end
 
   def changeset(attrs) do

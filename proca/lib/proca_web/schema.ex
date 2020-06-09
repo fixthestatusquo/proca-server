@@ -97,6 +97,9 @@ defmodule ProcaWeb.Schema do
     Action Pages will be removed (principle of not removing signature data).
     """
     field :declare_campaign, type: :campaign do
+      @desc "Org name"
+      arg(:org_name, non_null(:string))
+
       @desc "Campaign unchanging identifier"
       arg(:name, non_null(:string))
 

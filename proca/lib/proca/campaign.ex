@@ -1,5 +1,6 @@
 defmodule Proca.Campaign do
   use Ecto.Schema
+  alias Proca.{Repo,Campaign}
   import Ecto.Changeset
 
   schema "campaigns" do
@@ -18,5 +19,11 @@ defmodule Proca.Campaign do
     |> cast(attrs, [:name, :title])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+  end
+
+  def upsert(org, attrs = %{name: cname}) do
+    (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{})
+    |> Campaign.changeset(attrs)
+    |> put_change(:org_id, org.id)
   end
 end
