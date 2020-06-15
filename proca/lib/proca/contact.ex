@@ -13,7 +13,8 @@ defmodule Proca.Contact do
   end
 
   def build(attrs) when is_map(attrs) do
-    case JSON.encode(attrs) do
+    external_attrs = attrs |> ProperCase.to_camel_case()
+    case JSON.encode(external_attrs) do
       {:ok, payload} -> change(%Contact{}, %{ payload: payload })
     end
   end

@@ -66,7 +66,7 @@ defmodule Proca.Stage.Support do
       ref: Supporter.base_encode(ref),
       firstName: first_name,
       email: email,
-      payload: Contact.base_encode(payload)
+      payload: payload
     }
   end
 
