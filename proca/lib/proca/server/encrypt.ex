@@ -56,7 +56,7 @@ Increment nonce by 1. Should be run after every successful encryption.
     try do
       case Kcl.box(text, nonce, my_keys.private, rcpt_keys.public) do
         {encrypted, _} ->
-          {:reply, {encrypted, nonce}, {my_keys, increment_nonce(nonce)}}
+          {:reply, {encrypted, nonce, my_keys.id}, {my_keys, increment_nonce(nonce)}}
       end
     rescue
       e in FunctionClauseError ->
@@ -101,7 +101,7 @@ Increment nonce by 1. Should be run after every successful encryption.
   Returns nonce, ciphertext
   Increments nonce
   """
-  @spec encrypt(Proca.PublicKey, binary()) :: {binary(), binary()} | {:error, String.t()}
+  @spec encrypt(Proca.PublicKey, binary()) :: {binary(), binary(), integer()} | {:error, String.t()}
   def encrypt(%Proca.PublicKey{} = pk, text) do
     GenServer.call(__MODULE__, {:encrypt, pk, text})
   end

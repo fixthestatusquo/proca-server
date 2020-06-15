@@ -7,6 +7,7 @@ defmodule Proca.Contact do
     field :payload, :binary
     field :crypto_nonce, :binary
     belongs_to :public_key, Proca.PublicKey
+    belongs_to :sign_key, Proca.PublicKey
     belongs_to :supporter, Proca.Supporter
 
     timestamps()
@@ -31,11 +32,12 @@ defmodule Proca.Contact do
       case contact_ch do
         %{changes: %{payload: payload}} ->
           case Proca.Server.Encrypt.encrypt(pk, payload) do
-            {penc, nonce} when is_binary(penc) ->
+            {penc, nonce, sign_id} when is_binary(penc) ->
               contact_ch
               |> put_change(:payload, penc)
               |> put_change(:crypto_nonce, nonce)
               |> put_assoc(:public_key, pk)
+              |> put_change(:sign_key_id, sign_id)
 
             {:error, msg} ->
               add_error(contact_ch, :payload, msg)
