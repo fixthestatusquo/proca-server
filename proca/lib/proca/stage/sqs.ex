@@ -6,7 +6,7 @@ defmodule Proca.Stage.SQS do
   alias Proca.{Action,Org,Service}
   import Ecto.Query, only: [from: 2]
   alias Proca.Stage.Support
-
+  require Logger
 
   def start_link(_opts) do
     Broadway.start_link(__MODULE__,
@@ -17,7 +17,10 @@ defmodule Proca.Stage.SQS do
                  connection: Proca.Server.Plumbing.connection_url(),
                  qos: [
                    prefetch_count: 10,
-                 ]
+                 ],
+                 backoff_type: :exp,
+                 backoff_min: 1_000,   # backoff from 1 second
+                 backoff_max: 600_000  # up to 10 mins
                 },
         concurrency: 1
       ],
@@ -61,6 +64,9 @@ defmodule Proca.Stage.SQS do
       |> Service.aws_request(service)
       do
       {:ok, status} -> msgs |> mark_failed(status)
+      {:error, {:http_error, http_code, %{message: message}}} ->
+        Logger.error("SQS forward: #{http_code} #{message}")
+        msgs |> Enum.map(fn m -> Message.failed(m, message) end)
       _ -> msgs |> Enum.map(fn m -> Message.failed(m, "Cannot call SQS.SendMessageBatch") end)
       end
     else
@@ -70,7 +76,16 @@ defmodule Proca.Stage.SQS do
 
   def to_message(body) do
     {:ok, payload} = JSON.encode(body)
-    [id: body["actionId"], message_body: payload]
+    [id: body["actionId"], message_body: payload, message_attributes: to_message_attributes(body)]
+  end
+
+  def to_message_attributes(body) do
+    [
+      %{name: "Schema", data_type: :string, value: body["schema"]},
+      %{name: "Stage", data_type: :string, value: body["stage"]},
+      %{name: "CampaignName", data_type: :string, value: body["campaign"]["name"]},
+      %{name: "ActionType", data_type: :string, value: body["action"]["actionType"]},
+    ]
   end
 
   def mark_failed(messages, %{body: %{failures: fails}}) do

@@ -52,7 +52,7 @@ defmodule Proca.MixProject do
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
       {:amqp, "~> 1.4"},
-      {:broadway_rabbitmq, "~> 0.6"},
+      {:broadway_rabbitmq, "~> 0.6.1"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
