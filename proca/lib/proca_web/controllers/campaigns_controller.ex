@@ -19,7 +19,6 @@ defmodule ProcaWeb.CampaignsController do
     ch = ActionPage.changeset(%{})
     |> put_change(:org_id, socket.assigns[:staffer].org_id)
 
-    IO.inspect(ch, label: "apch")
     {
       :noreply,
       socket
@@ -111,7 +110,6 @@ defmodule ProcaWeb.CampaignsController do
     |> Repo.insert_or_update
       do
       {:ok, c} ->
-        IO.inspect(c, label: "campaign_saved")
         {
           :noreply,
           socket
@@ -119,7 +117,6 @@ defmodule ProcaWeb.CampaignsController do
           |> assign_campaigns
         }
       {:error, ch} ->
-        IO.inspect(ch, label: "campaign_save")
         {
           :noreply,
           socket
