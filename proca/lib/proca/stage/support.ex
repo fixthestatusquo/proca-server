@@ -8,7 +8,7 @@ defmodule Proca.Stage.Support do
     from(a in Action,
       where: a.id in ^action_ids,
       preload: [
-        [supporter: [[contacts: :public_key], :consent]],
+        [supporter: [[contacts: [:public_key, :sign_key]], :consent]],
         :action_page, :campaign,
         :source,
         :fields
@@ -39,7 +39,8 @@ defmodule Proca.Stage.Support do
         %Contact{
           payload: payload,
           crypto_nonce: nonce,
-          public_key: %PublicKey{public: public}
+          public_key: %PublicKey{public: public},
+          sign_key: %PublicKey{public: sign}
         }
       ) do
     %{
@@ -48,7 +49,8 @@ defmodule Proca.Stage.Support do
       email: email,
       payload: Contact.base_encode(payload),
       nonce: Contact.base_encode(nonce),
-      publicKey: PublicKey.base_encode(public)
+      publicKey: PublicKey.base_encode(public),
+      signKey: PublicKey.base_encode(sign)
     }
   end
 
@@ -73,7 +75,7 @@ defmodule Proca.Stage.Support do
   def action_data(action, stage \\ :deliver) do
     action = Repo.preload(action,
       [
-        [supporter: [[contacts: :public_key], :consent]],
+        [supporter: [[contacts: [:public_key, :sign_key]], :consent]],
         :action_page, :campaign,
         :source,
         :fields
