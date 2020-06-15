@@ -1,20 +1,11 @@
-import request from 'request'
-
-function actionsApiUrl(identity_url, config) {
-  const format = /^https?:\/\/[\w\d_.-]+$/
-  if (!identity_url || !identity_url.match(format)) {
-    throw "Use https://just.identity.host for identity service_url"
-  }
-
-  return `${identity_url}/api/actions`
-}
-
+import bent from 'bent'
 
 
 export async function syncAction(action, config, argv) {
-  const url = actionsApiUrl(argv.service_url || process.env.IDENTITY_URL, config)
-  const api_token = process.env.IDENTITY_API_TOKEN
-  const comm_consent = process.env.IDENTITY_CONSENT
+  console.info(action)
+  const url = argv.service_url || config.identity_url
+  const api_token = config.identity_api_token
+  const comm_consent = config.identity_consent
 
   let consent = {}
   if (comm_consent === null) {
@@ -23,8 +14,15 @@ export async function syncAction(action, config, argv) {
   consent[comm_consent] = 'communication'
 
   const payload = toDataApi(action, consent)
-  console.log(payload)
+
+  payload.api_token = api_token
+
+  const post = bent(url, 'POST', 200)
+  console.info(payload)
+  const r = await post('/api/actions', payload)
+  return r
 }
+
 
 /* 
    PROCA ACTION JSON
@@ -77,19 +75,21 @@ function toDataApi(action, consent_map) {
   const ah = {
     action_type: action.action.actionType,
     action_technical_type: `proca:${action.action.actionType}`,
-    created_dt: action.action.createdAt,
+    create_dt: action.action.createdAt,
     action_name: action.campaign.name,
     action_public_name: action.campaign.name,
     external_id: action.campaignId,
     consents: Object.entries(consent_map).map(([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)),
     cons_hash: {
-      firstname: action.contact.pii.first_name,
-      lastname: action.contact.pii.last_name,
+      firstname: action.contact.pii.firstName,
+      lastname: action.contact.pii.lastName,
       emails: [{ email: action.contact.pii.email }],
-      addr: {
-        zip: action.contact.pii.postcode,
-        country: action.contact.pii.country
-      }
+      addresses: [{
+        postcode: action.contact.pii.postcode,
+        country: action.contact.pii.country,
+        town: action.contact.pii.locality,
+        state: action.contact.pii.region
+      }]
     }
   }
 
@@ -97,9 +97,10 @@ function toDataApi(action, consent_map) {
     ah['custom_fields'] = Object.entries(action.action.fields).map(([k,v]) => { return {'name': k, 'value': v}})
   }
 
+// XXX add source
+
   return ah
 }
-
 function toConsent(action, consent_id, consent_config) {
   if (consent_config == 'implicit' || consent_config == 'explicit') {
     return {

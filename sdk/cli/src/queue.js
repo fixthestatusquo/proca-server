@@ -1,5 +1,6 @@
 import amqplib from 'amqplib'
 import backoff from 'backoff'
+import {decryptAction} from './crypto'
 
 export function connect(config) {
   if (!config.queue_url) {
@@ -37,8 +38,8 @@ export async function syncQueue(service, config, argv) {
 
   return new Promise(async (ok, fail) => {
     const ret = await ch.consume(qn, (msg) => {
-      let action = JSON.parse(msg.content.toString());
-      action.contact.pii = JSON.parse(action.contact.payload)
+      let action = JSON.parse(msg.content.toString())
+      action = decryptAction(action, config)
       const syncing = service.syncAction(action, config, argv)
             .then((v) => {
               ch.ack(msg)

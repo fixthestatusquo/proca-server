@@ -21,6 +21,9 @@ const config = {
   user: process.env.AUTH_USER,
   password: process.env.AUTH_PASSWORD,
   queue_url: process.env.QUEUE_URL,
+  identity_url: process.env.IDENTITY_URL,
+  identity_api_token: process.env.IDENTITY_API_TOKEN,
+  identity_consent: process.env.IDENTITY_CONSENT,
   url: process.env.API_URL || 'https://api.proca.foundation',
   keys: (process.env.KEYS || '').split(',').map(to_keys).filter(x => x !== null)
 }
@@ -34,6 +37,9 @@ function storeConfig(config, fn) {
     'AUTH_PASSWORD': config.password,
     'API_URL': config.url,
     'QUEUE_URL': config.queue_url,
+    'IDENTITY_URL': config.identity_url,
+    'IDENTITY_API_TOKEN': config.identity_api_token,
+    'IDENTITY_CONSENT': config.identity_consent,
     'KEYS': config.keys.map(({pub, priv}) =>  `${pub}:${priv}`).join(',')
   }
 
