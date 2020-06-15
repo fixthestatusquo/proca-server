@@ -62,6 +62,7 @@ defmodule Proca.MixProject do
       {:poison, "~> 4.0"},
       {:phoenix_live_view, "~> 0.12.1"},
       {:pow, "~> 1.0.20"},
+      {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.4", only: :test}
