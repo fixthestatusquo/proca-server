@@ -1,4 +1,4 @@
-import * as identity from './api'
+import * as identity from './identity'
 
 module.exports = {
   identity

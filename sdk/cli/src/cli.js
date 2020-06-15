@@ -125,7 +125,10 @@ export default function cli () {
               alias: 'service', type: 'string', describe: 'Service to which deliver action data'
             })
             .option('l', {
-              alias: 'service_url', type: 'string', describe: 'Deliver to service at location'
+              alias: 'service_url',
+              type: 'string',
+              describe: 'Deliver to service at location',
+              default: config.service_url
             })
             .option('B', {
               alias: 'backoff', type: 'boolean', describe: 'Add backoff when calling syncAction'
