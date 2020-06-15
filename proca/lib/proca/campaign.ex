@@ -5,6 +5,7 @@ defmodule Proca.Campaign do
 
   schema "campaigns" do
     field :name, :string
+    field :external_id, :integer
     field :title, :string
     field :force_delivery, :boolean
 
@@ -20,6 +21,12 @@ defmodule Proca.Campaign do
     |> cast(attrs, [:name, :title])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+  end
+
+  def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
+    (Repo.get_by(Campaign, external_id: id, org_id: org.id) || %Campaign{})
+    |> Campaign.changeset(attrs)
+    |> put_change(:org_id, org.id)
   end
 
   def upsert(org, attrs = %{name: cname}) do

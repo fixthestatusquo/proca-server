@@ -38,6 +38,8 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :id, :id
     @desc "Internal name of the campaign"
     field :name, :string
+    @desc "External ID (if set)"
+    field :external_id, :integer
     @desc "Full, official name of the campaign"
     field :title, :string
 
