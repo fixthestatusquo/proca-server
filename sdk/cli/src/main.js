@@ -2,7 +2,7 @@ import * as api from './api'
 import config from './config'
 import cli from './cli'
 import * as crypto from './crypto'
-import * as service from './service'
+import * as identity from './service/identity'
 import * as queue from './queue'
 
 module.exports = {
@@ -11,5 +11,5 @@ module.exports = {
   config,
   cli,
   crypto,
-  service
+  service: {identity}
 }
