@@ -112,6 +112,5 @@ defmodule ProcaWeb.TeamController do
     |> Enum.reduce(%{}, fn st, acc ->
       Map.put(acc, st.id, Role.findrole(st, roles()))
     end)
-    |> IO.inspect(label: "team_roles")
   end
 end

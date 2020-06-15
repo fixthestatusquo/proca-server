@@ -29,7 +29,6 @@ defmodule Proca.Contact.PopularInitiativeData do
 
   @impl Data
   def from_input(params) do
-    IO.inspect(params, label: "from_input")
     {%PopularInitiativeData{}, @schema}
     |> cast(params, [:first_name, :last_name, :birth_date, :email])
     |> cast(Map.get(params, :address, %{}), [:postcode, :locality, :region])
