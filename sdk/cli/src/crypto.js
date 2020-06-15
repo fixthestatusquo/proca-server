@@ -26,6 +26,22 @@ export function decrypt(payloads_with_nonces, sender_pk, config) {
   })
 }
 
+export function decryptOne(payload, nonce, public_key, sign_key, config) {
+  if (nonce === null || nonce === undefined) {
+    return payload
+  }
+
+  const my_priv = fromBase64(config.keys[0].priv)
+  sign_key = fromBase64(sign_key)
+
+  // decrypt
+  const clear = nacl.box.open(fromBase64(payload), fromBase64(nonce), sign_key, my_priv)
+  if (clear === null) {
+    return null;
+  } else {
+    return encodeUTF8(clear)
+  }
+}
 
 export function decryptSignatures({list, publicKey}, config) {
   decrypt(
@@ -38,4 +54,11 @@ export function decryptSignatures({list, publicKey}, config) {
     }
   })
   return list
+}
+
+export function decryptAction(action, config) {
+  const contact = action.contact;
+  const clear_contact = decryptOne(contact.payload, contact.nonce, contact.publicKey, contact.signKey, config)
+  contact.pii = JSON.parse(clear_contact)
+  return action
 }
