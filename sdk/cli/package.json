@@ -9,12 +9,10 @@
   "bin": {
     "proca-cli": "bin/proca-cli"
   },
-  "scripts": {
-    "install": "npm run build",
-    "build": "npx parcel build src/index.js --target=node",
-    "watch": "npx parcel src/index.js --target=node"
-  },
+  "scripts": {},
   "dependencies": {
+    "amqplib": "^0.5.6",
+    "backoff": "^2.5.0",
     "base64url": "^3.0.1",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
@@ -23,6 +21,7 @@
     "graphql-request": "^2.0.0",
     "inquirer": "^7.1.0",
     "node-fetch": "^2.6.0",
+    "request": "^2.88.2",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "yargs": "^15.3.1"

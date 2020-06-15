@@ -20,6 +20,7 @@ const config = {
   org: process.env.ORG_NAME,
   user: process.env.AUTH_USER,
   password: process.env.AUTH_PASSWORD,
+  queue_url: process.env.QUEUE_URL,
   url: process.env.API_URL || 'https://api.proca.foundation',
   keys: (process.env.KEYS || '').split(',').map(to_keys).filter(x => x !== null)
 }
@@ -32,6 +33,7 @@ function storeConfig(config, fn) {
     'AUTH_USER': config.user,
     'AUTH_PASSWORD': config.password,
     'API_URL': config.url,
+    'QUEUE_URL': config.queue_url,
     'KEYS': config.keys.map(({pub, priv}) =>  `${pub}:${priv}`).join(',')
   }
 
@@ -60,6 +62,7 @@ async function setup() {
      validate: emailValidator.validate},
     {type:'password', name: 'password', default: config.password, messsage: 'Your password?'},
     {type:'input', name: 'url', default: config.url, message: 'Proca backend url'},
+    {type:'input', name: 'queue_url', default: config.queue_url, message: 'Proca queue url'},
     {type:'input', name: 'pub', default: k1.pub, message: 'Public key'},
     {type:'password', name: 'priv', default: k1.priv, message: 'Private key'}
 
