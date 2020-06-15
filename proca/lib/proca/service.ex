@@ -17,7 +17,7 @@ defmodule Proca.Service do
 
   def build_for_org(attrs, %Org{id: org_id}, service) do
     %Service{}
-    |> cast(attrs, [:name, :host, :user, :password, :path])
+    |> cast(attrs, [:host, :user, :password, :path])
     |> put_change(:name, service)
     |> put_change(:org_id, org_id)
   end
