@@ -103,6 +103,9 @@ defmodule ProcaWeb.Schema do
       @desc "Campaign unchanging identifier"
       arg(:name, non_null(:string))
 
+      @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+      arg(:external_id, :integer)
+
       @desc "Campaign human readable title"
       arg(:title, non_null(:string))
 
