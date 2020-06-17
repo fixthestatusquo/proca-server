@@ -116,18 +116,6 @@ defmodule Proca.Stage.Support do
     |> put_action_meta(stage)
   end
 
-  @doc "We just pass action id around because we can just retrieve the action and have a synced copy"
-  def brief_action_data(action, stage \\ :deliver) do
-    action = Repo.preload(action, [:action_page])
-    %{
-      "actionId" => action.id,
-      "actionPageId" => action.action_page_id,
-      "campaignId" => action.campaign_id,
-      "orgId" => action.action_page.org_id
-    }
-    |> put_action_meta(stage)
-  end
-
   def put_action_meta(map, stage) do
     map
     |> Map.put("schema", "proca:action:1")

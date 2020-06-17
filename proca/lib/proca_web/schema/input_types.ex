@@ -29,6 +29,7 @@ defmodule ProcaWeb.Schema.InputTypes do
   input_object :custom_field_input do
     field :key, :string
     field :value, :string
+    field :transient, :boolean
   end
 
 

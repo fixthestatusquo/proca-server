@@ -1,11 +1,13 @@
 defmodule Proca.Field do
   use Ecto.Schema
+  import Ecto.Query
   import Ecto.Changeset
-  alias Proca.Field
+  alias Proca.{Field,Action}
 
   schema "fields" do
     field :key, :string
     field :value, :string
+    field :transient, :boolean
     belongs_to :action, Proca.Action
   end
 
@@ -17,7 +19,7 @@ defmodule Proca.Field do
 
   def changeset(attr = %{key: _key, value: _value}) do
     %Field{}
-    |> cast(attr, [:key, :value])
+    |> cast(attr, [:key, :value, :transient])
     |> validate_format(:key, ~r/^([\w\d_-]+$)/)
     |> validate_length(:key, min: 1, max: 64)
     |> validate_length(:value, max: 1024)
@@ -35,5 +37,9 @@ defmodule Proca.Field do
           v2 -> [v, v2]
         end)
     end)
+  end
+
+  def transient_fields(action = %Action{}) do
+    from(f in Field, where: f.action_id == ^action.id and f.transient == true)
   end
 end

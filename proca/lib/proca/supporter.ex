@@ -103,4 +103,8 @@ defmodule Proca.Supporter do
   def base_decode(encoded) when is_bitstring(encoded) do
     Base.url_decode64(encoded, padding: false)
   end
+
+  def transient_fields(supporter) do
+    change(supporter, first_name: nil, email: nil)
+  end
 end
