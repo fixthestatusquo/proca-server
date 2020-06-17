@@ -72,6 +72,10 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
+  def declare(_, _, _) do
+    {:error, "You need to authorize with Basic auth"}
+  end
+
   def upsert_campaign(org, attrs) do
     campaign = Campaign.upsert(org, attrs)
 
