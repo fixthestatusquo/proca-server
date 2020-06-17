@@ -1,0 +1,12 @@
+#!/bin/bash
+set -u
+set -e
+
+echo -n "Email: "
+read email
+echo -n "Password: "
+read -s pass
+echo
+
+tok=$(echo -n $email:$pass | base64)
+echo "Authorization: Basic $tok"
