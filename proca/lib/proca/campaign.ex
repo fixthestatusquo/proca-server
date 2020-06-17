@@ -18,7 +18,7 @@ defmodule Proca.Campaign do
   @doc false
   def changeset(campaign, attrs) do
     campaign
-    |> cast(attrs, [:name, :title])
+    |> cast(attrs, [:name, :title, :external_id])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
   end
