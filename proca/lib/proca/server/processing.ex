@@ -3,7 +3,7 @@ defmodule Proca.Server.Processing do
   alias Proca.Repo
   alias Proca.{Action, ActionPage, Supporter, PublicKey, Field, Contact}
   alias Proca.Server.Plumbing
-  import Proca.Stage.Support, only: [action_data: 1, brief_action_data: 1]
+  import Proca.Stage.Support, only: [action_data: 1]
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
@@ -166,18 +166,16 @@ defmodule Proca.Server.Processing do
       "#{action.action_page.org.name}.system.action"
     end
 
-    data = if action.action_page.org.custom_action_deliver do
-      action_data(action)
-    else
-      brief_action_data(action)
-    end
+    data = action_data(action)
 
     IO.puts("Emitting action/deliver #{action.id} with #{routing}")
-    Plumbing.push(
-      exchange_for(:action, :deliver),
-      routing,
-      data
-    )
+    IO.inspect(data, label: "Action data")
+    with :ok <- Plumbing.push(exchange_for(:action, :deliver), routing, data),
+         :ok <- clear_transient(action) do
+      :ok
+      else
+        _ -> :error
+    end
   end
 
   def exchange_for(_, :confirm) do
@@ -211,4 +209,9 @@ defmodule Proca.Server.Processing do
     end
   end
 
+  def clear_transient(action) do
+    Repo.delete_all(Field.transient_fields(action))
+    {ret, _} = Repo.update(Supporter.transient_fields(action.supporter))
+    ret
+  end
 end
