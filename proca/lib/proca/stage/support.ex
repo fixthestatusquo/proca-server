@@ -106,7 +106,8 @@ defmodule Proca.Stage.Support do
         "thankYouTemplateRef" => action.action_page.thank_you_template_ref
       },
       "campaign" => %{
-        "name" => action.campaign.name
+        "name" => action.campaign.name,
+        "externalId" => action.campaign.external_id
       },
       "contact" => action_data_contact(action.supporter, contact),
       "privacy" => privacy,
