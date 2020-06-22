@@ -104,7 +104,13 @@ function toDataApi(action, consent_map) {
     ah['custom_fields'] = Object.entries(action.action.fields).map(([k,v]) => { return {'name': k, 'value': v}})
   }
 
-// XXX add source
+  if (action.source) {
+    ah['source'] = {
+      campaign: action.source.campaign,
+      source: action.source.source,
+      medium: action.source.medium,
+    }
+  }
 
   return ah
 }
