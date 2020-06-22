@@ -2,7 +2,6 @@ import bent from 'bent'
 
 
 export async function syncAction(action, config) {
-  console.info(action)
   const url = config.service_url
   const api_token = config.identity_api_token
   const comm_consent = config.identity_consent
