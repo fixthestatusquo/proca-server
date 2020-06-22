@@ -10,14 +10,22 @@ export async function syncAction(action, config) {
   if (comm_consent === null) {
     throw "Please set IDENTITY_CONSENT"
   }
-  consent[comm_consent] = 'communication'
+  if (comm_consent[0] == "{") {
+    // this is a hash with consent map
+    consent = JSON.parse(comm_consent)
+  } else {
+    consent[comm_consent] = 'communication'
+  }
+
+  if (action.contact.pii === null) {
+    throw "Cannot decrypt personal data, please check KEYS"
+  }
 
   const payload = toDataApi(action, consent)
 
   payload.api_token = api_token
 
   const post = bent(url, 'POST', 200)
-  console.info(payload)
   const r = await post('/api/actions', payload)
   return r
 }
