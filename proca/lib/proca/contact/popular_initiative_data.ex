@@ -43,9 +43,9 @@ defmodule Proca.Contact.PopularInitiativeData do
     {Contact.build(data), fingerprint(data)}
   end
 
-  defp fingerprint(%{first_name: fname, last_name: lname, email: eml, birth_date: bd}) do
+  defp fingerprint(data = %{first_name: fname, email: eml, birth_date: bd}) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
-    x = fname <> (lname || "") <> eml <> bd
+    x = fname <> Map.get(data, :last_name, "") <> eml <> bd
     hash = :crypto.hash(:sha256, seed <> x)
     hash
   end
