@@ -1,27 +1,36 @@
+import debug from 'debug'
 import bent from 'bent'
 
+const log = debug('proca:service:identity')
 
 export async function syncAction(action, config) {
   const url = config.service_url
   const api_token = config.identity_api_token
   const comm_consent = config.identity_consent
 
+  log('czy to dziala KURWA')
+
   let consent = {}
   if (comm_consent === null) {
+    log('ProcaCli config.identity_consent is not set')
     throw "Please set IDENTITY_CONSENT"
   }
   if (comm_consent[0] == "{") {
+    log('ProcaCli config.identity_consent has JSON config')
     // this is a hash with consent map
     consent = JSON.parse(comm_consent)
   } else {
+    log(`ProcaCli config.identity_consent uses ${comm_consent} as commmunication consent`)
     consent[comm_consent] = 'communication'
   }
 
   if (action.contact.pii === null) {
+    log(`Cannot decrypt PII; sender key is ${action.contact.signKey}`)
     throw "Cannot decrypt personal data, please check KEYS"
   }
 
   const payload = toDataApi(action, consent)
+  log(`Identity DATA API payload (without api_token)`, payload)
 
   payload.api_token = api_token
 
@@ -78,7 +87,7 @@ export async function syncAction(action, config) {
 }
 */ 
 
-function toDataApi(action, consent_map) {
+export function toDataApi(action, consent_map) {
   const ah = {
     action_type: action.action.actionType,
     action_technical_type: `proca:${action.action.actionType}`,
@@ -112,10 +121,14 @@ function toDataApi(action, consent_map) {
     }
   }
 
+  if (action.action.fields) {
+    ah['metadata'] = action.action.fields
+  }
+
   return ah
 }
-function toConsent(action, consent_id, consent_config) {
-  if (consent_config == 'implicit' || consent_config == 'explicit') {
+export function toConsent(action, consent_id, consent_config) {
+  if (consent_config == 'implicit' || consent_config == 'explicit_opt_in') {
     return {
       public_id: consent_id,
       consent_level: consent_config
@@ -139,5 +152,7 @@ function toConsent(action, consent_id, consent_config) {
         consent_level: 'no_change'
       }
     }
+  } else {
+    throw `unsuported config for consent ${consent_id}: ${consent_config}`
   }
 }
