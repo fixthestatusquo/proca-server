@@ -32,20 +32,20 @@ defmodule Proca.Contact.PopularInitiativeData do
     {%PopularInitiativeData{}, @schema}
     |> cast(params, [:first_name, :last_name, :birth_date, :email])
     |> cast(Map.get(params, :address, %{}), [:postcode, :locality, :region])
-    |> validate_required(Map.keys(@schema) |> List.delete(:last_name))
+    |> validate_required([:first_name, :email, :postcode])
     |> Data.validate_email(:email)
     |> validate_format(:postcode, ~r/^\d{4}$/)
   end
 
   @impl Data
   def to_contact(%{valid?: true, changes: data}, _action_page) do
-    data = data |> Map.put(:birth_date, Date.to_string(data.birth_date))
+    data = data |> Map.update(:birth_date, nil, &Date.to_string(&1))
     {Contact.build(data), fingerprint(data)}
   end
 
-  defp fingerprint(data = %{first_name: fname, email: eml, birth_date: bd}) do
+  defp fingerprint(data = %{first_name: fname, email: eml}) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
-    x = fname <> Map.get(data, :last_name, "") <> eml <> bd
+    x = fname <> Map.get(data, :last_name, "") <> eml <> Map.get(data, :birth_date, "")
     hash = :crypto.hash(:sha256, seed <> x)
     hash
   end
