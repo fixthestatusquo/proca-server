@@ -39,7 +39,11 @@ defmodule Proca.Contact.PopularInitiativeData do
 
   @impl Data
   def to_contact(%{valid?: true, changes: data}, _action_page) do
-    data = data |> Map.update(:birth_date, nil, &Date.to_string(&1))
+    data = if Map.has_key?(data, :birth_date) do
+      %{data | birth_date: Date.to_string(data.birth_date)}
+    else
+      data
+    end
     {Contact.build(data), fingerprint(data)}
   end
 
