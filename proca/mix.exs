@@ -65,7 +65,10 @@ defmodule Proca.MixProject do
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, ">= 0.0.0", only: :test},
-      {:ex_machina, "~> 2.4", only: :test}
+      {:ex_machina, "~> 2.4", only: :test},
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:dogma, "~> 0.1", only: [:dev]},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]
   end
 

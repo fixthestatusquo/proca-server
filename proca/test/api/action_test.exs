@@ -34,7 +34,7 @@ defmodule Api.ActionTest do
     make_petition_action(org, ap, %{action_type: "petiton"})
 
     [action] = Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:fields, :supporter]))
-    assert length(action.fields) == 0
+    assert action.fields == []
     assert action.processing_status == :new
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id
@@ -47,8 +47,8 @@ defmodule Api.ActionTest do
     make_petition_action(org, ap, %{
           action_type: "petition",
           fields: [
-            %{ key: "extra_supporters", value: "5"},
-            %{ key: "card_url", value: "https://bucket.s3.amazon.com/1234/file.pdf"}
+            %{key: "extra_supporters", value: "5"},
+            %{key: "card_url", value: "https://bucket.s3.amazon.com/1234/file.pdf"}
           ]})
 
     [action] = Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:fields, :supporter]))

@@ -1,4 +1,13 @@
-defmodule Proca.Action  do
+defmodule Proca.Action do
+
+  @moduledoc """
+  Record for action done by supporter. Supporter can have many actions, but
+  actions can be created without a supporter with intention, to match them later
+  to supporter record. This can come handy when we need to create actions for
+  user, but will gather personal data later. It is possible to use ref field to
+  match action to supporter later.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -36,6 +45,9 @@ defmodule Proca.Action  do
     end
   end
 
+  @doc """
+  Creates action for supporter. Supporter can be a struct, or reference (binary)
+  """
   def create_for_supporter(attrs, supporter, action_page) do
     %Action{}
     |> cast(attrs, [:action_type])
@@ -48,6 +60,9 @@ defmodule Proca.Action  do
                           end)
   end
 
+  @doc """
+  Links actions with a particular ref with provided supporter.
+  """
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
     |> Repo.update_all(set: [supporter_id: id, ref: nil])

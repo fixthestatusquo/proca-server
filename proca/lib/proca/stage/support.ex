@@ -3,12 +3,14 @@ defmodule Proca.Stage.Support do
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
 
+  # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
+  # the AP.delivery flag
 
   def bulk_actions_data(action_ids, stage \\ :deliver) do
     from(a in Action,
       where: a.id in ^action_ids,
       preload: [
-        [supporter: [[contacts: [:public_key, :sign_key]], :consent]],
+        [supporter: [contacts: [:public_key, :sign_key]]],
         :action_page, :campaign,
         :source,
         :fields
@@ -72,19 +74,42 @@ defmodule Proca.Stage.Support do
     }
   end
 
+
+  defp action_data_contact(
+    %Supporter{
+      fingerprint: ref,
+      first_name: first_name,
+      email: email
+    },
+    contact
+  ) when is_nil(contact) do
+    %{
+      ref: Supporter.base_encode(ref),
+      firstName: first_name,
+      email: email,
+      payload: ""
+    }
+  end
+
   def action_data(action, stage \\ :deliver) do
     action = Repo.preload(action,
       [
-        [supporter: [[contacts: [:public_key, :sign_key]], :consent]],
+        [supporter: [contacts: [:public_key, :sign_key]]],
         :action_page, :campaign,
         :source,
         :fields
       ])
-    contact = hd(action.supporter.contacts)
-    privacy = if action.with_consent do
+
+    # XXX we should be explicit about Contact org_id recipient, because for unencrypted contacts we do not have
+    # the public_key!
+    contact = Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
+
+    privacy = if not is_nil(contact) and action.with_consent do
       %{
-        "communication" => action.supporter.consent.communication,
-        "givenAt" => (action.supporter.consent.given_at |> DateTime.to_iso8601())
+        "communication" => contact.communication_consent,
+        "givenAt" => contact.inserted_at
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.to_iso8601()
       }
     else
       nil

@@ -2,21 +2,81 @@ defmodule Proca.Contact do
   use Ecto.Schema
   import Ecto.Changeset
   alias Proca.Contact
+  alias Proca.Supporter.Consent
 
   schema "contacts" do
+    belongs_to :supporter, Proca.Supporter
+
+    # Personally Identifiable Information
     field :payload, :binary
     field :crypto_nonce, :binary
     belongs_to :public_key, Proca.PublicKey
     belongs_to :sign_key, Proca.PublicKey
-    belongs_to :supporter, Proca.Supporter
+
+    # Consent
+    field :communication_consent, :boolean, default: false
+    field :communication_scopes, {:array, :string}, default: []
+    field :delivery_consent, :boolean, default: false
+    belongs_to :org, Proca.Org
 
     timestamps()
   end
 
+  @spec build(map()) :: Ecto.Changeset.t
   def build(attrs) when is_map(attrs) do
     external_attrs = attrs |> ProperCase.to_camel_case()
-    case JSON.encode(external_attrs) do
-      {:ok, payload} -> change(%Contact{}, %{ payload: payload })
+    case Jason.encode(external_attrs) do
+      {:ok, payload} -> change(%Contact{}, %{payload: payload})
+    end
+  end
+
+  def spread(_new_contact, []) do
+    []
+  end
+
+  def spread(new_contact, [consent | rc]) do
+    ch = new_contact
+    |> Contact.add_encryption(consent.org)
+    |> Contact.add_consent(consent)
+
+    [ch | spread(new_contact, rc)]
+  end
+
+  def add_consent(contact_ch, %Consent{
+        communication_consent: cc,
+        communication_scopes: cs,
+        delivery_consent: dc,
+        org: org}) do
+    contact_ch
+    |> change(communication_consent: cc, communication_scopes: cs, delivery_consent: dc, org: org)
+  end
+
+  @spec add_encryption(Ecto.Changeset.t(), Proca.Org | Proca.PublicKey | nil) :: Ecto.Changeset.t()
+  def add_encryption(contact_ch, public_key) when is_nil(public_key) do
+    contact_ch
+  end
+
+  def add_encryption(contact_ch, org = %Proca.Org{}) do
+    add_encryption(contact_ch, Proca.Org.active_public_key(org))
+  end
+
+  def add_encryption(contact_ch, public_key = %Proca.PublicKey{}) do
+    case contact_ch do
+      %{changes: %{payload: payload}} ->
+        case Proca.Server.Encrypt.encrypt(public_key, payload) do
+          {penc, nonce, sign_id} when is_binary(penc) ->
+            contact_ch
+            |> put_change(:payload, penc)
+            |> put_change(:crypto_nonce, nonce)
+            |> put_assoc(:public_key, public_key)
+            |> put_change(:sign_key_id, sign_id)
+
+          {:error, msg} ->
+            add_error(contact_ch, :payload, msg)
+        end
+
+      no_payload ->
+        add_error(no_payload, :payload, "Contact payload required to encrypt")
     end
   end
 
@@ -28,25 +88,7 @@ defmodule Proca.Contact do
 
   @spec encrypt(Ecto.Changeset.t(), [Proca.PublicKey]) :: [Ecto.Changeset.t()]
   def encrypt(contact_ch, [pk | public_keys]) do
-    enc_ch =
-      case contact_ch do
-        %{changes: %{payload: payload}} ->
-          case Proca.Server.Encrypt.encrypt(pk, payload) do
-            {penc, nonce, sign_id} when is_binary(penc) ->
-              contact_ch
-              |> put_change(:payload, penc)
-              |> put_change(:crypto_nonce, nonce)
-              |> put_assoc(:public_key, pk)
-              |> put_change(:sign_key_id, sign_id)
-
-            {:error, msg} ->
-              add_error(contact_ch, :payload, msg)
-          end
-
-        no_payload ->
-          add_error(no_payload, :payload, "Contact payload required to encrypt")
-      end
-
+    enc_ch = add_encryption(contact_ch, pk)
     [enc_ch | encrypt(contact_ch, public_keys)]
   end
 

@@ -1,13 +1,14 @@
 defmodule Proca.Supporter do
   use Ecto.Schema
   alias Proca.Repo
-  alias Proca.{Consent, Supporter, Contact, ActionPage}
+  alias Proca.{Supporter, Contact, ActionPage}
+  alias Proca.Contact.Data
+  alias Proca.Supporter.Privacy
   import Ecto.Changeset
   import Ecto.Query
 
   schema "supporters" do
     has_many :contacts, Proca.Contact
-    has_one :consent, Proca.Consent
 
     belongs_to :campaign, Proca.Campaign
     belongs_to :action_page, Proca.ActionPage
@@ -31,27 +32,21 @@ defmodule Proca.Supporter do
     |> validate_required([])
   end
 
-  def from_contact_data(%{valid?: true, changes: attrs}, action_page) do
+  @spec new_supporter(struct(), ActionPage) :: Ecto.Changeset.t(Supporter)
+  def new_supporter(data, action_page) do
     %Supporter{}
-    |> cast(attrs, [:first_name, :email])  ## <- this list must come from action page pipeline needs
+    |> cast(Map.from_struct(data), [:first_name, :email])  ## <- this list must come from action page pipeline needs
+    |> change(first_name: data.first_name, email: data.email, fingerprint: Data.fingerprint(data))
     |> put_assoc(:campaign, action_page.campaign)
     |> put_assoc(:action_page, action_page)
   end
 
-  def maybe_encrypt(contact, recipients) do
-    case Proca.Supporter.Privacy.is_encrypted(recipients) do
-      {true, keys} -> Contact.encrypt(contact, keys)
-      false -> [contact]
-    end
-  end
-
-  def distribute_personal_data(new_supporter, new_contact, action_page, privacy) do
-    with recipients <- Proca.Supporter.Privacy.recipients(action_page, privacy),
-         distributed_contacts <- maybe_encrypt(new_contact, recipients),
-         consent <- Consent.from_privacy(privacy) do
+  @spec add_contacts(Ecto.Changeset.t, Ecto.Changeset.t, ActionPage, Privacy) :: Ecto.Changeset.t
+  def add_contacts(new_supporter, new_contact, action_page, privacy) do
+    with consents <- Proca.Supporter.Privacy.consents(action_page, privacy),
+         contacts <- Contact.spread(new_contact, consents) do
       new_supporter
-      |> put_assoc(:contacts, distributed_contacts)
-      |> put_assoc(:consent, consent)
+      |> put_assoc(:contacts, contacts)
     end
   end
 
@@ -61,24 +56,6 @@ defmodule Proca.Supporter do
 
   def privacy_defaults(%{opt_in: _opt_in} = p) do
     Map.put(p, :lead_opt_in, false)
-  end
-
-  @doc """
-  """
-  def create_supporter(action_page, %{contact: contact, privacy: privacy}) do
-    contact_schema = ActionPage.contact_schema(action_page)
-
-    with data = %{valid?: true} = data <- apply(contact_schema, :from_input, [contact]),
-         {new_contact = %{valid?: true}, fpr} <- apply(contact_schema, :to_contact, [data, action_page]),
-           new_supporter = %{valid?: true} <- from_contact_data(data, action_page)
-           |> distribute_personal_data(new_contact, action_page, privacy_defaults(privacy))
-           |> put_change(:fingerprint, fpr)
-    do
-      new_supporter
-    else
-      invalid_data ->
-        {:error, invalid_data}
-    end
   end
 
   @doc "Returns %Supporter{} or nil"

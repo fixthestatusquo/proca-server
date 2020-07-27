@@ -3,29 +3,28 @@ defmodule ProcaWeb.Resolvers.Action do
   import Ecto.Changeset
 
   alias Proca.{Supporter, Action, ActionPage, Contact, Source, Consent}
+  alias Proca.Contact.Data
+  alias Proca.Supporter.Privacy
   alias Proca.Repo
 
   alias ProcaWeb.Helper
 
-  def get_action_page(%{action_page_id: id}) do
+  defp get_action_page(%{action_page_id: id}) do
     case ActionPage.find(id) do
       nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
       action_page -> {:ok, action_page |> Repo.preload([:org, [campaign: :org]])}
     end
   end
 
-  defp add_tracking(sig, %{tracking: tr}) do
-    with {:ok, src} <- Source.get_or_create_by(tr) do
-      put_assoc(sig, :source, src)
-    else
-      # XXX report this somehow? This is a strange situation where we could not insert Source.
-      # even though we retried 2 times
-      {:error, _m} -> sig
+  defp add_tracking(action, %{tracking: tr}) do
+    case Source.get_or_create_by(tr) do
+      {:ok, src} -> put_assoc(action, :source, src)
+      _ -> action
     end
   end
 
-  defp add_tracking(sig, %{}) do
-    sig
+  defp add_tracking(action, %{}) do
+    action
   end
 
   defp increment_counter(%{campaign_id: cid, action_type: atype}, new_supporter) do
@@ -50,7 +49,9 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   defp output(contact_ref) when is_bitstring(contact_ref) do
-    %{contact_ref: contact_ref}
+    %{
+      contact_ref: contact_ref
+    }
   end
 
   def get_supporter(action_page, %{contact_ref: cref}) do
@@ -70,19 +71,30 @@ defmodule ProcaWeb.Resolvers.Action do
     Action.link_refs_to_supporter([ref], supporter)
   end
 
-  def link_references(_supporter, %{}) do
+  # when we create new supporter, but there is no contact_ref to link
+  def link_references(supporter, %{}) do
   end
 
-  def add_action_contact(_, params = %{action: action}, _) do
+  def add_action_contact_tx(a, params, b) do
+    Repo.transaction(fn ->
+      add_action_contact(a, params, b)
+    end)
+  end
+
+  def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, _) do
     with {:ok, action_page} <- get_action_page(params),
-         create_supporter = %{valid?: true} <-
-           Supporter.create_supporter(action_page, params),
-         {:ok, supporter} <- Repo.insert(create_supporter |> add_tracking(params)),
-         change = %{valid?: true} <-
+         data1 = %{valid?: true} <- ActionPage.new_data(contact, action_page),
+         data <- apply_changes(data1),
+         contact = %{valid?: true} <- Data.to_contact(data, action_page),
+         supporter1 = %{valid?: true} <- Supporter.new_supporter(data, action_page),
+         supporter2 <- Supporter.add_contacts(supporter1, contact, action_page, struct!(Privacy, priv))
+         |> add_tracking(params),
+         {:ok, supporter} <- Repo.insert(supporter2),
+         action1 = %{valid?: true} <-
            Action.create_for_supporter(action, supporter, action_page)
            |> add_tracking(params)
            |> put_change(:with_consent, true),
-         {:ok, new_action} <- Repo.insert(change) do
+         {:ok, new_action} <- Repo.insert(action1) do
 
       link_references(supporter, params)
       increment_counter(new_action, true)
@@ -100,6 +112,12 @@ defmodule ProcaWeb.Resolvers.Action do
       _ ->
         {:error, "other error?"}
     end
+  end
+
+  def add_action_tx(a, params, b) do
+    Repo.transaction(fn ->
+      add_action(a, params, b)
+    end)
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, _) do

@@ -22,7 +22,7 @@ defmodule Proca.PublicKey do
   end
 
   def expire(public_key) do
-    changeset(public_key, %{expired_at: DateTime.utc_now()})
+   change(public_key, expired_at: DateTime.utc_now())
   end
 
   def active_keys_for(org) do

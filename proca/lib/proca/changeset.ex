@@ -1,4 +1,8 @@
 defmodule Proca.Changeset do
+  @moduledoc """
+  Helper methods for manipulating changeset data
+  """
+
   def trim(%Ecto.Changeset{changes: ch} = changeset,
     field, len) when is_atom(field) and is_integer(len) do
 
