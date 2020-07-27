@@ -52,6 +52,7 @@ defmodule ProcaWeb.Resolvers.Org do
   def action_pages(org, _, _) do
     c = from(ap in ActionPage, where: ap.org_id == ^org.id, preload: [:org])
     |> Repo.all
+    |> Enum.map(&ActionPage.stringify_config(&1))
 
     {:ok, c}
   end
