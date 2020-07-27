@@ -1,5 +1,6 @@
 defmodule ProcaWeb.Helper do
   alias Ecto.Changeset
+  import Ecto.Changeset
 
   @doc """
   GraphQL expect a flat list of %{message: "some text"}. Traverse changeset and
@@ -35,6 +36,14 @@ defmodule ProcaWeb.Helper do
       flatten_errors(e, lastkey)
     end)
     |> Enum.concat()
+  end
+
+  @spec validate(Ecto.Changeset.t) :: {:ok | :error, Ecto.Changeset.t}
+  def validate(changeset) do
+    case changeset do
+      ch = %{valid?: true} -> {:ok, apply_changes(ch)}
+      errch -> {:error, errch}
+    end
   end
 
 end

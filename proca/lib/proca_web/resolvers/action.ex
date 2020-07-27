@@ -1,6 +1,7 @@
 defmodule ProcaWeb.Resolvers.Action do
   # import Ecto.Query
   import Ecto.Changeset
+  alias Ecto.Multi
 
   alias Proca.{Supporter, Action, ActionPage, Contact, Source, Consent}
   alias Proca.Contact.Data
@@ -75,76 +76,82 @@ defmodule ProcaWeb.Resolvers.Action do
   def link_references(supporter, %{}) do
   end
 
-  def add_action_contact_tx(a, params, b) do
-    case Repo.transaction(fn ->
-      add_action_contact(a, params, b)
-    end) do
-      {:ok, rv} -> rv
-      e -> e
-    end
-  end
-
   def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, _) do
-    with {:ok, action_page} <- get_action_page(params),
-         data1 = %{valid?: true} <- ActionPage.new_data(contact, action_page),
-         data <- apply_changes(data1),
-         contact = %{valid?: true} <- Data.to_contact(data, action_page),
-         supporter1 = %{valid?: true} <- Supporter.new_supporter(data, action_page),
-         supporter2 <- Supporter.add_contacts(supporter1, contact, action_page, struct!(Privacy, priv))
-         |> add_tracking(params),
-         {:ok, supporter} <- Repo.insert(supporter2),
-         action1 = %{valid?: true} <-
-           Action.create_for_supporter(action, supporter, action_page)
-           |> add_tracking(params)
-           |> put_change(:with_consent, true),
-         {:ok, new_action} <- Repo.insert(action1) do
+    case Multi.new()
+    |> Multi.run(:action_page, fn repo, _m ->
+      get_action_page(params)
+    end)
+    |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
+      Helper.validate(ActionPage.new_data(contact, action_page))
+    end)
+    |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page} ->
+      Supporter.new_supporter(data, action_page)
+      |> Supporter.add_contacts(Data.to_contact(data, action_page), action_page, struct!(Privacy, priv)) 
+      |> add_tracking(params)
+      |> repo.insert()
+    end)
+    |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page} ->
+      Action.create_for_supporter(action, supporter, action_page)
+      |> add_tracking(params)
+      |> put_change(:with_consent, true)
+      |> repo.insert()
+    end)
+    |> Multi.run(:link_references, fn repo, %{supporter: supporter} ->
+      {:ok, link_references(supporter, params)}
+    end)
+    |> Multi.run(:increment_counter, fn _repo, %{action: action} ->
+      {:ok, increment_counter(action, true)}
+    end)
+    |> Multi.run(:process_action, fn _repo, %{action: action} ->
+      {:ok, process_action(action)}
+    end)
+    |> Repo.transaction()
+      do
+      {:ok, %{supporter: supporter}} -> {:ok, output(supporter)}
 
-      link_references(supporter, params)
-      increment_counter(new_action, true)
-      process_action(new_action)
-
-      # format return value 
-      {:ok, output(supporter)}
-    else
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
         {:error, Helper.format_errors(changeset)}
 
-      {:error, msg} ->
+      {:error, _v, msg, _ch} ->
         {:error, msg}
 
-      _ ->
+      _e ->
         {:error, "other error?"}
-    end
-  end
 
-  def add_action_tx(a, params, b) do
-    case Repo.transaction(fn ->
-          add_action(a, params, b)
-        end) do
-      {:ok, rv} -> rv
-      e -> e
     end
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, _) do
-    with {:ok, action_page} <- get_action_page(params),
-         {:ok, supporter} <- get_supporter(action_page, params),
-         change = %{valid?: true} <-
-           Action.create_for_supporter(action_attrs, supporter, action_page)
-           |> add_tracking(params),
-         {:ok, new_action} <- Repo.insert(change) do
-      increment_counter(new_action, false)
-      process_action(new_action)
+    case Multi.new()
+    |> Multi.run(:action_page, fn repo, _m ->
+      get_action_page(params)
+    end)
+    |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->
+      get_supporter(action_page, params)
+    end)
+    |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter} ->
+      Action.create_for_supporter(action_attrs, supporter, action_page)
+      |> add_tracking(params)
+      |> repo.insert()
+    end)
+    |> Multi.run(:increment_counter, fn _repo, %{action: action} ->
+      {:ok, increment_counter(action, false)}
+    end)
+    |> Multi.run(:process_action, fn _repo, %{action: action} ->
+      {:ok, process_action(action)}
+    end)
+    |> Repo.transaction()
+      do
+      {:ok, %{supporter: supporter}} -> {:ok, output(supporter)}
 
-      {:ok, output(supporter)}
-    else
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
         {:error, Helper.format_errors(changeset)}
 
-      {:error, msg} ->
+      {:error, v, msg, ch} ->
+        IO.inspect({v, msg, ch}, label: "Second error")
         {:error, msg}
 
-      _ ->
+      _e ->
         {:error, "other error?"}
     end
   end
