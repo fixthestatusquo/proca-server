@@ -45,15 +45,22 @@ defmodule Proca.Org do
     Proca.Repo.one from o in Proca.Org, where: o.id == ^id, preload: ^preload
   end
 
-  def get_public_keys(org) do
-    Ecto.assoc(org, :public_keys) |> Proca.Repo.all
-  end
-
   def list(preloads \\ []) do
     Proca.Repo.all from o in Proca.Org, preload: ^preloads
   end
 
+  @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
   def active_public_keys(public_keys) do
-    Enum.filter(public_keys, fn pk -> is_nil(pk.expired_at) end)
+    public_keys
+    |> Enum.filter(fn pk -> is_nil(pk.expired_at) end)
+    |> Enum.sort(fn a, b -> a.inserted_at < b.inserted_at end)
+  end
+
+  @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
+  def active_public_key(org) do
+    org = Proca.Repo.preload(org, [:public_keys])
+    org.public_keys
+    |> active_public_keys()
+    |> List.first()
   end
 end

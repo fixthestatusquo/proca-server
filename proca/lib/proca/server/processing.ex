@@ -73,8 +73,20 @@ defmodule Proca.Server.Processing do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_call(:sync, state, _from) do
+    {:reply, state, :ok}
+  end
+
   def process_async(action) do
     GenServer.cast(__MODULE__, {:action, action})
+  end
+
+  @doc """
+  A noop sync method that lets you make sure all previous async messages were processed (used in testing)
+  """
+  def sync do
+    GenServer.call(__MODULE__, :sync)
   end
 
   @doc """
@@ -168,8 +180,6 @@ defmodule Proca.Server.Processing do
 
     data = action_data(action)
 
-    IO.puts("Emitting action/deliver #{action.id} with #{routing}")
-    IO.inspect(data, label: "Action data")
     with :ok <- Plumbing.push(exchange_for(:action, :deliver), routing, data),
          :ok <- clear_transient(action) do
       :ok

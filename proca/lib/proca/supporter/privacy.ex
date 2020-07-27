@@ -1,4 +1,6 @@
 defmodule Proca.Supporter.Privacy do
+  alias Proca.Supporter.Privacy
+  alias Proca.Supporter.Consent
   @moduledoc """
   This module specifies how the supporter presonal data is stored and share between orgs.
 
@@ -8,24 +10,21 @@ defmodule Proca.Supporter.Privacy do
 
   Each action is identitfied by Action record and can reference a supporter
 
-  Supporter records an individual taking action. Can be identified differently
-  based on collected personal data, for instance, by email passport hash. If
-  supporter signs up many times, many supporter records will be created, but
-  with same fingerprint. This supporter will be just counted once per campaign.
-  Supporter has many contacts.
+  Supporter records an individual taking action. Can be identified uniquely by a
+  fingeprint, which is calculated based on current Contact Data format. For
+  instance in Proca.Contact.BasicData, fingerprint is a seeded SHA256 hash of
+  email. If supporter signs up many times, many supporter records will be
+  created, but with same fingerprint. This supporter will be just counted once
+  per campaign. Supporter has many Contact records.
 
-  Contact stores personal data. It can store encrypted, or unencrypted payload.
-  When encrypted, there is a separate Contact record for each receiving orgs'
-  PublicKey. If unencrypted, there is only one Contact record. It's not possible
-  to encrypt contact data for one org, but not for the other, in case when one
-  org is missing active PublicKey, they will not receive the data (otherwise
-  encryption for one destination would be defeated by cleartext contact payload
-  for another).
+  Contact stores personal data and privacy/consent information. It can store
+  encrypted, or unencrypted payload. There is a separate Contact record for each
+  Org receiving contact data. 
 
   Contact data can be distributed to:
-  - action page org
-  - campaign org
-  - partner org (this can be any other org)
+  - Widget Org collecting data on Action Page
+  - Lead Org running the campaign (if different)
+  - 3rd Party Org (this can be any other org)
 
   When it is distributed, there is a consent associated with delivery and
   communication areas (and a scope, currently email, but could be email, sms etc).
@@ -50,51 +49,51 @@ defmodule Proca.Supporter.Privacy do
 
   """
 
-  alias Proca.PublicKey
-  alias Proca.Repo
+  defstruct [
+    opt_in: false,
+    lead_opt_in: false
+  ]
+
+  @default_communication_scopes ["email"]
 
   @doc """
-  privacy - for now, a simple privacy map is: %{ opt_in: :boolean, lead_opt_in: :boolean }. Exactly what we have in the API
+  privacy - for now, a simple privacy map is: %{ opt_in: :boolean, lead_opt_in: :boolean }.
+  Exactly what we have in the API.
   """
-  @spec recipients(Proca.ActionPage, map()) :: [Proca.Org]
-  def recipients(action_page, privacy) do
-    action_page = Repo.preload(action_page, [:org, campaign: :org])
-    partner_delivery = action_page.delivery
-    lead_delivery = not partner_delivery or action_page.campaign.force_delivery
+  @spec consents(Proca.ActionPage, Privacy) :: [Consent]
+  def consents(action_page, privacy = %Privacy{}) when not is_nil(action_page) do
+    action_page = Proca.Repo.preload(action_page, [:org, campaign: :org])
+    widget_delivery = action_page.delivery
 
-    partner_communication = privacy.opt_in
+    # lead org delivers, if widget org doesn't, or if it overrides it
+    lead_delivery = not widget_delivery or action_page.campaign.force_delivery
+
+    widget_communication = privacy.opt_in
     lead_communication = privacy.lead_opt_in
 
-    partner_org =
-      case partner_delivery or partner_communication do
-        true -> [action_page.org]
+    widget_org =
+      case widget_delivery or widget_communication do
+        true -> [%Consent{
+                    org: action_page.org,
+                    communication_consent: widget_communication,
+                    communication_scopes: @default_communication_scopes,
+                    delivery_consent: widget_delivery
+                 }]
         false -> []
       end
 
     lead_org =
-      case lead_delivery or lead_communication do
-        true -> [action_page.campaign.org]
-        false -> []
-      end
-
-    Enum.uniq_by(partner_org ++ lead_org, fn o -> o.id end)
-  end
-
-  @doc """
-  Is contact data encrypted in this case? If any of the data recipients encrypts data, data will only be encrypted to such recipients. Returns {true, [list of keys]}
-
-  If none is encrypting data, contact will be stored plaintext. Returns false.
-  """
-  @spec is_encrypted([Proca.Org]) :: false | {true, [Proca.PublicKey]}
-  def is_encrypted(data_recipients) do
-    active_keys =
-      data_recipients
-      |> Enum.map(fn org -> PublicKey.active_keys_for(org) end)
-      |> List.flatten()
-
-    case active_keys do
-      [] -> false
-      keys -> {true, keys}
+      case action_page.campaign.org_id != action_page.org_id and
+             (lead_delivery or lead_communication) do
+      true -> [%Consent{
+                  org: action_page.campaign.org,
+                  communication_consent: lead_communication,
+                  communication_scopes: @default_communication_scopes,
+                  delivery_consent: lead_delivery
+               }]
+      false -> []
     end
+
+    widget_org ++ lead_org
   end
 end

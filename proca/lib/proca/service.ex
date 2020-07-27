@@ -40,7 +40,7 @@ defmodule Proca.Service do
   def aws_request(req, name, %Org{} = org) do
     case get_one_for_org(name, org) do
       srv = %Service{} -> aws_request(req, srv)
-      x when is_nil(x) -> {:error, { :no_service, name }}
+      x when is_nil(x) -> {:error, {:no_service, name}}
     end
   end
 

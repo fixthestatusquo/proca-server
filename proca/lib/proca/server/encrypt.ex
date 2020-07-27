@@ -33,10 +33,10 @@ defmodule Proca.Server.Encrypt do
       o = %Org{name: org_name} ->
         case Org.active_public_keys(o.public_keys) do
           [] ->
-            {:stop, "Missing encryption keys in org #{org_name}"}
+            {:stop, "Missing encryption keys in org #{org_name}", org_name}
           l when length(l) > 1 ->
-            {:stop, "Cannot use more then one our key for encryption"}
-          [pk = %{private: priv}] when not is_nil(priv) -> 
+            {:stop, "Cannot use more then one our key for encryption", org_name}
+          [pk = %{private: priv} | _nothing] when not is_nil(priv) -> 
             {:noreply, {pk, :crypto.strong_rand_bytes(24)}}
         end
     end

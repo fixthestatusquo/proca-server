@@ -1,10 +1,15 @@
 defmodule Proca.Contact.BasicData do
-  alias Proca.Contact.{Data, BasicData}
+  @moduledoc """
+  Basic data represents the most typical data set we collect on membres: email
+  as main identifier, names, postcode and country for locality, and optional
+  phone number.
+  """
+
+  alias Proca.Contact.{Data, BasicData, Input}
   alias Proca.Contact
   import Ecto.Changeset
 
-  @behaviour Data
-
+  @derive Jason.Encoder
   defstruct [
     name: nil,
     first_name: nil,
@@ -23,10 +28,10 @@ defmodule Proca.Contact.BasicData do
     postcode: :string
   }
 
-
-  @impl Data
+  @behaviour Input
+  @impl Input
   def from_input(params) do
-    normalized = Data.normalize_names_attr(params)
+    normalized = Input.normalize_names_attr(params)
 
     # name and contact
     chst = {%BasicData{}, @schema}
@@ -36,26 +41,31 @@ defmodule Proca.Contact.BasicData do
     chst2 = case Map.get(normalized, :address) do
               nil -> chst
               addr -> cast(chst, addr, [:country, :postcode])
-    end
+            end
 
     validated = chst2
     |> validate_required([:name, :first_name, :email])
-    |> Data.validate_email(:email)
-    |> Data.validate_phone(:phone)
+    |> Input.validate_email(:email)
+    |> Input.validate_phone(:phone)
 
     validated
   end
 
-  @impl Data
-  def to_contact(%{valid?: true, changes: data}, _action_page) do
-    # XXX here we should check action_page.split_names
-    data = data
-    |> Map.delete(:name)
+end
 
-    {Contact.build(data), fingerprint(data)}
+
+defimpl Proca.Contact.Data, for: Proca.Contact.BasicData do
+  alias Proca.Contact.{Data, BasicData, Input}
+  alias Proca.Contact
+
+  def to_contact(data, _action_page) do
+    # XXX here we should check action_page.split_names
+    data2 = Map.from_struct(data) |> Map.delete(:name)
+
+    Contact.build(data2)
   end
 
-  defp fingerprint(%{email: email}) do
+  def fingerprint(%BasicData{email: email}) when byte_size(email) > 0 do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
     hash = :crypto.hash(:sha256, seed <> email)
     hash

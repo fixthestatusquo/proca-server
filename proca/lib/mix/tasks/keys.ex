@@ -1,6 +1,10 @@
 defmodule Mix.Tasks.Keys do
   use Mix.Task
 
+  @moduledoc """
+  Mix tasks for managing organisation and generating encryption keys.
+  """
+
   defp start_repo do
     [:postgrex, :ecto]
     |> Enum.each(&Application.ensure_all_started/1)

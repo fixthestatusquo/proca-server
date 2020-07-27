@@ -1,4 +1,8 @@
 defmodule Proca.Campaign do
+  @moduledoc """
+  Campaign represents a political goal and consists of many action pages. Belongs to one Org (so called "leader org").
+  """
+
   use Ecto.Schema
   alias Proca.{Repo,Campaign}
   import Ecto.Changeset
