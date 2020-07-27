@@ -8,8 +8,6 @@ export async function syncAction(action, config) {
   const api_token = config.identity_api_token
   const comm_consent = config.identity_consent
 
-  log('czy to dziala KURWA')
-
   let consent = {}
   if (comm_consent === null) {
     log('ProcaCli config.identity_consent is not set')
