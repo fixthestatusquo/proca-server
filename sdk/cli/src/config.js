@@ -25,7 +25,7 @@ const config = {
   identity_api_token: process.env.IDENTITY_API_TOKEN,
   identity_consent: process.env.IDENTITY_CONSENT,
   service_url: process.env.SERVICE_URL || process.env.IDENTITY_URL,
-  url: process.env.API_URL || 'https://api.proca.foundation',
+  url: process.env.API_URL || 'https://api.proca.app',
   keys: (process.env.KEYS || '').split(',').map(to_keys).filter(x => x !== null)
 }
 

@@ -25,7 +25,7 @@ Environment variables are:
 ORG_NAME=someorg
 AUTH_USER=user@domain.com
 AUTH_PASSWORD=secret123
-API_URL=https://api.proca.foundation
+API_URL=https://api.proca.app
 KEYS=publickey1:privatekey1,publickey2:privatekey2
 ```
 
