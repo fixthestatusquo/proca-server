@@ -51,6 +51,8 @@ defmodule Proca.Action do
   def create_for_supporter(attrs, supporter, action_page) do
     %Action{}
     |> cast(attrs, [:action_type])
+    |> validate_required([:action_type])
+    |> validate_format(:action_type, ~r/^([\w\d_-]+$)/)
     |> put_supporter_or_ref(supporter, action_page)
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
