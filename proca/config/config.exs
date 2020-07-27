@@ -34,6 +34,9 @@ config :logger,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+# Disable lager logging (included by rabbitmq app)
+config :lager, handlers: []
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

@@ -27,7 +27,7 @@ defmodule ProcaWeb.Helper do
   end
 
   defp flatten_errors(%{message: msg} = map, lastkey) when is_map(map) do
-    [%{message: "#{lastkey}: #{msg}"}]
+    [%{message: "#{lastkey}: #{msg}", path: [Atom.to_string(lastkey)]}]
   end
 
   defp flatten_errors(lst, lastkey) when is_list(lst) do

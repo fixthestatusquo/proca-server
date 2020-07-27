@@ -16,6 +16,29 @@ config :proca, ProcaWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :error
 
+# Running with Systemd
+config :mix_systemd,
+  exec_start_pre: [
+    # Run before starting the app
+    # The `!` means the script is run as root, not as the app user
+    [:deploy_dir, "/current/bin/proca eval Proca.ReleaseTasks.migrate"],
+    [:deploy_dir, "/current/bin/proca eval Proca.ReleaseTasks.seed"]
+  ],
+  dirs: [
+    # create /etc/foo
+    :runtime,
+    :logs,
+    :configuration,
+  ],
+  env_files: [
+    # Read environment vars from the file /etc/foo/environment
+    [:configuration_dir, "/environment"],
+  ],
+  env_vars: [
+    # Tell release to use /run/foo for temp files
+    ["RELEASE_TMP=", :runtime_dir],
+  ]
+
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key
