@@ -37,7 +37,7 @@ You can run `proca-cli setup` to create or update .env file interactively. At th
 
 `proca-cli campaigns` - lists campaigns
 
-`proca-cli singatures -c x` - fetches supporter data for a campaign id `x`
+`proca-cli signatures -c x` - fetches supporter data for a campaign id `x`
 
 
 ## Library usage
