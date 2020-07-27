@@ -76,9 +76,12 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   def add_action_contact_tx(a, params, b) do
-    Repo.transaction(fn ->
+    case Repo.transaction(fn ->
       add_action_contact(a, params, b)
-    end)
+    end) do
+      {:ok, rv} -> rv
+      e -> e
+    end
   end
 
   def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, _) do
@@ -115,9 +118,12 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   def add_action_tx(a, params, b) do
-    Repo.transaction(fn ->
-      add_action(a, params, b)
-    end)
+    case Repo.transaction(fn ->
+          add_action(a, params, b)
+        end) do
+      {:ok, rv} -> rv
+      e -> e
+    end
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, _) do
