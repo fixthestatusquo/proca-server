@@ -59,6 +59,10 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :url, :string
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
+    @desc "List of steps in journey"
+    field :journey, list_of(non_null(:string))
+    @desc "Config JSON of this action page"
+    field :config, :string
     @desc "Campaign this widget belongs to"
     field :campaign, :campaign do
       resolve &Resolvers.ActionPage.campaign/3

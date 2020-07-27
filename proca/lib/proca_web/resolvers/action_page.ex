@@ -11,14 +11,14 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   defp find_one(criteria) do
-    query = (from p in Proca.ActionPage, preload: [[campaign: :org], :org])
+    query = (from p in Proca.ActionPage, preload: [[campaign: :org], :org], limit: 1)
     |> criteria.()
 
     case Proca.Repo.one query do
       nil -> {:error, %{
                  message: "Action page not found",
                  extensions: %{code: "not_found"} } }
-      ap -> {:ok, ap}
+      ap -> {:ok, ap |> Proca.ActionPage.stringify_config()}
     end
   end
 
@@ -40,4 +40,5 @@ defmodule ProcaWeb.Resolvers.ActionPage do
       Repo.preload(ap, [campaign: :org]).campaign
     }
   end
+
 end

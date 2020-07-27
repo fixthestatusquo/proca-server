@@ -4,7 +4,6 @@ defmodule Proca.ActionPage do
 
   Action Page accepts data in many formats (See Contact.Data) and produces Contact and Supporter records.
   """
-
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -18,6 +17,8 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :url, :string
     field :delivery, :boolean
+    field :journey, {:array, :string}, default: []
+    field :config, :map
 
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org
@@ -41,14 +42,33 @@ defmodule Proca.ActionPage do
     changeset(%ActionPage{}, attrs)
   end
 
+
+  def cast_json(changeset, _key, json_string) when is_nil(json_string) do
+    changeset
+  end
+
+  def cast_json(changeset, key, json_string) do
+    case Jason.decode(json_string) do
+      {:ok, map} -> change(changeset, %{key => map})
+      {:error, %Jason.DecodeError{data: err_data, position: err_pos, token: err_token}} ->
+        add_error(changeset, key, "Cannot decode json for #{key}: #{err_data} at #{err_pos} (token: #{err_token})")
+    end
+  end
+
+  def stringify_config(action_page = %ActionPage{}) do
+    %{action_page | config: Jason.encode!(action_page.config)}
+  end
+
   def upsert(org, campaign, attrs) do
     (Repo.get_by(ActionPage, campaign_id: campaign.id, url: attrs.url) || %ActionPage{})
-    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref])
+    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
     |> validate_required([:url, :locale])
     |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+    |> cast_json(:config, Map.get(attrs, :config, nil))
     |> put_change(:campaign_id, campaign.id)
     |> put_change(:org_id, org.id)
   end
+
 
   def find(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]

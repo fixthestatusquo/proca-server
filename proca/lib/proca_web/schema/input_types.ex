@@ -117,5 +117,15 @@ defmodule ProcaWeb.Schema.InputTypes do
     Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. 
     """
     field :extra_supporters, :integer
+
+    @desc """
+    List of steps in the journey
+    """
+    field :journey, list_of(non_null(:string))
+
+    @desc """
+    JSON string containing Action Page config
+    """
+    field :config, :string
   end
 end
