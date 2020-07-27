@@ -11,7 +11,12 @@ defmodule Proca.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      releases: [
+        proca: [
+          steps: [:assemble, :tar]
+        ]
+      ]
     ]
   end
 
@@ -64,6 +69,7 @@ defmodule Proca.MixProject do
       {:pow, "~> 1.0.20"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:mix_systemd, "~> 0.7.3"},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.4", only: :test},
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
