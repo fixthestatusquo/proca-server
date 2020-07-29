@@ -27,7 +27,7 @@ export async function syncAction(action, config) {
     throw "Cannot decrypt personal data, please check KEYS"
   }
 
-  const payload = toDataApi(action, consent)
+  const payload = toDataApi(action, consent, config.identity_action_fields, config.identity_contact_fields)
   log(`Identity DATA API payload (without api_token)`, payload)
 
   payload.api_token = api_token
@@ -45,7 +45,7 @@ export async function syncAction(action, config) {
    "actionType":"download",
    "createdAt":"2020-06-15T10:10:23",
    "fields":{
-   "postcardUrl":"https://pepe"
+   "postcardUrl":"https://pepe", "ContactLanguage": "IT"
    }
    },
    "actionId":73,
@@ -85,7 +85,7 @@ export async function syncAction(action, config) {
 }
 */ 
 
-export function toDataApi(action, consent_map) {
+export function toDataApi(action, consent_map, action_fields, contact_fields) {
   const ah = {
     action_type: action.action.actionType,
     action_technical_type: `proca:${action.action.actionType}`,
@@ -109,9 +109,24 @@ export function toDataApi(action, consent_map) {
     }
   }
 
-  if (action.action.fields.length > 0) {
-    ah['custom_fields'] = Object.entries(action.action.fields).map(([k,v]) => { return {'name': k, 'value': v}})
+  const custom_fields = []
+  const metadata = []
+
+  for (const [key,value] of Object.entries(action.action.fields)) {
+    if ((action_fields || []).includes(key.toLowerCase())) {
+      metadata.push({name: key, value: value})
+    }
+
+    if ((contact_fields || []).includes(key.toLowerCase())) {
+      custom_fields.push({name: key, value: value})
+    }
   }
+
+  if (Object.keys(custom_fields).length > 0)
+    ah['cons_hash']['custom_fields'] = custom_fields
+
+  if (Object.keys(metadata).length > 0)
+    ah['metadata'] = metadata
 
   if (action.source) {
     ah['source'] = {
@@ -119,10 +134,6 @@ export function toDataApi(action, consent_map) {
       source: action.source.source,
       medium: action.source.medium,
     }
-  }
-
-  if (action.action.fields) {
-    ah['metadata'] = action.action.fields
   }
 
   return ah
