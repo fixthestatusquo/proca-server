@@ -114,7 +114,7 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
 
   for (const [key,value] of Object.entries(action.action.fields)) {
     if ((action_fields || []).includes(key.toLowerCase())) {
-      metadata.push({name: key, value: value})
+      metadata[key] = value
     }
 
     if ((contact_fields || []).includes(key.toLowerCase())) {
@@ -122,11 +122,11 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
     }
   }
 
-  if (Object.keys(custom_fields).length > 0)
-    ah['cons_hash']['custom_fields'] = custom_fields
-
   if (Object.keys(metadata).length > 0)
     ah['metadata'] = metadata
+
+  if (custom_fields.length > 0)
+    ah['cons_hash']['custom_fields'] = custom_fields
 
   if (action.source) {
     ah['source'] = {
