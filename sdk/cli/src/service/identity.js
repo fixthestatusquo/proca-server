@@ -19,7 +19,7 @@ export async function syncAction(action, config) {
     consent = JSON.parse(comm_consent)
   } else {
     log(`ProcaCli config.identity_consent uses ${comm_consent} as commmunication consent`)
-    consent[comm_consent] = 'communication'
+    consent[comm_consent] = { level: 'communication' }
   }
 
   if (action.contact.pii === null) {
@@ -50,7 +50,7 @@ export async function syncAction(action, config) {
    },
    "actionId":73,
    "actionPage":{
-   "locale":"en",
+   "locale":"de",
    "thankYouTemplateRef":null,
    "url":"https://campax.org/1"
    },
@@ -93,7 +93,9 @@ export function toDataApi(action, consent_map) {
     action_name: action.campaign.name,
     action_public_name: action.campaign.name,
     external_id: action.campaignId,
-    consents: Object.entries(consent_map).map(([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)),
+    consents: Object.entries(consent_map).map(
+      ([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)
+    ).filter(x => x),
     cons_hash: {
       firstname: action.contact.pii.firstName,
       lastname: action.contact.pii.lastName,
@@ -125,13 +127,20 @@ export function toDataApi(action, consent_map) {
 
   return ah
 }
-export function toConsent(action, consent_id, consent_config) {
-  if (consent_config == 'implicit' || consent_config == 'explicit_opt_in') {
+export function toConsent(action, consent_id, {level, locale}) {
+  // Skip if this is not this locale
+  if (locale && locale.toLowerCase() != action.actionPage.locale.toLowerCase())
+    return null;
+
+  // If it's a hardcoded consent, send it
+  if (level == 'implicit' || level == 'explicit_opt_in')
     return {
       public_id: consent_id,
-      consent_level: consent_config
+      consent_level: level
     }
-  } else if (consent_config == 'communication') {
+
+  // Handle opt in to communication
+  if (level == 'communication') {
     if (action.privacy) {
       if (action.privacy.communication) {
         return {
@@ -150,7 +159,7 @@ export function toConsent(action, consent_id, consent_config) {
         consent_level: 'no_change'
       }
     }
-  } else {
-    throw `unsuported config for consent ${consent_id}: ${consent_config}`
   }
+
+  throw `unsuported config for consent ${consent_id}: ${level} for locale ${locale}`
 }
