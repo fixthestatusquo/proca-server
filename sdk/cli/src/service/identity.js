@@ -110,7 +110,7 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
   }
 
   const custom_fields = []
-  const metadata = []
+  const metadata = {}
 
   for (const [key,value] of Object.entries(action.action.fields)) {
     if ((action_fields || []).includes(key.toLowerCase())) {
