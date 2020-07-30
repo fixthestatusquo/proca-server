@@ -17,6 +17,11 @@ defmodule Proca.Contact.Input do
     |> Map.put(:name, String.trim "#{fst} #{lst}")
   end
 
+  def normalize_names_attr(attr = %{first_name: fst}) do
+    attr
+    |> Map.put(:name, String.trim fst)
+  end
+
   def normalize_names_attr(attr = %{name: n}) do
     attr
     |> Map.put(:first_name, hd(String.split(n, " ")))
