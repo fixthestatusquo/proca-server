@@ -72,7 +72,7 @@ defmodule Proca.Action do
 
   def get_by_id(action_id) do
     from(a in Action, where: a.id == ^action_id,
-      preload: [:campaign, [action_page: :org], [supporter: :consent]],
+      preload: [:campaign, [action_page: :org], [supporter: :contacts], :fields],
       limit: 1)
     |> Repo.one
   end
