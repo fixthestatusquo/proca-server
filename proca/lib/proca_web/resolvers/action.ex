@@ -99,15 +99,11 @@ defmodule ProcaWeb.Resolvers.Action do
     |> Multi.run(:link_references, fn repo, %{supporter: supporter} ->
       {:ok, link_references(supporter, params)}
     end)
-    |> Multi.run(:increment_counter, fn _repo, %{action: action} ->
-      {:ok, increment_counter(action, true)}
-    end)
-    |> Multi.run(:process_action, fn _repo, %{action: action} ->
-      {:ok, process_action(action)}
-    end)
     |> Repo.transaction()
       do
-      {:ok, %{supporter: supporter}} -> {:ok, output(supporter)}
+      {:ok, %{supporter: supporter, action: action}} ->
+        notify_action_created(action, true)
+        {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
         {:error, Helper.format_errors(changeset)}
@@ -134,15 +130,11 @@ defmodule ProcaWeb.Resolvers.Action do
       |> add_tracking(params)
       |> repo.insert()
     end)
-    |> Multi.run(:increment_counter, fn _repo, %{action: action} ->
-      {:ok, increment_counter(action, false)}
-    end)
-    |> Multi.run(:process_action, fn _repo, %{action: action} ->
-      {:ok, process_action(action)}
-    end)
     |> Repo.transaction()
       do
-      {:ok, %{supporter: supporter}} -> {:ok, output(supporter)}
+      {:ok, %{supporter: supporter, action: action}} ->
+        notify_action_created(action, false)
+        {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
         {:error, Helper.format_errors(changeset)}
@@ -154,6 +146,13 @@ defmodule ProcaWeb.Resolvers.Action do
       _e ->
         {:error, "other error?"}
     end
+  end
+
+  @spec notify_action_created(Action, boolean()) :: :ok
+  def notify_action_created(action, created_supporter) do
+    increment_counter(action, created_supporter)
+    process_action(action)
+    :ok
   end
 
   def link_actions(_, params = %{link_refs: refs}, _) do
