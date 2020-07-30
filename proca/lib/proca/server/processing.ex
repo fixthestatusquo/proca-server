@@ -6,6 +6,7 @@ defmodule Proca.Server.Processing do
   import Proca.Stage.Support, only: [action_data: 1]
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
+  import Logger
 
   @moduledoc """
   For these cases:
@@ -199,7 +200,8 @@ defmodule Proca.Server.Processing do
 
   @spec process(Action) :: :ok
   def process(action) do
-    action = Action.get_by_id(action.id)
+    # action = Action.get_by_id(action.id)
+    action = Repo.preload(action, action_page: :org, supporter: :contacts)
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} ->
@@ -221,7 +223,12 @@ defmodule Proca.Server.Processing do
 
   def clear_transient(action) do
     Repo.delete_all(Field.transient_fields(action))
-    {ret, _} = Repo.update(Supporter.transient_fields(action.supporter))
-    ret
+    {n, res} = Repo.update_all(Supporter.transient_fields(action.supporter), [])
+
+    if ! n > 0 do
+      Logger.warn "clear_transiet: cleared #{n} supporter rows: #{res}"
+    end
+
+    :ok
   end
 end

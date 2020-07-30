@@ -82,6 +82,6 @@ defmodule Proca.Supporter do
   end
 
   def transient_fields(supporter) do
-    change(supporter, first_name: nil, email: nil)
+    from(s in Supporter, where: s.id == ^supporter.id, update: [set: [first_name: nil, email: nil]])
   end
 end
