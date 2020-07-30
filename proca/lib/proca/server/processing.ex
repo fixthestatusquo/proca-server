@@ -199,7 +199,7 @@ defmodule Proca.Server.Processing do
 
   @spec process(Action) :: :ok
   def process(action) do
-    action = Repo.preload(action, action_page: :org, supporter: :contacts)
+    action = Action.get_by_id(action.id)
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} ->
