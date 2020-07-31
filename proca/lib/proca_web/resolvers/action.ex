@@ -7,6 +7,7 @@ defmodule ProcaWeb.Resolvers.Action do
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
+  alias Proca.Server.Notify
 
   alias ProcaWeb.Helper
 
@@ -26,14 +27,6 @@ defmodule ProcaWeb.Resolvers.Action do
 
   defp add_tracking(action, %{}) do
     action
-  end
-
-  defp increment_counter(%{campaign_id: cid, action_type: atype}, new_supporter) do
-    Proca.Server.Stats.increment(cid, atype, new_supporter)
-  end
-
-  defp process_action(action) do
-    Proca.Server.Processing.process_async(action)
   end
 
   defp output(%{first_name: first_name, fingerprint: fpr}) do
@@ -102,7 +95,7 @@ defmodule ProcaWeb.Resolvers.Action do
     |> Repo.transaction()
       do
       {:ok, %{supporter: supporter, action: action}} ->
-        notify_action_created(action, true)
+        Notify.action_created(action, true)
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
@@ -133,7 +126,7 @@ defmodule ProcaWeb.Resolvers.Action do
     |> Repo.transaction()
       do
       {:ok, %{supporter: supporter, action: action}} ->
-        notify_action_created(action, false)
+        Notify.action_created(action, false)
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
@@ -146,13 +139,6 @@ defmodule ProcaWeb.Resolvers.Action do
       _e ->
         {:error, "other error?"}
     end
-  end
-
-  @spec notify_action_created(Action, boolean()) :: :ok
-  def notify_action_created(action, created_supporter) do
-    increment_counter(action, created_supporter)
-    process_action(action)
-    :ok
   end
 
   def link_actions(_, params = %{link_refs: refs}, _) do
