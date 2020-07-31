@@ -74,6 +74,12 @@ defmodule ProcaWeb.Schema.DataTypes do
     @desc "Organization id"
     field :id, :integer
 
+    @desc "Organisation short name"
+    field :name, :string
+
+    @desc "Organisation title (human readable name)"
+    field :title, :string
+
     @desc "List campaigns this org is running (owns or has action page)"
     field :campaigns, list_of(:campaign) do
       resolve &Resolvers.Org.campaigns/3
@@ -133,6 +139,10 @@ Provide campaign_id to only get signatures for a campaign
   end
 
   object :public_org do
+    @desc "Organisation short name"
+    field :name, :string
+
+    @desc "Organisation title (human readable name)"
     field :title, :string
   end
 
