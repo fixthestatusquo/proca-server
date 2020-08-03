@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Proca.{ActionPage,Campaign,Contact,Consent,Supporter,Source}
+  alias Proca.{ActionPage,Campaign,Contact,Supporter,Source}
   alias Proca.{Org,Staffer,PublicKey}
 
   alias Proca.Repo
@@ -60,8 +60,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   defp org_signatures(org) do
     from(s in Supporter,
-      join: c in Contact, on: c.supporter_id == s.id,
-      join: pk in PublicKey, on: pk.id == c.public_key_id,
+      join: c in Contact, on: s.id == c.supporter_id,
       join: ap in ActionPage, on: s.action_page_id == ap.id,
       order_by: [asc: s.id],
       where: c.org_id == ^org.id
@@ -71,7 +70,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   defp org_signatures_for_campaign(org, campaign_id) do
     org_signatures(org)
-    |> where([ap], ap.campaign_id == ^campaign_id)
+    |> where([s, c, ap], ap.campaign_id == ^campaign_id)
   end
 
   defp signatures_list(query, limit_sigs) do
@@ -82,7 +81,7 @@ defmodule ProcaWeb.Resolvers.Org do
           lim -> query |> limit(^lim)
         end
 
-    q = select(q, [s, c, pk, ap], %{
+    q = select(q, [s, c, ap], %{
           id: s.id,
           created: s.inserted_at,
           nonce: c.crypto_nonce,
@@ -99,7 +98,10 @@ defmodule ProcaWeb.Resolvers.Org do
       %{
         public_key: PublicKey.base_encode(my_pk.public),
         list: Enum.map(sigs, fn s -> %{s |
-                                       nonce: Contact.base_encode(s.nonce),
+                                       nonce: case s.nonce do
+                                                nonce when is_nil(nonce) -> nil
+                                                nonce -> Contact.base_encode(s.nonce)
+                                              end,
                                        contact: Contact.base_encode(s.contact)
                                       }
         end)
@@ -110,13 +112,13 @@ defmodule ProcaWeb.Resolvers.Org do
 
   def signatures(org, arg = %{campaign_id: campaign_id, start: id}, _) do
     org_signatures_for_campaign(org, campaign_id)
-    |> where([c], c.id >= ^id)
+    |> where([s, c, ap], c.id >= ^id)
     |> signatures_list(Map.get(arg, :limit))
   end
 
   def signatures(org, arg = %{campaign_id: campaign_id, after: dt}, _) do
     org_signatures_for_campaign(org, campaign_id)
-    |> where([s], s.inserted_at >= ^dt)
+    |> where([s, c, ap], s.inserted_at >= ^dt)
     |> signatures_list(Map.get(arg, :limit))
   end
 
@@ -127,13 +129,13 @@ defmodule ProcaWeb.Resolvers.Org do
 
   def signatures(org, arg = %{start: id}, _) do
     org_signatures(org)
-    |> where([c], c.id >= ^id)
+    |> where([s, c, ap], c.id >= ^id)
     |> signatures_list(Map.get(arg, :limit))
   end
 
   def signatures(org, arg = %{after: dt}, _) do
     org_signatures(org)
-    |> where([s], s.inserted_at >= ^dt)
+    |> where([s, c, ap], s.inserted_at >= ^dt)
     |> signatures_list(Map.get(arg, :limit))
   end
 
