@@ -102,7 +102,10 @@ defmodule ProcaWeb.Resolvers.Org do
                                                 nonce when is_nil(nonce) -> nil
                                                 nonce -> Contact.base_encode(s.nonce)
                                               end,
-                                       contact: Contact.base_encode(s.contact)
+                                       contact: case s.nonce do
+                                                  nonce when is_nil(nonce) -> s.contact
+                                                  nonce -> Contact.base_encode(s.contact)
+                                                end
                                       }
         end)
       }
