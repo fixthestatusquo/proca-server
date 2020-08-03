@@ -61,11 +61,10 @@ defmodule ProcaWeb.Resolvers.Org do
   defp org_signatures(org) do
     from(s in Supporter,
       join: c in Contact, on: c.supporter_id == s.id,
-      join: g in Consent, on: g.supporter_id == s.id,
       join: pk in PublicKey, on: pk.id == c.public_key_id,
       join: ap in ActionPage, on: s.action_page_id == ap.id,
       order_by: [asc: s.id],
-      where: pk.org_id == ^org.id
+      where: c.org_id == ^org.id
     )
 
   end
@@ -83,14 +82,14 @@ defmodule ProcaWeb.Resolvers.Org do
           lim -> query |> limit(^lim)
         end
 
-    q = select(q, [s, c, g, pk, ap], %{
+    q = select(q, [s, c, pk, ap], %{
           id: s.id,
           created: s.inserted_at,
           nonce: c.crypto_nonce,
           contact: c.payload,
           action_page_id: ap.id,
           campaign_id: ap.campaign_id,
-          opt_in: g.communication
+          opt_in: c.communication_consent
                })
 
     sigs = Repo.all q
