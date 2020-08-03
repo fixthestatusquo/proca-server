@@ -47,7 +47,8 @@ defmodule ProcaWeb.CampaignsController do
     org_id = socket.assigns[:staffer].org_id
 
     new_ch = ch.data
-    |> ActionPage.changeset(Map.merge(%{"org_id" => org_id}, attrs))
+    |> ActionPage.changeset(attrs)
+    |> cast(attrs, [:org_id])
     |> put_assoc(:campaign, socket.assigns[:selected_campaign])
 
 
