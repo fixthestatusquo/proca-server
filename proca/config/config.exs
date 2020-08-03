@@ -28,11 +28,6 @@ config :proca, Proca.Supporter,
 config :proca, Proca.Server.Plumbing,
   url: "amqp://proca:proca@rabbitmq.docker/proca"
 
-# Configures Elixir's Logger
-config :logger,
-  backends: [:console, Sentry.LoggerBackend],
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
 
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []

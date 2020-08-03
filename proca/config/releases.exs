@@ -41,3 +41,14 @@ config :proca, ProcaWeb.Endpoint,
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "5000")
+
+
+# Configures Elixir's Logger
+config :logger,
+  backends: [:console, Sentry.LoggerBackend, {LoggerFileBackend, :error_log}],
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
+
+config :logger, :error_log,
+  path: System.get_env("LOGS_DIR") <> "/error.log",
+  level: :error
