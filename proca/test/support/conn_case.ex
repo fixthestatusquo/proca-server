@@ -26,6 +26,22 @@ defmodule ProcaWeb.ConnCase do
 
       # The default endpoint for testing
       @endpoint ProcaWeb.Endpoint
+
+      def auth_api_post(conn, query, user, password) do
+        conn
+        |> put_req_header("authorization", "Basic " <> Base.encode64(user <> ":" <> password))
+        |> post("/api", %{query: query})
+      end
+
+
+      def auth_api_post(conn, query, user) do
+        auth_api_post(conn, query, user, user)
+      end
+
+      def api_post(conn, query) do
+        conn
+        |> post("/api", %{query: query})
+      end
     end
   end
 

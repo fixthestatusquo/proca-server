@@ -97,6 +97,11 @@ defmodule ProcaWeb.Schema.InputTypes do
   @desc "ActionPage declaration"
   input_object :action_page_input do
     @desc """
+    Action Page id
+    """
+    field :id, :integer
+
+    @desc """
     Unique URL identifying ActionPage.
 
     Does not have to exist, must be unique. Can be a 'technical' identifier
@@ -105,10 +110,10 @@ defmodule ProcaWeb.Schema.InputTypes do
     ask for ActionPage by it's current location.href, in which case it is useful
     to make this url match the real idwget location.
     """
-    field :url, non_null(:string)
+    field :url, :string
 
     @desc "2-letter, lowercase, code of ActionPage language"
-    field :locale, non_null(:string)
+    field :locale, :string
 
     @desc "A reference to thank you email template of this ActionPage"
     field :thank_you_template_ref, :string

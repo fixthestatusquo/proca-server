@@ -33,9 +33,10 @@ defmodule Proca.Factory do
   end
 
   def user_factory do
+    email = sequence("email", &"member-#{&1}@example.org")
     %Proca.Users.User{
-      email: sequence("email", &"member-#{&1}@example.org"),
-      password_hash: sequence("password") |>  Pow.Ecto.Schema.Password.pbkdf2_hash(iterations: 1)
+      email: email,
+      password_hash: email |>  Pow.Ecto.Schema.Password.pbkdf2_hash(iterations: 1)
     }
   end
 
