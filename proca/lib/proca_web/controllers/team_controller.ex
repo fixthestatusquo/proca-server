@@ -100,10 +100,10 @@ defmodule ProcaWeb.TeamController do
 
   def roles() do
     [
-      :campaign_manager,
-      :campaigner,
       :mechanic,
-      :robot
+      :robot,
+      :campaign_manager,
+      :campaigner
     ]
   end
 
