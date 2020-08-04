@@ -12,7 +12,8 @@ defmodule Proca.Staffer.Permission do
     join_orgs: 1 <<< 1,
 
     use_api: 1 <<< 8,
-    
+    export_contacts: 1 <<< 9,
+
     change_org_settings: 1 <<< 16,
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,

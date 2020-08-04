@@ -18,11 +18,6 @@ defmodule Proca.Staffer.Role do
   """
 
   @roles [
-    instance_admin: [
-      :manage_orgs,
-      :join_orgs,
-      :change_org_settings
-    ],
     campaign_manager: [
       :change_org_settings,
       :manage_campaigns,
@@ -35,9 +30,17 @@ defmodule Proca.Staffer.Role do
     ],
     mechanic: [
       :change_org_settings,
-      :use_api
+      :manage_campaigns,
+      :manage_action_pages,
+      :use_api,
+      :export_data
     ],
-    robot: [:use_api]
+    robot: [
+      :manage_campaigns,
+      :manage_action_pages,
+      :use_api,
+      :export_data
+    ]
   ]
 
   def from_string(rs) when is_bitstring(rs) do
