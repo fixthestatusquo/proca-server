@@ -21,8 +21,10 @@ defmodule Proca.Staffer.Permission do
   ]
 
   def can?(%Staffer{perms: perms}, permission) when is_atom(permission) do
-    bit = @bits[permission]
-    (perms &&& bit) > 0
+    case @bits[permission] do
+      bit when is_nil(bit) -> raise ArgumentError, message: "No such permission #{permission}"
+      bit -> (perms &&& bit) > 0
+    end
   end
 
   def can?(staffer = %Staffer{}, permission) when is_list(permission) do

@@ -17,7 +17,21 @@ defmodule Proca.Staffer.Role do
   Obviously the permission bits overlap between the roles, so the code must figure out what is the role based on bits set.
   """
 
+  # Must be ordered from most to least capable!
   @roles [
+    mechanic: [
+      :change_org_settings,
+      :manage_campaigns,
+      :manage_action_pages,
+      :use_api,
+      :export_contacts
+    ],
+    robot: [
+      :manage_campaigns,
+      :manage_action_pages,
+      :use_api,
+      :export_contacts
+    ],
     campaign_manager: [
       :change_org_settings,
       :manage_campaigns,
@@ -27,19 +41,6 @@ defmodule Proca.Staffer.Role do
     campaigner: [
       :manage_campaigns,
       :manage_action_pages
-    ],
-    mechanic: [
-      :change_org_settings,
-      :manage_campaigns,
-      :manage_action_pages,
-      :use_api,
-      :export_data
-    ],
-    robot: [
-      :manage_campaigns,
-      :manage_action_pages,
-      :use_api,
-      :export_data
     ]
   ]
 
