@@ -105,16 +105,20 @@ defmodule ProcaWeb.CampaignsController do
   end
 
   def public_actions_for(campaign) do
-    pa = []
-    if Map.get(campaign, "public_petition_comments", false) do
-      pa = ["petition:comment" | pa]
-    end
-
-    if Map.get(campaign, "public_openletter", false) do
-      pa = ["openletter:twitter", "openletter:comment", "openletter:organisation", "openletter:picture"] ++ pa
-    end
-
-    pa
+    %{
+      "public_petition_comments" => ["petition:comment"],
+      "public_openletter" => ["openletter:twitter",
+                              "openletter:comment",
+                              "openletter:organisation",
+                              "openletter:picture"]
+    }
+    |> Enum.reduce([], fn {checkbox, pub_act}, whitelist  ->
+      if campaign[checkbox] == "true" do
+        pub_act ++ whitelist
+      else
+        whitelist
+      end
+    end)
   end
 
   def handle_event("campaign_save", %{"campaign" => campaign}, socket) do
