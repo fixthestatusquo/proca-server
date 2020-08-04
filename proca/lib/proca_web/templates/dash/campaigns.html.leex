@@ -89,13 +89,16 @@
             </div>
 
             <p>Public actions</p>
+            <% public_action_types = Enum.map(@campaign.data.public_actions, fn acf ->
+              hd(String.split(acf, ":"))
+              end) %>
             <div class="form-group">
-              <%= checkbox f, :public_petition_comments, checked: true %>
+              <%= checkbox f, :public_petition_comments, checked: Enum.member?(public_action_types, "petition") %>
               <%= label f, :public_petition_comments, "Comments made to petition are public" %>
             </div>
 
             <div class="form-group">
-              <%= checkbox f, :public_openletter, checked: false %>
+              <%= checkbox f, :public_openletter, checked: Enum.member?(public_action_types, "openletter") %>
               <%= label f, :public_openletter, "Open Letter signatories" %>
             </div>
             
