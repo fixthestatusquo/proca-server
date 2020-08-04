@@ -50,7 +50,7 @@ defmodule Proca.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.2"},
       {:sentry, "~> 7.0"},
-      {:plug_cowboy, "~> 2.1"},
+      {:plug_cowboy, "~> 2.3"},
       {:absinthe, "1.5.0-rc.0"},
       {:absinthe_phoenix, "~> 1.5.0-rc.0"},
       {:absinthe_plug, "~> 1.5.0-rc.0"},
