@@ -33,7 +33,8 @@ defmodule ProcaWeb.Schema do
     field :actions, :actions_query_result do
       arg(:action_page_id, :integer)
       arg(:campaign_id, :integer)
-      resolve(&Resolvers.ActionQuery.actions_for_campaign/3)
+      arg(:action_type, non_null(:string))
+      resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
     @desc "Organization api (authenticated)"

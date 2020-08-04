@@ -42,15 +42,14 @@ defmodule ProcaWeb.Schema.DataTypes do
 
   object :action_custom_fields do
     field :action_type, non_null(:string)
+    field :inserted_at, non_null(:datetime)
     field :fields, list_of(non_null(:custom_field))
   end
 
   @desc "Result of actions query"
   object :actions_query_result do
-    field :list, list_of(:action_custom_fields) do
-      arg(:action_type, non_null(:string))
-      resolve(&Resolvers.ActionQuery.list_by_action_type/3)
-    end
+    field :field_keys, list_of(non_null(:string))
+    field :list, list_of(:action_custom_fields)
   end
 
   object :campaign do
