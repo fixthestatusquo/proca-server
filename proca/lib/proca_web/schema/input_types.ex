@@ -27,8 +27,8 @@ defmodule ProcaWeb.Schema.InputTypes do
 
   @desc "Custom field with a key and value. Both are strings."
   input_object :custom_field_input do
-    field :key, :string
-    field :value, :string
+    field :key, non_null(:string)
+    field :value, non_null(:string)
     field :transient, :boolean
   end
 
@@ -42,7 +42,6 @@ defmodule ProcaWeb.Schema.InputTypes do
   input_object :full_name_input do
     field :full_name, :string
   end
-
 
   @desc "Contact information"
   input_object :contact_input do

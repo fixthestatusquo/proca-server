@@ -29,6 +29,13 @@ defmodule ProcaWeb.Schema do
       resolve(&Resolvers.ActionPage.find/3)
     end
 
+    @desc "Fetch public actions"
+    field :actions, :actions_query_result do
+      arg(:action_page_id, :integer)
+      arg(:campaign_id, :integer)
+      resolve(&Resolvers.ActionQuery.actions_for_campaign/3)
+    end
+
     @desc "Organization api (authenticated)"
     field :org, :org do
       @desc "Name of organisation"

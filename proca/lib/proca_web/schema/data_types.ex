@@ -34,6 +34,25 @@ defmodule ProcaWeb.Schema.DataTypes do
     field :count, non_null(:integer)
   end
 
+  @desc "Custom field"
+  object :custom_field do
+    field :key, non_null(:string)
+    field :value, non_null(:string)
+  end
+
+  object :action_custom_fields do
+    field :action_type, non_null(:string)
+    field :fields, list_of(non_null(:custom_field))
+  end
+
+  @desc "Result of actions query"
+  object :actions_query_result do
+    field :list, list_of(:action_custom_fields) do
+      arg(:action_type, non_null(:string))
+      resolve(&Resolvers.ActionQuery.list_by_action_type/3)
+    end
+  end
+
   object :campaign do
     field :id, :integer
     @desc "Internal name of the campaign"
