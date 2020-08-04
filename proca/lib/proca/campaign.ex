@@ -12,6 +12,7 @@ defmodule Proca.Campaign do
     field :external_id, :integer
     field :title, :string
     field :force_delivery, :boolean
+    field :public_actions, {:array, :string}, default: []
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
