@@ -104,10 +104,24 @@ defmodule ProcaWeb.CampaignsController do
     }
   end
 
+  def public_actions_for(campaign) do
+    pa = []
+    if Map.get(campaign, "public_petition_comments", false) do
+      pa = ["petition:comment" | pa]
+    end
+
+    if Map.get(campaign, "public_openletter", false) do
+      pa = ["openletter:twitter", "openletter:comment", "openletter:organisation", "openletter:picture"] ++ pa
+    end
+
+    pa
+  end
+
   def handle_event("campaign_save", %{"campaign" => campaign}, socket) do
     case socket.assigns[:campaign].data
     |> Campaign.changeset(campaign)
     |> put_change(:org_id, socket.assigns[:staffer].org.id)
+    |> put_change(:public_actions, public_actions_for(campaign))
     |> Repo.insert_or_update
       do
       {:ok, c} ->
