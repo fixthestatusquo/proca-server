@@ -87,6 +87,17 @@
             <%= text_input f, :name, class: "form-control" %>
             <%= error_tag f, :name %>
             </div>
+
+            <p>Public actions</p>
+            <div class="form-group">
+              <%= checkbox f, :public_petition_comments, checked: true %>
+              <%= label f, :public_petition_comments, "Comments made to petition are public" %>
+            </div>
+
+            <div class="form-group">
+              <%= checkbox f, :public_openletter, checked: false %>
+              <%= label f, :public_openletter, "Open Letter signatories" %>
+            </div>
             
             <div class="d-flex justify-content-between">
               <%= if @campaign.data.id do %>
