@@ -33,16 +33,17 @@ defmodule Proca.ActionPage do
   @doc false
   def changeset(action_page, attrs) do
     action_page
-    |> cast(attrs, [:url, :locale, :org_id, :delivery, :extra_supporters])
-    |> validate_required([:url, :locale, :org_id])
+    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
+    |> validate_required([:url, :locale])
     |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+    |> cast_json(:config, Map.get(attrs, :config, nil))
   end
 
   def changeset(attrs) do
     changeset(%ActionPage{}, attrs)
   end
 
-
+  # XXX move to helper
   def cast_json(changeset, _key, json_string) when is_nil(json_string) do
     changeset
   end
@@ -59,16 +60,19 @@ defmodule Proca.ActionPage do
     %{action_page | config: Jason.encode!(action_page.config)}
   end
 
-  def upsert(org, campaign, attrs) do
-    (Repo.get_by(ActionPage, campaign_id: campaign.id, url: attrs.url) || %ActionPage{})
-    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
-    |> validate_required([:url, :locale])
-    |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
-    |> cast_json(:config, Map.get(attrs, :config, nil))
+  def upsert(org, campaign, attrs = %{id: id}) do
+    (Repo.get_by(ActionPage, campaign_id: campaign.id, id: id) || %ActionPage{})
+    |> ActionPage.changeset(attrs)
     |> put_change(:campaign_id, campaign.id)
     |> put_change(:org_id, org.id)
   end
 
+  def upsert(org, campaign, attrs) do
+    (Repo.get_by(ActionPage, campaign_id: campaign.id, url: Map.get(attrs, :url, nil)) || %ActionPage{})
+    |> ActionPage.changeset(attrs)
+    |> put_change(:campaign_id, campaign.id)
+    |> put_change(:org_id, org.id)
+  end
 
   def find(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]

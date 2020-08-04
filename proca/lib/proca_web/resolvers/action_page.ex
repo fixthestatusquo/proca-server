@@ -1,6 +1,10 @@
 defmodule ProcaWeb.Resolvers.ActionPage do
   import Ecto.Query
+  alias Proca.ActionPage
   alias Proca.Repo
+  alias ProcaWeb.Helper
+
+  import Logger
 
   defp by_id(query, id) do
     query |> where([x], x.id == ^id)
@@ -39,6 +43,20 @@ defmodule ProcaWeb.Resolvers.ActionPage do
       :ok,
       Repo.preload(ap, [campaign: :org]).campaign
     }
+  end
+
+  def update(_, attrs = %{id: id}, %{context: %{user: user}}) do
+    case Repo.get_by(ActionPage, id: id)
+    |> Helper.can_manage?(user, fn ap ->
+      ap
+      |> ActionPage.changeset(attrs)
+      |> Repo.update
+    end)
+      do
+      {:error,  chset = %Ecto.Changeset{}} -> {:error, Helper.format_errors(chset)}
+      {:error, msg} -> {:error, msg}
+      {:ok, ap} -> {:ok, ap}
+    end
   end
 
 end

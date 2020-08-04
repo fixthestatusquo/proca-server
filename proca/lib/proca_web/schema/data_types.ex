@@ -35,7 +35,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   object :campaign do
-    field :id, :id
+    field :id, :integer
     @desc "Internal name of the campaign"
     field :name, :string
     @desc "External ID (if set)"
@@ -52,7 +52,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   object :action_page do
-    field :id, :id
+    field :id, :integer
     @desc "Locale for the widget, in i18n format"
     field :locale, :string
     @desc "Url where the widget is hosted"

@@ -1,5 +1,6 @@
 defmodule Proca.Staffer.Permission do
   use Bitwise
+  alias Proca.Staffer
 
   @moduledoc """
   Permission bits used in proca.
@@ -18,13 +19,17 @@ defmodule Proca.Staffer.Permission do
     signoff_action_page: 1 <<< 19
   ]
 
-  def can?(staffer, permission) when is_atom(permission) do
+  def can?(%Staffer{perms: perms}, permission) when is_atom(permission) do
     bit = @bits[permission]
-    (staffer.perms &&& bit) > 0
+    (perms &&& bit) > 0
   end
 
-  def can?(staffer, permission) when is_list(permission) do
+  def can?(staffer = %Staffer{}, permission) when is_list(permission) do
     Enum.all?(permission, &(can? staffer, &1))
+  end
+
+  def can?(staffer, _perms) when is_nil(staffer) do
+    false
   end
 
   def add(perms, permission) when is_integer(perms) and is_atom(permission) do
