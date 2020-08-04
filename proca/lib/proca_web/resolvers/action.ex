@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.Action do
   import Ecto.Changeset
   alias Ecto.Multi
 
-  alias Proca.{Supporter, Action, ActionPage, Contact, Source, Consent}
+  alias Proca.{Supporter, Action, ActionPage, Contact, Source}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
