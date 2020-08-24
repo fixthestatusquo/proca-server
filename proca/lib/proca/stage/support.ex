@@ -127,7 +127,7 @@ defmodule Proca.Stage.Support do
       },
       "actionPage" => %{
         "locale" => action.action_page.locale,
-        "url" => action.action_page.url,
+        "name" => action.action_page.name,
         "thankYouTemplateRef" => action.action_page.thank_you_template_ref
       },
       "campaign" => %{

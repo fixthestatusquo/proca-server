@@ -46,10 +46,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve &Resolvers.Org.campaign_by_id/3
     end
 
-    @desc "Get signatures this org has collected.
-Provide campaign_id to only get signatures for a campaign
-
-"
+    @desc """
+    Get signatures this org has collected.
+    Provide campaign_id to only get signatures for a campaign
+    """
     field :signatures, :signature_list do
       @desc "return only signatures for campaign id"
       arg :campaign_id, :integer
@@ -71,6 +71,7 @@ Provide campaign_id to only get signatures for a campaign
     @desc "Organisation title (human readable name)"
     field :title, :string
   end
+
 
 
   object :signature_list do

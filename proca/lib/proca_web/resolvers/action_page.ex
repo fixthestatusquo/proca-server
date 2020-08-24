@@ -10,8 +10,8 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     query |> where([x], x.id == ^id)
   end
 
-  defp by_url(query,  url) do
-    query |> where([x], x.url == ^url)
+  defp by_name(query,  name) do
+    query |> where([x], x.name == ^name)
   end
 
   defp find_one(criteria) do
@@ -30,12 +30,17 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     find_one(& by_id &1, id)
   end
 
+  def find(_, %{name: name}, _) do
+    find_one(& by_name &1, ActionPage.remove_schema_from_name(name))
+  end
+
+  # XXX legacy
   def find(_, %{url: url}, _) do
-    find_one(& by_url &1, url)
+    find_one(& by_name &1, ActionPage.remove_schema_from_name(url))
   end
 
   def find(_, %{}, _) do
-    {:error, "You must pass either id or url to query for ActionPage"}
+    {:error, "You must pass either id or name to query for ActionPage"}
   end
 
   def campaign(ap, %{}, _) do

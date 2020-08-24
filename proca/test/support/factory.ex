@@ -25,7 +25,7 @@ defmodule Proca.Factory do
  
   def action_page_factory do
     %Proca.ActionPage{
-      url: sequence("https://some.url.com/sign"),
+      name: sequence("https://some.url.com/sign"),
       org: build(:org),
       campaign: build(:campaign),
       delivery: false

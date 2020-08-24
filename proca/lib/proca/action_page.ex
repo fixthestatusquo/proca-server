@@ -15,7 +15,7 @@ defmodule Proca.ActionPage do
 
   schema "action_pages" do
     field :locale, :string
-    field :url, :string
+    field :name, :string
     field :delivery, :boolean
     field :journey, {:array, :string}, default: []
     field :config, :map
@@ -33,9 +33,10 @@ defmodule Proca.ActionPage do
   @doc false
   def changeset(action_page, attrs) do
     action_page
-    |> cast(attrs, [:url, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
-    |> validate_required([:url, :locale])
-    |> validate_format(:url, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+    |> cast(attrs, [:name, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
+    |> validate_required([:name, :locale])
+    |> validate_format(:name, ~r/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+/) 
+    |> remove_schema_from_name()
     |> cast_json(:config, Map.get(attrs, :config, nil))
   end
 
@@ -56,22 +57,52 @@ defmodule Proca.ActionPage do
     end
   end
 
+  @doc "Remove http or https schema from changeset name attribute, or string. (Legacy of ActionPage.url)"
+  def remove_schema_from_name(changeset = %{changes: %{name: name}}) do
+    name = remove_schema_from_name(name)
+    change(changeset, name: name)
+  end
+
+  def remove_schema_from_name(name) when is_bitstring(name) do
+    Regex.replace(~r/^https?:\/\//, name, "") 
+  end
+
   def stringify_config(action_page = %ActionPage{}) do
     %{action_page | config: Jason.encode!(action_page.config)}
   end
 
+  @doc """
+  Upsert query of ActionPage by id or by name.
+
+  org - what org does it belong to
+  campaign - what campaign does it belong to
+  attrs - attributes. The id and name will be tried in that order to lookup existing action page. If not found, it will be created.
+  """
   def upsert(org, campaign, attrs = %{id: id}) do
-    (Repo.get_by(ActionPage, campaign_id: campaign.id, id: id) || %ActionPage{})
+    (Repo.get_by(ActionPage,
+          org_id: org.id,
+          campaign_id: campaign.id,
+          id: id) || %ActionPage{})
+    |> ActionPage.changeset(attrs)
+    |> put_change(:campaign_id, campaign.id)
+    |> put_change(:org_id, org.id)
+  end
+
+  def upsert(org, campaign, attrs = %{name: name}) do
+    (Repo.get_by(ActionPage,
+          org_id: org.id,
+          campaign_id: campaign.id,
+          name: name) || %ActionPage{})
     |> ActionPage.changeset(attrs)
     |> put_change(:campaign_id, campaign.id)
     |> put_change(:org_id, org.id)
   end
 
   def upsert(org, campaign, attrs) do
-    (Repo.get_by(ActionPage, campaign_id: campaign.id, url: Map.get(attrs, :url, nil)) || %ActionPage{})
-    |> ActionPage.changeset(attrs)
-    |> put_change(:campaign_id, campaign.id)
-    |> put_change(:org_id, org.id)
+      %ActionPage{}
+      |> ActionPage.changeset(attrs)
+      |> put_change(:campaign_id, campaign.id)
+      |> put_change(:org_id, org.id)
   end
 
   def find(id) do

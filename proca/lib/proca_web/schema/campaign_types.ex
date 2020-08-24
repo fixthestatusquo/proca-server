@@ -24,7 +24,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :action_page, :action_page do
       @desc "Get action page by id."
       arg(:id, :integer)
-      @desc "Get action page by url the widget is displayed on"
+      @desc "Get action page by name the widget is displayed on"
+      arg(:name, :string)
+      @desc "Get action page by url the widget is displayed on (DEPRECATED, use name)"
       arg(:url, :string)
 
       resolve(&Resolvers.ActionPage.find/3)
@@ -37,10 +39,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     Creates or appends campaign and it's action pages. In case of append, it
     will change the campaign with the matching name, and action pages with
-    matching urls. It will create new action pages if you pass a new urls. No
+    matching names. It will create new action pages if you pass new names. No
     Action Pages will be removed (principle of not removing signature data).
     """
     field :upsert_campaign, type: :campaign do
+      middleware Authenticated
+
       @desc "Org name"
       arg(:org_name, non_null(:string))
 
@@ -64,6 +68,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Deprecated, use upsert_campaign.
     """
     field :declare_campaign, type: :campaign do
+      middleware Authenticated
+
       @desc "Org name"
       arg(:org_name, non_null(:string))
 
@@ -77,7 +83,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:title, non_null(:string))
 
       @desc "Action pages of this campaign"
-      arg(:action_pages, non_null(list_of(:action_page_input)))
+      arg(:action_pages, non_null(list_of(:action_page_input_legacy_url)))
 
       resolve(&Resolvers.Campaign.upsert/3)
     end
@@ -95,7 +101,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg :id, non_null(:integer)
 
       @desc """
-      Unique URL identifying ActionPage.
+      Unique NAME identifying ActionPage.
 
       Does not have to exist, must be unique. Can be a 'technical' identifier
       scoped to particular organization, so it does not have to change when the
@@ -103,7 +109,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       ask for ActionPage by it's current location.href, in which case it is useful
       to make this url match the real idwget location.
       """
-      arg :url, :string
+      arg :name, :string
 
       @desc "2-letter, lowercase, code of ActionPage language"
       arg :locale, :string
@@ -152,8 +158,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :id, :integer
     @desc "Locale for the widget, in i18n format"
     field :locale, :string
-    @desc "Url where the widget is hosted"
-    field :url, :string
+    @desc "Name where the widget is hosted"
+    field :name, :string
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
     @desc "List of steps in journey"
@@ -175,15 +181,15 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :id, :integer
 
     @desc """
-    Unique URL identifying ActionPage.
+    Unique NAME identifying ActionPage.
 
     Does not have to exist, must be unique. Can be a 'technical' identifier
     scoped to particular organization, so it does not have to change when the
-    slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
-    ask for ActionPage by it's current location.href, in which case it is useful
-    to make this url match the real idwget location.
+    slugs/names change (eg. some.org/1234). However, frontent Widget can
+    ask for ActionPage by it's current location.href (but without https://), in which case it is useful
+    to make this url match the real widget location. 
     """
-    field :url, :string
+    field :name, :string
 
     @desc "2-letter, lowercase, code of ActionPage language"
     field :locale, :string
@@ -206,6 +212,19 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     """
     field :config, :string
   end
+
+
+  @desc "ActionPage declaration (using the legacy url attribute)"
+  input_object :action_page_input_legacy_url do
+    field :id, :integer
+    field :url, :string
+    field :locale, :string
+    field :thank_you_template_ref, :string
+    field :extra_supporters, :integer
+    field :journey, list_of(non_null(:string))
+    field :config, :string
+  end
+
 
 
   @desc "Campaign statistics"

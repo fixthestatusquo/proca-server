@@ -11,11 +11,11 @@ defmodule Proca.StoryFactory do
   use with: `import Proca.StoryFactory, only: [blue_story: 0]`
   """
 
-  @blue_website "https://blue.org"
+  @blue_website "blue.org"
   def blue_story() do
     blue_org = Factory.insert(:org, name: "blue")
     camp = Factory.insert(:campaign, name: "whales", title: "Save the whales!", org: blue_org)
-    ap = Factory.insert(:action_page, campaign: camp, org: blue_org, url: @blue_website <> "/whales_now")
+    ap = Factory.insert(:action_page, campaign: camp, org: blue_org, name: @blue_website <> "/whales_now")
 
     %{
       org: blue_org,
@@ -25,20 +25,20 @@ defmodule Proca.StoryFactory do
 
   @api_perms Proca.Staffer.Permission.add(0, [:use_api, :manage_campaigns, :manage_action_pages])
 
-  @red_website "https://red.org"
-  @yellow_website "https://yellow.org"
+  @red_website "red.org"
+  @yellow_website "yellow.org"
   def red_story() do
     red_org = Factory.insert(:org, name: "red")
     red_camp = Factory.insert(:campaign, name: "blood-donors", title: "Donate blood", org: red_org)
-    red_ap = Factory.insert(:action_page, campaign: red_camp, org: red_org, url: @red_website <> "/sign")
+    red_ap = Factory.insert(:action_page, campaign: red_camp, org: red_org, name: @red_website <> "/sign")
 
     yellow_org = Factory.insert(:org, name: "yellow")
     yellow_camp = Factory.insert(:campaign, name: "blood-donors", title: "Donate blood", org: yellow_org)
-    yellow_ap = Factory.insert(:action_page, campaign: yellow_camp, org: yellow_org, url: @yellow_website <> "/sign")
+    yellow_ap = Factory.insert(:action_page, campaign: yellow_camp, org: yellow_org, name: @yellow_website <> "/sign")
 
     red_bot = Factory.insert(:staffer, org: red_org, perms: @api_perms)
-    orange_ap1 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, url: @red_website <> "/we-walk-with-yellow")
-    orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, url: @red_website <> "/we-donate-with-yellow")
+    orange_ap1 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-walk-with-yellow")
+    orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-donate-with-yellow")
 
     %{
       red_org: red_org, yellow_org: yellow_org,

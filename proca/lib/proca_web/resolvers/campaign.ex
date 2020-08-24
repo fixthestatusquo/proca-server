@@ -50,6 +50,14 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def upsert(_, attrs = %{org_name: org_name, action_pages: pages}, %{context: %{user: user}}) do
+    # XXX Add name: attributes if url given (Legacy for declare_campaign)
+    pages = Enum.map(pages, fn ap ->
+                 case ap do
+                   %{url: url} -> Map.put(ap, :name, url)
+                   ap -> ap
+                 end
+    end)
+
     with %Org{} = org <- Org.get_by_name(org_name),
          %Staffer{} = staffer <- Staffer.for_user_in_org(user, org.id),
          true <- can?(staffer, :use_api)
@@ -72,10 +80,6 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
-  def upsert(_, _, _) do
-    {:error, "You need to authorize with Basic auth"}
-  end
-
   def upsert_campaign(org, attrs) do
     campaign = Campaign.upsert(org, attrs)
 
@@ -92,11 +96,11 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
   def upsert_action_page(org, campaign, attrs) do
     ap = ActionPage.upsert(org, campaign, attrs)
-    
+
     if not ap.valid? do
       Repo.rollback(ap)
     end
-    
+
     if ap.data.id do
       Repo.update!(ap)
     else
