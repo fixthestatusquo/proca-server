@@ -8,7 +8,7 @@
 
     <div class="card-group">
       <%= for org <- @orgs do %>
-        <div class="card w-25 m-3 <%= if @staffer != nil && @staffer.org_id == org.id, do: "bg-warning" %>">
+        <div class="card m-3 <%= if @staffer != nil && @staffer.org_id == org.id, do: "bg-warning" %>">
           <div class="card-body">
             <h5 class="card-title"><%= org.title %></h5>
             <p class="card-text"><code><%= org.name %></code></p>
