@@ -42,6 +42,11 @@ defmodule ProcaWeb.ConnCase do
         conn
         |> post("/api", %{query: query})
       end
+
+      def is_success(res) do
+        assert res["errors"] == nil
+        res
+      end
     end
   end
 

@@ -27,7 +27,7 @@
             <ul>
               <%= for ap <- camp.action_pages do %>
                 <li>
-                  <code><a href="<%= ap.url %>" target="_blank"><%= ap.url %></a></code>
+                  <code><a href="<%= ap.name %>" target="_blank"><%= ap.name %></a></code>
                   (id: <code><%= ap.id %></code>)
                   <%= if ap.org_id != camp.org_id do %><span>by: <%= ap.org.title %></span><% end %>
                   <a href="#" phx-click="action_page_edit" phx-value-id="<%= ap.id %>" class="text-primary float-right ml-2"> edit </a>
@@ -151,9 +151,9 @@
             <% end %>
 
             <div class="form-group">
-            <%= label f, :url, "URL of widget" %>
-            <%= text_input f, :url, class: "form-control" %>
-            <%= error_tag f, :url %>
+            <%= label f, :name, "NAME of widget" %>
+            <%= text_input f, :name, class: "form-control" %>
+            <%= error_tag f, :name %>
             </div>
             
             <div class="form-group">

@@ -28,7 +28,7 @@ defmodule ProcaWeb.UpsertActionPage do
       mutation Uap {
       updateActionPage(id: #{ap.id},
       locale: "jp",
-      url: "https://yellow.org/other",
+      name: "https://yellow.org/other",
       journey: ["sign", "share"],
       config: "{\\"foo\\": 123}") {
       id
@@ -45,7 +45,7 @@ defmodule ProcaWeb.UpsertActionPage do
 
       updated = Proca.Repo.get(Proca.ActionPage, ap.id)
       assert updated.config == %{"foo" => 123}
-      assert updated.url == "https://yellow.org/other"
+      assert updated.name == "yellow.org/other"
       assert updated.journey == ["sign", "share"]
     end
   end
