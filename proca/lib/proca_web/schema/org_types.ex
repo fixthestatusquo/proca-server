@@ -5,14 +5,17 @@ defmodule ProcaWeb.Schema.OrgTypes do
   
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
+  alias ProcaWeb.Schema.Authenticated
 
   object :org_queries do
     @desc "Organization api (authenticated)"
     field :org, :org do
+      middleware Authenticated
+
       @desc "Name of organisation"
       arg(:name, non_null(:string))
 
-      resolve(&Resolvers.Org.find/3)
+      resolve(&Resolvers.Org.get_by_name/3)
     end
   end
 
@@ -27,7 +30,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Organisation title (human readable name)"
     field :title, :string
 
-    @desc "List campaigns this org is running (owns or has action page)"
+    @desc "List campaigns this org is leader or partner of"
     field :campaigns, list_of(:campaign) do
       resolve &Resolvers.Org.campaigns/3
     end
@@ -37,10 +40,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve &Resolvers.Org.action_pages/3
     end
 
-    @desc "Get campaign this org is running by id"
+    @desc "Get campaign this org is leader or partner of by id"
     field :campaign, :campaign do
       arg :id, :integer
-      resolve &Resolvers.Org.campaign/3
+      resolve &Resolvers.Org.campaign_by_id/3
     end
 
     @desc "Get signatures this org has collected.
