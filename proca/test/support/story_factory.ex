@@ -37,11 +37,14 @@ defmodule Proca.StoryFactory do
     yellow_ap = Factory.insert(:action_page, campaign: yellow_camp, org: yellow_org, url: @yellow_website <> "/sign")
 
     red_bot = Factory.insert(:staffer, org: red_org, perms: @api_perms)
+    orange_ap1 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, url: @red_website <> "/we-walk-with-yellow")
+    orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, url: @red_website <> "/we-donate-with-yellow")
 
     %{
       red_org: red_org, yellow_org: yellow_org,
-      red_campaign: red_camp, yellow_camp: yellow_camp,
+      red_campaign: red_camp, yellow_campaign: yellow_camp,
       red_ap: red_ap, yellow_ap: yellow_ap,
+      orange_aps: [orange_ap1, orange_ap2],
       red_bot: red_bot
     }
 

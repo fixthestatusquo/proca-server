@@ -4,8 +4,6 @@ defmodule ProcaWeb.Schema.Authenticated do
   import Logger
 
   def call(resolution, opts) do
-    Logger.debug(inspect(resolution))
-
     case resolution.context do
       %{user: user} ->
         resolution

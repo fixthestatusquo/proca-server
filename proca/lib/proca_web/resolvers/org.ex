@@ -3,15 +3,15 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Proca.{ActionPage,Campaign,Contact,Supporter,Source}
-  alias Proca.{Org,Staffer,PublicKey}
+  alias Proca.{ActionPage, Campaign, Contact, Supporter, Source}
+  alias Proca.{Org, Staffer, PublicKey}
 
   alias Proca.Repo
   alias ProcaWeb.Helper
   import Proca.Staffer.Permission
 
 
-  def find(_, %{name: name}, %{context: %{user: user}}) when not is_nil(user) do
+  def get_by_name(_, %{name: name}, %{context: %{user: user}})  do
     with %Org{} = org <- Org.get_by_name(name, [[campaigns: :org], :action_pages]),
          %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
            true <- can?(s, :use_api)
@@ -22,35 +22,25 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def find(_, %{name: _name}, _ctx) do
-    {:error, "You need to authorize with Basic auth"}
-  end
-
-  def campaign(org, %{id: camp_id}, _) do
-    c = from(c in Campaign,
-      left_join: ap in ActionPage,
-      on: c.id == ap.campaign_id,
-      where: c.id == ^camp_id and (ap.org_id == ^org.id or c.org_id == ^org.id ))
-    |> distinct(true)
+  def campaign_by_id(org, %{id: camp_id}, _) do
+    c = Campaign.select_by_org(org)
+    |> where([c], c.id == ^camp_id)
     |> Repo.one
 
     {:ok, c}
   end
 
   def campaigns(org, _, _) do
-    cl = from(c in Campaign,
-      left_join: ap in ActionPage,
-      on: c.id == ap.campaign_id,
-      where: ap.org_id == ^org.id or c.org_id == ^org.id,
-      preload: [:org])
-    |> distinct(true)
+    cl = Campaign.select_by_org(org)
+    |> preload([c], [:org])
     |> Repo.all
 
     {:ok, cl}
   end
 
   def action_pages(org, _, _) do
-    c = from(ap in ActionPage, where: ap.org_id == ^org.id, preload: [:org])
+    c = Ecto.assoc(org, :action_pages)
+    |> preload([ap], [:org])
     |> Repo.all
     |> Enum.map(&ActionPage.stringify_config(&1))
 
@@ -65,7 +55,6 @@ defmodule ProcaWeb.Resolvers.Org do
       order_by: [asc: s.id],
       where: c.org_id == ^org.id
     )
-
   end
 
   defp org_signatures_for_campaign(org, campaign_id) do

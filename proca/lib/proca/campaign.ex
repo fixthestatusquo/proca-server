@@ -4,8 +4,9 @@ defmodule Proca.Campaign do
   """
 
   use Ecto.Schema
-  alias Proca.{Repo,Campaign}
+  alias Proca.{Repo, Campaign, ActionPage}
   import Ecto.Changeset
+  import Ecto.Query
 
   schema "campaigns" do
     field :name, :string
@@ -38,5 +39,13 @@ defmodule Proca.Campaign do
     (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{})
     |> Campaign.changeset(attrs)
     |> put_change(:org_id, org.id)
+  end
+
+  def select_by_org(org) do
+    from(c in Campaign,
+      left_join: ap in ActionPage,
+      on: c.id == ap.campaign_id,
+      where: ap.org_id == ^org.id or c.org_id == ^org.id)
+    |> distinct(true)
   end
 end

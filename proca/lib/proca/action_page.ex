@@ -89,5 +89,4 @@ defmodule Proca.ActionPage do
     schema = contact_schema(action_page)
     apply(schema, :from_input, [params])
   end
-
 end
