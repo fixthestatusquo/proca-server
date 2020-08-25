@@ -1,4 +1,4 @@
-defmodule Api.ActionTest do
+defmodule ProcaWeb.Api.ActionTest do
   use Proca.DataCase
   import Proca.StoryFactory, only: [blue_story: 0]
   import Ecto.Query
