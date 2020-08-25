@@ -58,9 +58,13 @@ defmodule Proca.ActionPage do
   end
 
   @doc "Remove http or https schema from changeset name attribute, or string. (Legacy of ActionPage.url)"
-  def remove_schema_from_name(changeset = %{changes: %{name: name}}) do
+  def remove_schema_from_name(changeset = %Ecto.Changeset{changes: %{name: name}}) do
     name = remove_schema_from_name(name)
     change(changeset, name: name)
+  end
+
+  def remove_schema_from_name(changeset = %Ecto.Changeset{}) do
+    changeset
   end
 
   def remove_schema_from_name(name) when is_bitstring(name) do
