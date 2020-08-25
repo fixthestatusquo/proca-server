@@ -1,4 +1,4 @@
-defmodule ProcaWeb.UpsertActionPage do
+defmodule ProcaWeb.Api.UpsertActionPage do
   use ProcaWeb.ConnCase
   import Proca.StoryFactory, only: [red_story: 0]
 
