@@ -20,8 +20,7 @@
           <%= if camp.org_id != @staffer.org_id do %>
             <p>Run by <%=  camp.org.title %>.</p>
           <% end %>
-          <p>codename: <code><%= camp.name %></code></p>
-          <p>id: <code><%= camp.id %></code></p>
+          <p>codename: <code><%= camp.name %></code>, id: <code><%= camp.id %></code></p>
           <%= if length(camp.action_pages) > 0 do %>
             <h4>Action pages:</h4>
             <ul>
