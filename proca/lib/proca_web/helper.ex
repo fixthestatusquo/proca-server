@@ -20,7 +20,7 @@ defmodule ProcaWeb.Helper do
   end
 
 
-  defp flatten_errors(%{} = map) when is_map(map) do
+  defp flatten_errors(%{} = map, _lastkey \\ nil) when is_map(map) do
     map
     |> Map.keys()
     |> Enum.map(fn k ->
