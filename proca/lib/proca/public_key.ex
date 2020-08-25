@@ -3,6 +3,7 @@ defmodule Proca.PublicKey do
   import Ecto.Changeset
   import Ecto.Query
   alias Proca.Repo
+  alias Proca.PublicKey
 
   schema "public_keys" do
     field :name, :string
@@ -25,9 +26,19 @@ defmodule Proca.PublicKey do
    change(public_key, expired_at: DateTime.utc_now())
   end
 
-  def active_keys_for(org) do
-    from(pk in Proca.PublicKey, where: pk.org_id == ^org.id and is_nil(pk.expired_at))
-    |> Repo.all
+  @spec active_key_for(%Proca.Org{}) :: %PublicKey{} | nil
+  def active_key_for(org) do
+    active_keys()
+    |> where([pk], pk.org_id == ^org.id)
+    |> Repo.one
+  end
+
+  def active_keys(preload \\ []) do
+    from(pk in PublicKey,
+      order_by: [desc: pk.inserted_at],
+      where: is_nil(pk.expired_at),
+      preload: ^preload,
+      distinct: pk.org_id)
   end
 
   def build_for(org, name \\ "generated") do

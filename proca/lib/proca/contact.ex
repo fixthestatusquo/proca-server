@@ -36,8 +36,8 @@ defmodule Proca.Contact do
 
   def spread(new_contact, [consent | rc]) do
     ch = new_contact
-    |> Contact.add_encryption(consent.org)
-    |> Contact.add_consent(consent)
+    |> add_encryption(consent.org)
+    |> add_consent(consent)
 
     [ch | spread(new_contact, rc)]
   end
@@ -52,24 +52,18 @@ defmodule Proca.Contact do
   end
 
   @spec add_encryption(Ecto.Changeset.t(), Proca.Org | Proca.PublicKey | nil) :: Ecto.Changeset.t()
-  def add_encryption(contact_ch, public_key) when is_nil(public_key) do
-    contact_ch
-  end
-
   def add_encryption(contact_ch, org = %Proca.Org{}) do
-    add_encryption(contact_ch, Proca.Org.active_public_key(org))
-  end
-
-  def add_encryption(contact_ch, public_key = %Proca.PublicKey{}) do
     case contact_ch do
       %{changes: %{payload: payload}} ->
-        case Proca.Server.Encrypt.encrypt(public_key, payload) do
-          {penc, nonce, sign_id} when is_binary(penc) ->
+        case Proca.Server.Encrypt.encrypt(org, payload) do
+          {penc, nonce, enc_id, sign_id} when is_binary(penc) and is_binary(nonce) ->
             contact_ch
             |> put_change(:payload, penc)
             |> put_change(:crypto_nonce, nonce)
-            |> put_assoc(:public_key, public_key)
+            |> put_assoc(:public_key, enc_id)
             |> put_change(:sign_key_id, sign_id)
+
+          {_clear, nil, nil, nil} -> contact_ch
 
           {:error, msg} ->
             add_error(contact_ch, :payload, msg)

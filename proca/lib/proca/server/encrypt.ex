@@ -4,7 +4,10 @@ defmodule Proca.Server.Encrypt do
   """
 
   use GenServer
-  alias Proca.Org
+  alias Proca.Repo
+  alias Proca.{Org, PublicKey}
+
+  import Logger
 
   @impl true
   @doc "When initialized with no org name (for us), then fail"
@@ -26,20 +29,36 @@ defmodule Proca.Server.Encrypt do
   end
 
   @impl true
+  @doc """
+  Fetch the instance org based on org_name passed to this server. Stop server if such org does not exist.
+  Fetch an active key for this organisation, and if it is not found or does not have a private part present, generate it.
+  """
   def handle_continue(:get_keys, org_name) do
-    case Org.get_by_name(org_name, [:public_keys]) do
-      nil ->
-        {:stop, "Can't find org #{org_name}. Please create an Org for app and set it as ORG_NAME environment"}
-      o = %Org{name: org_name} ->
-        case Org.active_public_keys(o.public_keys) do
-          [] ->
-            {:stop, "Missing encryption keys in org #{org_name}", org_name}
-          l when length(l) > 1 ->
-            {:stop, "Cannot use more then one our key for encryption", org_name}
-          [pk = %{private: priv} | _nothing] when not is_nil(priv) -> 
-            {:noreply, {pk, :crypto.strong_rand_bytes(24)}}
-        end
+    with instance_org when not is_nil(instance_org) <- Org.get_by_name(org_name),
+         keys <- PublicKey.active_keys() |> Repo.all() |> Map.new(fn pk -> {pk.org_id, pk} end),
+           my_keys <- ensure_encryption_key(keys[instance_org.id], instance_org)
+      do
+      {:noreply, {my_keys, :crypto.strong_rand_bytes(24), keys}}
+      else
+        nil -> {:stop, "Can't find org #{org_name}. Instance org needs to exist."}
     end
+  end
+
+  defp ensure_encryption_key(pk, org) when is_nil(pk) do
+    Logger.warn("Generate an instance key, because it is null")
+    {:ok, pk} = PublicKey.build_for(org) |> Repo.insert()
+    pk
+  end
+
+  defp ensure_encryption_key(%PublicKey{private: prv}, org) when is_nil(prv) do
+    Logger.warn("Generate an instance key, because it has no private key")
+    {:ok, pk} = PublicKey.build_for(org) |> Repo.insert()
+    pk
+  end
+
+  defp ensure_encryption_key(pk, _org) do
+    Logger.warn("Instance key name #{pk.name}")
+    pk
   end
 
   @nonce_bits 24*8
@@ -52,24 +71,41 @@ Increment nonce by 1. Should be run after every successful encryption.
   end
 
   @impl true
-  def handle_call({:encrypt, rcpt_keys, text}, _from, {my_keys, nonce}) do
+  def handle_call({:encrypt, %Org{id: id}, text}, from, state = {_, _, keys}) do
+    pk = keys[id]
+    handle_call({:encrypt, pk, text}, from, state)
+  end
+
+  @impl true
+  def handle_call({:encrypt, %PublicKey{id: pub_id, public: public}, text}, _from, {my_keys, nonce, keys}) do
     try do
-      case Kcl.box(text, nonce, my_keys.private, rcpt_keys.public) do
+      case Kcl.box(text, nonce, my_keys.private, public) do
         {encrypted, _} ->
-          {:reply, {encrypted, nonce, my_keys.id}, {my_keys, increment_nonce(nonce)}}
+          {:reply, {encrypted, nonce, pub_id, my_keys.id}, {my_keys, increment_nonce(nonce), keys}}
       end
     rescue
       e in FunctionClauseError ->
         {:reply,
          {:error, "Bad arguments to Kcl.box - can't call #{e.function}/#{e.arity}"},
-         {my_keys, nonce}}
+         {my_keys, nonce, keys}}
     end
   end
 
   @impl true
-  def handle_call({:decrypt, rcpt_keys, text, nonce}, _from, s = {my_keys, _}) do
+  def handle_call({:encrypt, pk, text}, _from, state) when is_nil(pk) do
+    {:reply, {text, nil, nil, nil}, state}
+  end
+
+  @impl true
+  def handle_call({:decrypt, %Org{id: id}, text, text_nonce}, from, state = {_, _, keys}) do
+    pk = keys[id]
+    handle_call({:decrypt, pk, state}, from, state)
+  end
+
+  @impl true
+  def handle_call({:decrypt, %PublicKey{public: sender_pub}, text, text_nonce}, _from, s = {my_keys, nonce, keys}) do
     try do
-      case Kcl.unbox(text, nonce, rcpt_keys.private,  my_keys.public) do
+      case Kcl.unbox(text, text_nonce, my_keys.private, sender_pub) do
         {cleartext, _} ->
           {:reply, cleartext, s}
       end
@@ -77,15 +113,21 @@ Increment nonce by 1. Should be run after every successful encryption.
       e in FunctionClauseError ->
         {:reply,
          {:error, "Bad arguments to Kcl.box - can't call #{e.function}/#{e.arity}"},
-         {my_keys, nonce}}
+         s}
     end
   end
 
+  @impl true
   def handle_call({:get_keys}, _from, state = {my_keys, _}) do
     {:reply,
      {:ok, my_keys},
      state
     }
+  end
+
+  @impl true
+  def handle_cast({:update_key, org_id, key}, {my_keys, nonce, keys}) do
+    {:noreply, {my_keys, nonce, Map.put(keys, org_id, key)}}
   end
 
   @doc "Start Encrypt server"
@@ -94,16 +136,16 @@ Increment nonce by 1. Should be run after every successful encryption.
   end
 
   @doc """
-  Encrypt plaintext text using recipient public key pk.
+  Encrypt plaintext text using recipient public key pk
 
   Calls NaCl box primitive with (text, nonce, our private key, recipien public key).
   On failure, returns error from NaCl (the NaCl library fails ugly with FunctionClauseError)
   Returns nonce, ciphertext
   Increments nonce
   """
-  @spec encrypt(Proca.PublicKey, binary()) :: {binary(), binary(), integer()} | {:error, String.t()}
-  def encrypt(%Proca.PublicKey{} = pk, text) do
-    GenServer.call(__MODULE__, {:encrypt, pk, text})
+  @spec encrypt(Org | PublicKey, binary()) :: {binary(), binary(), integer()} | {:error, String.t()}
+  def encrypt(pk_or_org, text) do
+    GenServer.call(__MODULE__, {:encrypt, pk_or_org, text})
   end
 
   @doc """
@@ -116,9 +158,14 @@ Increment nonce by 1. Should be run after every successful encryption.
   On failure, returns error from NaCl (the NaCl library fails ugly with FunctionClauseError)
   Returns cleartext
   """
-  @spec decrypt(Proca.PublicKey, binary(), binary()) :: binary() | {:error, String.t()}
-  def decrypt(%Proca.PublicKey{} = pk, encrypted, nonce) do 
-    GenServer.call(__MODULE__, {:decrypt, pk, encrypted, nonce})
+  @spec decrypt(Org | PublicKey, binary(), binary()) :: binary() | {:error, String.t()}
+  def decrypt(pk_or_org, encrypted, nonce) do 
+    GenServer.call(__MODULE__, {:decrypt, pk_or_org, encrypted, nonce})
+  end
+
+  def update_key(org, key) do
+    GenServer.cast(__MODULE__, {:update_key, org.id, key})
+    :ok
   end
 
   @doc "Get public key used by this Encrypt server"

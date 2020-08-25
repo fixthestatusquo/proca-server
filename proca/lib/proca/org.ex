@@ -38,7 +38,28 @@ defmodule Proca.Org do
   end
 
   def get_by_name(name, preload \\ []) do
-    Proca.Repo.one from o in Proca.Org, where: o.name == ^name, preload: ^preload
+    {preload, select_active_keys} = if Enum.member? preload, :active_public_keys do
+      {
+        [:public_keys | List.delete(preload, :active_public_keys)],
+        true
+      }
+    else
+      {preload, false}
+    end
+
+    q = from o in Proca.Org, where: o.name == ^name, preload: ^preload
+    org = Proca.Repo.one q
+
+    if select_active_keys do
+      %{org |
+        public_keys: org.public_keys
+        |> Enum.filter(fn pk -> is_nil(pk.expired_at) end)
+        |> Enum.sort(fn a, b -> a.inserted_at > b.inserted_at end)
+      }
+    else
+      org
+    end
+
   end
 
   def get_by_id(id, preload \\ []) do
@@ -58,9 +79,7 @@ defmodule Proca.Org do
 
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
-    org = Proca.Repo.preload(org, [:public_keys])
-    org.public_keys
-    |> active_public_keys()
-    |> List.first()
+    org = Proca.Repo.preload(org, [:active_public_keys])
+    List.first org.public_keys
   end
 end

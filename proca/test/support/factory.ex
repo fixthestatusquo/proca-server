@@ -10,6 +10,10 @@ defmodule Proca.Factory do
     }
   end
 
+  def public_key_factory(%{org: org}) do
+    name = sequence("public_key")
+    Proca.PublicKey.build_for(org) |> Ecto.Changeset.apply_changes
+  end
 
   def campaign_factory do
     name = sequence("petition")
