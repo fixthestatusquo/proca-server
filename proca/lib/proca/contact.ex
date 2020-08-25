@@ -60,7 +60,7 @@ defmodule Proca.Contact do
             contact_ch
             |> put_change(:payload, penc)
             |> put_change(:crypto_nonce, nonce)
-            |> put_assoc(:public_key, enc_id)
+            |> put_change(:public_key_id, enc_id)
             |> put_change(:sign_key_id, sign_id)
 
           {_clear, nil, nil, nil} -> contact_ch
