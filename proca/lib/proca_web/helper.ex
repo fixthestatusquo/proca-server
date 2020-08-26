@@ -19,23 +19,31 @@ defmodule ProcaWeb.Helper do
     |> flatten_errors()
   end
 
+  @doc """
+  Must be able to flatten an error structure like:
+  %{fields: [%{value: [%{message: "can't be blank"}]}]}
 
-  defp flatten_errors(%{} = map, _lastkey \\ nil) when is_map(map) do
-    map
-    |> Map.keys()
-    |> Enum.map(fn k ->
-      flatten_errors(Map.get(map, k), k)
-    end)
-    |> Enum.concat()
-  end
-
-  defp flatten_errors(%{message: msg} = map, lastkey) when is_map(map) do
-    [%{message: "#{lastkey}: #{msg}", path: [Atom.to_string(lastkey)]}]
-  end
+  1. a list -> run recursively for each element, concatenate the result
+  2. map with keys mapped to errors -> get each key and pass it futher
+  """
+  defp flatten_errors(errors, lastkey \\ nil)
 
   defp flatten_errors(lst, lastkey) when is_list(lst) do
     Enum.map(lst, fn e ->
       flatten_errors(e, lastkey)
+    end)
+    |> Enum.concat()
+  end
+
+  defp flatten_errors(%{message: msg} = m, lastkey) when map_size(m) == 1 do
+    [%{message: "#{lastkey}: #{msg}", path: [Atom.to_string(lastkey)]}]
+  end
+
+  defp flatten_errors(map, lastkey) when is_map(map) do
+    map
+    |> Map.keys()
+    |> Enum.map(fn k ->
+      flatten_errors(Map.get(map, k), k)
     end)
     |> Enum.concat()
   end
