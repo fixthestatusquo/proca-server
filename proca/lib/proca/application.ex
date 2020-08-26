@@ -15,7 +15,7 @@ defmodule Proca.Application do
       # Start the endpoint when the application starts
       ProcaWeb.Endpoint,
       {
-        Proca.Server.Encrypt,
+        Proca.Server.Keys,
         Application.get_env(:proca, Proca)[:org_name]
       },
       {

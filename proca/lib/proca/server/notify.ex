@@ -10,7 +10,7 @@ defmodule Proca.Server.Notify do
 
   @spec public_key_created(Org, PublicKey) :: :ok
   def public_key_created(org, key) do
-    Proca.Server.Encrypt.update_key(org, key)
+    Proca.Server.Keys.update_key(org, key)
   end
 
   defp process_action(action) do
