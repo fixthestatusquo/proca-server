@@ -14,6 +14,7 @@ defmodule Proca.PublicKey do
 
     timestamps()
   end
+  @derive {Inspect, only: [:id, :name, :org, :expired_at]}
 
   @doc false
   def changeset(public_key, attrs) do
