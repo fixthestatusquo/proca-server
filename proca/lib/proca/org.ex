@@ -34,7 +34,7 @@ defmodule Proca.Org do
     org
     |> cast(attrs, [:name, :title])
     |> validate_required([:name, :title])
-    |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+    |> validate_format(:name, ~r/^([[:alnum]_-]+$)/)
   end
 
   def get_by_name(name, preload \\ []) do
