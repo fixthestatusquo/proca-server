@@ -20,6 +20,12 @@ defmodule Mix.Tasks.Keys do
     end
   end
 
+  @shortdoc "Create an instance org with given shortname"
+  def run(["create_org", org_name]) do
+    start_repo()
+    Proca.Org.changeset(%Proca.Org{}, %{name: org_name, title: "Instance Org"})
+    |> Proca.Repo.insert()
+  end
 
   @shortdoc "Generate or import encryption keys for an org"
   def run(["generate", org_name]) do
@@ -36,6 +42,5 @@ defmodule Mix.Tasks.Keys do
       nil -> IO.puts "no such org #{org_name}"
       o -> Proca.PublicKey.import_public_for(o, pub) |> Proca.Repo.insert
     end
-
   end
 end
