@@ -31,11 +31,17 @@ live_view_signing_salt =
   You can generate one by calling: mix phx.gen.secret
   """
 
+bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
+|> String.split(".")
+|> Enum.map(&String.to_integer/1)
+|> List.to_tuple
+
 config :proca, ProcaWeb.Endpoint,
-  url: [host: System.get_env("DOMAIN"), port: 80],
+  url: [host: System.get_env("DOMAIN")],
   http: [
-    port: String.to_integer(System.get_env("PORT") || "4000"),
-    transport_options: [socket_opts: [:inet6]]
+    ip: bind_ip,
+    port: String.to_integer(System.get_env("PORT") || "4000")
+    # transport_options: [socket_opts: [:inet6]]
   ],
   check_origin: ["//" <> System.get_env("DOMAIN")],
   secret_key_base: secret_key_base
