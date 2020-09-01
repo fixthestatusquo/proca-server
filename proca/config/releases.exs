@@ -17,6 +17,9 @@ config :proca, Proca.Repo,
 config :proca, Proca.Server.Plumbing,
   url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL")
 
+config :proca, Proca.Server.Jwks,
+  url: System.get_env("JWKS_URL")
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
   raise """

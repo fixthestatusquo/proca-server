@@ -17,7 +17,8 @@ defmodule ProcaWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug CORSPlug, origin: "*"
-    plug ProcaWeb.Plugs.ApiAuthPlug
+    plug ProcaWeb.Plugs.BasicAuthPlug
+    plug ProcaWeb.Plugs.JwtAuthPlug
   end
 
   pipeline :auth do
