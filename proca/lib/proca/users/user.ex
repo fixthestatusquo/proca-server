@@ -11,6 +11,20 @@ defmodule Proca.Users.User do
     timestamps()
   end
 
+  @pow_config pow_config  = [otp_app: :proca]
+
+  def pow_config do
+    @pow_config
+  end
+
+  def create(email) do
+    case Pow.Operations.create(params_for(email), pow_config)
+      do
+      {:ok, user} -> user
+      _ -> nil
+    end
+  end
+
   def params_for(email) do
     pwd = StrongPassword.generate()
     %{
