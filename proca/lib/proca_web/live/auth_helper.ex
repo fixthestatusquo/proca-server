@@ -29,7 +29,6 @@ defmodule ProcaWeb.Live.AuthHelper do
     pow_config  = [otp_app: opts[:otp_app]]
 
     quote do
-      
       @pow_config unquote(Macro.escape(pow_config)) ++ [module: __MODULE__]
       @renewal_config unquote(Macro.escape(renewal_config)) ++ [module: __MODULE__]
 

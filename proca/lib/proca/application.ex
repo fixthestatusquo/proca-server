@@ -39,6 +39,11 @@ defmodule Proca.Application do
       # {Proca.Worker, arg},
     ]
 
+    children = case Application.get_env(:proca, Proca.Server.Jwks)[:url] do
+                 nil -> children
+                 url -> children ++ [{Proca.Server.Jwks, url}]
+    end
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Proca.Supervisor]

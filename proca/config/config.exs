@@ -28,6 +28,8 @@ config :proca, Proca.Supporter,
 config :proca, Proca.Server.Plumbing,
   url: "amqp://proca:proca@rabbitmq.docker/proca"
 
+config :proca, Proca.Server.Jwks,
+  url: "https://account.fixthestatusquo.org/.well-known/jwks.json"
 
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []
