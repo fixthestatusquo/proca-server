@@ -21,10 +21,9 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   Return the current user context based on the authorization header
   """
   def jwt_auth(conn) do
-    with [token] <- Conn.get_req_header(conn, "authorization"),
+    with ["Bearer " <> token] <- Conn.get_req_header(conn, "authorization"),
          {true, jwt, _sig} <- Proca.Server.Jwks.verify(token)
       do
-      IO.inspect(jwt, label: "JWT success")
       conn
       |> get_or_create_user(jwt)
     else
