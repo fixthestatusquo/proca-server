@@ -29,9 +29,15 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       conn
       |> get_or_create_user(jwt)
     else
-      {false, _, _} -> conn
-      |> Conn.send_resp(401, "Unauthorized")
-      |> Conn.halt()
+      {false, _, _} ->
+        case conn do
+          %{private: %{phoenix_format: "html"}} ->
+            conn
+          _ ->
+            conn
+            |> Conn.send_resp(401, "Unauthorized")
+            |> Conn.halt()
+        end
       nil -> conn # no token
     end
   end
@@ -48,7 +54,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
         }
       } -> case Repo.get_by(User, email: email) do
              nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config)
-             user -> Plug.assign_current_user(conn, user, User.pow_config) |> IO.inspect(label: "assigning")
+             user -> Plug.assign_current_user(conn, user, User.pow_config)
            end
 
       _ -> conn
