@@ -22,7 +22,7 @@ defmodule ProcaWeb.Router do
   end
 
   pipeline :auth do
-    plug ProcaWeb.Plugs.JwtAuthPlug, query_param: "jwt"
+    plug ProcaWeb.Plugs.JwtAuthPlug, query_param: "jwt", enable_session: true
     plug Pow.Plug.RequireAuthenticated, error_handler: Pow.Phoenix.PlugErrorHandler
   end
 
