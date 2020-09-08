@@ -7,15 +7,16 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Repo
   alias Proca.Users.User
 
+  @pow_config [otp_app: :proca]
 
  #   Absinthe.Plug.put_options(conn, context: context)
-  def init([]), do: nil
-  def init([query_param: param]), do: param
+  def init(opts), do: opts
 
-  def call(conn, param) do
+  def call(conn, opts) do
     conn
-    |> jwt_auth(param)
+    |> jwt_auth(opts[:query_param])
     |> add_to_context
+    |> add_to_session(opts[:enable_session])
   end
 
   @doc """
@@ -71,6 +72,18 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       %User{} = u -> 
         Absinthe.Plug.put_options(conn, context: %{user: u})
       nil -> conn
+    end
+  end
+
+  defp add_to_session(conn, nil), do: conn
+  
+  defp add_to_session(conn, false), do: conn
+
+  defp add_to_session(conn, true) do
+    case conn.assigns.user do
+      user = %User{} -> conn
+        |> Session.create(user, @pow_config) |> elem(0)
+        _ -> conn
     end
   end
 end
