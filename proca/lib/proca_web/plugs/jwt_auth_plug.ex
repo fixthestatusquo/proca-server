@@ -9,19 +9,20 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
 
 
  #   Absinthe.Plug.put_options(conn, context: context)
-  def init(opts), do: opts
+  def init([]), do: nil
+  def init([query_param: param]), do: param
 
-  def call(conn, _) do
+  def call(conn, param) do
     conn
-    |> jwt_auth
+    |> jwt_auth(param)
     |> add_to_context
   end
 
   @doc """
   Return the current user context based on the authorization header
   """
-  def jwt_auth(conn) do
-    with ["Bearer " <> token] <- Conn.get_req_header(conn, "authorization"),
+  def jwt_auth(conn, param) do
+    with token when not is_nil(token) <- get_token(conn, param),
          {true, jwt, _sig} <- Proca.Server.Jwks.verify(token)
       do
       conn
@@ -30,7 +31,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       {false, _, _} -> conn
       |> Conn.send_resp(401, "Unauthorized")
       |> Conn.halt()
-      _ -> conn
+      nil -> conn # no token
     end
   end
 
@@ -46,11 +47,23 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
         }
       } -> case Repo.get_by(User, email: email) do
              nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config)
-             user -> Plug.assign_current_user(conn, user, User.pow_config)
+             user -> Plug.assign_current_user(conn, user, User.pow_config) |> IO.inspect(label: "assigning")
            end
 
       _ -> conn
     end
+  end
+
+  defp get_token(conn, nil) do
+    case Conn.get_req_header(conn, "authorization") do
+      ["Bearer " <> token] -> token
+      _ -> nil
+    end
+  end
+
+  defp get_token(conn, param) do
+    conn = Conn.fetch_query_params(conn)
+    conn.query_params[param]
   end
 
   defp add_to_context(conn) do

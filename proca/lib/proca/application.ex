@@ -39,11 +39,14 @@ defmodule Proca.Application do
       # {Proca.Worker, arg},
     ]
 
-    children = case Application.get_env(:proca, Proca.Server.Jwks)[:url] do
-                 nil -> children
-                 url -> children ++ [{Proca.Server.Jwks, url}]
-    end
-
+    children = if enabled(:jwt) do
+      children ++ [{
+                    Proca.Server.Jwks,
+                    Application.get_env(:proca, Proca.Server.Jwks)[:url]
+                    }]
+    else
+      children
+    end 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Proca.Supervisor]
@@ -55,5 +58,9 @@ defmodule Proca.Application do
   def config_change(changed, _new, removed) do
     ProcaWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp enabled(:jwt) do
+    not is_nil Application.get_env(:proca, Proca.Server.Jwks)[:url]
   end
 end
