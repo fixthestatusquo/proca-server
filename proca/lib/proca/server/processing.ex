@@ -170,7 +170,7 @@ defmodule Proca.Server.Processing do
   different system will consume it straight from rabbitmq.
 
   """
-  @spec emit(Action, :action | :supporter, :confirm | :deliver) :: :ok | :error
+  @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
   def emit(action, :action, :deliver) do
 
     routing = if action.action_page.org.custom_action_deliver do
@@ -198,8 +198,8 @@ defmodule Proca.Server.Processing do
   end
 
 
-  @spec process(Action) :: :ok
-  def process(action) do
+  @spec process(action :: %Action{}) :: :ok
+  def process(action = %Action{}) do
     # action = Action.get_by_id(action.id)
     action = Repo.preload(action, action_page: :org, supporter: :contacts)
 
@@ -207,14 +207,11 @@ defmodule Proca.Server.Processing do
       {state_change, thing, stage} ->
         Repo.transaction(fn ->
           case emit(action, thing, stage) do
-            :ok ->
-              Repo.update!(state_change)
-              :ok
-
-            :error ->
-              raise "Cannot emit"
+            :ok -> Repo.update!(state_change)
+            :error -> raise "Cannot emit"
           end
         end)
+        :ok
 
       :ok ->
         :ok
@@ -223,11 +220,7 @@ defmodule Proca.Server.Processing do
 
   def clear_transient(action) do
     Repo.delete_all(Field.transient_fields(action))
-    {n, res} = Repo.update_all(Supporter.transient_fields(action.supporter), [])
-
-    if ! n > 0 do
-      Logger.warn "clear_transiet: cleared #{n} supporter rows: #{res}"
-    end
+    {_n, _res} = Repo.update_all(Supporter.transient_fields(action.supporter), [])
 
     :ok
   end
