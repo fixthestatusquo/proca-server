@@ -20,6 +20,8 @@ defmodule Proca.Org do
     
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
+    belongs_to :email_backend, Proca.Service
+    belongs_to :template_backend, Proca.Service
 
     field :custom_supporter_confirm, :boolean
     field :custom_action_confirm, :boolean

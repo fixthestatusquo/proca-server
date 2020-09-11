@@ -1,3 +1,3 @@
 defmodule Proca.Service.EmailTemplate do
-  defstruct subject: "", html: "", text: "", ref: ""
+  defstruct name: "", subject: "", html: "", text: "", ref: ""
 end
