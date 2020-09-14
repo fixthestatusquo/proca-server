@@ -56,4 +56,16 @@ defmodule Proca.Service.EmailBackend do
     e = apply(backend, :put_template, [e, email_template])
     apply(backend, :deliver, [e, org])
   end
+
+  defmodule NotDelivered do
+    defexception [:message]
+
+    def exception(msg) when is_bitstring(msg) do
+      %NotDelivered{message: msg}
+    end
+
+    def exception(original_exception) do
+      %NotDelivered{message: original_exception.message}
+    end
+  end
 end
