@@ -6,7 +6,7 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service}
-  alias Proca.Service.{EmailTemplate, EmailRecipient}
+  alias Proca.Service.{EmailTemplate, EmailRecipient, EmailBackend}
   alias Bamboo.{MailjetAdapter, MailjetHelper, Email}
 
   @api_url "https://api.mailjet.com/v3"
@@ -62,7 +62,11 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def deliver(email, %Org{email_backend: srv}) do
-    MailjetAdapter.deliver(email, config(srv))
+    try do
+      MailjetAdapter.deliver(email, config(srv))
+    rescue e in MailjetAdapter.ApiError ->
+        reraise EmailBackend.NotDelivered.exception(e), __STACKTRACE__
+    end
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
