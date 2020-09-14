@@ -21,10 +21,10 @@ defmodule Proca.Stage.Support do
 
   defp action_data_source(%Action{source: s}) when not is_nil(s) do
     %{
-      source: s.source,
-      mediunm: s.medium,
-      campaign: s.campaign,
-      content: s.content
+      "source" => s.source,
+      "mediunm" => s.medium,
+      "campaign" => s.campaign,
+      "content" => s.content
     }
   end
 
@@ -46,13 +46,13 @@ defmodule Proca.Stage.Support do
         }
       ) do
     %{
-      ref: Supporter.base_encode(ref),
-      firstName: first_name,
-      email: email,
-      payload: Contact.base_encode(payload),
-      nonce: Contact.base_encode(nonce),
-      publicKey: PublicKey.base_encode(public),
-      signKey: PublicKey.base_encode(sign)
+      "ref" => Supporter.base_encode(ref),
+      "firstName" => first_name,
+      "email" => email,
+      "payload" => Contact.base_encode(payload),
+      "nonce" => Contact.base_encode(nonce),
+      "publicKey" => PublicKey.base_encode(public),
+      "signKey" => PublicKey.base_encode(sign)
     }
   end
 
@@ -67,10 +67,10 @@ defmodule Proca.Stage.Support do
         }
       ) do
     %{
-      ref: Supporter.base_encode(ref),
-      firstName: first_name,
-      email: email,
-      payload: payload
+      "ref" => Supporter.base_encode(ref),
+      "firstName" => first_name,
+      "email" => email,
+      "payload" => payload
     }
   end
 
@@ -84,10 +84,10 @@ defmodule Proca.Stage.Support do
     contact
   ) when is_nil(contact) do
     %{
-      ref: Supporter.base_encode(ref),
-      firstName: first_name,
-      email: email,
-      payload: ""
+      "ref" => Supporter.base_encode(ref),
+      "firstName" => first_name,
+      "email" => email,
+      "payload" => ""
     }
   end
 

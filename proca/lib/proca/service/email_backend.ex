@@ -21,19 +21,20 @@ defmodule Proca.Service.EmailBackend do
   """
 
   alias Proca.{Org, Service}
-  alias Proca.Service.EmailTemplate
+  alias Proca.Service.{EmailTemplate, EmailRecipient}
   alias Bamboo.Email
 
-  # Tempalte management
+  # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
-  # @callback list_templates(org :: %Org{:template_backend => %Service{}}) :: [%EmailTemplate{}]
   @callback list_templates(org :: %Org{}) :: [%EmailTemplate{}]
   @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) :: :ok | {:error, reason :: String.t}
-  @callback get_template(org :: %Org{}, ref :: String.t) :: {:ok, %EmailTemplate{}} | {:error, reasone :: String.t}
+  @callback get_template(org :: %Org{}, ref :: String.t) :: {:ok, %EmailTemplate{}} | {:error, reason :: String.t}
 
-  @type recipient :: %{required(String.t) => String.t}
+  @type recipient :: %EmailRecipient{}
 
-  @callback put_recipients(email :: %Email{}, recipients :: [recipient], org :: %Org{}) :: %Email{}
+  @callback put_recipients(email :: %Email{}, recipients :: [recipient]) :: %Email{}
+  @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
+  @callback deliver(%Email{}, %Org{}) :: any()
 
   def service_module(:mailjet) do
     Proca.Service.Mailjet
@@ -44,5 +45,15 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:supports_templates?, [org])
   end
 
+  @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok
+  def deliver(recipients, %Org{email_backend: %Service{name: name}} = org, email_template) do
+    backend = service_module(name)
 
+    e = %Email{}
+    |> Email.from({org.name, org.email_from})
+
+    e = apply(backend, :put_recipients, [e, recipients])
+    e = apply(backend, :put_template, [e, email_template])
+    apply(backend, :deliver, [e, org])
+  end
 end

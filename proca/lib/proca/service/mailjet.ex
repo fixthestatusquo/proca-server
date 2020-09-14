@@ -6,7 +6,8 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service}
-  alias Proca.Service.EmailTemplate
+  alias Proca.Service.{EmailTemplate, EmailRecipient}
+  alias Bamboo.{MailjetAdapter, MailjetHelper, Email}
 
   @api_url "https://api.mailjet.com/v3"
   @template_path "/REST/template"
@@ -32,5 +33,42 @@ defmodule Proca.Service.Mailjet do
     }
   end
 
+  @impl true
+  def upsert_template(_org, _template) do
+    {:error, "not implemneted"}
+  end
 
+  @impl true
+  def get_template(_org, _template) do
+    {:error, "not implemented"}
+  end
+
+  @impl true
+  def put_recipients(email, recipients) do
+    email
+    |> Email.to([])
+    |> Email.cc([])
+    |> Email.bcc(Enum.map(recipients,
+        fn %{first_name: name, email: eml} -> {name, eml} end))
+    |> MailjetHelper.put_recipient_vars(Enum.map(recipients, &(&1.fields)))
+  end
+
+  @impl true
+  def put_template(email, %EmailTemplate{ref: ref}) do
+    email
+    |> MailjetHelper.template(String.to_integer(ref))
+    |> MailjetHelper.template_language(true)
+  end
+
+  @impl true
+  def deliver(email, %Org{email_backend: srv}) do
+    MailjetAdapter.deliver(email, config(srv))
+  end
+
+  def config(%Service{name: :mailjet, user: u, password: p}) do
+    %{
+      api_key: u,
+      api_private_key: p
+    }
+  end
 end
