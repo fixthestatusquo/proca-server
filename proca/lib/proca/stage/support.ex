@@ -132,6 +132,7 @@ defmodule Proca.Stage.Support do
       },
       "campaign" => %{
         "name" => action.campaign.name,
+        "title" => action.campaign.title,
         "externalId" => action.campaign.external_id
       },
       "contact" => action_data_contact(action.supporter, contact),
