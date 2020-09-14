@@ -13,10 +13,11 @@ defmodule Proca.Service.EmailRecipient do
     fields = get_in(action_data, ["action", "fields"])
 
     # add also ref field. I guess email and name are implemneted in template render (by Mailjet etc)?
-    fields = Map.merge(fields, %{"ref" => rcpt.ref})
+    fields = Map.merge(fields, Map.take(rcpt, [:first_name, :email, :ref]))
 
     fields = Map.merge(fields, %{
           "campaign_name" => get_in(action_data, ["campaign", "name"]),
+          "campaign_title" => get_in(action_data, ["campaign", "title"]),
           "action_page_name" => get_in(action_data, ["actionPage", "name"]),
           "utm_source" => get_in(action_data, ["source", "source"]),
           "utm_medium" => get_in(action_data, ["source", "medium"]),
