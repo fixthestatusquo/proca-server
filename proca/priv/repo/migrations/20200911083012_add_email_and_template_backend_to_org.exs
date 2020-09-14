@@ -4,6 +4,7 @@ defmodule Proca.Repo.Migrations.AddEmailAndTemplateBackendToOrg do
   def change do
     alter table(:orgs) do
       add :email_backend_id, references(:services, on_delete: :nilify_all), null: true
+      add :email_from, :string, null: true
       add :template_backend_id, references(:services, on_delete: :nilify_all), null: true
     end
   end
