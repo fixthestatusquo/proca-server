@@ -135,5 +135,29 @@ defmodule ProcaWeb.Resolvers.Org do
     org_signatures(org)
     |> signatures_list(Map.get(arg, :limit))
   end
+
+  def org_personal_data(org, _args, _ctx) do
+    {
+      :ok,
+      %{
+        contact_schema: org.contact_schema,
+        email_opt_in: org.email_opt_in,
+        email_opt_in_template: org.email_opt_in_template
+      }
+    }
+  end
+
+  def update_org(_p, %{name: name} = attrs, %{context: %{user: user}}) do
+    with %Org{} = org <- Org.get_by_name(name),
+         %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
+           true <- can?(s, :use_api)
+      do
+      Org.changeset(org, attrs)
+      |> Repo.update()
+      else
+        _ -> {:error, "Access forbidden"}
+    end
+
+  end
 end
 

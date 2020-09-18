@@ -17,5 +17,6 @@ defmodule ProcaWeb.Schema do
   mutation do
     import_fields :campaign_mutations
     import_fields :action_mutations
+    import_fields :org_mutations
   end
 end
