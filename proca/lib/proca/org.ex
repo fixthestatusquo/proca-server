@@ -17,12 +17,15 @@ defmodule Proca.Org do
     has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
 
     field :contact_schema, ContactSchema, default: :basic
-    
+
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
     field :email_from, :string
     belongs_to :template_backend, Proca.Service
+    
+    field :email_opt_in, :boolean, default: false
+    field :email_opt_in_template, :string
 
     field :custom_supporter_confirm, :boolean
     field :custom_action_confirm, :boolean
@@ -35,7 +38,7 @@ defmodule Proca.Org do
   @doc false
   def changeset(org, attrs) do
     org
-    |> cast(attrs, [:name, :title])
+    |> cast(attrs, [:name, :title, :contact_schema, :email_opt_in, :email_opt_in_template])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^([[:alnum]_-]+$)/)
   end

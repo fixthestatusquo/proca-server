@@ -94,7 +94,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :update_action_page, type: :action_page do
       middleware Authenticated
 
-      # XXX Copy from action_page_input and find/replace filed->arg. GraphQL is silly here
+      # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
       @desc """
       Action Page id
       """
