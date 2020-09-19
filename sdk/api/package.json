@@ -1,0 +1,29 @@
+{
+  "name": "@ftsq/proca-api",
+  "version": "1.0.0",
+  "description": "Client library for Proca API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate": "graphql-codegen --config codegen.yml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fixthestatusquo/proca-api.git"
+  },
+  "author": "Marcin Koziej <code@fixthestatusquo.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fixthestatusquo/proca-api/issues"
+  },
+  "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@graphql-codegen/cli": "1.17.8",
+    "@graphql-codegen/introspection": "^1.17.8",
+    "@graphql-codegen/typescript": "1.17.8",
+    "@graphql-codegen/typescript-graphql-request": "^2.0.0",
+    "get-graphql-schema": "^2.1.2",
+    "graphql": "^15.3.0"
+  }
+}

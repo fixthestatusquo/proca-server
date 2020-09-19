@@ -1,0 +1,535 @@
+schema {
+  query: RootQueryType
+  mutation: RootMutationType
+}
+
+type ActionCustomFields {
+  actionType: String!
+  fields: [CustomField!]
+  insertedAt: Datetime!
+}
+
+type ActionExport
+
+"""
+Custom field added to action. For signature it can be contact, for mail it can be subject and body
+"""
+input ActionInput {
+  """Action Type"""
+  actionType: String!
+
+  """Other fields that accompany the signature"""
+  fields: [CustomFieldInput!]
+}
+
+type ActionPage {
+  """Campaign this widget belongs to"""
+  campaign: Campaign
+
+  """Config JSON of this action page"""
+  config: String
+  id: Int
+
+  """List of steps in journey"""
+  journey: [String!]
+
+  """Locale for the widget, in i18n format"""
+  locale: String
+
+  """Name where the widget is hosted"""
+  name: String
+  org: PublicOrg
+
+  """Reference to thank you email templated of this Action Page"""
+  thankYouTemplateRef: String
+}
+
+"""ActionPage declaration"""
+input ActionPageInput {
+  """
+  JSON string containing Action Page config
+  
+  """
+  config: String
+
+  """
+  Extra supporter count. If you want to add a number of signatories you have
+  offline or kept in another system, you can specify the number here. 
+  
+  """
+  extraSupporters: Int
+
+  """
+  Action Page id
+  
+  """
+  id: Int
+
+  """
+  List of steps in the journey
+  
+  """
+  journey: [String!]
+
+  """2-letter, lowercase, code of ActionPage language"""
+  locale: String
+
+  """
+  Unique NAME identifying ActionPage.
+  
+  Does not have to exist, must be unique. Can be a 'technical' identifier
+  scoped to particular organization, so it does not have to change when the
+  slugs/names change (eg. some.org/1234). However, frontent Widget can
+  ask for ActionPage by it's current location.href (but without https://), in which case it is useful
+  to make this url match the real widget location. 
+  
+  """
+  name: String
+
+  """A reference to thank you email template of this ActionPage"""
+  thankYouTemplateRef: String
+}
+
+"""ActionPage declaration (using the legacy url attribute)"""
+input ActionPageInputLegacyUrl {
+  config: String
+  extraSupporters: Int
+  id: Int
+  journey: [String!]
+  locale: String
+  thankYouTemplateRef: String
+  url: String
+}
+
+"""Count of actions for particular action type"""
+type ActionTypeCount {
+  """action type"""
+  actionType: String!
+
+  """count of actions of action type"""
+  count: Int!
+}
+
+"""Address type which can hold different addres fields."""
+input AddressInput {
+  """Country code (two-letter)."""
+  country: String
+
+  """Locality, which can be a city/town/village"""
+  locality: String
+
+  """Postcode, in format correct for country locale"""
+  postcode: String
+
+  """Region, being province, voyevodship, county"""
+  region: String
+}
+
+type Campaign {
+  """Fetch public actions"""
+  actions(actionPageId: Int, actionType: String!, campaignId: Int): PublicActionsResult
+
+  """External ID (if set)"""
+  externalId: Int
+  id: Int
+
+  """Internal name of the campaign"""
+  name: String
+  org: PublicOrg
+
+  """Campaign statistics"""
+  stats: CampaignStats
+
+  """Full, official name of the campaign"""
+  title: String
+}
+
+"""Campaign statistics"""
+type CampaignStats {
+  """Action counts for selected action types"""
+  actionCount: [ActionTypeCount!]
+
+  """Signature count (naive at the moment)"""
+  supporterCount: Int
+}
+
+"""GDPR consent data structure"""
+input ConsentInput {
+  leadOptIn: Boolean
+
+  """Has contact consented to receiving communication from widget owner?"""
+  optIn: Boolean!
+}
+
+"""Contact information"""
+input ContactInput {
+  """Contacts address"""
+  address: AddressInput
+
+  """Date of birth in format YYYY-MM-DD"""
+  birthDate: String
+
+  """Email"""
+  email: String
+
+  """First name (when you provide full name split into first and last)"""
+  firstName: String
+
+  """Last name (when you provide full name split into first and last)"""
+  lastName: String
+
+  """Full name"""
+  name: String
+
+  """Contacts phone number"""
+  phone: String
+}
+
+type ContactReference {
+  """Contact's reference"""
+  contactRef: String
+
+  """Contacts first name"""
+  firstName: String
+}
+
+enum ContactSchema {
+  BASIC
+  POPULAR_INITIATIVE
+}
+
+"""Custom field"""
+type CustomField {
+  key: String!
+  value: String!
+}
+
+"""Custom field with a key and value. Both are strings."""
+input CustomFieldInput {
+  key: String!
+  transient: Boolean
+  value: String!
+}
+
+scalar Datetime
+
+type Org {
+  """List action pages this org has"""
+  actionPages: [ActionPage]
+
+  """Get campaign this org is leader or partner of by id"""
+  campaign(id: Int): Campaign
+
+  """List campaigns this org is leader or partner of"""
+  campaigns: [Campaign]
+
+  """Organization id"""
+  id: Int
+
+  """Organisation short name"""
+  name: String
+  personalData: PersonalData!
+
+  """
+  Get signatures this org has collected.
+  Provide campaign_id to only get signatures for a campaign
+  XXX DEPRECATE AND REMOVE
+  
+  """
+  signatures(
+    """
+    return only signatures created at date time from this argument (inclusive)
+    """
+    after: Datetime
+
+    """return only signatures for campaign id"""
+    campaignId: Int
+
+    """Limit the number of returned signatures"""
+    limit: Int
+
+    """return only signatures with id starting from this argument (inclusive)"""
+    start: Int
+  ): SignatureList
+
+  """Organisation title (human readable name)"""
+  title: String
+}
+
+type PersonalData {
+  """Schema for contact personal information"""
+  contactSchema: ContactSchema!
+
+  """Email opt in enabled"""
+  emailOptIn: Boolean!
+
+  """Email opt in template name"""
+  emailOptInTemplate: String
+}
+
+"""Result of actions query"""
+type PublicActionsResult {
+  fieldKeys: [String!]
+  list: [ActionCustomFields]
+}
+
+type PublicOrg {
+  """Organisation short name"""
+  name: String
+
+  """Organisation title (human readable name)"""
+  title: String
+}
+
+type RootMutationType {
+  """Adds an action referencing contact data via contactRef"""
+  addAction(
+    """Action data"""
+    action: ActionInput!
+    actionPageId: Int!
+
+    """Contact reference"""
+    contactRef: ID
+
+    """Tracking codes (UTM_*)"""
+    tracking: TrackingInput
+  ): ContactReference
+
+  """Adds an action with contact data"""
+  addActionContact(
+    """Action data"""
+    action: ActionInput!
+    actionPageId: Int!
+
+    """GDPR communication opt"""
+    contact: ContactInput!
+
+    """Links to previous contact reference"""
+    contactRef: ID
+
+    """Signature action data"""
+    privacy: ConsentInput!
+
+    """Tracking codes (UTM_*)"""
+    tracking: TrackingInput
+  ): ContactReference
+
+  """
+  Deprecated, use upsert_campaign.
+  
+  """
+  declareCampaign(
+    """Action pages of this campaign"""
+    actionPages: [ActionPageInputLegacyUrl]!
+
+    """
+    Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign
+    """
+    externalId: Int
+
+    """Campaign unchanging identifier"""
+    name: String!
+
+    """Org name"""
+    orgName: String!
+
+    """Campaign human readable title"""
+    title: String!
+  ): Campaign
+
+  """Link actions with refs to contact with contact reference"""
+  linkActions(
+    """Action Page id"""
+    actionPageId: Int!
+
+    """Contact reference"""
+    contactRef: ID!
+
+    """Link actions with these references (if unlinked to supporter)"""
+    linkRefs: [String!]
+  ): ContactReference
+
+  """
+  Update an Action Page
+  
+  """
+  updateActionPage(
+    """
+    JSON string containing Action Page config
+    
+    """
+    config: String
+
+    """
+    Extra supporter count. If you want to add a number of signatories you have
+    offline or kept in another system, you can specify the number here. 
+    
+    """
+    extraSupporters: Int
+
+    """
+    Action Page id
+    
+    """
+    id: Int!
+
+    """
+    List of steps in the journey
+    
+    """
+    journey: [String!]
+
+    """2-letter, lowercase, code of ActionPage language"""
+    locale: String
+
+    """
+    Unique NAME identifying ActionPage.
+    
+    Does not have to exist, must be unique. Can be a 'technical' identifier
+    scoped to particular organization, so it does not have to change when the
+    slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
+    ask for ActionPage by it's current location.href, in which case it is useful
+    to make this url match the real idwget location.
+    
+    """
+    name: String
+
+    """A reference to thank you email template of this ActionPage"""
+    thankYouTemplateRef: String
+  ): ActionPage
+  updateOrg(
+    """Schema for contact personal information"""
+    contactSchema: ContactSchema
+
+    """Email opt in enabled"""
+    emailOptIn: Boolean
+
+    """Email opt in template name"""
+    emailOptInTemplate: String
+
+    """
+    Name of organisation, used for lookup, can't be used to change org name
+    """
+    name: String!
+
+    """Organisation title (human readable name)"""
+    title: String
+  ): Org
+
+  """
+  Upserts a campaign.
+  
+  Creates or appends campaign and it's action pages. In case of append, it
+  will change the campaign with the matching name, and action pages with
+  matching names. It will create new action pages if you pass new names. No
+  Action Pages will be removed (principle of not removing signature data).
+  
+  """
+  upsertCampaign(
+    """Action pages of this campaign"""
+    actionPages: [ActionPageInput]!
+
+    """
+    Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign
+    """
+    externalId: Int
+
+    """Campaign unchanging identifier"""
+    name: String!
+
+    """Org name"""
+    orgName: String!
+
+    """Campaign human readable title"""
+    title: String!
+  ): Campaign
+}
+
+type RootQueryType {
+  """Get action page"""
+  actionPage(
+    """Get action page by id."""
+    id: Int
+
+    """Get action page by name the widget is displayed on"""
+    name: String
+
+    """
+    Get action page by url the widget is displayed on (DEPRECATED, use name)
+    """
+    url: String
+  ): ActionPage
+
+  """Get a list of campains"""
+  campaigns(
+    """
+    Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list
+    """
+    name: String
+
+    """
+    Filter campaigns by title using LIKE format (% means any sequence of characters)
+    """
+    title: String
+  ): [Campaign]
+  exportActions(
+    """
+    return only actions created at date time from this argument (inclusive)
+    """
+    after: Datetime
+    campaignId: Int
+
+    """Limit the number of returned actions"""
+    limit: Int
+    orgName: String!
+
+    """return only actions with id starting from this argument (inclusive)"""
+    start: Int
+  ): ActionExport
+
+  """Organization api (authenticated)"""
+  org(
+    """Name of organisation"""
+    name: String!
+  ): Org
+}
+
+type Signature {
+  """Action page id"""
+  actionPageId: Int
+
+  """Campaign id"""
+  campaignId: Int
+
+  """Encrypted contact data in Base64url"""
+  contact: String
+
+  """DateTime of signature (UTC)"""
+  created: Datetime
+
+  """Signature id"""
+  id: Int
+
+  """Encryption nonce in Base64url"""
+  nonce: String
+
+  """Opt in given when adding sig"""
+  optIn: Boolean
+}
+
+type SignatureList {
+  """List of returned signatures"""
+  list: [Signature]
+
+  """Public key of sender (proca app), in Base64url encoding (RFC 4648 5.)"""
+  publicKey: String
+}
+
+"""Tracking codes"""
+input TrackingInput {
+  campaign: String!
+  content: String
+  medium: String!
+  source: String!
+}
+
