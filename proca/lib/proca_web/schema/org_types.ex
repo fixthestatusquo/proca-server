@@ -97,6 +97,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc """
     Get signatures this org has collected.
     Provide campaign_id to only get signatures for a campaign
+    XXX DEPRECATE AND REMOVE
     """
     field :signatures, :signature_list do
       @desc "return only signatures for campaign id"

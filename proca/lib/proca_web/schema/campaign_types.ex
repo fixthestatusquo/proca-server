@@ -151,8 +151,18 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve &Resolvers.Campaign.stats/3
     end
 
+    @desc "Fetch public actions"
+    field :actions, :public_actions_result do
+      arg(:action_page_id, :integer)
+      arg(:campaign_id, :integer)
+      arg(:action_type, non_null(:string))
+      resolve(&Resolvers.ActionQuery.list_by_action_type/3)
+    end
+
     field :org, :public_org
   end
+
+
 
   object :action_page do
     field :id, :integer
@@ -226,7 +236,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   end
 
 
-
+  # public counters
   @desc "Campaign statistics"
   object :campaign_stats do
     @desc "Signature count (naive at the moment)"
@@ -243,5 +253,18 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "count of actions of action type"
     field :count, non_null(:integer)
+  end
+
+
+  object :action_custom_fields do
+    field :action_type, non_null(:string)
+    field :inserted_at, non_null(:datetime)
+    field :fields, list_of(non_null(:custom_field))
+  end
+
+  @desc "Result of actions query"
+  object :public_actions_result do
+    field :field_keys, list_of(non_null(:string))
+    field :list, list_of(:action_custom_fields)
   end
 end

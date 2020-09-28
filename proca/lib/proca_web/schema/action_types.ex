@@ -5,35 +5,24 @@ defmodule ProcaWeb.Schema.ActionTypes do
   
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
+  alias ProcaWeb.Schema.Authenticated
 
   object :action_queries do
-    @desc "Fetch public actions"
-    field :actions, :actions_query_result do
-      arg(:action_page_id, :integer)
-      arg(:campaign_id, :integer)
-      arg(:action_type, non_null(:string))
-      resolve(&Resolvers.ActionQuery.list_by_action_type/3)
+    field :export_actions, :actions_export do
+      middleware Authenticated
+
+      arg :org_name, non_null(:string)
+      arg :campaign_id, :integer
+      @desc "return only actions with id starting from this argument (inclusive)"
+      arg :start, :integer
+      @desc "return only actions created at date time from this argument (inclusive)"
+      arg :after, :datetime
+      @desc "Limit the number of returned actions"
+      arg :limit, :integer
+
     end
+    # authenticated action exporting
   end
-
-  @desc "Custom field"
-  object :custom_field do
-    field :key, non_null(:string)
-    field :value, non_null(:string)
-  end
-
-  object :action_custom_fields do
-    field :action_type, non_null(:string)
-    field :inserted_at, non_null(:datetime)
-    field :fields, list_of(non_null(:custom_field))
-  end
-
-  @desc "Result of actions query"
-  object :actions_query_result do
-    field :field_keys, list_of(non_null(:string))
-    field :list, list_of(:action_custom_fields)
-  end
-
 
   object :action_mutations do
     @desc "Adds an action referencing contact data via contactRef"
@@ -130,11 +119,22 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :fields, list_of(non_null(:custom_field_input))
   end
 
+  object :action do
+    field :action_type, non_null(:string)
+    field :fields, non_null(list_of(non_null(:custom_field)))
+  end
+
   @desc "Custom field with a key and value. Both are strings."
   input_object :custom_field_input do
     field :key, non_null(:string)
     field :value, non_null(:string)
     field :transient, :boolean
+  end
+
+  @desc "Custom field with a key and value."
+  object :custom_field do
+    field :key, non_null(:string)
+    field :value, non_null(:string)
   end
 
   @desc "GDPR consent data structure"
@@ -158,6 +158,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Contacts first name"
     field :first_name, :string
+  end
+
+  object :actions_export do
+    field :list, non_null(list_of(non_null(:action)))
   end
 
 
