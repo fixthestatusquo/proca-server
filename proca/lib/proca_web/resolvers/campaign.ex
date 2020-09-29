@@ -64,7 +64,9 @@ defmodule ProcaWeb.Resolvers.Campaign do
       do
       result = Repo.transaction(fn ->
         campaign = upsert_campaign(org, attrs)
-        Enum.each(pages, fn page ->
+        pages
+        |> Enum.map(&fix_page_legacy_url/1)
+        |> Enum.each(fn page ->
           upsert_action_page(org, campaign, page)
         end)
         campaign
@@ -79,6 +81,18 @@ defmodule ProcaWeb.Resolvers.Campaign do
         _ -> {:error, "Access forbidden"}
     end
   end
+
+  # XXX for declareCampaign support
+  defp fix_page_legacy_url(%{url: url} = page) do
+    case url do
+      "https://" <> n -> %{page | name: n}
+      "http://" <> n -> %{page | name: n}
+      n -> %{page | name: n}
+    end
+    |> Map.delete(:url)
+  end
+
+  defp fix_page_legacy_url(page), do: page
 
   def upsert_campaign(org, attrs) do
     campaign = Campaign.upsert(org, attrs)
