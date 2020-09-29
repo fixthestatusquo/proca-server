@@ -53,7 +53,7 @@ config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "5000")
 
-config, :proca, Proca.Supporter,
+config :proca, Proca.Supporter,
   fpr_seed: System.get_env("FINGERPRINT_SEED") || ""
 
 # Configures Elixir's Logger
