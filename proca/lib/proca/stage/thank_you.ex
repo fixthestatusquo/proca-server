@@ -55,7 +55,8 @@ defmodule Proca.Stage.ThankYou do
           |> Message.put_batch_key(action_page_id)
           |> Message.put_batcher(:transactional)
         else
-          Message.ack_immediately(message)
+          Message.ack_immediately([Message.put_batcher(message, :transactional)])
+          |> List.first
         end
 
       {:error, reason} -> Message.failed(message, reason)
