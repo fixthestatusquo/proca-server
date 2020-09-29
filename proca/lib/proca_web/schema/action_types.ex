@@ -8,10 +8,12 @@ defmodule ProcaWeb.Schema.ActionTypes do
   alias ProcaWeb.Schema.Authenticated
 
   object :action_queries do
-    field :export_actions, :actions_export do
+    field :export_actions, list_of(:action) do
       middleware Authenticated
 
+      @desc "Organization name"
       arg :org_name, non_null(:string)
+      @desc "Campaign the action belongs to (unless given, get all actions)"
       arg :campaign_id, :integer
       @desc "return only actions with id starting from this argument (inclusive)"
       arg :start, :integer
@@ -20,8 +22,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Limit the number of returned actions"
       arg :limit, :integer
 
+      resolve &Resolvers.ExportActions.export_actions/3
     end
-    # authenticated action exporting
   end
 
   object :action_mutations do
@@ -37,7 +39,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
 
-      resolve(&Resolvers.Action.add_action/3)
+      resolve &Resolvers.Action.add_action/3
     end
 
     @desc "Adds an action with contact data"
@@ -57,7 +59,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Links to previous contact reference"
       arg(:contact_ref, :id)
 
-      resolve(&Resolvers.Action.add_action_contact/3)
+      resolve &Resolvers.Action.add_action_contact/3
     end
 
     @desc "Link actions with refs to contact with contact reference"
@@ -71,7 +73,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Link actions with these references (if unlinked to supporter)"
       arg(:link_refs, list_of(non_null(:string)))
 
-      resolve(&Resolvers.Action.link_actions/3)
+      resolve &Resolvers.Action.link_actions/3
     end
   end
 
@@ -119,9 +121,41 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :fields, list_of(non_null(:custom_field_input))
   end
 
+  # XXX maybe rename to :exported_action or something
   object :action do
+    field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
+    field :contact, non_null(:contact)
     field :fields, non_null(list_of(non_null(:custom_field)))
+    field :tracking, :tracking
+    field :campaign, non_null(:action_campaign)
+    field :action_page, non_null(:action_action_page)
+    field :privacy, non_null(:consent)
+  end
+
+  object :action_campaign do
+    field :name, non_null(:string)
+    field :external_id, non_null(:integer)
+  end
+
+  object :action_action_page do
+    field :name, non_null(:string)
+    field :locale, non_null(:string)
+  end
+
+  object :contact do
+    field :contact_ref, non_null(:string)
+    field :payload, :string
+    field :nonce, :string
+    field :public_key, :key
+    field :sign_key, :key
+    field :optIn, non_null(:boolean)
+  end
+
+  @desc "Encryption or sign key with integer id (database)"
+  object :key do
+    field :id, non_null(:integer)
+    field :key, non_null(:string)
   end
 
   @desc "Custom field with a key and value. Both are strings."
@@ -141,9 +175,23 @@ defmodule ProcaWeb.Schema.ActionTypes do
   input_object :consent_input do
     @desc "Has contact consented to receiving communication from widget owner?"
     field :opt_in, non_null(:boolean)
+    @desc "Opt in to the campaign leader"
     field :lead_opt_in, :boolean
   end
 
+  @desc "GDPR consent data for this org"
+  object :consent do
+    field :opt_in, non_null(:boolean)
+  end
+
+  @desc "Tracking codes"
+  object :tracking do
+    field :source, non_null(:string)
+    field :medium, non_null(:string)
+    field :campaign, non_null(:string)
+    field :content, non_null(:string)
+  end
+  
   @desc "Tracking codes"
   input_object :tracking_input do
     field :source, non_null(:string)
@@ -158,10 +206,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Contacts first name"
     field :first_name, :string
-  end
-
-  object :actions_export do
-    field :list, non_null(list_of(non_null(:action)))
   end
 
 
