@@ -33,8 +33,6 @@ config :proca, ProcaWeb.Endpoint,
 config :sentry,
   dsn: System.get_env("SENTRY_DSN") || nil
 
-config, :proca, Proca.Supporter,
-  fpr_seed: System.get_env("FINGERPRINT_SEED") || ""
 
 
 # ## Using releases (Elixir v1.9+)
