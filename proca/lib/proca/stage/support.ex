@@ -19,16 +19,16 @@ defmodule Proca.Stage.Support do
       |> Enum.map(fn a -> action_data(a, stage) end)
   end
 
-  defp action_data_source(%Action{source: s}) when not is_nil(s) do
+  defp action_data_tracking(%Action{source: s}) when not is_nil(s) do
     %{
       "source" => s.source,
-      "mediunm" => s.medium,
+      "medium" => s.medium,
       "campaign" => s.campaign,
       "content" => s.content
     }
   end
 
-  defp action_data_source(_) do
+  defp action_data_tracking(_) do
     nil
   end
 
@@ -137,7 +137,7 @@ defmodule Proca.Stage.Support do
       },
       "contact" => action_data_contact(action.supporter, contact),
       "privacy" => privacy,
-      "source" => action_data_source(action)
+      "tracking" => action_data_tracking(action)
     }
     |> put_action_meta(stage)
   end
