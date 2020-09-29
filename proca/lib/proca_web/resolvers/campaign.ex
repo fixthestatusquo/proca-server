@@ -60,7 +60,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
     with %Org{} = org <- Org.get_by_name(org_name),
          %Staffer{} = staffer <- Staffer.for_user_in_org(user, org.id),
-         true <- can?(staffer, :use_api)
+         true <- can?(staffer, [:use_api, :manage_campaigns, :manage_action_pages])
       do
       result = Repo.transaction(fn ->
         campaign = upsert_campaign(org, attrs)
