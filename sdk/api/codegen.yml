@@ -1,11 +1,27 @@
 overwrite: true
-schema: "http://localhost:4000/api"
-documents: null
+schema: "schema/schema.graphql"
 generates:
-  src/generated/graphql.ts:
-    plugins:
-      - "typescript"
-      - "typescript-graphql-request"
   ./graphql.schema.json:
     plugins:
       - "introspection"
+  src/types.ts:
+    plugins:
+      - "typescript"
+  src/sdk/widget.ts:
+    documents:
+      - "schema/widget.graphql"
+    plugins:
+      - "typescript-graphql-request"
+      - "typescript-operations"
+    preset: import-types
+    presetConfig:
+      typesPath: types
+  src/sdk/admin.ts:
+    documents:
+      - "schema/admin.graphql"
+    plugins:
+      - "typescript-graphql-request"
+      - "typescript-operations"
+    preset: import-types
+    presetConfig:
+      typesPath: types

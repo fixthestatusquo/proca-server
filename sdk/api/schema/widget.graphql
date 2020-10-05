@@ -1,0 +1,48 @@
+query GetActionPage($name: String, $id: Int) {
+  actionPage(name: $name, id: $id) {
+    config,
+    locale,
+    journey,
+    name,
+    campaign {
+      title, name, externalId, 
+      stats {
+        actionCount {
+          actionType, count
+        }, 
+        supporterCount
+      },
+      org {
+        title
+      }
+    }
+  }
+}
+
+
+query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
+  actionPage(name: $name, id: $id) {
+    config,
+    locale,
+    journey,
+    name,
+    campaign {
+      title, name, externalId,
+      stats {
+        actionCount {
+          actionType, count
+        }, 
+        supporterCount
+      },
+      actions(actionType: $actionType) {
+        fieldKeys, list {  
+        actionType, insertedAt,
+          fields { key, value }
+        }
+      },
+      org {
+        title
+      }
+    }
+  }
+}
