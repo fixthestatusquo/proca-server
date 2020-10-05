@@ -1,0 +1,9 @@
+query ListCampaigns($org: String!) {
+    org(name: $org) {
+      campaigns {
+        id, externalId, name, title,
+        org { name, title }
+      }
+    }
+  }
+
