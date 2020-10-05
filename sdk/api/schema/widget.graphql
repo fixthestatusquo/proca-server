@@ -46,3 +46,40 @@ query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
     }
   }
 }
+
+mutation AddContactAction(
+  $id: Int!,
+  $contact: ContactInput!, 
+  $actionType: String!,
+  $fields: [CustomFieldInput!],
+  $privacy: ConsentInput!,
+  $tracking: TrackingInput
+) {
+  addActionContact(
+    actionPageId: $id,
+    contact: $contact,
+    action: { actionType: $actionType, fields: $fields }
+    privacy: $privacy,
+    tracking: $tracking
+  ) {
+    contactRef, firstName
+  }
+}
+
+
+mutation AddAction(
+  $id: Int!,
+  $contactRef: ID, 
+  $actionType: String!,
+  $fields: [CustomFieldInput!],
+  $tracking: TrackingInput
+) {
+  addAction(
+    actionPageId: $id,
+    contactRef: $contactRef,
+    action: { actionType: $actionType, fields: $fields }
+    tracking: $tracking
+  ) {
+    contactRef, firstName
+  }
+}

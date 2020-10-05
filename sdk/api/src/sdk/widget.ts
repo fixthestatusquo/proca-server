@@ -65,6 +65,14 @@ export const GetActionPagePublicResultDocument = gql`
   }
 }
     `;
+export const AddContactActionDocument = gql`
+    mutation AddContactAction($id: Int!, $contact: ContactInput!, $actionType: String!, $fields: [CustomFieldInput!], $privacy: ConsentInput!, $tracking: TrackingInput) {
+  addActionContact(actionPageId: $id, contact: $contact, action: {actionType: $actionType, fields: $fields}, privacy: $privacy, tracking: $tracking) {
+    contactRef
+    firstName
+  }
+}
+    `;
 
 export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 
@@ -77,6 +85,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetActionPagePublicResult(variables: GetActionPagePublicResultQueryVariables): Promise<GetActionPagePublicResultQuery> {
       return withWrapper(() => client.request<GetActionPagePublicResultQuery>(print(GetActionPagePublicResultDocument), variables));
+    },
+    AddContactAction(variables: AddContactActionMutationVariables): Promise<AddContactActionMutation> {
+      return withWrapper(() => client.request<AddContactActionMutation>(print(AddContactActionDocument), variables));
     }
   };
 }
@@ -148,5 +159,23 @@ export type GetActionPagePublicResultQuery = (
         & Pick<Types.PublicOrg, 'title'>
       )> }
     )> }
+  )> }
+);
+
+export type AddContactActionMutationVariables = Types.Exact<{
+  id: Types.Scalars['Int'];
+  contact: Types.ContactInput;
+  actionType: Types.Scalars['String'];
+  fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
+  privacy: Types.ConsentInput;
+  tracking?: Types.Maybe<Types.TrackingInput>;
+}>;
+
+
+export type AddContactActionMutation = (
+  { __typename?: 'RootMutationType' }
+  & { addActionContact?: Types.Maybe<(
+    { __typename?: 'ContactReference' }
+    & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
   )> }
 );

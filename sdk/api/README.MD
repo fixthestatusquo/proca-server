@@ -35,6 +35,16 @@ Simple example:
 ```
 
 
+To use authenticated API, use `authBasic` or `authToken`:
+
+```
+import {authBasic} from '@proca/api'
+
+client = authBasic(client, "user@domain.com", "password123")
+sdk = getAdminSdk(client)
+```
+
+
 # Operations in SDK
 
 The sdk's contain operations defined in `schema` directory, in `widget.graphql` and `admin.graphql`. You can create queries in GraphiQL UI.

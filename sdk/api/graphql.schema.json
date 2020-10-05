@@ -1391,16 +1391,6 @@
             "description": "Adds an action with contact data",
             "args": [
               {
-                "name": "contactRef",
-                "description": "Links to previous contact reference",
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "ID",
-                  "ofType": null
-                },
-                "defaultValue": null
-              },
-              {
                 "name": "tracking",
                 "description": "Tracking codes (UTM_*)",
                 "type": {
@@ -2024,16 +2014,6 @@
             "name": "addActionContact",
             "description": "Adds an action with contact data",
             "args": [
-              {
-                "name": "contactRef",
-                "description": "Links to previous contact reference",
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "ID",
-                  "ofType": null
-                },
-                "defaultValue": null
-              },
               {
                 "name": "tracking",
                 "description": "Tracking codes (UTM_*)",
