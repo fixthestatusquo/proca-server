@@ -37,7 +37,7 @@ Simple example:
 
 To use authenticated API, use `authBasic` or `authToken`:
 
-```
+```js
 import {authBasic} from '@proca/api'
 
 client = authBasic(client, "user@domain.com", "password123")
