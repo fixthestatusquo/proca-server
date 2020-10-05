@@ -29,6 +29,32 @@ export const GetActionPageDocument = gql`
   }
 }
     `;
+export const GetCountDocument = gql`
+    query GetCount($id: Int!) {
+  actionPage(id: $id) {
+    campaign {
+      stats {
+        supporterCount
+      }
+    }
+  }
+}
+    `;
+export const GetCountByNameDocument = gql`
+    query GetCountByName($name: String!) {
+  actionPage(name: $name) {
+    id
+    campaign {
+      name
+      title
+      externalId
+      stats {
+        supporterCount
+      }
+    }
+  }
+}
+    `;
 export const GetActionPagePublicResultDocument = gql`
     query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
   actionPage(name: $name, id: $id) {
@@ -73,6 +99,14 @@ export const AddContactActionDocument = gql`
   }
 }
     `;
+export const AddActionDocument = gql`
+    mutation AddAction($id: Int!, $contactRef: ID, $actionType: String!, $fields: [CustomFieldInput!], $tracking: TrackingInput) {
+  addAction(actionPageId: $id, contactRef: $contactRef, action: {actionType: $actionType, fields: $fields}, tracking: $tracking) {
+    contactRef
+    firstName
+  }
+}
+    `;
 
 export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 
@@ -83,11 +117,20 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetActionPage(variables?: GetActionPageQueryVariables): Promise<GetActionPageQuery> {
       return withWrapper(() => client.request<GetActionPageQuery>(print(GetActionPageDocument), variables));
     },
+    GetCount(variables: GetCountQueryVariables): Promise<GetCountQuery> {
+      return withWrapper(() => client.request<GetCountQuery>(print(GetCountDocument), variables));
+    },
+    GetCountByName(variables: GetCountByNameQueryVariables): Promise<GetCountByNameQuery> {
+      return withWrapper(() => client.request<GetCountByNameQuery>(print(GetCountByNameDocument), variables));
+    },
     GetActionPagePublicResult(variables: GetActionPagePublicResultQueryVariables): Promise<GetActionPagePublicResultQuery> {
       return withWrapper(() => client.request<GetActionPagePublicResultQuery>(print(GetActionPagePublicResultDocument), variables));
     },
     AddContactAction(variables: AddContactActionMutationVariables): Promise<AddContactActionMutation> {
       return withWrapper(() => client.request<AddContactActionMutation>(print(AddContactActionDocument), variables));
+    },
+    AddAction(variables: AddActionMutationVariables): Promise<AddActionMutation> {
+      return withWrapper(() => client.request<AddActionMutation>(print(AddActionDocument), variables));
     }
   };
 }
@@ -116,6 +159,46 @@ export type GetActionPageQuery = (
       )>, org?: Types.Maybe<(
         { __typename?: 'PublicOrg' }
         & Pick<Types.PublicOrg, 'title'>
+      )> }
+    )> }
+  )> }
+);
+
+export type GetCountQueryVariables = Types.Exact<{
+  id: Types.Scalars['Int'];
+}>;
+
+
+export type GetCountQuery = (
+  { __typename?: 'RootQueryType' }
+  & { actionPage?: Types.Maybe<(
+    { __typename?: 'ActionPage' }
+    & { campaign?: Types.Maybe<(
+      { __typename?: 'Campaign' }
+      & { stats?: Types.Maybe<(
+        { __typename?: 'CampaignStats' }
+        & Pick<Types.CampaignStats, 'supporterCount'>
+      )> }
+    )> }
+  )> }
+);
+
+export type GetCountByNameQueryVariables = Types.Exact<{
+  name: Types.Scalars['String'];
+}>;
+
+
+export type GetCountByNameQuery = (
+  { __typename?: 'RootQueryType' }
+  & { actionPage?: Types.Maybe<(
+    { __typename?: 'ActionPage' }
+    & Pick<Types.ActionPage, 'id'>
+    & { campaign?: Types.Maybe<(
+      { __typename?: 'Campaign' }
+      & Pick<Types.Campaign, 'name' | 'title' | 'externalId'>
+      & { stats?: Types.Maybe<(
+        { __typename?: 'CampaignStats' }
+        & Pick<Types.CampaignStats, 'supporterCount'>
       )> }
     )> }
   )> }
@@ -175,6 +258,23 @@ export type AddContactActionMutationVariables = Types.Exact<{
 export type AddContactActionMutation = (
   { __typename?: 'RootMutationType' }
   & { addActionContact?: Types.Maybe<(
+    { __typename?: 'ContactReference' }
+    & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
+  )> }
+);
+
+export type AddActionMutationVariables = Types.Exact<{
+  id: Types.Scalars['Int'];
+  contactRef?: Types.Maybe<Types.Scalars['ID']>;
+  actionType: Types.Scalars['String'];
+  fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
+  tracking?: Types.Maybe<Types.TrackingInput>;
+}>;
+
+
+export type AddActionMutation = (
+  { __typename?: 'RootMutationType' }
+  & { addAction?: Types.Maybe<(
     { __typename?: 'ContactReference' }
     & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
   )> }
