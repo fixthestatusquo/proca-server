@@ -253,7 +253,6 @@ export type ActionMutationsAddActionArgs = {
 
 
 export type ActionMutationsAddActionContactArgs = {
-  contactRef?: Maybe<Scalars['ID']>;
   tracking?: Maybe<TrackingInput>;
   privacy: ConsentInput;
   contact: ContactInput;
@@ -343,7 +342,6 @@ export type RootMutationTypeAddActionArgs = {
 
 
 export type RootMutationTypeAddActionContactArgs = {
-  contactRef?: Maybe<Scalars['ID']>;
   tracking?: Maybe<TrackingInput>;
   privacy: ConsentInput;
   contact: ContactInput;

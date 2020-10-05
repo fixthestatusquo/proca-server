@@ -279,9 +279,6 @@ type ActionMutations {
 
   "Adds an action with contact data"
   addActionContact(
-    "Links to previous contact reference"
-    contactRef: ID
-
     "Tracking codes (UTM_*)"
     tracking: TrackingInput
 
@@ -413,9 +410,6 @@ type RootMutationType {
 
   "Adds an action with contact data"
   addActionContact(
-    "Links to previous contact reference"
-    contactRef: ID
-
     "Tracking codes (UTM_*)"
     tracking: TrackingInput
 

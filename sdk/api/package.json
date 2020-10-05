@@ -20,7 +20,10 @@
     "url": "https://github.com/fixthestatusquo/proca-api/issues"
   },
   "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
-  "dependencies": {},
+  "dependencies": {
+    "cross-fetch": "^3.0.6",
+    "js-base64": "^3.5.2"
+  },
   "devDependencies": {
     "@graphql-codegen/add": "^2.0.1",
     "@graphql-codegen/cli": "1.17.8",

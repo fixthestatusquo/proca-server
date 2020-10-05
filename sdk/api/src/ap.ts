@@ -1,4 +1,5 @@
-import {getWidgetSdk} from './index'
+import {getWidgetSdk, getAdminSdk} from './index'
+import {authBasic} from './auth'
 import {GraphQLClient} from 'graphql-request'
 
 
@@ -17,8 +18,17 @@ async function m(name : string) {
     console.log(failure.response.status)
     console.log(failure.response.errors[0])
   } 
-
 }
 
+async function a(name: string) {
+  const pw = "pelolpe123"
+  let client = new GraphQLClient("http://localhost:4000/api")
+  client = authBasic(client, "marcin@cahoots.pl", pw)
+  const sdk = getAdminSdk(client)
 
-m(process.argv[2])
+  const campaigns = await sdk.ListCampaigns({"org": name})
+
+  console.log(campaigns.org.campaigns)
+}
+
+a(process.argv[2])
