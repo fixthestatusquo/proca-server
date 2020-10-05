@@ -1,3 +1,4 @@
+# Use this to get all information needed to generate a widget
 query GetActionPage($name: String, $id: Int) {
   actionPage(name: $name, id: $id) {
     config,
@@ -19,7 +20,29 @@ query GetActionPage($name: String, $id: Int) {
   }
 }
 
+query GetCount($id: Int!) {
+  actionPage(id:$id) {
+    campaign {
+      stats {
+        supporterCount
+      }
+    }
+  }
+}
 
+# Use instead of GetcountByUrl (ActionPage.url is deprecated)
+query GetCountByName($name: String!) {
+  actionPage(name: $name) {
+    id, campaign {
+      name,
+      title,
+  		externalId,
+      stats {
+        supporterCount 
+      }
+    }
+  }
+}
 query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
   actionPage(name: $name, id: $id) {
     config,
