@@ -34,7 +34,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       arg(:action, non_null(:action_input))
 
       @desc "Contact reference"
-      arg(:contact_ref, :id)
+      arg(:contact_ref, non_null(:id))
 
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
@@ -55,9 +55,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
-
-      @desc "Links to previous contact reference"
-      arg(:contact_ref, :id)
 
       resolve &Resolvers.Action.add_action_contact/3
     end
