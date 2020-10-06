@@ -153,8 +153,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Fetch public actions"
     field :actions, :public_actions_result do
-      arg(:action_page_id, :integer)
-      arg(:campaign_id, :integer)
       arg(:action_type, non_null(:string))
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end

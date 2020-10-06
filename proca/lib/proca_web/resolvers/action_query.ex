@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
 
   alias ProcaWeb.Helper
 
-  def actions_for_campaign(%{campaign_id: campaign_id}) do
+  def actions_for_campaign(campaign_id) do
     {
       :ok,
       from(a in Action,
@@ -18,22 +18,13 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
     }
   end
 
-  def actions_for_campaign(%{action_page_id: action_page_id}) do
-    campaign_id = from(ap in ActionPage, where: ap.id == ^action_page_id, select: ap.campaign_id) |> Repo.one()
-
-    actions_for_campaign(%{campaign_id: campaign_id})
-  end
-
-  def actions_for_campaign(%{}) do
-    {:error, "Provide either campaign_id or action_page_id of queried campaign"}
-  end
 
   @max_list_size 100
-  def list_by_action_type(_parent, %{action_type: action_type} = params, _ctx) do
+  def list_by_action_type(%{id: campaign_id}, %{action_type: action_type} = params, _ctx) do
     limit = Map.get(params, :limit, 10)
     limit = max(limit, @max_list_size)
 
-    case actions_for_campaign(params) do
+    case actions_for_campaign(campaign_id) do
       {:ok, query} ->
 
         list = query
