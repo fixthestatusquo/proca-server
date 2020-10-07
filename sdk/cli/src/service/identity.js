@@ -128,11 +128,20 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
   if (custom_fields.length > 0)
     ah['cons_hash']['custom_fields'] = custom_fields
 
+  // XXX deprecated
   if (action.source) {
     ah['source'] = {
       campaign: action.source.campaign,
       source: action.source.source,
       medium: action.source.medium,
+    }
+  }
+
+  if (action.tracking) {
+    ah['source'] = {
+      campaign: action.tracking.campaign,
+      source: action.tracking.source,
+      medium: action.tracking.medium,
     }
   }
 
