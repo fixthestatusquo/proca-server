@@ -27,8 +27,8 @@ const config = {
   identity_action_fields: (process.env.IDENTITY_ACTION_FIELDS || '').toLowerCase().split(','),
   identity_contact_fields: (process.env.IDENTITY_CONTACT_FIELDS || '').toLowerCase().split(','),
   service_url: process.env.SERVICE_URL || process.env.IDENTITY_URL,
-  url: process.env.API_URL || 'https://api.proca.app',
-  keys: (process.env.KEYS || '').split(',').map(to_keys).filter(x => x !== null)
+  url: process.env.API_URL || 'https://api.proca.app/api',
+  keys: process.env.KEYS || 'keys.json'
 }
 
 function storeConfig(config, fn) {
@@ -43,8 +43,10 @@ function storeConfig(config, fn) {
     'IDENTITY_URL': config.identity_url,
     'IDENTITY_API_TOKEN': config.identity_api_token,
     'IDENTITY_CONSENT': config.identity_consent,
+    'IDENTITY_ACTION_FIELDS': config.identity_action_fields,
+    'IDENTITY_CONTACT_FIELDS': config.identity_contact_fields,
     'SERVICE_URL': config.service_url,
-    'KEYS': config.keys.map(({pub, priv}) =>  `${pub}:${priv}`).join(',')
+    'KEYS': config.keys
   }
 
   for (let [k, v] of Object.entries(vars)) {
@@ -59,13 +61,6 @@ function storeConfig(config, fn) {
 }
 
 async function setup() {
-  let k1 
-  if (config.keys.length > 0) {
-    k1 = config.keys[0]
-  } else {
-    k1 = { pub: null, priv: null }
-  }
-
   const info = await inquirer.prompt([
     {type:'input', name: 'org', default: config.org, message: 'What is the short name of your org?'},
     {type:'input', name: 'user', default: config.user, message: 'What is your username (email)?',
@@ -73,20 +68,18 @@ async function setup() {
     {type:'password', name: 'password', default: config.password, messsage: 'Your password?'},
     {type:'input', name: 'url', default: config.url, message: 'Proca backend url'},
     {type:'input', name: 'queue_url', default: config.queue_url, message: 'Proca queue url'},
-    {type:'input', name: 'pub', default: k1.pub, message: 'Public key'},
-    {type:'password', name: 'priv', default: k1.priv, message: 'Private key'}
+    {type:'input', name: 'keys', default: config.keys, message: 'Keys file'}
 
   ]).catch((error) => {
     console.log(`Wrong! ${error}`)
     return {}
   })
 
-  info.keys = [{ pub: info.pub, priv: info.priv }]
   storeConfig(info, '.env')
 }
 
 export default Object.assign(config, {setup: setup});
 
-module.exports = Object.assign(config, {
-  setup: setup
-})
+// module.exports = Object.assign(config, {
+//   setup: setup
+// })

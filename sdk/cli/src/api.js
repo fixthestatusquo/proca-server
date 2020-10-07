@@ -1,9 +1,8 @@
-global.fetch = require("node-fetch");
-import { request, GraphQLClient} from 'graphql-request'
 import {decrypt} from './crypto'
 
 
 export function client({url, user, password}) {
+
   var auth = 'Basic ' + Buffer.from(user + ':' + password).toString('base64')
   const c = new GraphQLClient(`${url}/api`, {
     headers: {
