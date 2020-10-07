@@ -5,26 +5,29 @@
   "main": "src/index.js",
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
   "author": "xavier.dutoit <xavier@tttp.eu>",
-  "license": "aGPL3",
+  "license": "AGPL-3.0",
   "bin": {
     "proca-cli": "bin/proca-cli"
   },
   "scripts": {},
   "dependencies": {
+    "@proca/api": "0.0.5",
     "amqplib": "^0.5.6",
     "backoff": "^2.5.0",
     "base64url": "^3.0.1",
-    "bent": "^7.3.4",
+    "bent": "^7.3.11",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.2.0",
     "email-validator": "^2.0.4",
     "esm": "^3.2.25",
+    "graphql": "^15.3.0",
     "graphql-request": "^2.0.0",
-    "inquirer": "^7.1.0",
-    "node-fetch": "^2.6.0",
+    "graphql-tag": "^2.11.0",
+    "inquirer": "^7.3.3",
+    "node-fetch": "^2.6.1",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
-    "yargs": "^15.3.1"
+    "yargs": "^15.4.1"
   },
   "devDependencies": {}
 }

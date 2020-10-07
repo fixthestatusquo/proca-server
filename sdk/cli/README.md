@@ -35,9 +35,31 @@ You can run `proca-cli setup` to create or update .env file interactively. At th
 
 ### Commands
 
-`proca-cli campaigns` - lists campaigns
+Common options:
+- `-X` - CSV output
+- `J` - JSON output
+- 
 
-`proca-cli signatures -c x` - fetches supporter data for a campaign id `x`
+
+`setup` - creates .env file with configuration variables 
+
+`token` - show authorization header used
+
+`campaigns` - list campaigns
+
+`campaign id` - gets info about campaign
+
+`pages` - lists action pages
+
+`page id` - gets info about action page
+
+`export` - exports actions.
+- `-c campaignId` - just export for this campaign
+- `-b number` - batch size
+- `-s start` - start from id
+- `-a date_time` - start from actions >= date_time (json format)
+
+
 
 
 ## Library usage
