@@ -25,3 +25,12 @@ generates:
     preset: import-types
     presetConfig:
       typesPath: types
+  src/sdk/updates.ts:
+    documents:
+      - "schema/updates.graphql"
+    plugins:
+      - "typescript-graphql-request"
+      - "typescript-operations"
+    preset: import-types
+    presetConfig:
+      typesPath: types

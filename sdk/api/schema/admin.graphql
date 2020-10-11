@@ -7,5 +7,104 @@ query ListCampaigns($org: String!) {
     }
   }
 
+query GetCampaign($org: String!, $id: Int!) {
+    org(name: $org) {
+      campaign(id: $id) {
+        id, externalId, name, title,
+        stats {
+          supporterCount, actionCount { actionType, count }
+        }
+      }
+    }
+  }
+
+query GetActionPage($org: String!, $id: Int!) {
+    org(name: $org) {
+      actionPage(id: $id) {
+        id,
+        name,
+        locale,
+        extraSupporters, thankYouTemplateRef,
+        config,
+        campaign { name, id, externalId }
+      }
+    }
+}
+
+# XXX add optional campaignId param to filter
+query ListActionPages($org: String!) {
+  org(name: $org) {
+    actionPages {
+      id, name, locale,
+      extraSupporters,
+      campaign { name, id, externalId }
+    }
+  }
+}
+
+query ExportCampaignActions($org: String!, $campaignId: Int!, $start: Int, $after: Datetime, $limit: Int) {
+      exportActions(orgName: $org, campaignId: $campaignId, start: $start, after: $after, limit: $limit)
+      {
+        actionId, actionType,
+        contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
+        fields { key, value },
+        tracking { source, medium, campaign, content },
+        actionPage { id, name },
+        privacy { optIn }
+      }
+}
+
+query ExportOrgActions($org: String!, $start: Int, $after: Datetime, $limit: Int) {
+      exportActions(orgName: $org, start: $start, after: $after, limit: $limit)
+      {
+        actionId, actionType,
+        contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
+        fields { key, value },
+        tracking { source, medium, campaign, content },
+        actionPage { id, name },
+        privacy { optIn }
+      }
+}
+
+mutation UpdateActionPage(
+      $id: Int!,
+      $name: String,
+      $locale: String,
+      $thankYouTemplateRef: String,
+      $extraSupporters: Int,
+      $config: String
+      ) {
+      updateActionPage(
+        id: $id,
+        name: $name,
+        locale: $locale,
+        thankYouTemplateRef: $thankYouTemplateRef,
+        extraSupporters: $extraSupporters,
+        config: $config)
+      {
+        id
+      }
+  }
+
+mutation UpsertCampaign(
+         $org: String!,
+         $name: String!,
+         $externalId: Int,
+         $title: String,
+         $actionPages: [ActionPageInput]!
+        ) {
+        upsertCampaign(
+          orgName: $org, name: $name, externalId: $externalId, title: $title, actionPages: $actionPages
+        ) {
+          id
+        }
+      }
 
 
+query ListKeys{
+  org(name:"campax") { 
+    keys { 
+      id, name, public, expiredAt 
+    }
+  }
+}

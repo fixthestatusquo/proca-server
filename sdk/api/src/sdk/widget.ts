@@ -29,34 +29,23 @@ export const GetActionPageDocument = gql`
   }
 }
     `;
-export const GetCountDocument = gql`
-    query GetCount($id: Int!) {
-  actionPage(id: $id) {
+export const GetStatsDocument = gql`
+    query GetStats($name: String, $id: Int) {
+  actionPage(id: $id, name: $name) {
     campaign {
       stats {
         supporterCount
+        actionCount {
+          actionType
+          count
+        }
       }
     }
   }
 }
     `;
-export const GetCountByNameDocument = gql`
-    query GetCountByName($name: String!) {
-  actionPage(name: $name) {
-    id
-    campaign {
-      name
-      title
-      externalId
-      stats {
-        supporterCount
-      }
-    }
-  }
-}
-    `;
-export const GetActionPagePublicResultDocument = gql`
-    query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
+export const GetPublicResultDocument = gql`
+    query GetPublicResult($name: String, $id: Int, $actionType: String!) {
   actionPage(name: $name, id: $id) {
     config
     locale
@@ -100,7 +89,7 @@ export const AddContactActionDocument = gql`
 }
     `;
 export const AddActionDocument = gql`
-    mutation AddAction($id: Int!, $contactRef: ID, $actionType: String!, $fields: [CustomFieldInput!], $tracking: TrackingInput) {
+    mutation AddAction($id: Int!, $contactRef: ID!, $actionType: String!, $fields: [CustomFieldInput!], $tracking: TrackingInput) {
   addAction(actionPageId: $id, contactRef: $contactRef, action: {actionType: $actionType, fields: $fields}, tracking: $tracking) {
     contactRef
     firstName
@@ -117,14 +106,11 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetActionPage(variables?: GetActionPageQueryVariables): Promise<GetActionPageQuery> {
       return withWrapper(() => client.request<GetActionPageQuery>(print(GetActionPageDocument), variables));
     },
-    GetCount(variables: GetCountQueryVariables): Promise<GetCountQuery> {
-      return withWrapper(() => client.request<GetCountQuery>(print(GetCountDocument), variables));
+    GetStats(variables?: GetStatsQueryVariables): Promise<GetStatsQuery> {
+      return withWrapper(() => client.request<GetStatsQuery>(print(GetStatsDocument), variables));
     },
-    GetCountByName(variables: GetCountByNameQueryVariables): Promise<GetCountByNameQuery> {
-      return withWrapper(() => client.request<GetCountByNameQuery>(print(GetCountByNameDocument), variables));
-    },
-    GetActionPagePublicResult(variables: GetActionPagePublicResultQueryVariables): Promise<GetActionPagePublicResultQuery> {
-      return withWrapper(() => client.request<GetActionPagePublicResultQuery>(print(GetActionPagePublicResultDocument), variables));
+    GetPublicResult(variables: GetPublicResultQueryVariables): Promise<GetPublicResultQuery> {
+      return withWrapper(() => client.request<GetPublicResultQuery>(print(GetPublicResultDocument), variables));
     },
     AddContactAction(variables: AddContactActionMutationVariables): Promise<AddContactActionMutation> {
       return withWrapper(() => client.request<AddContactActionMutation>(print(AddContactActionDocument), variables));
@@ -144,8 +130,8 @@ export type GetActionPageQueryVariables = Types.Exact<{
 export type GetActionPageQuery = (
   { __typename?: 'RootQueryType' }
   & { actionPage?: Types.Maybe<(
-    { __typename?: 'ActionPage' }
-    & Pick<Types.ActionPage, 'config' | 'locale' | 'journey' | 'name'>
+    { __typename?: 'PublicActionPage' }
+    & Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
     & { campaign?: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
@@ -164,58 +150,42 @@ export type GetActionPageQuery = (
   )> }
 );
 
-export type GetCountQueryVariables = Types.Exact<{
-  id: Types.Scalars['Int'];
+export type GetStatsQueryVariables = Types.Exact<{
+  name?: Types.Maybe<Types.Scalars['String']>;
+  id?: Types.Maybe<Types.Scalars['Int']>;
 }>;
 
 
-export type GetCountQuery = (
+export type GetStatsQuery = (
   { __typename?: 'RootQueryType' }
   & { actionPage?: Types.Maybe<(
-    { __typename?: 'ActionPage' }
+    { __typename?: 'PublicActionPage' }
     & { campaign?: Types.Maybe<(
       { __typename?: 'Campaign' }
       & { stats?: Types.Maybe<(
         { __typename?: 'CampaignStats' }
         & Pick<Types.CampaignStats, 'supporterCount'>
+        & { actionCount?: Types.Maybe<Array<(
+          { __typename?: 'ActionTypeCount' }
+          & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
+        )>> }
       )> }
     )> }
   )> }
 );
 
-export type GetCountByNameQueryVariables = Types.Exact<{
-  name: Types.Scalars['String'];
-}>;
-
-
-export type GetCountByNameQuery = (
-  { __typename?: 'RootQueryType' }
-  & { actionPage?: Types.Maybe<(
-    { __typename?: 'ActionPage' }
-    & Pick<Types.ActionPage, 'id'>
-    & { campaign?: Types.Maybe<(
-      { __typename?: 'Campaign' }
-      & Pick<Types.Campaign, 'name' | 'title' | 'externalId'>
-      & { stats?: Types.Maybe<(
-        { __typename?: 'CampaignStats' }
-        & Pick<Types.CampaignStats, 'supporterCount'>
-      )> }
-    )> }
-  )> }
-);
-
-export type GetActionPagePublicResultQueryVariables = Types.Exact<{
+export type GetPublicResultQueryVariables = Types.Exact<{
   name?: Types.Maybe<Types.Scalars['String']>;
   id?: Types.Maybe<Types.Scalars['Int']>;
   actionType: Types.Scalars['String'];
 }>;
 
 
-export type GetActionPagePublicResultQuery = (
+export type GetPublicResultQuery = (
   { __typename?: 'RootQueryType' }
   & { actionPage?: Types.Maybe<(
-    { __typename?: 'ActionPage' }
-    & Pick<Types.ActionPage, 'config' | 'locale' | 'journey' | 'name'>
+    { __typename?: 'PublicActionPage' }
+    & Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
     & { campaign?: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
@@ -265,7 +235,7 @@ export type AddContactActionMutation = (
 
 export type AddActionMutationVariables = Types.Exact<{
   id: Types.Scalars['Int'];
-  contactRef?: Types.Maybe<Types.Scalars['ID']>;
+  contactRef: Types.Scalars['ID'];
   actionType: Types.Scalars['String'];
   fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
   tracking?: Types.Maybe<Types.TrackingInput>;

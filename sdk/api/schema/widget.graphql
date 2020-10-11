@@ -20,30 +20,20 @@ query GetActionPage($name: String, $id: Int) {
   }
 }
 
-query GetCount($id: Int!) {
-  actionPage(id:$id) {
+query GetStats($name: String, $id: Int) {
+  actionPage(id: $id, name: $name) {
     campaign {
       stats {
-        supporterCount
+        supporterCount,
+        actionCount {
+          actionType, count
+        }
       }
     }
   }
 }
 
-# Use instead of GetcountByUrl (ActionPage.url is deprecated)
-query GetCountByName($name: String!) {
-  actionPage(name: $name) {
-    id, campaign {
-      name,
-      title,
-  		externalId,
-      stats {
-        supporterCount 
-      }
-    }
-  }
-}
-query GetActionPagePublicResult($name: String, $id: Int, $actionType: String!) {
+query GetPublicResult($name: String, $id: Int, $actionType: String!) {
   actionPage(name: $name, id: $id) {
     config,
     locale,
@@ -92,7 +82,7 @@ mutation AddContactAction(
 
 mutation AddAction(
   $id: Int!,
-  $contactRef: ID, 
+  $contactRef: ID!, 
   $actionType: String!,
   $fields: [CustomFieldInput!],
   $tracking: TrackingInput
@@ -106,3 +96,4 @@ mutation AddAction(
     contactRef, firstName
   }
 }
+
