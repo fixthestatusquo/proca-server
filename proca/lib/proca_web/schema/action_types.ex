@@ -149,11 +149,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :optIn, non_null(:boolean)
   end
 
-  @desc "Encryption or sign key with integer id (database)"
-  object :key do
-    field :id, non_null(:integer)
-    field :key, non_null(:string)
-  end
 
   @desc "Custom field with a key and value. Both are strings."
   input_object :custom_field_input do

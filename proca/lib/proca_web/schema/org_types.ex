@@ -56,6 +56,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve &Resolvers.Org.org_personal_data/3
     end
 
+    field :keys, non_null(list_of(non_null(:key))) do
+      resolve &Resolvers.Org.list_keys/3
+    end
+
     # TODO:
     # field :public_keys, non_null(list_of(non_null(:string)))
     # field :users, non_null(list_of(:org_user))
@@ -137,7 +141,13 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :email_opt_in_template, :string
   end
 
-
+  @desc "Encryption or sign key with integer id (database)"
+  object :key do
+    field :id, non_null(:integer)
+    field :public, non_null(:string)
+    field :name, :string
+    field :expired_at, :datetime
+  end
 
   object :signature_list do
     @desc "Public key of sender (proca app), in Base64url encoding (RFC 4648 5.)"

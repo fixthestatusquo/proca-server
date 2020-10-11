@@ -45,8 +45,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       contact_ref: Supporter.base_encode(ref),
       payload: Contact.base_encode(payload),
       nonce: Contact.base_encode(nonce),
-      public_key: %{id: pk_id, key: PublicKey.base_encode(pk_key)},
-      sign_key: %{id: sk_id, key: PublicKey.base_encode(sk_key)}
+      public_key: %{id: pk_id, public: PublicKey.base_encode(pk_key)},
+      sign_key: %{id: sk_id, public: PublicKey.base_encode(sk_key)}
     }
   end
 
