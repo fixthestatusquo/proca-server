@@ -1,6 +1,7 @@
 schema {
   query: RootQueryType
   mutation: RootMutationType
+  subscription: RootSubscriptionType
 }
 
 "Tracking codes"
@@ -34,7 +35,8 @@ type Signature {
   optIn: Boolean
 }
 
-type ActionActionPage {
+type SimpleActionPage {
+  id: Int!
   name: String!
   locale: String!
 }
@@ -54,12 +56,6 @@ input ConsentInput {
 
   "Opt in to the campaign leader"
   leadOptIn: Boolean
-}
-
-"Type to describe an area (identified by area_code) in some administrative division (area_type). Area code can be an official code or just a name, provided they are unique."
-input AreaInput {
-  areaCode: String
-  areaType: String
 }
 
 "GDPR consent data for this org"
@@ -87,6 +83,10 @@ type ActionTypeCount {
 enum ContactSchema {
   POPULAR_INITIATIVE
   BASIC
+}
+
+type RootSubscriptionType {
+  actionPageUpdated(orgName: String!): ActionPage
 }
 
 type ActionCampaign {
@@ -120,125 +120,6 @@ type PublicActionsResult {
   list: [ActionCustomFields]
 }
 
-type OrgMutations {
-  updateOrg(
-    "Email opt in template name"
-    emailOptInTemplate: String
-
-    "Email opt in enabled"
-    emailOptIn: Boolean
-
-    "Schema for contact personal information"
-    contactSchema: ContactSchema
-
-    "Organisation title (human readable name)"
-    title: String
-
-    "Name of organisation, used for lookup, can't be used to change org name"
-    name: String!
-  ): Org
-}
-
-type CampaignQueries {
-  "Get a list of campains"
-  campaigns(
-    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
-    name: String
-
-    "Filter campaigns by title using LIKE format (% means any sequence of characters)"
-    title: String
-  ): [Campaign]
-
-  "Get action page"
-  actionPage(
-    "Get action page by url the widget is displayed on (DEPRECATED, use name)"
-    url: String
-
-    "Get action page by name the widget is displayed on"
-    name: String
-
-    "Get action page by id."
-    id: Int
-  ): ActionPage
-}
-
-type CampaignMutations {
-  """
-  Upserts a campaign.
-
-  Creates or appends campaign and it's action pages. In case of append, it
-  will change the campaign with the matching name, and action pages with
-  matching names. It will create new action pages if you pass new names. No
-  Action Pages will be removed (principle of not removing signature data).
-  """
-  upsertCampaign(
-    "Action pages of this campaign"
-    actionPages: [ActionPageInput]!
-
-    "Campaign human readable title"
-    title: String!
-
-    "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-    externalId: Int
-
-    "Campaign unchanging identifier"
-    name: String!
-
-    "Org name"
-    orgName: String!
-  ): Campaign
-
-  "Deprecated, use upsert_campaign."
-  declareCampaign(
-    "Action pages of this campaign"
-    actionPages: [ActionPageInputLegacyUrl]!
-
-    "Campaign human readable title"
-    title: String!
-
-    "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-    externalId: Int
-
-    "Campaign unchanging identifier"
-    name: String!
-
-    "Org name"
-    orgName: String!
-  ): Campaign
-
-  "Update an Action Page"
-  updateActionPage(
-    "JSON string containing Action Page config"
-    config: String
-
-    "List of steps in the journey"
-    journey: [String!]
-
-    "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
-    extraSupporters: Int
-
-    "A reference to thank you email template of this ActionPage"
-    thankYouTemplateRef: String
-
-    "2-letter, lowercase, code of ActionPage language"
-    locale: String
-
-    """
-    Unique NAME identifying ActionPage.
-
-    Does not have to exist, must be unique. Can be a 'technical' identifier
-    scoped to particular organization, so it does not have to change when the
-    slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
-    ask for ActionPage by it's current location.href, in which case it is useful
-    to make this url match the real idwget location.
-    """
-    name: String
-
-    "Action Page id"
-    id: Int!
-  ): ActionPage
-}
-
 "Campaign statistics"
 type CampaignStats {
   "Signature count (naive at the moment)"
@@ -248,63 +129,10 @@ type CampaignStats {
   actionCount: [ActionTypeCount!]
 }
 
-type OrgQueries {
-  "Organization api (authenticated)"
-  org(
-    "Name of organisation"
-    name: String!
-  ): Org
-}
-
 type ActionCustomFields {
   actionType: String!
   insertedAt: Datetime!
   fields: [CustomField!]
-}
-
-type ActionMutations {
-  "Adds an action referencing contact data via contactRef"
-  addAction(
-    "Tracking codes (UTM_*)"
-    tracking: TrackingInput
-
-    "Contact reference"
-    contactRef: ID
-
-    "Action data"
-    action: ActionInput!
-
-    actionPageId: Int!
-  ): ContactReference
-
-  "Adds an action with contact data"
-  addActionContact(
-    "Tracking codes (UTM_*)"
-    tracking: TrackingInput
-
-    "Signature action data"
-    privacy: ConsentInput!
-
-    "GDPR communication opt"
-    contact: ContactInput!
-
-    "Action data"
-    action: ActionInput!
-
-    actionPageId: Int!
-  ): ContactReference
-
-  "Link actions with refs to contact with contact reference"
-  linkActions(
-    "Link actions with these references (if unlinked to supporter)"
-    linkRefs: [String!]
-
-    "Contact reference"
-    contactRef: ID!
-
-    "Action Page id"
-    actionPageId: Int!
-  ): ContactReference
 }
 
 type Action {
@@ -314,7 +142,7 @@ type Action {
   fields: [CustomField!]!
   tracking: Tracking
   campaign: ActionCampaign!
-  actionPage: ActionActionPage!
+  actionPage: SimpleActionPage!
   privacy: Consent!
 }
 
@@ -332,7 +160,7 @@ type RootMutationType {
     actionPages: [ActionPageInput]!
 
     "Campaign human readable title"
-    title: String!
+    title: String
 
     "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
     externalId: Int
@@ -367,7 +195,7 @@ type RootMutationType {
     "JSON string containing Action Page config"
     config: String
 
-    "List of steps in the journey"
+    "List of steps in the journey (deprecated, pass in config)"
     journey: [String!]
 
     "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
@@ -400,7 +228,7 @@ type RootMutationType {
     tracking: TrackingInput
 
     "Contact reference"
-    contactRef: ID
+    contactRef: ID!
 
     "Action data"
     action: ActionInput!
@@ -453,25 +281,6 @@ type RootMutationType {
     "Name of organisation, used for lookup, can't be used to change org name"
     name: String!
   ): Org
-}
-
-type ActionQueries {
-  exportActions(
-    "Limit the number of returned actions"
-    limit: Int
-
-    "return only actions created at date time from this argument (inclusive)"
-    after: Datetime
-
-    "return only actions with id starting from this argument (inclusive)"
-    start: Int
-
-    "Campaign the action belongs to (unless given, get all actions)"
-    campaignId: Int
-
-    "Organization name"
-    orgName: String!
-  ): [Action]
 }
 
 type RootQueryType {
@@ -494,7 +303,7 @@ type RootQueryType {
 
     "Get action page by id."
     id: Int
-  ): ActionPage
+  ): PublicActionPage
 
   exportActions(
     "Limit the number of returned actions"
@@ -529,6 +338,33 @@ type PublicOrg {
 }
 
 type ActionPage {
+  id: Int
+
+  "Locale for the widget, in i18n format"
+  locale: String
+
+  "Name where the widget is hosted"
+  name: String
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "List of steps in journey"
+  journey: [String!]
+
+  "Config JSON of this action page"
+  config: String
+
+  "Extra supporters (added to supporters count)"
+  extraSupporters: Int
+
+  "Campaign this widget belongs to"
+  campaign: Campaign
+
+  org: PublicOrg
+}
+
+type PublicActionPage {
   id: Int
 
   "Locale for the widget, in i18n format"
@@ -636,7 +472,9 @@ type Campaign {
 "Encryption or sign key with integer id (database)"
 type Key {
   id: Int!
-  key: String!
+  public: String!
+  name: String
+  expiredAt: Datetime
 }
 
 type Org {
@@ -651,11 +489,15 @@ type Org {
 
   personalData: PersonalData!
 
+  keys: [Key!]!
+
   "List campaigns this org is leader or partner of"
   campaigns: [Campaign]
 
   "List action pages this org has"
   actionPages: [ActionPage]
+
+  actionPage(name: String, id: Int): ActionPage
 
   "Get campaign this org is leader or partner of by id"
   campaign(id: Int): Campaign
@@ -694,7 +536,6 @@ type Contact {
   nonce: String
   publicKey: Key
   signKey: Key
-  optIn: Boolean!
 }
 
 "Custom field with a key and value. Both are strings."

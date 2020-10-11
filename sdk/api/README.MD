@@ -14,12 +14,12 @@ Package exports two SDK's, dedicated to:
 Simple example:
 
 ```js
-  import {getWidgetSdk, getAdminSdk} from '@proca/api'
+  import {client, getWidgetSdk, getAdminSdk} from '@proca/api'
 
   // create a new GraphQL client
-  const client = new GraphQLClient("https://api-stg.proca.app/api")
+  const client = new client("https://api-stg.proca.app/api")
 
-  const sdk = getWidgetSdk(client)
+  const sdk = widgetSdk(client)
   
   try {
     const actionPage = await sdk.GetActionPage({"name": "tttp.eu/campaign-non-commercial"})
@@ -41,7 +41,7 @@ To use authenticated API, use `authBasic` or `authToken`:
 import {authBasic} from '@proca/api'
 
 client = authBasic(client, "user@domain.com", "password123")
-sdk = getAdminSdk(client)
+sdk = adminSdk(client)
 ```
 
 

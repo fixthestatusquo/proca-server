@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/types.d.ts",
@@ -22,6 +22,9 @@
   "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
   "dependencies": {
     "cross-fetch": "^3.0.6",
+    "graphql": "^15.3.0",
+    "graphql-request": "^3.1.0",
+    "graphql-tag": "^2.11.0",
     "js-base64": "^3.5.2"
   },
   "devDependencies": {
@@ -33,7 +36,6 @@
     "@graphql-codegen/typescript-graphql-request": "^2.0.0",
     "@graphql-codegen/typescript-operations": "^1.17.8",
     "get-graphql-schema": "^2.1.2",
-    "graphql": "^15.3.0",
     "typescript": "^4.0.3"
   }
 }
