@@ -157,7 +157,22 @@ defmodule ProcaWeb.Resolvers.Org do
       else
         _ -> {:error, "Access forbidden"}
     end
+  end
 
+  def list_keys(%{id: org_id}, _, %{context: %{user: user}}) do
+    with %Staffer{} = s <- Staffer.for_user_in_org(user, org_id),
+         true <- can?(s, [:use_api, :export_contacts])
+      do
+      {
+        :ok,
+        from(pk in PublicKey, where: pk.org_id == ^org_id,
+          select: %{id: pk.id, name: pk.name, public: pk.public, expired_at: pk.expired_at})
+          |> Repo.all
+          |> Enum.map(&Map.put(&1, :public, PublicKey.base_encode(&1.public)))
+      }
+      else
+        _ -> {:error, "Access forbidden"}
+    end
   end
 end
 
