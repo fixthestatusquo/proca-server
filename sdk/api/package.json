@@ -21,20 +21,31 @@
   },
   "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
   "dependencies": {
+    "@absinthe/socket-apollo-link": "^0.2.1",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
     "cross-fetch": "^3.0.6",
     "graphql": "^15.3.0",
-    "graphql-request": "^3.1.0",
     "graphql-tag": "^2.11.0",
-    "js-base64": "^3.5.2"
+    "js-base64": "^3.5.2",
+    "phoenix": "^1.5.5",
+    "urql": "^1.10.1",
+    "ws": "^7.3.1"
   },
   "devDependencies": {
     "@graphql-codegen/add": "^2.0.1",
     "@graphql-codegen/cli": "1.17.8",
     "@graphql-codegen/import-types-preset": "^1.17.9",
     "@graphql-codegen/introspection": "^1.17.8",
+    "@graphql-codegen/typed-document-node": "^1.17.9",
     "@graphql-codegen/typescript": "1.17.8",
     "@graphql-codegen/typescript-graphql-request": "^2.0.0",
     "@graphql-codegen/typescript-operations": "^1.17.8",
+    "@graphql-typed-document-node/core": "^3.1.0",
+    "@types/absinthe__socket": "^0.2.1",
+    "@types/absinthe__socket-apollo-link": "^0.2.1",
+    "@types/ws": "^7.2.7",
     "get-graphql-schema": "^2.1.2",
     "typescript": "^4.0.3"
   }

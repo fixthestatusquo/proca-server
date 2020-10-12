@@ -1,30 +1,8 @@
 import * as Types from 'types';
 
-import { GraphQLClient } from 'graphql-request';
-import { print } from 'graphql';
-import gql from 'graphql-tag';
+import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 
-export const ActionPageUpdatedDocument = gql`
-    subscription ActionPageUpdated($orgName: String!) {
-  actionPageUpdated(orgName: $orgName) {
-    id
-    name
-  }
-}
-    `;
-
-export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
-
-
-const defaultWrapper: SdkFunctionWrapper = sdkFunction => sdkFunction();
-export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
-  return {
-    ActionPageUpdated(variables: ActionPageUpdatedSubscriptionVariables): Promise<ActionPageUpdatedSubscription> {
-      return withWrapper(() => client.request<ActionPageUpdatedSubscription>(print(ActionPageUpdatedDocument), variables));
-    }
-  };
-}
-export type Sdk = ReturnType<typeof getSdk>;
+export const ActionPageUpdatedDocument: DocumentNode<ActionPageUpdatedSubscription, ActionPageUpdatedSubscriptionVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"ActionPageUpdated"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orgName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},"directives":[]}],"directives":[],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionPageUpdated"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orgName"}}}],"directives":[],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"},"arguments":[],"directives":[]},{"kind":"Field","name":{"kind":"Name","value":"name"},"arguments":[],"directives":[]}]}}]}}]};
 export type ActionPageUpdatedSubscriptionVariables = Types.Exact<{
   orgName: Types.Scalars['String'];
 }>;
