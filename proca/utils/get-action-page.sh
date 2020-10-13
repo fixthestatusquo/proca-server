@@ -26,8 +26,6 @@ END
 
 }
 
-
-
 while getopts "u:n:o:wc" OPTION; do
     case $OPTION in
         n)
