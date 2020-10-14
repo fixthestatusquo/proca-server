@@ -6,7 +6,7 @@
   <section>
     <h3>Orgs in this instance:</h3>
 
-    <div class="card-group">
+    <div class="card-columns">
       <%= for org <- @orgs do %>
         <div class="card m-3 <%= if @staffer != nil && @staffer.org_id == org.id, do: "bg-warning" %>">
           <div class="card-body">
