@@ -32,6 +32,10 @@ defmodule Proca.Stage.ThankYou do
           batch_size: 5,
           batch_timeout: 10_000,
           concurrency: 1
+        ],
+        noop: [
+          batch_size: 1,
+          concurrency: 1
         ]
       ]
     )
@@ -55,8 +59,8 @@ defmodule Proca.Stage.ThankYou do
           |> Message.put_batch_key(action_page_id)
           |> Message.put_batcher(:transactional)
         else
-          Message.ack_immediately([Message.put_batcher(message, :transactional)])
-          |> List.first
+          message
+          |> Message.put_batcher(:noop)
         end
 
       {:error, reason} -> Message.failed(message, reason)
@@ -81,6 +85,12 @@ defmodule Proca.Stage.ThankYou do
         Logger.error("Failed to send email batch #{x.message}")
         Enum.map(messages, &Message.failed(&1, x.message))
     end
+  end
+
+  @impl true
+  def handle_batch(:noop, messages, _, _) do
+    messages
+    |> Message.ack_immediately()
   end
 
   defp send_thank_you?(action_page_id, action_type) do
