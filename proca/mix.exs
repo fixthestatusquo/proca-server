@@ -40,7 +40,7 @@ defmodule Proca.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.5.0"},
-      {:phoenix_pubsub, "~> 2.0", override: true}, # See below
+      {:phoenix_pubsub, "~> 2.0"}, # See below
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.1"},
       {:ecto_enum, "~> 1.4"},
@@ -51,9 +51,9 @@ defmodule Proca.MixProject do
       {:jason, "~> 1.2"},
       {:sentry, "~> 7.0"},
       {:plug_cowboy, "~> 2.3"},
-      {:absinthe, "1.5.0-rc.0"},
-      {:absinthe_phoenix, "~> 1.5.0-rc.0"},
-      {:absinthe_plug, "~> 1.5.0-rc.0"},
+      {:absinthe, "1.5.0"},
+      {:absinthe_phoenix, "~> 2.0"},
+      {:absinthe_plug, "~> 1.5.0"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
       {:amqp, "~> 1.4"},
