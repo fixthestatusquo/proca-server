@@ -506,27 +506,23 @@
         "description": null,
         "fields": [
           {
-            "name": "actionPageUpdated",
+            "name": "actionPageUpserted",
             "description": null,
             "args": [
               {
                 "name": "orgName",
                 "description": null,
                 "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 },
                 "defaultValue": null
               }
             ],
             "type": {
               "kind": "OBJECT",
-              "name": "ActionPage",
+              "name": "PublicActionPage",
               "ofType": null
             },
             "isDeprecated": false,

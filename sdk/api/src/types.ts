@@ -90,12 +90,12 @@ export enum ContactSchema {
 
 export type RootSubscriptionType = {
   __typename?: 'RootSubscriptionType';
-  actionPageUpdated?: Maybe<ActionPage>;
+  actionPageUpserted?: Maybe<PublicActionPage>;
 };
 
 
-export type RootSubscriptionTypeActionPageUpdatedArgs = {
-  orgName: Scalars['String'];
+export type RootSubscriptionTypeActionPageUpsertedArgs = {
+  orgName?: Maybe<Scalars['String']>;
 };
 
 export type ActionCampaign = {
