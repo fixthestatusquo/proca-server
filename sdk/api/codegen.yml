@@ -6,31 +6,29 @@ generates:
       - "introspection"
   src/types.ts:
     plugins:
-      - "typescript"
-  src/sdk/widget.ts:
+      - typescript
+
+  src/queries/widget.ts:
     documents:
-      - "schema/widget.graphql"
+      - schema/widget.graphql
     plugins:
-      - "typed-document-node"
-      - "typescript-operations"
+      - typescript-graphql-request
+      - typescript-operations
     preset: import-types
     presetConfig:
       typesPath: types
-  src/sdk/admin.ts:
+    config:
+      omitOperationSuffix: true
+
+  src/queries/admin.ts:
     documents:
-      - "schema/admin.graphql"
+      - schema/admin.graphql
     plugins:
-      - "typedarray-document-node"
-      - "typescript-operations"
+      - typed-document-node
+      - typescript-operations
     preset: import-types
     presetConfig:
       typesPath: types
-  src/sdk/updates.ts:
-    documents:
-      - "schema/updates.graphql"
-    plugins:
-      - "typed-document-node"
-      - "typescript-operations"
-    preset: import-types
-    presetConfig:
-      typesPath: types
+    config:
+      omitOperationSuffix: true
+
