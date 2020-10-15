@@ -1,5 +1,0 @@
-subscription ActionPageUpdated($orgName: String!) {
-  actionPageUpdated(orgName: $orgName) {
-    id, name
-  }
-}

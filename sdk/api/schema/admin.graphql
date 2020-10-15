@@ -101,10 +101,17 @@ mutation UpsertCampaign(
       }
 
 
-query ListKeys{
-  org(name:"campax") { 
+query ListKeys($orgName: String!){
+  org(name: $orgName) { 
     keys { 
       id, name, public, expiredAt 
     }
+  }
+}
+
+
+subscription ActionPageUpdated($orgName: String!) {
+  actionPageUpdated(orgName: $orgName) {
+    id, name
   }
 }
