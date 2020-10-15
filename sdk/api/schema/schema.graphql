@@ -86,7 +86,7 @@ enum ContactSchema {
 }
 
 type RootSubscriptionType {
-  actionPageUpdated(orgName: String!): ActionPage
+  actionPageUpserted(orgName: String): PublicActionPage
 }
 
 type ActionCampaign {

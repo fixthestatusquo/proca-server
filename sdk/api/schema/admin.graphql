@@ -25,6 +25,7 @@ query GetActionPage($org: String!, $id: Int!) {
         name,
         locale,
         extraSupporters, thankYouTemplateRef,
+        journey,
         config,
         campaign { name, id, externalId }
       }
@@ -110,8 +111,8 @@ query ListKeys($orgName: String!){
 }
 
 
-subscription ActionPageUpdated($orgName: String!) {
-  actionPageUpdated(orgName: $orgName) {
+subscription ActionPageUpserted($orgName: String) {
+  actionPageUpserted(orgName: $orgName) {
     id, name
   }
 }
