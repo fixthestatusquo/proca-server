@@ -17,7 +17,7 @@ export async function watchPages(argv) {
 
         if (argv.x) {
           const output = execSync(argv.x, {input: t})
-          console.info(output)
+          console.info(output.toString())
         } else {
           console.log(t)
         }
