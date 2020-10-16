@@ -16,8 +16,19 @@ export async function watchPages(argv) {
         const t = fmt.actionPage(ap, ap.org)
 
         if (argv.x) {
-          const output = execSync(argv.x, {input: t})
-          console.info(output.toString())
+          try {
+            const output = execSync(argv.x, {input: t})
+            console.info(output.toString())
+          } catch (e) {
+            if (e.stdout) {
+              console.log(e.stdout.toString())
+            }
+            if (e.stderr) {
+              console.error(e.stterr.toString())
+            } else {
+              console.error(e)
+            }
+          }
         } else {
           console.log(t)
         }
