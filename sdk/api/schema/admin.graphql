@@ -102,8 +102,8 @@ mutation UpsertCampaign(
       }
 
 
-query ListKeys($orgName: String!){
-  org(name: $orgName) { 
+query ListKeys($org: String!){
+  org(name: $org) { 
     keys { 
       id, name, public, expiredAt 
     }
@@ -111,8 +111,10 @@ query ListKeys($orgName: String!){
 }
 
 
-subscription ActionPageUpserted($orgName: String) {
-  actionPageUpserted(orgName: $orgName) {
-    id, name
+subscription ActionPageUpserted($org: String) {
+  actionPageUpserted(orgName: $org) {
+    id, name, locale, journey, config,
+    campaign { name, title },
+    org { title }
   }
 }
