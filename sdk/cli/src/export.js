@@ -1,4 +1,8 @@
 
+export async function exportActions(argv) {
+  
+}
+
 export async function getSupporters(argv) {
   const c = argv2client(argv);
   await streamSignatures(c, argv.org, argv.campaignId, sigs => {

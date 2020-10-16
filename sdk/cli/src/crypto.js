@@ -1,6 +1,19 @@
 import nacl from 'tweetnacl'
 import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
+import fs from 'fs'
+
+export function loadKeys(filename) {
+  return JSON.parse(fs.readFileSync(filename, 'utf8'))
+}
+
+export function saveKeys(keys, filename) {
+  const content = JSON.stringify(keys)
+  fs.writeFileSync(filename)
+}
+
+
+
 
 function fromBase64(s) {
   return decodeBase64(base64url.toBase64(s))
