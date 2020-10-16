@@ -1,17 +1,22 @@
 {
   "name": "@proca/cli",
-  "version": "1.2.8",
+  "version": "1.4.0",
   "description": "cli[ent] for Proca",
   "main": "src/index.js",
+  "types": "types/types.d.ts",
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
   "author": "xavier.dutoit <xavier@tttp.eu>",
   "license": "AGPL-3.0",
   "bin": {
     "proca-cli": "bin/proca-cli"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
   "dependencies": {
-    "@proca/api": "0.0.5",
+    "@proca/api": "^0.1.0",
     "amqplib": "^0.5.6",
     "backoff": "^2.5.0",
     "base64url": "^3.0.1",
@@ -29,5 +34,7 @@
     "tweetnacl-util": "^0.15.1",
     "yargs": "^15.4.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
 }

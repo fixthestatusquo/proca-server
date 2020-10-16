@@ -47,17 +47,23 @@ Common options:
 
 `campaigns` - list campaigns
 
-`campaign id` - gets info about campaign
+`campaign -c id` - gets info about campaign
 
 `pages` - lists action pages
 
-`page id` - gets info about action page
+`page -c id` - gets info about action page
+
+`page:set -c id` - sets info in action page
+
+
 
 `export` - exports actions.
-- `-c campaignId` - just export for this campaign
+- `-i campaignId` - just export for this campaign
 - `-b number` - batch size
 - `-s start` - start from id
-- `-a date_time` - start from actions >= date_time (json format)
+- `-t stop` - stop at id
+- `-a date_time` - actions created after (greater-equal) date_time (json format)
+- `-e date_time` - actions created before (less-then) date_time
 
 
 

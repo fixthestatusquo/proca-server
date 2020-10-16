@@ -1,7 +1,8 @@
 import config from "./config";
+import client from './client'
 
 export async function showToken(argv) {
-  const c = argv2client(argv);
+  const c = client(argv);
   console.log(c.options.headers);
 }
 

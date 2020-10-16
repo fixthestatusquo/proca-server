@@ -27,7 +27,7 @@ const config = {
   identity_action_fields: (process.env.IDENTITY_ACTION_FIELDS || '').toLowerCase().split(','),
   identity_contact_fields: (process.env.IDENTITY_CONTACT_FIELDS || '').toLowerCase().split(','),
   service_url: process.env.SERVICE_URL || process.env.IDENTITY_URL,
-  url: process.env.API_URL || 'https://api.proca.app/api',
+  url: process.env.API_URL || 'https://api.proca.app',
   keys: process.env.KEYS || 'keys.json'
 }
 

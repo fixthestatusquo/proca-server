@@ -1,8 +1,11 @@
 import yargs from 'yargs';
 
 import config from './config'
-import {listCampaigns, getCampaign} from  './campaign'
+import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
+import {listKeys} from './org'
+import {exportActions} from './export'
 import {setup, showToken} from './util'
+import {watchPages} from './watch'
 
 import {testQueue, syncQueue, addBackoff} from './queue'
 import {deliver} from './export'
@@ -70,11 +73,89 @@ export default function cli() {
         .command('token', 'print basic auth token', y => y, showToken)
         .command('campaigns', 'List campaigns for org', y => y, listCampaigns)
         .command('campaign', 'show campaign for org', {
-          c: {
-            type: 'integer',
+          i: {
+            type: 'number',
+            description: 'ID of requested object',
             demandOption: true
           }
         }, getCampaign)
+        .command('pages', 'List action pages for org', y => y, listActionPages)
+        .command('page', 'show page for org', {
+          i: {
+            alias: 'id',
+            type: 'number',
+            description: 'ID of requested object',
+            demandOption: true
+          }
+        }, getActionPage)
+        .command('page:update', 'update page for org', {
+          i: {
+            alias: 'id',
+            type: 'number',
+            description: 'ID of requested object',
+            demandOption: true
+          },
+          n: {
+            alias: 'name',
+            type: 'string',
+            description: 'update ActionPage name'
+          },
+          l: {
+            alias: 'locale',
+            type: 'string',
+            description: 'update ActionPage locale'
+          },
+          t: {
+            alias: 'tytpl',
+            type: 'string',
+            description: 'update ActionPage Thank You email template reference'
+          },
+          e: {
+            alias: 'extra',
+            type: 'number',
+            description: 'update ActionPage extra supporters number'
+          },
+          c: {
+            alias: 'config',
+            type: 'string',
+            description: 'update ActionPage config - provide filename or JSON string'
+          }
+        }, updateActionPage)
+        .command('keys', 'Display keys', {}, listKeys)
+        .command('watch:pages', 'Subscribe to page updates', {
+          x: {
+            alias: 'exec',
+            type: 'string',
+            description: 'program to execute with data in stdin'
+          },
+          A: {
+            alias: 'all',
+            type: 'boolean',
+            description: 'Watch all orgs (not just one passed via -o)'
+          }
+        }, watchPages)
+/*        .command('export', 'Export action and supporter data', {
+          i: {
+            alias: 'id',
+            type: 'number',
+            description: 'Limit to campaign ID'
+          },
+          b: {
+            alias: 'batch',
+            type: 'number',
+            description: 'Batch size'
+          },
+          s: {
+            alias: 'start',
+            type: 'number',
+            description: 'Start from this action id'
+          },
+          a: {
+            alias: 'after',
+            type: 'string',
+            description: 'Start from this date (iso)'
+          }
+        }, exportActions)
         .command(
           'deliver',
           'print status of delivery qeue',
@@ -103,6 +184,6 @@ export default function cli() {
               });
           },
           deliver
-        )
+        )*/
         .demandCommand().argv;
 }
