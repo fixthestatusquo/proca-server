@@ -21,7 +21,7 @@
     "backoff": "^2.5.0",
     "base64url": "^3.0.1",
     "bent": "^7.3.11",
-    "csv-writer": "^1.6.0",
+    "csv-stringify": "^5.5.1",
     "dotenv": "^8.2.0",
     "email-validator": "^2.0.4",
     "esm": "^3.2.25",

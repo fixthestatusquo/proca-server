@@ -37,7 +37,7 @@ You can run `proca-cli setup` to create or update .env file interactively. At th
 
 Common options:
 - `-X` - CSV output
-- `J` - JSON output
+- `-J` - JSON output
 - 
 
 

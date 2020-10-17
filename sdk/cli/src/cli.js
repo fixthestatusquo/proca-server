@@ -40,10 +40,10 @@ export default function cli() {
           describe: 'password',
           default: config.password
         })
-        .option('a', {
-          alias: 'url',
+        .option('h', {
+          alias: 'host',
           type: 'string',
-          describe: 'api url (without path)',
+          describe: 'api host with scheme (http/https)',
           default: config.url
         })
         .option('q', {
@@ -134,16 +134,17 @@ export default function cli() {
             description: 'Watch all orgs (not just one passed via -o)'
           }
         }, watchPages)
-/*        .command('export', 'Export action and supporter data', {
-          i: {
-            alias: 'id',
-            type: 'number',
-            description: 'Limit to campaign ID'
+        .command('export', 'Export action and supporter data', {
+          c: {
+            alias: 'campaign',
+            type: 'string',
+            description: 'Limit to campaign name'
           },
           b: {
             alias: 'batch',
             type: 'number',
-            description: 'Batch size'
+            description: 'Batch size',
+            default: 1000
           },
           s: {
             alias: 'start',
@@ -156,7 +157,7 @@ export default function cli() {
             description: 'Start from this date (iso)'
           }
         }, exportActions)
-        .command(
+        /*.command(
           'deliver',
           'print status of delivery qeue',
           yargs => {

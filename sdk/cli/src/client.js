@@ -6,6 +6,6 @@ export default function getClient(argv) {
   if (argv.user && argv.password) {
     a = basicAuth({username: argv.user, password: argv.password})
   }
-  let c = link(argv.url, a)
+  let c = link(argv.host, a)
   return c
 }
