@@ -43,10 +43,13 @@ query ListActionPages($org: String!) {
   }
 }
 
-query ExportCampaignActions($org: String!, $campaignId: Int!, $start: Int, $after: Datetime, $limit: Int) {
-      exportActions(orgName: $org, campaignId: $campaignId, start: $start, after: $after, limit: $limit)
+query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String!,
+                            $start: Int, $after: Datetime, $limit: Int) {
+
+      exportActions(orgName: $org, campaignId: $campaignId, campaignName: $campaignName,
+                    start: $start, after: $after, limit: $limit)
       {
-        actionId, actionType,
+        actionId, actionType, createdAt,
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
         fields { key, value },
         tracking { source, medium, campaign, content },
@@ -55,14 +58,15 @@ query ExportCampaignActions($org: String!, $campaignId: Int!, $start: Int, $afte
       }
 }
 
-query ExportOrgActions($org: String!, $start: Int, $after: Datetime, $limit: Int) {
-      exportActions(orgName: $org, start: $start, after: $after, limit: $limit)
+query ExportOrgActions($org: String!, $start: Int,  $limit: Int) {
+      exportActions(orgName: $org, start: $start,  limit: $limit)
       {
-        actionId, actionType,
+        actionId, actionType, createdAt,
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
         fields { key, value },
         tracking { source, medium, campaign, content },
         actionPage { id, name },
+        campaign { name, externalId },
         privacy { optIn }
       }
 }

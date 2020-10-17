@@ -149,6 +149,7 @@ export type ActionCustomFields = {
 export type Action = {
   __typename?: 'Action';
   actionId: Scalars['Int'];
+  createdAt: Scalars['Datetime'];
   actionType: Scalars['String'];
   contact: Contact;
   fields: Array<CustomField>;
@@ -221,6 +222,7 @@ export type RootMutationTypeAddActionArgs = {
 
 
 export type RootMutationTypeAddActionContactArgs = {
+  contactRef?: Maybe<Scalars['ID']>;
   tracking?: Maybe<TrackingInput>;
   privacy: ConsentInput;
   contact: ContactInput;
@@ -274,6 +276,7 @@ export type RootQueryTypeExportActionsArgs = {
   after?: Maybe<Scalars['Datetime']>;
   start?: Maybe<Scalars['Int']>;
   campaignId?: Maybe<Scalars['Int']>;
+  campaignName?: Maybe<Scalars['String']>;
   orgName: Scalars['String'];
 };
 

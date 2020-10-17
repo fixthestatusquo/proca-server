@@ -137,6 +137,7 @@ type ActionCustomFields {
 
 type Action {
   actionId: Int!
+  createdAt: Datetime!
   actionType: String!
   contact: Contact!
   fields: [CustomField!]!
@@ -238,6 +239,9 @@ type RootMutationType {
 
   "Adds an action with contact data"
   addActionContact(
+    "Links to previous contact reference"
+    contactRef: ID
+
     "Tracking codes (UTM_*)"
     tracking: TrackingInput
 
@@ -315,8 +319,11 @@ type RootQueryType {
     "return only actions with id starting from this argument (inclusive)"
     start: Int
 
-    "Campaign the action belongs to (unless given, get all actions)"
+    "Limit results to campaign id"
     campaignId: Int
+
+    "Limit results to campaign name"
+    campaignName: String
 
     "Organization name"
     orgName: String!
