@@ -155,6 +155,11 @@ export default function cli() {
             alias: 'after',
             type: 'string',
             description: 'Start from this date (iso)'
+          },
+          d: {
+            alias: 'decrypt',
+            type: 'boolean',
+            description: 'Decrypt contact PII'
           }
         }, exportActions)
         /*.command(
