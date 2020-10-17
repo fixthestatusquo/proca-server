@@ -1,4 +1,4 @@
-import {createObjectCsvWriter} from 'csv-writer'
+import csvStringify from 'csv-stringify/lib/sync'
 
 
 const actionTypeEmojis = {
@@ -111,6 +111,12 @@ class Terminal {
     return ap
   }
 
+  action(a) {
+    const c = a.campaign !== undefined ? a.campaign.name : ''
+    const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
+    return t
+  }
+
 
 
   error(err) {
@@ -136,10 +142,60 @@ class Json extends Terminal {
 
 }
 
+class Csv extends Terminal {
+  // not so smart because it generates CSV line by line
+  // but for now this is not a big issue
+  constructor(argv) {
+    super(argv)
+    this.campaignName = argv.campaign
+    this.rowCount = 0
+  }
+
+  action(a) {
+    const opts = {}
+    if (this.rowCount == 0) {
+      opts.columns = [
+        'campaignName',
+        'actionPageName',
+        'actionType',
+        'contact.first_name',
+        'contact.last_name',
+        'contact.email',
+        'contact.phone',
+        'contact.postcode',
+        'contact.country',
+        'created',
+        'id',
+        'optIn'
+      ]
+      opts.header = true
+    }
+
+    this.rowCount += 1
+
+    return csvStringify([[
+      a.campaign !== undefined ? a.campaign.name : this.campaignName,
+      a.actionPage.name,
+      a.actionType,
+      a.contact.first_name,
+      a.contact.last_name,
+      a.contact.email,
+      a.contact.phone,
+      a.contact.postcode,
+      a.contact.country,
+      a.createdAt,
+      a.actionId,
+      a.privacy.optIn
+    ]], opts).slice(0, -1) // chomp newline
+  }
+}
+
 
 export function getFormatter(argv) {
   if (argv.J) {
     return new Json(argv)
+  } else if (argv.X) {
+    return new Csv(argv)
   } else {
     return new Terminal(argv)
   }
