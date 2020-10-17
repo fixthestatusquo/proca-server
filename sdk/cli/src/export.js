@@ -1,6 +1,8 @@
 import client from './client'
 import {admin, request} from '@proca/api'
 import {getFormatter} from './format'
+import {keys, decrypt} from './crypto'
+
 
 
 export async function exportActions(argv) {
@@ -35,10 +37,37 @@ export async function exportActions(argv) {
     for (const action of data.exportActions) {
       vars.start = action.actionId + 1
 
+      const c = getContact(action.contact, argv)
+      Object.assign(action.contact, c)
+
       console.log(fmt.action(action))
     }
   }
 }
+
+function getContact(contact, argv) {
+  const {payload, nonce, publicKey, signKey} = contact
+  if (payload === undefined) return {}
+  if (publicKey === null) {
+    // plain text
+    return JSON.parse(payload)
+  }
+
+  if (!argv.decrypt)
+    return {}
+
+  const k = keys(argv)
+  if (k === null)
+    return {}
+
+  const clear = decrypt(payload, nonce, publicKey.public, signKey.public, k)
+
+  if (clear === null)
+    return {}
+
+  return JSON.parse(clear)
+}
+
 
 export async function getSupporters(argv) {
   const c = argv2client(argv);
