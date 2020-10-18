@@ -164,6 +164,11 @@ export default function cli() {
         }, exportActions)
         .command('deliver:check', 'print status of delivery queue', {}, testQueue)
         .command('deliver:sync', 'sync deliver queue to service', {
+          d: {
+            alias: 'decrypt',
+            type: 'boolean',
+            description: 'Decrypt contact PII'
+          },
           's': {
             alias: 'service',
             type: 'string',

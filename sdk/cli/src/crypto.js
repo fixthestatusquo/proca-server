@@ -4,8 +4,13 @@ import base64url from 'base64url'
 import fs from 'fs'
 
 export function keys(argv) {
-  if (argv.keys)
-    return loadKeys(argv.keys)
+  if (argv.keys) {
+    if (argv.keys[0] === '{') {
+      return JSON.parse(argv.keys)
+    } else {
+      return loadKeys(argv.keys)
+    }
+  }
   return null
 }
 
