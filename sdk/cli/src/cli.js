@@ -4,11 +4,11 @@ import config from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
 import {listKeys} from './org'
 import {exportActions} from './export'
+import {testQueue, syncQueue} from './queue'
 import {setup, showToken} from './util'
 import {watchPages} from './watch'
 
-import {testQueue, syncQueue, addBackoff} from './queue'
-import {deliver} from './export'
+// import {testQueue, syncQueue, addBackoff} from './queue'
 
 require = require('esm')(module);
 
@@ -162,34 +162,25 @@ export default function cli() {
             description: 'Decrypt contact PII'
           }
         }, exportActions)
-        /*.command(
-          'deliver',
-          'print status of delivery qeue',
-          yargs => {
-            return yargs
-              .option('c', {
-                alias: 'check',
-                type: 'boolean',
-                describe: 'Check delivery queue'
-              })
-              .option('s', {
-                alias: 'service',
-                type: 'string',
-                describe: 'Service to which deliver action data'
-              })
-              .option('l', {
-                alias: 'service_url',
-                type: 'string',
-                describe: 'Deliver to service at location',
-                default: config.service_url
-              })
-              .option('B', {
-                alias: 'backoff',
-                type: 'boolean',
-                describe: 'Add backoff when calling syncAction'
-              });
+        .command('deliver:check', 'print status of delivery queue', {}, testQueue)
+        .command('deliver:sync', 'sync deliver queue to service', {
+          's': {
+            alias: 'service',
+            type: 'string',
+            describe: 'Service to which deliver action data',
+            demandOption: true
           },
-          deliver
-        )*/
+          'l': {
+            alias: 'service_url',
+            type: 'string',
+            describe: 'Deliver to service at location',
+            default: config.service_url
+          },
+          'B': {
+            alias: 'backoff',
+            type: 'boolean',
+            describe: 'Add backoff when calling syncAction'
+          }
+        }, syncQueue)
         .demandCommand().argv;
 }

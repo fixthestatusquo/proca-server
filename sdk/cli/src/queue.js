@@ -1,26 +1,28 @@
 import amqplib from 'amqplib'
 import backoff from 'backoff'
 import {decryptAction} from './crypto'
+import config from './config'
 
-export function connect(config) {
-  if (!config.queue_url) {
+
+export function connect(argv) {
+  if (!argv.queue_url) {
     throw "Please configure queue url with -q or QUEUE_URL"
   }
-  return amqplib.connect(config.queue_url)
+  return amqplib.connect(argv.queue_url)
 }
 
-function queueName(type, config) {
+function queueName(type, argv) {
   if (type == 'deliver' || type == 'confirm') {
-    return `custom.${config.org}.${type}`
+    return `custom.${argv.org}.${type}`
   }
-  throw "queue type must by either deliver or config"
+  throw "queue type must by either deliver or configm"
 }
 
-export async function testQueue(config) {
-  const conn = await connect(config)
+export async function testQueue(argv) {
+  const conn = await connect(argv)
   const ch = await conn.createChannel()
   try {
-    const status = await ch.checkQueue(queueName('deliver', config))
+    const status = await ch.checkQueue(queueName('deliver', argv))
     console.log(status)
     return status
   } finally {
@@ -29,18 +31,38 @@ export async function testQueue(config) {
   }
 }
 
-export async function syncQueue(service, config, argv) {
-  const conn = await connect(config)
+function getService(argv) {
+  if (typeof argv.service === 'string') {
+    let service = require(`./service/${argv.service}`);
+    if (argv.backoff) {
+      service.syncAction = addBackoff(service.syncAction);
+    }
+    return service
+  }
+
+  if (typeof argv.service === 'object') {
+    return argv.service
+  }
+
+  throw "argv.service should be a name of module in src/service or function"
+}
+
+
+export async function syncQueue(argv) {
+  const conn = await connect(argv)
   const ch = await conn.createChannel()
-  const qn = queueName('deliver', config)
+  const qn = queueName('deliver', argv)
+  const service = getService(argv)
   let consumerTag = null
-  console.log(`⏳ waiting for actions from ${qn}`)
+  console.error(`⏳ waiting for actions from ${qn}`)
 
   return new Promise(async (ok, fail) => {
     const ret = await ch.consume(qn, (msg) => {
       let action = JSON.parse(msg.content.toString())
-      action = decryptAction(action, config)
-      const syncing = service.syncAction(action, config, argv)
+
+      action = decryptAction(action, argv)
+
+      const syncing = service.syncAction(action, argv, config)
             .then((v) => {
               ch.ack(msg)
             })
@@ -55,6 +77,7 @@ export async function syncQueue(service, config, argv) {
     consumerTag = ret.consumerTag
   })
 }
+
 
 export function addBackoff(fun) {
   async function newFun(...args) {
