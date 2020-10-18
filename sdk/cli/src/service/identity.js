@@ -3,26 +3,26 @@ import bent from 'bent'
 
 const log = debug('proca:service:identity')
 
-export async function syncAction(action, config) {
-  const url = config.service_url
+export async function syncAction(action, argv, config) {
+  const url = argv.service_url
   const api_token = config.identity_api_token
   const comm_consent = config.identity_consent
 
   let consent = {}
-  if (comm_consent === null) {
-    log('ProcaCli config.identity_consent is not set')
+  if (comm_consent === null || comm_consent === undefined) {
+    log('ProcaCli argv.identity_consent is not set')
     throw "Please set IDENTITY_CONSENT"
   }
   if (comm_consent[0] == "{") {
-    log('ProcaCli config.identity_consent has JSON config')
+    log('ProcaCli argv.identity_consent has JSON argv')
     // this is a hash with consent map
     consent = JSON.parse(comm_consent)
   } else {
-    log(`ProcaCli config.identity_consent uses ${comm_consent} as commmunication consent`)
+    log(`ProcaCli argv.identity_consent uses ${comm_consent} as commmunication consent`)
     consent[comm_consent] = { level: 'communication' }
   }
 
-  if (action.contact.pii === null) {
+  if (Object.keys(action.contact.pii).length == 0) {
     log(`Cannot decrypt PII; sender key is ${action.contact.signKey}`)
     throw "Cannot decrypt personal data, please check KEYS"
   }
@@ -38,52 +38,8 @@ export async function syncAction(action, config) {
 }
 
 
-/* 
-   PROCA ACTION JSON
-   {
-   "action":{
-   "actionType":"download",
-   "createdAt":"2020-06-15T10:10:23",
-   "fields":{
-   "postcardUrl":"https://pepe", "ContactLanguage": "IT"
-   }
-   },
-   "actionId":73,
-   "actionPage":{
-   "locale":"de",
-   "thankYouTemplateRef":null,
-   "url":"https://campax.org/1"
-   },
-   "actionPageId":4,
-   "campaign":{
-   "name":"r1"
-   },
-   "campaignId":3,
-   "contact":{
-   "email":"dump+test2@cahoots.pl",
-   "firstName":"Mee",
-   "pii": {
-   "birth_date":"1990-10-12",
-   "email":"dump+test2@cahoots.pl",
-   "first_name":"Mee",
-   "last_name":"Bacheli",
-   "locality":"Vissay",
-   "postcode":"1234",
-   "region":"Canton1"
-   },
-   "payload":"{\"birth_date\":\"1990-10-12\",\"email\":\"dump+test2@cahoots.pl\",\"first_name\":\"Mee\",\"last_name\":\"Bacheli\",\"locality\":\"Vissay\",\"postcode\":\"1234\",\"region\":\"Canton1\"}",
-   "ref":"GiYjjcsLwOBSdBvNEYMk6TLRe8b1-eYPNJuwD2eT8sA"
-   },
-   "orgId":3,
-   "privacy":{
-   "communication":true,
-   "givenAt":"2020-06-15T10:10:23Z"
-   },
-   "schema":"proca:action:1",
-   "source":null,
-   "stage":"deliver"
-}
-*/ 
+
+
 
 export function toDataApi(action, consent_map, action_fields, contact_fields) {
   const ah = {
@@ -181,5 +137,5 @@ export function toConsent(action, consent_id, {level, locale}) {
     }
   }
 
-  throw `unsuported config for consent ${consent_id}: ${level} for locale ${locale}`
+  throw `unsuported argv for consent ${consent_id}: ${level} for locale ${locale}`
 }
