@@ -30,7 +30,15 @@ defmodule ProcaWeb.DashView do
       {"English", "en"},
       {"French", "fr"},
       {"German", "de"},
-      {"Italian", "it"}
+      {"Italian", "it"},
+      {"Hindi", "hi"},
+      {"Estonian", "ee"},
+      {"Dutch", "nl"},
+      {"Greek", "el"},
+      {"Polish", "pl"},
+      {"Romanian", "ro"},
+      {"Spanish", "es"},
+      {"Swedish", "se"}
     ]
   end
 
