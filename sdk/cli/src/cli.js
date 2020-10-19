@@ -84,8 +84,17 @@ export default function cli() {
           i: {
             alias: 'id',
             type: 'number',
-            description: 'ID of requested object',
-            demandOption: true
+            description: 'ID of requested object'
+          },
+          n: {
+            alias: 'name',
+            type: 'string',
+            description: 'Name of requested object'
+          },
+          'P': {
+            alias: 'public',
+            type: 'boolean',
+            description: 'Use public API to fetch action page'
           }
         }, getActionPage)
         .command('page:update', 'update page for org', {
