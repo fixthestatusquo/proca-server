@@ -1,6 +1,6 @@
 
 import client from './client'
-import {admin, request} from '@proca/api'
+import {admin, widget, request} from '@proca/api'
 import {getFormatter} from './format'
 import fs from 'fs'
 
@@ -47,10 +47,18 @@ export async function getActionPage(argv) {
   const c = client(argv)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.GetActionPageDocument, {org: argv.org, id: argv.i})
+  let query = admin.GetActionPageDocument
+  if (argv.public) query = widget.GetActionPageDocument
+
+  let vars = {}
+  if (argv.name) vars.name = argv.name
+  if (argv.id) vars.id = argv.id
+  if (!argv.public) vars.org = argv.org
+
+  const {data, errors} = await request(c, query, vars)
   if (errors) throw errors
 
-  const ap = data.org.actionPage
+  const ap = argv.public ? data.actionPage : data.org.actionPage
 
   let t = null
   t = fmt.actionPage(ap, data.org)
