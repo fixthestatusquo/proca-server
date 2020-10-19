@@ -26,10 +26,10 @@ ORG_NAME=someorg
 AUTH_USER=user@domain.com
 AUTH_PASSWORD=secret123
 API_URL=https://api.proca.app
-KEYS=publickey1:privatekey1,publickey2:privatekey2
+KEYS=keys.json
 ```
 
-Keys should be pasted in Base64url format (same as in Proca dashboard)
+Keys are sto is also allowedred in a JSON (map of public to private keys in base64url format). The format printed by `proca-cli keys`
 
 You can run `proca-cli setup` to create or update .env file interactively. At the moment only one keypair is supported.
 

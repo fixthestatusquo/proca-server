@@ -70,7 +70,7 @@ async function setup() {
     {type:'password', name: 'password', default: config.password, messsage: 'Your password?'},
     {type:'input', name: 'url', default: config.url, message: 'Proca backend url'},
     {type:'input', name: 'queue_url', default: config.queue_url, message: 'Proca queue url'},
-    {type:'input', name: 'keys', default: config.keys, message: 'Keys file'}
+    {type:'password', name: 'keys', default: config.keys, message: 'Keys file name or JSON'}
 
   ]).catch((error) => {
     console.log(`Wrong! ${error}`)

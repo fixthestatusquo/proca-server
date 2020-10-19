@@ -7,7 +7,7 @@ export async function listKeys(argv) {
   const c = client(argv)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.ListKeysDocument, {"orgName": argv.org})
+  const {data, errors} = await request(c, admin.ListKeysDocument, {"org": argv.org})
   if (errors) throw errors
 
   data.org.keys
