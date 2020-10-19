@@ -92,6 +92,13 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve &Resolvers.Org.action_pages/3
     end
 
+    @dest "Action Page"
+    field :action_page, :action_page do
+      arg :id, :integer
+      arg :name, :string
+      resolve &Resolvers.Org.action_page/3
+    end
+
     @desc "Get campaign this org is leader or partner of by id"
     field :campaign, :campaign do
       arg :id, :integer

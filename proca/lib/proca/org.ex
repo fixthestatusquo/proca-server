@@ -57,7 +57,7 @@ defmodule Proca.Org do
     q = from o in Proca.Org, where: o.name == ^name, preload: ^preload
     org = Proca.Repo.one q
 
-    if select_active_keys do
+    if not is_nil(org) and select_active_keys do
       %{org |
         public_keys: org.public_keys
         |> Enum.filter(fn pk -> is_nil(pk.expired_at) end)

@@ -28,10 +28,11 @@ defmodule Proca.Factory do
   end
  
   def action_page_factory do
+    org = insert(:org)
     %Proca.ActionPage{
       name: sequence("https://some.url.com/sign"),
-      org: build(:org),
-      campaign: build(:campaign),
+      org: org,
+      campaign: build(:campaign, org: org),
       delivery: false
     }
   end
@@ -80,6 +81,17 @@ defmodule Proca.Factory do
     |> Ecto.Changeset.apply_changes
   end
 
+  def basic_data_pl_supporter_with_contact_factory(attrs) do
+    action_page = Map.get(attrs, :action_page) || Factory.build(:action_page)
+    data = Map.get(attrs, :data) || build(:basic_data_pl)
+
+    contact = Proca.Contact.Data.to_contact(data, action_page)
+
+    Proca.Supporter.new_supporter(data, action_page)
+    |> Proca.Supporter.add_contacts(contact, action_page, %Proca.Supporter.Privacy{opt_in: true})
+    |> Ecto.Changeset.apply_changes
+  end
+
   def contact_factory do
     {:ok, payload} = %{
       first_name: "John", last_name: "Brown", email: "john.brown@gmail.com",
@@ -96,6 +108,16 @@ defmodule Proca.Factory do
       first_name: sequence("first_name"),
       email: sequence("email"),
       fingerprint: sequence("fingerprint")
+    }
+  end
+
+  def action_factory(%{action_page: ap, action_type: at} = attrs) do
+    s = build(:basic_data_pl_supporter_with_contact, action_page: ap)
+    %Proca.Action{
+      action_type: at,
+      action_page: ap,
+      campaign: ap.campaign,
+      supporter: s
     }
   end
 end

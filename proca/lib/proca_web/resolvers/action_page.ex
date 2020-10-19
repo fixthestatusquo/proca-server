@@ -3,6 +3,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   alias Proca.ActionPage
   alias Proca.Repo
   alias ProcaWeb.Helper
+  alias Proca.Server.Notify
 
   import Logger
 
@@ -60,7 +61,9 @@ defmodule ProcaWeb.Resolvers.ActionPage do
       do
       {:error,  chset = %Ecto.Changeset{}} -> {:error, Helper.format_errors(chset)}
       {:error, msg} -> {:error, msg}
-      {:ok, ap} -> {:ok, ap}
+      {:ok, ap} ->
+        Notify.action_page_updated(ap)
+        {:ok, ap}
     end
   end
 

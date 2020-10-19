@@ -14,6 +14,7 @@ defmodule Proca.Application do
       {Phoenix.PubSub, name: Proca.PubSub},
       # Start the endpoint when the application starts
       ProcaWeb.Endpoint,
+      {Absinthe.Subscription, ProcaWeb.Endpoint},
       {
         Proca.Server.Keys,
         Application.get_env(:proca, Proca)[:org_name]

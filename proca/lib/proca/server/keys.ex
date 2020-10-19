@@ -39,7 +39,7 @@ defmodule Proca.Server.Keys do
         :ok,
         {id, sensitive_data_wrap(%{}), :crypto.strong_rand_bytes(24)},
         {:continue, :get_keys}}
-      nil -> {:stop, "Can't find org #{org_name} to be instance org"}
+      nil -> :ignore # {:stop, "Can't find org #{org_name} to be instance org"}
     end
   end
 

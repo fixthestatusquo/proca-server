@@ -21,7 +21,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     end
 
     @desc "Get action page"
-    field :action_page, :action_page do
+    field :action_page, :public_action_page do
       @desc "Get action page by id."
       arg(:id, :integer)
       @desc "Get action page by name the widget is displayed on"
@@ -55,7 +55,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:external_id, :integer)
 
       @desc "Campaign human readable title"
-      arg(:title, non_null(:string))
+      arg(:title, :string)
 
       @desc "Action pages of this campaign"
       arg(:action_pages, non_null(list_of(:action_page_input)))
@@ -123,7 +123,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg :extra_supporters, :integer
 
       @desc """
-      List of steps in the journey
+      List of steps in the journey (deprecated, pass in config)
       """
       arg :journey, list_of(non_null(:string))
 
@@ -161,8 +161,28 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   end
 
 
-
   object :action_page do
+    field :id, :integer
+    @desc "Locale for the widget, in i18n format"
+    field :locale, :string
+    @desc "Name where the widget is hosted"
+    field :name, :string
+    @desc "Reference to thank you email templated of this Action Page"
+    field :thank_you_template_ref, :string
+    @desc "List of steps in journey"
+    field :journey, list_of(non_null(:string))
+    @desc "Config JSON of this action page"
+    field :config, :string
+    @desc "Extra supporters (added to supporters count)"
+    field :extra_supporters, :integer
+    @desc "Campaign this widget belongs to"
+    field :campaign, :campaign do
+      resolve &Resolvers.ActionPage.campaign/3
+    end
+    field :org, :public_org
+  end
+
+  object :public_action_page do
     field :id, :integer
     @desc "Locale for the widget, in i18n format"
     field :locale, :string
