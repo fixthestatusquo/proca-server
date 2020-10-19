@@ -13,7 +13,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
       @desc "Organization name"
       arg :org_name, non_null(:string)
-      @desc "Campaign the action belongs to (unless given, get all actions)"
+      @desc "Limit results to campaign name"
+      arg :campaign_name, :string
+      @desc "Limit results to campaign id"
       arg :campaign_id, :integer
       @desc "return only actions with id starting from this argument (inclusive)"
       arg :start, :integer
@@ -114,6 +116,14 @@ defmodule ProcaWeb.Schema.ActionTypes do
     # field :longitute, :float
   end
 
+# field :areas -- commented above
+#   @desc "Type to describe an area (identified by area_code) in some administrative division (area_type). Area code can be an official code or just a name, provided they are unique."
+#   input_object :area_input do
+#     field :area_code, :string
+#     field :area_type, :string
+#   end
+
+
   @desc "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
   input_object :action_input do
     @desc "Action Type"
@@ -125,21 +135,23 @@ defmodule ProcaWeb.Schema.ActionTypes do
   # XXX maybe rename to :exported_action or something
   object :action do
     field :action_id, non_null(:integer)
+    field :created_at, non_null(:datetime)
     field :action_type, non_null(:string)
     field :contact, non_null(:contact)
     field :fields, non_null(list_of(non_null(:custom_field)))
     field :tracking, :tracking
     field :campaign, non_null(:action_campaign)
-    field :action_page, non_null(:action_action_page)
+    field :action_page, non_null(:simple_action_page)
     field :privacy, non_null(:consent)
   end
 
   object :action_campaign do
     field :name, non_null(:string)
-    field :external_id, non_null(:integer)
+    field :external_id, :integer
   end
 
-  object :action_action_page do
+  object :simple_action_page do
+    field :id, non_null(:integer)
     field :name, non_null(:string)
     field :locale, non_null(:string)
   end
@@ -150,7 +162,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :nonce, :string
     field :public_key, :key
     field :sign_key, :key
-    field :optIn, non_null(:boolean)
+ #   field :optIn, non_null(:boolean) <- is in privacy already
   end
 
 

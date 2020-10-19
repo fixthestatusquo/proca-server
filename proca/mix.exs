@@ -70,7 +70,7 @@ defmodule Proca.MixProject do
       {:json, "~> 1.3.0"},  # XXX migrate to jason
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
-      {:phoenix_live_view, "~> 0.12.1"},
+      {:phoenix_live_view, "~> 0.13.0"},
       {:pow, "~> 1.0.20"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},

@@ -27,7 +27,10 @@ defmodule ProcaWeb.Resolvers.Org do
     |> where([c], c.id == ^camp_id)
     |> Repo.one
 
-    {:ok, c}
+    case c do
+      nil -> {:error, "not_found"}
+      c -> {:ok, c}
+    end
   end
 
   def campaigns(org, _, _) do
@@ -45,6 +48,17 @@ defmodule ProcaWeb.Resolvers.Org do
     |> Enum.map(&ActionPage.stringify_config(&1))
 
     {:ok, c}
+  end
+
+  def action_page(%{id: org_id}, params, _) do
+    case  ProcaWeb.Resolvers.ActionPage.find(nil, params, nil) do
+      {:ok, %ActionPage{org_id: ^org_id}} = ret -> ret
+      {:ok, %ActionPage{}} -> {:error, %{
+                                  message: "Action page not found",
+                                  extensions: %{code: "not_found"}
+                               }}
+      {:error, x} -> {:error, x}
+    end
   end
 
 

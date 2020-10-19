@@ -5,7 +5,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
 
   import Proca.Staffer.Permission
 
-  alias Proca.{Supporter, Action, ActionPage, Contact, Source, Org, Staffer, PublicKey}
+  alias Proca.{Supporter, Action, ActionPage, Campaign, Contact, Source, Org, Staffer, PublicKey}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
@@ -26,10 +26,16 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   end
   def filter_after(q, _), do: q
 
+  def filter_campaign(q, %{campaign_name: name}) do
+    q
+    |> join(:inner, [a], camp in assoc(a, :campaign), on: camp.name == ^name)
+  end
+
   def filter_campaign(q, %{campaign_id: cid}) do
     q
     |> where([a], a.campaign_id == ^cid)
   end
+
   def filter_campaign(q, _), do: q
 
 
@@ -79,7 +85,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       privacy: format_privacy(contact),
       trackng: action.source,
       campaign: Map.take(action.campaign, [:name, :external_id]),
-      action_page: Map.take(action.action_page, [:name, :locale])
+      action_page: Map.take(action.action_page, [:id, :name, :locale])
     }
   end
 

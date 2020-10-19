@@ -1,5 +1,7 @@
 defmodule ProcaWeb.UserSocket do
   use Phoenix.Socket
+  use Absinthe.Phoenix.Socket,
+    schema: ProcaWeb.Schema
 
   ## Channels
   # channel "room:*", ProcaWeb.RoomChannel

@@ -50,9 +50,13 @@ defmodule ProcaWeb.Router do
     pipe_through :api
 
     forward "/", Absinthe.Plug,
-      schema: ProcaWeb.Schema
+      schema: ProcaWeb.Schema,
+      socket: ProcaWeb.UserSocket
   end
 
   forward "/graphiql", Absinthe.Plug.GraphiQL,
-    schema: ProcaWeb.Schema, interface: :playground, default_url: "/api"
+    schema: ProcaWeb.Schema,
+    socket: ProcaWeb.UserSocket,
+    interface: :playground,
+    default_url: "/api"
 end

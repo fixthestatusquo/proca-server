@@ -1,4 +1,5 @@
 defmodule Proca.Server.Notify do
+  alias Proca.Repo
   alias Proca.{Action, Org, PublicKey}
 
   @spec action_created(Action, boolean()) :: :ok
@@ -13,6 +14,19 @@ defmodule Proca.Server.Notify do
     Proca.Server.Keys.update_key(org, key)
   end
 
+  def action_page_added(action_page) do
+    action_page_updated(action_page)
+  end
+
+  def action_page_updated(action_page) do
+    action_page = Repo.preload(action_page, [:org, :campaign])
+    publish_subscription_event(action_page, action_page_upserted: "$instance")
+    publish_subscription_event(action_page, action_page_upserted: action_page.org.name)
+    :ok
+  end
+
+  # common side-effects
+
   defp process_action(action) do
     Proca.Server.Processing.process_async(action)
   end
@@ -21,5 +35,7 @@ defmodule Proca.Server.Notify do
     Proca.Server.Stats.increment(cid, atype, new_supporter)
   end
 
-
+  defp publish_subscription_event(record, routing_key) do
+    Absinthe.Subscription.publish(ProcaWeb.Endpoint, record, routing_key)
+  end
 end
