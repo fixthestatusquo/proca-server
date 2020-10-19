@@ -94,6 +94,8 @@ class Terminal {
     }
     const config = JSON.parse(ap.config)
 
+    delete config.actionpage
+
     // actionpage (id) should be passed in options
     ap.locale = config.lang || ap.locale
     delete config.lang
@@ -101,8 +103,8 @@ class Terminal {
     ap.journey = config.journey || ap.journey
     delete config.journey
 
-    ap.filename = config.name || ap.filename
-    delete config.name
+    ap.name = config.filename || ap.name
+    delete config.filename
 
     // organisation - we ignore it
 

@@ -94,7 +94,7 @@ export async function updateActionPage(argv) {
   }
 
   // DEBUG
-  console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
+  // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
 
   const {data, errors} = await request(c, admin.UpdateActionPageDocument, ap_in)
   if (errors) { throw errors }
