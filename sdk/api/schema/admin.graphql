@@ -43,7 +43,7 @@ query ListActionPages($org: String!) {
   }
 }
 
-query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String!,
+query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String,
                             $start: Int, $after: Datetime, $limit: Int) {
 
       exportActions(orgName: $org, campaignId: $campaignId, campaignName: $campaignName,
