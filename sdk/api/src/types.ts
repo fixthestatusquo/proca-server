@@ -101,7 +101,7 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 export type ActionCampaign = {
   __typename?: 'ActionCampaign';
   name: Scalars['String'];
-  externalId: Scalars['Int'];
+  externalId?: Maybe<Scalars['Int']>;
 };
 
 /** ActionPage declaration (using the legacy url attribute) */

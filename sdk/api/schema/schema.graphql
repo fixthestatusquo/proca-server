@@ -91,7 +91,7 @@ type RootSubscriptionType {
 
 type ActionCampaign {
   name: String!
-  externalId: Int!
+  externalId: Int
 }
 
 "ActionPage declaration (using the legacy url attribute)"
