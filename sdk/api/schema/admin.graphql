@@ -18,9 +18,9 @@ query GetCampaign($org: String!, $id: Int!) {
     }
   }
 
-query GetActionPage($org: String!, $id: Int!) {
+query GetActionPage($org: String!, $id: Int, $name: String) {
     org(name: $org) {
-      actionPage(id: $id) {
+      actionPage(id: $id, name: $name) {
         id,
         name,
         locale,
