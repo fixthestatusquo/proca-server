@@ -75,6 +75,7 @@ mutation UpdateActionPage(
       $id: Int!,
       $name: String,
       $locale: String,
+      $journey: [String!],
       $thankYouTemplateRef: String,
       $extraSupporters: Int,
       $config: String
@@ -83,6 +84,7 @@ mutation UpdateActionPage(
         id: $id,
         name: $name,
         locale: $locale,
+        journey: $journey,
         thankYouTemplateRef: $thankYouTemplateRef,
         extraSupporters: $extraSupporters,
         config: $config)
