@@ -1,6 +1,7 @@
 # Use this to get all information needed to generate a widget
 query GetActionPage($name: String, $id: Int) {
   actionPage(name: $name, id: $id) {
+    id,
     config,
     locale,
     journey,

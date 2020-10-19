@@ -7,6 +7,7 @@ import gql from 'graphql-tag';
 export const GetActionPageDocument = gql`
     query GetActionPage($name: String, $id: Int) {
   actionPage(name: $name, id: $id) {
+    id
     config
     locale
     journey
@@ -131,7 +132,7 @@ export type GetActionPage = (
   { __typename?: 'RootQueryType' }
   & { actionPage?: Types.Maybe<(
     { __typename?: 'PublicActionPage' }
-    & Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
+    & Pick<Types.PublicActionPage, 'id' | 'config' | 'locale' | 'journey' | 'name'>
     & { campaign?: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
