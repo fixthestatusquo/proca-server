@@ -10,14 +10,13 @@ defmodule Proca.Server.KeysTest do
     red_story()
   end
 
-  test "Key server fails when given non-existing org" do
-    {:error, p} = GenServer.start_link(Proca.Server.Keys, "foobar")
-    assert p =~ ~r/find org foobar/
+  test "Server returns :ignore when given non-existing org" do
+    p = GenServer.start_link(Proca.Server.Keys, "foobar")
+    assert p = :ignore
   end
 
-  test "Key server fails silently (exit with :ignore) when instance org has no keys", %{red_org: org} do
-    p = GenServer.start_link(Proca.Server.Keys, org.name)
-    assert p == :ignore
+  test "When instance org has no keys it starts but will exit", %{red_org: org} do
+    {:ok, _pid} = GenServer.start_link(Proca.Server.Keys, org.name)
   end
 
   test "Sever works when instance org has keys", %{red_org: org} do
