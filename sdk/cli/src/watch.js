@@ -24,7 +24,7 @@ export async function watchPages(argv) {
               console.log(e.stdout.toString())
             }
             if (e.stderr) {
-              console.error(e.stterr.toString())
+              console.error(e.stderr.toString())
             } else {
               console.error(e)
             }
