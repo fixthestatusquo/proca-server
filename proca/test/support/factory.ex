@@ -32,6 +32,7 @@ defmodule Proca.Factory do
     %Proca.ActionPage{
       name: sequence("https://some.url.com/sign"),
       org: org,
+      locale: "en",
       campaign: build(:campaign, org: org),
       delivery: false
     }
