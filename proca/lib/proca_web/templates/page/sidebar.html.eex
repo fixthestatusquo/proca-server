@@ -17,12 +17,14 @@
   </li>
 
   <!-- Nav Item - Dashboard -->
+  <%= if Proca.Staffer.Permission.can? @staffer, [:manage_orgs] do %>
   <li class="nav-item"> <%# XXX add support for active class here %>
     <%=  link to: Routes.live_path(@conn, ProcaWeb.OrgsController), class: 'nav-link' do %>
       <i class="fas fa-fw fa-fist-raised"></i>
       <span>Organisations</span></a>
     <% end %>
   </li>
+  <% end %>
 
   <li class="nav-item ">
     <%=  link to: Routes.live_path(@conn, ProcaWeb.CampaignsController), class: 'nav-link' do %>
