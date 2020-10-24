@@ -129,6 +129,13 @@ defmodule ProcaWeb.OrgsController do
   def mount(_params, session, socket) do
     socket = mount_user(socket, session)
 
+    socket = if Proca.Staffer.Permission.can?(socket.assigns.staffer, [:manage_orgs]) do
+      socket
+    else
+      socket
+      |> Phoenix.LiveView.redirect(to: "/")
+    end
+
     if socket.redirected do
       {:ok, socket}
     else
