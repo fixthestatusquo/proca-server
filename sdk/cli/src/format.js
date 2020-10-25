@@ -72,7 +72,7 @@ class Terminal {
   // The standalone json files used to generate widget for action page
   // is using a different format today 
   addAPkeysToConfig(ap, org) {
-    const c = JSON.parse(ap.config || '{}')
+    const c = JSON.parse(ap.config || '{}') || {}
     
     const m = {
       actionpage: ap.id,
