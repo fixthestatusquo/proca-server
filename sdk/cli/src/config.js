@@ -22,7 +22,7 @@ const config = {
   org: process.env.ORG_NAME,
   user: process.env.AUTH_USER,
   password: process.env.AUTH_PASSWORD,
-  queue_url: process.env.QUEUE_URL,
+  queue_url: process.env.QUEUE_URL || 'amqp://api.proca.app/proca',
   identity_url: process.env.IDENTITY_URL,
   identity_api_token: process.env.IDENTITY_API_TOKEN,
   identity_consent: process.env.IDENTITY_CONSENT,
