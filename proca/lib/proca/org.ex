@@ -40,7 +40,7 @@ defmodule Proca.Org do
     org
     |> cast(attrs, [:name, :title, :contact_schema, :email_opt_in, :email_opt_in_template])
     |> validate_required([:name, :title])
-    |> validate_format(:name, ~r/^([[:alnum]_-]+$)/)
+    |> validate_format(:name, ~r/^([[:alnum:]_-]+$)/)
     |> unique_constraint(:name)
   end
 
