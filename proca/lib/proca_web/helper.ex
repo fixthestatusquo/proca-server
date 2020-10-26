@@ -1,7 +1,7 @@
 defmodule ProcaWeb.Helper do
   alias Ecto.Changeset
   import Ecto.Changeset
-  alias Proca.{ActionPage, Campaign,Staffer}
+  alias Proca.{ActionPage, Campaign, Staffer}
   alias Proca.Staffer.Permission
 
   @doc """
