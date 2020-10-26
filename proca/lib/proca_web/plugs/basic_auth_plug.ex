@@ -4,6 +4,7 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   alias Plug.Conn
   alias Pow.{Plug, Store.CredentialsCache}
   alias Proca.Users.User
+  import ProcaWeb.Plugs.Helper
 
 
  #   Absinthe.Plug.put_options(conn, context: context)
@@ -22,8 +23,7 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
     case Conn.get_req_header(conn, "authorization") do
       # Basic Auth
       ["Basic " <> token] -> try_authorize(token, conn)
-      |> Conn.delete_req_header("authorization")
-        
+
       # not Basic authorization
       _ -> conn
     end
@@ -36,12 +36,10 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
       conn
     else
       {:error, conn = %Conn{}} -> conn
-      |> Conn.send_resp(401, "Unauthorized")
-      |> Conn.halt()
+      |> error_halt(401, "unauthorized", "Can not authenticate with these Basic HTTP credentials")
 
       _ -> conn
-      |> Conn.send_resp(401, "Malformed authorization")
-      |> Conn.halt()
+      |> error_halt(400, "unauthorized", "Malformed Basic auth header")
     end
   end
 

@@ -4,7 +4,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   """
   
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Schema.Authenticated
+  alias ProcaWeb.Schema.Authorized
   alias ProcaWeb.Resolvers
 
   object :campaign_queries do
@@ -43,7 +43,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Action Pages will be removed (principle of not removing signature data).
     """
     field :upsert_campaign, type: :campaign do
-      middleware Authenticated
+      middleware Authorized
 
       @desc "Org name"
       arg(:org_name, non_null(:string))
@@ -68,7 +68,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Deprecated, use upsert_campaign.
     """
     field :declare_campaign, type: :campaign do
-      middleware Authenticated
+      middleware Authorized
 
       @desc "Org name"
       arg(:org_name, non_null(:string))
@@ -92,7 +92,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Update an Action Page
     """
     field :update_action_page, type: :action_page do
-      middleware Authenticated
+      middleware Authorized
 
       # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
       @desc """

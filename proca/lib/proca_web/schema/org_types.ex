@@ -5,12 +5,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
   
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Schema.Authenticated
+  alias ProcaWeb.Schema.Authorized
 
   object :org_queries do
     @desc "Organization api (authenticated)"
     field :org, :org do
-      middleware Authenticated
+      middleware Authorized
 
       @desc "Name of organisation"
       arg(:name, non_null(:string))
@@ -21,7 +21,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org_mutations do
     field :update_org, type: :org do
-      middleware Authenticated
+      middleware Authorized
 
       @desc "Name of organisation, used for lookup, can't be used to change org name"
       arg :name, non_null(:string)

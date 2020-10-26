@@ -6,6 +6,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Users.User
   alias Proca.Repo
   alias Proca.Users.User
+  import ProcaWeb.Plugs.Helper
 
   @pow_config [otp_app: :proca]
 
@@ -30,14 +31,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       |> get_or_create_user(jwt)
     else
       {false, _, _} ->
-        case conn do
-          %{private: %{phoenix_format: "html"}} ->
-            conn
-          _ ->
-            conn
-            |> Conn.send_resp(401, "Unauthorized")
-            |> Conn.halt()
-        end
+        error_halt(conn, 401, "unauthorized", "JWT token invalid")
       nil -> conn # no token
     end
   end

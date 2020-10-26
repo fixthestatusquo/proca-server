@@ -1,9 +1,9 @@
-defmodule ProcaWeb.Schema.Authenticated do
+defmodule ProcaWeb.Schema.Authorized do
   @moduledoc """
   Absinthe middleware to mark authenticated API calls.
 
-  `middleware Authenticated` - checks if context has :user
-  `middleware Authenticated` - can?: {:org | :campaign | :action_page, perms}, get_by: [:id, [name: :org_name]]
+  `middleware Authorized` - checks if context has :user
+  `middleware Authorized` - can?: {:org | :campaign | :action_page, perms}, get_by: [:id, [name: :org_name]]
 
   """
 
@@ -21,7 +21,9 @@ defmodule ProcaWeb.Schema.Authenticated do
         |> verify_access(user, Keyword.get(opts, :can?), Keyword.get(opts, :get_by, [:id, :name]))
       _ ->
         resolution
-        |> Absinthe.Resolution.put_result({:error, "unauthenticated"})
+        |> Absinthe.Resolution.put_result({:error, %{
+                                              message: "Authentication is required for this API call",
+                                              extensions: %{code: "unauthorized"}}})
     end
   end
 
@@ -33,7 +35,12 @@ defmodule ProcaWeb.Schema.Authenticated do
     case get_staffer_for_resource(user, resource_type, resolution.arguments, by_fields) do
       nil ->
         resolution
-        |> Absinthe.Resolution.put_result({:error, "not_found"})
+        |> Absinthe.Resolution.put_result({:error, %{
+                                              message: "User is not a member of team responsible for resource",
+                                              extensions: %{
+                                                code: "permission_denied"
+                                              }
+                                           }})
       {staffer, resource} ->
         if Staffer.Permission.can?(staffer, perms) do
           %{
@@ -43,7 +50,13 @@ defmodule ProcaWeb.Schema.Authenticated do
           }
         else
           resolution
-          |> Absinthe.Resolution.put_result({:error, "permission_denied"})
+          |> Absinthe.Resolution.put_result({:error, %{
+                                                message: "User does not have sufficient permissions",
+                                                extensions: %{
+                                                  code: "permission_denied",
+                                                  required: perms
+                                                }
+                                             }})
         end
     end
   end
