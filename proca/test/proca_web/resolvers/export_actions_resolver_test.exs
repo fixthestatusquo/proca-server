@@ -1,4 +1,4 @@
-defmodule ProcaWeb.ActionResolverTest do
+defmodule ProcaWeb.ExportActionResolverTest do
   use Proca.DataCase
   import Proca.StoryFactory, only: [blue_story: 0]
   alias Proca.Factory
@@ -22,17 +22,8 @@ defmodule ProcaWeb.ActionResolverTest do
   end
 
   test "exportAction for org", %{org: org, action_page: ap, actions: actions, admin: %{user: user}} do
-    IO.inspect(Proca.Repo.all(Proca.Contact))
-    IO.inspect(Proca.Repo.all(Proca.Supporter))
-    IO.inspect(Proca.Repo.all(Proca.Action))
-
-
-
-    IO.inspect(org.id, label: 'ORG ID')
     {:ok, l} = ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{context: %{user: user}})
-    IO.inspect(l, label: "export_actions")
 
     assert Enum.count(l) == 3
-
   end
 end
