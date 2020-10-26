@@ -44,7 +44,10 @@ defmodule ProcaWeb.CampaignsController do
   def handle_event("action_page_save", %{"action_page" => attrs}, socket) do
     ch = socket.assigns[:action_page]
 
-    org_id = socket.assigns[:staffer].org_id
+    org_id = case Map.get(attrs, "org_id", nil) do
+             nil -> socket.assigns[:staffer].org_id
+             o -> String.to_integer(o)
+           end
 
     new_ch = ch.data
     |> ActionPage.changeset(attrs)
