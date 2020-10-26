@@ -142,6 +142,10 @@ class Json extends Terminal {
     return JSON.stringify(config, null, 2)
   }
 
+  action(a) {
+    return JSON.stringify(a)
+  }
+
 }
 
 class Csv extends Terminal {

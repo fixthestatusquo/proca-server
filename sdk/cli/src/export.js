@@ -1,5 +1,6 @@
 import client from './client'
 import {admin, request} from '@proca/api'
+import {decryptAction} from './crypto'
 import {getFormatter} from './format'
 import {keys, decrypt, getContact} from './crypto'
 
