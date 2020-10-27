@@ -15,6 +15,10 @@ The mechanism is simple:
 2. The cron job fetches JSON with data for a particular widget name.
 3. The JSON is stored in a file that is available on your website (eg. in `uploads` of your Wordpress).
 4. Configure the widget to use URL of the JSON.
+5. If you _run the widget on different domain then you store the json_, You need
+   to configure [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+   on your server so it allows fetching the file from a website with different
+   domain. [Guide here.](https://www.keycdn.com/support/cors)
 
 
 We provide a bash script to help with that: [get-action-page.sh](https://raw.githubusercontent.com/fixthestatusquo/proca-backend/main/utils/get-action-page.sh)
