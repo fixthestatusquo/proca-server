@@ -12,9 +12,11 @@ config :proca, Proca.Repo,
 # you can enable the server option below.
 config :proca, ProcaWeb.Endpoint,
   http: [port: 4002],
-  server: false
+  server: false,
+  router: ProcaWeb.Router
 
 # Print only warnings and errors during test
+# config :logger, level: :debug
 config :logger, level: :warn
 
 config :proca, Proca, org_name: "hq"

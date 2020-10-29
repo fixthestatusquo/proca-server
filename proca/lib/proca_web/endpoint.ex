@@ -50,5 +50,5 @@ defmodule ProcaWeb.Endpoint do
   plug Plug.Session, @session_options
   plug Pow.Plug.Session, otp_app: :proca
   plug CORSPlug
-  plug ProcaWeb.Router
+  plug Application.get_env(:proca, ProcaWeb.Endpoint)[:router]
 end

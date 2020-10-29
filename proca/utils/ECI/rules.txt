@@ -1,0 +1,127 @@
+	READ_SKIP_COUNT BIGINT ,
+	WRITE_SKIP_COUNT BIGINT ,
+	PROCESS_SKIP_COUNT BIGINT ,
+CREATE TABLE OCT_COUNTRY_RULE
+CREATE TRIGGER `TRIGGER_OCT_COUNTRY_RULE` BEFORE UPDATE ON `OCT_COUNTRY_RULE` FOR EACH ROW
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (1,'pl','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "national.id.number", value == null || value not matches "[0-9]{11}" )
+        validationResult.addValidationError("national.id.number","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (2,'fr','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{5}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (3,'ro','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value.toLowerCase() not matches "[a-z]{2}[0-9]{6}" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "[a-z0-9]*")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "personal.id", value == null || value not matches "[0-9]{13}")
+        validationResult.addValidationError("personal.id","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (4,'at','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value not matches "[0-9]{7}|[0-9]{8}")
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "[a-z][0-9]{7,8}")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (5,'lv','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.id", value == null || value not matches "[0-9]{6}[0-9]{5}")
+        validationResult.addValidationError("personal.id","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (6,'bg','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.number", value == null || value not matches "[0-9]{10}" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (7,'cy','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value not matches "[0-9]{1,10}" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "([bcej][0-9]{6})|(k[0-9]{8})|([ds]p[0-9]{7})")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (8,'lt','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.number", value == null || value not matches "[0-9]{11}" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (9,'mt','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value.toLowerCase() not matches "[a-z0-9]*" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (10,'pt','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value not matches "[0-9]{1,8}" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "citizens.card", value == null || value.toLowerCase() not matches "[0-9]{9}[a-z]{2}[0-9]" )
+        validationResult.addValidationError("citizens.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "([a-z]{1}[0-9]{6})|([a-z]{2}[0-9]{6})")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (11,'si','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.number", value == null || value not matches "[0-9]{13}" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (12,'cz','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value not matches "([0-9]{9})|([0-9]{6}[a-z]{2}[0-9]{2})|([0-9]{6}[a-z]{2})|([a-z]{2}[0-9]{6})" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value not matches "[0-9]{7,8}")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (13,'es','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value.toLowerCase() not matches "[0-9]{8}[a-z]" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "[a-z0-9]*")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (14,'hu','package eu.europa.ec.eci.oct.validation
+        sf : ValidationProperty(key == "id.card", value == null || value.toLowerCase() not matches "([0-9]{6}[a-z]{2})|([a-z]{2}[a-z][0-9]{6})|([a-z]{2}[a-z]{2}[0-9]{6})|([a-z]{2}[a-z]{3}[0-9]{6})|([a-z]{2}[0-9]{6})" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "([a-z]{2}[0-9]{6})|([a-z]{2}[0-9]{7})")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "personal.number", value == null ||  value not matches "[0-9][0-9]{6}[0-9]{4}" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (15,'se','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.number", value == null || value not matches "([0-9]{8}-[0-9]{4}|[0-9]{6}-[0-9]{4}|[0-9]{12}|[0-9]{10})" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (16,'it','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "id.card", value == null || value.toLowerCase() not matches "([a-z]{2}[0-9]{6,8})|([0-9]{7}[a-z]{2})|([a-z]{2}[0-9]{5}[a-z]{2})" )
+        validationResult.addValidationError("id.card","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "issuing.authority", value == null || value.empty == true)
+        validationResult.addValidationError("issuing.authority","oct.empty.property", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "passport", value == null || value.toLowerCase() not matches "([a-z]{2}[0-9]{7})|([a-z][0-9]{6})|([0-9]{6}[a-z])")
+        validationResult.addValidationError("passport","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (17,'hr','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.id", value == null || value not matches "[0-9]{11}")
+        validationResult.addValidationError("personal.id","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (18,'de','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{5}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (20,'lu','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{4}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (21,'nl','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value.toLowerCase() not matches "[1-9][0-9]{3}[a-z]{2}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (22,'sk','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[089][0-9]{4}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch",ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (23,'dk','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{4}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (24,'be','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "national.id.number", value == null || value not matches "([0-9][0-9]).(0?0[1-9]|1[0-2]).([0-2]?[0-2][0-9]|3[0-1])-[0-9]{3}.[0-9]{2}" )
+        validationResult.addValidationError("national.id.number","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (25,'ee','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "personal.number", value == null || value not matches "[0-9]{11}" )
+        validationResult.addValidationError("personal.number","oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (26,'fi','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{5}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (27,'ie','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null)
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (28,'gr','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value not matches "[0-9]{5}")
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+INSERT INTO OCT_COUNTRY_RULE (ID,CODE,RULE) VALUES (100,'common','package eu.europa.ec.eci.oct.validation
+        v : ValidationProperty(key == "postal.code", value == null || value.empty == true || value.length  > 10)
+        validationResult.addValidationError("postal.code", "oct.error.propertytypemismatch", ValidationConstants.SKIPPABLE);
+        v : ValidationProperty(key == "street",  value == null ||  value.empty == true )
+        validationResult.addValidationError("street","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "street.number",  value == null || value.empty == true )
+        validationResult.addValidationError("street.number","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "city",  value == null || value.empty == true )
+        validationResult.addValidationError("city","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "family.names", value == null || value.empty == true )
+        validationResult.addValidationError("family.names","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "full.first.names",  value == null || value.empty == true )
+        validationResult.addValidationError("full.first.names","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "country",  value == null || value.empty == true )
+        validationResult.addValidationError("country","oct.empty.property", ValidationConstants.NOT_SKIPPABLE);
+        v : ValidationProperty(key == "date.of.birth", (value == null || value.empty == true || !isAbleToVoteByMS(nationality, value)))
+        validationResult.addValidationError("date.of.birth","oct.error.invalidrange", ValidationConstants.NOT_SKIPPABLE);

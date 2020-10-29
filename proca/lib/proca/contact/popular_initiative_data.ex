@@ -2,34 +2,27 @@ defmodule Proca.Contact.PopularInitiativeData do
   @moduledoc """
   Data gathered for Popular Initiative in Switzerland.
   """
+  use Ecto.Schema
+
   alias Proca.Contact.{Data, Input, PopularInitiativeData}
   alias Proca.Contact
   import Ecto.Changeset
 
   @derive Jason.Encoder
-  defstruct [
-    first_name: nil,
-    last_name: nil,
-    birth_date: nil,
-    email: nil,
-    postcode: nil,
-    locality: nil,
-    region: nil
-  ]
-  @schema %{
-    first_name: :string,
-    last_name: :string,
-    birth_date: :date,
-    email: :string,
-    postcode: :string,
-    locality: :string,
-    region: :string
-  }
+  embedded_schema do
+    field :first_name, :string
+    field :last_name, :string
+    field :birth_date, :date
+    field :email, :string
+    field :postcode, :string
+    field :locality, :string
+    field :region, :string
+  end
 
   @behaviour Input
   @impl Input
   def from_input(params) do
-    {%PopularInitiativeData{}, @schema}
+    %PopularInitiativeData{}
     |> cast(params, [:first_name, :last_name, :birth_date, :email])
     |> cast(Map.get(params, :address, %{}), [:postcode, :locality, :region])
     |> validate_required([:first_name, :email, :postcode])

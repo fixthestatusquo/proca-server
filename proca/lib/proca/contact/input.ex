@@ -43,4 +43,16 @@ defmodule Proca.Contact.Input do
     chst
     |> Changeset.validate_format(field, @phone_format)
   end
+
+  def validate_older(chst, field, years) do
+    {:ok, today} = DateTime.now("Etc/UTC")
+    today = DateTime.to_date(today)
+    Changeset.validate_change(chst, field, fn field, dt ->
+      case Date.compare(today, %{dt | year: dt.year + years}) do
+        :gt -> []
+        :eq -> []  # year is complete day before anniversary of birth
+        :lt -> [{field, {"Age below limit", [minimum_age: years]}}]
+      end
+    end)
+  end
 end
