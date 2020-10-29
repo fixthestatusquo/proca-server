@@ -7,6 +7,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  Date: any;
   Datetime: any;
 };
 
@@ -58,6 +59,15 @@ export type ConsentInput = {
   optIn: Scalars['Boolean'];
   /** Opt in to the campaign leader */
   leadOptIn?: Maybe<Scalars['Boolean']>;
+};
+
+export type NationalityInput = {
+  /** Nationality / issuer of id document */
+  country: Scalars['String'];
+  /** Document type */
+  documentType?: Maybe<Scalars['String']>;
+  /** Document serial id/number */
+  documentNumber?: Maybe<Scalars['String']>;
 };
 
 /** GDPR consent data for this org */
@@ -114,6 +124,7 @@ export type ActionPageInputLegacyUrl = {
   journey?: Maybe<Array<Scalars['String']>>;
   config?: Maybe<Scalars['String']>;
 };
+
 
 /** Custom field added to action. For signature it can be contact, for mail it can be subject and body */
 export type ActionInput = {
@@ -342,6 +353,10 @@ export type AddressInput = {
   locality?: Maybe<Scalars['String']>;
   /** Region, being province, voyevodship, county */
   region?: Maybe<Scalars['String']>;
+  /** Street name */
+  street?: Maybe<Scalars['String']>;
+  /** Street number */
+  streetNumber?: Maybe<Scalars['String']>;
 };
 
 /** ActionPage declaration */
@@ -498,7 +513,9 @@ export type ContactInput = {
   /** Contacts phone number */
   phone?: Maybe<Scalars['String']>;
   /** Date of birth in format YYYY-MM-DD */
-  birthDate?: Maybe<Scalars['String']>;
+  birthDate?: Maybe<Scalars['Date']>;
   /** Contacts address */
   address?: Maybe<AddressInput>;
+  /** Nationality information */
+  nationality?: Maybe<NationalityInput>;
 };

@@ -58,6 +58,17 @@ input ConsentInput {
   leadOptIn: Boolean
 }
 
+input NationalityInput {
+  "Nationality / issuer of id document"
+  country: String!
+
+  "Document type"
+  documentType: String
+
+  "Document serial id/number"
+  documentNumber: String
+}
+
 "GDPR consent data for this org"
 type Consent {
   optIn: Boolean!
@@ -104,6 +115,8 @@ input ActionPageInputLegacyUrl {
   journey: [String!]
   config: String
 }
+
+scalar Date
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
 input ActionInput {
@@ -410,6 +423,12 @@ input AddressInput {
 
   "Region, being province, voyevodship, county"
   region: String
+
+  "Street name"
+  street: String
+
+  "Street number"
+  streetNumber: String
 }
 
 "ActionPage declaration"
@@ -576,8 +595,11 @@ input ContactInput {
   phone: String
 
   "Date of birth in format YYYY-MM-DD"
-  birthDate: String
+  birthDate: Date
 
   "Contacts address"
   address: AddressInput
+
+  "Nationality information"
+  nationality: NationalityInput
 }
