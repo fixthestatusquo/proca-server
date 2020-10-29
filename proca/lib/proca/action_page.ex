@@ -118,6 +118,7 @@ defmodule Proca.ActionPage do
     case cs do
       :basic -> Proca.Contact.BasicData
       :popular_initiative -> Proca.Contact.PopularInitiativeData
+      :eci -> Proca.Contact.EciData
     end
   end
 

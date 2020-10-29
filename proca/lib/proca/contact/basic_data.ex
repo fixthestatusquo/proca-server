@@ -4,29 +4,22 @@ defmodule Proca.Contact.BasicData do
   as main identifier, names, postcode and country for locality, and optional
   phone number.
   """
+  use Ecto.Schema
 
   alias Proca.Contact.{Data, BasicData, Input}
   alias Proca.Contact
   import Ecto.Changeset
 
   @derive Jason.Encoder
-  defstruct [
-    name: nil,
-    first_name: nil,
-    last_name: nil,
-    email: nil,
-    phone: nil,
-    country: nil,
-    postcode: nil]
-  @schema %{
-    name: :string,
-    first_name: :string,
-    last_name: :string,
-    email: :string,
-    phone: :string,
-    country: :string,
-    postcode: :string
-  }
+  embedded_schema do
+    field :name, :string
+    field :first_name, :string
+    field :last_name, :string
+    field :email, :string
+    field :phone, :string
+    field :country, :string
+    field :postcode, :string
+  end
 
   @behaviour Input
   @impl Input
@@ -34,7 +27,7 @@ defmodule Proca.Contact.BasicData do
     normalized = Input.normalize_names_attr(params)
 
     # name and contact
-    chst = {%BasicData{}, @schema}
+    chst = %BasicData{}
     |> cast(normalized, [:name, :first_name, :last_name, :email, :phone])
 
     # address

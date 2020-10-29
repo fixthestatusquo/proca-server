@@ -1,0 +1,193 @@
+{
+  "at": [
+    "passport",
+    "id.card",
+    "full.first.names",
+    "family.names"
+  ],
+  "be": [
+    "full.first.names",
+    "family.names",
+    "national.id.number"
+  ],
+  "bg": [
+    "personal.number",
+    "full.first.names",
+    "family.names"
+  ],
+  "cy": [
+    "full.first.names",
+    "family.names",
+    "passport",
+    "id.card"
+  ],
+  "cz": [
+    "family.names",
+    "passport",
+    "id.card",
+    "full.first.names"
+  ],
+  "de": [
+    "city",
+    "country",
+    "postal.code",
+    "full.first.names",
+    "street",
+    "family.names",
+    "street.number",
+    "date.of.birth"
+  ],
+  "dk": [
+    "country",
+    "street",
+    "postal.code",
+    "street.number",
+    "date.of.birth",
+    "full.first.names",
+    "family.names",
+    "city"
+  ],
+  "ee": [
+    "full.first.names",
+    "family.names",
+    "personal.number"
+  ],
+  "es": [
+    "id.card",
+    "full.first.names",
+    "family.names",
+    "passport"
+  ],
+  "fi": [
+    "street.number",
+    "date.of.birth",
+    "city",
+    "country",
+    "postal.code",
+    "full.first.names",
+    "street",
+    "family.names"
+  ],
+  "fr": [
+    "city",
+    "country",
+    "postal.code",
+    "full.first.names",
+    "date.of.birth",
+    "family.names",
+    "street",
+    "street.number"
+  ],
+  "gr": [
+    "full.first.names",
+    "family.names",
+    "street",
+    "street.number",
+    "city",
+    "country",
+    "postal.code"
+  ],
+  "hr": [
+    "full.first.names",
+    "personal.id",
+    "family.names",
+    "passport"
+  ],
+  "hu": [
+    "id.card",
+    "full.first.names",
+    "family.names",
+    "passport",
+    "personal.number"
+  ],
+  "ie": [
+    "city",
+    "country",
+    "postal.code",
+    "full.first.names",
+    "street",
+    "family.names",
+    "street.number",
+    "date.of.birth"
+  ],
+  "it": [
+    "full.first.names",
+    "family.names",
+    "passport",
+    "id.card"
+  ],
+  "lt": [
+    "full.first.names",
+    "personal.number",
+    "family.names"
+  ],
+  "lu": [
+    "postal.code",
+    "full.first.names",
+    "street",
+    "family.names",
+    "street.number",
+    "date.of.birth",
+    "city",
+    "country"
+  ],
+  "lv": [
+    "personal.id",
+    "full.first.names",
+    "family.names"
+  ],
+  "mt": [
+    "full.first.names",
+    "family.names",
+    "id.card"
+  ],
+  "nl": [
+    "full.first.names",
+    "street",
+    "family.names",
+    "street.number",
+    "date.of.birth",
+    "city",
+    "country",
+    "postal.code"
+  ],
+  "pl": [
+    "full.first.names",
+    "family.names",
+    "national.id.number"
+  ],
+  "pt": [
+    "family.names",
+    "citizens.card",
+    "passport",
+    "id.card",
+    "full.first.names"
+  ],
+  "ro": [
+    "personal.id",
+    "passport",
+    "id.card",
+    "full.first.names",
+    "family.names"
+  ],
+  "se": [
+    "full.first.names",
+    "family.names",
+    "personal.number"
+  ],
+  "si": [
+    "personal.number",
+    "full.first.names",
+    "family.names"
+  ],
+  "sk": [
+    "street",
+    "postal.code",
+    "city",
+    "country",
+    "street.number",
+    "full.first.names",
+    "family.names",
+    "date.of.birth"
+  ]
+}

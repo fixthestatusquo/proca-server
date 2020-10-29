@@ -47,11 +47,13 @@ defmodule ProcaWeb.Schema.ActionTypes do
     @desc "Adds an action with contact data"
     field :add_action_contact, type: :contact_reference do
       arg(:action_page_id, non_null(:integer))
+
       @desc "Action data"
       arg(:action, non_null(:action_input))
 
       @desc "GDPR communication opt"
       arg(:contact, non_null(:contact_input))
+
       @desc "Signature action data"
       arg(:privacy, non_null(:consent_input))
 
@@ -93,27 +95,51 @@ defmodule ProcaWeb.Schema.ActionTypes do
     @desc "Contacts phone number"
     field :phone, :string
     @desc "Date of birth in format YYYY-MM-DD"
-    field :birth_date, :string
+    field :birth_date, :date
+
     @desc "Contacts address"
     field :address, :address_input
+
+    @desc "Nationality information"
+    field :nationality, :nationality_input
   end
 
   @desc "Address type which can hold different addres fields."
   input_object :address_input do
     @desc "Country code (two-letter)."
     field :country, :string
+
     @desc "Postcode, in format correct for country locale"
     field :postcode, :string
+
     @desc "Locality, which can be a city/town/village"
     field :locality, :string
+
     @desc "Region, being province, voyevodship, county"
     field :region, :string
+
+    @desc "Street name"
+    field :street, :string
+
+    @desc "Street number"
+    field :street_number, :string
 
     # @desc "List of areas this address belongs to"
     # field :areas, list_of(non_null(:area_input))
 
     # field :latitute, :float
     # field :longitute, :float
+  end
+
+  input_object :nationality_input do
+    @desc "Nationality / issuer of id document"
+    field :country, non_null(:string)
+
+    @desc "Document type"
+    field :document_type, :string
+
+    @desc "Document serial id/number"
+    field :document_number, :string
   end
 
 # field :areas -- commented above
