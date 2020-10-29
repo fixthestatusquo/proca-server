@@ -82,8 +82,8 @@ export const GetPublicResultDocument = gql`
 }
     `;
 export const AddContactActionDocument = gql`
-    mutation AddContactAction($id: Int!, $contact: ContactInput!, $actionType: String!, $fields: [CustomFieldInput!], $privacy: ConsentInput!, $tracking: TrackingInput) {
-  addActionContact(actionPageId: $id, contact: $contact, action: {actionType: $actionType, fields: $fields}, privacy: $privacy, tracking: $tracking) {
+    mutation AddContactAction($id: Int!, $contact: ContactInput!, $contactRef: ID, $actionType: String!, $fields: [CustomFieldInput!], $privacy: ConsentInput!, $tracking: TrackingInput) {
+  addActionContact(actionPageId: $id, contact: $contact, contactRef: $contactRef, action: {actionType: $actionType, fields: $fields}, privacy: $privacy, tracking: $tracking) {
     contactRef
     firstName
   }
@@ -219,6 +219,7 @@ export type GetPublicResult = (
 export type AddContactActionVariables = Types.Exact<{
   id: Types.Scalars['Int'];
   contact: Types.ContactInput;
+  contactRef?: Types.Maybe<Types.Scalars['ID']>;
   actionType: Types.Scalars['String'];
   fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
   privacy: Types.ConsentInput;

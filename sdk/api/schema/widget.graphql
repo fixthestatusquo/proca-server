@@ -63,7 +63,8 @@ query GetPublicResult($name: String, $id: Int, $actionType: String!) {
 
 mutation AddContactAction(
   $id: Int!,
-  $contact: ContactInput!, 
+  $contact: ContactInput!,
+  $contactRef: ID,
   $actionType: String!,
   $fields: [CustomFieldInput!],
   $privacy: ConsentInput!,
@@ -72,7 +73,8 @@ mutation AddContactAction(
   addActionContact(
     actionPageId: $id,
     contact: $contact,
-    action: { actionType: $actionType, fields: $fields }
+    contactRef: $contactRef,
+    action: { actionType: $actionType, fields: $fields },
     privacy: $privacy,
     tracking: $tracking
   ) {

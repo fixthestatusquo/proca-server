@@ -65,6 +65,9 @@ import { DefinitionNode } from 'graphql'
 
 import {AuthHeader} from './auth'
 
+type Extensions = {
+  captcha?: string
+}
 
 // hasSubscription - helper func to see if we have an operation with subscription
 // taken from @jumpn/utils-graphql which is not really useful as has not types
@@ -98,7 +101,7 @@ export function link(url: string, auth?: AuthHeader) {
   x['transport'] = WebSocket
 
   const wsLink = createAbsintheSocketLink(AbsintheSocket.create(phoenixSocket));
-  const httpLink = createHttpLink({uri: config.url, headers: auth})
+  const httpLink = createHttpLink({uri: config.url, headers: auth, includeExtensions: true})
 
   return split(
     (op) => hasSubscription(op.query),
@@ -107,11 +110,12 @@ export function link(url: string, auth?: AuthHeader) {
   );
 }
 
-export async function request<Q,R>(link: ApolloLink, query: DocumentNode<Q,R>, variables: R) : Promise<FetchResult> {
+export async function request<Q,R>(link: ApolloLink, query: DocumentNode<Q,R>, variables: R, extensions?: Extensions) : Promise<FetchResult> {
   return makePromise(
     execute(link, {
       query,
-      variables
+      variables,
+      extensions
     })
   )
 }
