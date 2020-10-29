@@ -20,7 +20,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   scalar :date do
     parse fn input ->
       case Date.from_iso8601(input.value) do
-        {:ok, date, _} -> {:ok, date}
+        {:ok, date} -> {:ok, date}
         _ -> :error
       end
     end
