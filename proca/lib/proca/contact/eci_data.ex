@@ -36,6 +36,14 @@ defmodule Proca.Contact.EciData do
   end
 
 
+  defp locality_to_city(%{locality: city} = p) do
+    p
+    |> Map.delete(:locality)
+    |> Map.put(:city, city)
+  end
+
+  defp locality_to_city(p), do: p
+
   def cast_data(params, country_of_nationality)  when is_bitstring(country_of_nationality) do
     data = %EciData{}
     |> cast(params, [
@@ -43,7 +51,7 @@ defmodule Proca.Contact.EciData do
           :last_name,
           :birth_date,
         ])
-    |> cast(Map.get(params, :address, %{}), [:country, :postcode, :city, :street, :street_number])
+    |> cast(Map.get(params, :address, %{}) |> locality_to_city(), [:country, :postcode, :city, :street, :street_number])
     |> validate_required(EciDataRules.required(country_of_nationality))
     |> Input.validate_older(:birth_date,  EciDataRules.age_limit(country_of_nationality))
     # the residency can be in any country 
