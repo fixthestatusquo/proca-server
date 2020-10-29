@@ -345,6 +345,51 @@
         "possibleTypes": null
       },
       {
+        "kind": "INPUT_OBJECT",
+        "name": "NationalityInput",
+        "description": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "country",
+            "description": "Nationality / issuer of id document",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "documentType",
+            "description": "Document type",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "documentNumber",
+            "description": "Document serial id/number",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "Consent",
         "description": "GDPR consent data for this org",
@@ -658,6 +703,16 @@
             "defaultValue": null
           }
         ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "Date",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
         "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
@@ -2106,6 +2161,26 @@
               "ofType": null
             },
             "defaultValue": null
+          },
+          {
+            "name": "street",
+            "description": "Street name",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "streetNumber",
+            "description": "Street number",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null
           }
         ],
         "interfaces": null,
@@ -2924,7 +2999,7 @@
             "description": "Date of birth in format YYYY-MM-DD",
             "type": {
               "kind": "SCALAR",
-              "name": "String",
+              "name": "Date",
               "ofType": null
             },
             "defaultValue": null
@@ -2935,6 +3010,16 @@
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "AddressInput",
+              "ofType": null
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "nationality",
+            "description": "Nationality information",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "NationalityInput",
               "ofType": null
             },
             "defaultValue": null
