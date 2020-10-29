@@ -14,7 +14,7 @@ defmodule EciDataTest do
     address = %{
       street: "Exarcheia",
       street_number: "161",
-      city: "Athens",
+      locality: "Athens",
       country: "Greece",
       postcode: "12345"
     }
