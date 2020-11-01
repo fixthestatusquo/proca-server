@@ -12,6 +12,10 @@ export const GetActionPageDocument = gql`
     locale
     journey
     name
+    org {
+      title
+    }
+
     campaign {
       title
       name
