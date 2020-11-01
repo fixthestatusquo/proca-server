@@ -285,6 +285,7 @@ defmodule Proca.Contact.EciDataRules do
       "family.names" -> :last_name
       "date.of.birth" -> :birth_date
       "postal.code" -> :postcode
+      "city" -> :locality
       x -> x |> String.replace(".", "_") |> String.to_atom
     end
   end

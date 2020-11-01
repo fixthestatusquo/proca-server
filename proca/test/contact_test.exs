@@ -47,6 +47,22 @@ defmodule ContactTest do
     assert not is_nil List.keyfind(data.errors, :email, 0)
   end
 
+  test "basic data without address fields" do
+    action_page = Factory.build(:action_page)
+    attrs = %{name: "James Bond", email: "notshaken@gmail.com", postcode: "1234"}
+    data = ActionPage.new_data(attrs, action_page)
+    assert data.valid?
+    
+    contact = Data.to_contact(apply_changes(data), action_page)
+    fields = Jason.decode!(get_change(contact, :payload))
+
+    assert length(Map.keys(fields)) == 3
+    assert fields["email"] == "notshaken@gmail.com"
+    assert fields["firstName"] == "James"
+    assert fields["lastName"] == "Bond"
+
+  end
+
   test "BasicData.from_input and to_contact produce contact changeset and fingerprint" do
     alias Proca.Contact.BasicData
     ap = Factory.insert(:action_page)
