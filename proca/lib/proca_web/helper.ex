@@ -26,24 +26,30 @@ defmodule ProcaWeb.Helper do
   1. a list -> run recursively for each element, concatenate the result
   2. map with keys mapped to errors -> get each key and pass it futher
   """
-  defp flatten_errors(errors, lastkey \\ nil)
+  defp flatten_errors(errors, path \\ [])
 
-  defp flatten_errors(lst, lastkey) when is_list(lst) do
-    Enum.map(lst, fn e ->
-      flatten_errors(e, lastkey)
+  # handle messages list (it's a list of %{message: "123"})
+  defp flatten_errors([], _), do: []
+  defp flatten_errors([%{message: msg} = m | other_msg], path = [lastkey | _]) when map_size(m) == 1 do
+    [%{message: "#{lastkey}: #{msg}", path: Enum.reverse(path)} | flatten_errors(other_msg, path)]
+  end
+
+  # handle an associated list (like has_many)
+  defp flatten_errors(lst, path) when is_list(lst) do
+    lst
+    |> Enum.with_index()
+    |> Enum.map(fn {e, i} ->
+      flatten_errors(e, [i | path])
     end)
     |> Enum.concat()
   end
 
-  defp flatten_errors(%{message: msg} = m, lastkey) when map_size(m) == 1 do
-    [%{message: "#{lastkey}: #{msg}", path: [Atom.to_string(lastkey)]}]
-  end
-
-  defp flatten_errors(map, lastkey) when is_map(map) do
+  # handle an associated map (like has_one)
+  defp flatten_errors(map, path) when is_map(map) do
     map
     |> Map.keys()
     |> Enum.map(fn k ->
-      flatten_errors(Map.get(map, k), k)
+      flatten_errors(Map.get(map, k), [k|path])
     end)
     |> Enum.concat()
   end

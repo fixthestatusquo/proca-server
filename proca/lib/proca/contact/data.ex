@@ -12,3 +12,23 @@ defprotocol Proca.Contact.Data do
     @spec fingerprint(t) :: binary()
     def fingerprint(t)
 end
+
+defimpl Jason.Encoder, for: [
+  Proca.Contact.BasicData,
+  Proca.Contact.PopularInitiativeData,
+  Proca.Contact.EciData,
+  Proca.Contact.Input.Nationality,
+  Proca.Contact.Input.Address] do
+
+  @doc """
+  Do not serialize missing values
+  """
+  def encode(struct, opts) do
+    struct
+    |> Map.from_struct()
+    |> Enum.filter(fn {_, v} -> not is_nil(v) end)
+    |> Map.new
+    |> ProperCase.to_camel_case()
+    |> Jason.Encode.map(opts)
+  end
+end

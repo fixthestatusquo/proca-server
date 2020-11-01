@@ -22,10 +22,9 @@ defmodule Proca.Contact do
     timestamps()
   end
 
-  @spec build(map()) :: Ecto.Changeset.t
-  def build(attrs) when is_map(attrs) do
-    external_attrs = attrs |> ProperCase.to_camel_case()
-    case Jason.encode(external_attrs) do
+  @spec build(struct()) :: Ecto.Changeset.t
+  def build(contact_data) when is_struct(contact_data) do
+    case Jason.encode(contact_data) do
       {:ok, payload} -> change(%Contact{}, %{payload: payload})
     end
   end

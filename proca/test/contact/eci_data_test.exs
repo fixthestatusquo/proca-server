@@ -5,6 +5,7 @@ defmodule EciDataTest do
   alias Proca.Contact.Data
   alias Proca.Contact.{Input, EciData}
   import Ecto.Changeset
+  import ProcaWeb.Helper, only: [format_errors: 1]
 
   setup do
     names = %{
@@ -54,7 +55,7 @@ defmodule EciDataTest do
     bad_passport_format = %{d |nationality: %{n | document_number: "AB12345"}}
     c = EciData.from_input(bad_passport_format)
     assert not c.valid?
-    assert [{:document_number, {_, [validation: :format]}}] = c.errors
+    assert [%{message: "document_number: has invalid format", path: [:nationality, :document_number]}] = format_errors(c)
   end
 
   test "Austrian with problematic documents", %{at_passport: d} do
@@ -62,33 +63,48 @@ defmodule EciDataTest do
     no_dn = %{d|nationality: %{n|document_number: nil}}
 
     c = EciData.from_input(no_dn)
+
     assert not c.valid?
-    assert [{:document_number, {_, [validation: :required]}}] = c.errors
+    assert [%{message: "document_number: can't be blank", path: [:nationality, :document_number]}] = format_errors(c)
 
     no_dt = %{d|nationality: %{n|document_type: nil}}
     c = EciData.from_input(no_dt)
     assert not c.valid?
-    assert [{:document_type, {_, [validation: :required]}}] = c.errors
+    assert [%{message: "document_type: can't be blank", path: [:nationality, :document_type]}] = format_errors(c)
 
     no_docs = %{d|nationality: %{country: n.country}}
     c = EciData.from_input(no_docs)
     assert not c.valid?
-    assert [document_type: {_, [validation: :required]},
-      document_number: {_, [validation: :required]}] = c.errors
+    assert [%{message: "document_number: can't be blank", path: [:nationality, :document_number]}, %{message: "document_type: can't be blank", path: [:nationality, :document_type]}] = format_errors(c)
 
     wrong_type = %{d|nationality: %{n|document_type: "id.card"}}
     c = EciData.from_input(wrong_type)
     assert not c.valid?
-    assert [document_number: {_, [validation: :format]}] = c.errors
+    assert [%{message: "document_number: has invalid format", path: [:nationality, :document_number]}] = format_errors(c)
 
     unsupported_type = %{d |nationality: %{n|document_type: "pesel"}}
     c = EciData.from_input(unsupported_type)
     assert not c.valid?
-    assert [{:document_type, {_, [{:validation, :inclusion} | _enum]}}] = c.errors
+    assert [%{message: "document_type: is invalid", path: [:nationality, :document_type]}] = format_errors(c)
   end
 
   test "Greek with address", %{gr: d} do
     c = EciData.from_input(d)
     assert c.valid?
+    assert get_change(c, :city) == "Athens"
+  end
+
+  test "Greek with missing address country", %{gr: gr} do
+    d = %{gr | address: %{gr.address | country: nil}}
+    c = EciData.from_input(d)
+    assert not c.valid?
+    assert [%{message: "country: can't be blank", path: [:address, :country]}] = format_errors(c)
+  end
+
+  test "Greek with missing locality", %{gr: gr} do
+    d = %{gr | address: %{gr.address | locality: nil}}
+    c = EciData.from_input(d)
+    assert not c.valid?
+    assert [%{message: "locality: can't be blank", path: [:address, :locality]}] = format_errors(c)
   end
 end
