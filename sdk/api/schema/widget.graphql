@@ -61,7 +61,7 @@ query GetPublicResult($name: String, $id: Int, $actionType: String!) {
   }
 }
 
-mutation AddContactAction(
+mutation AddActionContact(
   $id: Int!,
   $contact: ContactInput!,
   $contactRef: ID,

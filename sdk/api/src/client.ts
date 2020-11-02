@@ -44,11 +44,8 @@
 */
 
 // apollo stack
-//import ApolloClient from "apollo-client"
-//import {InMemoryCache} from "apollo-cache-inmemory"
 
 import {split, ApolloLink, execute, makePromise, FetchResult, Observable} from "apollo-link"
-import {parse} from "graphql"
 
 // http stack
 import {createHttpLink} from "apollo-link-http"
@@ -90,6 +87,9 @@ export function apiUrls(hostUrl: string) {
 
 // Create the client
 export function link(url: string, auth?: AuthHeader) {
+  if (url === null || url === undefined) {
+    throw new Error("api url must not be null or undefined")
+  }
   const config = apiUrls(url)
 
   const phoenixSocket = new PhoenixSocket(config.wsUrl, {transport: "WebSocket"})
