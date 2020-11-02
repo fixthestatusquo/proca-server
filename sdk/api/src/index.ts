@@ -1,6 +1,3 @@
-
-import 'cross-fetch/polyfill';
-
 import * as widget from './queries/widget'
 import * as admin from './queries/admin'
 import {basicAuth, tokenAuth} from './auth'

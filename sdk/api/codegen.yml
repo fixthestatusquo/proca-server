@@ -12,7 +12,7 @@ generates:
     documents:
       - schema/widget.graphql
     plugins:
-      - typescript-graphql-request
+      - typed-document-node
       - typescript-operations
     preset: import-types
     presetConfig:

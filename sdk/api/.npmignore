@@ -1,0 +1,6 @@
+node_modules
+src
+schema
+graphql.schema.json
+codegen.yml
+tsconfig.json
