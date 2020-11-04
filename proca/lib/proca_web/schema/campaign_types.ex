@@ -57,6 +57,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       @desc "Campaign human readable title"
       arg(:title, :string)
 
+      @desc "Custom config as stringified JSON map"
+      arg(:config, :json)
+
       @desc "Action pages of this campaign"
       arg(:action_pages, non_null(list_of(:action_page_input)))
 
@@ -145,6 +148,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :external_id, :integer
     @desc "Full, official name of the campaign"
     field :title, :string
+    @desc "Custom config map"
+    field :config, :json
 
     @desc "Campaign statistics"
     field :stats, :campaign_stats do

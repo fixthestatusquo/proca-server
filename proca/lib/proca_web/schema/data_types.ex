@@ -29,4 +29,22 @@ defmodule ProcaWeb.Schema.DataTypes do
       Date.to_iso8601(date)
     end
   end
+
+  scalar :json do
+    parse fn input ->
+      case Jason.decode(input.value) do
+        {:ok, object} -> {:ok, object}
+        x ->
+          IO.inspect(x)
+          :error
+      end
+    end
+
+    serialize fn object ->
+      case Jason.encode(object) do
+        {:ok, json} -> json
+        _ -> :error
+      end
+    end
+  end
 end
