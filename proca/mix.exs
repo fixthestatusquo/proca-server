@@ -65,6 +65,7 @@ defmodule Proca.MixProject do
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
       {:hackney, "~> 1.16.0"},
+      {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:jose, "~> 1.10.0"},
       {:json, "~> 1.3.0"},  # XXX migrate to jason

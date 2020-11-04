@@ -27,6 +27,9 @@ defmodule ProcaWeb.Schema.EciSchema do
   mutation do
     @desc "Adds an action with contact data"
     field :add_action_contact, type: :contact_reference do
+      middleware Resolvers.IncludeExtensions
+      middleware Resolvers.Captcha
+
       arg(:action_page_id, non_null(:integer))
 
       @desc "Action data"
