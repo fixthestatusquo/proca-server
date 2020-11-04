@@ -14,6 +14,7 @@ defmodule Proca.Campaign do
     field :title, :string
     field :force_delivery, :boolean
     field :public_actions, {:array, :string}, default: []
+    field :config, :map
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -24,7 +25,7 @@ defmodule Proca.Campaign do
   @doc false
   def changeset(campaign, attrs) do
     campaign
-    |> cast(attrs, [:name, :title, :external_id])
+    |> cast(attrs, [:name, :title, :external_id, :config])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
   end
