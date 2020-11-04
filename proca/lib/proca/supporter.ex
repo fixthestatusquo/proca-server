@@ -35,8 +35,8 @@ defmodule Proca.Supporter do
   @spec new_supporter(struct(), ActionPage) :: Ecto.Changeset.t(Supporter)
   def new_supporter(data, action_page) do
     %Supporter{}
-    |> cast(Map.from_struct(data), [:first_name, :email])  ## <- this list must come from action page pipeline needs
-    |> change(first_name: data.first_name, email: data.email, fingerprint: Data.fingerprint(data))
+    |> change(Map.take(data, ActionPage.kept_personalization_fields(action_page)))
+    |> change(%{fingerprint: Data.fingerprint(data)})
     |> put_assoc(:campaign, action_page.campaign)
     |> put_assoc(:action_page, action_page)
   end

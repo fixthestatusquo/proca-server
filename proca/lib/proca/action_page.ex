@@ -122,6 +122,12 @@ defmodule Proca.ActionPage do
     end
   end
 
+  def kept_personalization_fields(%ActionPage{
+        campaign: campaign, org: org
+                                  } = action_page) do
+    [:email, :first_name]
+  end
+
   def new_data(params, action_page) do
     schema = contact_schema(action_page)
     apply(schema, :from_input, [params])
