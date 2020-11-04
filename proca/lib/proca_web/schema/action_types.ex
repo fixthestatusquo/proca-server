@@ -5,7 +5,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
   
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Schema.Authorized
+  alias ProcaWeb.Resolvers.Authorized
 
   object :action_queries do
     field :export_actions, list_of(:action) do

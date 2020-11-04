@@ -4,7 +4,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   """
   
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Schema.Authorized
+  alias ProcaWeb.Resolvers.Authorized
   alias ProcaWeb.Resolvers
 
   object :campaign_queries do

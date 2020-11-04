@@ -2,7 +2,7 @@ defmodule ProcaWeb.AuthorizedTest do
   use Proca.DataCase
   import Proca.StoryFactory, only: [red_story: 0]
 
-  alias ProcaWeb.Schema.Authorized
+  alias ProcaWeb.Resolvers.Authorized
 
   setup do
     s = red_story()

@@ -1,4 +1,4 @@
-defmodule ProcaWeb.Schema.Authorized do
+defmodule ProcaWeb.Resolvers.Authorized do
   @moduledoc """
   Absinthe middleware to mark authenticated API calls.
 

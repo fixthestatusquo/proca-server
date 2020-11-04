@@ -5,7 +5,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
   
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Schema.Authorized
+  alias ProcaWeb.Resolvers.Authorized
 
   object :org_queries do
     @desc "Organization api (authenticated)"
