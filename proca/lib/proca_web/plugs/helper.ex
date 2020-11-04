@@ -21,7 +21,7 @@ defmodule ProcaWeb.Plugs.Helper do
                                          }
                                       }]
                      })
-      other -> text(conn, case explanation do
+      _other -> text(conn, case explanation do
                    nil -> short_code
                    e -> "#{short_code}: #{e}"
                  end)
