@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require("cross-fetch/polyfill")
 require = require('esm')(module /*, options*/);
 cli = require('../src/cli').default;
 cli(process.argv);
