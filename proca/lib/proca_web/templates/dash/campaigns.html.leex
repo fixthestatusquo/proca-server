@@ -28,7 +28,7 @@
                 <li>
                   <code><a href="<%= ap.name %>" target="_blank"><%= ap.name %></a></code>
                   (id: <code><%= ap.id %></code>)
-                  <%= if ap.org_id != camp.org_id do %><span>by: <%= ap.org.title %></span><% end %>
+                  <%= if ap.org_id != camp.org_id and ap.org != nil do %><span>by: <%= ap.org.title %></span><% end %>
                   <a href="#" phx-click="action_page_edit" phx-value-id="<%= ap.id %>" class="text-primary float-right ml-2"> edit </a>
                 </li>
               <% end %>
