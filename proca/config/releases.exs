@@ -20,6 +20,7 @@ config :proca, Proca.Server.Plumbing,
 config :proca, Proca.Server.Jwks,
   url: System.get_env("JWKS_URL")
 
+
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
   raise """
@@ -48,6 +49,10 @@ config :proca, ProcaWeb.Endpoint,
   ],
   check_origin: ["//" <> System.get_env("DOMAIN")],
   secret_key_base: secret_key_base
+
+config :proca, ProcaWeb.Resolvers.Captcha,
+  hcaptcha: System.get_env("HCAPTCHA_KEY")
+
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
