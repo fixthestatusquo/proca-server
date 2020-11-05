@@ -38,6 +38,16 @@ defmodule ProcaWeb.Resolvers.ExportActions do
 
   def filter_campaign(q, _), do: q
 
+  def filter_optin(q, %{only_opt_in: false}) do
+    q
+  end
+
+  def filter_optin(q, _) do
+    # on only_opt_in=true or omitted
+    # filter by communication consent
+    q
+    |> where([a, s, c], c.communication_consent == true)
+  end
 
 
   def format_contact(
@@ -73,9 +83,12 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     }
   end
 
-  def format(action) do
-    [contact] = action.supporter.contacts
+  # XXX there should be exactly one contact per supporter per org
+  # But we could have supporters with 0 actions, if no comm/deliver consents are present.
+  # Should actions without any contact data be exported at all?
+  # Strange corner case.
 
+  def format(action = %{supporter: %{contacts: [contact]}}) do
     %{
       action_id: action.id,
       action_type: action.action_type,
@@ -88,6 +101,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       action_page: Map.take(action.action_page, [:id, :name, :locale])
     }
   end
+
 
   @default_limit 100
   def export_actions(_parent, %{org_name: org_name} = params, %{context: %{user: user}}) do
@@ -105,7 +119,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         left_join: sk in assoc(c, :sign_key),
         limit: ^lim,
         preload: [
-          [supporter: [contacts: [:public_key, :sign_key]]],
+          [supporter: {s, [contacts: {c, [:public_key, :sign_key]}]}],
           :action_page, :campaign,
           :source,
           :fields
@@ -113,6 +127,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       |> filter_start(params)
       |> filter_after(params)
       |> filter_campaign(params)
+      |> filter_optin(params)
       |> Repo.all()
       |> Enum.map(&format/1)
       |> ok()
