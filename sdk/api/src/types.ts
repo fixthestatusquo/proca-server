@@ -8,6 +8,7 @@ export type Scalars = {
   Int: number;
   Float: number;
   Date: any;
+  Json: any;
   Datetime: any;
 };
 
@@ -170,6 +171,7 @@ export type Action = {
   privacy: Consent;
 };
 
+
 export type RootMutationType = {
   __typename?: 'RootMutationType';
   /**
@@ -197,6 +199,7 @@ export type RootMutationType = {
 
 export type RootMutationTypeUpsertCampaignArgs = {
   actionPages: Array<Maybe<ActionPageInput>>;
+  config?: Maybe<Scalars['Json']>;
   title?: Maybe<Scalars['String']>;
   externalId?: Maybe<Scalars['Int']>;
   name: Scalars['String'];
@@ -283,6 +286,7 @@ export type RootQueryTypeActionPageArgs = {
 
 
 export type RootQueryTypeExportActionsArgs = {
+  onlyOptIn?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
   after?: Maybe<Scalars['Datetime']>;
   start?: Maybe<Scalars['Int']>;
@@ -404,6 +408,8 @@ export type Campaign = {
   externalId?: Maybe<Scalars['Int']>;
   /** Full, official name of the campaign */
   title?: Maybe<Scalars['String']>;
+  /** Custom config map */
+  config?: Maybe<Scalars['Json']>;
   /** Campaign statistics */
   stats?: Maybe<CampaignStats>;
   /** Fetch public actions */

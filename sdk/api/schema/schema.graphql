@@ -160,6 +160,8 @@ type Action {
   privacy: Consent!
 }
 
+scalar Json
+
 type RootMutationType {
   """
   Upserts a campaign.
@@ -172,6 +174,9 @@ type RootMutationType {
   upsertCampaign(
     "Action pages of this campaign"
     actionPages: [ActionPageInput]!
+
+    "Custom config as stringified JSON map"
+    config: Json
 
     "Campaign human readable title"
     title: String
@@ -323,6 +328,9 @@ type RootQueryType {
   ): PublicActionPage
 
   exportActions(
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
     "Limit the number of returned actions"
     limit: Int
 
@@ -485,6 +493,9 @@ type Campaign {
 
   "Full, official name of the campaign"
   title: String
+
+  "Custom config map"
+  config: Json
 
   "Campaign statistics"
   stats: CampaignStats

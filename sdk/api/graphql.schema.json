@@ -1073,6 +1073,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "Json",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "RootMutationType",
         "description": null,
@@ -1096,6 +1106,16 @@
                       "ofType": null
                     }
                   }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "config",
+                "description": "Custom config as stringified JSON map",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Json",
+                  "ofType": null
                 },
                 "defaultValue": null
               },
@@ -1719,6 +1739,16 @@
             "name": "exportActions",
             "description": null,
             "args": [
+              {
+                "name": "onlyOptIn",
+                "description": "Only download opted in contacts and actions (default true)",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
               {
                 "name": "limit",
                 "description": "Limit the number of returned actions",
@@ -2379,6 +2409,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "config",
+            "description": "Custom config map",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Json",
               "ofType": null
             },
             "isDeprecated": false,
