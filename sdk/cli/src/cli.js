@@ -169,6 +169,12 @@ export default function cli() {
             alias: 'decrypt',
             type: 'boolean',
             description: 'Decrypt contact PII'
+          },
+          A: {
+            alias: 'all',
+            type: 'boolean',
+            default: false,
+            description: 'Download all actions (even not opted in)'
           }
         }, exportActions)
         .command('deliver:check', 'print status of delivery queue', {}, testQueue)

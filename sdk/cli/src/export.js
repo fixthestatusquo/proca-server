@@ -12,6 +12,7 @@ export async function exportActions(argv) {
   const vars = {
     org: argv.org,
     limit: argv.batch,
+    onlyOptIn: !argv.all
   }
 
   if (argv.start) vars.start = argv.start
