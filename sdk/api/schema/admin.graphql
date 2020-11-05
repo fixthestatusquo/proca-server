@@ -44,10 +44,11 @@ query ListActionPages($org: String!) {
 }
 
 query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String,
-                            $start: Int, $after: Datetime, $limit: Int) {
+                            $start: Int, $after: Datetime, $limit: Int,
+                            $onlyOptIn: Boolean) {
 
       exportActions(orgName: $org, campaignId: $campaignId, campaignName: $campaignName,
-                    start: $start, after: $after, limit: $limit)
+                    start: $start, after: $after, limit: $limit, onlyOptIn: $onlyOptIn)
       {
         actionId, actionType, createdAt,
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
@@ -58,8 +59,8 @@ query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: Stri
       }
 }
 
-query ExportOrgActions($org: String!, $start: Int,  $limit: Int) {
-      exportActions(orgName: $org, start: $start,  limit: $limit)
+query ExportOrgActions($org: String!, $start: Int,  $limit: Int, $onlyOptIn: Boolean) {
+      exportActions(orgName: $org, start: $start,  limit: $limit, onlyOptIn: $onlyOptIn)
       {
         actionId, actionType, createdAt,
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
