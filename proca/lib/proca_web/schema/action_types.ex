@@ -25,7 +25,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       arg :limit, :integer
 
       @desc "Only download opted in contacts and actions (default true)"
-      arg :onlyOptIn, :boolean
+      arg :only_opt_in, :boolean
 
       resolve &Resolvers.ExportActions.export_actions/3
     end
