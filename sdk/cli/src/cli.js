@@ -175,6 +175,12 @@ export default function cli() {
             type: 'boolean',
             default: false,
             description: 'Download all actions (even not opted in)'
+          },
+          F: {
+            alias: 'fields',
+            type: 'string',
+            default: '',
+            description: 'Export fields (comma separated)'
           }
         }, exportActions)
         .command('deliver:check', 'print status of delivery queue', {}, testQueue)
