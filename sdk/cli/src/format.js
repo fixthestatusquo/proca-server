@@ -1,4 +1,5 @@
 import csvStringify from 'csv-stringify/lib/sync'
+import {keys} from './crypto'
 
 
 const actionTypeEmojis = {
@@ -14,8 +15,9 @@ const actionTypeOtherEmoji = "👉";
 
 
 class Terminal {
-  constructor({org}) {
-    this.org = org
+  constructor(options) {
+    this.org = options.org
+    this.keys = keys(options)
   }
 
   campaign(c) {
@@ -119,7 +121,11 @@ class Terminal {
     return t
   }
 
-
+  key(k) {
+    const present = k.public in this.keys
+    const active = k.expiredAt === null
+    return `${k.public} [${present?"PRESENT":"ABSENT!"}] ${active?"ACTIVE":"EXPIRED: " + k.expiredAt} ${k.name}`
+  }
 
   error(err) {
     if (err.response && err.response.errors) {
