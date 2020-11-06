@@ -1,6 +1,6 @@
 {
   "name": "@proca/cli",
-  "version": "1.4.9",
+  "version": "1.4.11",
   "description": "cli[ent] for Proca",
   "main": "src/index.js",
   "types": "types/types.d.ts",

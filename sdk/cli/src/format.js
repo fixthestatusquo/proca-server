@@ -155,6 +155,14 @@ class Csv extends Terminal {
     super(argv)
     this.campaignName = argv.campaign
     this.rowCount = 0
+    this.fields = argv.fields.split(',')
+  }
+
+  getField(a, f) {
+    const kv = a.fields.find(({key, value}) => key == f)
+    if (kv !== undefined)
+      return kv.value
+    return ''
   }
 
   action(a) {
@@ -173,7 +181,8 @@ class Csv extends Terminal {
         'created',
         'id',
         'optIn'
-      ]
+      ].concat(this.fields)
+
       opts.header = true
     }
 
@@ -192,7 +201,9 @@ class Csv extends Terminal {
       a.createdAt,
       a.actionId,
       a.privacy.optIn
-    ]], opts).slice(0, -1) // chomp newline
+    ].concat(
+      this.fields.map((f) => this.getField(a, f))
+    )], opts).slice(0, -1) // chomp newline
   }
 }
 
