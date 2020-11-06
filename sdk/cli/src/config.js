@@ -73,7 +73,7 @@ async function setup() {
     {type:'password', name: 'keys', default: config.keys, message: 'Keys file name or JSON'}
 
   ]).catch((error) => {
-    console.log(`Wrong! ${error}`)
+    console.error(`Wrong! ${error}`)
     return {}
   })
 

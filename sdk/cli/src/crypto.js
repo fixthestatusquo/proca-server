@@ -4,23 +4,38 @@ import base64url from 'base64url'
 import fs from 'fs'
 
 export function keys(argv) {
+  let ks = null;
   if (argv.keys) {
     if (argv.keys[0] === '{') {
-      return JSON.parse(argv.keys)
+      ks = JSON.parse(argv.keys)
     } else {
-      return loadKeys(argv.keys)
+      ks = loadKeys(argv.keys)
     }
   }
-  return null
+
+  for (const pub of Object.keys(ks)) {
+    if (typeof ks[pub] === "string") {
+      ks[pub] = { private: ks[pub] }
+    }
+  }
+
+  return ks
 }
 
 function loadKeys(filename) {
+  try {
   return JSON.parse(fs.readFileSync(filename, 'utf8'))
+  } catch (e) {
+    if (e.code == 'ENOENT') return {}
+    throw e
+  }
 }
 
-function saveKeys(keys, filename) {
-  const content = JSON.stringify(keys)
-  fs.writeFileSync(filename)
+export function saveKeys(keys, filename) {
+  if (typeof keys !== 'object') throw `Trying to save non invalid keys map ${keys}`
+  if (Object.keys(keys) == 0) throw `Trying to save empty key map ${keys}`
+  const content = JSON.stringify(keys, null, 2)
+  fs.writeFileSync(filename, content, {mode: 0o600})
 }
 
 

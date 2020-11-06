@@ -2,7 +2,7 @@ import yargs from 'yargs';
 
 import config from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
-import {listKeys} from './org'
+import {listKeys, addKey} from './org'
 import {exportActions} from './export'
 import {testQueue, syncQueue} from './queue'
 import {setup, showToken} from './util'
@@ -131,6 +131,7 @@ export default function cli() {
           }
         }, updateActionPage)
         .command('keys', 'Display keys', {}, listKeys)
+        .command('key:add', 'add key', {}, addKey)
         .command('watch:pages', 'Subscribe to page updates', {
           x: {
             alias: 'exec',

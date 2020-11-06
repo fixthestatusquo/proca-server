@@ -1,6 +1,6 @@
 {
   "name": "@proca/cli",
-  "version": "1.4.11",
+  "version": "1.4.12",
   "description": "cli[ent] for Proca",
   "main": "src/index.js",
   "types": "types/types.d.ts",
@@ -28,6 +28,7 @@
     "esm": "^3.2.25",
     "inquirer": "^7.3.3",
     "node-fetch": "^2.6.1",
+    "pry": "^0.8.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "yargs": "^15.4.1"
