@@ -4,17 +4,17 @@ defmodule Proca.Contact.EciDataRules do
   Provides `schema` macro to generate EciData embedded schema
   """
   @rules %{
-    "at" => %{
+    "AT" => %{
       "id.card" => %{"pattern" => "[0-9]{7}|[0-9]{8}", "skippable" => true},
       "passport" => %{"pattern_i" => "[a-z][0-9]{7,8}", "skippable" => true}
     },
-    "be" => %{
+    "BE" => %{
       "national.id.number" => %{
         "pattern" => "([0-9][0-9]).(0?0[1-9]|1[0-2]).([0-2]?[0-2][0-9]|3[0-1])-[0-9]{3}.[0-9]{2}",
         "skippable" => true
       }
     },
-    "bg" => %{
+    "BG" => %{
       "personal.number" => %{"pattern" => "[0-9]{10}", "skippable" => true}
     },
     "common" => %{
@@ -27,34 +27,34 @@ defmodule Proca.Contact.EciDataRules do
       "street" => %{"empty" => false, "skippable" => false},
       "street.number" => %{"empty" => false, "skippable" => false}
     },
-    "cy" => %{
+    "CY" => %{
       "id.card" => %{"pattern" => "[0-9]{1,10}", "skippable" => true},
       "passport" => %{
         "pattern_i" => "([bcej][0-9]{6})|(k[0-9]{8})|([ds]p[0-9]{7})",
         "skippable" => true
       }
     },
-    "cz" => %{
+    "CZ" => %{
       "id.card" => %{
         "pattern" => "([0-9]{9})|([0-9]{6}[a-z]{2}[0-9]{2})|([0-9]{6}[a-z]{2})|([a-z]{2}[0-9]{6})",
         "skippable" => true
       },
       "passport" => %{"pattern" => "[0-9]{7,8}", "skippable" => true}
     },
-    "de" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
-    "dk" => %{"postal.code" => %{"pattern" => "[0-9]{4}", "skippable" => true}},
-    "ee" => %{
+    "DE" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
+    "DK" => %{"postal.code" => %{"pattern" => "[0-9]{4}", "skippable" => true}},
+    "EE" => %{
       "personal.number" => %{"pattern" => "[0-9]{11}", "skippable" => true}
     },
-    "es" => %{
+    "ES" => %{
       "id.card" => %{"pattern_i" => "[0-9]{8}[a-z]", "skippable" => true},
       "passport" => %{"pattern_i" => "[a-z0-9]*", "skippable" => true}
     },
-    "fi" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
-    "fr" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
-    "gr" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
-    "hr" => %{"personal.id" => %{"pattern" => "[0-9]{11}", "skippable" => true}},
-    "hu" => %{
+    "FI" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
+    "FR" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
+    "GR" => %{"postal.code" => %{"pattern" => "[0-9]{5}", "skippable" => true}},
+    "HR" => %{"personal.id" => %{"pattern" => "[0-9]{11}", "skippable" => true}},
+    "HU" => %{
       "id.card" => %{
         "pattern_i" => "([0-9]{6}[a-z]{2})|([a-z]{2}[a-z][0-9]{6})|([a-z]{2}[a-z]{2}[0-9]{6})|([a-z]{2}[a-z]{3}[0-9]{6})|([a-z]{2}[0-9]{6})",
         "skippable" => true
@@ -68,8 +68,8 @@ defmodule Proca.Contact.EciDataRules do
         "skippable" => true
       }
     },
-    "ie" => %{"postal.code" => %{"skippable" => true}},
-    "it" => %{
+    "IE" => %{"postal.code" => %{"skippable" => true}},
+    "IT" => %{
       "id.card" => %{
         "pattern_i" => "([a-z]{2}[0-9]{6,8})|([0-9]{7}[a-z]{2})|([a-z]{2}[0-9]{5}[a-z]{2})",
         "skippable" => true
@@ -80,24 +80,24 @@ defmodule Proca.Contact.EciDataRules do
         "skippable" => true
       }
     },
-    "lt" => %{
+    "LT" => %{
       "personal.number" => %{"pattern" => "[0-9]{11}", "skippable" => true}
     },
-    "lu" => %{"postal.code" => %{"pattern" => "[0-9]{4}", "skippable" => true}},
-    "lv" => %{
+    "LU" => %{"postal.code" => %{"pattern" => "[0-9]{4}", "skippable" => true}},
+    "LV" => %{
       "personal.id" => %{"pattern" => "[0-9]{6}[0-9]{5}", "skippable" => true}
     },
-    "mt" => %{"id.card" => %{"pattern_i" => "[a-z0-9]*", "skippable" => true}},
-    "nl" => %{
+    "MT" => %{"id.card" => %{"pattern_i" => "[a-z0-9]*", "skippable" => true}},
+    "NL" => %{
       "postal.code" => %{
         "pattern_i" => "[1-9][0-9]{3}[a-z]{2}",
         "skippable" => true
       }
     },
-    "pl" => %{
+    "PL" => %{
       "national.id.number" => %{"pattern" => "[0-9]{11}", "skippable" => true}
     },
-    "pt" => %{
+    "PT" => %{
       "citizens.card" => %{
         "pattern_i" => "[0-9]{9}[a-z]{2}[0-9]",
         "skippable" => true
@@ -108,21 +108,21 @@ defmodule Proca.Contact.EciDataRules do
         "skippable" => true
       }
     },
-    "ro" => %{
+    "RO" => %{
       "id.card" => %{"pattern_i" => "[a-z]{2}[0-9]{6}", "skippable" => true},
       "passport" => %{"pattern_i" => "[a-z0-9]*", "skippable" => true},
       "personal.id" => %{"pattern" => "[0-9]{13}", "skippable" => true}
     },
-    "se" => %{
+    "SE" => %{
       "personal.number" => %{
         "pattern" => "([0-9]{8}-[0-9]{4}|[0-9]{6}-[0-9]{4}|[0-9]{12}|[0-9]{10})",
         "skippable" => true
       }
     },
-    "si" => %{
+    "SI" => %{
       "personal.number" => %{"pattern" => "[0-9]{13}", "skippable" => true}
     },
-    "sk" => %{
+    "SK" => %{
       "postal.code" => %{"pattern" => "[089][0-9]{4}", "skippable" => true}
     }
   }
@@ -130,33 +130,33 @@ defmodule Proca.Contact.EciDataRules do
   # remove:
   # , "residence.permit"
   @required_fields %{
-    "at" => ["passport", "id.card", "full.first.names", "family.names"],
-    "be" => ["full.first.names", "family.names", "national.id.number"],
-    "bg" => ["personal.number", "full.first.names", "family.names"],
-    "cy" => ["full.first.names", "family.names", "passport", "id.card"],
-    "cz" => ["family.names", "passport", "id.card", "full.first.names"],
-    "de" => ["city", "country", "postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth"],
-    "dk" => ["country", "street", "postal.code", "street.number", "date.of.birth", "full.first.names", "family.names", "city"],
-    "ee" => ["full.first.names", "family.names", "personal.number"],
-    "es" => ["id.card", "full.first.names", "family.names", "passport"],
-    "fi" => ["street.number", "date.of.birth", "city", "country", "postal.code", "full.first.names", "street", "family.names"],
-    "fr" => ["city", "country", "postal.code", "full.first.names", "date.of.birth", "family.names", "street", "street.number"],
-    "gr" => ["full.first.names", "family.names", "street", "street.number", "city", "country", "postal.code"],
-    "hr" => ["full.first.names", "personal.id", "family.names", "passport"],
-    "hu" => ["id.card", "full.first.names", "family.names", "passport", "personal.number"],
-    "ie" => ["city", "country", "postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth"],
-    "it" => ["full.first.names", "family.names", "passport", "id.card"],
-    "lt" => ["full.first.names", "personal.number", "family.names"],
-    "lu" => ["postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth", "city", "country"],
-    "lv" => ["personal.id", "full.first.names", "family.names"],
-    "mt" => ["full.first.names", "family.names", "id.card"],
-    "nl" => ["full.first.names", "street", "family.names", "street.number", "date.of.birth", "city", "country", "postal.code"],
-    "pl" => ["full.first.names", "family.names", "national.id.number"],
-    "pt" => ["family.names", "citizens.card", "passport", "id.card", "full.first.names"],
-    "ro" => ["personal.id", "passport", "id.card", "full.first.names", "family.names"],
-    "se" => ["full.first.names", "family.names", "personal.number"],
-    "si" => ["personal.number", "full.first.names", "family.names"],
-    "sk" => ["street", "postal.code", "city", "country", "street.number", "full.first.names", "family.names", "date.of.birth"]
+    "AT" => ["passport", "id.card", "full.first.names", "family.names"],
+    "BE" => ["full.first.names", "family.names", "national.id.number"],
+    "BG" => ["personal.number", "full.first.names", "family.names"],
+    "CY" => ["full.first.names", "family.names", "passport", "id.card"],
+    "CZ" => ["family.names", "passport", "id.card", "full.first.names"],
+    "DE" => ["city", "country", "postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth"],
+    "DK" => ["country", "street", "postal.code", "street.number", "date.of.birth", "full.first.names", "family.names", "city"],
+    "EE" => ["full.first.names", "family.names", "personal.number"],
+    "ES" => ["id.card", "full.first.names", "family.names", "passport"],
+    "FI" => ["street.number", "date.of.birth", "city", "country", "postal.code", "full.first.names", "street", "family.names"],
+    "FR" => ["city", "country", "postal.code", "full.first.names", "date.of.birth", "family.names", "street", "street.number"],
+    "GR" => ["full.first.names", "family.names", "street", "street.number", "city", "country", "postal.code"],
+    "HR" => ["full.first.names", "personal.id", "family.names", "passport"],
+    "HU" => ["id.card", "full.first.names", "family.names", "passport", "personal.number"],
+    "IE" => ["city", "country", "postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth"],
+    "IT" => ["full.first.names", "family.names", "passport", "id.card"],
+    "LT" => ["full.first.names", "personal.number", "family.names"],
+    "LU" => ["postal.code", "full.first.names", "street", "family.names", "street.number", "date.of.birth", "city", "country"],
+    "LV" => ["personal.id", "full.first.names", "family.names"],
+    "MT" => ["full.first.names", "family.names", "id.card"],
+    "NL" => ["full.first.names", "street", "family.names", "street.number", "date.of.birth", "city", "country", "postal.code"],
+    "PL" => ["full.first.names", "family.names", "national.id.number"],
+    "PT" => ["family.names", "citizens.card", "passport", "id.card", "full.first.names"],
+    "RO" => ["personal.id", "passport", "id.card", "full.first.names", "family.names"],
+    "SE" => ["full.first.names", "family.names", "personal.number"],
+    "SI" => ["personal.number", "full.first.names", "family.names"],
+    "SK" => ["street", "postal.code", "city", "country", "street.number", "full.first.names", "family.names", "date.of.birth"]
   }
 
   @document_types [
@@ -170,104 +170,104 @@ defmodule Proca.Contact.EciDataRules do
   ]
 
   @postcode_formats %{
-    "at" => ~r/^.*$/,
-    "be" => ~r/^.*$/,
-    "bg" => ~r/^.*$/,
-    "cy" => ~r/^.*$/,
-    "cz" => ~r/^.*$/,
-    "de" => ~r/^[0-9]{5}$/,
-    "dk" => ~r/^[0-9]{4}$/,
-    "ee" => ~r/^.*$/,
-    "es" => ~r/^.*$/,
-    "fi" => ~r/^[0-9]{5}$/,
-    "fr" => ~r/^[0-9]{5}$/,
-    "gr" => ~r/^[0-9]{5}$/,
-    "hr" => ~r/^.*$/,
-    "hu" => ~r/^.*$/,
-    "ie" => ~r/^.*$/,
-    "it" => ~r/^.*$/,
-    "lt" => ~r/^.*$/,
-    "lu" => ~r/^[0-9]{4}$/,
-    "lv" => ~r/^.*$/,
-    "mt" => ~r/^.*$/,
-    "nl" => ~r/^.*$/,
-    "pl" => ~r/^.*$/,
-    "pt" => ~r/^.*$/, 
-    "ro" => ~r/^.*$/,
-    "se" => ~r/^.*$/,
-    "si" => ~r/^.*$/,
-    "sk" => ~r/^[089][0-9]{4}$/
+    "AT" => ~r/^.*$/,
+    "BE" => ~r/^.*$/,
+    "BG" => ~r/^.*$/,
+    "CY" => ~r/^.*$/,
+    "CZ" => ~r/^.*$/,
+    "DE" => ~r/^[0-9]{5}$/,
+    "DK" => ~r/^[0-9]{4}$/,
+    "EE" => ~r/^.*$/,
+    "ES" => ~r/^.*$/,
+    "FI" => ~r/^[0-9]{5}$/,
+    "FR" => ~r/^[0-9]{5}$/,
+    "GR" => ~r/^[0-9]{5}$/,
+    "HR" => ~r/^.*$/,
+    "HU" => ~r/^.*$/,
+    "IE" => ~r/^.*$/,
+    "IT" => ~r/^.*$/,
+    "LT" => ~r/^.*$/,
+    "LU" => ~r/^[0-9]{4}$/,
+    "LV" => ~r/^.*$/,
+    "MT" => ~r/^.*$/,
+    "NL" => ~r/^.*$/,
+    "PL" => ~r/^.*$/,
+    "PT" => ~r/^.*$/, 
+    "RO" => ~r/^.*$/,
+    "SE" => ~r/^.*$/,
+    "SI" => ~r/^.*$/,
+    "SK" => ~r/^[089][0-9]{4}$/
   }
 
   @document_number_formats %{
-    "at" => %{
+    "AT" => %{
       "id.card" => ~r/^[0-9]{7}|[0-9]{8}$/,
       "passport" => ~r/^[a-z][0-9]{7,8}$/i
     },
-    "be" => %{
+    "BE" => %{
       "national.id.number" => ~r/^([0-9][0-9]).(0?0[1-9]|1[0-2]).([0-2]?[0-2][0-9]|3[0-1])-[0-9]{3}.[0-9]{2}$/
     },
-    "bg" => %{"personal.number" => ~r/^[0-9]{10}$/},
+    "BG" => %{"personal.number" => ~r/^[0-9]{10}$/},
     "common" => %{},
-    "cy" => %{
+    "CY" => %{
       "id.card" => ~r/^[0-9]{1,10}$/,
       "passport" => ~r/^([bcej][0-9]{6})|(k[0-9]{8})|([ds]p[0-9]{7})$/i
     },
-    "cz" => %{
+    "CZ" => %{
       "id.card" => ~r/^([0-9]{9})|([0-9]{6}[a-z]{2}[0-9]{2})|([0-9]{6}[a-z]{2})|([a-z]{2}[0-9]{6})$/,
       "passport" => ~r/^[0-9]{7,8}$/
     },
-    "de" => %{},
-    "dk" => %{},
-    "ee" => %{"personal.number" => ~r/^[0-9]{11}$/},
-    "es" => %{"id.card" => ~r/^[0-9]{8}[a-z]$/i, "passport" => ~r/[a-z0-9]*/i},
-    "fi" => %{},
-    "fr" => %{},
-    "gr" => %{},
-    "hr" => %{"personal.id" => ~r/^[0-9]{11}$/},
-    "hu" => %{
+    "DE" => %{},
+    "DK" => %{},
+    "EE" => %{"personal.number" => ~r/^[0-9]{11}$/},
+    "ES" => %{"id.card" => ~r/^[0-9]{8}[a-z]$/i, "passport" => ~r/[a-z0-9]*/i},
+    "FI" => %{},
+    "FR" => %{},
+    "GR" => %{},
+    "HR" => %{"personal.id" => ~r/^[0-9]{11}$/},
+    "HU" => %{
       "id.card" => ~r/^([0-9]{6}[a-z]{2})|([a-z]{2}[a-z][0-9]{6})|([a-z]{2}[a-z]{2}[0-9]{6})|([a-z]{2}[a-z]{3}[0-9]{6})|([a-z]{2}[0-9]{6})$/i,
       "passport" => ~r/^([a-z]{2}[0-9]{6})|([a-z]{2}[0-9]{7})$/i,
       "personal.number" => ~r/^[0-9][0-9]{6}[0-9]{4}$/
     },
-    "ie" => %{},
-    "it" => %{
+    "IE" => %{},
+    "IT" => %{
       "id.card" => ~r/^([a-z]{2}[0-9]{6,8})|([0-9]{7}[a-z]{2})|([a-z]{2}[0-9]{5}[a-z]{2})$/i,
       "passport" => ~r/^([a-z]{2}[0-9]{7})|([a-z][0-9]{6})|([0-9]{6}[a-z])$/i
     },
-    "lt" => %{"personal.number" => ~r/^[0-9]{11}$/},
-    "lu" => %{},
-    "lv" => %{"personal.id" => ~r/^[0-9]{6}[0-9]{5}$/},
-    "mt" => %{"id.card" => ~r/^[a-z0-9]*$/i},
-    "nl" => %{},
-    "pl" => %{"national.id.number" => ~r/^[0-9]{11}$/},
-    "pt" => %{
+    "LT" => %{"personal.number" => ~r/^[0-9]{11}$/},
+    "LU" => %{},
+    "LV" => %{"personal.id" => ~r/^[0-9]{6}[0-9]{5}$/},
+    "MT" => %{"id.card" => ~r/^[a-z0-9]*$/i},
+    "NL" => %{},
+    "PL" => %{"national.id.number" => ~r/^[0-9]{11}$/},
+    "PT" => %{
       "citizens.card" => ~r/^[0-9]{9}[a-z]{2}[0-9]$/i,
       "id.card" => ~r/^[0-9]{1,8}$/,
       "passport" => ~r/^([a-z]{1}[0-9]{6})|([a-z]{2}[0-9]{6})$/i
     },
-    "ro" => %{
+    "RO" => %{
       "id.card" => ~r/^[a-z]{2}[0-9]{6}$/i,
       "passport" => ~r/^[a-z0-9]*$/i,
       "personal.id" => ~r/^[0-9]{13}$/
     },
-    "se" => %{
+    "SE" => %{
       "personal.number" => ~r/^([0-9]{8}-[0-9]{4}|[0-9]{6}-[0-9]{4}|[0-9]{12}|[0-9]{10})$/
     },
-    "si" => %{"personal.number" => ~r/^[0-9]{13}$/},
-    "sk" => %{}
+    "SI" => %{"personal.number" => ~r/^[0-9]{13}$/},
+    "SK" => %{}
   }
 
   @age_limits %{
-    "gr" => 17,
-    "mt" => 16,
-    "at" => 16,
-    "ee" => 16
+    "GR" => 17,
+    "MT" => 16,
+    "AT" => 16,
+    "EE" => 16
   }
 
-  @countries ["at", "be", "bg", "cy", "cz", "de", "dk", "ee", "es", "fi", "fr",
-              "gr", "hr", "hu", "ie", "it", "lt", "lu", "lv", "mt", "nl", "pl", "pt", "ro",
-              "se", "si", "sk"]
+  @countries ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR",
+              "GR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO",
+              "SE", "SI", "SK"]
 
   require Ecto.Schema
 
@@ -297,13 +297,13 @@ defmodule Proca.Contact.EciDataRules do
 
 
   def required(country) do
-    Map.get(@required_fields, country)
+    Map.fetch!(@required_fields, country)
     |> Enum.filter(fn f -> not Enum.member?(@document_types, f) end)
     |> Enum.map(&our_field/1)
   end
 
   def required_document_types(country) do
-    Map.get(@required_fields, country)
+    Map.fetch!(@required_fields, country)
     |> Enum.filter(fn f -> Enum.member?(@document_types, f) end)
   end
 
