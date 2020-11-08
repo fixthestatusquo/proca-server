@@ -23,13 +23,13 @@ defmodule EciDataTest do
     %{
       at_passport: %{
         nationality: %{
-          country: "at", document_type: "passport", document_number: "R1234567"
+          country: "AT", document_type: "passport", document_number: "R1234567"
         }
       } |> Map.merge(names),
 
       gr: %{
         nationality: %{
-          country: "gr"
+          country: "GR"
         },
         address: address
       } |> Map.merge(names)
@@ -106,5 +106,12 @@ defmodule EciDataTest do
     c = EciData.from_input(d)
     assert not c.valid?
     assert [%{message: "locality: can't be blank", path: [:address, :locality]}] = format_errors(c)
+  end
+
+  test "Greek with lowercase country name", %{gr: gr} do
+    d = %{gr | nationality: %{gr.nationality | country: "gr"}}
+    c = EciData.from_input(d)
+    assert not c.valid?
+    assert [%{message: "country: is invalid", path: [:nationality, :country]}] = format_errors(c)
   end
 end

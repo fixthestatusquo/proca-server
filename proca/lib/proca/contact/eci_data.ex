@@ -48,13 +48,17 @@ defmodule Proca.Contact.EciData do
     nationality = get_change(ch, :nationality)
     |> validate_inclusion(:country, EciDataRules.countries)
 
+    nationality = if nationality.valid? do
+      case get_change(nationality, :country) do
+        nil -> nationality
 
-    nationality = case get_change(nationality, :country) do
-                    nil -> nationality
-
-                    country -> nationality
-                    |> validate_document_type(EciDataRules.required_document_types(country))
-                    |> validate_document_number(country)
+        country ->
+          nationality
+          |> validate_document_type(EciDataRules.required_document_types(country))
+          |> validate_document_number(country)
+      end
+    else
+      nationality
     end
 
     put_embed(ch, :nationality, nationality)
@@ -77,7 +81,7 @@ defmodule Proca.Contact.EciData do
     end
   end
 
-  def validate_personel(ch = %{valid?: false}), do: ch
+  def validate_personal(ch = %{valid?: false}), do: ch
 
   def validate_personal(ch) do
     country = get_change(ch, :nationality) |> get_change(:country)
