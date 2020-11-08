@@ -108,6 +108,13 @@ defmodule EciDataTest do
     assert [%{message: "locality: can't be blank", path: [:address, :locality]}] = format_errors(c)
   end
 
+  test "Greek with ill formatted postcode", %{gr: gr} do
+    d = %{gr | address: %{gr.address | postcode: "123"}}
+    c = EciData.from_input(d)
+    assert not c.valid?
+    assert [%{message: "postcode: has invalid format", path: [:address, :postcode]}] = format_errors(c)
+  end
+
   test "Greek with lowercase country name", %{gr: gr} do
     d = %{gr | nationality: %{gr.nationality | country: "gr"}}
     c = EciData.from_input(d)
