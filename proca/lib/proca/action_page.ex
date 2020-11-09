@@ -34,7 +34,7 @@ defmodule Proca.ActionPage do
   def changeset(action_page, attrs) do
     action_page
     |> cast(attrs, [:name, :locale, :extra_supporters, :delivery, :thank_you_template_ref, :journey])
-    |> validate_required([:name, :locale])
+    |> validate_required([:name, :locale, :extra_supporters])
     |> unique_constraint(:name)
     |> validate_format(:name, ~r/^(?:http(s)?:\/\/)?([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/)
     |> remove_schema_from_name()
