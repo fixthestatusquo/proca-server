@@ -1,7 +1,6 @@
 defmodule ProcaWeb.OrgsController do
   use ProcaWeb, :live_view
-  alias Proca.{Org,Staffer}
-  alias Proca.Users.User
+  alias Proca.{Org, Staffer}
   alias Proca.Repo
   import Ecto.Query
 
@@ -13,24 +12,22 @@ defmodule ProcaWeb.OrgsController do
     {:noreply,
      socket
      |> assign(:change_org, Org.changeset(%Org{}, %{}))
-     |> assign(:can_remove_org, false)
-    }
+     |> assign(:can_remove_org, false)}
   end
 
   def handle_event("org_discard", _value, socket) do
     {:noreply,
      socket
-     |> assign(:change_org, nil)
-    }
+     |> assign(:change_org, nil)}
   end
 
   def handle_event("org_edit", %{"id" => id}, socket) do
-    org = Repo.get Org, String.to_integer(id)
+    org = Repo.get(Org, String.to_integer(id))
+
     {:noreply,
      socket
      |> assign(:change_org, Org.changeset(org, %{}))
-     |> assign(:can_remove_org, false)
-    }
+     |> assign(:can_remove_org, false)}
   end
 
   def handle_event("org_remove_lock", _v, socket) do
@@ -42,7 +39,8 @@ defmodule ProcaWeb.OrgsController do
   end
 
   def handle_event("org_remove", %{"id" => id}, socket) do
-    Repo.delete %Org{id: String.to_integer(id)}
+    Repo.delete(%Org{id: String.to_integer(id)})
+
     {
       :noreply,
       socket
@@ -54,10 +52,9 @@ defmodule ProcaWeb.OrgsController do
   def handle_event("org_save", %{"org" => org}, socket) do
     with %{data: data} <- socket.assigns[:change_org] do
       ch = Org.changeset(data, org)
-      
+
       case Repo.insert_or_update(ch) do
         {:ok, saved_org} ->
-
           org_after_save(saved_org)
 
           {
@@ -66,6 +63,7 @@ defmodule ProcaWeb.OrgsController do
             |> assign(:change_org, nil)
             |> assign_org_list
           }
+
         {:error, ch} ->
           {
             :noreply,
@@ -78,12 +76,12 @@ defmodule ProcaWeb.OrgsController do
     end
   end
 
-  def handle_event("org_join", %{"org_id" => org_id}, socket = %{ assigns: assigns}) do
+  def handle_event("org_join", %{"org_id" => org_id}, socket = %{assigns: assigns}) do
     with attrs <- %{
-          org_id: org_id,
-          user_id: assigns[:staffer].user_id,
-          perms: assigns[:staffer].perms
-               },
+           org_id: org_id,
+           user_id: assigns[:staffer].user_id,
+           perms: assigns[:staffer].perms
+         },
          st <- Staffer.changeset(%Staffer{}, attrs) do
       {:ok, _new_st} = Repo.insert(st)
     end
@@ -95,9 +93,10 @@ defmodule ProcaWeb.OrgsController do
     }
   end
 
-  def handle_event("org_leave", %{"org_id" => org_id}, socket = %{ assigns: assigns }) do
-    {1, _s} = from(st in Staffer, where: st.org_id == ^org_id and st.user_id == ^assigns[:staffer].user_id)
-    |> Repo.delete_all
+  def handle_event("org_leave", %{"org_id" => org_id}, socket = %{assigns: assigns}) do
+    {1, _s} =
+      from(st in Staffer, where: st.org_id == ^org_id and st.user_id == ^assigns[:staffer].user_id)
+      |> Repo.delete_all()
 
     {
       :noreply,
@@ -108,14 +107,17 @@ defmodule ProcaWeb.OrgsController do
 
   def assign_org_list(socket) do
     orgs = Org.list([:public_keys])
+
     socket
     |> assign(:orgs, orgs)
   end
 
   def assign_user_staffers(socket) do
     me = socket.assigns[:staffer]
-    orgs_im_in = from(s in Staffer, where: s.user_id == ^me.user_id, select: s.org_id)
-    |> Repo.all
+
+    orgs_im_in =
+      from(s in Staffer, where: s.user_id == ^me.user_id, select: s.org_id)
+      |> Repo.all()
 
     socket
     |> assign(:orgs_joined, orgs_im_in)
@@ -129,12 +131,13 @@ defmodule ProcaWeb.OrgsController do
   def mount(_params, session, socket) do
     socket = mount_user(socket, session)
 
-    socket = if Proca.Staffer.Permission.can?(socket.assigns.staffer, [:manage_orgs]) do
-      socket
-    else
-      socket
-      |> Phoenix.LiveView.redirect(to: "/")
-    end
+    socket =
+      if Proca.Staffer.Permission.can?(socket.assigns.staffer, [:manage_orgs]) do
+        socket
+      else
+        socket
+        |> Phoenix.LiveView.redirect(to: "/")
+      end
 
     if socket.redirected do
       {:ok, socket}
@@ -144,8 +147,7 @@ defmodule ProcaWeb.OrgsController do
        |> assign_org_list
        |> assign_user_staffers
        |> assign(:change_org, nil)
-       |> assign(:can_remove_org, false)
-      }
+       |> assign(:can_remove_org, false)}
     end
   end
 

@@ -1,4 +1,7 @@
 defmodule ProcaWeb.EciRouter do
+  @moduledoc """
+  Alternative router used in ECI build. Minimal version of ProcaWeb.Router
+  """
   use ProcaWeb, :router
   use Plug.ErrorHandler
   use Sentry.Plug
@@ -12,10 +15,9 @@ defmodule ProcaWeb.EciRouter do
   scope "/api" do
     pipe_through :api
 
-    forward "/", Absinthe.Plug,
-      schema: ProcaWeb.Schema.EciSchema
+    forward "/", Absinthe.Plug, schema: ProcaWeb.Schema.EciSchema
   end
-  
+
   forward "/graphiql", Absinthe.Plug.GraphiQL,
     schema: ProcaWeb.Schema.EciSchema,
     interface: :playground,

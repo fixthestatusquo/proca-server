@@ -1,11 +1,8 @@
 defmodule ProcaWeb.TeamController do
   use ProcaWeb, :live_view
-  alias Proca.{Org, Staffer}
+  alias Proca.{Staffer}
   alias Proca.Staffer.Role
-  alias Proca.Users.User
   alias Proca.Repo
-  alias Ecto.Changeset
-  import Ecto.Query
 
   def handle_event("change_role", %{"staffer" => staffer_id_str, "role" => role}, socket) do
     with %Staffer{} = staffer <- Repo.get(Staffer, staffer_id_str |> String.to_integer()),

@@ -50,12 +50,13 @@ defmodule Proca.Staffer.Role do
   end
 
   def change(staffer = %Staffer{perms: perms}, role) do
-    np = Keyword.keys(@roles)
-    |> List.keydelete(role, 0)
-    |> Enum.reduce(perms, fn r, p ->
-      Permission.remove(p, @roles[r])
-    end)
-    |> Permission.add(@roles[role])
+    np =
+      Keyword.keys(@roles)
+      |> List.keydelete(role, 0)
+      |> Enum.reduce(perms, fn r, p ->
+        Permission.remove(p, @roles[r])
+      end)
+      |> Permission.add(@roles[role])
 
     Changeset.change(staffer, perms: np)
   end

@@ -3,18 +3,15 @@ defmodule StafferTest do
   doctest Proca.Staffer
   alias Proca.Staffer
 
-
   test "Find user not in org" do
-    orgA = Factory.insert(:org)
-    orgB = Factory.insert(:org)
-    orgC = Factory.insert(:org)
-    userX = Factory.insert(:user)
-    stafferXA = Factory.insert(:staffer, user: userX, org: orgA)
-    stafferXB = Factory.insert(:staffer, user: userX, org: orgB)
+    org_a = Factory.insert(:org)
+    org_b = Factory.insert(:org)
+    org_c = Factory.insert(:org)
+    user_x = Factory.insert(:user)
+    staffer_xa = Factory.insert(:staffer, user: user_x, org: org_a)
+    staffer_xb = Factory.insert(:staffer, user: user_x, org: org_b)
 
-    userNotInC = Staffer.not_in_org(orgC.id)
-    assert length(userNotInC) == 1
-    
+    user_not_in_c = Staffer.not_in_org(org_c.id)
+    assert length(user_not_in_c) == 1
   end
-
 end

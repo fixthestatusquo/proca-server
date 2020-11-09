@@ -1,6 +1,4 @@
 defmodule Proca.Supporter.Privacy do
-  alias Proca.Supporter.Privacy
-  alias Proca.Supporter.Consent
   @moduledoc """
   This module specifies how the supporter presonal data is stored and share between orgs.
 
@@ -49,10 +47,11 @@ defmodule Proca.Supporter.Privacy do
 
   """
 
-  defstruct [
-    opt_in: false,
-    lead_opt_in: false
-  ]
+  alias Proca.Supporter.{Privacy, Consent}
+  alias Proca.ActionPage
+
+  defstruct opt_in: false,
+            lead_opt_in: false
 
   @default_communication_scopes ["email"]
 
@@ -60,8 +59,8 @@ defmodule Proca.Supporter.Privacy do
   privacy - for now, a simple privacy map is: %{ opt_in: :boolean, lead_opt_in: :boolean }.
   Exactly what we have in the API.
   """
-  @spec consents(Proca.ActionPage, Privacy) :: [Consent]
-  def consents(action_page, privacy = %Privacy{}) when not is_nil(action_page) do
+  @spec consents(%ActionPage{}, %Privacy{}) :: [%Consent{}]
+  def consents(action_page = %ActionPage{}, privacy = %Privacy{}) when not is_nil(action_page) do
     action_page = Proca.Repo.preload(action_page, [:org, campaign: :org])
     widget_delivery = action_page.delivery
 
@@ -73,26 +72,36 @@ defmodule Proca.Supporter.Privacy do
 
     widget_org =
       case widget_delivery or widget_communication do
-        true -> [%Consent{
-                    org: action_page.org,
-                    communication_consent: widget_communication,
-                    communication_scopes: @default_communication_scopes,
-                    delivery_consent: widget_delivery
-                 }]
-        false -> []
+        true ->
+          [
+            %Consent{
+              org: action_page.org,
+              communication_consent: widget_communication,
+              communication_scopes: @default_communication_scopes,
+              delivery_consent: widget_delivery
+            }
+          ]
+
+        false ->
+          []
       end
 
     lead_org =
       case action_page.campaign.org_id != action_page.org_id and
              (lead_delivery or lead_communication) do
-      true -> [%Consent{
-                  org: action_page.campaign.org,
-                  communication_consent: lead_communication,
-                  communication_scopes: @default_communication_scopes,
-                  delivery_consent: lead_delivery
-               }]
-      false -> []
-    end
+        true ->
+          [
+            %Consent{
+              org: action_page.campaign.org,
+              communication_consent: lead_communication,
+              communication_scopes: @default_communication_scopes,
+              delivery_consent: lead_delivery
+            }
+          ]
+
+        false ->
+          []
+      end
 
     widget_org ++ lead_org
   end

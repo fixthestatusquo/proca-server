@@ -1,4 +1,8 @@
 defmodule Proca.PublicKey do
+  @moduledoc """
+  Keypair for encyrption of personal data
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -14,6 +18,7 @@ defmodule Proca.PublicKey do
 
     timestamps()
   end
+
   @derive {Inspect, only: [:id, :name, :org, :expired_at]}
 
   @doc false
@@ -24,14 +29,14 @@ defmodule Proca.PublicKey do
   end
 
   def expire(public_key) do
-   change(public_key, expired_at: DateTime.utc_now())
+    change(public_key, expired_at: DateTime.utc_now())
   end
 
   @spec active_key_for(%Proca.Org{}) :: %PublicKey{} | nil
   def active_key_for(org) do
     active_keys()
     |> where([pk], pk.org_id == ^org.id)
-    |> Repo.one
+    |> Repo.one()
   end
 
   def active_keys(preload \\ []) do
@@ -39,11 +44,12 @@ defmodule Proca.PublicKey do
       order_by: [desc: pk.inserted_at],
       where: is_nil(pk.expired_at),
       preload: ^preload,
-      distinct: pk.org_id)
+      distinct: pk.org_id
+    )
   end
 
   def build_for(org, name \\ "generated") do
-    {priv, pub} = Kcl.generate_key_pair
+    {priv, pub} = Kcl.generate_key_pair()
 
     %Proca.PublicKey{}
     |> changeset(%{name: name, public: pub, private: priv})
@@ -51,8 +57,9 @@ defmodule Proca.PublicKey do
   end
 
   def import_private_for(org, private, name \\ "imported") do
-    pk = %Proca.PublicKey{}
-    |> changeset(%{name: name, org: org})
+    pk =
+      %Proca.PublicKey{}
+      |> changeset(%{name: name, org: org})
 
     case base_decode(private) do
       {:ok, key} when is_binary(key) ->
@@ -61,20 +68,23 @@ defmodule Proca.PublicKey do
           |> put_change(:private, key)
           |> put_change(:public, public)
         end
+
       :error ->
         add_error(pk, :private, "Cannot decode private key using Base64url (RFC4648, no padding)")
     end
   end
 
   def import_public_for(org, public, name \\ "imported") do
-    pk = %Proca.PublicKey{}
-    |> changeset(%{name: name})
-    |> put_assoc(:org, org)
+    pk =
+      %Proca.PublicKey{}
+      |> changeset(%{name: name})
+      |> put_assoc(:org, org)
 
     case base_decode(public) do
       {:ok, key} when is_binary(key) ->
         pk
         |> put_change(:public, key)
+
       :error ->
         add_error(pk, :public, "Cannot decode public key using Base64")
     end

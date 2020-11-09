@@ -11,8 +11,9 @@ defmodule Proca.Contact.Input.Nationality do
   end
 
   def changeset(ch, params) do
-    params = params
-    |> Proca.Contact.Input.upcase_country()
+    params =
+      params
+      |> Proca.Contact.Input.upcase_country()
 
     ch
     |> cast(params, [:country, :document_type, :document_number])
@@ -20,4 +21,3 @@ defmodule Proca.Contact.Input.Nationality do
     |> Input.validate_country_format()
   end
 end
-

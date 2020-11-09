@@ -1,4 +1,7 @@
 defmodule Proca.Contact.Input.Contact do
+  @moduledoc """
+  Schema for handling contact: map from graphql addAction* mutations
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -34,16 +37,17 @@ defmodule Proca.Contact.Input.Contact do
 
   def normalize_names_attr(attr = %{first_name: fst, last_name: lst}) do
     attr
-    |> Map.put(:name, String.trim "#{fst} #{lst}")
+    |> Map.put(:name, String.trim("#{fst} #{lst}"))
   end
 
   def normalize_names_attr(attr = %{first_name: fst}) do
     attr
-    |> Map.put(:name, String.trim fst)
+    |> Map.put(:name, String.trim(fst))
   end
 
   def normalize_names_attr(attr = %{name: n}) do
     [first | rest] = String.split(n, " ")
+
     attr
     |> Map.put(:first_name, first)
     |> Map.put(:last_name, rest |> Enum.join(" "))

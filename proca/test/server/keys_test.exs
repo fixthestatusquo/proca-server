@@ -6,7 +6,7 @@ defmodule Proca.Server.KeysTest do
   alias Proca.{Repo, PublicKey, Org}
 
   setup do
-    Process.flag :trap_exit, true
+    Process.flag(:trap_exit, true)
     red_story()
   end
 
@@ -26,12 +26,13 @@ defmodule Proca.Server.KeysTest do
   end
 
   test "I can get keys for encryption from server", %{red_org: o1, yellow_org: o2} do
-    {:ok, pk1} =  PublicKey.build_for(o1) |> Repo.insert()
+    {:ok, pk1} = PublicKey.build_for(o1) |> Repo.insert()
     {:ok, pk2} = PublicKey.build_for(o2) |> Repo.insert()
 
     {:ok, p} = GenServer.start_link(Proca.Server.Keys, o1.name)
 
-    {o1_priv, o2_pub, nonce1, key_ids} = GenServer.call(p, {:encryption, [from: o1.id, to: o2.id]})
+    {o1_priv, o2_pub, nonce1, key_ids} =
+      GenServer.call(p, {:encryption, [from: o1.id, to: o2.id]})
 
     assert o1_priv == pk1.private
     assert o2_pub == pk2.public
@@ -54,7 +55,7 @@ defmodule Proca.Server.KeysTest do
   end
 
   test "I get null for recipient key if they don't have a key", %{red_org: o1, yellow_org: o2} do
-    {:ok, pk1} =  PublicKey.build_for(o1) |> Repo.insert()
+    {:ok, pk1} = PublicKey.build_for(o1) |> Repo.insert()
 
     {:ok, p} = GenServer.start_link(Proca.Server.Keys, o1.name)
 

@@ -7,11 +7,15 @@ defmodule ProcaWeb.Resolvers.IncludeExtensions do
 
   @behaviour Absinthe.Middleware
 
-  def call(resolution = %{
-  context: ctx = %{extensions: ext},
-  extensions: %{}}, _opts) when is_map(ext) do
-    %{resolution | extensions: ext,
-      context: Map.delete(ctx, :extensions)}
+  def call(
+        resolution = %{
+          context: ctx = %{extensions: ext},
+          extensions: %{}
+        },
+        _opts
+      )
+      when is_map(ext) do
+    %{resolution | extensions: ext, context: Map.delete(ctx, :extensions)}
   end
 
   def call(resolution, _) do

@@ -21,5 +21,4 @@ defmodule RolesTest do
   # test "changing roles does not remove non-role permission bits" do
   #  # at the moment we do not have such permissions
   # end
-
 end

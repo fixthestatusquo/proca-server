@@ -1,4 +1,10 @@
 defmodule Proca.Stage.Support do
+  @moduledoc """
+  Support functions for job processing in Broadway. Most imporatntly functions
+  to build RabbitMQ events containing enough data to be processed internally
+  (system) or externally (custom).
+  """
+
   alias Proca.{Action, Supporter, Org, PublicKey, Contact, Field}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
@@ -11,12 +17,14 @@ defmodule Proca.Stage.Support do
       where: a.id in ^action_ids,
       preload: [
         [supporter: [contacts: [:public_key, :sign_key]]],
-        :action_page, :campaign,
+        :action_page,
+        :campaign,
         :source,
         :fields
-      ])
-      |> Repo.all()
-      |> Enum.map(fn a -> action_data(a, stage) end)
+      ]
+    )
+    |> Repo.all()
+    |> Enum.map(fn a -> action_data(a, stage) end)
   end
 
   defp action_data_tracking(%Action{source: s}) when not is_nil(s) do
@@ -33,18 +41,18 @@ defmodule Proca.Stage.Support do
   end
 
   defp action_data_contact(
-        %Supporter{
-          fingerprint: ref,
-          first_name: first_name,
-          email: email
-        },
-        %Contact{
-          payload: payload,
-          crypto_nonce: nonce,
-          public_key: %PublicKey{public: public},
-          sign_key: %PublicKey{public: sign}
-        }
-      ) do
+         %Supporter{
+           fingerprint: ref,
+           first_name: first_name,
+           email: email
+         },
+         %Contact{
+           payload: payload,
+           crypto_nonce: nonce,
+           public_key: %PublicKey{public: public},
+           sign_key: %PublicKey{public: sign}
+         }
+       ) do
     %{
       "ref" => Supporter.base_encode(ref),
       "firstName" => first_name,
@@ -57,15 +65,15 @@ defmodule Proca.Stage.Support do
   end
 
   defp action_data_contact(
-        %Supporter{
-          fingerprint: ref,
-          first_name: first_name,
-          email: email
-        },
-        %Contact{
-          payload: payload
-        }
-      ) do
+         %Supporter{
+           fingerprint: ref,
+           first_name: first_name,
+           email: email
+         },
+         %Contact{
+           payload: payload
+         }
+       ) do
     %{
       "ref" => Supporter.base_encode(ref),
       "firstName" => first_name,
@@ -74,15 +82,15 @@ defmodule Proca.Stage.Support do
     }
   end
 
-
   defp action_data_contact(
-    %Supporter{
-      fingerprint: ref,
-      first_name: first_name,
-      email: email
-    },
-    contact
-  ) when is_nil(contact) do
+         %Supporter{
+           fingerprint: ref,
+           first_name: first_name,
+           email: email
+         },
+         contact
+       )
+       when is_nil(contact) do
     %{
       "ref" => Supporter.base_encode(ref),
       "firstName" => first_name,
@@ -92,28 +100,35 @@ defmodule Proca.Stage.Support do
   end
 
   def action_data(action, stage \\ :deliver) do
-    action = Repo.preload(action,
-      [
-        [supporter: [contacts: [:public_key, :sign_key]]],
-        :action_page, :campaign,
-        :source,
-        :fields
-      ])
+    action =
+      Repo.preload(
+        action,
+        [
+          [supporter: [contacts: [:public_key, :sign_key]]],
+          :action_page,
+          :campaign,
+          :source,
+          :fields
+        ]
+      )
 
     # XXX we should be explicit about Contact org_id recipient, because for unencrypted contacts we do not have
     # the public_key!
-    contact = Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
+    contact =
+      Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
 
-    privacy = if not is_nil(contact) and action.with_consent do
-      %{
-        "communication" => contact.communication_consent,
-        "givenAt" => contact.inserted_at
-        |> DateTime.from_naive!("Etc/UTC")
-        |> DateTime.to_iso8601()
-      }
-    else
-      nil
-    end
+    privacy =
+      if not is_nil(contact) and action.with_consent do
+        %{
+          "communication" => contact.communication_consent,
+          "givenAt" =>
+            contact.inserted_at
+            |> DateTime.from_naive!("Etc/UTC")
+            |> DateTime.to_iso8601()
+        }
+      else
+        nil
+      end
 
     %{
       "actionId" => action.id,
@@ -123,7 +138,7 @@ defmodule Proca.Stage.Support do
       "action" => %{
         "actionType" => action.action_type,
         "fields" => Field.list_to_map(action.fields),
-        "createdAt" => (action.inserted_at |> NaiveDateTime.to_iso8601())
+        "createdAt" => action.inserted_at |> NaiveDateTime.to_iso8601()
       },
       "actionPage" => %{
         "locale" => action.action_page.locale,

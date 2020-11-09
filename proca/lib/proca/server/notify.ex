@@ -1,8 +1,11 @@
 defmodule Proca.Server.Notify do
+  @moduledoc """
+  Server that decides what actions should be done after different events
+  """
   alias Proca.Repo
   alias Proca.{Action, Org, PublicKey}
 
-  @spec action_created(Action, boolean()) :: :ok
+  @spec action_created(%Action{}, boolean()) :: :ok
   def action_created(action, created_supporter) do
     increment_counter(action, created_supporter)
     process_action(action)

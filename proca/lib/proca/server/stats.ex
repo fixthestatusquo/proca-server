@@ -1,11 +1,5 @@
 defmodule Proca.Server.Stats do
-  use GenServer
-  alias Proca.{Action,Supporter,ActionPage}
-  alias Proca.Repo
-  import Ecto.Query
-
-  @impl true
-  @doc """
+  @moduledoc """
   Stores campaign and action page signature counts in following structure (under campaign state key):
   - map of campaign ids stores 2 element tuple 
   - first element is count for whole campaign
@@ -18,9 +12,16 @@ defmodule Proca.Server.Stats do
   interval: int - calculation interval in ms
   query_runs: boolean - a flag saying calculation is running now and we shouldn't run new calculation
   campaign:
-    campaign_id ->  (map)
-       {deduped supporters, [action_type: count]}
+  campaign_id ->  (map)
+  {deduped supporters, [action_type: count]}
   """
+
+  use GenServer
+  alias Proca.{Action, Supporter, ActionPage}
+  alias Proca.Repo
+  import Ecto.Query
+
+  @impl true
   def init(sync_every_ms) do
     {
       :ok,
@@ -65,26 +66,26 @@ defmodule Proca.Server.Stats do
   end
 
   @impl true
-  def handle_cast({:increment, campaign_id, action_type, new_supporter},
-    state = %{campaign: campaign}) do
-    campaign = with {sup_ct, types_ct} <- Map.get(campaign, campaign_id, {0, []}),
-                    {action_type, at_ct} <- List.keyfind(types_ct, action_type, 0, {action_type, 0})
-      do
-      Map.put(campaign, campaign_id,
-        {
-          (sup_ct + if new_supporter, do: 1, else: 0),
-          List.keystore(types_ct,
-            action_type, 0,
-            {action_type, at_ct + 1})
+  def handle_cast(
+        {:increment, campaign_id, action_type, new_supporter},
+        state = %{campaign: campaign}
+      ) do
+    campaign =
+      with {sup_ct, types_ct} <- Map.get(campaign, campaign_id, {0, []}),
+           {action_type, at_ct} <- List.keyfind(types_ct, action_type, 0, {action_type, 0}) do
+        Map.put(campaign, campaign_id, {
+          sup_ct + if(new_supporter, do: 1, else: 0),
+          List.keystore(types_ct, action_type, 0, {action_type, at_ct + 1})
         })
+      end
 
-    end
     {:noreply, %{state | campaign: campaign}}
   end
 
   @impl true
   @doc """
-  Get stats for campaign
+  - Get stats for campaign
+  - Get stats for action types
   """
   def handle_call({:stats, c_id}, _f, stats = %{campaign: camp}) do
     cst = Map.get(camp, c_id, {0, []})
@@ -93,43 +94,48 @@ defmodule Proca.Server.Stats do
   end
 
   @impl true
-  @doc """
-  Get stats for types
-  """
   def handle_call({:stats, c_id, types}, _f, stats = %{campaign: camp}) do
     with {sup, types_ct} <- Map.get(camp, c_id, {0, []}),
-         counts <- Enum.map(types, fn t -> List.keyfind(types_ct, t, 0, {t, 0}) end)
-      do
+         counts <- Enum.map(types, fn t -> List.keyfind(types_ct, t, 0, {t, 0}) end) do
       {:reply, {sup, counts}, stats}
     end
   end
 
   def calculate() do
-    query = from(s in Supporter, order_by: s.inserted_at)
-    |> distinct([s], s.fingerprint)
-    |> subquery()
-    |> group_by([s], [s.campaign_id])
-    |> select([s], [s.campaign_id, count(s.fingerprint)])
+    query =
+      from(s in Supporter, order_by: s.inserted_at)
+      |> distinct([s], s.fingerprint)
+      |> subquery()
+      |> group_by([s], [s.campaign_id])
+      |> select([s], [s.campaign_id, count(s.fingerprint)])
 
-    supporters = query
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn [c_id, sup_ct], acc -> Map.put(acc, c_id, {sup_ct, []}) end)
+    supporters =
+      query
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn [c_id, sup_ct], acc -> Map.put(acc, c_id, {sup_ct, []}) end)
 
-    extra_supporters = from(ap in ActionPage, group_by: ap.campaign_id,
-      where: ap.extra_supporters > 0, select: [ap.campaign_id, sum(ap.extra_supporters)])
+    extra_supporters =
+      from(ap in ActionPage,
+        group_by: ap.campaign_id,
+        where: ap.extra_supporters > 0,
+        select: [ap.campaign_id, sum(ap.extra_supporters)]
+      )
       |> Repo.all()
       |> Enum.reduce(%{}, fn [c_id, ex_ct], acc -> Map.put(acc, c_id, {ex_ct, []}) end)
 
     # merge supporters and extra_supporters
 
-    action_counts =  from(a in Action, group_by: [a.campaign_id, a.action_type],
-      select: [a.campaign_id, a.action_type, count(a.id)])
+    action_counts =
+      from(a in Action,
+        group_by: [a.campaign_id, a.action_type],
+        select: [a.campaign_id, a.action_type, count(a.id)]
+      )
       |> Repo.all()
       |> Enum.reduce(%{}, &add_action_type_counts/2)
 
     supporters
-    |> Map.merge(extra_supporters, fn _c_id, {su, []}, {ex, []} -> {su+ex, []} end)
-    |> Map.merge(action_counts, fn _c_id, {su, []}, {_x, ats} -> {su, ats} end )
+    |> Map.merge(extra_supporters, fn _c_id, {su, []}, {ex, []} -> {su + ex, []} end)
+    |> Map.merge(action_counts, fn _c_id, {su, []}, {_x, ats} -> {su, ats} end)
   end
 
   defp add_action_type_counts([c_id, at, ct], acc) do

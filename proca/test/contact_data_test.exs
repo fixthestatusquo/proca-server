@@ -5,15 +5,17 @@ defmodule ContactDataTest do
 
   test "Create a BasicData from params" do
     params = %{
-      first_name: "Harald", last_name: "Bower",
+      first_name: "Harald",
+      last_name: "Bower",
       email: "harhar@gmail.com",
       address: %{
-        country: "it", postcode: "0993"
+        country: "it",
+        postcode: "0993"
       }
     }
 
     new_data = BasicData.from_input(params)
-    data = apply_changes new_data
+    data = apply_changes(new_data)
 
     assert %BasicData{first_name: "Harald", last_name: "Bower", email: "harhar@gmail.com"} = data
   end

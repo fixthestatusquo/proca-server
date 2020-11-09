@@ -28,26 +28,34 @@ defmodule Proca.Application do
         Application.get_env(:proca, Proca.Server.Plumbing)[:url]
       },
       {
-        Proca.Server.Processing, []
+        Proca.Server.Processing,
+        []
       },
       {
-        Proca.Stage.ThankYou, []
+        Proca.Stage.ThankYou,
+        []
       },
       {
-        Proca.Stage.SQS, []
+        Proca.Stage.SQS,
+        []
       }
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},
     ]
 
-    children = if enabled(:jwt) do
-      children ++ [{
-                    Proca.Server.Jwks,
-                    Application.get_env(:proca, Proca.Server.Jwks)[:url]
-                    }]
-    else
-      children
-    end 
+    children =
+      if enabled(:jwt) do
+        children ++
+          [
+            {
+              Proca.Server.Jwks,
+              Application.get_env(:proca, Proca.Server.Jwks)[:url]
+            }
+          ]
+      else
+        children
+      end
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Proca.Supervisor]
@@ -62,6 +70,6 @@ defmodule Proca.Application do
   end
 
   defp enabled(:jwt) do
-    not is_nil Application.get_env(:proca, Proca.Server.Jwks)[:url]
+    not is_nil(Application.get_env(:proca, Proca.Server.Jwks)[:url])
   end
 end

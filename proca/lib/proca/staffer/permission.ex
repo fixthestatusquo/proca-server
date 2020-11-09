@@ -10,10 +10,9 @@ defmodule Proca.Staffer.Permission do
   @bits [
     manage_orgs: 1 <<< 0,
     join_orgs: 1 <<< 1,
-
-    use_api: 1 <<< 8,  # XXX deprecated - we go full API so this will be unused
+    # XXX deprecated - we go full API so this will be unused
+    use_api: 1 <<< 8,
     export_contacts: 1 <<< 9,
-
     change_org_settings: 1 <<< 16,
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
@@ -28,7 +27,7 @@ defmodule Proca.Staffer.Permission do
   end
 
   def can?(staffer = %Staffer{}, permission) when is_list(permission) do
-    Enum.all?(permission, &(can? staffer, &1))
+    Enum.all?(permission, &can?(staffer, &1))
   end
 
   def can?(staffer, _perms) when is_nil(staffer) do
@@ -41,7 +40,7 @@ defmodule Proca.Staffer.Permission do
   end
 
   def add(perms, permission) when is_integer(perms) and is_list(permission) do
-    Enum.reduce(permission, perms, &(add(&2, &1)))
+    Enum.reduce(permission, perms, &add(&2, &1))
   end
 
   def remove(perms, permission) when is_integer(perms) and is_atom(permission) do
@@ -50,7 +49,7 @@ defmodule Proca.Staffer.Permission do
   end
 
   def remove(perms, permission) when is_integer(perms) and is_list(permission) do
-    Enum.reduce(permission, perms, &(remove(&2, &1)))
+    Enum.reduce(permission, perms, &remove(&2, &1))
   end
 
   def to_list(perms) when is_integer(perms) do

@@ -22,7 +22,7 @@ defmodule ProcaWeb.DashView do
   end
 
   def can?(staffer, permission) do
-    Proca.Staffer.Permission.can? staffer, permission
+    Proca.Staffer.Permission.can?(staffer, permission)
   end
 
   def supported_languages() do

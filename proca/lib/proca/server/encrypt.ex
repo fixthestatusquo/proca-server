@@ -9,12 +9,15 @@ defmodule Proca.Server.Encrypt do
   import Logger
 
   def encrypt(%Org{id: id}, text) do
-    case Keys.encryption([to: id]) do
-      :plaintext -> {text, nil, nil, nil}
-      {private, public, nonce, [from: sign_id, to: enc_id]} -> case do_encrypt(text, private, public, nonce) do
-                                    {:ok, enc, nonce} -> {enc, nonce, enc_id, sign_id}
-                                    error -> error
-                                  end
+    case Keys.encryption(to: id) do
+      :plaintext ->
+        {text, nil, nil, nil}
+
+      {private, public, nonce, [from: sign_id, to: enc_id]} ->
+        case do_encrypt(text, private, public, nonce) do
+          {:ok, enc, nonce} -> {enc, nonce, enc_id, sign_id}
+          error -> error
+        end
     end
   end
 
@@ -30,7 +33,7 @@ defmodule Proca.Server.Encrypt do
       end
     rescue
       e in FunctionClauseError ->
-         {:error, "Bad arguments to Kcl.box - can't call #{e.function}/#{e.arity}"}
+        {:error, "Bad arguments to Kcl.box - can't call #{e.function}/#{e.arity}"}
     end
   end
 end

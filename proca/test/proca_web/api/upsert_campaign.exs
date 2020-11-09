@@ -6,8 +6,5 @@ defmodule ProcaWeb.UpsertCampaign do
     setup do
       blue_story()
     end
-
-
   end
-
 end

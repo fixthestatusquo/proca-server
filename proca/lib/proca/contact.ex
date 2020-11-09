@@ -1,4 +1,10 @@
 defmodule Proca.Contact do
+  @moduledoc """
+  Schema holding personal data (PII). Belongs to action page that collected the
+  data, and to organisation which the data is sent to. Contains consent
+  information. Can be encrypted. There can be many Contact records per one
+  supporter (=per one action)
+  """
   use Ecto.Schema
   import Ecto.Changeset
   alias Proca.Contact
@@ -22,7 +28,7 @@ defmodule Proca.Contact do
     timestamps()
   end
 
-  @spec build(struct()) :: Ecto.Changeset.t
+  @spec build(struct()) :: Ecto.Changeset.t(%Contact{})
   def build(contact_data) when is_struct(contact_data) do
     case Jason.encode(contact_data) do
       {:ok, payload} -> change(%Contact{}, %{payload: payload})
@@ -34,9 +40,10 @@ defmodule Proca.Contact do
   end
 
   def spread(new_contact, [consent | rc]) do
-    ch = new_contact
-    |> add_encryption(consent.org)
-    |> add_consent(consent)
+    ch =
+      new_contact
+      |> add_encryption(consent.org)
+      |> add_consent(consent)
 
     [ch | spread(new_contact, rc)]
   end
@@ -45,12 +52,13 @@ defmodule Proca.Contact do
         communication_consent: cc,
         communication_scopes: cs,
         delivery_consent: dc,
-        org: org}) do
+        org: org
+      }) do
     contact_ch
     |> change(communication_consent: cc, communication_scopes: cs, delivery_consent: dc, org: org)
   end
 
-  @spec add_encryption(Ecto.Changeset.t(), Proca.Org | Proca.PublicKey | nil) :: Ecto.Changeset.t()
+  @spec add_encryption(Ecto.Changeset.t(Contact), %Proca.Org{}) :: Ecto.Changeset.t(Contact)
   def add_encryption(contact_ch, org = %Proca.Org{}) do
     case contact_ch do
       %{changes: %{payload: payload}} ->
@@ -62,7 +70,8 @@ defmodule Proca.Contact do
             |> put_change(:public_key_id, enc_id)
             |> put_change(:sign_key_id, sign_id)
 
-          {_clear, nil, nil, nil} -> contact_ch
+          {_clear, nil, nil, nil} ->
+            contact_ch
 
           {:error, msg} ->
             add_error(contact_ch, :payload, msg)
@@ -79,7 +88,7 @@ defmodule Proca.Contact do
     []
   end
 
-  @spec encrypt(Ecto.Changeset.t(), [Proca.PublicKey]) :: [Ecto.Changeset.t()]
+  @spec encrypt(Ecto.Changeset.t(Contact), [%Proca.PublicKey{}]) :: [Ecto.Changeset.t(Contact)]
   def encrypt(contact_ch, [pk | public_keys]) do
     enc_ch = add_encryption(contact_ch, pk)
     [enc_ch | encrypt(contact_ch, public_keys)]

@@ -1,4 +1,7 @@
 defmodule Proca.Service.EmailRecipient do
+  @moduledoc """
+  Represents an email recipient, for email templates that can be persnonalized.
+  """
   alias Proca.Service.EmailRecipient
 
   defstruct first_name: "", email: "", ref: "", fields: %{}
@@ -15,19 +18,21 @@ defmodule Proca.Service.EmailRecipient do
     # add also ref field. I guess email and name are implemneted in template render (by Mailjet etc)?
     fields = Map.merge(fields, Map.take(rcpt, [:first_name, :email, :ref]))
 
-    fields = Map.merge(fields, %{
-          "campaign_name" => get_in(action_data, ["campaign", "name"]),
-          "campaign_title" => get_in(action_data, ["campaign", "title"]),
-          "action_page_name" => get_in(action_data, ["actionPage", "name"]),
-          "utm_source" => get_in(action_data, ["source", "source"]),
-          "utm_medium" => get_in(action_data, ["source", "medium"]),
-          "utm_campaign" => get_in(action_data, ["source", "campaign"]),
-          "utm_content" => get_in(action_data, ["source", "content"])
-                       })
+    fields =
+      Map.merge(fields, %{
+        "campaign_name" => get_in(action_data, ["campaign", "name"]),
+        "campaign_title" => get_in(action_data, ["campaign", "title"]),
+        "action_page_name" => get_in(action_data, ["actionPage", "name"]),
+        "utm_source" => get_in(action_data, ["source", "source"]),
+        "utm_medium" => get_in(action_data, ["source", "medium"]),
+        "utm_campaign" => get_in(action_data, ["source", "campaign"]),
+        "utm_content" => get_in(action_data, ["source", "content"])
+      })
 
-    fields = fields
-    |> Enum.reject(fn {_, v} -> is_nil(v) end)
-    |> Map.new
+    fields =
+      fields
+      |> Enum.reject(fn {_, v} -> is_nil(v) end)
+      |> Map.new()
 
     %{rcpt | fields: fields}
   end

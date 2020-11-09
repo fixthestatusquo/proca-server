@@ -15,10 +15,11 @@ defmodule ProcaWeb.Api.ActionPageLegacyUrlTest do
       }
     """
 
-    res = conn
-    |> api_post(query)
-    |> json_response(200)
-    |> is_success
+    res =
+      conn
+      |> api_post(query)
+      |> json_response(200)
+      |> is_success
 
     assert res["data"]["actionPage"]["id"] == red_ap.id
   end
@@ -40,10 +41,11 @@ defmodule ProcaWeb.Api.ActionPageLegacyUrlTest do
     }
     """
 
-    res = conn
-    |> auth_api_post(query, red_bot.user.email)
-    |> json_response(200)
-    |> is_success
+    res =
+      conn
+      |> auth_api_post(query, red_bot.user.email)
+      |> json_response(200)
+      |> is_success
 
     cid = res["data"]["declareCampaign"]["id"]
 
@@ -58,14 +60,16 @@ defmodule ProcaWeb.Api.ActionPageLegacyUrlTest do
     }
     """
 
-    res = conn
-    |> auth_api_post(query2, red_bot.user.email)
-    |> json_response(200)
+    res =
+      conn
+      |> auth_api_post(query2, red_bot.user.email)
+      |> json_response(200)
 
-    assert is_nil res["errors"]
-    
-    assert res["data"]["actionPage"] == %{"locale" => "en", "campaign" => %{"id" => cid, "title" => "New one"}}
+    assert is_nil(res["errors"])
+
+    assert res["data"]["actionPage"] == %{
+             "locale" => "en",
+             "campaign" => %{"id" => cid, "title" => "New one"}
+           }
   end
-
-
 end

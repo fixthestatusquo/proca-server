@@ -6,7 +6,7 @@ defmodule Proca.Contact.BasicData do
   """
   use Ecto.Schema
 
-  alias Proca.Contact.{Data, BasicData, Input}
+  alias Proca.Contact.{BasicData, Input}
   alias Proca.Contact
   import Ecto.Changeset
 
@@ -23,35 +23,35 @@ defmodule Proca.Contact.BasicData do
   @behaviour Input
   @impl Input
   def from_input(params) do
-    ch = params
-    |> Input.Contact.normalize_names_attr()
-    |> Input.Contact.changeset()
-    |> validate_required([:name, :first_name, :email])
-    |> Input.validate_email(:email)
-    |> Input.validate_phone(:phone)
+    ch =
+      params
+      |> Input.Contact.normalize_names_attr()
+      |> Input.Contact.changeset()
+      |> validate_required([:name, :first_name, :email])
+      |> Input.validate_email(:email)
+      |> Input.validate_phone(:phone)
 
     if ch.valid? do
       d = apply_changes(ch)
       a = Map.get(d, :address) || %Input.Address{}
 
       change(%BasicData{}, %{
-            name: d.name,
-            first_name: d.first_name,
-            last_name: d.last_name,
-            email: d.email,
-            phone: d.phone,
-            country: a.country,
-            postcode: a.postcode
-             })
+        name: d.name,
+        first_name: d.first_name,
+        last_name: d.last_name,
+        email: d.email,
+        phone: d.phone,
+        country: a.country,
+        postcode: a.postcode
+      })
     else
       ch
     end
   end
 end
 
-
 defimpl Proca.Contact.Data, for: Proca.Contact.BasicData do
-  alias Proca.Contact.{Data, BasicData, Input}
+  alias Proca.Contact.BasicData
   alias Proca.Contact
 
   def to_contact(data, _action_page) do

@@ -23,7 +23,6 @@ defmodule Proca.Contact.EciData do
     embeds_one :nationality, Input.Nationality
   end
 
-
   def validate_document_type(ch, []) do
     ch
   end
@@ -37,7 +36,10 @@ defmodule Proca.Contact.EciData do
   def validate_document_number(ch = %{changes: %{document_type: dt}}, country_of_nationality) do
     ch
     |> validate_required([:document_number])
-    |> validate_format(:document_number, EciDataRules.document_number_format(country_of_nationality, dt))
+    |> validate_format(
+      :document_number,
+      EciDataRules.document_number_format(country_of_nationality, dt)
+    )
   end
 
   def validate_document_number(ch, _n) do
@@ -45,21 +47,24 @@ defmodule Proca.Contact.EciData do
   end
 
   def validate_nationality(ch = %{valid?: true}) do
-    nationality = get_change(ch, :nationality)
-    |> validate_inclusion(:country, EciDataRules.countries)
+    nationality =
+      get_change(ch, :nationality)
+      |> validate_inclusion(:country, EciDataRules.countries())
 
-    nationality = if nationality.valid? do
-      case get_change(nationality, :country) do
-        nil -> nationality
+    nationality =
+      if nationality.valid? do
+        case get_change(nationality, :country) do
+          nil ->
+            nationality
 
-        country ->
-          nationality
-          |> validate_document_type(EciDataRules.required_document_types(country))
-          |> validate_document_number(country)
+          country ->
+            nationality
+            |> validate_document_type(EciDataRules.required_document_types(country))
+            |> validate_document_number(country)
+        end
+      else
+        nationality
       end
-    else
-      nationality
-    end
 
     put_embed(ch, :nationality, nationality)
   end
@@ -70,15 +75,19 @@ defmodule Proca.Contact.EciData do
     country = get_change(ch, :nationality) |> get_change(:country)
     address_fields = [:country, :locality, :postcode, :street, :street_number]
 
-    required_address_fields = EciDataRules.required(country)
-    |> Enum.filter(&Enum.member?(address_fields, &1))
+    required_address_fields =
+      EciDataRules.required(country)
+      |> Enum.filter(&Enum.member?(address_fields, &1))
 
     case get_change(ch, :address) do
-      nil -> ch
+      nil ->
+        ch
+
       address ->
-        address = address
-        |> validate_required(required_address_fields)
-        |> validate_format(:postcode, EciDataRules.postcode_format(country))
+        address =
+          address
+          |> validate_required(required_address_fields)
+          |> validate_format(:postcode, EciDataRules.postcode_format(country))
 
         put_embed(ch, :address, address)
     end
@@ -90,38 +99,41 @@ defmodule Proca.Contact.EciData do
     country = get_change(ch, :nationality) |> get_change(:country)
     personal_fields = [:first_name, :last_name, :birth_date]
 
-    required_fields = EciDataRules.required(country)
-    |> Enum.filter(&Enum.member?(personal_fields, &1))
+    required_fields =
+      EciDataRules.required(country)
+      |> Enum.filter(&Enum.member?(personal_fields, &1))
 
     ch
     |> validate_required(required_fields)
-    |> Input.validate_older(:birth_date,  EciDataRules.age_limit(country))
+    |> Input.validate_older(:birth_date, EciDataRules.age_limit(country))
   end
 
   @behaviour Input
   @impl Input
   def from_input(params) do
-    ch = params
-    |> Input.Contact.changeset()
-    |> validate_required(:nationality)
-    |> validate_nationality()
-    |> validate_address()
-    |> validate_personal()
+    ch =
+      params
+      |> Input.Contact.changeset()
+      |> validate_required(:nationality)
+      |> validate_nationality()
+      |> validate_address()
+      |> validate_personal()
 
     if ch.valid? do
-      d = apply_changes ch
+      d = apply_changes(ch)
       a = Map.get(d, :address) || %Input.Address{}
+
       change(%EciData{}, %{
-            first_name: d.first_name,
-            last_name: d.last_name,
-            birth_date: d.birth_date,
-            nationality: d.nationality,
-            country: a.country,
-            postcode: a.postcode,
-            city: a.locality,
-            street: a.street,
-            street_number: a.street_number
-             })
+        first_name: d.first_name,
+        last_name: d.last_name,
+        birth_date: d.birth_date,
+        nationality: d.nationality,
+        country: a.country,
+        postcode: a.postcode,
+        city: a.locality,
+        street: a.street,
+        street_number: a.street_number
+      })
     else
       ch
     end
@@ -132,29 +144,31 @@ defimpl Proca.Contact.Data, for: Proca.Contact.EciData do
   alias Proca.Contact.EciData
   alias Proca.Contact
 
-  def to_contact(%EciData{} = data, _action_page) do
+  def to_contact(data = %EciData{}, _action_page) do
     Contact.build(data)
   end
 
   def fingerprint(%EciData{
         nationality: %{country: c, document_number: dn, document_type: dt}
-                  }) when not is_nil(dn) and not is_nil(dt) and not is_nil(c) do
+      })
+      when not is_nil(dn) and not is_nil(dt) and not is_nil(c) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
     hash = :crypto.hash(:sha256, seed <> c <> dt <> dn)
     hash
   end
 
-  def fingerprint(%EciData{} = data) do
+  def fingerprint(data = %EciData{}) do
     seed = Application.get_env(:proca, Proca.Supporter)[:fpr_seed]
 
-    cont = [:country, :first_name, :last_name, :birth_date, :postcode]
-    |> Enum.reduce("", fn f, s ->
-      if f == :birth_date and data.birth_date do
-        s <> Date.to_string(data.birth_date)
-      else
-        s <> Map.get(data, f, "")
-      end
-    end)
+    cont =
+      [:country, :first_name, :last_name, :birth_date, :postcode]
+      |> Enum.reduce("", fn f, s ->
+        if f == :birth_date and data.birth_date do
+          s <> Date.to_string(data.birth_date)
+        else
+          s <> Map.get(data, f, "")
+        end
+      end)
 
     :crypto.hash(:sha256, seed <> cont)
   end

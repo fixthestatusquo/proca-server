@@ -1,4 +1,7 @@
 defmodule ProcaWeb.Plugs.JwtAuthPlug do
+  @moduledoc """
+  A plug that reads JWT from Authorization header and authenticates the user
+  """
   @behaviour Plug
 
   alias Plug.Conn
@@ -10,7 +13,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
 
   @pow_config [otp_app: :proca]
 
- #   Absinthe.Plug.put_options(conn, context: context)
+  #   Absinthe.Plug.put_options(conn, context: context)
   def init(opts), do: opts
 
   def call(conn, opts) do
@@ -25,14 +28,16 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   """
   def jwt_auth(conn, param) do
     with token when not is_nil(token) <- get_token(conn, param),
-         {true, jwt, _sig} <- Proca.Server.Jwks.verify(token)
-      do
+         {true, jwt, _sig} <- Proca.Server.Jwks.verify(token) do
       conn
       |> get_or_create_user(jwt)
     else
       {false, _, _} ->
         error_halt(conn, 401, "unauthorized", "JWT token invalid")
-      nil -> conn # no token
+
+      # no token
+      nil ->
+        conn
     end
   end
 
@@ -46,12 +51,14 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
             }
           }
         }
-      } -> case Repo.get_by(User, email: email) do
-             nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config)
-             user -> Plug.assign_current_user(conn, user, User.pow_config)
-           end
+      } ->
+        case Repo.get_by(User, email: email) do
+          nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config())
+          user -> Plug.assign_current_user(conn, user, User.pow_config())
+        end
 
-      _ -> conn
+      _ ->
+        conn
     end
   end
 
@@ -69,21 +76,22 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
 
   defp add_to_context(conn) do
     case conn.assigns.user do
-      %User{} = u -> 
+      %User{} = u ->
         Absinthe.Plug.put_options(conn, context: %{user: u})
-      nil -> conn
+
+      nil ->
+        conn
     end
   end
 
   defp add_to_session(conn, nil), do: conn
-  
+
   defp add_to_session(conn, false), do: conn
 
   defp add_to_session(conn, true) do
     case conn.assigns.user do
-      user = %User{} -> conn
-        |> Session.create(user, @pow_config) |> elem(0)
-        _ -> conn
+      user = %User{} -> conn |> Session.create(user, @pow_config) |> elem(0)
+      _ -> conn
     end
   end
 end
