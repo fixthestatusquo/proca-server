@@ -44,7 +44,7 @@ defmodule Proca.Contact.EciData do
     ch
   end
 
-  def validate_nationality(ch) do
+  def validate_nationality(ch = %{valid?: true}) do
     nationality = get_change(ch, :nationality)
     |> validate_inclusion(:country, EciDataRules.countries)
 
