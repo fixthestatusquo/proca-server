@@ -1,5 +1,4 @@
 defmodule Proca.Action do
-
   @moduledoc """
   Record for action done by supporter. Supporter can have many actions, but
   actions can be created without a supporter with intention, to match them later
@@ -13,7 +12,6 @@ defmodule Proca.Action do
   import Ecto.Query
   alias Proca.{Action, Supporter, Field}
   alias Proca.Repo
-
 
   schema "actions" do
     field :ref, :binary
@@ -56,10 +54,13 @@ defmodule Proca.Action do
     |> put_supporter_or_ref(supporter, action_page)
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
-    |> put_assoc(:fields, case attrs do
-                            %{fields: fields} -> Field.changesets(fields)
-                            _ -> []
-                          end)
+    |> put_assoc(
+      :fields,
+      case attrs do
+        %{fields: fields} -> Field.changesets(fields)
+        _ -> []
+      end
+    )
   end
 
   @doc """
@@ -71,9 +72,11 @@ defmodule Proca.Action do
   end
 
   def get_by_id(action_id) do
-    from(a in Action, where: a.id == ^action_id,
+    from(a in Action,
+      where: a.id == ^action_id,
       preload: [:campaign, [action_page: :org], [supporter: :contacts], :fields],
-      limit: 1)
-    |> Repo.one
+      limit: 1
+    )
+    |> Repo.one()
   end
 end

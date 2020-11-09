@@ -1,7 +1,8 @@
 defmodule Proca.Contact.Input do
+  @moduledoc """
+  When api resolver validates contact map, it can use these helper funcitons.
+  """
   alias Ecto.Changeset
-  alias Proca.{ActionPage, Contact}
-  alias Proca.Contact.Input
   import Ecto.Changeset
 
   @doc """
@@ -9,7 +10,9 @@ defmodule Proca.Contact.Input do
   """
   @callback from_input(map()) :: Changeset.t
 
-  @email_format Regex.compile! "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$"
+  @email_format Regex.compile!(
+                  "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$"
+                )
   def validate_email(chst, field) do
     chst
     |> Changeset.validate_format(field, @email_format)
@@ -24,10 +27,12 @@ defmodule Proca.Contact.Input do
   def validate_older(chst, field, years) do
     {:ok, today} = DateTime.now("Etc/UTC")
     today = DateTime.to_date(today)
+
     Changeset.validate_change(chst, field, fn field, dt ->
       case Date.compare(today, %{dt | year: dt.year + years}) do
         :gt -> []
-        :eq -> []  # year is complete day before anniversary of birth
+        # year is complete day before anniversary of birth
+        :eq -> []
         :lt -> [{field, {"Age below limit", [minimum_age: years]}}]
       end
     end)
@@ -40,7 +45,7 @@ defmodule Proca.Contact.Input do
     end)
   end
 
-  def validate_country_format(%Ecto.Changeset{} = ch) do
+  def validate_country_format(ch = %Ecto.Changeset{}) do
     validate_format(ch, :country, ~r/[A-Z]{2}/)
   end
 end

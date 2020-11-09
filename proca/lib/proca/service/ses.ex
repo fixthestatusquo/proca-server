@@ -1,8 +1,4 @@
 defmodule Proca.Service.SES do
-  alias Proca.Service.EmailTemplate
-  alias Proca.Repo
-  alias Proca.{Service, Supporter, Action}
-
   @moduledoc """
   This module lets you send bulk emails via AWS SES.
 
@@ -27,6 +23,11 @@ defmodule Proca.Service.SES do
   - and does not care about the template
   """
 
+  alias Proca.Service.EmailTemplate
+  alias Proca.Repo
+  alias Proca.{Service, Supporter, Action}
+
+
   @doc """
   XXX this method should later keep track of whether EmailTemplate was changed or not...
   """
@@ -35,19 +36,19 @@ defmodule Proca.Service.SES do
     |> Service.aws_request(:ses, org)
   end
 
-  def send_batch([%Supporter{} | _] = supporters, org, template) do
+  def send_batch(supporters = [%Supporter{} | _], org, template) do
     org = Repo.preload(org, [:services])
     create_template(org, template)
 
     ExAws.SES.send_bulk_templated_email(
       template.ref,
       "dump@cahoots.pl",
-      supporters_to_recipients(supporters))
+      supporters_to_recipients(supporters)
+    )
     |> Service.aws_request(:ses, org)
   end
 
-
-  def send_batch([%Action{} | _] = actions, org, template) do
+  def send_batch(actions = [%Action{} | _], org, template) do
     actions
     |> Enum.map(fn a -> a.supporter end)
     |> send_batch(org, template)
@@ -59,15 +60,18 @@ defmodule Proca.Service.SES do
 
   def supporters_to_recipients(supporters) do
     supporters
-    |> Enum.map(fn s -> %{
-                        destination: %{
-                          to: [s.email],
-                          cc: [], bcc: []
-                        },
-                        replacement_template_data: %{
-                          "firstName" => s.first_name,
-                          "email" => s.email
-                        }
-                    } end)
+    |> Enum.map(fn s ->
+      %{
+        destination: %{
+          to: [s.email],
+          cc: [],
+          bcc: []
+        },
+        replacement_template_data: %{
+          "firstName" => s.first_name,
+          "email" => s.email
+        }
+      }
+    end)
   end
 end

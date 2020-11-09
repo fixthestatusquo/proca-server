@@ -17,16 +17,18 @@ defmodule ProcaWeb.Campaigns do
       }
       """
 
-      res = conn
-      |> api_post(query)
-      |> json_response(200)
+      res =
+        conn
+        |> api_post(query)
+        |> json_response(200)
 
-      assert res == %{"data" => %{"campaigns" =>
-                                   [
-                                     %{"id" => action_page.campaign.id, "title" => action_page.campaign.title}
-                                   ]
-                                 }
-                     }
+      assert res == %{
+               "data" => %{
+                 "campaigns" => [
+                   %{"id" => action_page.campaign.id, "title" => action_page.campaign.title}
+                 ]
+               }
+             }
     end
 
     test "filter campaigns by title", %{conn: conn, org: org} do
@@ -40,12 +42,15 @@ defmodule ProcaWeb.Campaigns do
       }
       """
 
-      res = conn
-      |> api_post(query)
-      |> json_response(200)
+      res =
+        conn
+        |> api_post(query)
+        |> json_response(200)
 
-      assert Enum.map(res["data"]["campaigns"], &Map.get(&1, "title")) == ["Save the whales!", "Donate for blue whale"]
+      assert Enum.map(res["data"]["campaigns"], &Map.get(&1, "title")) == [
+               "Save the whales!",
+               "Donate for blue whale"
+             ]
     end
   end
-
 end

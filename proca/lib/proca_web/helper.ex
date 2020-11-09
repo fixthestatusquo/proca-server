@@ -1,4 +1,7 @@
 defmodule ProcaWeb.Helper do
+  @moduledoc """
+  Helper functions for formatting errors from resolvers
+  """
   alias Ecto.Changeset
   import Ecto.Changeset
   alias Proca.{ActionPage, Campaign, Staffer}
@@ -26,16 +29,18 @@ defmodule ProcaWeb.Helper do
   1. a list -> run recursively for each element, concatenate the result
   2. map with keys mapped to errors -> get each key and pass it futher
   """
-  defp flatten_errors(errors, path \\ [])
+  def flatten_errors(errors, path \\ [])
 
   # handle messages list (it's a list of %{message: "123"})
-  defp flatten_errors([], _), do: []
-  defp flatten_errors([%{message: msg} = m | other_msg], path = [lastkey | _]) when map_size(m) == 1 do
+  def flatten_errors([], _), do: []
+
+  def flatten_errors([%{message: msg} = m | other_msg], path = [lastkey | _])
+       when map_size(m) == 1 do
     [%{message: "#{lastkey}: #{msg}", path: Enum.reverse(path)} | flatten_errors(other_msg, path)]
   end
 
   # handle an associated list (like has_many)
-  defp flatten_errors(lst, path) when is_list(lst) do
+  def flatten_errors(lst, path) when is_list(lst) do
     lst
     |> Enum.with_index()
     |> Enum.map(fn {e, i} ->
@@ -45,11 +50,11 @@ defmodule ProcaWeb.Helper do
   end
 
   # handle an associated map (like has_one)
-  defp flatten_errors(map, path) when is_map(map) do
+  def flatten_errors(map, path) when is_map(map) do
     map
     |> Map.keys()
     |> Enum.map(fn k ->
-      flatten_errors(Map.get(map, k), [k|path])
+      flatten_errors(Map.get(map, k), [k | path])
     end)
     |> Enum.concat()
   end
@@ -62,26 +67,23 @@ defmodule ProcaWeb.Helper do
     end
   end
 
-  def can_manage?(%Campaign{} = campaign, user, callback) do
+  def can_manage?(campaign = %Campaign{}, user, callback) do
     with org_id <- Map.get(campaign, :org_id),
          staffer <- Staffer.for_user_in_org(user, org_id),
-           true <- Permission.can?(staffer, [:use_api, :manage_campaigns, :manage_action_pages])
-      do
+         true <- Permission.can?(staffer, [:use_api, :manage_campaigns, :manage_action_pages]) do
       callback.(campaign)
-      else
-        _ -> {:error, "User cannot manage this campaign"}
+    else
+      _ -> {:error, "User cannot manage this campaign"}
     end
   end
 
-  def can_manage?(%ActionPage{} = action_page, user, callback) do
+  def can_manage?(action_page = %ActionPage{}, user, callback) do
     with org_id <- Map.get(action_page, :org_id),
          staffer <- Staffer.for_user_in_org(user, org_id),
-           true <- Permission.can?(staffer, [:use_api, :manage_action_pages])
-      do
+         true <- Permission.can?(staffer, [:use_api, :manage_action_pages]) do
       callback.(action_page)
-      else
-        _ -> {:error, "User cannot manage this action page"}
+    else
+      _ -> {:error, "User cannot manage this action page"}
     end
   end
-
 end

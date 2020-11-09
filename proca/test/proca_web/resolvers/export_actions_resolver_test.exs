@@ -14,7 +14,7 @@ defmodule ProcaWeb.ExportActionResolverTest do
     %{org: org, pages: [ap]} = blue_story()
 
     admin = Factory.insert(:staffer, org: org, perms: @export_via_api_perms)
-    actions = Factory.insert_list(3, :action,  %{action_page: ap, action_type: "signature"})
+    actions = Factory.insert_list(3, :action, %{action_page: ap, action_type: "signature"})
 
     %{
       org: org,
@@ -24,23 +24,45 @@ defmodule ProcaWeb.ExportActionResolverTest do
     }
   end
 
-  test "exportAction for org", %{org: org, action_page: ap, actions: actions, admin: %{user: user}} do
-    {:ok, l} = ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{context: %{user: user}})
+  test "exportAction for org", %{
+    org: org,
+    action_page: ap,
+    actions: actions,
+    admin: %{user: user}
+  } do
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{
+        context: %{user: user}
+      })
 
     assert Enum.count(l) == 3
   end
 
-
-  test "exportAction onlyOptIn filter", %{org: org, action_page: ap, actions: actions, admin: %{user: user}} do
-    [a| _] = actions
+  test "exportAction onlyOptIn filter", %{
+    org: org,
+    action_page: ap,
+    actions: actions,
+    admin: %{user: user}
+  } do
+    [a | _] = actions
     [c] = a.supporter.contacts
 
-    change(c, communication_consent: false) |> Repo.update!
+    change(c, communication_consent: false) |> Repo.update!()
 
-    {:ok, l} = ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{context: %{user: user}})
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{
+        context: %{user: user}
+      })
+
     assert Enum.count(l) == 2
 
-    {:ok, l} = ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name, only_opt_in: false}, %{context: %{user: user}})
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_actions(
+        nil,
+        %{org_name: ap.org.name, only_opt_in: false},
+        %{context: %{user: user}}
+      )
+
     assert Enum.count(l) == 3
   end
 end

@@ -1,12 +1,10 @@
 defmodule Proca.Server.Processing do
   use GenServer
   alias Proca.Repo
-  alias Proca.{Action, ActionPage, Supporter, PublicKey, Field, Contact}
+  alias Proca.{Action, ActionPage, Supporter, Field}
   alias Proca.Server.Plumbing
   import Proca.Stage.Support, only: [action_data: 1]
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-  import Logger
 
   @moduledoc """
   For these cases:
@@ -93,8 +91,7 @@ defmodule Proca.Server.Processing do
   @doc """
   This function implements the state machine for Action. It returns a changeset to update action/supporter (state) and atoms telling where to route action.
   """
-  @spec transition(Action, ActionPage) ::
-          {Ecto.Changeset, :action | :supporter, :confirm | :deliver} | :ok
+  @spec transition(%Action{}, %ActionPage{}) :: :ok | {Ecto.Changeset.t(%Action{}), :action | :supporter, :confirm | :deliver}
   def transition(
         %{
           processing_status: :new,
@@ -149,11 +146,11 @@ defmodule Proca.Server.Processing do
   end
 
   def transition(
-    %{
-      processing_status: :delivered
-    },
-    _ap
-  ) do
+        %{
+          processing_status: :delivered
+        },
+        _ap
+      ) do
     # Action already delivered
     :ok
   end
@@ -172,20 +169,20 @@ defmodule Proca.Server.Processing do
   """
   @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
   def emit(action, :action, :deliver) do
-
-    routing = if action.action_page.org.custom_action_deliver do
-      "#{action.action_page.org.name}.custom.action"
-    else
-      "#{action.action_page.org.name}.system.action"
-    end
+    routing =
+      if action.action_page.org.custom_action_deliver do
+        "#{action.action_page.org.name}.custom.action"
+      else
+        "#{action.action_page.org.name}.system.action"
+      end
 
     data = action_data(action)
 
     with :ok <- Plumbing.push(exchange_for(:action, :deliver), routing, data),
          :ok <- clear_transient(action) do
       :ok
-      else
-        _ -> :error
+    else
+      _ -> :error
     end
   end
 
@@ -197,14 +194,12 @@ defmodule Proca.Server.Processing do
     "deliver"
   end
 
-
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
-    # action = Action.get_by_id(action.id)
     action = Repo.preload(action, action_page: :org, supporter: :contacts)
 
     case transition(action, action.action_page) do
-      {state_change, thing, stage} ->
+      {state_change, thing, stage} -> 
         Repo.transaction(fn ->
           case emit(action, thing, stage) do
             :ok -> Repo.update!(state_change)
@@ -213,8 +208,7 @@ defmodule Proca.Server.Processing do
         end)
         :ok
 
-      :ok ->
-        :ok
+      :ok -> :ok
     end
   end
 

@@ -1,4 +1,7 @@
 defmodule ProcaWeb.Schema do
+  @moduledoc """
+  Main API schema. See schema/ for details.
+  """
   use Absinthe.Schema
 
   import_types(ProcaWeb.Schema.DataTypes)
@@ -8,18 +11,18 @@ defmodule ProcaWeb.Schema do
   import_types(ProcaWeb.Schema.SubscriptionTypes)
 
   query do
-    import_fields :campaign_queries
-    import_fields :action_queries
-    import_fields :org_queries
+    import_fields(:campaign_queries)
+    import_fields(:action_queries)
+    import_fields(:org_queries)
   end
 
   mutation do
-    import_fields :campaign_mutations
-    import_fields :action_mutations
-    import_fields :org_mutations
+    import_fields(:campaign_mutations)
+    import_fields(:action_mutations)
+    import_fields(:org_mutations)
   end
 
   subscription do
-    import_fields :updates
+    import_fields(:updates)
   end
 end

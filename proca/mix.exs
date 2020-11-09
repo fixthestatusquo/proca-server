@@ -75,7 +75,7 @@ defmodule Proca.MixProject do
       {:pow, "~> 1.0.20"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:logger_file_backend, "~> 0.0.11"},
+      {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this
       {:mix_systemd, "~> 0.7.3"},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.4", only: :test},

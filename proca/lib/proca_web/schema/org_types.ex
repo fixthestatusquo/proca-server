@@ -2,7 +2,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
   @moduledoc """
   API for org entities
   """
-  
+
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.Authorized
@@ -10,7 +10,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
   object :org_queries do
     @desc "Organization api (authenticated)"
     field :org, :org do
-      middleware Authorized
+      middleware(Authorized)
 
       @desc "Name of organisation"
       arg(:name, non_null(:string))
@@ -21,22 +21,22 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org_mutations do
     field :update_org, type: :org do
-      middleware Authorized
+      middleware(Authorized)
 
       @desc "Name of organisation, used for lookup, can't be used to change org name"
-      arg :name, non_null(:string)
+      arg(:name, non_null(:string))
 
       @desc "Organisation title (human readable name)"
-      arg :title, :string
+      arg(:title, :string)
 
       @desc "Schema for contact personal information"
-      arg :contact_schema, :contact_schema
+      arg(:contact_schema, :contact_schema)
 
       @desc "Email opt in enabled"
-      arg :email_opt_in, :boolean
+      arg(:email_opt_in, :boolean)
 
       @desc "Email opt in template name"
-      arg :email_opt_in_template, :string
+      arg(:email_opt_in_template, :string)
 
       resolve(&Resolvers.Org.update_org/3)
     end
@@ -53,11 +53,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :title, :string
 
     field :personal_data, non_null(:personal_data) do
-      resolve &Resolvers.Org.org_personal_data/3
+      resolve(&Resolvers.Org.org_personal_data/3)
     end
 
     field :keys, non_null(list_of(non_null(:key))) do
-      resolve &Resolvers.Org.list_keys/3
+      resolve(&Resolvers.Org.list_keys/3)
     end
 
     # TODO:
@@ -81,46 +81,27 @@ defmodule ProcaWeb.Schema.OrgTypes do
     #
     #  field :sqs_deliver, :boolean
 
-
     @desc "List campaigns this org is leader or partner of"
     field :campaigns, list_of(:campaign) do
-      resolve &Resolvers.Org.campaigns/3
+      resolve(&Resolvers.Org.campaigns/3)
     end
 
     @desc "List action pages this org has"
     field :action_pages, list_of(:action_page) do
-      resolve &Resolvers.Org.action_pages/3
+      resolve(&Resolvers.Org.action_pages/3)
     end
 
-    @dest "Action Page"
+    @desc "Action Page"
     field :action_page, :action_page do
-      arg :id, :integer
-      arg :name, :string
-      resolve &Resolvers.Org.action_page/3
+      arg(:id, :integer)
+      arg(:name, :string)
+      resolve(&Resolvers.Org.action_page/3)
     end
 
     @desc "Get campaign this org is leader or partner of by id"
     field :campaign, :campaign do
-      arg :id, :integer
-      resolve &Resolvers.Org.campaign_by_id/3
-    end
-
-    @desc """
-    Get signatures this org has collected.
-    Provide campaign_id to only get signatures for a campaign
-    XXX DEPRECATE AND REMOVE
-    """
-    field :signatures, :signature_list do
-      @desc "return only signatures for campaign id"
-      arg :campaign_id, :integer
-      @desc "return only signatures with id starting from this argument (inclusive)"
-      arg :start, :integer
-      @desc "return only signatures created at date time from this argument (inclusive)"
-      arg :after, :datetime
-      @desc "Limit the number of returned signatures"
-      arg :limit, :integer
-
-      resolve &Resolvers.Org.signatures/3
+      arg(:id, :integer)
+      resolve(&Resolvers.Org.campaign_by_id/3)
     end
   end
 
@@ -133,8 +114,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   enum :contact_schema do
-    value :basic
-    value :popular_initiative
+    value(:basic)
+    value(:popular_initiative)
   end
 
   object :personal_data do
@@ -154,30 +135,5 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :public, non_null(:string)
     field :name, :string
     field :expired_at, :datetime
-  end
-
-  object :signature_list do
-    @desc "Public key of sender (proca app), in Base64url encoding (RFC 4648 5.)"
-    field :public_key, :string
-    @desc "List of returned signatures"
-    field :list, list_of(:signature)
-  end
-
-
-  object :signature do
-    @desc "Signature id"
-    field :id, :integer
-    @desc "DateTime of signature (UTC)"
-    field :created, :datetime
-    @desc "Encryption nonce in Base64url"
-    field :nonce, :string
-    @desc "Encrypted contact data in Base64url"
-    field :contact, :string
-    @desc "Campaign id"
-    field :campaign_id, :integer
-    @desc "Action page id"
-    field :action_page_id, :integer
-    @desc "Opt in given when adding sig"
-    field :opt_in, :boolean
   end
 end

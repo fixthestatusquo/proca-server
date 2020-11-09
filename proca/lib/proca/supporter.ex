@@ -1,4 +1,8 @@
 defmodule Proca.Supporter do
+  @moduledoc """
+  Supporter is the actor that does actions.
+  Has associated contacts, which contain personal data dediacted to every receiving org
+  """
   use Ecto.Schema
   alias Proca.Repo
   alias Proca.{Supporter, Contact, ActionPage}
@@ -32,8 +36,7 @@ defmodule Proca.Supporter do
     |> validate_required([])
   end
 
-  @spec new_supporter(struct(), ActionPage) :: Ecto.Changeset.t(Supporter)
-  def new_supporter(data, action_page) do
+  def new_supporter(data, action_page = %ActionPage{}) do
     %Supporter{}
     |> change(Map.take(data, ActionPage.kept_personalization_fields(action_page)))
     |> change(%{fingerprint: Data.fingerprint(data)})
@@ -41,20 +44,26 @@ defmodule Proca.Supporter do
     |> put_assoc(:action_page, action_page)
   end
 
-  @spec add_contacts(Ecto.Changeset.t, Ecto.Changeset.t, ActionPage, Privacy) :: Ecto.Changeset.t
-  def add_contacts(new_supporter, new_contact, action_page, privacy) do
-    with consents <- Proca.Supporter.Privacy.consents(action_page, privacy),
-         contacts <- Contact.spread(new_contact, consents) do
-      new_supporter
-      |> put_assoc(:contacts, contacts)
-    end
+  # @spec add_contacts(Ecto.Changeset.t(Supporter), Ecto.Changeset.t(Contact), %ActionPage{}, %Privacy{}) :: Ecto.Changeset.t(Supporter)
+  def add_contacts(
+    new_supporter = %Ecto.Changeset{},
+    new_contact = %Ecto.Changeset{},
+    action_page = %ActionPage{},
+    privacy = %Privacy{}
+  ) do
+
+    consents = Privacy.consents(action_page, privacy)
+    contacts = Contact.spread(new_contact, consents)
+
+    new_supporter
+    |> put_assoc(:contacts, contacts)
   end
 
-  def privacy_defaults(%{opt_in: _opt_in, lead_opt_in: _lead_opt_in} = p) do
+  def privacy_defaults(p = %{opt_in: _opt_in, lead_opt_in: _lead_opt_in}) do
     p
   end
 
-  def privacy_defaults(%{opt_in: _opt_in} = p) do
+  def privacy_defaults(p = %{opt_in: _opt_in}) do
     Map.put(p, :lead_opt_in, false)
   end
 
@@ -82,6 +91,9 @@ defmodule Proca.Supporter do
   end
 
   def transient_fields(supporter) do
-    from(s in Supporter, where: s.id == ^supporter.id, update: [set: [first_name: nil, email: nil]])
+    from(s in Supporter,
+      where: s.id == ^supporter.id,
+      update: [set: [first_name: nil, email: nil]]
+    )
   end
 end

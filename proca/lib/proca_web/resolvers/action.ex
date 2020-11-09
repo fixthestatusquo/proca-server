@@ -1,6 +1,10 @@
 defmodule ProcaWeb.Resolvers.Action do
+  @moduledoc """
+  Resolvers for action related mutations
+  """
   # import Ecto.Query
   import Ecto.Changeset
+  import Logger
   alias Ecto.Multi
 
   alias Proca.{Supporter, Action, ActionPage, Contact, Source}
@@ -71,29 +75,32 @@ defmodule ProcaWeb.Resolvers.Action do
 
   def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, _) do
     case Multi.new()
-    |> Multi.run(:action_page, fn repo, _m ->
-      get_action_page(params)
-    end)
-    |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
-      Helper.validate(ActionPage.new_data(contact, action_page))
-    end)
-    |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page} ->
-      Supporter.new_supporter(data, action_page)
-      |> Supporter.add_contacts(Data.to_contact(data, action_page), action_page, struct!(Privacy, priv)) 
-      |> add_tracking(params)
-      |> repo.insert()
-    end)
-    |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page} ->
-      Action.create_for_supporter(action, supporter, action_page)
-      |> add_tracking(params)
-      |> put_change(:with_consent, true)
-      |> repo.insert()
-    end)
-    |> Multi.run(:link_references, fn repo, %{supporter: supporter} ->
-      {:ok, link_references(supporter, params)}
-    end)
-    |> Repo.transaction()
-      do
+         |> Multi.run(:action_page, fn repo, _m ->
+           get_action_page(params)
+         end)
+         |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
+           Helper.validate(ActionPage.new_data(contact, action_page))
+         end)
+         |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page} ->
+           Supporter.new_supporter(data, action_page)
+           |> Supporter.add_contacts(
+             Data.to_contact(data, action_page),
+             action_page,
+             struct!(Privacy, priv)
+           )
+           |> add_tracking(params)
+           |> repo.insert()
+         end)
+         |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page} ->
+           Action.create_for_supporter(action, supporter, action_page)
+           |> add_tracking(params)
+           |> put_change(:with_consent, true)
+           |> repo.insert()
+         end)
+         |> Multi.run(:link_references, fn repo, %{supporter: supporter} ->
+           {:ok, link_references(supporter, params)}
+         end)
+         |> Repo.transaction() do
       {:ok, %{supporter: supporter, action: action}} ->
         Notify.action_created(action, true)
         {:ok, output(supporter)}
@@ -106,25 +113,23 @@ defmodule ProcaWeb.Resolvers.Action do
 
       _e ->
         {:error, "other error?"}
-
     end
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, _) do
     case Multi.new()
-    |> Multi.run(:action_page, fn repo, _m ->
-      get_action_page(params)
-    end)
-    |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->
-      get_supporter(action_page, params)
-    end)
-    |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter} ->
-      Action.create_for_supporter(action_attrs, supporter, action_page)
-      |> add_tracking(params)
-      |> repo.insert()
-    end)
-    |> Repo.transaction()
-      do
+         |> Multi.run(:action_page, fn repo, _m ->
+           get_action_page(params)
+         end)
+         |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->
+           get_supporter(action_page, params)
+         end)
+         |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter} ->
+           Action.create_for_supporter(action_attrs, supporter, action_page)
+           |> add_tracking(params)
+           |> repo.insert()
+         end)
+         |> Repo.transaction() do
       {:ok, %{supporter: supporter, action: action}} ->
         Notify.action_created(action, false)
         {:ok, output(supporter)}
@@ -133,8 +138,8 @@ defmodule ProcaWeb.Resolvers.Action do
         {:error, Helper.format_errors(changeset)}
 
       {:error, v, msg, ch} ->
-        IO.inspect({v, msg, ch}, label: "Second error")
-        {:error, msg}
+             error [why: "unmatched error in addAction", match: {:error, v, msg, ch}]
+             {:error, msg}
 
       _e ->
         {:error, "other error?"}
@@ -143,12 +148,11 @@ defmodule ProcaWeb.Resolvers.Action do
 
   def link_actions(_, params = %{link_refs: refs}, _) do
     with {:ok, action_page} <- get_action_page(params),
-         {:ok, supporter = %Supporter{}} <- get_supporter(action_page, params)
-      do
+         {:ok, supporter = %Supporter{}} <- get_supporter(action_page, params) do
       Action.link_refs_to_supporter(refs, supporter)
       {:ok, output(supporter)}
-      else
-        _ -> {:error, "ActionPage or contact not found"}
+    else
+      _ -> {:error, "ActionPage or contact not found"}
     end
   end
 end

@@ -46,7 +46,8 @@ defmodule Proca.Campaign do
     from(c in Campaign,
       left_join: ap in ActionPage,
       on: c.id == ap.campaign_id,
-      where: ap.org_id == ^org.id or c.org_id == ^org.id)
+      where: ap.org_id == ^org.id or c.org_id == ^org.id
+    )
     |> distinct(true)
   end
 end

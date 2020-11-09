@@ -2,7 +2,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   @moduledoc """
   API for campaign and action page entities
   """
-  
+
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers.Authorized
   alias ProcaWeb.Resolvers
@@ -43,7 +43,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Action Pages will be removed (principle of not removing signature data).
     """
     field :upsert_campaign, type: :campaign do
-      middleware Authorized
+      middleware(Authorized)
 
       @desc "Org name"
       arg(:org_name, non_null(:string))
@@ -71,7 +71,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Deprecated, use upsert_campaign.
     """
     field :declare_campaign, type: :campaign do
-      middleware Authorized
+      middleware(Authorized)
 
       @desc "Org name"
       arg(:org_name, non_null(:string))
@@ -95,13 +95,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Update an Action Page
     """
     field :update_action_page, type: :action_page do
-      middleware Authorized
+      middleware(Authorized)
 
       # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
       @desc """
       Action Page id
       """
-      arg :id, non_null(:integer)
+      arg(:id, non_null(:integer))
 
       @desc """
       Unique NAME identifying ActionPage.
@@ -112,33 +112,32 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       ask for ActionPage by it's current location.href, in which case it is useful
       to make this url match the real idwget location.
       """
-      arg :name, :string
+      arg(:name, :string)
 
       @desc "2-letter, lowercase, code of ActionPage language"
-      arg :locale, :string
+      arg(:locale, :string)
 
       @desc "A reference to thank you email template of this ActionPage"
-      arg :thank_you_template_ref, :string
+      arg(:thank_you_template_ref, :string)
 
       @desc """
       Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. 
       """
-      arg :extra_supporters, :integer
+      arg(:extra_supporters, :integer)
 
       @desc """
       List of steps in the journey (deprecated, pass in config)
       """
-      arg :journey, list_of(non_null(:string))
+      arg(:journey, list_of(non_null(:string)))
 
       @desc """
       JSON string containing Action Page config
       """
-      arg :config, :string
+      arg(:config, :string)
 
       resolve(&Resolvers.ActionPage.update/3)
     end
   end
-
 
   object :campaign do
     field :id, :integer
@@ -153,7 +152,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Campaign statistics"
     field :stats, :campaign_stats do
-      resolve &Resolvers.Campaign.stats/3
+      resolve(&Resolvers.Campaign.stats/3)
     end
 
     @desc "Fetch public actions"
@@ -164,7 +163,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     field :org, :public_org
   end
-
 
   object :action_page do
     field :id, :integer
@@ -182,8 +180,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :extra_supporters, :integer
     @desc "Campaign this widget belongs to"
     field :campaign, :campaign do
-      resolve &Resolvers.ActionPage.campaign/3
+      resolve(&Resolvers.ActionPage.campaign/3)
     end
+
     field :org, :public_org
   end
 
@@ -201,8 +200,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :config, :string
     @desc "Campaign this widget belongs to"
     field :campaign, :campaign do
-      resolve &Resolvers.ActionPage.campaign/3
+      resolve(&Resolvers.ActionPage.campaign/3)
     end
+
     field :org, :public_org
   end
 
@@ -246,7 +246,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :config, :string
   end
 
-
   @desc "ActionPage declaration (using the legacy url attribute)"
   input_object :action_page_input_legacy_url do
     field :id, :integer
@@ -257,7 +256,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :journey, list_of(non_null(:string))
     field :config, :string
   end
-
 
   # public counters
   @desc "Campaign statistics"
@@ -277,7 +275,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "count of actions of action type"
     field :count, non_null(:integer)
   end
-
 
   object :action_custom_fields do
     field :action_type, non_null(:string)

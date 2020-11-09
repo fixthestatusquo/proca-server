@@ -1,4 +1,7 @@
 defmodule ProcaWeb.Router do
+  @moduledoc """
+  Main app router
+  """
   use ProcaWeb, :router
   import Phoenix.LiveView.Router
   use Pow.Phoenix.Router

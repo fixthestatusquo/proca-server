@@ -1,8 +1,13 @@
 defmodule Proca.Field do
+  @moduledoc """
+  Custom field.
+
+  Transient fields are removed after being processed (delivered)
+  """
   use Ecto.Schema
   import Ecto.Query
   import Ecto.Changeset
-  alias Proca.{Field,Action}
+  alias Proca.{Field, Action}
 
   schema "fields" do
     field :key, :string
@@ -10,7 +15,6 @@ defmodule Proca.Field do
     field :transient, :boolean
     belongs_to :action, Proca.Action
   end
-
 
   def changesets(custom_fields) when is_list(custom_fields) do
     custom_fields
@@ -31,12 +35,11 @@ defmodule Proca.Field do
   """
   def list_to_map(fields) do
     fields
-    |> Enum.reduce(%{}, fn %{key: k, value: v},
-      acc ->
-        Map.update(acc, k, v, fn
-          l when is_list(l) -> [v | l]
-          v2 -> [v, v2]
-        end)
+    |> Enum.reduce(%{}, fn %{key: k, value: v}, acc ->
+      Map.update(acc, k, v, fn
+        l when is_list(l) -> [v | l]
+        v2 -> [v, v2]
+      end)
     end)
   end
 

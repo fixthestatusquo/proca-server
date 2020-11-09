@@ -1,5 +1,6 @@
 defmodule ProcaWeb.UserSocket do
   use Phoenix.Socket
+
   use Absinthe.Phoenix.Socket,
     schema: ProcaWeb.Schema
 

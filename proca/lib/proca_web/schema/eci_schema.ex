@@ -1,4 +1,7 @@
 defmodule ProcaWeb.Schema.EciSchema do
+  @moduledoc """
+  An alternative API schema (replaces ProcaWeb.Schema) used in ECI build.
+  """
   use Absinthe.Schema
   alias ProcaWeb.Resolvers
 
@@ -27,8 +30,8 @@ defmodule ProcaWeb.Schema.EciSchema do
   mutation do
     @desc "Adds an action with contact data"
     field :add_action_contact, type: :contact_reference do
-      middleware Resolvers.IncludeExtensions
-      middleware Resolvers.Captcha
+      middleware(Resolvers.IncludeExtensions)
+      middleware(Resolvers.Captcha)
 
       arg(:action_page_id, non_null(:integer))
 
@@ -47,7 +50,7 @@ defmodule ProcaWeb.Schema.EciSchema do
       @desc "Links to previous contact reference"
       arg(:contact_ref, :id)
 
-      resolve &Resolvers.Action.add_action_contact/3
+      resolve(&Resolvers.Action.add_action_contact/3)
     end
   end
 end

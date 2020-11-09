@@ -2,32 +2,32 @@ defmodule ProcaWeb.Schema.ActionTypes do
   @moduledoc """
   API for action entities
   """
-  
+
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.Authorized
 
   object :action_queries do
     field :export_actions, list_of(:action) do
-      middleware Authorized
+      middleware(Authorized)
 
       @desc "Organization name"
-      arg :org_name, non_null(:string)
+      arg(:org_name, non_null(:string))
       @desc "Limit results to campaign name"
-      arg :campaign_name, :string
+      arg(:campaign_name, :string)
       @desc "Limit results to campaign id"
-      arg :campaign_id, :integer
+      arg(:campaign_id, :integer)
       @desc "return only actions with id starting from this argument (inclusive)"
-      arg :start, :integer
+      arg(:start, :integer)
       @desc "return only actions created at date time from this argument (inclusive)"
-      arg :after, :datetime
+      arg(:after, :datetime)
       @desc "Limit the number of returned actions"
-      arg :limit, :integer
+      arg(:limit, :integer)
 
       @desc "Only download opted in contacts and actions (default true)"
-      arg :only_opt_in, :boolean
+      arg(:only_opt_in, :boolean)
 
-      resolve &Resolvers.ExportActions.export_actions/3
+      resolve(&Resolvers.ExportActions.export_actions/3)
     end
   end
 
@@ -44,7 +44,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
 
-      resolve &Resolvers.Action.add_action/3
+      resolve(&Resolvers.Action.add_action/3)
     end
 
     @desc "Adds an action with contact data"
@@ -67,7 +67,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Links to previous contact reference"
       arg(:contact_ref, :id)
 
-      resolve &Resolvers.Action.add_action_contact/3
+      resolve(&Resolvers.Action.add_action_contact/3)
     end
 
     @desc "Link actions with refs to contact with contact reference"
@@ -81,7 +81,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Link actions with these references (if unlinked to supporter)"
       arg(:link_refs, list_of(non_null(:string)))
 
-      resolve &Resolvers.Action.link_actions/3
+      resolve(&Resolvers.Action.link_actions/3)
     end
   end
 
@@ -145,13 +145,12 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :document_number, :string
   end
 
-# field :areas -- commented above
-#   @desc "Type to describe an area (identified by area_code) in some administrative division (area_type). Area code can be an official code or just a name, provided they are unique."
-#   input_object :area_input do
-#     field :area_code, :string
-#     field :area_type, :string
-#   end
-
+  # field :areas -- commented above
+  #   @desc "Type to describe an area (identified by area_code) in some administrative division (area_type). Area code can be an official code or just a name, provided they are unique."
+  #   input_object :area_input do
+  #     field :area_code, :string
+  #     field :area_type, :string
+  #   end
 
   @desc "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
   input_object :action_input do
@@ -191,9 +190,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :nonce, :string
     field :public_key, :key
     field :sign_key, :key
- #   field :optIn, non_null(:boolean) <- is in privacy already
+    #   field :optIn, non_null(:boolean) <- is in privacy already
   end
-
 
   @desc "Custom field with a key and value. Both are strings."
   input_object :custom_field_input do
@@ -228,7 +226,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :campaign, non_null(:string)
     field :content, non_null(:string)
   end
-  
+
   @desc "Tracking codes"
   input_object :tracking_input do
     field :source, non_null(:string)
@@ -244,6 +242,4 @@ defmodule ProcaWeb.Schema.ActionTypes do
     @desc "Contacts first name"
     field :first_name, :string
   end
-
-
 end

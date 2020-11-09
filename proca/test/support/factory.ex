@@ -1,4 +1,7 @@
 defmodule Proca.Factory do
+  @moduledoc """
+  Main schema Factory for tests
+  """
   use ExMachina.Ecto, repo: Proca.Repo
   alias Proca.Factory
 
@@ -112,7 +115,7 @@ defmodule Proca.Factory do
     }
   end
 
-  def action_factory(%{action_page: ap, action_type: at} = attrs) do
+  def action_factory(attrs = %{action_page: ap, action_type: at}) do
     s = build(:basic_data_pl_supporter_with_contact, action_page: ap)
     %Proca.Action{
       action_type: at,

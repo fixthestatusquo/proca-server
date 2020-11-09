@@ -27,8 +27,10 @@ defmodule Proca.Service.EmailBackend do
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
   @callback list_templates(org :: %Org{}) :: [%EmailTemplate{}]
-  @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) :: :ok | {:error, reason :: String.t}
-  @callback get_template(org :: %Org{}, ref :: String.t) :: {:ok, %EmailTemplate{}} | {:error, reason :: String.t}
+  @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) ::
+              :ok | {:error, reason :: String.t()}
+  @callback get_template(org :: %Org{}, ref :: String.t()) ::
+              {:ok, %EmailTemplate{}} | {:error, reason :: String.t()}
 
   @type recipient :: %EmailRecipient{}
 
@@ -40,17 +42,18 @@ defmodule Proca.Service.EmailBackend do
     Proca.Service.Mailjet
   end
 
-  def supports_templates?(%Org{template_backend: %Service{name: name}} = org) do
+  def supports_templates?(org = %Org{template_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:supports_templates?, [org])
   end
 
   @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok
-  def deliver(recipients, %Org{email_backend: %Service{name: name}} = org, email_template) do
+  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
 
-    e = %Email{}
-    |> Email.from({org.name, org.email_from})
+    e =
+      %Email{}
+      |> Email.from({org.name, org.email_from})
 
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])

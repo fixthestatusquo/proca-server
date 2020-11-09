@@ -31,14 +31,14 @@ defmodule Proca.Server.Plumbing do
 
   ## Routing:
   The routing keys have such structure in both confirm and deliver exchange:
-  
+
   ```
   org . custom-or-system . type
          ^                   ^
          |                   `-- supporter or action
          --- system if proca processes
               custom if some other system reads from custom queue and GETs callbacks
-  
+
   ```
   ## Data:
 
@@ -82,26 +82,26 @@ defmodule Proca.Server.Plumbing do
 
   @impl true
   def handle_continue(:connect, st) do
-    with {:ok, c} <- AMQP.Connection.open(st.url) do
-      # Inform us when AMQP connection is down
-      Process.monitor(c.pid)
+    case AMQP.Connection.open(st.url) do
+      {:ok, c} ->
+        # Inform us when AMQP connection is down
+        Process.monitor(c.pid)
 
-      # Sets up top level proca exchanges
-      setup_exchanges(c)
-      setup_global_queues(c)
-      setup_org_queues(c)
+        # Sets up top level proca exchanges
+        setup_exchanges(c)
+        setup_global_queues(c)
+        setup_org_queues(c)
 
-      {
-        :noreply,
-        %{st | conn: c}
-      }
-    else
+        {
+          :noreply,
+          %{st | conn: c}
+        }
       {:error, reason} -> {:stop, reason, st}
     end
   end
 
   @impl true
-  def handle_info({:DOWN, _, :process, pid, reason}, %{conn: %{ pid: pid }}) do
+  def handle_info({:DOWN, _, :process, pid, reason}, %{conn: %{pid: pid}}) do
     # Stop GenServer. Will be restarted by Supervisor.
     {:stop, {:connection_lost, reason}, nil}
   end
@@ -110,10 +110,7 @@ defmodule Proca.Server.Plumbing do
 
   @impl true
   def handle_call(:state, _from, st) do
-    {:reply,
-     st,
-     st
-    }
+    {:reply, st, st}
   end
 
   @impl true
@@ -133,7 +130,6 @@ defmodule Proca.Server.Plumbing do
     setup_org_queues(c)
     {:noreply, s}
   end
-
 
   def setup() do
     GenServer.cast(__MODULE__, :setup)
@@ -155,6 +151,7 @@ defmodule Proca.Server.Plumbing do
 
   def setup_exchanges(connection) do
     {:ok, chan} = Channel.open(connection)
+
     try do
       :ok = Exchange.declare(chan, "confirm", :topic, durable: true)
       :ok = Exchange.declare(chan, "deliver", :topic, durable: true)
@@ -164,11 +161,12 @@ defmodule Proca.Server.Plumbing do
   end
 
   def setup_global_queues(connection) do
-    queues =  [
+    queues = [
       {"confirm", "*.system.supporter", "system.email.confirm"},
       {"deliver", "*.system.*", "system.email.thankyou"},
       {"system.sqs"}
     ]
+
     setup_queues(connection, queues)
   end
 
@@ -189,6 +187,7 @@ defmodule Proca.Server.Plumbing do
       {"deliver", "#{org_name}.custom.action", "custom.#{org_name}.deliver"},
       {"deliver", "#{org_name}.system.action", "system.sqs", enable_sqs}
     ]
+
     setup_queues(connection, queues)
   end
 
@@ -216,12 +215,13 @@ defmodule Proca.Server.Plumbing do
     end)
   end
 
-  @spec push(String.t, String.t, map()) :: :ok | :error
+  @spec push(String.t(), String.t(), map()) :: :ok | :error
   def push(exchange, routing_key, data) do
     options = [
       mandatory: true,
       persistent: true
     ]
+
     with_chan(connection(), fn chan ->
       case JSON.encode(data) do
         {:ok, payload} -> publish(chan, exchange, routing_key, payload, options)
@@ -235,25 +235,29 @@ defmodule Proca.Server.Plumbing do
   def setup_queues(connection, queue_defs) do
     with_chan(connection, fn chan ->
       queue_defs
-      |> Enum.each(fn df -> case df  do
-                              {ex, rk, qu} ->
-                                {:ok, _stat} = Queue.declare(chan, qu, durable: true)
-                                :ok = Queue.bind(chan, qu, ex, routing_key: rk)
-                              {qu} ->
-                                {:ok, _stat} = Queue.declare(chan, qu, durable: true)
-                              {ex, rk, qu, opt_bind} ->
-                                if opt_bind do
-                                  :ok = Queue.bind(chan, qu, ex, routing_key: rk)
-                                else
-                                  :ok = Queue.unbind(chan, qu, ex, routing_key: rk)
-                                end
-                            end
+      |> Enum.each(fn df ->
+        case df do
+          {ex, rk, qu} ->
+            {:ok, _stat} = Queue.declare(chan, qu, durable: true)
+            :ok = Queue.bind(chan, qu, ex, routing_key: rk)
+
+          {qu} ->
+            {:ok, _stat} = Queue.declare(chan, qu, durable: true)
+
+          {ex, rk, qu, opt_bind} ->
+            if opt_bind do
+              :ok = Queue.bind(chan, qu, ex, routing_key: rk)
+            else
+              :ok = Queue.unbind(chan, qu, ex, routing_key: rk)
+            end
+        end
       end)
     end)
   end
 
   def with_chan(connection, f) do
     {:ok, chan} = Channel.open(connection)
+
     try do
       apply(f, [chan])
     after

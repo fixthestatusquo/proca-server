@@ -12,22 +12,28 @@ defmodule ContactDataInitiativeTest do
         locality: "Vessy",
         region: "GE",
         country: "CH"
-      }}
+      }
+    }
 
-    assert d = %{valid?: true} = PopularInitiativeData.from_input params
+    assert d = %{valid?: true} = PopularInitiativeData.from_input(params)
     f = Data.fingerprint(apply_changes(d))
     assert byte_size(f) > 0
 
-    assert d = %{valid?: true} = PopularInitiativeData.from_input Map.put(params, :last_name, "Berg")
+    assert d =
+             %{valid?: true} =
+             PopularInitiativeData.from_input(Map.put(params, :last_name, "Berg"))
+
     f = Data.fingerprint(apply_changes(d))
     assert byte_size(f) > 0
 
-    assert d = %{valid?: true} = PopularInitiativeData.from_input Map.put(params, :birth_date, "1983-01-01")
+    assert d =
+             %{valid?: true} =
+             PopularInitiativeData.from_input(Map.put(params, :birth_date, "1983-01-01"))
+
     f = Data.fingerprint(apply_changes(d))
     assert byte_size(f) > 0
 
-    assert d = %{valid?: false} = PopularInitiativeData.from_input (params|>Map.delete(:email))
+    assert d = %{valid?: false} = PopularInitiativeData.from_input(params |> Map.delete(:email))
     assert List.keyfind(d.errors, :email, 0)
-
   end
 end
