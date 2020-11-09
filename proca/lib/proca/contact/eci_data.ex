@@ -151,7 +151,7 @@ defimpl Proca.Contact.Data, for: Proca.Contact.EciData do
       if f == :birth_date and data.birth_date do
         s <> Date.to_string(data.birth_date)
       else
-        s <> Map.get(s, f, "")
+        s <> Map.get(data, f, "")
       end
     end)
 
