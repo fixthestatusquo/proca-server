@@ -1,1 +1,1 @@
-curl https://api.proca.app/api -H "Content-Type: application/json" --data @payload.json 
+curl https://sign.freesharing.eu/api -H "Content-Type: application/json" --data @payload.json 
