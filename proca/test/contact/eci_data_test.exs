@@ -115,10 +115,12 @@ defmodule EciDataTest do
     assert [%{message: "postcode: has invalid format", path: [:address, :postcode]}] = format_errors(c)
   end
 
-  test "Greek with lowercase country name", %{gr: gr} do
+  test "Greek with lowercase country name is upcased", %{gr: gr} do
     d = %{gr | nationality: %{gr.nationality | country: "gr"}}
     c = EciData.from_input(d)
-    assert not c.valid?
-    assert [%{message: "country: is invalid", path: [:nationality, :country]}] = format_errors(c)
+    assert c.valid?
+
+    record = apply_changes(c)
+    assert record.nationality.country == "GR"
   end
 end

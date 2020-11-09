@@ -17,7 +17,7 @@ defmodule Proca.Contact.Input.Contact do
   end
 
   def changeset(ch, params) do
-    ch 
+    ch
     |> cast(params, [:name, :first_name, :last_name, :email, :phone, :birth_date])
     |> cast_embed(:address)
     |> cast_embed(:nationality)

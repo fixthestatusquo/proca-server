@@ -1,6 +1,7 @@
 defmodule Proca.Contact.Input.Address do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Proca.Contact.Input
   @moduledoc "schema for residency address"
 
   embedded_schema do
@@ -13,7 +14,11 @@ defmodule Proca.Contact.Input.Address do
   end
 
   def changeset(ch, params) do
+    params = params
+    |> Input.upcase_country()
+
     ch
     |> cast(params, [:country, :postcode, :region, :locality, :street, :street_number])
+    |> Input.validate_country_format()
   end
 end

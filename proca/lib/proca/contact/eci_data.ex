@@ -79,7 +79,7 @@ defmodule Proca.Contact.EciData do
         address = address
         |> validate_required(required_address_fields)
         |> validate_format(:postcode, EciDataRules.postcode_format(country))
-        
+
         put_embed(ch, :address, address)
     end
   end
@@ -101,7 +101,8 @@ defmodule Proca.Contact.EciData do
   @behaviour Input
   @impl Input
   def from_input(params) do
-    ch = Input.Contact.changeset(params)
+    ch = params
+    |> Input.Contact.changeset()
     |> validate_required(:nationality)
     |> validate_nationality()
     |> validate_address()
