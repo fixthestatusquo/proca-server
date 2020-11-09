@@ -128,6 +128,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       |> filter_after(params)
       |> filter_campaign(params)
       |> filter_optin(params)
+      |> order_by([a], [asc: a.id])
       |> Repo.all()
       |> Enum.map(&format/1)
       |> ok()
