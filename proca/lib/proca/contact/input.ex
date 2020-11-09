@@ -1,6 +1,8 @@
 defmodule Proca.Contact.Input do
   alias Ecto.Changeset
   alias Proca.{ActionPage, Contact}
+  alias Proca.Contact.Input
+  import Ecto.Changeset
 
   @doc """
   Accepts attributes and returns a (virtual) validated data changeset
@@ -29,5 +31,16 @@ defmodule Proca.Contact.Input do
         :lt -> [{field, {"Age below limit", [minimum_age: years]}}]
       end
     end)
+  end
+
+  def upcase_country(params) do
+    Map.update(params, :country, nil, fn
+      cc when is_nil(cc) -> nil
+      cc -> String.upcase(cc)
+    end)
+  end
+
+  def validate_country_format(%Ecto.Changeset{} = ch) do
+    validate_format(ch, :country, ~r/[A-Z]{2}/)
   end
 end
