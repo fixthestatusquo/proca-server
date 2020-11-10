@@ -4,11 +4,11 @@ import {admin, widget, request} from '@proca/api'
 import {getFormatter} from './format'
 import fs from 'fs'
 
-export async function listCampaigns(argv) {
-  const c = client(argv)
+export async function listCampaigns(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.ListCampaignsDocument, {"org": argv.org})
+  const {data, errors} = await request(c, admin.ListCampaignsDocument, {"org": config.org})
   if (errors) throw errors
 
   data.org.campaigns
@@ -18,11 +18,11 @@ export async function listCampaigns(argv) {
     })
 }
 
-export async function getCampaign(argv) {
-  const c = client(argv)
+export async function getCampaign(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
   
-  const {data, errors} = await request(c, admin.GetCampaignDocument, {"org": argv.org, "id": argv.i})
+  const {data, errors} = await request(c, admin.GetCampaignDocument, {"org": config.org, "id": argv.id})
 
   if (errors) throw errors
 
@@ -30,11 +30,11 @@ export async function getCampaign(argv) {
 }
 
 
-export async function listActionPages(argv) {
-  const c = client(argv)
+export async function listActionPages(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.ListActionPagesDocument, {"org": argv.org})
+  const {data, errors} = await request(c, admin.ListActionPagesDocument, {"org": config.org})
   if (errors) throw errors
 
   data.org.actionPages
@@ -43,8 +43,8 @@ export async function listActionPages(argv) {
 }
 
 
-export async function getActionPage(argv) {
-  const c = client(argv)
+export async function getActionPage(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
   let query = admin.GetActionPageDocument
@@ -53,7 +53,7 @@ export async function getActionPage(argv) {
   let vars = {}
   if (argv.name) vars.name = argv.name
   if (argv.id) vars.id = argv.id
-  if (!argv.public) vars.org = argv.org
+  if (!argv.public) vars.org = config.org
 
   const {data, errors} = await request(c, query, vars)
   if (errors) throw errors
@@ -66,18 +66,18 @@ export async function getActionPage(argv) {
 }
 
 
-export async function updateActionPage(argv) {
-  const c = client(argv)
+export async function updateActionPage(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
-  let config = null
+  let json = null
 
-  // config
+  // json
   if (argv.c) {
     if (argv.c[0] == '{') {
-      config = argv.c
+      json = argv.c
     } else {
-      config = fs.readFileSync(argv.c, 'utf8')
+      json = fs.readFileSync(argv.c, 'utf8')
     }
   }
 
@@ -86,7 +86,7 @@ export async function updateActionPage(argv) {
     name: argv.name,
     thankYouTemplateRef: argv.tytpl,
     extraSupporters: argv.extra,
-    config: config
+    config: json
   }
 
   if (argv.J) {

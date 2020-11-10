@@ -1,7 +1,6 @@
 import amqplib from 'amqplib'
 import backoff from 'backoff'
 import {decryptAction} from './crypto'
-import config from './config'
 
 
 export function connect(argv) {
@@ -48,7 +47,7 @@ function getService(argv) {
 }
 
 
-export async function syncQueue(argv) {
+export async function syncQueue(argv, config) {
   const conn = await connect(argv)
   const ch = await conn.createChannel()
   const qn = queueName('deliver', argv)
