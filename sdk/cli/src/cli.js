@@ -1,11 +1,12 @@
 import yargs from 'yargs';
 
-import config from './config'
+import {load as loadConfig} from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
 import {listKeys, addKey} from './org'
 import {exportActions} from './export'
 import {testQueue, syncQueue} from './queue'
-import {setup, showToken} from './util'
+import {setup} from './setup'
+import {showToken} from './util'
 import {watchPages} from './watch'
 
 // import {testQueue, syncQueue, addBackoff} from './queue'
@@ -13,51 +14,67 @@ import {watchPages} from './watch'
 require = require('esm')(module);
 
 
+
 export default function cli() {
+  const config = loadConfig()
+
+  const configOverrides = {
+    'queue': 'queue_url',
+    'keys': 'keyData',
+    'host': 'url',
+    'user': 'username',
+    'password': 'password',
+    'org': 'org'
+  }
+
+  function override(option, desc) {
+    const key = configOverrides[option]
+    return {
+      alias: option,
+      type: 'string',
+      describe: desc,
+      default: config[key],
+    }
+  }
+
+  function cmd(cliMethod) {
+    return (opts) => {
+      // override config
+      for (const [opt, key] of Object.entries(configOverrides)) {
+        config[key] = opts[opt]
+      }
+
+      cliMethod(opts, config).catch((error) => {
+        if (error.message) {
+          console.error(`Error:`, error.message)
+        } else if (error.length > 0 && error[0].message) {
+          const {message, path} = error[0]
+          console.error(`Error:`, message)
+          if (path && path[0] == 'org') {
+            console.error(`Do you belong to the team of org "${config.org}"?`)
+          }
+        } else if (error.result && error.result.errors && error.result.errors.length > 0) {
+          const {message, extensions, path} = error.result.errors[0]
+          console.error(message + (extensions && extensions.code ? `, code: ${extensions.code}` : ``))
+        }
+      })
+    }
+  }
+
   const argv = yargs
         .scriptName('proca-cli')
         .command(
           'setup',
-          'configure proca CLI (generates .env file)',
+          'configure proca CLI (generates .env, keys.json files)',
           y => y,
-          setup
+          (y) => setup(config)
         )
-        .option('o', {
-          alias: 'org',
-          type: 'string',
-          describe: 'org name',
-          default: config.org
-        })
-        .option('u', {
-          alias: 'user',
-          type: 'string',
-          describe: 'user email',
-          default: config.user
-        })
-        .option('p', {
-          alias: 'password',
-          type: 'string',
-          describe: 'password',
-          default: config.password
-        })
-        .option('h', {
-          alias: 'host',
-          type: 'string',
-          describe: 'api host with scheme (http/https)',
-          default: config.url
-        })
-        .option('q', {
-          alias: 'queue_url',
-          type: 'string',
-          describe: 'queue url (without path)',
-          default: config.queue_url
-        })
-        .option('k', {
-          alias: 'keys',
-          type: 'string',
-          describe: 'key file',
-          default: config.keys
-        })
+        .option('o', override('org', 'org name' ))
+        .option('u', override('user', 'user name'))
+        .option('p', override('password', 'password'))
+        .option('h', override('host', 'api url'))
+        .option('q', override('queue', 'queue url'))
+        .option('k', override('keys', 'file containing keys'))
         .option('J', {
           alias: 'json',
           type: 'boolean',
@@ -70,16 +87,17 @@ export default function cli() {
           describe: 'Format output in CSV',
           default: false
         })
-        .command('token', 'print basic auth token', y => y, showToken)
-        .command('campaigns', 'List campaigns for org', y => y, listCampaigns)
+        .command('token', 'print basic auth token', {}, showToken)
+        .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
         .command('campaign', 'show campaign for org', {
           i: {
+            alias: 'id',
             type: 'number',
             description: 'ID of requested object',
             demandOption: true
           }
-        }, getCampaign)
-        .command('pages', 'List action pages for org', y => y, listActionPages)
+        }, cmd(getCampaign))
+        .command('pages', 'List action pages for org', {}, cmd(listActionPages))
         .command('page', 'show page for org', {
           i: {
             alias: 'id',
@@ -96,7 +114,7 @@ export default function cli() {
             type: 'boolean',
             description: 'Use public API to fetch action page'
           }
-        }, getActionPage)
+        }, cmd(getActionPage))
         .command('page:update', 'update page for org', {
           i: {
             alias: 'id',
@@ -129,9 +147,9 @@ export default function cli() {
             type: 'string',
             description: 'update ActionPage config - provide filename or JSON string'
           }
-        }, updateActionPage)
-        .command('keys', 'Display keys', {}, listKeys)
-        .command('key:add', 'add key', {}, addKey)
+        }, cmd(updateActionPage))
+        .command('keys', 'Display keys', {}, cmd(listKeys))
+        .command('key:add', 'Do not use! deprecated. Use setup instead', {}, cmd(addKey))
         .command('watch:pages', 'Subscribe to page updates', {
           x: {
             alias: 'exec',
@@ -143,7 +161,7 @@ export default function cli() {
             type: 'boolean',
             description: 'Watch all orgs (not just one passed via -o)'
           }
-        }, watchPages)
+        }, cmd(watchPages))
         .command('export', 'Export action and supporter data', {
           c: {
             alias: 'campaign',
@@ -171,6 +189,12 @@ export default function cli() {
             type: 'boolean',
             description: 'Decrypt contact PII'
           },
+          I: {
+            alias: 'ignore',
+            type: 'boolean',
+            default: false,
+            description: 'Ignore problems with decrypting contact pii'
+          },
           A: {
             alias: 'all',
             type: 'boolean',
@@ -183,8 +207,8 @@ export default function cli() {
             default: '',
             description: 'Export fields (comma separated)'
           }
-        }, exportActions)
-        .command('deliver:check', 'print status of delivery queue', {}, testQueue)
+        }, cmd(exportActions))
+        .command('deliver:check', 'print status of delivery queue', {}, cmd(testQueue))
         .command('deliver:sync', 'sync deliver queue to service', {
           d: {
             alias: 'decrypt',
@@ -208,6 +232,6 @@ export default function cli() {
             type: 'boolean',
             describe: 'Add backoff when calling syncAction'
           }
-        }, syncQueue)
+        }, cmd(syncQueue))
         .demandCommand().argv;
 }

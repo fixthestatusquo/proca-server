@@ -1,87 +1,65 @@
-
-import dotenv from 'dotenv'
-import inquirer from 'inquirer'
-import emailValidator from 'email-validator'
-import fs from 'fs'
-
-dotenv.config()
-
-function to_keys(joined_by_col) {
-  const [pub, priv] = joined_by_col.split(':')
-  if (pub == null || priv == null) {
-    return null;
-  }
-  return {
-    pub, priv
-  }
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+exports.__esModule = true;
+exports.storeConfig = exports.loadFromEnv = exports.load = void 0;
+var dotenv_1 = __importDefault(require("dotenv"));
+var fs_1 = require("fs");
+function load() {
+    var parsed = dotenv_1["default"].config().parsed;
+    var config = loadFromEnv(process.env);
+    // was env file loaded?
+    config.envFile = parsed !== undefined;
+    return config;
 }
-
-/* XXX ^^ remove */
-
-const config = {
-  org: process.env.ORG_NAME,
-  user: process.env.AUTH_USER,
-  password: process.env.AUTH_PASSWORD,
-  queue_url: process.env.QUEUE_URL || 'amqp://api.proca.app/proca',
-  identity_url: process.env.IDENTITY_URL,
-  identity_api_token: process.env.IDENTITY_API_TOKEN,
-  identity_consent: process.env.IDENTITY_CONSENT,
-  identity_action_fields: (process.env.IDENTITY_ACTION_FIELDS || '').toLowerCase().split(','),
-  identity_contact_fields: (process.env.IDENTITY_CONTACT_FIELDS || '').toLowerCase().split(','),
-  service_url: process.env.SERVICE_URL || process.env.IDENTITY_URL,
-  url: process.env.API_URL || 'https://api.proca.app',
-  keys: process.env.KEYS || 'keys.json'
+exports.load = load;
+function loadFromEnv(env) {
+    if (env === void 0) { env = process.env; }
+    var config = {
+        org: env["ORG_NAME"],
+        username: env["AUTH_USER"],
+        password: env["AUTH_PASSWORD"],
+        queue_url: env["QUEUE_URL"] || 'amqp://api.proca.app/proca',
+        identity_url: env["IDENTITY_URL"],
+        identity_api_token: env["IDENTITY_API_TOKEN"],
+        identity_consent: env["IDENTITY_CONSENT"],
+        identity_action_fields: (env["IDENTITY_ACTION_FIELDS"] || '').toLowerCase().split(','),
+        identity_contact_fields: (env["IDENTITY_CONTACT_FIELDS"] || '').toLowerCase().split(','),
+        service_url: env["SERVICE_URL"] || env["IDENTITY_URL"],
+        url: env["API_URL"] || 'https://api.proca.app',
+        keyData: env["KEYS"] || 'keys.json',
+        envFile: false,
+        verbose: false
+    };
+    return config;
 }
-
-function storeConfig(config, fn) {
-  let data = ''
-
-  const vars = {
-    'ORG_NAME': config.org,
-    'AUTH_USER': config.user,
-    'AUTH_PASSWORD': config.password,
-    'API_URL': config.url,
-    'QUEUE_URL': config.queue_url,
-    'IDENTITY_URL': config.identity_url,
-    'IDENTITY_API_TOKEN': config.identity_api_token,
-    'IDENTITY_CONSENT': config.identity_consent,
-    'IDENTITY_ACTION_FIELDS': config.identity_action_fields,
-    'IDENTITY_CONTACT_FIELDS': config.identity_contact_fields,
-    'SERVICE_URL': config.service_url,
-    'KEYS': config.keys
-  }
-
-  for (let [k, v] of Object.entries(vars)) {
-    if (v) {
-      data += `${k}=${v}\n`
+exports.loadFromEnv = loadFromEnv;
+function storeConfig(config, file_name) {
+    var data = '';
+    var vars = {
+        'ORG_NAME': config.org,
+        'AUTH_USER': config.username,
+        'AUTH_PASSWORD': config.password,
+        'API_URL': config.url,
+        'QUEUE_URL': config.queue_url,
+        'IDENTITY_URL': config.identity_url,
+        'IDENTITY_API_TOKEN': config.identity_api_token,
+        'IDENTITY_CONSENT': config.identity_consent,
+        'IDENTITY_ACTION_FIELDS': config.identity_action_fields ? config.identity_action_fields.join(",") : null,
+        'IDENTITY_CONTACT_FIELDS': config.identity_contact_fields ? config.identity_contact_fields.join(",") : null,
+        'SERVICE_URL': config.service_url,
+        'KEYS': config.keyData
+    };
+    for (var _i = 0, _a = Object.entries(vars); _i < _a.length; _i++) {
+        var _b = _a[_i], k = _b[0], v = _b[1];
+        if (v) {
+            data += k + "=" + v + "\n";
+        }
     }
-  }
-
-  fs.writeFile(fn, data, (err) => {
-    if (err) return console.log(err);
-  })
+    fs_1.writeFileSync(file_name, data);
 }
-
-async function setup() {
-  const info = await inquirer.prompt([
-    {type:'input', name: 'org', default: config.org, message: 'What is the short name of your org?'},
-    {type:'input', name: 'user', default: config.user, message: 'What is your username (email)?',
-     validate: emailValidator.validate},
-    {type:'password', name: 'password', default: config.password, messsage: 'Your password?'},
-    {type:'input', name: 'url', default: config.url, message: 'Proca backend url'},
-    {type:'input', name: 'queue_url', default: config.queue_url, message: 'Proca queue url'},
-    {type:'password', name: 'keys', default: config.keys, message: 'Keys file name or JSON'}
-
-  ]).catch((error) => {
-    console.error(`Wrong! ${error}`)
-    return {}
-  })
-
-  storeConfig(info, '.env')
-}
-
-export default Object.assign(config, {setup: setup});
-
+exports.storeConfig = storeConfig;
 // module.exports = Object.assign(config, {
 //   setup: setup
 // })

@@ -5,12 +5,12 @@ import {getFormatter} from './format'
 import {keys, decrypt, getContact} from './crypto'
 
 
-export async function exportActions(argv) {
-  const c = client(argv)
+export async function exportActions(argv, config) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
   const vars = {
-    org: argv.org,
+    org: config.org,
     limit: argv.batch,
     onlyOptIn: !argv.all
   }
@@ -38,7 +38,8 @@ export async function exportActions(argv) {
     for (const action of data.exportActions) {
       vars.start = action.actionId + 1
 
-      decryptAction(action, argv)
+      // inplace 
+      decryptAction(action, argv, config)
 
       console.log(fmt.action(action))
     }
