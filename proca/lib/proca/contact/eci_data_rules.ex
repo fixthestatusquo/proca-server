@@ -252,32 +252,12 @@ defmodule Proca.Contact.EciDataRules do
   ]
 
   @postcode_formats %{
-    "AT" => ~r/^.*$/,
-    "BE" => ~r/^.*$/,
-    "BG" => ~r/^.*$/,
-    "CY" => ~r/^.*$/,
-    "CZ" => ~r/^.*$/,
     "DE" => ~r/^[0-9]{5}$/,
     "DK" => ~r/^[0-9]{4}$/,
-    "EE" => ~r/^.*$/,
-    "ES" => ~r/^.*$/,
     "FI" => ~r/^[0-9]{5}$/,
     "FR" => ~r/^[0-9]{5}$/,
     "GR" => ~r/^[0-9]{5}$/,
-    "HR" => ~r/^.*$/,
-    "HU" => ~r/^.*$/,
-    "IE" => ~r/^.*$/,
-    "IT" => ~r/^.*$/,
-    "LT" => ~r/^.*$/,
     "LU" => ~r/^[0-9]{4}$/,
-    "LV" => ~r/^.*$/,
-    "MT" => ~r/^.*$/,
-    "NL" => ~r/^.*$/,
-    "PL" => ~r/^.*$/,
-    "PT" => ~r/^.*$/,
-    "RO" => ~r/^.*$/,
-    "SE" => ~r/^.*$/,
-    "SI" => ~r/^.*$/,
     "SK" => ~r/^[089][0-9]{4}$/
   }
 
@@ -402,7 +382,7 @@ defmodule Proca.Contact.EciDataRules do
   end
 
   def postcode_format(country) do
-    Map.get(@postcode_formats, country, ~r/^.*$/)
+    Map.get(@postcode_formats, country, ~r/^[A-Z0-9 -]{1,10}$/i)
   end
 
   def required(country) do
