@@ -117,7 +117,7 @@ defmodule Proca.Server.Stats do
     extra_supporters =
       from(ap in ActionPage,
         group_by: ap.campaign_id,
-        where: ap.extra_supporters > 0,
+        where: ap.extra_supporters != 0,
         select: [ap.campaign_id, sum(ap.extra_supporters)]
       )
       |> Repo.all()
