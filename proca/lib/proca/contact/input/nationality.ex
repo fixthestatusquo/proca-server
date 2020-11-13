@@ -19,5 +19,9 @@ defmodule Proca.Contact.Input.Nationality do
     |> cast(params, [:country, :document_type, :document_number])
     |> validate_required(:country)
     |> Input.validate_country_format()
+    |> validate_format(:document_type, ~r/^[a-z_.]+$/)
+    |> validate_length(:document_type, max: 16)
+    |> validate_format(:document_number, ~r/^[A-Z0-9._-]+$/i)
+    |> validate_length(:document_number, max: 32)
   end
 end

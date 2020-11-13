@@ -38,6 +38,21 @@ defmodule Proca.Contact.Input do
     end)
   end
 
+  def validate_name(chst, field) do
+    chst
+    |> validate_format(field, ~r/^[\p{L}'][ \p{L},'-]*[\p{L}.]$/u)
+  end
+
+  def validate_address_line(chst, field) do
+    chst
+    |> validate_format(field, ~r/^[ \p{L}0-9'",.-]+$/u)
+  end
+
+  def validate_postcode(chst) do
+    chst
+    |> validate_format(:postcode, ~r/^[A-Z0-9- ]{1,10}/)
+  end
+
   def upcase_country(params) do
     Map.update(params, :country, nil, fn
       cc when is_nil(cc) -> nil

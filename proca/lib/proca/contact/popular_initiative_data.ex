@@ -36,7 +36,6 @@ defmodule Proca.Contact.PopularInitiativeData do
     ch =
       Input.Contact.changeset(params)
       |> validate_required([:first_name, :email, :address])
-      |> Input.validate_email(:email)
       |> validate_address()
 
     if ch.valid? do
