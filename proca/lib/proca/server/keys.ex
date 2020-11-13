@@ -68,7 +68,7 @@ defmodule Proca.Server.Keys do
   end
 
   @impl true
-  def format_status(reason, [pdict, state]) do
+  def format_status(_reason, [pdict, _state]) do
     # XXX ?
     {__MODULE__, pdict}
   end
@@ -132,7 +132,7 @@ defmodule Proca.Server.Keys do
   @doc "
   Increment nonce by 1. Should be run after every successful encryption.
   "
-  defp increment_nonce(nonce) do
+  def increment_nonce(nonce) do
     <<x::@nonce_bits>> = nonce
     <<x + 1::@nonce_bits>>
   end

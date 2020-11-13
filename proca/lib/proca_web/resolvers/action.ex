@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Action do
   import Logger
   alias Ecto.Multi
 
-  alias Proca.{Supporter, Action, ActionPage, Contact, Source}
+  alias Proca.{Supporter, Action, ActionPage, Source}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
@@ -70,12 +70,12 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   # when we create new supporter, but there is no contact_ref to link
-  def link_references(supporter, %{}) do
+  def link_references(_supporter, %{}) do
   end
 
   def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, _) do
     case Multi.new()
-         |> Multi.run(:action_page, fn repo, _m ->
+         |> Multi.run(:action_page, fn _repo, _m ->
            get_action_page(params)
          end)
          |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
@@ -97,7 +97,7 @@ defmodule ProcaWeb.Resolvers.Action do
            |> put_change(:with_consent, true)
            |> repo.insert()
          end)
-         |> Multi.run(:link_references, fn repo, %{supporter: supporter} ->
+         |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
            {:ok, link_references(supporter, params)}
          end)
          |> Repo.transaction() do
@@ -118,7 +118,7 @@ defmodule ProcaWeb.Resolvers.Action do
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, _) do
     case Multi.new()
-         |> Multi.run(:action_page, fn repo, _m ->
+         |> Multi.run(:action_page, fn _repo, _m ->
            get_action_page(params)
          end)
          |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->

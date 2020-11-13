@@ -2,11 +2,8 @@ defmodule Proca.Server.Encrypt do
   @moduledoc """
   Server which holds Home Org encryption keys and current nonce, and performs encryption and decryption of messages to other Orgs using their public keys.
   """
-  alias Proca.Repo
   alias Proca.Server.Keys
-  alias Proca.{Org, PublicKey}
-
-  import Logger
+  alias Proca.Org
 
   def encrypt(%Org{id: id}, text) do
     case Keys.encryption(to: id) do

@@ -5,7 +5,7 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   @behaviour Plug
 
   alias Plug.Conn
-  alias Pow.{Plug, Store.CredentialsCache}
+  alias Pow.Plug
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
 

@@ -15,7 +15,7 @@ defmodule Proca.Factory do
 
   def public_key_factory(%{org: org}) do
     name = sequence("public_key")
-    Proca.PublicKey.build_for(org) |> Ecto.Changeset.apply_changes
+    Proca.PublicKey.build_for(org, name) |> Ecto.Changeset.apply_changes
   end
 
   def campaign_factory do
@@ -115,7 +115,7 @@ defmodule Proca.Factory do
     }
   end
 
-  def action_factory(attrs = %{action_page: ap, action_type: at}) do
+  def action_factory(%{action_page: ap, action_type: at}) do
     s = build(:basic_data_pl_supporter_with_contact, action_page: ap)
     %Proca.Action{
       action_type: at,
