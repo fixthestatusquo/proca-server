@@ -60,7 +60,7 @@ defmodule Proca.Service.Mailjet do
   @impl true
   def put_template(email, %EmailTemplate{ref: ref}) do
     email
-    |> MailjetHelper.template(String.to_integer(ref))
+    |> MailjetHelper.template(ref)
     |> MailjetHelper.template_language(true)
   end
 
