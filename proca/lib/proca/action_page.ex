@@ -10,8 +10,7 @@ defmodule Proca.ActionPage do
   import Ecto.Query
 
   alias Proca.Repo
-  alias Proca.{ActionPage, Campaign, Contact, Supporter, Org}
-  alias Proca.Contact.Data
+  alias Proca.{ActionPage, Campaign, Org}
 
   schema "action_pages" do
     field :locale, :string

@@ -6,9 +6,7 @@ defmodule Proca.Stage.SQS do
 
   alias Broadway.Message
   alias Broadway.BatchInfo
-  alias Proca.{Action, Org, Service}
-  import Ecto.Query, only: [from: 2]
-  alias Proca.Stage.Support
+  alias Proca.{Org, Service}
   require Logger
 
   def start_link(_opts) do

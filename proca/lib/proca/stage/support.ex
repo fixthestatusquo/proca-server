@@ -5,7 +5,7 @@ defmodule Proca.Stage.Support do
   (system) or externally (custom).
   """
 
-  alias Proca.{Action, Supporter, Org, PublicKey, Contact, Field}
+  alias Proca.{Action, Supporter, PublicKey, Contact, Field}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
 

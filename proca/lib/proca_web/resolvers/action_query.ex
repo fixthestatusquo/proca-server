@@ -3,11 +3,8 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
   Resolvers for public action lists (recent comments etc.)
   """
   import Ecto.Query
-  import Ecto.Changeset
   alias Proca.Repo
-  alias Proca.{Action, Field, Campaign}
-
-  alias ProcaWeb.Helper
+  alias Proca.Action
 
   def actions_for_campaign(campaign_id) do
     from(a in Action,

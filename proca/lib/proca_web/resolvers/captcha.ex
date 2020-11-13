@@ -10,9 +10,6 @@ defmodule ProcaWeb.Resolvers.Captcha do
 
   @behaviour Absinthe.Middleware
 
-  import Logger
-  import Ecto.Query
-
   def call(resolution, _opts) do
     case resolution.extensions do
       %{captcha: code} ->
