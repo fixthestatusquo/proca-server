@@ -28,8 +28,6 @@ defmodule Proca.Contact.BasicData do
       |> Input.Contact.normalize_names_attr()
       |> Input.Contact.changeset()
       |> validate_required([:name, :first_name, :email])
-      |> Input.validate_email(:email)
-      |> Input.validate_phone(:phone)
 
     if ch.valid? do
       d = apply_changes(ch)

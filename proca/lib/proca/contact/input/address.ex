@@ -21,5 +21,14 @@ defmodule Proca.Contact.Input.Address do
     ch
     |> cast(params, [:country, :postcode, :region, :locality, :street, :street_number])
     |> Input.validate_country_format()
+    |> Input.validate_postcode()
+    |> Input.validate_address_line(:region)
+    |> Input.validate_address_line(:locality)
+    |> Input.validate_address_line(:street)
+    |> Input.validate_address_line(:street_number)
+    |> validate_length(:region, max: 64)
+    |> validate_length(:locality, max: 64)
+    |> validate_length(:street, max: 128)
+    |> validate_length(:street_number, max: 6)
   end
 end

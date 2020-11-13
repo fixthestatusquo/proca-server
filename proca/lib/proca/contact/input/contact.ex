@@ -4,6 +4,7 @@ defmodule Proca.Contact.Input.Contact do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  alias Proca.Contact.Input
 
   embedded_schema do
     field :name, :string
@@ -22,6 +23,11 @@ defmodule Proca.Contact.Input.Contact do
   def changeset(ch, params) do
     ch
     |> cast(params, [:name, :first_name, :last_name, :email, :phone, :birth_date])
+    |> Input.validate_name(:name)
+    |> Input.validate_name(:first_name)
+    |> Input.validate_name(:last_name)
+    |> Input.validate_email(:email)
+    |> Input.validate_phone(:phone)
     |> cast_embed(:address)
     |> cast_embed(:nationality)
   end
