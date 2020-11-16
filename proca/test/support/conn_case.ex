@@ -47,6 +47,15 @@ defmodule ProcaWeb.ConnCase do
         assert res["errors"] == nil
         res
       end
+
+      def has_error_message(res, message) do
+        assert length(Map.get(res, "errors", [])) > 0
+        assert Enum.any?(Map.get(res, "errors", []), fn
+          %{"message" => msg} -> msg == message
+          _ -> false
+        end)
+        res
+      end
     end
   end
 
