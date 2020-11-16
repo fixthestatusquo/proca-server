@@ -6,11 +6,12 @@ defmodule ProcaWeb.Schema.DataTypes do
   import Logger
 
   scalar :datetime do
-    parse(fn input ->
-      case DateTime.from_iso8601(input.value) do
+    parse(fn %{value: value} ->
+      case DateTime.from_iso8601(value) do
         {:ok, datetime, _} -> {:ok, datetime}
         _ -> :error
       end
+      _ -> :error
     end)
 
     serialize(fn datetime ->
@@ -20,11 +21,12 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   scalar :date do
-    parse(fn input ->
-      case Date.from_iso8601(input.value) do
+    parse(fn %{value: value} ->
+      case Date.from_iso8601(value) do
         {:ok, date} -> {:ok, date}
         _ -> :error
       end
+      _ -> :error
     end)
 
     serialize(fn date ->
@@ -33,15 +35,16 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   scalar :json do
-    parse(fn input ->
-      case Jason.decode(input.value) do
+    parse(fn %{value: value} ->
+      case Jason.decode(value) do
         {:ok, object} ->
           {:ok, object}
 
       x ->
-          error [why: "error while decoding json input", input: input.value, msg: x]
+          error [why: "error while decoding json input", input: value, msg: x]
           :error
       end
+      _ -> :error
     end)
 
     serialize(fn object ->
