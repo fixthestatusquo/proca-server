@@ -46,6 +46,8 @@ defmodule Proca.Contact.EciData do
     ch
   end
 
+  def validate_nationality(ch = %{valid?: false}), do: ch
+
   def validate_nationality(ch = %{valid?: true}) do
     nationality =
       get_change(ch, :nationality)
@@ -68,6 +70,7 @@ defmodule Proca.Contact.EciData do
 
     put_embed(ch, :nationality, nationality)
   end
+
 
   def validate_address(ch = %{valid?: false}), do: ch
 

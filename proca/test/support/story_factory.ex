@@ -50,4 +50,17 @@ defmodule Proca.StoryFactory do
     }
 
   end
+
+  def eci_story() do
+    org = Factory.insert(:org, name: "runner", title: "ECI runner", contact_schema: :eci)
+    camp = Factory.insert(:campaign, name: "the-eci", title: "ECI", org: org)
+    ap = Factory.insert(:action_page, campaign: camp, org: org, name: "eci.eu/pl", locale: "pl")
+
+    %{
+      org: org,
+      campaign: camp,
+      pages: [ap]
+    }
+  end
+
 end

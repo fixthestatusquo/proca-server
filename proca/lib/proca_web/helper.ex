@@ -16,9 +16,15 @@ defmodule ProcaWeb.Helper do
   dot and return suchj field, for instance: contact.email instead of email
   """
 
+  def replace_placeholders(msg, opts) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end) 
+  end
+
   def format_errors(changeset) do
     changeset
-    |> Changeset.traverse_errors(fn {msg, _o} -> %{message: msg} end)
+    |> Changeset.traverse_errors(fn {msg, opts} -> %{message: replace_placeholders(msg, opts)} end)
     |> flatten_errors()
   end
 

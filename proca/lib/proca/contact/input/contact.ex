@@ -28,6 +28,11 @@ defmodule Proca.Contact.Input.Contact do
     |> Input.validate_name(:last_name)
     |> Input.validate_email(:email)
     |> Input.validate_phone(:phone)
+    |> validate_length(:name, max: 128)
+    |> validate_length(:first_name, max: 64)
+    |> validate_length(:last_name, max: 64)
+    |> validate_length(:email, max: 64)
+    |> validate_length(:phone, max: 20)
     |> cast_embed(:address)
     |> cast_embed(:nationality)
   end
