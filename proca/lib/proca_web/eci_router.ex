@@ -19,8 +19,8 @@ defmodule ProcaWeb.EciRouter do
     forward "/", Absinthe.Plug, schema: ProcaWeb.Schema.EciSchema
   end
 
-  forward "/graphiql", Absinthe.Plug.GraphiQL,
-    schema: ProcaWeb.Schema.EciSchema,
-    interface: :playground,
-    default_url: "/api"
+  # forward "/graphiql", Absinthe.Plug.GraphiQL,
+  #   schema: ProcaWeb.Schema.EciSchema,
+  #   interface: :playground,
+  #   default_url: "/api"
 end
