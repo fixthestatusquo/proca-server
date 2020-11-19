@@ -11,7 +11,11 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 # Development setup
 
-1. Databases
+Proca backend is an Elixir app that uses PostgreSQL as data store and RabbitMQ
+for data processing. The PostgreSQL is managed by migrations. The RabbitMQ is
+(re)configured live when the app is run, it only needs predentials to access it.
+
+1. Databases: create
 
 ```
 sudo -i
@@ -21,26 +25,32 @@ createuser -P proca
 createdb -O proca proca
 createdb -O proca proca_test
 exit
-exit
 ```
 
-2. Create RabbitMQ
+3. Databases: initialize
+```
+mix ecto.migrate
+mix run priv/repo/seeds.exs
+# same for test db
+env MIX_ENV=test mix ecto.migrate
+env MIX_ENV=test  mix run priv/repo/seeds.exs
+```
+
+3. Create RabbitMQ
 
 ```
 ./utils/create-queue
 sudo -i
 echo "172.19.0.3  rabbitmq.docker" >> /etc/hosts
+# add proca user and proca vhost
+./utils/create-queue-creds
 ```
 
 Login to http://rabbitmq.docker:15672/ with guest/guest and add:
 - virtual host called "proca" (not "/proca")
 - user called proca (pass proca) with full access to virtual host "proca"
 
-3. Init the db
-```
-env mix ecto.migrate
-env  mix run priv/repo/seeds.exs
-# same for test db
-env MIX_ENV=test mix ecto.migrate
-env MIX_ENV=test  mix run priv/repo/seeds.exs
-```
+Test vhost: we do not use a test vhost at this point. The test run uses the same
+dev one (should be moved to test one at some point, or queue messaging mocked
+out).
+
