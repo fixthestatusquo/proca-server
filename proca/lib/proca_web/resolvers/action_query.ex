@@ -19,7 +19,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
   @max_list_size 100
   def list_by_action_type(%{id: campaign_id}, params = %{action_type: action_type}, _ctx) do
     limit = Map.get(params, :limit, 10)
-    limit = max(limit, @max_list_size)
+    limit = min(limit, @max_list_size)
 
     query =  actions_for_campaign(campaign_id)
     list = query
