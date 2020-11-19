@@ -157,7 +157,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Fetch public actions"
     field :actions, :public_actions_result do
+      @desc "Return actions of this action type"
       arg(:action_type, non_null(:string))
+      @desc "Limit the number of returned actions, default is 10, max is 100)"
+      arg(:limit, :integer)
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
