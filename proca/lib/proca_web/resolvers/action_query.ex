@@ -29,6 +29,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
     |> select([a, c], a)
     |> Repo.all()
     |> Enum.map(fn a -> %{
+                        action_id: a.id,
                         action_type: a.action_type,
                         inserted_at: a.inserted_at,
                         fields: Enum.map(a.fields, &Map.take(&1, [:key, :value]))
