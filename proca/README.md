@@ -54,3 +54,9 @@ Test vhost: we do not use a test vhost at this point. The test run uses the same
 dev one (should be moved to test one at some point, or queue messaging mocked
 out).
 
+4. Run the app
+
+```
+mix deps.get
+mix phx.server
+```
