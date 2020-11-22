@@ -65,6 +65,12 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
+  def put_reply_to(email, reply_to_email) do
+    email
+    |> Email.put_header("Reply-To", reply_to_email)
+  end
+
+  @impl true
   def deliver(email, %Org{email_backend: srv}) do
     try do
       MailjetAdapter.deliver(email, config(srv))

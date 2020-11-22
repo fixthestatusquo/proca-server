@@ -36,6 +36,7 @@ defmodule Proca.Service.EmailBackend do
 
   @callback put_recipients(email :: %Email{}, recipients :: [recipient]) :: %Email{}
   @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
+  @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t) :: %Email{}
   @callback deliver(%Email{}, %Org{}) :: any()
 
   def service_module(:mailjet) do
@@ -51,13 +52,37 @@ defmodule Proca.Service.EmailBackend do
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
 
-    e =
-      %Email{}
-      |> Email.from({org.name, org.email_from})
+    e = Email.from(%Email{}, from(org))
+
+    e = if elem(e.from, 1) != org.email_from do
+      apply(backend, :put_reply_to, [e, org.email_from])
+    else
+      e
+    end
 
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])
     apply(backend, :deliver, [e, org])
+  end
+
+  defp from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
+    {org.title, org.email_from}
+  end
+
+  defp from(org = %Org{email_backend: %Service{org: via_org}}) do
+    via_from(org, via_org)
+  end
+
+  defp via_from(%{title: org_title, email_from: email_from}, %{email_from: via_email_from})
+  when not is_nil(email_from) and not is_nil(via_email_from) do
+    [user, _domain] = Regex.split(~r/@/, email_from)
+    [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
+
+    {org_title, "#{via_user}+#{user}@#{via_domain}"}
+  end
+
+  defp via_from(_o1, _o2) do
+    nil
   end
 
   defmodule NotDelivered do
