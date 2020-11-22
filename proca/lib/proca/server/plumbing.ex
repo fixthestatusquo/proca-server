@@ -70,6 +70,15 @@ defmodule Proca.Server.Plumbing do
 
   XXX maybe system.email.confirm can be merged with system.email.thankyou ?
 
+  ## Retry queues:
+
+  We use an exchange loop for implementing retries:
+  ```
+  [queue_name] with dlx set to -> (system.fail rk=queue_name)
+
+  (system.fail) - # -> [system.retry ttl=30sec] with dlx set to -> (system.retry)
+  ````
+
   """
   @impl true
   def init(url) do
@@ -155,15 +164,30 @@ defmodule Proca.Server.Plumbing do
     try do
       :ok = Exchange.declare(chan, "confirm", :topic, durable: true)
       :ok = Exchange.declare(chan, "deliver", :topic, durable: true)
+      :ok = Exchange.declare(chan, "system.fail", :topic, durable: true)
+      :ok = Exchange.declare(chan, "system.retry", :topic, durable: true)
     rescue
       _ -> Channel.close(chan)
     end
   end
 
+  defp dlx(exchange_name) do
+    {"x-dead-letter-exchange", :longstr, exchange_name}
+  end
+
+  defp dlk(routing_key) do
+    {"x-dead-letter-routing-key", :longstr, routing_key}
+  end
+
+  defp ttl(sec) do
+    {"x-message-ttl", :long, round(sec * 1000)}
+  end
+
   def setup_global_queues(connection) do
     queues = [
-      {"confirm", "*.system.supporter", "system.email.confirm"},
-      {"deliver", "*.system.*", "system.email.thankyou"},
+      {"system.fail", "#", "system.failed", arguments: [dlx("system.retry"), ttl(30)]},
+      {"confirm", "*.system.supporter", "system.email.confirm", retry: true},
+      {"deliver", "*.system.*", "system.email.thankyou", retry: true},
       {"system.sqs"}
     ]
 
@@ -185,7 +209,7 @@ defmodule Proca.Server.Plumbing do
       {"confirm", "#{org_name}.custom.supporter", "custom.#{org_name}.confirm"},
       {"confirm", "#{org_name}.custom.action", "custom.#{org_name}.moderate"},
       {"deliver", "#{org_name}.custom.action", "custom.#{org_name}.deliver"},
-      {"deliver", "#{org_name}.system.action", "system.sqs", enable_sqs}
+      {"deliver", "#{org_name}.system.action", "system.sqs", bind: enable_sqs}
     ]
 
     setup_queues(connection, queues)
@@ -235,24 +259,54 @@ defmodule Proca.Server.Plumbing do
   def setup_queues(connection, queue_defs) do
     with_chan(connection, fn chan ->
       queue_defs
-      |> Enum.each(fn df ->
-        case df do
-          {ex, rk, qu} ->
-            {:ok, _stat} = Queue.declare(chan, qu, durable: true)
-            :ok = Queue.bind(chan, qu, ex, routing_key: rk)
-
-          {qu} ->
-            {:ok, _stat} = Queue.declare(chan, qu, durable: true)
-
-          {ex, rk, qu, opt_bind} ->
-            if opt_bind do
-              :ok = Queue.bind(chan, qu, ex, routing_key: rk)
-            else
-              :ok = Queue.unbind(chan, qu, ex, routing_key: rk)
-            end
-        end
-      end)
+      |> Enum.each(&setup_queue(chan, &1))
     end)
+  end
+
+  def setup_queue(chan, {qu})
+  when is_bitstring(qu) do
+    setup_queue(chan, {"", "", qu, bind: :skip})
+  end
+
+  def setup_queue(chan, {qu, opts})
+  when is_bitstring(qu)
+  and is_list(opts) do
+    setup_queue(chan, {"", "", qu, opts})
+  end
+
+  def setup_queue(chan, {ex, rk, qu})
+  when is_bitstring(ex)
+  and is_bitstring(rk)
+  and is_bitstring(qu) do
+    setup_queue(chan, {ex, rk, qu, []})
+  end
+
+  def setup_queue(chan, {ex, rk, qu, opts})
+  when is_bitstring(ex)
+  and is_bitstring(rk)
+  and is_bitstring(qu)
+  and is_list(opts) do
+    retry_args = if Keyword.get(opts, :retry, false) do
+      [dlx("system.fail"), dlk(qu)]
+    else
+      []
+    end
+
+    args = Keyword.get(opts, :arguments, [])
+
+    {:ok, _stat} = Queue.declare(chan, qu, durable: true, arguments: retry_args ++ args)
+
+    case Keyword.get(opts, :bind, true) do
+      true -> :ok = Queue.bind(chan, qu, ex, routing_key: rk)
+      false -> :ok = Queue.unbind(chan, qu, ex, routing_key: rk)
+      :skip -> :ok
+    end
+
+    if Keyword.get(opts, :retry, false) do
+      :ok = Queue.bind(chan, qu, "system.retry", routing_key: qu)
+    else
+      :ok = Queue.unbind(chan, qu, "system.retry", routing_key: qu)
+    end
   end
 
   def with_chan(connection, f) do
