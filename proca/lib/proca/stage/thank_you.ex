@@ -17,13 +17,7 @@ defmodule Proca.Stage.ThankYou do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
-        module:
-          {BroadwayRabbitMQ.Producer,
-           queue: "system.email.thankyou",
-           connection: Proca.Server.Plumbing.connection_url(),
-           qos: [
-             prefetch_count: 10
-           ]},
+        module: Proca.Stage.Support.queue("system.email.thankyou", [retry: true]),
         concurrency: 1
       ],
       processors: [
@@ -55,6 +49,7 @@ defmodule Proca.Stage.ThankYou do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
+    # IO.inspect(message.metadata, label: "metadata")
     case JSON.decode(data) do
       {:ok,
        %{"actionPageId" => action_page_id, "actionId" => action_id} = action} ->
@@ -69,7 +64,9 @@ defmodule Proca.Stage.ThankYou do
         end
 
       {:error, reason} ->
-        Message.failed(message, reason)
+        message
+        |> Message.configure_ack(on_failure: :ack)
+        |> Message.failed(reason)
     end
   end
 
