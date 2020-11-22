@@ -3,7 +3,6 @@ defmodule Proca.Source do
   Holds utm codes. Will be reused by many actions
   """
   use Ecto.Schema
-  import Ecto.Query
   import Ecto.Changeset
   import Proca.Changeset
   alias Proca.Repo
@@ -35,46 +34,27 @@ defmodule Proca.Source do
     |> trim(:content, 255)
   end
 
-  def normalize_tracking_codes(tracking_codes) do
-    t =
-      if Map.has_key?(tracking_codes, :content) do
-        tracking_codes
-      else
-        Map.put(tracking_codes, :content, "")
-      end
-
-    t
+  def normalize_tracking_codes(tracking_codes = %{content: c}) when is_bitstring(c) do
+    tracking_codes
   end
 
-  def get_or_create_by(tracking_codes, attempt_no \\ 0) do
+  def normalize_tracking_codes(tracking_codes) do
+    Map.put(tracking_codes, :content, "")
+  end
+
+  def get_or_create_by(tracking_codes) do
     t = normalize_tracking_codes(tracking_codes)
     # look it up
-    case Repo.one(
-           from(s in Source,
-             where:
-               s.campaign == ^t.campaign and
-                 s.source == ^t.source and
-                 s.content == ^t.content
-           )
-         ) do
-      found_source = %Source{} ->
-        {:ok, found_source}
 
-      # Not found, let us create it
-      # In case of race condition between SELECT and INSERT,
-      # we will get unique index error and retry (limit to 2 attempts)
-      nil ->
-        try do
-          Source.build_from_attrs(t)
-          |> Repo.insert()
-        rescue
-          Ecto.ConstraintError ->
-            if attempt_no < 2 do
-              get_or_create_by(t, attempt_no + 1)
-            else
-              {:error, "Cannot create Source for these tracking codes"}
-            end
-        end
-    end
+    %Source{
+      campaign: t.campaign,
+      source: t.source,
+      medium: t.medium,
+      content: t.content
+    }
+    |> Repo.insert([
+      on_conflict: [set: [updated_at: DateTime.utc_now]],
+      conflict_target: [:source, :medium, :campaign, :content]
+    ])
   end
 end
