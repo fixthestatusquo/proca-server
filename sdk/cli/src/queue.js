@@ -4,17 +4,17 @@ import {decryptAction} from './crypto'
 
 
 export function connect(argv) {
-  if (!argv.queue_url) {
-    throw "Please configure queue url with -q or QUEUE_URL"
+  if (!argv.queue) {
+    throw Error("Please configure queue url with -q or QUEUE_URL")
   }
-  return amqplib.connect(argv.queue_url)
+  return amqplib.connect(argv.queue)
 }
 
 function queueName(type, argv) {
   if (type == 'deliver' || type == 'confirm') {
     return `custom.${argv.org}.${type}`
   }
-  throw "queue type must by either deliver or configm"
+  throw Error("queue type must by either deliver or configm")
 }
 
 export async function testQueue(argv) {
