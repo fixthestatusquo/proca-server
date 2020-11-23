@@ -5,11 +5,12 @@ defmodule ProcaWeb.Resolvers.Org do
   # import Ecto.Query
   import Ecto.Query
 
-  alias Proca.{ActionPage, Campaign}
+  alias Proca.{ActionPage, Campaign, Action}
   alias Proca.{Org, Staffer, PublicKey}
 
   alias Proca.Repo
   import Proca.Staffer.Permission
+  import Logger
 
   def get_by_name(_, %{name: name}, %{context: %{user: user}}) do
     with %Org{} = org <- Org.get_by_name(name, [[campaigns: :org], :action_pages]),
@@ -106,5 +107,24 @@ defmodule ProcaWeb.Resolvers.Org do
     else
       _ -> {:error, "Access forbidden"}
     end
+  end
+
+  def sample_email(%{action_id: id}, email) do
+    with a when not is_nil(a) <- Repo.one(from(a in Action, where: a.id == ^id,
+                 preload: [action_page:
+                           [org:
+                            [email_backend: :org]
+                           ]
+                          ])),
+         ad <- Proca.Stage.Support.action_data(a),
+         recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
+         %{thank_you_template_ref: tr} <- a.action_page,
+           tmpl <- %Proca.Service.EmailTemplate{ref: tr}
+      do
+      Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
+      else
+        e -> error("sample email", e)
+    end
+
   end
 end
