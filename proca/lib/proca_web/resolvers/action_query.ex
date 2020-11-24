@@ -23,7 +23,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
 
     query =  actions_for_campaign(campaign_id)
     list = query
-    |> where([a, c], a.action_type == ^action_type)
+    |> where([a, c], a.action_type == ^action_type and a.processing_status in [:accepted, :delivered])
     |> order_by([a, c], desc: a.inserted_at)
     |> limit([a, c], ^limit)
     |> select([a, c], a)

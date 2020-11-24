@@ -104,6 +104,7 @@ defmodule Proca.Server.Stats do
   def calculate() do
     query =
       from(s in Supporter, order_by: s.inserted_at)
+      |> where([s], s.processing_status in [:accepted, :delivered])
       |> distinct([s], s.fingerprint)
       |> subquery()
       |> group_by([s], [s.campaign_id])
@@ -127,6 +128,7 @@ defmodule Proca.Server.Stats do
 
     action_counts =
       from(a in Action,
+        where: a.processing_status in [:accepted, :delivered],
         group_by: [a.campaign_id, a.action_type],
         select: [a.campaign_id, a.action_type, count(a.id)]
       )
