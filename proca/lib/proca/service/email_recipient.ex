@@ -23,10 +23,10 @@ defmodule Proca.Service.EmailRecipient do
         "campaign_name" => get_in(action_data, ["campaign", "name"]),
         "campaign_title" => get_in(action_data, ["campaign", "title"]),
         "action_page_name" => get_in(action_data, ["actionPage", "name"]),
-        "utm_source" => get_in(action_data, ["source", "source"]),
-        "utm_medium" => get_in(action_data, ["source", "medium"]),
-        "utm_campaign" => get_in(action_data, ["source", "campaign"]),
-        "utm_content" => get_in(action_data, ["source", "content"])
+        "utm_source" => get_in(action_data, ["tracking", "source"]),
+        "utm_medium" => get_in(action_data, ["tracking", "medium"]),
+        "utm_campaign" => get_in(action_data, ["tracking", "campaign"]),
+        "utm_content" => get_in(action_data, ["tracking", "content"])
       })
 
     fields =
