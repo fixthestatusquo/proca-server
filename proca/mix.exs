@@ -60,7 +60,7 @@ defmodule Proca.MixProject do
       {:broadway_rabbitmq, "~> 0.6.1"},
       {:bamboo, "~> 1.5.0"},
       # {:bamboo_mailjet, "~> 0.1.0"},
-      {:bamboo_mailjet, path: "/home/marcin/Projects/bamboo_mailjet"},
+      {:bamboo_mailjet, github: "fixthestatusquo/bamboo_mailjet", branch: "feat/formatter_recipients"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
