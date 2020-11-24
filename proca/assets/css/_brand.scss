@@ -1,0 +1,100 @@
+
+$ftsq-color-primary: rgb(255, 92, 57);    // #FF5C39
+$ftsq-color-primary-lighter: #FF5D32; // ?? not sure maybe lighter
+$ftsq-color-secondary: rgb(72, 92, 199);  // #485CC7
+$ftsq-color-secondary-lighter: #5375E6; // #697FFF;
+
+$ftsq-color-halfway-10: #e75c4c; 
+$ftsq-color-halfway-20: #d15c5d;
+$ftsq-color-halfway-30: #b95c6f;
+$ftsq-color-halfway-40: #a65c7e;
+$ftsq-color-halfway-50: #8c5c92;
+$ftsq-color-halfway-60: #7a5ca0;
+$ftsq-color-halfway-70: #615cb4;
+
+$ftsq-color-gray: rgb(84, 88, 90); // #54585a
+$ftsq-gradient-45: linear-gradient(45deg, $ftsq-color-primary 0%, $ftsq-color-secondary 80%);
+
+
+$ftsq-lemon: #C8FF00
+
+:root {
+    --ftsq-color-primary: #{$ftsq-color-primary};
+    --ftsq-color-secondary: #{$ftsq-color-secondary};
+    --ftsq-color-secondary-lighter: #{$ftsq-color-secondary-lighter};
+    --ftsq-color-gray: #{$ftsq-color-gray};
+
+    --ftsq-color-halfway-10: #e75c4c; 
+    --ftsq-color-halfway-20: #d15c5d;
+    --ftsq-color-halfway-30: #b95c6f;
+    --ftsq-color-halfway-40: #a65c7e;
+    --ftsq-color-halfway-50: #8c5c92;
+    --ftsq-color-halfway-60: #7a5ca0;
+    --ftsq-color-halfway-70: #615cb4;
+
+}
+
+
+
+$ftsq-logo-svg: url('../img/FTSQ-project-www-01.svg');
+$ftsq-logo-png: url('../img/FTSQ-project-www-01.png');
+
+
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,900;1,200;1,300;1,400&display=swap');
+
+.ftsq-font {
+    font-family: 'Titillium Web', sans-serif;
+    font-weight: 400;
+    color: $ftsq-color-gray;
+}
+
+.ftsq-font-bold {
+    font-weight: 600;
+}
+
+.ftsq-font-h {
+    font-weight: 600;
+}
+
+.ftsq-font-h-bold {
+    font-weight: 900;
+}
+
+
+
+
+.ftsq-sharp-corners {
+    border-radius: 0px;
+}
+
+/* gradient animation */
+
+
+.ftsq-bg-gradient {
+    background: $ftsq-gradient-45;
+}
+
+.bg-fixed {
+    background-attachment: fixed;
+}
+
+/* this does not work - skips straign to full grafient and stutters when hover-off :( 
+@keyframes bg-to-gradient {
+    0% {background: linear-gradient(45deg, $ftsq-color-halfway-40 0%, $ftsq-color-halfway-40 80%);}
+    25% {background: linear-gradient(45deg, $ftsq-color-halfway-30 0%, $ftsq-color-halfway-50 80%);}
+    50% {background: linear-gradient(45deg, $ftsq-color-halfway-20 0%, $ftsq-color-halfway-60 80%);}
+    75% {background: linear-gradient(45deg, $ftsq-color-halfway-10 0%, $ftsq-color-halfway-70 80%);}
+    100% {background: $ftsq-gradient-45;}
+}
+
+.ftsq-bg-gradient-on-hover {
+    background-color: $ftsq-color-halfway-40;
+    animation: bg-to-gradient 0.1s linear;
+    animation-direction: reverse;
+}
+
+.ftsq-bg-gradient-on-hover:hover {
+    animation: bg-to-gradient 2s linear;
+    background: $ftsq-gradient-45;
+}
+*/
