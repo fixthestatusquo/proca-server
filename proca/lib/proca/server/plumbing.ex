@@ -187,7 +187,7 @@ defmodule Proca.Server.Plumbing do
     queues = [
       {"system.fail", "#", "system.failed", arguments: [dlx("system.retry"), ttl(30)]},
       {"confirm", "*.system.supporter", "system.email.confirm", retry: true},
-      {"deliver", "*.system.*", "system.email.thankyou", retry: true},
+      {"deliver", "*.system.action", "system.email.thankyou", retry: true},
       {"system.sqs"}
     ]
 
