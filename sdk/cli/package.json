@@ -13,12 +13,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "watch": "tsc -w",
-    "build-incremental": "tsc --outDir src --esModuleInterop src/*.ts",
-    "watch-incremental": "tsc --watch --outDir src --esModuleInterop src/*.ts"
+    "watch": "tsc -w"
   },
   "dependencies": {
-    "@proca/api": "^0.1.10",
+    "@proca/api": "^0.2.0",
+    "@types/node-mailjet": "^3.3.4",
     "amqplib": "^0.5.6",
     "backoff": "^2.5.0",
     "base64url": "^3.0.1",
@@ -30,6 +29,7 @@
     "esm": "^3.2.25",
     "inquirer": "^7.3.3",
     "node-fetch": "^2.6.1",
+    "node-mailjet": "^3.3.1",
     "pry": "^0.8.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
@@ -39,5 +39,9 @@
     "@types/inquirer": "^7.3.1",
     "@types/node": "^14.14.7",
     "typescript": "^4.0.3"
+  },
+  "peerDependencies": {
+    "node-mailjet": "^3.3.1",
+    "@types/node-mailjet": "^3.3.4"
   }
 }

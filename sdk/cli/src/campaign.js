@@ -1,101 +1,117 @@
-
-import client from './client'
-import {admin, widget, request} from '@proca/api'
-import {getFormatter} from './format'
-import fs from 'fs'
-
-export async function listCampaigns(argv, config) {
-  const c = client(config)
-  const fmt = getFormatter(argv)
-
-  const {data, errors} = await request(c, admin.ListCampaignsDocument, {"org": config.org})
-  if (errors) throw errors
-
-  data.org.campaigns
-    .map(c => fmt.campaign(c))
-    .forEach((c) => {
-      console.log(c)
-    })
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateActionPage = exports.getActionPage = exports.listActionPages = exports.getCampaign = exports.listCampaigns = void 0;
+const client_1 = __importDefault(require("./client"));
+const api_1 = require("@proca/api");
+const format_1 = require("./format");
+const fs_1 = __importDefault(require("fs"));
+function listCampaigns(argv, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = client_1.default(config);
+        const fmt = format_1.getFormatter(argv);
+        const result = yield api_1.request(c, api_1.admin.ListCampaignsDocument, { "org": config.org });
+        result.data.org.campaigns
+            .map(c => fmt.campaign(c))
+            .forEach((c) => {
+            console.log(c);
+        });
+    });
 }
-
-export async function getCampaign(argv, config) {
-  const c = client(config)
-  const fmt = getFormatter(argv)
-  
-  const {data, errors} = await request(c, admin.GetCampaignDocument, {"org": config.org, "id": argv.id})
-
-  if (errors) throw errors
-
-  console.log(fmt.campaign(data.org.campaign))
+exports.listCampaigns = listCampaigns;
+function getCampaign(argv, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = client_1.default(config);
+        const fmt = format_1.getFormatter(argv);
+        const { data, errors } = yield api_1.request(c, api_1.admin.GetCampaignDocument, { "org": config.org, "id": argv.id });
+        if (errors)
+            throw errors;
+        console.log(fmt.campaign(data.org.campaign));
+    });
 }
-
-
-export async function listActionPages(argv, config) {
-  const c = client(config)
-  const fmt = getFormatter(argv)
-
-  const {data, errors} = await request(c, admin.ListActionPagesDocument, {"org": config.org})
-  if (errors) throw errors
-
-  data.org.actionPages
-    .map(ap => fmt.actionPage(ap))
-    .forEach((ap) => {console.log(ap)})
+exports.getCampaign = getCampaign;
+function listActionPages(argv, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = client_1.default(config);
+        const fmt = format_1.getFormatter(argv);
+        const { data, errors } = yield api_1.request(c, api_1.admin.ListActionPagesDocument, { "org": config.org });
+        if (errors)
+            throw errors;
+        data.org.actionPages
+            .map(ap => fmt.actionPage(ap, data.org))
+            .forEach((ap) => { console.log(ap); });
+    });
 }
-
-
-export async function getActionPage(argv, config) {
-  const c = client(config)
-  const fmt = getFormatter(argv)
-
-  let query = admin.GetActionPageDocument
-  if (argv.public) query = widget.GetActionPageDocument
-
-  let vars = {}
-  if (argv.name) vars.name = argv.name
-  if (argv.id) vars.id = argv.id
-  if (!argv.public) vars.org = config.org
-
-  const {data, errors} = await request(c, query, vars)
-  if (errors) throw errors
-
-  const ap = argv.public ? data.actionPage : data.org.actionPage
-
-  let t = null
-  t = fmt.actionPage(ap, data.org)
-  console.log(t)
+exports.listActionPages = listActionPages;
+function getActionPage(argv, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = client_1.default(config);
+        const fmt = format_1.getFormatter(argv);
+        let vars = {};
+        let t = null;
+        if (argv.name)
+            vars.name = argv.name;
+        if (argv.id)
+            vars.id = argv.id;
+        if (argv.public)
+            vars.org = config.org;
+        if (argv.public) {
+            const { data, errors } = yield api_1.request(c, api_1.widget.GetActionPageDocument, vars);
+            if (errors)
+                throw errors;
+            t = fmt.actionPage(data.actionPage, data.actionPage.org);
+        }
+        else {
+            const { data, errors } = yield api_1.request(c, api_1.admin.GetActionPageDocument, vars);
+            if (errors)
+                throw errors;
+            t = fmt.actionPage(data.org.actionPage, data.org);
+        }
+        console.log(t);
+    });
 }
-
-
-export async function updateActionPage(argv, config) {
-  const c = client(config)
-  const fmt = getFormatter(argv)
-
-  let json = null
-
-  // json
-  if (argv.c) {
-    if (argv.c[0] == '{') {
-      json = argv.c
-    } else {
-      json = fs.readFileSync(argv.c, 'utf8')
-    }
-  }
-
-  let ap_in = {
-    id: argv.i,
-    name: argv.name,
-    thankYouTemplateRef: argv.tytpl,
-    extraSupporters: argv.extra,
-    config: json
-  }
-
-  if (argv.J) {
-    ap_in = fmt.addConfigKeysToAP(ap_in)
-  }
-
-  // DEBUG
-  // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
-
-  const {data, errors} = await request(c, admin.UpdateActionPageDocument, ap_in)
-  if (errors) { throw errors }
+exports.getActionPage = getActionPage;
+function updateActionPage(argv, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const c = client_1.default(config);
+        const fmt = format_1.getFormatter(argv);
+        let json = null;
+        // json
+        if (argv.config) {
+            if (argv.config[0] == '{') {
+                json = argv.config;
+            }
+            else {
+                json = fs_1.default.readFileSync(argv.config, 'utf8');
+            }
+        }
+        let actionPage = {
+            name: argv.name,
+            thankYouTemplateRef: argv.tytpl,
+            extraSupporters: argv.extra,
+            config: json
+        };
+        if (argv.json) {
+            actionPage = fmt.addConfigKeysToAP(actionPage);
+        }
+        // DEBUG
+        // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
+        const { errors } = yield api_1.request(c, api_1.admin.UpdateActionPageDocument, { id: argv.id, actionPage });
+        if (errors) {
+            throw errors;
+        }
+    });
 }
+exports.updateActionPage = updateActionPage;
+//# sourceMappingURL=campaign.js.map

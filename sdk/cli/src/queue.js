@@ -2,12 +2,11 @@ import amqplib from 'amqplib'
 import backoff from 'backoff'
 import {decryptAction} from './crypto'
 
-
-export function connect(argv) {
-  if (!argv.queue) {
+export function connect(config) {
+  if (!config.queue_url) {
     throw Error("Please configure queue url with -q or QUEUE_URL")
   }
-  return amqplib.connect(argv.queue)
+  return amqplib.connect(config.queue_url)
 }
 
 function queueName(type, argv) {
@@ -17,11 +16,11 @@ function queueName(type, argv) {
   throw Error("queue type must by either deliver or configm")
 }
 
-export async function testQueue(argv) {
-  const conn = await connect(argv)
+export async function testQueue(opts, config) {
+  const conn = await connect(config)
   const ch = await conn.createChannel()
   try {
-    const status = await ch.checkQueue(queueName('deliver', argv))
+    const status = await ch.checkQueue(opts.queueName || queueName('deliver', config))
     console.log(status)
     return status
   } finally {
@@ -47,11 +46,11 @@ function getService(argv) {
 }
 
 
-export async function syncQueue(argv, config) {
-  const conn = await connect(argv)
+export async function syncQueue(opts, config) {
+  const conn = await connect(config)
   const ch = await conn.createChannel()
-  const qn = queueName('deliver', argv)
-  const service = getService(argv)
+  const qn = opts.queueName || queueName('deliver', config)
+  const service = getService(opts)
   let consumerTag = null
   console.error(`⏳ waiting for actions from ${qn}`)
 
@@ -59,9 +58,9 @@ export async function syncQueue(argv, config) {
     const ret = await ch.consume(qn, (msg) => {
       let action = JSON.parse(msg.content.toString())
 
-      action = decryptAction(action, argv)
+      action = decryptAction(action, opts, config)
 
-      const syncing = service.syncAction(action, argv, config)
+      const syncing = service.syncAction(action, opts, config)
             .then((v) => {
               ch.ack(msg)
             })
@@ -70,6 +69,7 @@ export async function syncQueue(argv, config) {
               ch.cancel(consumerTag)
               ch.close()
               conn.close()
+              console.error('failure to syncAction:', e)
               fail(e)
             })
     })

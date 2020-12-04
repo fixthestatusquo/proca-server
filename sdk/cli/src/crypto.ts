@@ -3,6 +3,12 @@ import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
 import {readFileSync, writeFileSync} from 'fs'
 import {CliConfig} from './config'
+import {types} from '@proca/api'
+
+type DecryptOpts = {
+  decrypt: boolean,
+  ignore: boolean
+}
 
 export type KeyPair = {
   public: string,
@@ -112,25 +118,22 @@ export function decrypt(payload: string, nonce: string, public_key: KeyPair, sig
   }
 }
 
-type Contact = {
-  payload: string,
-  nonce: string,
-  publicKey: KeyPair,
-  signKey: KeyPair,
-  pii: any
+export type ContactWithPII = types.Contact & {
+  pii?: any
 }
 
-type Action = {
-  contact: Contact
+export type ActionWithPII = Omit<types.Action, "contact"> & {
+  contact: ContactWithPII
 }
 
-export function decryptAction(action : Action, argv, config : CliConfig) {
+export function decryptAction(action : types.Action, argv : DecryptOpts, config : CliConfig) {
   const pii = getContact(action.contact, argv, config)
-  action.contact.pii = pii
-  return action
+  const action2 = action as ActionWithPII
+  action2.contact.pii = pii
+  return action2
 }
 
-export function getContact(contact : Contact, argv, config : CliConfig) {
+export function getContact(contact : types.Contact, argv : DecryptOpts, config : CliConfig) {
   let {payload, nonce, publicKey, signKey} = contact
   if (payload === undefined) throw new Error(`action contact has no payload: ${JSON.stringify(contact)}`)
   if (publicKey === null || publicKey === undefined) {

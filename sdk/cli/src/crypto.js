@@ -2,15 +2,14 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.getContact = exports.decryptAction = exports.decrypt = exports.storeKeys = exports.loadKeys = void 0;
-var tweetnacl_1 = __importDefault(require("tweetnacl"));
-var tweetnacl_util_1 = require("tweetnacl-util");
-var base64url_1 = __importDefault(require("base64url"));
-var fs_1 = require("fs");
+const tweetnacl_1 = __importDefault(require("tweetnacl"));
+const tweetnacl_util_1 = require("tweetnacl-util");
+const base64url_1 = __importDefault(require("base64url"));
+const fs_1 = require("fs");
 function readMixedFormat(ks, keys) {
-    for (var _i = 0, _a = Object.entries(keys); _i < _a.length; _i++) {
-        var _b = _a[_i], key = _b[0], value = _b[1];
+    for (let [key, value] of Object.entries(keys)) {
         if (typeof key !== "string")
             throw new Error("keys must be a map keyed by public key");
         if (typeof value == "string")
@@ -26,37 +25,37 @@ function readMixedFormat(ks, keys) {
 function loadKeys(config) {
     if (config.keyData[0] === '{') {
         // in env-memory key list -----------------------
-        var ks = {
+        const ks = {
             filename: null,
             readFromFile: false,
             keys: []
         };
-        var kd = JSON.parse(config.keyData);
+        const kd = JSON.parse(config.keyData);
         return readMixedFormat(ks, kd);
     }
     else {
         // filename -------------------------------------
-        var ks = {
+        const ks = {
             filename: config.keyData,
             readFromFile: true,
             keys: []
         };
-        var kd = JSON.parse(fs_1.readFileSync(ks.filename, 'utf8'));
+        const kd = JSON.parse(fs_1.readFileSync(ks.filename, 'utf8'));
         return readMixedFormat(ks, kd);
     }
 }
 exports.loadKeys = loadKeys;
 function storeKeys(ks) {
-    var data = ks.keys.reduce(function (m, k) {
+    let data = ks.keys.reduce((m, k) => {
         m[k.public] = { private: k.private };
         return m;
     }, {});
-    var content = JSON.stringify(data, null, 2);
-    fs_1.writeFileSync(ks.filename, content, { mode: 384 });
+    const content = JSON.stringify(data, null, 2);
+    fs_1.writeFileSync(ks.filename, content, { mode: 0o600 });
 }
 exports.storeKeys = storeKeys;
 function base64url2normal(s) {
-    return tweetnacl_util_1.decodeBase64(base64url_1["default"].toBase64(s));
+    return tweetnacl_util_1.decodeBase64(base64url_1.default.toBase64(s));
 }
 function decrypt(payload, nonce, public_key, sign_key, keys) {
     if (!nonce) {
@@ -65,16 +64,16 @@ function decrypt(payload, nonce, public_key, sign_key, keys) {
     if (!(public_key && sign_key)) {
         throw new Error("Tried to decrypt a payload providing null public_key or sign_key");
     }
-    var privIdx = keys.keys.findIndex(function (k) { return k.public == public_key.public; });
+    const privIdx = keys.keys.findIndex((k) => k.public == public_key.public);
     if (privIdx < 0)
         return null;
-    var privPair = keys.keys[privIdx];
-    var priv = base64url2normal(privPair.private);
-    var pub = base64url2normal(sign_key.public);
+    const privPair = keys.keys[privIdx];
+    const priv = base64url2normal(privPair.private);
+    const pub = base64url2normal(sign_key.public);
     // decrypt
-    var clear = tweetnacl_1["default"].box.open(base64url2normal(payload), base64url2normal(nonce), pub, priv);
+    const clear = tweetnacl_1.default.box.open(base64url2normal(payload), base64url2normal(nonce), pub, priv);
     if (clear === null) {
-        throw new Error("decrypting payload returned null (payload " + payload + ")");
+        throw new Error(`decrypting payload returned null (payload ${payload})`);
     }
     else {
         return tweetnacl_util_1.encodeUTF8(clear);
@@ -82,31 +81,33 @@ function decrypt(payload, nonce, public_key, sign_key, keys) {
 }
 exports.decrypt = decrypt;
 function decryptAction(action, argv, config) {
-    var pii = getContact(action.contact, argv, config);
-    action.contact.pii = pii;
-    return action;
+    const pii = getContact(action.contact, argv, config);
+    const action2 = action;
+    action2.contact.pii = pii;
+    return action2;
 }
 exports.decryptAction = decryptAction;
 function getContact(contact, argv, config) {
-    var payload = contact.payload, nonce = contact.nonce, publicKey = contact.publicKey, signKey = contact.signKey;
+    let { payload, nonce, publicKey, signKey } = contact;
     if (payload === undefined)
-        throw new Error("action contact has no payload: " + JSON.stringify(contact));
+        throw new Error(`action contact has no payload: ${JSON.stringify(contact)}`);
     if (publicKey === null || publicKey === undefined) {
         // plain text
         return JSON.parse(payload);
     }
     if (!argv.decrypt)
         return {};
-    var ks = loadKeys(config);
-    var clear = decrypt(payload, nonce, publicKey, signKey, ks);
+    const ks = loadKeys(config);
+    const clear = decrypt(payload, nonce, publicKey, signKey, ks);
     if (clear === null) {
         if (argv.ignore) {
             return {};
         }
         else {
-            throw new Error("Cannot decrypt action data encrypted for key " + JSON.stringify(publicKey));
+            throw new Error(`Cannot decrypt action data encrypted for key ${JSON.stringify(publicKey)}`);
         }
     }
     return JSON.parse(clear);
 }
 exports.getContact = getContact;
+//# sourceMappingURL=crypto.js.map
