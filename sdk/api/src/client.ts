@@ -45,7 +45,7 @@
 
 // apollo stack
 
-import {split, ApolloLink, execute, makePromise, FetchResult, Observable} from "apollo-link"
+import {split, ApolloLink, execute, makePromise, ExecutionResult, FetchResult, Observable} from "apollo-link"
 
 // http stack
 import {createHttpLink} from "apollo-link-http"
@@ -64,6 +64,19 @@ import {AuthHeader} from './auth'
 
 type Extensions = {
   captcha?: string
+}
+
+type Error = {
+  message: string,
+  extensions?: {
+    [key: string]: string
+  },
+  path: string[],
+  locations: [ [Object] ],
+}
+
+export interface ExecutionErrors {
+  errors?: Error[]
 }
 
 // hasSubscription - helper func to see if we have an operation with subscription
@@ -110,16 +123,34 @@ export function link(url: string, auth?: AuthHeader) {
   );
 }
 
-export async function request<Q,R>(link: ApolloLink, query: DocumentNode<Q,R>, variables: R, extensions?: Extensions) : Promise<FetchResult> {
+/**
+ * Because the query document has a generic type narrowed for <Q - thing we get, R - arguments we send>,
+ * these two generics are used to cast the result:
+ * it is composed from:
+ * - ExecutionResult: data: Q
+ * - ExecutionErrors: errors?: Error  - not sure why apollo-link does not provide this type
+ * - FetchResult: other keys like extensions
+ * 
+ */ 
+
+export async function request<Q,R>(
+  link: ApolloLink,
+  query: DocumentNode<Q,R>,
+  variables: R,
+  extensions?: Extensions) : Promise<ExecutionResult<Q> & ExecutionErrors & FetchResult> {
   return makePromise(
     execute(link, {
       query,
       variables,
       extensions
-    })
+    }) as Observable<ExecutionResult<Q> & ExecutionErrors & FetchResult>
   )
 }
 
-export function subscribe<Q,R>(link: ApolloLink, query: DocumentNode<Q,R>, variables: R) : Observable<FetchResult> {
-  return execute(link, {query, variables})
+export function subscribe<Q,R>(
+  link: ApolloLink,
+  query: DocumentNode<Q,R>,
+  variables: R
+) : Observable<ExecutionResult<Q> & FetchResult> {
+  return execute(link, {query, variables}) as Observable<ExecutionResult<Q> & FetchResult>
 }

@@ -1,4 +1,4 @@
-import * as Types from 'types';
+import * as Types from '../types';
 
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 

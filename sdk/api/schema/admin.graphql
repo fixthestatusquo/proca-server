@@ -20,6 +20,7 @@ query GetCampaign($org: String!, $id: Int!) {
 
 query GetActionPage($org: String!, $id: Int, $name: String) {
     org(name: $org) {
+      name, title,
       actionPage(id: $id, name: $name) {
         id,
         name,
@@ -35,6 +36,8 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
 # XXX add optional campaignId param to filter
 query ListActionPages($org: String!) {
   org(name: $org) {
+    name, 
+    title,
     actionPages {
       id, name, locale,
       extraSupporters,
