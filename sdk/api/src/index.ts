@@ -1,10 +1,7 @@
-import * as widget from './queries/widget'
-import * as admin from './queries/admin'
-import {basicAuth, tokenAuth} from './auth'
-import {link, request, subscribe} from './client'
+export * as widget from './queries/widget'
+export * as admin from './queries/admin'
+export * as types from './types'
+export {basicAuth, tokenAuth, BasicAuth, TokenAuth} from './auth'
+export {link, request, subscribe} from './client'
 
-export {
-  widget, admin,
-  link, request, subscribe,
-  basicAuth, tokenAuth
-}
+

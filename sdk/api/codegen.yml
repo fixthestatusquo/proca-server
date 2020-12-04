@@ -16,7 +16,7 @@ generates:
       - typescript-operations
     preset: import-types
     presetConfig:
-      typesPath: types
+      typesPath: ../types
     config:
       omitOperationSuffix: true
 
@@ -28,7 +28,7 @@ generates:
       - typescript-operations
     preset: import-types
     presetConfig:
-      typesPath: types
+      typesPath: ../types
     config:
       omitOperationSuffix: true
 

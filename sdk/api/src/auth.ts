@@ -1,11 +1,11 @@
 import {encode} from 'js-base64';
 
-type BasicAuth = {
+export type BasicAuth = {
   username: string,
   password: string
 }
 
-type TokenAuth = {
+export type TokenAuth = {
   token: string
 }
 
