@@ -74,21 +74,12 @@ query ExportOrgActions($org: String!, $start: Int,  $limit: Int, $onlyOptIn: Boo
 
 mutation UpdateActionPage(
       $id: Int!,
-      $name: String,
-      $locale: String,
-      $journey: [String!],
-      $thankYouTemplateRef: String,
-      $extraSupporters: Int,
-      $config: String
+      $actionPage: ActionPageInput!
       ) {
       updateActionPage(
         id: $id,
-        name: $name,
-        locale: $locale,
-        journey: $journey,
-        thankYouTemplateRef: $thankYouTemplateRef,
-        extraSupporters: $extraSupporters,
-        config: $config)
+        input: $actionPage
+      )
       {
         id
       }
@@ -96,13 +87,11 @@ mutation UpdateActionPage(
 
 mutation UpsertCampaign(
          $org: String!,
-         $name: String!,
-         $externalId: Int,
-         $title: String,
-         $actionPages: [ActionPageInput]!
+         $campaign: CampaignInput!
         ) {
         upsertCampaign(
-          orgName: $org, name: $name, externalId: $externalId, title: $title, actionPages: $actionPages
+          orgName: $org,
+          input: $campaign
         ) {
           id
         }

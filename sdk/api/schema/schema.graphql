@@ -12,41 +12,29 @@ type Tracking {
   content: String!
 }
 
-type Signature {
-  "Signature id"
-  id: Int
+type UserRole {
+  org: Org!
+  role: String
+}
 
-  "DateTime of signature (UTC)"
-  created: Datetime
-
-  "Encryption nonce in Base64url"
-  nonce: String
-
-  "Encrypted contact data in Base64url"
-  contact: String
-
-  "Campaign id"
+input SelectActionPage {
   campaignId: Int
+}
 
-  "Action page id"
-  actionPageId: Int
-
-  "Opt in given when adding sig"
-  optIn: Boolean
+type KeyWithPrivate {
+  id: Int!
+  public: String!
+  private: String!
+  name: String
+  active: Boolean
+  expired: Boolean
+  expiredAt: Datetime
 }
 
 type SimpleActionPage {
   id: Int!
   name: String!
   locale: String!
-}
-
-type SignatureList {
-  "Public key of sender (proca app), in Base64url encoding (RFC 4648 5.)"
-  publicKey: String
-
-  "List of returned signatures"
-  list: [Signature]
 }
 
 "GDPR consent data structure"
@@ -92,6 +80,7 @@ type ActionTypeCount {
 }
 
 enum ContactSchema {
+  ECI
   POPULAR_INITIATIVE
   BASIC
 }
@@ -116,6 +105,12 @@ input ActionPageInputLegacyUrl {
   config: String
 }
 
+input SelectKey {
+  id: Int
+  active: Boolean
+  public: String
+}
+
 scalar Date
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
@@ -127,10 +122,23 @@ input ActionInput {
   fields: [CustomFieldInput!]
 }
 
+input AddKeyInput {
+  name: String!
+  public: String!
+}
+
+input GenKeyInput {
+  name: String!
+}
+
 "Result of actions query"
 type PublicActionsResult {
   fieldKeys: [String!]
   list: [ActionCustomFields]
+}
+
+type ActivateKeyResult {
+  status: Status
 }
 
 "Campaign statistics"
@@ -143,6 +151,7 @@ type CampaignStats {
 }
 
 type ActionCustomFields {
+  actionId: Int!
   actionType: String!
   insertedAt: Datetime!
   fields: [CustomField!]
@@ -172,20 +181,7 @@ type RootMutationType {
   Action Pages will be removed (principle of not removing signature data).
   """
   upsertCampaign(
-    "Action pages of this campaign"
-    actionPages: [ActionPageInput]!
-
-    "Custom config as stringified JSON map"
-    config: Json
-
-    "Campaign human readable title"
-    title: String
-
-    "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-    externalId: Int
-
-    "Campaign unchanging identifier"
-    name: String!
+    input: CampaignInput!
 
     "Org name"
     orgName: String!
@@ -211,34 +207,25 @@ type RootMutationType {
 
   "Update an Action Page"
   updateActionPage(
-    "JSON string containing Action Page config"
-    config: String
-
-    "List of steps in the journey (deprecated, pass in config)"
-    journey: [String!]
-
-    "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
-    extraSupporters: Int
-
-    "A reference to thank you email template of this ActionPage"
-    thankYouTemplateRef: String
-
-    "2-letter, lowercase, code of ActionPage language"
-    locale: String
-
-    """
-    Unique NAME identifying ActionPage.
-
-    Does not have to exist, must be unique. Can be a 'technical' identifier
-    scoped to particular organization, so it does not have to change when the
-    slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
-    ask for ActionPage by it's current location.href, in which case it is useful
-    to make this url match the real idwget location.
-    """
-    name: String
+    input: ActionPageInput!
 
     "Action Page id"
     id: Int!
+  ): ActionPage
+
+  """
+  Adds a new Action Page based on another Action Page. Intended to be used to
+  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  """
+  copyActionPage(
+    "Name of Action Page this one is cloned from"
+    fromName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Org owner of new Action Page"
+    orgName: String!
   ): ActionPage
 
   "Adds an action referencing contact data via contactRef"
@@ -287,22 +274,49 @@ type RootMutationType {
     actionPageId: Int!
   ): ContactReference
 
+  addOrgUser(input: UserInput!, orgName: String!): User
+
+  deleteOrgUser(email: String!, orgName: String!): DeleteUserResult
+
+  updateOrgUser(input: UserInput!, orgName: String!): User
+
+  addOrg(input: OrgInput!): Org
+
+  deleteOrg(
+    "Name of organisation"
+    name: String!
+  ): Boolean
+
   updateOrg(
-    "Email opt in template name"
-    emailOptInTemplate: String
-
-    "Email opt in enabled"
-    emailOptIn: Boolean
-
-    "Schema for contact personal information"
-    contactSchema: ContactSchema
-
-    "Organisation title (human readable name)"
-    title: String
+    input: OrgInput!
 
     "Name of organisation, used for lookup, can't be used to change org name"
     name: String!
   ): Org
+
+  joinOrg(name: String!): JoinOrgResult
+
+  generateKey(
+    input: GenKeyInput!
+
+    "Name of organisation"
+    orgName: String!
+  ): KeyWithPrivate
+
+  addKey(
+    input: AddKeyInput!
+
+    "Name of organisation"
+    orgName: String!
+  ): Key
+
+  "A separate key activate operation, because you also need to add the key to receiving system before it is used"
+  activateKey(
+    "Key id"
+    id: Int!
+
+    orgName: String!
+  ): ActivateKeyResult
 }
 
 type RootQueryType {
@@ -331,6 +345,9 @@ type RootQueryType {
     "Only download opted in contacts and actions (default true)"
     onlyOptIn: Boolean
 
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
     "Limit the number of returned actions"
     limit: Int
 
@@ -349,6 +366,8 @@ type RootQueryType {
     "Organization name"
     orgName: String!
   ): [Action]
+
+  currentUser: User
 
   "Organization api (authenticated)"
   org(
@@ -381,7 +400,7 @@ type ActionPage {
   journey: [String!]
 
   "Config JSON of this action page"
-  config: String
+  config: Json
 
   "Extra supporters (added to supporters count)"
   extraSupporters: Int
@@ -408,7 +427,7 @@ type PublicActionPage {
   journey: [String!]
 
   "Config JSON of this action page"
-  config: String
+  config: Json
 
   "Campaign this widget belongs to"
   campaign: Campaign
@@ -417,6 +436,28 @@ type PublicActionPage {
 }
 
 scalar Datetime
+
+type DeleteUserResult {
+  status: Status
+}
+
+"Campaign input"
+input CampaignInput {
+  "Campaign unchanging identifier"
+  name: String!
+
+  "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+  externalId: Int
+
+  "Campaign human readable title"
+  title: String
+
+  "Custom config as stringified JSON map"
+  config: Json
+
+  "Action pages of this campaign"
+  actionPages: [ActionPageInput]!
+}
 
 "Address type which can hold different addres fields."
 input AddressInput {
@@ -439,7 +480,7 @@ input AddressInput {
   streetNumber: String
 }
 
-"ActionPage declaration"
+"ActionPage input"
 input ActionPageInput {
   "Action Page id"
   id: Int
@@ -468,7 +509,7 @@ input ActionPageInput {
   journey: [String!]
 
   "JSON string containing Action Page config"
-  config: String
+  config: Json
 }
 
 type PersonalData {
@@ -480,6 +521,10 @@ type PersonalData {
 
   "Email opt in template name"
   emailOptInTemplate: String
+}
+
+input SelectCampaign {
+  id: Int
 }
 
 type Campaign {
@@ -501,7 +546,13 @@ type Campaign {
   stats: CampaignStats
 
   "Fetch public actions"
-  actions(actionType: String!): PublicActionsResult
+  actions(
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+
+    "Return actions of this action type"
+    actionType: String!
+  ): PublicActionsResult
 
   org: PublicOrg
 }
@@ -511,6 +562,8 @@ type Key {
   id: Int!
   public: String!
   name: String
+  active: Boolean
+  expired: Boolean
   expiredAt: Datetime
 }
 
@@ -526,37 +579,21 @@ type Org {
 
   personalData: PersonalData!
 
-  keys: [Key!]!
+  keys(select: SelectKey): [Key!]!
+
+  key(select: SelectKey!): Key
 
   "List campaigns this org is leader or partner of"
-  campaigns: [Campaign]
+  campaigns(select: SelectCampaign): [Campaign]
 
   "List action pages this org has"
-  actionPages: [ActionPage]
+  actionPages(select: SelectActionPage): [ActionPage]
 
+  "Action Page"
   actionPage(name: String, id: Int): ActionPage
 
   "Get campaign this org is leader or partner of by id"
   campaign(id: Int): Campaign
-
-  """
-  Get signatures this org has collected.
-  Provide campaign_id to only get signatures for a campaign
-  XXX DEPRECATE AND REMOVE
-  """
-  signatures(
-    "Limit the number of returned signatures"
-    limit: Int
-
-    "return only signatures created at date time from this argument (inclusive)"
-    after: Datetime
-
-    "return only signatures with id starting from this argument (inclusive)"
-    start: Int
-
-    "return only signatures for campaign id"
-    campaignId: Int
-  ): SignatureList
 }
 
 type ContactReference {
@@ -575,6 +612,10 @@ type Contact {
   signKey: Key
 }
 
+type JoinOrgResult {
+  status: Status
+}
+
 "Custom field with a key and value. Both are strings."
 input CustomFieldInput {
   key: String!
@@ -582,10 +623,32 @@ input CustomFieldInput {
   transient: Boolean
 }
 
+input OrgInput {
+  "Name used to rename"
+  name: String
+
+  "Organisation title (human readable name)"
+  title: String
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
+  "Email opt in enabled"
+  emailOptIn: Boolean
+
+  "Email opt in template name"
+  emailOptInTemplate: String
+}
+
 "Custom field with a key and value."
 type CustomField {
   key: String!
   value: String!
+}
+
+input UserInput {
+  email: String!
+  roles: [String!]
 }
 
 "Contact information"
@@ -613,4 +676,18 @@ input ContactInput {
 
   "Nationality information"
   nationality: NationalityInput
+}
+
+enum Status {
+  "Operation awaiting confirmation"
+  CONFIRMING
+
+  "Operation completed succesfully"
+  SUCCESS
+}
+
+type User {
+  id: Int!
+  email: String!
+  roles: [UserRole!]
 }

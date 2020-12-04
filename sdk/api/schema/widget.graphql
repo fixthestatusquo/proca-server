@@ -35,7 +35,7 @@ query GetStats($name: String, $id: Int) {
   }
 }
 
-query GetPublicResult($name: String, $id: Int, $actionType: String!) {
+query GetPublicResult($name: String, $id: Int, $actionType: String!, $limit: Int!) {
   actionPage(name: $name, id: $id) {
     config,
     locale,
@@ -49,7 +49,7 @@ query GetPublicResult($name: String, $id: Int, $actionType: String!) {
         }, 
         supporterCount
       },
-      actions(actionType: $actionType) {
+      actions(actionType: $actionType, limit: $limit) {
         fieldKeys, list {  
         actionType, insertedAt,
           fields { key, value }

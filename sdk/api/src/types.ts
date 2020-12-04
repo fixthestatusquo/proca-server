@@ -21,22 +21,25 @@ export type Tracking = {
   content: Scalars['String'];
 };
 
-export type Signature = {
-  __typename?: 'Signature';
-  /** Signature id */
-  id?: Maybe<Scalars['Int']>;
-  /** DateTime of signature (UTC) */
-  created?: Maybe<Scalars['Datetime']>;
-  /** Encryption nonce in Base64url */
-  nonce?: Maybe<Scalars['String']>;
-  /** Encrypted contact data in Base64url */
-  contact?: Maybe<Scalars['String']>;
-  /** Campaign id */
+export type UserRole = {
+  __typename?: 'UserRole';
+  org: Org;
+  role?: Maybe<Scalars['String']>;
+};
+
+export type SelectActionPage = {
   campaignId?: Maybe<Scalars['Int']>;
-  /** Action page id */
-  actionPageId?: Maybe<Scalars['Int']>;
-  /** Opt in given when adding sig */
-  optIn?: Maybe<Scalars['Boolean']>;
+};
+
+export type KeyWithPrivate = {
+  __typename?: 'KeyWithPrivate';
+  id: Scalars['Int'];
+  public: Scalars['String'];
+  private: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
+  active?: Maybe<Scalars['Boolean']>;
+  expired?: Maybe<Scalars['Boolean']>;
+  expiredAt?: Maybe<Scalars['Datetime']>;
 };
 
 export type SimpleActionPage = {
@@ -44,14 +47,6 @@ export type SimpleActionPage = {
   id: Scalars['Int'];
   name: Scalars['String'];
   locale: Scalars['String'];
-};
-
-export type SignatureList = {
-  __typename?: 'SignatureList';
-  /** Public key of sender (proca app), in Base64url encoding (RFC 4648 5.) */
-  publicKey?: Maybe<Scalars['String']>;
-  /** List of returned signatures */
-  list?: Maybe<Array<Maybe<Signature>>>;
 };
 
 /** GDPR consent data structure */
@@ -95,6 +90,7 @@ export type ActionTypeCount = {
 };
 
 export enum ContactSchema {
+  Eci = 'ECI',
   PopularInitiative = 'POPULAR_INITIATIVE',
   Basic = 'BASIC'
 }
@@ -126,6 +122,12 @@ export type ActionPageInputLegacyUrl = {
   config?: Maybe<Scalars['String']>;
 };
 
+export type SelectKey = {
+  id?: Maybe<Scalars['Int']>;
+  active?: Maybe<Scalars['Boolean']>;
+  public?: Maybe<Scalars['String']>;
+};
+
 
 /** Custom field added to action. For signature it can be contact, for mail it can be subject and body */
 export type ActionInput = {
@@ -135,11 +137,25 @@ export type ActionInput = {
   fields?: Maybe<Array<CustomFieldInput>>;
 };
 
+export type AddKeyInput = {
+  name: Scalars['String'];
+  public: Scalars['String'];
+};
+
+export type GenKeyInput = {
+  name: Scalars['String'];
+};
+
 /** Result of actions query */
 export type PublicActionsResult = {
   __typename?: 'PublicActionsResult';
   fieldKeys?: Maybe<Array<Scalars['String']>>;
   list?: Maybe<Array<Maybe<ActionCustomFields>>>;
+};
+
+export type ActivateKeyResult = {
+  __typename?: 'ActivateKeyResult';
+  status?: Maybe<Status>;
 };
 
 /** Campaign statistics */
@@ -153,6 +169,7 @@ export type CampaignStats = {
 
 export type ActionCustomFields = {
   __typename?: 'ActionCustomFields';
+  actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['Datetime'];
   fields?: Maybe<Array<CustomField>>;
@@ -187,22 +204,33 @@ export type RootMutationType = {
   declareCampaign?: Maybe<Campaign>;
   /** Update an Action Page */
   updateActionPage?: Maybe<ActionPage>;
+  /**
+   * Adds a new Action Page based on another Action Page. Intended to be used to
+   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   */
+  copyActionPage?: Maybe<ActionPage>;
   /** Adds an action referencing contact data via contactRef */
   addAction?: Maybe<ContactReference>;
   /** Adds an action with contact data */
   addActionContact?: Maybe<ContactReference>;
   /** Link actions with refs to contact with contact reference */
   linkActions?: Maybe<ContactReference>;
+  addOrgUser?: Maybe<User>;
+  deleteOrgUser?: Maybe<DeleteUserResult>;
+  updateOrgUser?: Maybe<User>;
+  addOrg?: Maybe<Org>;
+  deleteOrg?: Maybe<Scalars['Boolean']>;
   updateOrg?: Maybe<Org>;
+  joinOrg?: Maybe<JoinOrgResult>;
+  generateKey?: Maybe<KeyWithPrivate>;
+  addKey?: Maybe<Key>;
+  /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
+  activateKey?: Maybe<ActivateKeyResult>;
 };
 
 
 export type RootMutationTypeUpsertCampaignArgs = {
-  actionPages: Array<Maybe<ActionPageInput>>;
-  config?: Maybe<Scalars['Json']>;
-  title?: Maybe<Scalars['String']>;
-  externalId?: Maybe<Scalars['Int']>;
-  name: Scalars['String'];
+  input: CampaignInput;
   orgName: Scalars['String'];
 };
 
@@ -217,13 +245,15 @@ export type RootMutationTypeDeclareCampaignArgs = {
 
 
 export type RootMutationTypeUpdateActionPageArgs = {
-  config?: Maybe<Scalars['String']>;
-  journey?: Maybe<Array<Scalars['String']>>;
-  extraSupporters?: Maybe<Scalars['Int']>;
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
-  locale?: Maybe<Scalars['String']>;
-  name?: Maybe<Scalars['String']>;
+  input: ActionPageInput;
   id: Scalars['Int'];
+};
+
+
+export type RootMutationTypeCopyActionPageArgs = {
+  fromName: Scalars['String'];
+  name: Scalars['String'];
+  orgName: Scalars['String'];
 };
 
 
@@ -252,12 +282,60 @@ export type RootMutationTypeLinkActionsArgs = {
 };
 
 
-export type RootMutationTypeUpdateOrgArgs = {
-  emailOptInTemplate?: Maybe<Scalars['String']>;
-  emailOptIn?: Maybe<Scalars['Boolean']>;
-  contactSchema?: Maybe<ContactSchema>;
-  title?: Maybe<Scalars['String']>;
+export type RootMutationTypeAddOrgUserArgs = {
+  input: UserInput;
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeDeleteOrgUserArgs = {
+  email: Scalars['String'];
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeUpdateOrgUserArgs = {
+  input: UserInput;
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeAddOrgArgs = {
+  input: OrgInput;
+};
+
+
+export type RootMutationTypeDeleteOrgArgs = {
   name: Scalars['String'];
+};
+
+
+export type RootMutationTypeUpdateOrgArgs = {
+  input: OrgInput;
+  name: Scalars['String'];
+};
+
+
+export type RootMutationTypeJoinOrgArgs = {
+  name: Scalars['String'];
+};
+
+
+export type RootMutationTypeGenerateKeyArgs = {
+  input: GenKeyInput;
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeAddKeyArgs = {
+  input: AddKeyInput;
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeActivateKeyArgs = {
+  id: Scalars['Int'];
+  orgName: Scalars['String'];
 };
 
 export type RootQueryType = {
@@ -267,6 +345,7 @@ export type RootQueryType = {
   /** Get action page */
   actionPage?: Maybe<PublicActionPage>;
   exportActions?: Maybe<Array<Maybe<Action>>>;
+  currentUser?: Maybe<User>;
   /** Organization api (authenticated) */
   org?: Maybe<Org>;
 };
@@ -320,7 +399,7 @@ export type ActionPage = {
   /** List of steps in journey */
   journey?: Maybe<Array<Scalars['String']>>;
   /** Config JSON of this action page */
-  config?: Maybe<Scalars['String']>;
+  config?: Maybe<Scalars['Json']>;
   /** Extra supporters (added to supporters count) */
   extraSupporters?: Maybe<Scalars['Int']>;
   /** Campaign this widget belongs to */
@@ -340,12 +419,31 @@ export type PublicActionPage = {
   /** List of steps in journey */
   journey?: Maybe<Array<Scalars['String']>>;
   /** Config JSON of this action page */
-  config?: Maybe<Scalars['String']>;
+  config?: Maybe<Scalars['Json']>;
   /** Campaign this widget belongs to */
   campaign?: Maybe<Campaign>;
   org?: Maybe<PublicOrg>;
 };
 
+
+export type DeleteUserResult = {
+  __typename?: 'DeleteUserResult';
+  status?: Maybe<Status>;
+};
+
+/** Campaign input */
+export type CampaignInput = {
+  /** Campaign unchanging identifier */
+  name: Scalars['String'];
+  /** Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign */
+  externalId?: Maybe<Scalars['Int']>;
+  /** Campaign human readable title */
+  title?: Maybe<Scalars['String']>;
+  /** Custom config as stringified JSON map */
+  config?: Maybe<Scalars['Json']>;
+  /** Action pages of this campaign */
+  actionPages: Array<Maybe<ActionPageInput>>;
+};
 
 /** Address type which can hold different addres fields. */
 export type AddressInput = {
@@ -363,7 +461,7 @@ export type AddressInput = {
   streetNumber?: Maybe<Scalars['String']>;
 };
 
-/** ActionPage declaration */
+/** ActionPage input */
 export type ActionPageInput = {
   /** Action Page id */
   id?: Maybe<Scalars['Int']>;
@@ -386,7 +484,7 @@ export type ActionPageInput = {
   /** List of steps in the journey */
   journey?: Maybe<Array<Scalars['String']>>;
   /** JSON string containing Action Page config */
-  config?: Maybe<Scalars['String']>;
+  config?: Maybe<Scalars['Json']>;
 };
 
 export type PersonalData = {
@@ -397,6 +495,10 @@ export type PersonalData = {
   emailOptIn: Scalars['Boolean'];
   /** Email opt in template name */
   emailOptInTemplate?: Maybe<Scalars['String']>;
+};
+
+export type SelectCampaign = {
+  id?: Maybe<Scalars['Int']>;
 };
 
 export type Campaign = {
@@ -419,6 +521,7 @@ export type Campaign = {
 
 
 export type CampaignActionsArgs = {
+  limit: Scalars['Int'];
   actionType: Scalars['String'];
 };
 
@@ -428,6 +531,8 @@ export type Key = {
   id: Scalars['Int'];
   public: Scalars['String'];
   name?: Maybe<Scalars['String']>;
+  active?: Maybe<Scalars['Boolean']>;
+  expired?: Maybe<Scalars['Boolean']>;
   expiredAt?: Maybe<Scalars['Datetime']>;
 };
 
@@ -441,19 +546,35 @@ export type Org = {
   title?: Maybe<Scalars['String']>;
   personalData: PersonalData;
   keys: Array<Key>;
+  key?: Maybe<Key>;
   /** List campaigns this org is leader or partner of */
   campaigns?: Maybe<Array<Maybe<Campaign>>>;
   /** List action pages this org has */
   actionPages?: Maybe<Array<Maybe<ActionPage>>>;
+  /** Action Page */
   actionPage?: Maybe<ActionPage>;
   /** Get campaign this org is leader or partner of by id */
   campaign?: Maybe<Campaign>;
-  /**
-   * Get signatures this org has collected.
-   * Provide campaign_id to only get signatures for a campaign
-   * XXX DEPRECATE AND REMOVE
-   */
-  signatures?: Maybe<SignatureList>;
+};
+
+
+export type OrgKeysArgs = {
+  select?: Maybe<SelectKey>;
+};
+
+
+export type OrgKeyArgs = {
+  select: SelectKey;
+};
+
+
+export type OrgCampaignsArgs = {
+  select?: Maybe<SelectCampaign>;
+};
+
+
+export type OrgActionPagesArgs = {
+  select?: Maybe<SelectActionPage>;
 };
 
 
@@ -465,14 +586,6 @@ export type OrgActionPageArgs = {
 
 export type OrgCampaignArgs = {
   id?: Maybe<Scalars['Int']>;
-};
-
-
-export type OrgSignaturesArgs = {
-  limit?: Maybe<Scalars['Int']>;
-  after?: Maybe<Scalars['Datetime']>;
-  start?: Maybe<Scalars['Int']>;
-  campaignId?: Maybe<Scalars['Int']>;
 };
 
 export type ContactReference = {
@@ -492,6 +605,11 @@ export type Contact = {
   signKey?: Maybe<Key>;
 };
 
+export type JoinOrgResult = {
+  __typename?: 'JoinOrgResult';
+  status?: Maybe<Status>;
+};
+
 /** Custom field with a key and value. Both are strings. */
 export type CustomFieldInput = {
   key: Scalars['String'];
@@ -499,11 +617,29 @@ export type CustomFieldInput = {
   transient?: Maybe<Scalars['Boolean']>;
 };
 
+export type OrgInput = {
+  /** Name used to rename */
+  name?: Maybe<Scalars['String']>;
+  /** Organisation title (human readable name) */
+  title?: Maybe<Scalars['String']>;
+  /** Schema for contact personal information */
+  contactSchema?: Maybe<ContactSchema>;
+  /** Email opt in enabled */
+  emailOptIn?: Maybe<Scalars['Boolean']>;
+  /** Email opt in template name */
+  emailOptInTemplate?: Maybe<Scalars['String']>;
+};
+
 /** Custom field with a key and value. */
 export type CustomField = {
   __typename?: 'CustomField';
   key: Scalars['String'];
   value: Scalars['String'];
+};
+
+export type UserInput = {
+  email: Scalars['String'];
+  roles?: Maybe<Array<Scalars['String']>>;
 };
 
 /** Contact information */
@@ -524,4 +660,18 @@ export type ContactInput = {
   address?: Maybe<AddressInput>;
   /** Nationality information */
   nationality?: Maybe<NationalityInput>;
+};
+
+export enum Status {
+  /** Operation awaiting confirmation */
+  Confirming = 'CONFIRMING',
+  /** Operation completed succesfully */
+  Success = 'SUCCESS'
+}
+
+export type User = {
+  __typename?: 'User';
+  id: Scalars['Int'];
+  email: Scalars['String'];
+  roles?: Maybe<Array<UserRole>>;
 };
