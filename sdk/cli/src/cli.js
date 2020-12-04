@@ -14,7 +14,6 @@ import {watchPages} from './watch'
 require = require('esm')(module);
 
 
-
 export default function cli() {
   const config = loadConfig()
 
@@ -56,6 +55,8 @@ export default function cli() {
         } else if (error.result && error.result.errors && error.result.errors.length > 0) {
           const {message, extensions, path} = error.result.errors[0]
           console.error(message + (extensions && extensions.code ? `, code: ${extensions.code}` : ``))
+        } else {
+          console.error(error)
         }
       })
     }
@@ -208,8 +209,19 @@ export default function cli() {
             description: 'Export fields (comma separated)'
           }
         }, cmd(exportActions))
-        .command('deliver:check', 'print status of delivery queue', {}, cmd(testQueue))
+        .command('deliver:check', 'print status of delivery queue', {
+          Q: {
+            alias: 'queueName',
+            type: 'string',
+            description: 'Exact queue name to use instead of standard ones'
+          }
+        }, cmd(testQueue))
         .command('deliver:sync', 'sync deliver queue to service', {
+          Q: {
+            alias: 'queueName',
+            type: 'string',
+            description: 'Exact queue name to use instead of standard ones'
+          },
           d: {
             alias: 'decrypt',
             type: 'boolean',

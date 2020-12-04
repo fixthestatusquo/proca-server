@@ -76,6 +76,10 @@ export function storeConfig(config : CliConfig, file_name : string) {
 }
 
 
-// module.exports = Object.assign(config, {
-//   setup: setup
-// })
+export type WidgetConfig = {
+  actionpage: number,
+  lang: string,
+  journey: string[],
+  filename: string,
+  organisation: string
+}
