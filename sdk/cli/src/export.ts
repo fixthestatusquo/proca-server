@@ -1,15 +1,23 @@
 import client from './client'
 import {admin, request} from '@proca/api'
-import {decryptAction} from './crypto'
-import {getFormatter} from './format'
-import {keys, decrypt, getContact} from './crypto'
+import {ActionWithEncryptedContact, DecryptOpts, ActionWithPII, decryptAction} from './crypto'
+import {getFormatter, FormatOpts} from './format'
+import {CliConfig} from './config'
 
+interface ExportActionsOpts {
+  batch: number,
+  all: boolean,
+  start?: number,
+  after?: string,
+  campaign?: string,
+  fields: string
 
-export async function exportActions(argv, config) {
+}
+export async function exportActions(argv : ExportActionsOpts & DecryptOpts & FormatOpts, config : CliConfig) {
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const vars = {
+  const vars : admin.ExportCampaignActionsVariables = {
     org: config.org,
     limit: argv.batch,
     onlyOptIn: !argv.all
@@ -39,9 +47,9 @@ export async function exportActions(argv, config) {
       vars.start = action.actionId + 1
 
       // inplace 
-      decryptAction(action, argv, config)
+      const action2 = decryptAction(action as ActionWithEncryptedContact, argv, config)
 
-      console.log(fmt.action(action))
+      console.log(fmt.action(action2))
     }
   }
 }

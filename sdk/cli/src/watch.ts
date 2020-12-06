@@ -1,13 +1,20 @@
 import client from './client'
 import {admin, subscribe} from '@proca/api'
-import {getFormatter} from './format'
+import {getFormatter,FormatOpts} from './format'
 import {execSync} from 'child_process'
+import {CliConfig} from './config'
 
-export async function watchPages(argv) {
-  const c = client(argv)
+interface WatchOpts {
+  all: boolean,
+  org?: string,
+  exec?: string
+}
+
+export async function watchPages(argv : WatchOpts & FormatOpts, config: CliConfig) {
+  const c = client(config)
   const fmt = getFormatter(argv)
 
-  const orgName = argv.A ? null : argv.o
+  const orgName = argv.all ? null : argv.org
 
   const query = subscribe(c, admin.ActionPageUpsertedDocument, {org: orgName})
 
@@ -15,11 +22,12 @@ export async function watchPages(argv) {
         const ap = data.actionPageUpserted
         const t = fmt.actionPage(ap, ap.org)
 
-        if (argv.x) {
+        if (argv.exec) {
           try {
-            const output = execSync(argv.x, {input: t})
+            const output = execSync(argv.exec, {input: t})
             console.info(output.toString())
           } catch (e) {
+            console.error(`-- Error from command ${argv.exec} ------------`)
             if (e.stdout) {
               console.log(e.stdout.toString())
             }
@@ -34,5 +42,5 @@ export async function watchPages(argv) {
         }
   })
 
-  return sub
+  return sub as any
 }

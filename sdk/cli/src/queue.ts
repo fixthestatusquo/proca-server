@@ -1,22 +1,29 @@
 import amqplib from 'amqplib'
 import backoff from 'backoff'
-import {decryptAction} from './crypto'
+import {decryptAction, DecryptOpts} from './crypto'
+import {CliConfig} from './config'
+import {CliOpts, ServiceOpts} from './cli'
+import {ActionMessage} from './queueMessage'
 
-export function connect(config) {
+export type ProcessStage = "confirm" | "deliver"
+export type SyncFunction = (action : ActionMessage, argv : ServiceOpts, config : CliConfig) => any
+
+
+export function connect(config : CliConfig) {
   if (!config.queue_url) {
     throw Error("Please configure queue url with -q or QUEUE_URL")
   }
-  return amqplib.connect(config.queue_url)
+  return amqplib.connect(config.queue_url) as any
 }
 
-function queueName(type, argv) {
+function queueName(type : ProcessStage, argv:CliOpts) {
   if (type == 'deliver' || type == 'confirm') {
     return `custom.${argv.org}.${type}`
   }
   throw Error("queue type must by either deliver or configm")
 }
 
-export async function testQueue(opts, config) {
+export async function testQueue(opts : ServiceOpts, config : CliConfig) {
   const conn = await connect(config)
   const ch = await conn.createChannel()
   try {
@@ -29,7 +36,7 @@ export async function testQueue(opts, config) {
   }
 }
 
-function getService(argv) {
+function getService(argv : ServiceOpts) {
   if (typeof argv.service === 'string') {
     let service = require(`./service/${argv.service}`);
     if (argv.backoff) {
@@ -46,40 +53,40 @@ function getService(argv) {
 }
 
 
-export async function syncQueue(opts, config) {
+export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConfig) {
   const conn = await connect(config)
   const ch = await conn.createChannel()
   const qn = opts.queueName || queueName('deliver', config)
   const service = getService(opts)
-  let consumerTag = null
+  let consumerTag :string = null
   console.error(`⏳ waiting for actions from ${qn}`)
 
-  return new Promise(async (ok, fail) => {
-    const ret = await ch.consume(qn, (msg) => {
+  return new Promise(async (_, fail) => {
+    const ret = await ch.consume(qn, (msg : amqplib.Message) => {
       let action = JSON.parse(msg.content.toString())
 
       action = decryptAction(action, opts, config)
 
       const syncing = service.syncAction(action, opts, config)
-            .then((v) => {
-              ch.ack(msg)
-            })
-            .catch((e) => {
-              ch.nack(msg)
-              ch.cancel(consumerTag)
-              ch.close()
-              conn.close()
-              console.error('failure to syncAction:', e)
-              fail(e)
-            })
+        .then((v : any) => {
+          ch.ack(msg)
+        })
+        .catch((e : Error) => {
+          ch.nack(msg)
+          ch.cancel(consumerTag)
+          ch.close()
+          conn.close()
+          console.error('failure to syncAction:', e)
+          fail(e)
+        })
     })
     consumerTag = ret.consumerTag
   })
 }
 
 
-export function addBackoff(fun) {
-  async function newFun(...args) {
+export function addBackoff(fun : SyncFunction) {
+  async function newFun(...args : any[]) : Promise<any> {
     return new Promise((ok, fail) => {
       const bo = backoff.exponential({
         randomisationFactor: 0,
@@ -89,12 +96,12 @@ export function addBackoff(fun) {
       bo.failAfter(10)
       bo.on('ready', function(number, delay) {
         try {
-          fun.apply(null, args).then((r) => ok(r)).catch((err) => {
+          fun.apply(null, args).then((r : any) => ok(r )).catch((err : Error) => {
             console.log(`😵 rejected: ${err}`)
             bo.backoff()
           })
-        } catch(error) {
-          console.log(`😵 exception: ${err}`)
+        } catch(error : any) {
+          console.log(`😵 exception: ${error}`)
           bo.backoff()
         }
       })

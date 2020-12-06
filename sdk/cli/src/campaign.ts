@@ -17,6 +17,7 @@ export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
     .forEach((c) => {
       console.log(c)
     })
+  return result.data.org.campaigns
 }
 
 interface IdOpt {
@@ -45,6 +46,8 @@ export async function listActionPages(argv : FormatOpts, config : CliConfig) {
   data.org.actionPages
     .map(ap => fmt.actionPage(ap, data.org))
     .forEach((ap) => {console.log(ap)})
+
+  data.org.actionPages
 }
 
 interface GetActionPageOpts {
@@ -75,18 +78,19 @@ export async function getActionPage(argv : GetActionPageOpts & FormatOpts, confi
   if (argv.public)
     vars.org = config.org
 
-  
   if (argv.public) {
     const {data, errors} = await request(c, widget.GetActionPageDocument, vars)
     if (errors) throw errors
     t = fmt.actionPage(data.actionPage, data.actionPage.org)
+    console.log(t)
+    return data.actionPage
   } else {
     const {data, errors} = await request(c, admin.GetActionPageDocument, vars)
     if (errors) throw errors
     t = fmt.actionPage(data.org.actionPage, data.org)
+    console.log(t)
+    return data.org.actionPage
   }
-
-  console.log(t)
 }
 
 interface UpdateActionPageOpts {

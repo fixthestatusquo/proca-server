@@ -1,14 +1,27 @@
-import debug from 'debug'
 import bent from 'bent'
+import debug from 'debug'
+import {ActionMessage} from '../queueMessage'
+import {CliConfig} from '../config'
+import {ServiceOpts} from '../cli'
+
 
 const log = debug('proca:service:identity')
 
-export async function syncAction(action, argv, config) {
+type ConsentConfig = {
+  [key: string]: Consent
+}
+
+type Consent = {
+  level: "communication" | "none_given" | "implicit" | "explicit_not_opt_out" | "explicit_opt_in",
+  locale?: string
+}
+
+export async function syncAction(action : ActionMessage, argv : ServiceOpts, config : CliConfig) {
   const url = argv.service_url
   const api_token = config.identity_api_token
   const comm_consent = config.identity_consent
 
-  let consent = {}
+  let consent : ConsentConfig = null
   if (comm_consent === null || comm_consent === undefined) {
     log('ProcaCli argv.identity_consent is not set')
     throw "Please set IDENTITY_CONSENT"
@@ -19,6 +32,7 @@ export async function syncAction(action, argv, config) {
     consent = JSON.parse(comm_consent)
   } else {
     log(`ProcaCli argv.identity_consent uses ${comm_consent} as commmunication consent`)
+    consent = {}
     consent[comm_consent] = { level: 'communication' }
   }
 
@@ -38,11 +52,25 @@ export async function syncAction(action, argv, config) {
 }
 
 
+type DataApiCustomField = {
+  name: string,
+  value: string
+}
 
+type DataApiSource = {
+  source: string,
+  medium: string,
+  campaign: string
+}
 
-
-export function toDataApi(action, consent_map, action_fields, contact_fields) {
+export function toDataApi(action : ActionMessage,
+                          consent_map : ConsentConfig,
+                          action_fields : string[],
+                          contact_fields : string[]) {
   const ah = {
+    api_token: null as string,
+    metadata: {} as Record<string,string>,
+    source: null as DataApiSource,
     action_type: action.action.actionType,
     action_technical_type: `proca:${action.action.actionType}`,
     create_dt: action.action.createdAt,
@@ -56,6 +84,7 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
       firstname: action.contact.pii.firstName,
       lastname: action.contact.pii.lastName,
       emails: [{ email: action.contact.pii.email }],
+      custom_fields: [] as DataApiCustomField[],
       addresses: [{
         postcode: action.contact.pii.postcode,
         country: action.contact.pii.country,
@@ -66,7 +95,7 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
   }
 
   const custom_fields = []
-  const metadata = {}
+  const metadata : Record<string, string> = {}
 
   for (const [key,value] of Object.entries(action.action.fields)) {
     if ((action_fields || []).includes(key.toLowerCase())) {
@@ -79,22 +108,14 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
   }
 
   if (Object.keys(metadata).length > 0)
-    ah['metadata'] = metadata
+    ah.metadata = metadata
 
   if (custom_fields.length > 0)
-    ah['cons_hash']['custom_fields'] = custom_fields
+    ah.cons_hash.custom_fields = custom_fields
 
-  // XXX deprecated
-  if (action.source) {
-    ah['source'] = {
-      campaign: action.source.campaign,
-      source: action.source.source,
-      medium: action.source.medium,
-    }
-  }
 
   if (action.tracking) {
-    ah['source'] = {
+    ah.source = {
       campaign: action.tracking.campaign,
       source: action.tracking.source,
       medium: action.tracking.medium,
@@ -103,7 +124,9 @@ export function toDataApi(action, consent_map, action_fields, contact_fields) {
 
   return ah
 }
-export function toConsent(action, consent_id, {level, locale}) {
+
+export function toConsent(action : ActionMessage, consent_id : string, consent : Consent) {
+  const {level, locale} = consent
   // Skip if this is not this locale
   if (locale && locale.toLowerCase() != action.actionPage.locale.toLowerCase())
     return null;

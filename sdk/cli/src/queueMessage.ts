@@ -1,45 +1,59 @@
-type contact = {
+import {ProcessSage} from './queue'
+
+type Contact = {
   email: string,
   firstName: string,
   ref: string,
-  payload: string
+  payload: string,
+  signKey: string,
+  publicKey: string,
+  pii?: any
 }
 
-type campaign = {
+type Campaign = {
   title: string,
   name: string,
   externalId: number
 }
 
-type actionPage = {
+type ActionPage = {
   locale: string,
   name: string,
   thankYouTemplateRef: string
 }
 
-type action = {
+type Action = {
   actionType: string,
   fields: {
     [key: string]: string
-    // createdAt ? 
-  }
+  },
+  createdAt: string
 }
 
-type tracking = {
+type Tracking = {
   source: string,
   medium: string,
   campaign: string,
   content: string
 }
 
-export type actionMessage = {
+type Privacy = {
+  communication: boolean,
+  givenAt: string
+}
+
+export type ActionMessage = {
   actionId: number,
   actionPageId: number,
   campaignId: number,
   orgId: number,
-  action: action,
-  contact: contact,
-  campaign: campaign,
-  actionPage: actionPage,
-  tracking: tracking
+  action: Action,
+  contact: Contact,
+  campaign: Campaign,
+  actionPage: ActionPage,
+  tracking: Tracking,
+  privacy: Privacy,
+  schema: "proca:action:1",
+  stage: ProcessStage
+
 }
