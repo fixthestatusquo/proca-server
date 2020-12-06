@@ -2,14 +2,15 @@ import nacl from 'tweetnacl'
 import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
 import {readFileSync, writeFileSync} from 'fs'
-import {CliConfig} from './config'
 import {types} from '@proca/api'
+import {CliConfig} from './config'
 
-type DecryptOpts = {
-  decrypt: boolean,
-  ignore: boolean
+export type DecryptOpts = {
+  decrypt?: boolean,
+  ignore?: boolean
 }
 
+// keys ------
 export type KeyPair = {
   public: string,
   private?: string
@@ -20,7 +21,6 @@ export type KeyStore = {
   readFromFile: boolean,
   keys: KeyPair[]
 }
-
 
 type mixedFormatValue = {
   private: string
@@ -34,6 +34,27 @@ type fullFormatValue = {
 
 type fullFormat = Record<string, fullFormatValue>
 
+// contact payload
+
+export interface EncryptedContact {
+  payload: string,
+  nonce: string,
+  publicKey: KeyPair,
+  signKey: KeyPair,
+  contactRef: string
+}
+
+export interface ActionWithEncryptedContact {
+  contact: EncryptedContact
+}
+
+export type ContactWithPII = EncryptedContact & {
+  pii?: any
+}
+
+export type ActionWithPII = Omit<types.Action, "contact"> & {
+  contact: ContactWithPII,
+}
 
 function readMixedFormat(ks : KeyStore, keys : mixedFormat) {
   for (let [key, value] of Object.entries(keys)) {
@@ -118,22 +139,14 @@ export function decrypt(payload: string, nonce: string, public_key: KeyPair, sig
   }
 }
 
-export type ContactWithPII = types.Contact & {
-  pii?: any
-}
-
-export type ActionWithPII = Omit<types.Action, "contact"> & {
-  contact: ContactWithPII
-}
-
-export function decryptAction(action : types.Action, argv : DecryptOpts, config : CliConfig) {
+export function decryptAction(action : ActionWithEncryptedContact, argv : DecryptOpts, config : CliConfig) {
   const pii = getContact(action.contact, argv, config)
   const action2 = action as ActionWithPII
   action2.contact.pii = pii
   return action2
 }
 
-export function getContact(contact : types.Contact, argv : DecryptOpts, config : CliConfig) {
+export function getContact(contact : EncryptedContact, argv : DecryptOpts, config : CliConfig) {
   let {payload, nonce, publicKey, signKey} = contact
   if (payload === undefined) throw new Error(`action contact has no payload: ${JSON.stringify(contact)}`)
   if (publicKey === null || publicKey === undefined) {

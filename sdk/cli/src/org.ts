@@ -1,11 +1,10 @@
 import client from './client'
 import {request, admin} from '@proca/api'
-import {getFormatter} from './format'
-import {loadKeys, saveKeys} from './crypto'
-import fs from 'fs'
-import inquirer from 'inquirer'
+import {getFormatter,FormatOpts} from './format'
+import {loadKeys} from './crypto'
+import {CliConfig} from 'config'
 
-export async function listKeys(argv, config) {
+export async function listKeys(argv : FormatOpts, config : CliConfig) {
   const c = client(config)
   const fmt = getFormatter(argv)
   const keys = loadKeys(config)
@@ -20,6 +19,6 @@ export async function listKeys(argv, config) {
 }
 
 
-export async function addKey(argv, config) {
+export async function addKey(_opts : FormatOpts, _config : CliConfig) {
   console.log("please use proca-cli setup")
 }

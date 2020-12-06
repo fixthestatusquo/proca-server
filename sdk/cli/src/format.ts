@@ -1,5 +1,5 @@
 import csvStringify from 'csv-stringify/lib/sync'
-import {types} from '@proca/api'
+import {admin,types} from '@proca/api'
 import {ActionWithPII, KeyStore} from './crypto'
 import {WidgetConfig} from './config'
 
@@ -135,7 +135,7 @@ class Terminal {
     return ap
   }
 
-  action(a : types.Action) {
+  action(a : ActionWithPII) {
     const c = a.campaign !== undefined ? a.campaign.name : ''
     const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
     return t

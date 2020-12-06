@@ -1,6 +1,6 @@
 import yargs from 'yargs';
 
-import {load as loadConfig} from './config'
+import {load as loadConfig, CliConfig} from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
 import {listKeys, addKey} from './org'
 import {exportActions} from './export'
@@ -11,37 +11,78 @@ import {watchPages} from './watch'
 
 // import {testQueue, syncQueue, addBackoff} from './queue'
 
-require = require('esm')(module);
+interface ConfigDefaults {
+  queue_url: string,
+  keyData: string,
+  host: string,
+  user: string,
+  password: string,
+  org: string
+}
 
+export interface ServiceOpts {
+  service?: string,
+  service_url?: string,
+  queueName?: String,
+  backoff?: boolean
+}
+
+export interface CliOpts {
+  org?: string,
+  user?: string,
+  password?: string,
+  host?: string,
+  queue?: string,
+  keys?: string,
+  json?: boolean,
+  csv?: boolean,
+  id?: number,
+  name?: string,
+  public?: boolean,
+  locale?: string,
+  tytpl?: string,
+  extra?: number,
+  config?: string,
+  exec?: string,
+  all?: boolean,
+  campaign?: string,
+  start?: number,
+  after?: string,
+  decrypt?: boolean,
+  ignore?: boolean,
+  fields?: string,
+  // ServiceOpts 
+  queueName?: string,
+  service?: string,
+  service_url?: string,
+  backoff?: boolean
+}
 
 export default function cli() {
-  const config = loadConfig()
+  const config : CliConfig = loadConfig()
 
-  const configOverrides = {
-    'queue': 'queue_url',
-    'keys': 'keyData',
-    'host': 'url',
-    'user': 'username',
-    'password': 'password',
-    'org': 'org'
-  }
 
-  function override(option, desc) {
-    const key = configOverrides[option]
+  function override(short: string, desc: string, def: any) {
     return {
-      alias: option,
-      type: 'string',
+      alias: short,
+      type: "string" as yargs.PositionalOptionsType,
       describe: desc,
-      default: config[key],
+      default: def
     }
   }
 
-  function cmd(cliMethod) {
-    return (opts) => {
-      // override config
-      for (const [opt, key] of Object.entries(configOverrides)) {
-        config[key] = opts[opt]
-      }
+  function cmd(cliMethod : (opts:CliOpts, config:CliConfig) => Promise<any>) {
+    return (opts : yargs.Arguments<CliOpts>) => {
+
+      // back propagate the overriding of options
+      // this might not be right but we have a two way flow:
+      // the opts take defaults from config, but if set, they can override back the config
+      config.queue_url = opts.queue
+      config.keyData = opts.keys
+      config.url = opts.host
+      config.username = opts.user
+      config.password = opts.password
+      config.org = opts.org
 
       cliMethod(opts, config).catch((error) => {
         if (error.message) {
@@ -54,7 +95,11 @@ export default function cli() {
           }
         } else if (error.result && error.result.errors && error.result.errors.length > 0) {
           const {message, extensions, path} = error.result.errors[0]
-          console.error(message + (extensions && extensions.code ? `, code: ${extensions.code}` : ``))
+          console.error(
+              message
+              + (extensions && extensions.code ? `, code: ${extensions.code}` : ``)
+              + (path ? `, path: ${path}` : ``)
+          )
         } else {
           console.error(error)
         }
@@ -63,35 +108,34 @@ export default function cli() {
   }
 
   const argv = yargs
-        .scriptName('proca-cli')
-        .command(
-          'setup',
-          'configure proca CLI (generates .env, keys.json files)',
-          y => y,
-          (y) => setup(config)
-        )
-        .option('o', override('org', 'org name' ))
-        .option('u', override('user', 'user name'))
-        .option('p', override('password', 'password'))
-        .option('h', override('host', 'api url'))
-        .option('q', override('queue', 'queue url'))
-        .option('k', override('keys', 'file containing keys'))
-        .option('J', {
-          alias: 'json',
-          type: 'boolean',
-          describe: 'Format output in JSON',
-          default: false
-        })
-        .option('X', {
-          alias: 'csv',
-          type: 'boolean',
-          describe: 'Format output in CSV',
-          default: false
-        })
-        .command('token', 'print basic auth token', {}, showToken)
-        .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
-        .command('campaign', 'show campaign for org', {
-          i: {
+    .scriptName('proca-cli')
+    .command(
+      'setup',
+      'configure proca CLI (generates .env, keys.json files)',
+      () => setup(config)
+    )
+    .option('org', override('o', 'org name', config.org ))
+    .option('user', override('u', 'user name', config.username))
+    .option('password', override('p', 'password', config.password))
+    .option('host', override('h', 'api url', config.url))
+    .option('queue', override('q', 'queue url', config.queue_url))
+    .option('keys', override('k', 'file containing keys', config.keyData))
+    .option('json', {
+      alias: 'J',
+      type: 'boolean',
+      describe: 'Format output in JSON',
+      default: false
+    })
+    .option('csv', {
+      alias: 'X',
+      type: 'boolean',
+      describe: 'Format output in CSV',
+      default: false
+    })
+    .command('token', 'print basic auth token', {}, cmd(showToken))
+    .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
+    .command('campaign', 'show campaign for org', {
+          id: {
             alias: 'id',
             type: 'number',
             description: 'ID of requested object',
@@ -100,51 +144,51 @@ export default function cli() {
         }, cmd(getCampaign))
         .command('pages', 'List action pages for org', {}, cmd(listActionPages))
         .command('page', 'show page for org', {
-          i: {
-            alias: 'id',
+          id: {
+            alias: 'i',
             type: 'number',
             description: 'ID of requested object'
           },
-          n: {
-            alias: 'name',
+          name: {
+            alias: 'n',
             type: 'string',
             description: 'Name of requested object'
           },
-          'P': {
-            alias: 'public',
+          'public': {
+            alias: 'P',
             type: 'boolean',
             description: 'Use public API to fetch action page'
           }
         }, cmd(getActionPage))
         .command('page:update', 'update page for org', {
-          i: {
-            alias: 'id',
+          id: {
+            alias: 'i',
             type: 'number',
             description: 'ID of requested object',
             demandOption: true
           },
-          n: {
-            alias: 'name',
+          name: {
+            alias: 'n',
             type: 'string',
             description: 'update ActionPage name'
           },
-          l: {
-            alias: 'locale',
+          locale: {
+            alias: 'l',
             type: 'string',
             description: 'update ActionPage locale'
           },
-          t: {
-            alias: 'tytpl',
+          tytpl: {
+            alias: 't',
             type: 'string',
             description: 'update ActionPage Thank You email template reference'
           },
-          e: {
-            alias: 'extra',
+          extra: {
+            alias: 'e',
             type: 'number',
             description: 'update ActionPage extra supporters number'
           },
-          c: {
-            alias: 'config',
+          config: {
+            alias: 'c',
             type: 'string',
             description: 'update ActionPage config - provide filename or JSON string'
           }
@@ -152,95 +196,96 @@ export default function cli() {
         .command('keys', 'Display keys', {}, cmd(listKeys))
         .command('key:add', 'Do not use! deprecated. Use setup instead', {}, cmd(addKey))
         .command('watch:pages', 'Subscribe to page updates', {
-          x: {
-            alias: 'exec',
+          exec: {
+            alias: 'x',
             type: 'string',
             description: 'program to execute with data in stdin'
           },
-          A: {
-            alias: 'all',
+          all: {
+            alias: 'A',
             type: 'boolean',
             description: 'Watch all orgs (not just one passed via -o)'
           }
         }, cmd(watchPages))
         .command('export', 'Export action and supporter data', {
-          c: {
-            alias: 'campaign',
+          campaign: {
+            alias: 'c',
             type: 'string',
             description: 'Limit to campaign name'
           },
-          b: {
-            alias: 'batch',
+          batch: {
+            alias: 'b',
             type: 'number',
             description: 'Batch size',
             default: 1000
           },
-          s: {
-            alias: 'start',
+          start: {
+            alias: 's',
             type: 'number',
             description: 'Start from this action id'
           },
-          a: {
-            alias: 'after',
+          after: {
+            alias: 'a',
             type: 'string',
             description: 'Start from this date (iso)'
           },
-          d: {
-            alias: 'decrypt',
+          decrypt: {
+            alias: 'd',
             type: 'boolean',
+            default: true,
             description: 'Decrypt contact PII'
           },
-          I: {
-            alias: 'ignore',
+          ignore: {
+            alias: 'I',
             type: 'boolean',
             default: false,
             description: 'Ignore problems with decrypting contact pii'
           },
-          A: {
-            alias: 'all',
+          all: {
+            alias: 'A',
             type: 'boolean',
             default: false,
             description: 'Download all actions (even not opted in)'
           },
-          F: {
-            alias: 'fields',
+          fields: {
+            alias: 'F',
             type: 'string',
             default: '',
             description: 'Export fields (comma separated)'
           }
         }, cmd(exportActions))
         .command('deliver:check', 'print status of delivery queue', {
-          Q: {
-            alias: 'queueName',
+          queueName: {
+            alias: 'Q',
             type: 'string',
             description: 'Exact queue name to use instead of standard ones'
           }
         }, cmd(testQueue))
         .command('deliver:sync', 'sync deliver queue to service', {
-          Q: {
-            alias: 'queueName',
+          queueName: {
+            alias: 'Q',
             type: 'string',
             description: 'Exact queue name to use instead of standard ones'
           },
-          d: {
-            alias: 'decrypt',
+          decrypt: {
+            alias: 'd',
             type: 'boolean',
             description: 'Decrypt contact PII'
           },
-          's': {
-            alias: 'service',
+          service: {
+            alias: 's',
             type: 'string',
             describe: 'Service to which deliver action data',
             demandOption: true
           },
-          'l': {
-            alias: 'service_url',
+          service_url: {
+            alias: 'l',
             type: 'string',
             describe: 'Deliver to service at location',
             default: config.service_url
           },
-          'B': {
-            alias: 'backoff',
+          'backoff': {
+            alias: 'B',
             type: 'boolean',
             describe: 'Add backoff when calling syncAction'
           }

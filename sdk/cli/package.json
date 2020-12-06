@@ -2,7 +2,7 @@
   "name": "@proca/cli",
   "version": "2.0.1",
   "description": "cli[ent] for Proca",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "types": "types/types.d.ts",
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
   "author": "xavier.dutoit <xavier@tttp.eu>",
@@ -16,12 +16,11 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@proca/api": "^0.2.0",
+    "@proca/api": "^0.1.0",
     "@types/node-mailjet": "^3.3.4",
     "amqplib": "^0.5.6",
     "backoff": "^2.5.0",
     "base64url": "^3.0.1",
-    "bent": "^7.3.11",
     "cross-fetch": "^3.0.6",
     "csv-stringify": "^5.5.1",
     "dotenv": "^8.2.0",
@@ -36,12 +35,21 @@
     "yargs": "^15.4.1"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.16",
+    "@types/backoff": "^2.5.1",
+    "@types/bent": "^7.3.2",
+    "@types/debug": "^4.1.5",
+    "graphql": "^15.3.0",
     "@types/inquirer": "^7.3.1",
     "@types/node": "^14.14.7",
+    "@types/yargs": "^15.0.11",
     "typescript": "^4.0.3"
   },
-  "peerDependencies": {
-    "node-mailjet": "^3.3.1",
-    "@types/node-mailjet": "^3.3.4"
+  "peerDependencies": {},
+  "optionalDependencies": {
+    "@types/node-mailjet": "^3.3.4",
+    "bent": "^7.3.12",
+    "debug": "^4.3.1",
+    "node-mailjet": "^3.3.1"
   }
 }

@@ -19,7 +19,7 @@ export type CliConfig = {
   verbose?: boolean
 }
 
-export function load() {
+export function load() : CliConfig {
   const {parsed} = dotenv.config()
   const config : CliConfig = loadFromEnv(process.env)
   // was env file loaded?
