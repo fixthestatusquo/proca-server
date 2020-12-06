@@ -21,6 +21,8 @@ input SelectActionPage {
   campaignId: Int
 }
 
+scalar DateTime
+
 type KeyWithPrivate {
   id: Int!
   public: String!
@@ -28,7 +30,7 @@ type KeyWithPrivate {
   name: String
   active: Boolean
   expired: Boolean
-  expiredAt: Datetime
+  expiredAt: DateTime
 }
 
 type SimpleActionPage {
@@ -153,13 +155,13 @@ type CampaignStats {
 type ActionCustomFields {
   actionId: Int!
   actionType: String!
-  insertedAt: Datetime!
+  insertedAt: DateTime!
   fields: [CustomField!]
 }
 
 type Action {
   actionId: Int!
-  createdAt: Datetime!
+  createdAt: DateTime!
   actionType: String!
   contact: Contact!
   fields: [CustomField!]!
@@ -352,7 +354,7 @@ type RootQueryType {
     limit: Int
 
     "return only actions created at date time from this argument (inclusive)"
-    after: Datetime
+    after: DateTime
 
     "return only actions with id starting from this argument (inclusive)"
     start: Int
@@ -435,8 +437,6 @@ type PublicActionPage {
   org: PublicOrg
 }
 
-scalar Datetime
-
 type DeleteUserResult {
   status: Status
 }
@@ -482,9 +482,6 @@ input AddressInput {
 
 "ActionPage input"
 input ActionPageInput {
-  "Action Page id"
-  id: Int
-
   """
   Unique NAME identifying ActionPage.
 
@@ -564,7 +561,7 @@ type Key {
   name: String
   active: Boolean
   expired: Boolean
-  expiredAt: Datetime
+  expiredAt: DateTime
 }
 
 type Org {

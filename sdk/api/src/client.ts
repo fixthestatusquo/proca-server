@@ -98,7 +98,6 @@ export function apiUrls(hostUrl: string) {
   }
 }
 
-// Create the client
 export function link(url: string, auth?: AuthHeader) {
   if (url === null || url === undefined) {
     throw new Error("api url must not be null or undefined")
@@ -113,14 +112,14 @@ export function link(url: string, auth?: AuthHeader) {
   const x = phoenixSocket as any
   x['transport'] = WebSocket
 
-  const wsLink = createAbsintheSocketLink(AbsintheSocket.create(phoenixSocket));
+  const wsLink = createAbsintheSocketLink(AbsintheSocket.create(phoenixSocket))
   const httpLink = createHttpLink({uri: config.url, headers: auth, includeExtensions: true})
 
   return split(
     (op) => hasSubscription(op.query),
     wsLink as ApolloLink,  // AbsintheSocketLink supposed to be compatible but a cast still needed.
     httpLink
-  );
+  )
 }
 
 /**
