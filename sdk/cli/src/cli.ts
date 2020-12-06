@@ -1,6 +1,6 @@
 import yargs from 'yargs';
 
-import {load as loadConfig, CliConfig} from './config'
+import {load as loadConfig, CliConfig, overrideConfig} from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
 import {listKeys, addKey} from './org'
 import {exportActions} from './export'
@@ -11,14 +11,6 @@ import {watchPages} from './watch'
 
 // import {testQueue, syncQueue, addBackoff} from './queue'
 
-interface ConfigDefaults {
-  queue_url: string,
-  keyData: string,
-  host: string,
-  user: string,
-  password: string,
-  org: string
-}
 
 export interface ServiceOpts {
   service?: string,
@@ -77,12 +69,16 @@ export default function cli() {
       // back propagate the overriding of options
       // this might not be right but we have a two way flow:
       // the opts take defaults from config, but if set, they can override back the config
-      config.queue_url = opts.queue
-      config.keyData = opts.keys
-      config.url = opts.host
-      config.username = opts.user
-      config.password = opts.password
-      config.org = opts.org
+
+      overrideConfig(config, {
+        queue_url: opts.queue,
+        keyData: opts.keys,
+        url: opts.host,
+        username: opts.user,
+        password: opts.password,
+        org: opts.org
+      })
+
 
       cliMethod(opts, config).catch((error) => {
         if (error.message) {
@@ -96,7 +92,7 @@ export default function cli() {
         } else if (error.result && error.result.errors && error.result.errors.length > 0) {
           const {message, extensions, path} = error.result.errors[0]
           console.error(
-              message
+            message
               + (extensions && extensions.code ? `, code: ${extensions.code}` : ``)
               + (path ? `, path: ${path}` : ``)
           )
@@ -110,9 +106,10 @@ export default function cli() {
   const argv = yargs
     .scriptName('proca-cli')
     .command(
-      'setup',
+      ['setup', '$0'],
       'configure proca CLI (generates .env, keys.json files)',
-      () => setup(config)
+      {},
+      cmd(setup)
     )
     .option('org', override('o', 'org name', config.org ))
     .option('user', override('u', 'user name', config.username))
@@ -135,160 +132,161 @@ export default function cli() {
     .command('token', 'print basic auth token', {}, cmd(showToken))
     .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
     .command('campaign', 'show campaign for org', {
-          id: {
-            alias: 'id',
-            type: 'number',
-            description: 'ID of requested object',
-            demandOption: true
-          }
-        }, cmd(getCampaign))
-        .command('pages', 'List action pages for org', {}, cmd(listActionPages))
-        .command('page', 'show page for org', {
-          id: {
-            alias: 'i',
-            type: 'number',
-            description: 'ID of requested object'
-          },
-          name: {
-            alias: 'n',
-            type: 'string',
-            description: 'Name of requested object'
-          },
-          'public': {
-            alias: 'P',
-            type: 'boolean',
-            description: 'Use public API to fetch action page'
-          }
-        }, cmd(getActionPage))
-        .command('page:update', 'update page for org', {
-          id: {
-            alias: 'i',
-            type: 'number',
-            description: 'ID of requested object',
-            demandOption: true
-          },
-          name: {
-            alias: 'n',
-            type: 'string',
-            description: 'update ActionPage name'
-          },
-          locale: {
-            alias: 'l',
-            type: 'string',
-            description: 'update ActionPage locale'
-          },
-          tytpl: {
-            alias: 't',
-            type: 'string',
-            description: 'update ActionPage Thank You email template reference'
-          },
-          extra: {
-            alias: 'e',
-            type: 'number',
-            description: 'update ActionPage extra supporters number'
-          },
-          config: {
-            alias: 'c',
-            type: 'string',
-            description: 'update ActionPage config - provide filename or JSON string'
-          }
-        }, cmd(updateActionPage))
-        .command('keys', 'Display keys', {}, cmd(listKeys))
-        .command('key:add', 'Do not use! deprecated. Use setup instead', {}, cmd(addKey))
-        .command('watch:pages', 'Subscribe to page updates', {
-          exec: {
-            alias: 'x',
-            type: 'string',
-            description: 'program to execute with data in stdin'
-          },
-          all: {
-            alias: 'A',
-            type: 'boolean',
-            description: 'Watch all orgs (not just one passed via -o)'
-          }
-        }, cmd(watchPages))
-        .command('export', 'Export action and supporter data', {
-          campaign: {
-            alias: 'c',
-            type: 'string',
-            description: 'Limit to campaign name'
-          },
-          batch: {
-            alias: 'b',
-            type: 'number',
-            description: 'Batch size',
-            default: 1000
-          },
-          start: {
-            alias: 's',
-            type: 'number',
-            description: 'Start from this action id'
-          },
-          after: {
-            alias: 'a',
-            type: 'string',
-            description: 'Start from this date (iso)'
-          },
-          decrypt: {
-            alias: 'd',
-            type: 'boolean',
-            default: true,
-            description: 'Decrypt contact PII'
-          },
-          ignore: {
-            alias: 'I',
-            type: 'boolean',
-            default: false,
-            description: 'Ignore problems with decrypting contact pii'
-          },
-          all: {
-            alias: 'A',
-            type: 'boolean',
-            default: false,
-            description: 'Download all actions (even not opted in)'
-          },
-          fields: {
-            alias: 'F',
-            type: 'string',
-            default: '',
-            description: 'Export fields (comma separated)'
-          }
-        }, cmd(exportActions))
-        .command('deliver:check', 'print status of delivery queue', {
-          queueName: {
-            alias: 'Q',
-            type: 'string',
-            description: 'Exact queue name to use instead of standard ones'
-          }
-        }, cmd(testQueue))
-        .command('deliver:sync', 'sync deliver queue to service', {
-          queueName: {
-            alias: 'Q',
-            type: 'string',
-            description: 'Exact queue name to use instead of standard ones'
-          },
-          decrypt: {
-            alias: 'd',
-            type: 'boolean',
-            description: 'Decrypt contact PII'
-          },
-          service: {
-            alias: 's',
-            type: 'string',
-            describe: 'Service to which deliver action data',
-            demandOption: true
-          },
-          service_url: {
-            alias: 'l',
-            type: 'string',
-            describe: 'Deliver to service at location',
-            default: config.service_url
-          },
-          'backoff': {
-            alias: 'B',
-            type: 'boolean',
-            describe: 'Add backoff when calling syncAction'
-          }
-        }, cmd(syncQueue))
-        .demandCommand().argv;
+      id: {
+        alias: 'id',
+        type: 'number',
+        description: 'ID of requested object',
+        demandOption: true
+      }
+    }, cmd(getCampaign))
+    .command('pages', 'List action pages for org', {}, cmd(listActionPages))
+    .command('page', 'show page for org', {
+      id: {
+        alias: 'i',
+        type: 'number',
+        description: 'ID of requested object'
+      },
+      name: {
+        alias: 'n',
+        type: 'string',
+        description: 'Name of requested object'
+      },
+      'public': {
+        alias: 'P',
+        type: 'boolean',
+        description: 'Use public API to fetch action page'
+      }
+    }, cmd(getActionPage))
+    .command('page:update', 'update page for org', {
+      id: {
+        alias: 'i',
+        type: 'number',
+        description: 'ID of requested object',
+        demandOption: true
+      },
+      name: {
+        alias: 'n',
+        type: 'string',
+        description: 'update ActionPage name'
+      },
+      locale: {
+        alias: 'l',
+        type: 'string',
+        description: 'update ActionPage locale'
+      },
+      tytpl: {
+        alias: 't',
+        type: 'string',
+        description: 'update ActionPage Thank You email template reference'
+      },
+      extra: {
+        alias: 'e',
+        type: 'number',
+        description: 'update ActionPage extra supporters number'
+      },
+      config: {
+        alias: 'c',
+        type: 'string',
+        description: 'update ActionPage config - provide filename or JSON string'
+      }
+    }, cmd(updateActionPage))
+    .command('keys', 'Display keys', {}, cmd(listKeys))
+    .command('key:add', 'Do not use! deprecated. Use setup instead', {}, cmd(addKey))
+    .command('watch:pages', 'Subscribe to page updates', {
+      exec: {
+        alias: 'x',
+        type: 'string',
+        description: 'program to execute with data in stdin'
+      },
+      all: {
+        alias: 'A',
+        type: 'boolean',
+        description: 'Watch all orgs (not just one passed via -o)'
+      }
+    }, cmd(watchPages))
+    .command('export', 'Export action and supporter data', {
+      campaign: {
+        alias: 'c',
+        type: 'string',
+        description: 'Limit to campaign name'
+      },
+      batch: {
+        alias: 'b',
+        type: 'number',
+        description: 'Batch size',
+        default: 1000
+      },
+      start: {
+        alias: 's',
+        type: 'number',
+        description: 'Start from this action id'
+      },
+      after: {
+        alias: 'a',
+        type: 'string',
+        description: 'Start from this date (iso)'
+      },
+      decrypt: {
+        alias: 'd',
+        type: 'boolean',
+        default: true,
+        description: 'Decrypt contact PII'
+      },
+      ignore: {
+        alias: 'I',
+        type: 'boolean',
+        default: false,
+        description: 'Ignore problems with decrypting contact pii'
+      },
+      all: {
+        alias: 'A',
+        type: 'boolean',
+        default: false,
+        description: 'Download all actions (even not opted in)'
+      },
+      fields: {
+        alias: 'F',
+        type: 'string',
+        default: '',
+        description: 'Export fields (comma separated)'
+      }
+    }, cmd(exportActions))
+    .command('deliver:check', 'print status of delivery queue', {
+      queueName: {
+        alias: 'Q',
+        type: 'string',
+        description: 'Exact queue name to use instead of standard ones'
+      }
+    }, cmd(testQueue))
+    .command('deliver:sync', 'sync deliver queue to service', {
+      queueName: {
+        alias: 'Q',
+        type: 'string',
+        description: 'Exact queue name to use instead of standard ones'
+      },
+      decrypt: {
+        alias: 'd',
+        type: 'boolean',
+        description: 'Decrypt contact PII'
+      },
+      service: {
+        alias: 's',
+        type: 'string',
+        describe: 'Service to which deliver action data',
+        demandOption: true
+      },
+      service_url: {
+        alias: 'l',
+        type: 'string',
+        describe: 'Deliver to service at location',
+        default: config.service_url
+      },
+      'backoff': {
+        alias: 'B',
+        type: 'boolean',
+        describe: 'Add backoff when calling syncAction'
+      }
+    }, cmd(syncQueue))
+    .argv
+        // .demandCommand().argv;
 }

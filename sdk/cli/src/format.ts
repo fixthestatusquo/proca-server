@@ -147,8 +147,7 @@ class Terminal {
 
   key(k : types.Key, keys : KeyStore) {
     const present = this.hasPublicKey(k, keys)
-    const active = k.expiredAt === null
-    return `${k.public} [${present?"PRESENT":"ABSENT!"}] ${active?"ACTIVE":"EXPIRED: " + k.expiredAt} ${k.name}`
+    return `[${present?"*":" "}] ${k.active?"active> ":"        "}${k.public} ${k.name} ${k.expired?"(expired: " + k.expiredAt +")" : ""}`
   }
 
   error(err : any) {

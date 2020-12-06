@@ -19,6 +19,7 @@ export type CliConfig = {
   verbose?: boolean
 }
 
+
 export function load() : CliConfig {
   const {parsed} = dotenv.config()
   const config : CliConfig = loadFromEnv(process.env)
@@ -73,6 +74,17 @@ export function storeConfig(config : CliConfig, file_name : string) {
   }
 
   writeFileSync(file_name, data)
+}
+
+
+export function overrideConfig(config : CliConfig, overrides : Partial<CliConfig>) {
+  for (const prop of ['queue_url', 'keyData', 'url', 'username', 'password', 'org']) {
+    const overrides2 = overrides as Record<string, any>
+    const config2 = config as Record<string, any>
+    if (overrides2[prop]) {
+      config2[prop] = overrides2[prop]
+    }
+  }
 }
 
 

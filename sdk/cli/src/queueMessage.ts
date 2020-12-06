@@ -1,4 +1,4 @@
-import {ProcessSage} from './queue'
+import {ProcessStage} from './queue'
 
 type Contact = {
   email: string,
