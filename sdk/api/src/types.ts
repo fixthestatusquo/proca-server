@@ -7,9 +7,9 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  DateTime: any;
   Date: any;
   Json: any;
-  Datetime: any;
 };
 
 /** Tracking codes */
@@ -31,6 +31,7 @@ export type SelectActionPage = {
   campaignId?: Maybe<Scalars['Int']>;
 };
 
+
 export type KeyWithPrivate = {
   __typename?: 'KeyWithPrivate';
   id: Scalars['Int'];
@@ -39,7 +40,7 @@ export type KeyWithPrivate = {
   name?: Maybe<Scalars['String']>;
   active?: Maybe<Scalars['Boolean']>;
   expired?: Maybe<Scalars['Boolean']>;
-  expiredAt?: Maybe<Scalars['Datetime']>;
+  expiredAt?: Maybe<Scalars['DateTime']>;
 };
 
 export type SimpleActionPage = {
@@ -171,14 +172,14 @@ export type ActionCustomFields = {
   __typename?: 'ActionCustomFields';
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
-  insertedAt: Scalars['Datetime'];
+  insertedAt: Scalars['DateTime'];
   fields?: Maybe<Array<CustomField>>;
 };
 
 export type Action = {
   __typename?: 'Action';
   actionId: Scalars['Int'];
-  createdAt: Scalars['Datetime'];
+  createdAt: Scalars['DateTime'];
   actionType: Scalars['String'];
   contact: Contact;
   fields: Array<CustomField>;
@@ -367,7 +368,7 @@ export type RootQueryTypeActionPageArgs = {
 export type RootQueryTypeExportActionsArgs = {
   onlyOptIn?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
-  after?: Maybe<Scalars['Datetime']>;
+  after?: Maybe<Scalars['DateTime']>;
   start?: Maybe<Scalars['Int']>;
   campaignId?: Maybe<Scalars['Int']>;
   campaignName?: Maybe<Scalars['String']>;
@@ -425,7 +426,6 @@ export type PublicActionPage = {
   org?: Maybe<PublicOrg>;
 };
 
-
 export type DeleteUserResult = {
   __typename?: 'DeleteUserResult';
   status?: Maybe<Status>;
@@ -463,8 +463,6 @@ export type AddressInput = {
 
 /** ActionPage input */
 export type ActionPageInput = {
-  /** Action Page id */
-  id?: Maybe<Scalars['Int']>;
   /**
    * Unique NAME identifying ActionPage.
    * 
@@ -533,7 +531,7 @@ export type Key = {
   name?: Maybe<Scalars['String']>;
   active?: Maybe<Scalars['Boolean']>;
   expired?: Maybe<Scalars['Boolean']>;
-  expiredAt?: Maybe<Scalars['Datetime']>;
+  expiredAt?: Maybe<Scalars['DateTime']>;
 };
 
 export type Org = {

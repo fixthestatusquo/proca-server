@@ -47,7 +47,7 @@ query ListActionPages($org: String!) {
 }
 
 query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String,
-                            $start: Int, $after: Datetime, $limit: Int,
+                            $start: Int, $after: DateTime, $limit: Int,
                             $onlyOptIn: Boolean) {
 
       exportActions(orgName: $org, campaignId: $campaignId, campaignName: $campaignName,
@@ -62,7 +62,7 @@ query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: Stri
       }
 }
 
-query ExportOrgActions($org: String!, $start: Int,  $limit: Int, $onlyOptIn: Boolean) {
+query ExportOrgActions($org: String!, $start: Int, $after: DateTime, $limit: Int, $onlyOptIn: Boolean) {
       exportActions(orgName: $org, start: $start,  limit: $limit, onlyOptIn: $onlyOptIn)
       {
         actionId, actionType, createdAt,
@@ -104,11 +104,22 @@ mutation UpsertCampaign(
 query ListKeys($org: String!){
   org(name: $org) { 
     keys { 
-      id, name, public, expiredAt 
+      id, name, public, active, expired, expiredAt 
     }
   }
 }
 
+mutation GenerateKey($org: String!, $input:GenKeyInput!) {
+  generateKey(orgName: $org, input: $input) {
+    id, name, public, private, active, expired, expiredAt
+  }
+}
+
+mutation ActivateKey($org: String!, $id: Int!) {
+  activateKey(orgName: $org, id: $id) {
+    status
+  }
+}
 
 subscription ActionPageUpserted($org: String) {
   actionPageUpserted(orgName: $org) {

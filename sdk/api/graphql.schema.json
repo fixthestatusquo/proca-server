@@ -167,6 +167,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "DateTime",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "KeyWithPrivate",
         "description": null,
@@ -261,7 +271,7 @@
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "Datetime",
+              "name": "DateTime",
               "ofType": null
             },
             "isDeprecated": false,
@@ -1063,7 +1073,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "Datetime",
+                "name": "DateTime",
                 "ofType": null
               }
             },
@@ -1126,7 +1136,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "Datetime",
+                "name": "DateTime",
                 "ofType": null
               }
             },
@@ -2201,7 +2211,7 @@
                 "description": "return only actions created at date time from this argument (inclusive)",
                 "type": {
                   "kind": "SCALAR",
-                  "name": "Datetime",
+                  "name": "DateTime",
                   "ofType": null
                 },
                 "defaultValue": null
@@ -2586,16 +2596,6 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "Datetime",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "OBJECT",
         "name": "DeleteUserResult",
         "description": null,
@@ -2768,16 +2768,6 @@
         "description": "ActionPage input",
         "fields": null,
         "inputFields": [
-          {
-            "name": "id",
-            "description": "Action Page id",
-            "type": {
-              "kind": "SCALAR",
-              "name": "Int",
-              "ofType": null
-            },
-            "defaultValue": null
-          },
           {
             "name": "name",
             "description": "Unique NAME identifying ActionPage.\n\nDoes not have to exist, must be unique. Can be a 'technical' identifier\nscoped to particular organization, so it does not have to change when the\nslugs/names change (eg. some.org/1234). However, frontent Widget can\nask for ActionPage by it's current location.href (but without https://), in which case it is useful\nto make this url match the real widget location.",
@@ -3142,7 +3132,7 @@
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "Datetime",
+              "name": "DateTime",
               "ofType": null
             },
             "isDeprecated": false,
