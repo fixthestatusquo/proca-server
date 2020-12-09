@@ -79,6 +79,10 @@ export interface ExecutionErrors {
   errors?: Error[]
 }
 
+type LinkOptions = {
+  wsUrl?: string
+}
+
 // hasSubscription - helper func to see if we have an operation with subscription
 // taken from @jumpn/utils-graphql which is not really useful as has not types
 function isSubscription(definition: DefinitionNode) {
@@ -91,18 +95,40 @@ function hasSubscription(documentNode: DocumentNode): boolean {
 }
 
 // structure of http/ws endpoints
-export function apiUrls(hostUrl: string) {
+// Will use /api, /socket with no path given.
+// Otherwise will use the path for HTTP api, and /socket for WS.
+// You can provide a complete url or path for websocket in second argument
+export function apiUrls(apiUrl: string, wsUrl = "/socket") {
+  const api = new URL(apiUrl)
+  let ws : URL = null
+
+  if (api.pathname == '/') {
+    api.pathname = '/api'
+  }
+
+  try {
+    ws = new URL(wsUrl)
+  } catch (e) {
+    if (e instanceof TypeError) {
+      // consider a path
+      ws = new URL(apiUrl)
+      ws.pathname = wsUrl
+    } else {
+      throw e;
+    }
+  }
+
   return {
-    url: (hostUrl + '/api'),
-    wsUrl: (hostUrl + '/socket').replace(/^http/, 'ws')
+    url: api.href ,
+    wsUrl: ws.href
   }
 }
 
-export function link(url: string, auth?: AuthHeader) {
+export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
   if (url === null || url === undefined) {
     throw new Error("api url must not be null or undefined")
   }
-  const config = apiUrls(url)
+  const config = apiUrls(url, options ? options.wsUrl : undefined)
 
   const phoenixSocket = new PhoenixSocket(config.wsUrl, {transport: "WebSocket"})
 
