@@ -11,6 +11,7 @@ export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
   const fmt = getFormatter(argv)
 
   const result = await request(c, admin.ListCampaignsDocument, {"org": config.org})
+  if (result.errors) throw result.errors
 
   result.data.org.campaigns
     .map(c => fmt.campaign(c))
@@ -132,4 +133,49 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
 
   const {errors} = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage})
   if (errors) { throw errors }
+}
+
+interface UpsertCampaign {
+  id?: number,
+  name?: string,
+  title?: string
+}
+
+export async function upsertCampaign(argv : UpsertCampaign & FormatOpts, config : CliConfig) {
+  const c = client(config)
+  const fmt = getFormatter(argv)
+
+  const campaign  : types.CampaignInput = {
+    name: argv.name,
+    title: argv.title,
+    actionPages: []
+  }
+
+  const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
+  if (errors) throw errors
+
+  console.log(`Created campaign id: ${data.upsertCampaign.id}`)
+}
+
+interface UpsertActionPage {
+  campaign?: string,
+  name?: string,
+  locale?: string
+}
+
+export async function upsertActionPage(argv : UpsertActionPage & FormatOpts, config : CliConfig) {
+  const c = client(config)
+  const fmt = getFormatter(argv)
+
+  const campaign  : types.CampaignInput = {
+    name: argv.campaign,
+    actionPages: [{
+      name: argv.name, locale: argv.locale
+    }]
+  }
+
+  const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
+  if (errors) throw errors
+
+  console.log(`Created action page`)
 }
