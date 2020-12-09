@@ -442,7 +442,7 @@ export type CampaignInput = {
   /** Custom config as stringified JSON map */
   config?: Maybe<Scalars['Json']>;
   /** Action pages of this campaign */
-  actionPages: Array<Maybe<ActionPageInput>>;
+  actionPages: Array<ActionPageInput>;
 };
 
 /** Address type which can hold different addres fields. */

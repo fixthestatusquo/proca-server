@@ -456,7 +456,7 @@ input CampaignInput {
   config: Json
 
   "Action pages of this campaign"
-  actionPages: [ActionPageInput]!
+  actionPages: [ActionPageInput!]!
 }
 
 "Address type which can hold different addres fields."

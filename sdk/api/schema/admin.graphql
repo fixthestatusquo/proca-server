@@ -124,7 +124,7 @@ mutation ActivateKey($org: String!, $id: Int!) {
 subscription ActionPageUpserted($org: String) {
   actionPageUpserted(orgName: $org) {
     id, name, locale, journey, config,
-    campaign { name, title },
+    campaign { id, name, title, externalId },
     org { title }
   }
 }
