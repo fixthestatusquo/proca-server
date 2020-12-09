@@ -7,6 +7,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   alias Proca.Repo
   alias ProcaWeb.Helper
   alias Proca.Server.Notify
+  import Ecto.Changeset
 
 
   defp by_id(query, id) do
@@ -22,16 +23,11 @@ defmodule ProcaWeb.Resolvers.ActionPage do
       from(p in Proca.ActionPage, preload: [[campaign: :org], :org], limit: 1)
       |> criteria.()
 
-    case Proca.Repo.one(query) do
-      nil ->
-        {:error,
-         %{
-           message: "Action page not found",
-           extensions: %{code: "not_found"}
-         }}
-
-      ap ->
-        {:ok, ap |> Proca.ActionPage.stringify_config()}
+    case Proca.Repo.one query do
+      nil -> {:error, %{
+                 message: "Action page not found",
+                 extensions: %{code: "not_found"} } }
+      ap -> {:ok, ap}
     end
   end
 
@@ -59,22 +55,36 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     }
   end
 
-  def update(_, attrs = %{id: id}, %{context: %{user: user}}) do
-    case Repo.get_by(ActionPage, id: id)
-         |> Helper.can_manage?(user, fn ap ->
-           ap
-           |> ActionPage.changeset(attrs)
-           |> Repo.update()
-         end) do
-      {:error, chset = %Ecto.Changeset{}} ->
-        {:error, Helper.format_errors(chset)}
-
-      {:error, msg} ->
-        {:error, msg}
-
+  def update(_, %{input: attrs}, %{context: %{action_page: ap}}) do
+    case ap
+    |> ActionPage.changeset(attrs)
+    |> Repo.update()
+      do
+      {:error,  chset = %Ecto.Changeset{}} -> {:error, Helper.format_errors(chset)}
       {:ok, ap} ->
         Notify.action_page_updated(ap)
         {:ok, ap}
     end
+  end
+
+  def copy_from(_, %{name: name, from_name: from_name}, %{context: %{org: org}}) do
+    with ap when not is_nil(ap) <- ActionPage.find(from_name),
+         {:ok, new_ap} <- create_copy_in(org, ap, %{name: name})
+    do
+    Proca.Server.Notify.action_page_added(new_ap)
+    {:ok, new_ap}
+    else
+      nil -> {:error, "ActionPage named #{from_name} not found"}
+      {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
+  def create_copy_in(org, ap, attrs) do
+    %ActionPage{}
+    |> change(Map.take(ap, [:config, :delivery, :journey, :locale]))
+    |> ActionPage.changeset(attrs)
+    |> put_assoc(:org, org)
+    |> put_assoc(:campaign, ap.campaign)
+    |> Repo.insert()
   end
 end

@@ -14,6 +14,7 @@ defmodule Proca.Org do
     has_many :public_keys, Proca.PublicKey, on_delete: :delete_all
     has_many :staffers, Proca.Staffer, on_delete: :delete_all
     has_many :campaigns, Proca.Campaign, on_delete: :nilify_all
+    # XXX
     has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
 
     field :contact_schema, ContactSchema, default: :basic
@@ -24,13 +25,18 @@ defmodule Proca.Org do
     field :email_from, :string
     belongs_to :template_backend, Proca.Service
 
+    # double opt in configuration
+    # XXX maybe move these two into config
     field :email_opt_in, :boolean, default: false
     field :email_opt_in_template, :string
 
+    # confirming and delivery configuration
     field :custom_supporter_confirm, :boolean
     field :custom_action_confirm, :boolean
     field :custom_action_deliver, :boolean
     field :system_sqs_deliver, :boolean
+
+    field :config, :map
 
     timestamps()
   end
@@ -63,7 +69,7 @@ defmodule Proca.Org do
         org
         | public_keys:
             org.public_keys
-            |> Enum.filter(fn pk -> is_nil(pk.expired_at) end)
+            |> Enum.filter(& &1.active)
             |> Enum.sort(fn a, b -> a.inserted_at > b.inserted_at end)
       }
     else
@@ -82,7 +88,7 @@ defmodule Proca.Org do
   @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
   def active_public_keys(public_keys) do
     public_keys
-    |> Enum.filter(fn pk -> is_nil(pk.expired_at) end)
+    |> Enum.filter(& &1.active)
     |> Enum.sort(fn a, b -> a.inserted_at < b.inserted_at end)
   end
 

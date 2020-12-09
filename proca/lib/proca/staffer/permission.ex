@@ -4,19 +4,32 @@ defmodule Proca.Staffer.Permission do
 
   @moduledoc """
   Permission bits used in proca.
-  Should be named with a verb.
+  Should be named with a verb_noun (_owner is an exception here).
+
+  manage - add/delete/update objects
+  change - change some object's association or properties
   """
 
   @bits [
-    manage_orgs: 1 <<< 0,
+    # Admin permissions
+    instance_owner: 1 <<< 0,
     join_orgs: 1 <<< 1,
+
+    manage_users: 1 <<< 2,
+    manage_orgs: 1 <<< 3,
+
+    org_owner: 1 <<< 7, 
+
     # XXX deprecated - we go full API so this will be unused
     use_api: 1 <<< 8,
     export_contacts: 1 <<< 9,
+
+    change_org_users: 1 <<< 15,
     change_org_settings: 1 <<< 16,
+    change_org_services: 1 <<< 16, # sames as change_org_settings, maybe will be split in the future
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
-    signoff_action_page: 1 <<< 19
+    signoff_action_page: 1 <<< 19  # XXX this is unused but maybe could be usefull for moderation
   ]
 
   def can?(%Staffer{perms: perms}, permission) when is_atom(permission) do

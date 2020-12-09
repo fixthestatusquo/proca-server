@@ -55,7 +55,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
      }}
   end
 
-  def upsert(_, attrs = %{org_name: org_name, action_pages: pages}, %{context: %{user: user}}) do
+  @doc "XXX deprecated in favor of upsert/3"
+  def declare_upsert(p, attrs, res) do
+    upsert(p, %{input: attrs}, res)
+  end
+
+  def upsert(_, %{input: attrs = %{action_pages: pages}}, %{context: %{org: org}}) do
     # XXX Add name: attributes if url given (Legacy for declare_campaign)
     pages =
       Enum.map(pages, fn ap ->
@@ -65,30 +70,22 @@ defmodule ProcaWeb.Resolvers.Campaign do
         end
       end)
 
-    with %Org{} = org <- Org.get_by_name(org_name),
-         %Staffer{} = staffer <- Staffer.for_user_in_org(user, org.id),
-         true <- can?(staffer, [:use_api, :manage_campaigns, :manage_action_pages]) do
-      result =
-        Repo.transaction(fn ->
-          campaign = upsert_campaign(org, attrs)
+    result = Repo.transaction(fn ->
+      campaign = upsert_campaign(org, attrs)
+      pages
+      |> Enum.map(&fix_page_legacy_url/1)
+      |> Enum.each(fn page ->
+        ap = upsert_action_page(org, campaign, page)
+        Notify.action_page_updated(ap)
+        ap
+      end)
 
-          pages
-          |> Enum.map(&fix_page_legacy_url/1)
-          |> Enum.each(fn page ->
-            ap = upsert_action_page(org, campaign, page)
-            Notify.action_page_updated(ap)
-            ap
-          end)
+      campaign
+    end)
 
-          campaign
-        end)
-
-      case result do
-        {:ok, _} = r -> r
-        {:error, invalid} -> {:error, Helper.format_errors(invalid)}
-      end
-    else
-      _ -> {:error, "Access forbidden"}
+    case result do
+      {:ok, _} = r -> r
+      {:error, invalid} -> {:error, Helper.format_errors(invalid)}
     end
   end
 

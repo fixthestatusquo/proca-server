@@ -14,7 +14,7 @@ defmodule ProcaWeb.Api.UpsertActionPage do
     } do
       query = """
       mutation Uap {
-        updateActionPage(id: #{ap.id}, locale: "jp") {
+        updateActionPage(id: #{ap.id}, input: {locale: "jp"}) {
           locale
         }
       }
@@ -25,7 +25,7 @@ defmodule ProcaWeb.Api.UpsertActionPage do
         |> auth_api_post(query, user.email)
         |> json_response(200)
 
-      assert %{"errors" => [%{"message" => "User cannot manage this action page"}]} = res
+      assert %{"errors" => [%{"message" => "User is not a member of team responsible for resource"}]} = res
     end
 
     test "red bot can update red action page by id", %{
@@ -36,10 +36,15 @@ defmodule ProcaWeb.Api.UpsertActionPage do
       query = """
       mutation Uap {
       updateActionPage(id: #{ap.id},
-      locale: "jp",
-      name: "https://yellow.org/other",
-      journey: ["sign", "share"],
-      config: "{\\"foo\\": 123}") {
+      input: {
+        locale: "jp",
+        name: "https://yellow.org/other",
+        journey: ["sign", "share"],
+        config: "{\\"foo\\": 123}"
+      }
+      )
+      
+      {
       id
       }
       }

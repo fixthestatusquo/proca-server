@@ -33,112 +33,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     end
   end
 
-  object :campaign_mutations do
-    @desc """
-    Upserts a campaign.
-
-    Creates or appends campaign and it's action pages. In case of append, it
-    will change the campaign with the matching name, and action pages with
-    matching names. It will create new action pages if you pass new names. No
-    Action Pages will be removed (principle of not removing signature data).
-    """
-    field :upsert_campaign, type: :campaign do
-      middleware(Authorized)
-
-      @desc "Org name"
-      arg(:org_name, non_null(:string))
-
-      @desc "Campaign unchanging identifier"
-      arg(:name, non_null(:string))
-
-      @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-      arg(:external_id, :integer)
-
-      @desc "Campaign human readable title"
-      arg(:title, :string)
-
-      @desc "Custom config as stringified JSON map"
-      arg(:config, :json)
-
-      @desc "Action pages of this campaign"
-      arg(:action_pages, non_null(list_of(:action_page_input)))
-
-      resolve(&Resolvers.Campaign.upsert/3)
-    end
-
-    # XXX deprecated. 
-    @desc """
-    Deprecated, use upsert_campaign.
-    """
-    field :declare_campaign, type: :campaign do
-      middleware(Authorized)
-
-      @desc "Org name"
-      arg(:org_name, non_null(:string))
-
-      @desc "Campaign unchanging identifier"
-      arg(:name, non_null(:string))
-
-      @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-      arg(:external_id, :integer)
-
-      @desc "Campaign human readable title"
-      arg(:title, non_null(:string))
-
-      @desc "Action pages of this campaign"
-      arg(:action_pages, non_null(list_of(:action_page_input_legacy_url)))
-
-      resolve(&Resolvers.Campaign.upsert/3)
-    end
-
-    @desc """
-    Update an Action Page
-    """
-    field :update_action_page, type: :action_page do
-      middleware(Authorized)
-
-      # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
-      @desc """
-      Action Page id
-      """
-      arg(:id, non_null(:integer))
-
-      @desc """
-      Unique NAME identifying ActionPage.
-
-      Does not have to exist, must be unique. Can be a 'technical' identifier
-      scoped to particular organization, so it does not have to change when the
-      slugs/urls change (eg. https://some.org/1234). However, frontent Widget can
-      ask for ActionPage by it's current location.href, in which case it is useful
-      to make this url match the real idwget location.
-      """
-      arg(:name, :string)
-
-      @desc "2-letter, lowercase, code of ActionPage language"
-      arg(:locale, :string)
-
-      @desc "A reference to thank you email template of this ActionPage"
-      arg(:thank_you_template_ref, :string)
-
-      @desc """
-      Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. 
-      """
-      arg(:extra_supporters, :integer)
-
-      @desc """
-      List of steps in the journey (deprecated, pass in config)
-      """
-      arg(:journey, list_of(non_null(:string)))
-
-      @desc """
-      JSON string containing Action Page config
-      """
-      arg(:config, :string)
-
-      resolve(&Resolvers.ActionPage.update/3)
-    end
-  end
-
   object :campaign do
     field :id, :integer
     @desc "Internal name of the campaign"
@@ -160,7 +54,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       @desc "Return actions of this action type"
       arg(:action_type, non_null(:string))
       @desc "Limit the number of returned actions, default is 10, max is 100)"
-      arg(:limit, :integer)
+      arg(:limit, non_null(:integer), default_value: 10)
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
@@ -178,7 +72,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "List of steps in journey"
     field :journey, list_of(non_null(:string))
     @desc "Config JSON of this action page"
-    field :config, :string
+    field :config, :json
     @desc "Extra supporters (added to supporters count)"
     field :extra_supporters, :integer
     @desc "Campaign this widget belongs to"
@@ -186,6 +80,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionPage.campaign/3)
     end
 
+    # XXX ^^ resolve association similarly
     field :org, :public_org
   end
 
@@ -200,7 +95,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "List of steps in journey"
     field :journey, list_of(non_null(:string))
     @desc "Config JSON of this action page"
-    field :config, :string
+    field :config, :json
     @desc "Campaign this widget belongs to"
     field :campaign, :campaign do
       resolve(&Resolvers.ActionPage.campaign/3)
@@ -209,13 +104,115 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :org, :public_org
   end
 
-  @desc "ActionPage declaration"
-  input_object :action_page_input do
-    @desc """
-    Action Page id
-    """
-    field :id, :integer
 
+  object :campaign_mutations do
+    @desc """
+    Upserts a campaign.
+
+    Creates or appends campaign and it's action pages. In case of append, it
+    will change the campaign with the matching name, and action pages with
+    matching names. It will create new action pages if you pass new names. No
+    Action Pages will be removed (principle of not removing signature data).
+    """
+    field :upsert_campaign, type: :campaign do
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:manage_campaigns, :manage_action_pages]
+
+      @desc "Org name"
+      arg :org_name, non_null(:string)
+      arg :input, non_null(:campaign_input)
+
+      resolve(&Resolvers.Campaign.upsert/3)
+    end
+
+    # XXX deprecated. 
+    @desc """
+    Deprecated, use upsert_campaign.
+    """
+    field :declare_campaign, type: :campaign do
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:manage_campaigns, :manage_action_pages]
+
+      @desc "Org name"
+      arg(:org_name, non_null(:string))
+
+      @desc "Campaign unchanging identifier"
+      arg(:name, non_null(:string))
+
+      @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+      arg(:external_id, :integer)
+
+      @desc "Campaign human readable title"
+      arg(:title, non_null(:string))
+
+      @desc "Action pages of this campaign"
+      arg(:action_pages, non_null(list_of(:action_page_input_legacy_url)))
+
+      resolve(&Resolvers.Campaign.declare_upsert/3)
+    end
+
+    @desc """
+    Update an Action Page
+    """
+    field :update_action_page, type: :action_page do
+      middleware Authorized,
+        access: [:action_page, by: [:id]],
+        can?: [:manage_action_pages]
+
+      # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
+      @desc """
+      Action Page id
+      """
+      arg :id, non_null(:integer)
+      arg :input, non_null(:action_page_input)
+
+      resolve(&Resolvers.ActionPage.update/3)
+    end
+
+    @desc """
+    Adds a new Action Page based on another Action Page. Intended to be used to
+    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+    """
+    field :copy_action_page, type: :action_page do
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:manage_action_pages]
+
+      @desc "Org owner of new Action Page"
+      arg :org_name, non_null(:string)
+
+      @desc "New Action Page name"
+      arg :name, non_null(:string)
+
+      @desc "Name of Action Page this one is cloned from"
+      arg :from_name, non_null(:string)
+
+      resolve(&Resolvers.ActionPage.copy_from/3)
+    end
+  end
+
+  @desc "Campaign input"
+  input_object :campaign_input do
+    @desc "Campaign unchanging identifier"
+    field(:name, non_null(:string))
+
+    @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+    field(:external_id, :integer)
+
+    @desc "Campaign human readable title"
+    field(:title, :string)
+
+    @desc "Custom config as stringified JSON map"
+    field(:config, :json)
+
+    @desc "Action pages of this campaign"
+    field(:action_pages, non_null(list_of(non_null(:action_page_input))))
+  end
+
+  @desc "ActionPage input"
+  input_object :action_page_input do
     @desc """
     Unique NAME identifying ActionPage.
 
@@ -246,7 +243,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc """
     JSON string containing Action Page config
     """
-    field :config, :string
+    field :config, :json
   end
 
   @desc "ActionPage declaration (using the legacy url attribute)"
@@ -282,7 +279,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :action_custom_fields do
     field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
-    field :inserted_at, non_null(:datetime)
+    field :inserted_at, non_null(:date_time)
     field :fields, list_of(non_null(:custom_field))
   end
 
@@ -290,5 +287,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :public_actions_result do
     field :field_keys, list_of(non_null(:string))
     field :list, list_of(:action_custom_fields)
+  end
+
+  input_object :select_campaign do
+    field :id, :integer
+  end
+
+  input_object :select_action_page do
+    field :campaign_id, :integer
   end
 end

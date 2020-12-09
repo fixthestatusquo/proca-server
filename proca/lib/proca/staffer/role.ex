@@ -19,26 +19,17 @@ defmodule Proca.Staffer.Role do
 
   # Must be ordered from most to least capable!
   @roles [
-    mechanic: [
+    admin: [
+      :instance_owner,
+      :join_orgs,
+      :manage_users,
+      :manage_orgs
+    ],
+    owner: [
+      :org_owner,
+      :export_contacts,
+      :change_org_users,
       :change_org_settings,
-      :manage_campaigns,
-      :manage_action_pages,
-      :use_api,
-      :export_contacts
-    ],
-    robot: [
-      :manage_campaigns,
-      :manage_action_pages,
-      :use_api,
-      :export_contacts
-    ],
-    campaign_manager: [
-      :change_org_settings,
-      :manage_campaigns,
-      :manage_action_pages,
-      :signoff_action_page
-    ],
-    campaigner: [
       :manage_campaigns,
       :manage_action_pages
     ]
@@ -71,5 +62,9 @@ defmodule Proca.Staffer.Role do
     else
       findrole(staffer, other_roles)
     end
+  end
+
+  def permissions(role) do
+    @roles[role] || 0
   end
 end

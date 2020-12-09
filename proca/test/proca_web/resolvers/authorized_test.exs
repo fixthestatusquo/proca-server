@@ -34,7 +34,7 @@ defmodule ProcaWeb.AuthorizedTest do
   end
 
   test "Staffer search by org but no arguments", %{user_resolution: r} do
-    r2 = Authorized.call(r, can?: {:org, []})
+    r2 = Authorized.call(r, access: [:org])
     assert [%{extensions: %{code: "permission_denied"}}] = r2.errors
   end
 
@@ -43,7 +43,7 @@ defmodule ProcaWeb.AuthorizedTest do
     red_bot: staffer,
     red_org: org
   } do
-    r2 = Authorized.call(r, can?: {:org, []})
+    r2 = Authorized.call(r, access: [:org])
     assert r2.errors == []
     assert r2.context.staffer.id == staffer.id
     assert r2.context.org.id == org.id
@@ -54,34 +54,34 @@ defmodule ProcaWeb.AuthorizedTest do
     red_bot: staffer,
     red_org: org
   } do
-    r2 = Authorized.call(r, can?: {:org, []})
+    r2 = Authorized.call(r, access: [:org])
     assert r2.errors == []
     assert r2.context.staffer.id == staffer.id
     assert r2.context.org.id == org.id
 
-    r3 = Authorized.call(r, can?: {:org, [:manage_campaigns]})
+    r3 = Authorized.call(r, access: [:org], can?: [:manage_campaigns])
     assert r3.errors == []
     assert r3.context.staffer.id == staffer.id
     assert r3.context.org.id == org.id
 
-    r4 = Authorized.call(r, can?: {:org, [:signoff_action_page]})
+    r4 = Authorized.call(r, access: [:org], can?: [:signoff_action_page])
     assert [%{extensions: %{code: "permission_denied"}}] = r4.errors
   end
 
   test "Staffer search by org with org_name argument", %{org_org_name_resolution: r, red_org: org} do
-    r2 = Authorized.call(r, can?: {:org, [:manage_campaigns]}, get_by: [name: :org_name])
+    r2 = Authorized.call(r, access: [:org, by: [name: :org_name]], can?: [:manage_campaigns])
     assert r2.context.org.id == org.id
   end
 
   test "Staffer search by campaign", %{user_resolution: r, red_campaign: camp} do
     r2 = %{r | arguments: %{name: camp.name}}
-    r3 = Authorized.call(r2, can?: {:campaign, []})
+    r3 = Authorized.call(r2, access: [:campaign])
     assert r3.context.campaign.id == camp.id
   end
 
   test "Staffer search by action page", %{user_resolution: r, red_ap: ap} do
     r2 = %{r | arguments: %{name: ap.name}}
-    r3 = Authorized.call(r2, can?: {:action_page, []})
+    r3 = Authorized.call(r2, access: [:action_page])
     assert r3.context.action_page.id == ap.id
   end
 end

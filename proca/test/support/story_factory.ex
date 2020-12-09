@@ -42,9 +42,9 @@ defmodule Proca.StoryFactory do
     orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-donate-with-yellow")
 
     %{
-      red_org: red_org, yellow_org: yellow_org,
+      red_org: red_org,       yellow_org: yellow_org,
       red_campaign: red_camp, yellow_campaign: yellow_camp,
-      red_ap: red_ap, yellow_ap: yellow_ap,
+      red_ap: red_ap,         yellow_ap: yellow_ap,
       orange_aps: [orange_ap1, orange_ap2],
       red_bot: red_bot
     }

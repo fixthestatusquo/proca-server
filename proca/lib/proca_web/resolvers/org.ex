@@ -4,22 +4,23 @@ defmodule ProcaWeb.Resolvers.Org do
   """
   # import Ecto.Query
   import Ecto.Query
+  import Ecto.Changeset
 
   alias Proca.{ActionPage, Campaign, Action}
   alias Proca.{Org, Staffer, PublicKey}
+  alias ProcaWeb.Helper
+  alias Ecto.Multi
+  alias Proca.Server.Notify
 
   alias Proca.Repo
   import Proca.Staffer.Permission
   import Logger
 
-  def get_by_name(_, %{name: name}, %{context: %{user: user}}) do
-    with %Org{} = org <- Org.get_by_name(name, [[campaigns: :org], :action_pages]),
-         %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
-         true <- can?(s, :use_api) do
-      {:ok, org}
-    else
-      _ -> {:error, "Access forbidden"}
-    end
+  def get_by_name(_, _, %{context: %{org: org}}) do
+    {
+      :ok,
+      Repo.preload(org, [[campaigns: :org], :action_pages])
+    }
   end
 
   def campaign_by_id(org, %{id: camp_id}, _) do
@@ -44,11 +45,9 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def action_pages(org, _, _) do
-    c =
-      Ecto.assoc(org, :action_pages)
-      |> preload([ap], [:org])
-      |> Repo.all()
-      |> Enum.map(&ActionPage.stringify_config(&1))
+    c = Ecto.assoc(org, :action_pages)
+    |> preload([ap], [:org])
+    |> Repo.all
 
     {:ok, c}
   end
@@ -81,31 +80,66 @@ defmodule ProcaWeb.Resolvers.Org do
     }
   end
 
-  def update_org(_p, attrs = %{name: name}, %{context: %{user: user}}) do
-    with %Org{} = org <- Org.get_by_name(name),
-         %Staffer{} = s <- Staffer.for_user_in_org(user, org.id),
-         true <- can?(s, :use_api) do
-      Org.changeset(org, attrs)
-      |> Repo.update()
+  def add_org(_, params, %{context: %{user: user}}) do
+    with {:ok, org} <- Org.changeset(%Org{}, params) |> Repo.insert(),
+         perms <- Staffer.Permission.add(0, Staffer.Role.permissions(:owner)),
+         {:ok, staffer} <- Staffer.build_for(user, org.id, perms) |> Repo.insert()
+      do
+      {:ok, org}
     else
-      _ -> {:error, "Access forbidden"}
+      {:error, changeset} -> Helper.format_errors(changeset)
     end
   end
 
-  def list_keys(%{id: org_id}, _, %{context: %{user: user}}) do
-    with %Staffer{} = s <- Staffer.for_user_in_org(user, org_id),
-         true <- can?(s, [:use_api, :export_contacts]) do
-      {
-        :ok,
-        from(pk in PublicKey,
-          where: pk.org_id == ^org_id,
-          select: %{id: pk.id, name: pk.name, public: pk.public, expired_at: pk.expired_at}
-        )
-        |> Repo.all()
-        |> Enum.map(&Map.put(&1, :public, PublicKey.base_encode(&1.public)))
-      }
-    else
-      _ -> {:error, "Access forbidden"}
+  def delete_org(_, _, %{context: %{org: org}}) do
+    case Repo.delete(org) do
+      {:ok, _} -> {:ok, true}
+      {:error, ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
+  def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
+    case Org.changeset(org, attrs) |> Repo.update()
+      do
+      {:error, ch} -> {:error, Helper.format_errors(ch)}
+      {:ok, org} 
+    end
+  end
+
+  def list_keys(org_id, criteria) do
+    from(pk in PublicKey,
+      where: pk.org_id == ^org_id,
+      select: %{id: pk.id,
+                name: pk.name,
+                public: pk.public,
+                active: pk.active,
+                expired: pk.expired,
+                updated_at: pk.updated_at},
+      order_by: [desc: :inserted_at]
+    )
+    |> PublicKey.filter(criteria)
+  end
+
+  def format_key(pk) do
+    pk
+    |> Map.put(:public, PublicKey.base_encode(pk.public))
+    |> Map.put(:private, if Map.get(pk, :private, nil) do PublicKey.base_encode(pk.private) else nil end)
+    |> Map.put(:expired_at, if pk.expired do pk.updated_at else nil end)
+  end
+
+  def list_keys(%{id: org_id}, params, _) do
+    {
+      :ok,
+      list_keys(org_id, Map.get(params, :select, []))
+      |> Repo.all()
+      |> Enum.map(&format_key/1)
+    }
+  end
+
+  def get_key(%{id: org_id}, %{select: criteria}, _) do
+    case list_keys(org_id, criteria) |> Repo.one do
+      nil -> {:error, "not_found"}
+      k -> {:ok, format_key(k)}
     end
   end
 
@@ -117,8 +151,8 @@ defmodule ProcaWeb.Resolvers.Org do
                            ]
                           ])),
          ad <- Proca.Stage.Support.action_data(a),
-         recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
-         %{thank_you_template_ref: tr} <- a.action_page,
+           recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
+           %{thank_you_template_ref: tr} <- a.action_page,
            tmpl <- %Proca.Service.EmailTemplate{ref: tr}
       do
       Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
@@ -126,5 +160,59 @@ defmodule ProcaWeb.Resolvers.Org do
         e -> error("sample email", e)
     end
 
+  end
+
+  def add_key(_, %{input: %{name: name, public: public}}, %{context: %{org: org}}) do
+    with ch = %{valid?: true} <- PublicKey.import_public_for(org, public, name),
+         {:ok, key} <- Repo.insert(ch)
+      do
+      {:ok, key}
+      else
+        ch = %{valid?: false} -> {:error, Helper.format_errors(ch)}
+        {:error, ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
+  # If we modify the instance org, keep the private key
+  defp dont_store_private(%Org{name: name}, pk) do
+    if Application.get_env(:proca, Proca)[:org_name] == name do
+      pk
+    else
+      change(pk, private: nil)
+    end
+  end
+
+  def generate_key(_, %{input: %{name: name}}, %{context: %{org: org}}) do
+
+    with pk = %{valid?: true} <- PublicKey.build_for(org, name),
+         pub_prv_pk <- apply_changes(pk),
+         {:ok, pub_pk} <- dont_store_private(org, pk) |> Repo.insert()
+      do
+      {:ok,
+       format_key(%{pub_prv_pk | id: pub_pk.id})
+      }
+      else
+        ch = %{valid?: false} -> {:error, Helper.format_errors(ch)}
+        {:error, ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
+  def activate_key(_, %{id: id}, %{context: %{org: org}}) do
+    case Repo.get_by PublicKey, id: id, org_id: org.id do
+      nil ->
+        {:error, %{
+            message: "Public key not found",
+            extensions: %{code: "not_found"}
+         }}
+      %{expired: true} ->
+        {:error, %{
+            message: "Public key expired",
+            extensions: %{code: "expired"}
+         }}
+      pk = %PublicKey{} ->
+        pk = PublicKey.activate_for(org, id)
+        Notify.public_key_activated(org, pk)
+        {:ok, %{status: :success}}
+    end
   end
 end

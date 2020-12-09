@@ -122,9 +122,13 @@ defmodule Proca.Server.Keys do
     GenServer.call(__MODULE__, {:encryption, from_to})
   end
 
-  def update_key(org, key) do
+  def update_key(org, key = %{active: true}) do
     GenServer.cast(__MODULE__, {:update_key, org.id, sensitive_data_wrap(key)})
     :ok
+  end
+
+  def update_key(_org, pk) do
+    raise "Tried to use an inactive key id: #{pk.id}"
   end
 
   # HELPER FUNCTIONS

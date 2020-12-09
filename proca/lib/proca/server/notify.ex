@@ -14,6 +14,11 @@ defmodule Proca.Server.Notify do
 
   @spec public_key_created(Org, PublicKey) :: :ok
   def public_key_created(org, key) do
+    :ok
+  end
+
+  @spec public_key_activated(Org, PublicKey) :: :ok
+  def public_key_activated(org, key) do
     Proca.Server.Keys.update_key(org, key)
   end
 
@@ -24,7 +29,9 @@ defmodule Proca.Server.Notify do
   def action_page_updated(action_page) do
     action_page = Repo.preload(action_page, [:org, :campaign])
     publish_subscription_event(action_page, action_page_upserted: "$instance")
-    publish_subscription_event(action_page, action_page_upserted: action_page.org.name)
+    if not is_nil(action_page.org) do
+      publish_subscription_event(action_page, action_page_upserted: action_page.org.name)
+    end
     :ok
   end
 

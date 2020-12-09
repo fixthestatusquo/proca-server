@@ -48,10 +48,7 @@
                 <%= for role <- @roles do %>
                   <a href="#"
                      alt="<%= case role do
-                          :campaign_manager -> "Campaign manager"
-                          :campaigner -> "Campaigner"
-                          :mechanic -> "Tech"
-                          :robot -> "API"
+                          :owner -> "Owner"
                           end %>"
                      phx-click="change_role"
                      phx-value-staffer="<%= staff.id %>"
@@ -61,10 +58,7 @@
                   >
                     <span>
                       <%= case role do 
-                      :campaign_manager -> "👩‍✈"
-                      :campaigner -> "🤹"
-                      :mechanic -> "👩‍🔧"
-                      :robot -> "🤖"
+                      :owner -> "👩‍✈"
                       end %>
                     </span>
                   </a>
