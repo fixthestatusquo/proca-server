@@ -21,6 +21,10 @@
     "url": "https://github.com/fixthestatusquo/proca-api/issues"
   },
   "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
+  "files": [
+    "README.MD",
+    "dist"
+  ],
   "dependencies": {
     "@absinthe/socket-apollo-link": "^0.2.1",
     "apollo-link": "^1.2.14",

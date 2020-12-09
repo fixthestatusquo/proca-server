@@ -63,7 +63,7 @@ query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: Stri
 }
 
 query ExportOrgActions($org: String!, $start: Int, $after: DateTime, $limit: Int, $onlyOptIn: Boolean) {
-      exportActions(orgName: $org, start: $start,  limit: $limit, onlyOptIn: $onlyOptIn)
+      exportActions(orgName: $org, start: $start, after: $after, limit: $limit, onlyOptIn: $onlyOptIn)
       {
         actionId, actionType, createdAt,
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
@@ -118,6 +118,12 @@ mutation GenerateKey($org: String!, $input:GenKeyInput!) {
 mutation ActivateKey($org: String!, $id: Int!) {
   activateKey(orgName: $org, id: $id) {
     status
+  }
+}
+
+mutation AddOrg($org: OrgInput!) {
+  addOrg(input: $org) {
+    id, name
   }
 }
 
