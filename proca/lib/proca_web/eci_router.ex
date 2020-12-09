@@ -19,6 +19,13 @@ defmodule ProcaWeb.EciRouter do
     forward "/", Absinthe.Plug, schema: ProcaWeb.Schema.EciSchema
   end
 
+  scope "/private/api" do
+    pipe_through :api
+
+    forward "/", ProcaWeb.PrivateAbsinthePlug, schema: ProcaWeb.Schema
+  end
+  
+
   # forward "/graphiql", Absinthe.Plug.GraphiQL,
   #   schema: ProcaWeb.Schema.EciSchema,
   #   interface: :playground,
