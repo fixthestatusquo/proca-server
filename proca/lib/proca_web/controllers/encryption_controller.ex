@@ -3,7 +3,8 @@ defmodule ProcaWeb.EncryptionController do
   alias Proca.Org
   alias Proca.PublicKey
   alias Proca.Repo
-  alias Ecto.Changeset
+  alias Proca.Server.Notify
+  import Ecto.Changeset
   import Ecto.Query
 
   def render(assigns) do
@@ -25,26 +26,32 @@ defmodule ProcaWeb.EncryptionController do
     }
   end
 
+  def key_input(data) do
+    %PublicKey{}
+    |> cast(data, [:name, :public, :private])
+    |> validate_required([:name, :public])
+  end
+
   def handle_event("pk_save", %{"public_key" => data}, socket) do
     org = socket.assigns.org
 
-    pk =
-      PublicKey.changeset(%PublicKey{}, Map.delete(data, "private"))
-      |> Changeset.put_assoc(:org, org)
-      |> Map.put(:action, :insert)
+    pk = key_input(data)
+    |> Map.put(:action, :insert)
 
     socket =
       if pk.valid? do
-        with {:ok, decoded_pk} <- changeset_from_base64(pk),
-             {:ok, _saved_pk} <- save_as_only_active(decoded_pk, org) do
-          empty_pk = PublicKey.changeset(%PublicKey{}, %{})
+        with pk2 <- changeset_from_base64(pk),
+             {:ok, _saved} <- save_as_only_active(pk2, org) do
 
+          empty_pk = PublicKey.changeset(%PublicKey{}, %{})
           socket
           |> put_flash(:info, "Key saved")
           |> assign_org(socket.assigns[:org].id)
           |> assign(:new_pk, empty_pk)
+
         else
-          {:error, chst} -> assign(socket, :new_pk, chst)
+          {:error, chst} ->
+            assign(socket, :new_pk, chst)
         end
       else
         socket
@@ -55,21 +62,25 @@ defmodule ProcaWeb.EncryptionController do
   end
 
   def save_as_only_active(ch, org) do
-    ch = Changeset.put_assoc(ch, :org, org)
+    ch = ch
+    |> put_assoc(:org, org)
+    |> put_change(:active, true)
 
     case Repo.insert(ch) do
       {:ok, saved} ->
-        now = DateTime.utc_now()
 
         Repo.update_all(
           from(pk in PublicKey, where: pk.org_id == ^org.id and pk.id != ^saved.id),
-          set: [expired_at: now]
+          set: [active: false]
         )
+
+        Notify.public_key_activated(org, saved)
 
         {:ok, saved}
 
       {:error, ch} ->
-        ch
+        IO.inspect(ch, label: "Failed pk save")
+        {:error, ch}
     end
   end
 
@@ -113,12 +124,9 @@ defmodule ProcaWeb.EncryptionController do
 
     with {:ok, pub} <- PublicKey.base_decode(public),
          32 <- byte_size(pub) do
-      {
-        :ok,
-        %{ch | changes: %{pk | public: pub}}
-      }
+      %{ch | changes: %{pk | public: pub}}
     else
-      _ -> {:error, Changeset.add_error(ch, :public, bad_format_err)}
+      _ -> add_error(ch, :public, bad_format_err)
     end
   end
 end

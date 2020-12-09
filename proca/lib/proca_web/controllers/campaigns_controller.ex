@@ -29,15 +29,14 @@ defmodule ProcaWeb.CampaignsController do
   end
 
   def handle_event("action_page_edit", %{"id" => ap_id}, socket) do
-    with ap <- ActionPage.find(ap_id) do
-      {
-        :noreply,
-        socket
-        |> assign(:action_page, ActionPage.changeset(ap, %{}))
-        |> assign_selected_campaign(ap.campaign_id)
-        |> assign_partners
-      }
-    end
+    ap =  ActionPage.find(String.to_integer(ap_id))
+    {
+      :noreply,
+      socket
+      |> assign(:action_page, ActionPage.changeset(ap, %{}))
+      |> assign_selected_campaign(ap.campaign_id)
+      |> assign_partners
+    }
   end
 
   def handle_event("action_page_save", %{"action_page" => attrs}, socket) do

@@ -12,9 +12,10 @@
             <code>
               <%= Proca.PublicKey.base_encode(pk.public) %>
             </code>
-            <%= if pk.expired_at do %>
+            <%= if pk.expired do %>
               <span class="float-right badge badge-secondary">expired</span>
-            <% else %>
+            <% end %>
+            <%= if pk.active do %>
               <span class="float-right badge badge-warning">active</span>
             <% end %>
           </p>

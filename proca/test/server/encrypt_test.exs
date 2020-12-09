@@ -17,8 +17,8 @@ defmodule Server.EncryptTest do
   end
 
   test "Encryption key is updated using notification", %{red_org: red_org} do
-    key = Factory.insert(:public_key, org: red_org)
-    Proca.Server.Notify.public_key_created(red_org, key)
+    key = Factory.insert(:public_key, org: red_org, active: true)
+    Proca.Server.Notify.public_key_activated(red_org, key)
     {encrypted, nonce, enc_id, sign_id} = Encrypt.encrypt(red_org, "tabula rasa")
     assert not is_nil(nonce)
     assert enc_id == key.id

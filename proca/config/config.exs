@@ -25,7 +25,7 @@ config :proca, ProcaWeb.Resolvers.Captcha,
 
 config :proca, Proca,
   org_name: "test",
-  stats_sync_interval: 0
+  stats_sync_interval: 0  # XXX move to Proca.Server.Stats
 
 config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"

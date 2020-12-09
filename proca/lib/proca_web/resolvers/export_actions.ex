@@ -103,11 +103,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   end
 
   @default_limit 100
-  def export_actions(_parent, params = %{org_name: org_name}, %{context: %{user: user}}) do
-    with %Org{} = org <- Org.get_by_name(org_name),
-         %Staffer{} = staffer <- Staffer.for_user_in_org(user, org.id),
-         true <- can?(staffer, [:use_api, :export_contacts]) do
-      lim = Map.get(params, :limit, @default_limit)
+  def export_actions(_parent, params, %{context: %{org: org}}) do
+    lim = Map.get(params, :limit, @default_limit)
 
       from(a in Action,
         join: s in Supporter,
@@ -133,9 +130,6 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       |> Repo.all()
       |> Enum.map(&format/1)
       |> ok()
-    else
-      _ -> {:error, "Access forbidden"}
-    end
   end
 
   defp ok(val) do

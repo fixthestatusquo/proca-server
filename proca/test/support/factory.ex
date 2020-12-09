@@ -13,9 +13,11 @@ defmodule Proca.Factory do
     }
   end
 
-  def public_key_factory(%{org: org}) do
+  def public_key_factory(attrs = %{org: org}) do
     name = sequence("public_key")
-    Proca.PublicKey.build_for(org, name) |> Ecto.Changeset.apply_changes
+    Proca.PublicKey.build_for(org, name)
+    |> Ecto.Changeset.change(Map.delete(attrs, :org))
+    |> Ecto.Changeset.apply_changes
   end
 
   def campaign_factory do

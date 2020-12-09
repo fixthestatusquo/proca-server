@@ -4,6 +4,7 @@ defmodule ProcaWeb.Resolvers.Authorized do
 
   `middleware Authorized` - checks if context has :user
   `middleware Authorized` - can?: {:org | :campaign | :action_page, perms}, get_by: [:id, [name: :org_name]]
+  `middleware Authorized` - can?: perms, access: [:org | :campaign | :action_page, by: [:id, [name: :org_name]]]
 
   """
 
@@ -17,7 +18,8 @@ defmodule ProcaWeb.Resolvers.Authorized do
     case resolution.context do
       %{user: user = %User{}} ->
         resolution
-        |> verify_access(user, Keyword.get(opts, :can?), Keyword.get(opts, :get_by, [:id, :name]))
+        |> verify_access(user, Keyword.get(opts, :access, :auth_only))
+        |> verify_perms(Keyword.get(opts, :can?, nil))
 
       _ ->
         resolution
@@ -31,11 +33,13 @@ defmodule ProcaWeb.Resolvers.Authorized do
     end
   end
 
-  def verify_access(resolution, _user, nil, _) do
+  # No resource access requestesd. Just authenticated user
+  def verify_access(resolution, _user, :auth_only) do
     resolution
   end
 
-  def verify_access(resolution, user, {resource_type, perms}, by_fields) do
+  def verify_access(resolution, user, [resource_type | opts]) do
+    by_fields = Keyword.get(opts, :by, [:id, :name])
     case get_staffer_for_resource(user, resource_type, resolution.arguments, by_fields) do
       nil ->
         resolution
@@ -50,28 +54,61 @@ defmodule ProcaWeb.Resolvers.Authorized do
         )
 
       {staffer, resource} ->
-        if Staffer.Permission.can?(staffer, perms) do
           %{
             resolution
             | context:
-                resolution
+                resolution.context
                 |> Map.put(:staffer, staffer)
                 |> Map.put(resource_type, resource)
           }
-        else
-          resolution
-          |> Absinthe.Resolution.put_result(
-            {:error,
-             %{
-               message: "User does not have sufficient permissions",
-               extensions: %{
-                 code: "permission_denied",
-                 required: perms
-               }
-             }}
-          )
-        end
     end
+  end
+
+  def verify_perms(resolution, nil) do
+    resolution
+  end
+
+  def verify_perms(resolution = %{state: :resolved}, _) do
+    resolution
+  end
+
+  def verify_perms(resolution = %{context: %{staffer: staffer}}, perms) do
+    if Staffer.Permission.can?(staffer, perms) do
+      resolution
+    else
+      resolution
+      |> Absinthe.Resolution.put_result(
+        {:error,
+         %{
+           message: "User does not have sufficient permissions",
+           extensions: %{
+             code: "permission_denied",
+             required: perms
+           }
+         }}
+      )
+    end
+  end
+
+  def verify_perms(resolution = %{context: %{}}, _perms) do
+    IO.inspect(resolution.state, label: "STATE")
+    resolution
+    |> Absinthe.Resolution.put_result(
+      {
+        :error,
+        %{
+          message: "No object accessed, thus no permission can be verified",
+          extensions: %{
+            code: "permission_denied"
+          }
+        }
+      })
+  end
+
+  def get_staffer_for_resource(user, :instance_org, _args, _by_fields) do
+    query_for(user, :org)
+    |> get_by(:name, Application.get_env(:proca, Proca)[:org_name])
+    |> Repo.one()
   end
 
   def get_staffer_for_resource(user, resource_type, args, [{f, a} | by_fields]) do

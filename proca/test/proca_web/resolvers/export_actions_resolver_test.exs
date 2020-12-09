@@ -31,9 +31,11 @@ defmodule ProcaWeb.ExportActionResolverTest do
     admin: %{user: user}
   } do
     {:ok, l} =
-      ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{
-        context: %{user: user}
-      })
+      ProcaWeb.Resolvers.ExportActions.export_actions(
+        nil,
+        %{},
+        %{context: %{user: user, org: org}}
+      )
 
     assert Enum.count(l) == 3
   end
@@ -50,17 +52,19 @@ defmodule ProcaWeb.ExportActionResolverTest do
     change(c, communication_consent: false) |> Repo.update!()
 
     {:ok, l} =
-      ProcaWeb.Resolvers.ExportActions.export_actions(nil, %{org_name: ap.org.name}, %{
-        context: %{user: user}
-      })
+      ProcaWeb.Resolvers.ExportActions.export_actions(
+        nil,
+        %{},
+        %{context: %{user: user, org: org}}
+      )
 
     assert Enum.count(l) == 2
 
     {:ok, l} =
       ProcaWeb.Resolvers.ExportActions.export_actions(
         nil,
-        %{org_name: ap.org.name, only_opt_in: false},
-        %{context: %{user: user}}
+        %{only_opt_in: false},
+        %{context: %{user: user, org: org}}
       )
 
     assert Enum.count(l) == 3

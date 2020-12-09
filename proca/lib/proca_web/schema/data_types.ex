@@ -5,7 +5,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   use Absinthe.Schema.Notation
   import Logger
 
-  scalar :datetime do
+  scalar :date_time do
     parse(fn %{value: value} ->
       case DateTime.from_iso8601(value) do
         {:ok, datetime, _} -> {:ok, datetime}
@@ -53,5 +53,14 @@ defmodule ProcaWeb.Schema.DataTypes do
         _ -> :error
       end
     end)
+  end
+
+  enum :status do
+    value :success, description: "Operation completed succesfully"
+    value :confirming, description: "Operation awaiting confirmation"
+  end
+
+  object :delete_result do
+    field :success, non_null(:boolean)
   end
 end
