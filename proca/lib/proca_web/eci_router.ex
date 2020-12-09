@@ -13,6 +13,10 @@ defmodule ProcaWeb.EciRouter do
     plug ProcaWeb.Plugs.ParseExtensions, schema: %{captcha: :string}
   end
 
+  pipeline :auth_api do
+    plug ProcaWeb.Plugs.BasicAuthPlug
+  end
+
   scope "/api" do
     pipe_through :api
 
@@ -21,7 +25,7 @@ defmodule ProcaWeb.EciRouter do
 
   scope "/private/api" do
     pipe_through :api
-
+    pipe_through :auth_api
     forward "/", ProcaWeb.PrivateAbsinthePlug, schema: ProcaWeb.Schema
   end
   
