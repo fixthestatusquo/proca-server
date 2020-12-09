@@ -94,15 +94,17 @@ export default function cli() {
           if (extensions && extensions.code == 'permission_denied') {
             console.error(`Needed permissions are: ${extensions.required}`)
           }
-        } else if (error.result && error.result.errors && error.result.errors.length > 0) {
+        } else {
+          console.error(error)
+        }
+
+        if (error.result && error.result.errors && error.result.errors.length > 0) {
           const {message, extensions, path} = error.result.errors[0]
           console.error(
             message
               + (extensions && extensions.code ? `, code: ${extensions.code}` : ``)
               + (path ? `, path: ${path}` : ``)
           )
-        } else {
-          console.error(error)
         }
       })
     }
