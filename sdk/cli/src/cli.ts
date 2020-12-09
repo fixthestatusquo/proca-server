@@ -1,7 +1,8 @@
 import yargs from 'yargs';
 
 import {load as loadConfig, CliConfig, overrideConfig} from './config'
-import {listCampaigns, getCampaign, listActionPages, getActionPage, updateActionPage} from  './campaign'
+import {listCampaigns, getCampaign, listActionPages, getActionPage,
+        updateActionPage, upsertCampaign, upsertActionPage} from  './campaign'
 import {listKeys, addKey} from './org'
 import {exportActions} from './export'
 import {testQueue, syncQueue} from './queue'
@@ -30,6 +31,7 @@ export interface CliOpts {
   csv?: boolean,
   id?: number,
   name?: string,
+  title?: string,
   public?: boolean,
   locale?: string,
   tytpl?: string,
@@ -84,10 +86,13 @@ export default function cli() {
         if (error.message) {
           console.error(`Error:`, error.message)
         } else if (error.length > 0 && error[0].message) {
-          const {message, path} = error[0]
+          const {message, path, extensions} = error[0]
           console.error(`Error:`, message)
           if (path && path[0] == 'org') {
-            console.error(`Do you belong to the team of org "${config.org}"?`)
+            console.error(`Do you belong to the team of org "${config.org}" and have proper permissions?`)
+          }
+          if (extensions && extensions.code == 'permission_denied') {
+            console.error(`Needed permissions are: ${extensions.required}`)
           }
         } else if (error.result && error.result.errors && error.result.errors.length > 0) {
           const {message, extensions, path} = error.result.errors[0]
@@ -133,12 +138,25 @@ export default function cli() {
     .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
     .command('campaign', 'show campaign for org', {
       id: {
-        alias: 'id',
+        alias: 'i',
         type: 'number',
         description: 'ID of requested object',
         demandOption: true
       }
     }, cmd(getCampaign))
+    .command('campaign:upsert', 'Upsert campaign', {
+      name: {
+        alias: 'n',
+        type: 'string',
+        description: 'Name of campaign',
+        demandOption: true
+      },
+      title: {
+        alias: 't',
+        type: 'string',
+        description: 'Description of the campaign'
+      }
+    }, cmd(upsertCampaign))
     .command('pages', 'List action pages for org', {}, cmd(listActionPages))
     .command('page', 'show page for org', {
       id: {
@@ -190,6 +208,26 @@ export default function cli() {
         description: 'update ActionPage config - provide filename or JSON string'
       }
     }, cmd(updateActionPage))
+    .command('page:add', 'Add a page to campaign', {
+      campaign: {
+        alias: 'c',
+        type: 'string',
+        description: 'Limit to campaign name',
+        demandOption: true
+      },
+      name: {
+        alias: 'n',
+        type: 'string',
+        description: 'update ActionPage name',
+        demandOption: true
+      },
+      locale: {
+        alias: 'l',
+        type: 'string',
+        description: 'update ActionPage locale',
+        demandOption: true 
+      }
+    }, cmd(upsertActionPage))
     .command('keys', 'Display keys', {}, cmd(listKeys))
     .command('key:add', 'Do not use! deprecated. Use setup instead', {}, cmd(addKey))
     .command('watch:pages', 'Subscribe to page updates', {
