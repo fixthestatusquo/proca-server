@@ -28,7 +28,7 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
         extraSupporters, thankYouTemplateRef,
         journey,
         config,
-        campaign { name, id, externalId }
+        campaign { id, name, title, externalId }
       }
     }
 }
@@ -36,7 +36,7 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
 # XXX add optional campaignId param to filter
 query ListActionPages($org: String!) {
   org(name: $org) {
-    name, 
+    name,
     title,
     actionPages {
       id, name, locale,
@@ -102,9 +102,9 @@ mutation UpsertCampaign(
 
 
 query ListKeys($org: String!){
-  org(name: $org) { 
-    keys { 
-      id, name, public, active, expired, expiredAt 
+  org(name: $org) {
+    keys {
+      id, name, public, active, expired, expiredAt
     }
   }
 }

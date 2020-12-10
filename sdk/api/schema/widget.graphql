@@ -6,17 +6,17 @@ query GetActionPage($name: String, $id: Int) {
     locale,
     journey,
     name,
-    org { title }, 
+    org { name, title },
     campaign {
-      title, name, externalId, 
+      id, title, name, externalId,
       stats {
         actionCount {
           actionType, count
-        }, 
+        },
         supporterCount
       },
       org {
-        title
+        name, title
       }
     }
   }
@@ -46,11 +46,11 @@ query GetPublicResult($name: String, $id: Int, $actionType: String!, $limit: Int
       stats {
         actionCount {
           actionType, count
-        }, 
+        },
         supporterCount
       },
       actions(actionType: $actionType, limit: $limit) {
-        fieldKeys, list {  
+        fieldKeys, list {
         actionType, insertedAt,
           fields { key, value }
         }
@@ -86,7 +86,7 @@ mutation AddActionContact(
 
 mutation AddAction(
   $id: Int!,
-  $contactRef: ID!, 
+  $contactRef: ID!,
   $actionType: String!,
   $fields: [CustomFieldInput!],
   $tracking: TrackingInput
@@ -100,4 +100,3 @@ mutation AddAction(
     contactRef, firstName
   }
 }
-
