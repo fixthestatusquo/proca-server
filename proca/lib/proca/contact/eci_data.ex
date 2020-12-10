@@ -76,7 +76,7 @@ defmodule Proca.Contact.EciData do
 
   def validate_address(ch) do
     country = get_change(ch, :nationality) |> get_change(:country)
-    address_fields = [:country, :locality, :postcode, :street, :street_number]
+    address_fields = [:country, :locality, :postcode, :street]
 
     required_address_fields =
       EciDataRules.required(country)
