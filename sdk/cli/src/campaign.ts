@@ -28,7 +28,7 @@ interface IdOpt {
 export async function getCampaign(argv : IdOpt & FormatOpts, config : CliConfig) {
   const c = client(config)
   const fmt = getFormatter(argv)
-  
+
   const {data, errors} = await request(c, admin.GetCampaignDocument, {"org": config.org, "id": argv.id})
 
   if (errors) throw errors
@@ -76,7 +76,7 @@ export async function getActionPage(argv : GetActionPageOpts & FormatOpts, confi
   if (argv.id)
     vars.id = argv.id
 
-  if (argv.public)
+  if (!argv.public)
     vars.org = config.org
 
   if (argv.public) {
