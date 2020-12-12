@@ -80,14 +80,14 @@ defmodule ProcaWeb.Resolvers.Org do
     }
   end
 
-  def add_org(_, params, %{context: %{user: user}}) do
+  def add_org(_, %{input: params}, %{context: %{user: user}}) do
     with {:ok, org} <- Org.changeset(%Org{}, params) |> Repo.insert(),
-         perms <- Staffer.Permission.add(0, Staffer.Role.permissions(:owner)),
-         {:ok, staffer} <- Staffer.build_for(user, org.id, perms) |> Repo.insert()
+         perms <- Staffer.Role.permissions(:owner),
+         {:ok, _staffer} <- Staffer.build_for_user(user, org.id, perms) |> Repo.insert()
       do
       {:ok, org}
     else
-      {:error, changeset} -> Helper.format_errors(changeset)
+      {:error, changeset} -> {:error, Helper.format_errors(changeset)}
     end
   end
 
