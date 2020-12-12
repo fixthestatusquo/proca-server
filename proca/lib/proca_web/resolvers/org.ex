@@ -81,13 +81,17 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def add_org(_, %{input: params}, %{context: %{user: user}}) do
-    with {:ok, org} <- Org.changeset(%Org{}, params) |> Repo.insert(),
-         perms <- Staffer.Role.permissions(:owner),
-         {:ok, _staffer} <- Staffer.build_for_user(user, org.id, perms) |> Repo.insert()
-      do
-      {:ok, org}
-    else
-      {:error, changeset} -> {:error, Helper.format_errors(changeset)}
+    perms = Staffer.Role.permissions(:owner)
+
+    op = Multi.new()
+    |> Multi.insert(:org, Org.changeset(%Org{}, params))
+    |> Multi.insert(:staffer, fn %{org: org} ->
+      Staffer.build_for_user(user, org.id, perms)
+    end)
+
+    case Repo.transaction(op) do
+      {:ok, %{org: org}} -> {:ok, org}
+      {:error, _fail_op, fail_val, _ch} -> {:error, Helper.format_errors(fail_val)}
     end
   end
 
@@ -102,7 +106,7 @@ defmodule ProcaWeb.Resolvers.Org do
     case Org.changeset(org, attrs) |> Repo.update()
       do
       {:error, ch} -> {:error, Helper.format_errors(ch)}
-      {:ok, org} 
+      {:ok, org}
     end
   end
 
