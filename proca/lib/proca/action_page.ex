@@ -16,7 +16,7 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :name, :string
     field :delivery, :boolean
-    field :journey, {:array, :string}, default: []
+    field :journey, {:array, :string}, default: ["Petition", "Share"]
     field :config, :map
 
     belongs_to :campaign, Proca.Campaign
