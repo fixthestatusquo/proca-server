@@ -68,10 +68,10 @@
     core-js "2.6.0"
     graphql "14.0.2"
 
-"@proca/api@0.2.0-beta.2":
-  version "0.2.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.0-beta.2.tgz#0bbb9f982e4180ec4ccd73d9587112c7c510bcba"
-  integrity sha512-urJChYN9pPRuUKWlQTAkNXRraYJgEb706Kylh317mBhF4S0gD9oTpWxXxSGaR4clyCReMlCRdMdgydGwECio2w==
+"@proca/api@0.2.0-beta.4":
+  version "0.2.0-beta.4"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.0-beta.4.tgz#55a1ad8e141dd424491aa15aeda5e87e1a8b8214"
+  integrity sha512-BhcfN4CQdFB1McU1Y5HLA8++y/DfTnOx+CiyS3UuF+p052wngY2WAoG9im7xfPl0wDrTVC8RcOj1OrErmARcNg==
   dependencies:
     "@absinthe/socket-apollo-link" "^0.2.1"
     apollo-link "^1.2.14"
@@ -1380,11 +1380,6 @@ type-fest@^0.11.0:
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.11.0.tgz#97abf0872310fed88a5c466b25681576145e33f1"
   integrity sha512-OdjXJxnCN1AvyLSzeKIgXTXxV+99ZuXl3Hpo9XpJAv9MBcHrrJOQ5kV7ypXOuQie+AmWG25hLbiKdwYTifzcfQ==
-
-typescript@^4.0.3:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.0.3.tgz#153bbd468ef07725c1df9c77e8b453f8d36abba5"
-  integrity sha512-tEu6DGxGgRJPb/mVPIZ48e69xCn2yRmCgYmDugAVwmJ6o+0u1RI18eO7E7WBTLYLaEVVOhwQmcdhQHweux/WPg==
 
 unpipe@1.0.0:
   version "1.0.0"
