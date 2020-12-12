@@ -5,6 +5,7 @@ defmodule Proca.Users.User do
   use Ecto.Schema
   use Pow.Ecto.Schema
   alias Proca.Users.StrongPassword
+  alias Proca.{Repo,Users.User}
 
   schema "users" do
     pow_user_fields()
@@ -35,5 +36,17 @@ defmodule Proca.Users.User do
       password: pwd,
       password_confirmation: pwd
     }
+  end
+
+  def reset_password(email) do
+    with u = %User{} <- Repo.get_by(User, %{email: email}),
+         new_pass <- StrongPassword.generate(),
+         {:ok, u2} <- Pow.Ecto.Schema.Changeset.new_password_changeset(u, %{password:  new_pass}, @pow_config) |> Repo.update()
+      do
+      {:ok, u2, new_pass}
+      else
+        nil -> {:error, "user not found"}
+        err -> err
+    end
   end
 end
