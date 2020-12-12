@@ -25,7 +25,8 @@ defmodule Proca.Stage.SQS do
             ],
             backoff_type: :exp,
             backoff_min: 1_000,
-            backoff_max: 600_000
+            backoff_max: 600_000,
+            on_failure: :reject_and_requeue
           },
         concurrency: 1
       ],
