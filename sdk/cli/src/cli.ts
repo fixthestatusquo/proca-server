@@ -45,7 +45,7 @@ export interface CliOpts {
   decrypt?: boolean,
   ignore?: boolean,
   fields?: string,
-  // ServiceOpts 
+  // ServiceOpts
   queueName?: string,
   service?: string,
   service_url?: string,
@@ -108,6 +108,13 @@ export default function cli() {
         }
       })
     }
+  }
+
+  function validateIso8601Date(val :string) {
+    if (! /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/.test(val)) {
+      throw new Error("Provide a date time in ISO8601 format (YYYY-MM-DDThh:mm:ssZ or TZ shift instead of Z, eg:+01:00)")
+    }
+    return val
   }
 
   const argv = yargs
@@ -248,7 +255,7 @@ export default function cli() {
         alias: 'l',
         type: 'string',
         description: 'update ActionPage locale',
-        demandOption: true 
+        demandOption: true
       }
     }, cmd(upsertActionPage))
     .command('keys', 'Display keys', {}, cmd(listKeys))
@@ -285,7 +292,8 @@ export default function cli() {
       after: {
         alias: 'a',
         type: 'string',
-        description: 'Start from this date (iso)'
+        description: 'Start from this date (iso)',
+        coerce: validateIso8601Date
       },
       decrypt: {
         alias: 'd',

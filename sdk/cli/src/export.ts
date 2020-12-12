@@ -46,7 +46,7 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
     for (const action of data.exportActions) {
       vars.start = action.actionId + 1
 
-      // inplace 
+      // inplace
       const action2 = decryptAction(action as ActionWithEncryptedContact, argv, config)
 
       console.log(fmt.action(action2))
@@ -81,4 +81,3 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
 //     csvWriter.writeRecords(signatures);
 //   });
 // }
-
