@@ -3,7 +3,7 @@ import yargs from 'yargs';
 import {load as loadConfig, CliConfig, overrideConfig} from './config'
 import {listCampaigns, getCampaign, listActionPages, getActionPage,
         updateActionPage, upsertCampaign, upsertActionPage} from  './campaign'
-import {listKeys, addKey} from './org'
+import {listKeys, addOrg, addKey} from './org'
 import {exportActions} from './export'
 import {testQueue, syncQueue} from './queue'
 import {setup} from './setup'
@@ -137,6 +137,27 @@ export default function cli() {
       default: false
     })
     .command('token', 'print basic auth token', {}, cmd(showToken))
+    .command('org:add', 'add a new organisation', {
+      name: {
+        alias: 'n',
+        type: 'string',
+        description: 'Name of campaign',
+        demandOption: true
+      },
+      schema: {
+        alias: 's',
+        type: 'string',
+        description: 'Member personal data schema',
+        choices: ['basic', 'popular_initiative', 'eci'],
+        default: 'basic'
+      },
+      title: {
+        alias: 't',
+        type: 'string',
+        description: 'Full org name',
+        demandOption: true
+      }
+    }, cmd(addOrg))
     .command('campaigns', 'List campaigns for org', {}, cmd(listCampaigns))
     .command('campaign', 'show campaign for org', {
       id: {
