@@ -28,6 +28,7 @@
     "dist"
   ],
   "dependencies": {
+    "@graphql-typed-document-node/core": "^3.1.0",
     "@absinthe/socket-apollo-link": "^0.2.1",
     "apollo-link": "^1.2.14",
     "apollo-link-http": "^1.5.17",
@@ -44,7 +45,6 @@
     "@graphql-codegen/typescript": "1.17.8",
     "@graphql-codegen/typescript-graphql-request": "^2.0.0",
     "@graphql-codegen/typescript-operations": "^1.17.8",
-    "@graphql-typed-document-node/core": "^3.1.0",
     "@types/absinthe__socket": "^0.2.1",
     "@types/absinthe__socket-apollo-link": "^0.2.1",
     "@types/graphql": "^14.5.0",
