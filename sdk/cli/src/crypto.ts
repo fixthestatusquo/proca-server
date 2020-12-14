@@ -4,6 +4,7 @@ import base64url from 'base64url'
 import {readFileSync, writeFileSync} from 'fs'
 import {types} from '@proca/api'
 import {CliConfig} from './config'
+import {ActionMessage} from './queueMessage'
 
 export type DecryptOpts = {
   decrypt?: boolean,
@@ -145,6 +146,26 @@ export function decryptAction(action : ActionWithEncryptedContact, argv : Decryp
   action2.contact.pii = pii
   return action2
 }
+
+
+export function decryptActionMessage(action : ActionMessage, argv : DecryptOpts, config : CliConfig) {
+  const contact : EncryptedContact = {
+    signKey: { public: action.contact.signKey},
+    publicKey: { public: action.contact.publicKey},
+    nonce: action.contact.nonce,
+    payload: action.contact.payload,
+    contactRef: action.contact.ref
+  }
+
+  const pii = getContact(contact, argv, config)
+  action.contact.pii = pii
+  if (!action.contact.firstName && action.contact.pii.firstName)
+    action.contact.firstName = action.contact.pii.firstName
+  if (!action.contact.email && action.contact.pii.email)
+    action.contact.email = action.contact.pii.email
+  return action
+}
+
 
 export function getContact(contact : EncryptedContact, argv : DecryptOpts, config : CliConfig) {
   let {payload, nonce, publicKey, signKey} = contact
