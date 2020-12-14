@@ -7,6 +7,7 @@ type Contact = {
   payload: string,
   signKey: string,
   publicKey: string,
+  nonce: string,
   pii?: any
 }
 
