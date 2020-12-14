@@ -27,6 +27,7 @@ export interface CliOpts {
   host?: string,
   queue?: string,
   keys?: string,
+  debug?: boolean,
   json?: boolean,
   csv?: boolean,
   id?: number,
@@ -85,6 +86,7 @@ export default function cli() {
       cliMethod(opts, config).catch((error) => {
         if (error.message) {
           console.error(`Error:`, error.message)
+
         } else if (error.length > 0 && error[0].message) {
           const {message, path, extensions} = error[0]
           console.error(`Error:`, message)
@@ -96,6 +98,7 @@ export default function cli() {
           }
         } else {
           console.error(error)
+
         }
 
         if (error.result && error.result.errors && error.result.errors.length > 0) {
@@ -105,6 +108,10 @@ export default function cli() {
               + (extensions && extensions.code ? `, code: ${extensions.code}` : ``)
               + (path ? `, path: ${path}` : ``)
           )
+        }
+
+        if (opts.debug && error.stack) {
+          console.error(`The call trace that led to this error is:\n${error.stack}`)
         }
       })
     }
@@ -125,6 +132,12 @@ export default function cli() {
       {},
       cmd(setup)
     )
+    .option('debug', {
+      alias: 'D',
+      type: 'boolean',
+      default: false,
+      describe: 'Enable troubleshooting information'
+    })
     .option('org', override('o', 'org name', config.org ))
     .option('user', override('u', 'user name', config.username))
     .option('password', override('p', 'password', config.password))
