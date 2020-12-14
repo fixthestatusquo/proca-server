@@ -4,6 +4,7 @@ import {decryptAction, DecryptOpts} from './crypto'
 import {CliConfig} from './config'
 import {CliOpts, ServiceOpts} from './cli'
 import {ActionMessage} from './queueMessage'
+export {ActionMessage} from './queueMessage'
 
 export type ProcessStage = "confirm" | "deliver"
 export type SyncFunction = (action : ActionMessage, argv : ServiceOpts, config : CliConfig) => any
