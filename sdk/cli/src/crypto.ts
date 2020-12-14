@@ -122,7 +122,7 @@ export function decrypt(payload: string, nonce: string, public_key: KeyPair, sig
     throw new Error("Tried to decrypt a payload providing null public_key or sign_key")
   }
 
-  const privIdx = keys.keys.findIndex((k) => k.public == public_key.public) 
+  const privIdx = keys.keys.findIndex((k) => k.public == public_key.public)
   if (privIdx < 0) return null;
 
   const privPair = keys.keys[privIdx]
