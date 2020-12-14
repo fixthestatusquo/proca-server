@@ -1,14 +1,6 @@
-import {load as loadConfig} from './config'
-import cli from './cli'
-import * as crypto from './crypto'
-import * as identity from './service/identity'
-import * as email from './service/email'
-import * as queue from './queue'
-
-module.exports = {
-  queue,
-  loadConfig,
-  cli,
-  crypto,
-  service: {identity, email}
-}
+export {load as loadConfig} from './config'
+export * as cli from './cli'
+export * as crypto from './crypto'
+export * as identity from './service/identity'
+export * as email from './service/email'
+export * as queue from './queue'
