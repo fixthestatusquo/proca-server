@@ -75,7 +75,7 @@ class Terminal {
       t += `${ap.id} ${ap.name} [${ap.locale}]`
 
       if (!isPublicActionPage(ap) && ap.extraSupporters != 0) {
-        
+
         t += ` (🧑‍ ${ap.extraSupporters} extra supporters)`
       }
 
@@ -83,6 +83,10 @@ class Terminal {
         const ex_id = ap.campaign.externalId ? `, ${ap.campaign.externalId}` : ''
         t += ` campaign: ${ap.campaign.name} (id: ${ap.campaign.id}${ex_id})`
       }
+    }
+
+    if (!isPublicActionPage(ap) && ap.thankYouTemplateRef) {
+      t += `\nThankYou email template: ${ap.thankYouTemplateRef}`
     }
 
     if (ap.config) {
@@ -95,10 +99,10 @@ class Terminal {
   }
 
   // The standalone json files used to generate widget for action page
-  // is using a different format today 
+  // is using a different format today
   addAPkeysToConfig(ap : types.ActionPage, org : OrgDetails) {
     const c = JSON.parse(ap.config || '{}') || {}
-    
+
     const m : WidgetConfig = {
       actionpage: ap.id,
       lang: ap.locale,
@@ -253,4 +257,3 @@ export function getFormatter(argv : FormatOpts) {
     return new Terminal(argv)
   }
 }
-
