@@ -1,4 +1,4 @@
-export {load as loadConfig} from './config'
+export {load as loadConfig, CliConfig} from './config'
 export * as cli from './cli'
 export * as crypto from './crypto'
 export * as identity from './service/identity'
