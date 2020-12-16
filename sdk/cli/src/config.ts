@@ -13,7 +13,7 @@ export type CliConfig = {
   identity_action_fields?: string[],
   identity_contact_fields?: string[],
   service_url?: string,
-  url: string,
+  url?: string,
   keyData?: string,
   envFile?: boolean,
   verbose?: boolean
