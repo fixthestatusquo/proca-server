@@ -28,6 +28,14 @@ defmodule Proca.Application do
         Application.get_env(:proca, Proca.Server.Plumbing)[:url]
       },
       {
+        Proca.Pipes.Supervisor,
+        []
+      },
+      {
+        Registry,
+        [keys: :unique, name: Proca.Pipes.Registry]
+      },
+      {
         Proca.Server.Processing,
         []
       },
