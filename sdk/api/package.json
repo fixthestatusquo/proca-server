@@ -38,11 +38,11 @@
   },
   "devDependencies": {
     "@graphql-codegen/add": "^2.0.1",
-    "@graphql-codegen/cli": "1.17.8",
+    "@graphql-codegen/cli": "1.19.4",
     "@graphql-codegen/import-types-preset": "^1.17.9",
     "@graphql-codegen/introspection": "^1.17.8",
     "@graphql-codegen/typed-document-node": "^1.17.9",
-    "@graphql-codegen/typescript": "1.17.8",
+    "@graphql-codegen/typescript": "1.19.0",
     "@graphql-codegen/typescript-graphql-request": "^2.0.0",
     "@graphql-codegen/typescript-operations": "^1.17.8",
     "@types/absinthe__socket": "^0.2.1",
