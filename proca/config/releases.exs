@@ -14,7 +14,7 @@ config :proca, Proca.Repo,
   queue_target: String.to_integer(System.get_env("DB_QUEUE_TARGET") || "50"),
   queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000")
 
-config :proca, Proca.Server.Plumbing,
+config :proca, Proca.Pipes,
   url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL")
 
 config :proca, Proca.Server.Jwks,

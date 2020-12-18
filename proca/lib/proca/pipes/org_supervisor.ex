@@ -1,12 +1,16 @@
 defmodule Proca.Pipes.OrgSupervisor do
   alias Proca.Org
 
-  def start_link(org = %Org{name: org_name}) do
-    Supervisor.start_link(__MODULE__, org, name: process_name(org_name))
+  def start_link(org ) do
+    Supervisor.start_link(__MODULE__, org, name: process_name(org))
   end
 
-  defp process_name(org_name) when is_bitstring(org_name) do
-    {:via, Registry, {Proca.Pipes.Registry, "supervisor:" <> org_name}}
+  defp process_name(%Org{id: org_id}) do
+    {:via, Registry, {Proca.Pipes.Registry, {__MODULE__, org_id}}}
+  end
+
+  def whereis(org = %Org{}) do
+    Process.whereis(process_name(org))
   end
 
   def init(org = %Org{}) do
@@ -18,4 +22,7 @@ defmodule Proca.Pipes.OrgSupervisor do
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
+  def dispatch(%Org{id: org_id}, func) do
+    Registry.dispatch(Proca.Pipes.Registry, {__MODULE__, org_id}, func)
+  end
 end

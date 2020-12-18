@@ -3,7 +3,7 @@ defmodule Proca.Pipes.Supervisor do
   Supervisor of Topology processes.
   """
   use DynamicSupervisor
-  alias Proca.Pipes.OrgSupervisor
+  alias Proca.Pipes
   alias Proca.{Repo,Org}
 
   def start_link(_arg),
@@ -22,9 +22,9 @@ defmodule Proca.Pipes.Supervisor do
   def start_child(org = %Org{}) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      %{id: OrgSupervisor,
+      %{id: Pipes.OrgSupervisor,
         start: {
-          OrgSupervisor,
+          Pipes.OrgSupervisor,
           :start_link,
           [org]
         },
@@ -33,4 +33,9 @@ defmodule Proca.Pipes.Supervisor do
       })
   end
 
+  def terminate_child(org = %Org{}) do
+    Pipes.OrgSupervisor.dispatch(org, fn [{pid, _}] ->
+      DynamicSupervisor.terminate_child(__MODULE__, pid)
+    end)
+  end
 end
