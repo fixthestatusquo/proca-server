@@ -15,38 +15,18 @@ defmodule Proca.Application do
       # Start the endpoint when the application starts
       ProcaWeb.Endpoint,
       {Absinthe.Subscription, ProcaWeb.Endpoint},
-      {
-        Proca.Server.Keys,
-        Application.get_env(:proca, Proca)[:org_name]
-      },
-      {
-        Proca.Server.Stats,
-        Application.get_env(:proca, Proca)[:stats_sync_interval]
-      },
-      {
-        Proca.Server.Plumbing,
-        Application.get_env(:proca, Proca.Server.Plumbing)[:url]
-      },
-      {
-        Proca.Pipes.Supervisor,
-        []
-      },
-      {
-        Registry,
-        [keys: :unique, name: Proca.Pipes.Registry]
-      },
-      {
-        Proca.Server.Processing,
-        []
-      },
-      {
-        Proca.Stage.ThankYou,
-        []
-      },
-      {
-        Proca.Stage.SQS,
-        []
-      }
+
+      {Proca.Server.Keys, Application.get_env(:proca, Proca)[:org_name]},
+
+      {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
+
+      {Proca.Pipes.Connection, Application.get_env(:proca, Proca.Pipes)[:url]},
+      {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
+      {Proca.Pipes.Supervisor, []},
+      {Proca.Server.Processing, []},
+
+      # {Proca.Stage.ThankYou, []},
+      # {Proca.Stage.SQS, []}
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},
     ]

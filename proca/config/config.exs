@@ -30,7 +30,7 @@ config :proca, Proca,
 config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
-config :proca, Proca.Server.Plumbing,
+config :proca, Proca.Pipes,
   url: "amqp://proca:proca@rabbitmq.docker/proca"
 
 config :proca, Proca.Server.Jwks,
@@ -64,4 +64,3 @@ config :sentry,
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
-
