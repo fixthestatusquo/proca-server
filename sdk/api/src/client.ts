@@ -1,5 +1,5 @@
 /*
-  NodeJS compatibile Apollo Client 
+  NodeJS compatibile Apollo Client
 
   GraphQL, JavaScript and TypeScript is just a big ball of mud and this is why
   this file is terrible.
@@ -148,6 +148,15 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
   )
 }
 
+export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) {
+  if (url === null || url === undefined) {
+    throw new Error("api url must not be null or undefined")
+  }
+  const config = apiUrls(url, options ? options.wsUrl : undefined)
+  const httpLink = createHttpLink({uri: config.url, headers: auth, includeExtensions: true})
+  return httpLink
+}
+
 /**
  * Because the query document has a generic type narrowed for <Q - thing we get, R - arguments we send>,
  * these two generics are used to cast the result:
@@ -155,8 +164,8 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
  * - ExecutionResult: data: Q
  * - ExecutionErrors: errors?: Error  - not sure why apollo-link does not provide this type
  * - FetchResult: other keys like extensions
- * 
- */ 
+ *
+ */
 
 export async function request<Q,R>(
   link: ApolloLink,
