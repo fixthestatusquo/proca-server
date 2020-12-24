@@ -20,8 +20,8 @@ defmodule Proca.Pipes.Topology do
                                 > =cus.N.http             -> proca-gw
                                 > =cus.N.deliver
 
-                                    DLX:x N.fail fanout> N.fail
-                                    DLX:x N.retry direct:$qn-> =$qn=
+                                    DLX:x org.N.fail fanout> N.fail
+                                    DLX:x org.N.retry direct:$qn-> =$qn=
 
 
   Caveats:
@@ -47,9 +47,38 @@ defmodule Proca.Pipes.Topology do
   end
 
   ## Callbacks
-  def init(%Org{id: id, name: org_name}) do
+  def init(org = %Org{id: org_id}) do
+    {:ok, chan} = Channel.open(Pipes.Connection.connection)
+
+    try do
+      declare_exchanges(chan, org)
+    rescue
+      _ -> Channel.close(chan)
+    end
+
     # Setup queues (without the Broadway ones)
-    {:ok, %{org_id: id}}
+    {:ok, %{org_id: org_id}}
+  end
+
+  def xn(%Org{id: id}, name), do: "org.#{id}.#{name}"
+
+  def wqn(%Org{id: id}, name), do: "wrk.#{id}.#{name}"
+
+  def cqn(%Org{id: id}, name), do: "cus.#{id}.#{name}"
+
+
+  def declare_exchanges(chan, o = %Org{}) do
+    :ok = Exchange.declare(chan, xn(o, "confirm.supporter"), :topic, durable: true)
+    :ok = Exchange.declare(chan, xn(o, "confirm.action"), :topic, durable: true)
+    :ok = Exchange.declare(chan, xn(o, "deliver"), :topic, durable: true)
+    :ok = Exchange.declare(chan, xn(o, "fail"), :fanout, durable: true)
+    :ok = Exchange.declare(chan, xn(o, "retry"), :direct, durable: true)
+  end
+
+  def declare_custom_queues(chan, o = %Org{}) do
+    [{:custom_supporter_confirm, []}]
+    [{:custom_action_confirm, []}]
+    [{:custom_action_deliver, []}]
   end
 
 
