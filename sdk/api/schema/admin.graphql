@@ -134,3 +134,15 @@ subscription ActionPageUpserted($org: String) {
     org { title }
   }
 }
+
+query CurrentUserOrgs {
+  currentUser {
+    id
+    email,
+    roles {
+    	role, org {
+        id, name
+    	}
+    }
+  }
+}
