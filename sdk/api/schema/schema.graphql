@@ -566,13 +566,13 @@ type Key {
 
 type Org {
   "Organization id"
-  id: Int
+  id: Int!
 
   "Organisation short name"
-  name: String
+  name: String!
 
   "Organisation title (human readable name)"
-  title: String
+  title: String!
 
   personalData: PersonalData!
 
@@ -581,13 +581,13 @@ type Org {
   key(select: SelectKey!): Key
 
   "List campaigns this org is leader or partner of"
-  campaigns(select: SelectCampaign): [Campaign]
+  campaigns(select: SelectCampaign): [Campaign!]!
 
   "List action pages this org has"
-  actionPages(select: SelectActionPage): [ActionPage]
+  actionPages(select: SelectActionPage): [ActionPage!]!
 
   "Action Page"
-  actionPage(name: String, id: Int): ActionPage
+  actionPage(name: String, id: Int): ActionPage!
 
   "Get campaign this org is leader or partner of by id"
   campaign(id: Int): Campaign
@@ -686,5 +686,5 @@ enum Status {
 type User {
   id: Int!
   email: String!
-  roles: [UserRole!]
+  roles: [UserRole!]!
 }
