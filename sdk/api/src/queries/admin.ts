@@ -15,26 +15,23 @@ export const GenerateKeyDocument: DocumentNode<GenerateKey, GenerateKeyVariables
 export const ActivateKeyDocument: DocumentNode<ActivateKey, ActivateKeyVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ActivateKey"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activateKey"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]};
 export const AddOrgDocument: DocumentNode<AddOrg, AddOrgVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddOrg"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"OrgInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addOrg"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]};
 export const ActionPageUpsertedDocument: DocumentNode<ActionPageUpserted, ActionPageUpsertedVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"ActionPageUpserted"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionPageUpserted"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"journey"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]};
-export const CurrentUserOrgsDocument: DocumentNode<CurrentUserOrgs, CurrentUserOrgsVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CurrentUserOrgs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"currentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]};
+export const CurrentUserOrgsDocument: DocumentNode<CurrentUserOrgs, CurrentUserOrgsVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CurrentUserOrgs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"currentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]}}]};
 export type ListCampaignsVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListCampaigns = (
-  { __typename?: 'RootQueryType' }
-  & { org?: Types.Maybe<(
+export type ListCampaigns = { org: Types.Maybe<(
     { __typename?: 'Org' }
-    & { campaigns?: Types.Maybe<Array<Types.Maybe<(
+    & { campaigns: Array<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'id' | 'externalId' | 'name' | 'title'>
-      & { org?: Types.Maybe<(
+      & { org: Types.Maybe<(
         { __typename?: 'PublicOrg' }
         & Pick<Types.PublicOrg, 'name' | 'title'>
       )> }
-    )>>> }
-  )> }
-);
+    )> }
+  )> };
 
 export type GetCampaignVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -42,24 +39,21 @@ export type GetCampaignVariables = Types.Exact<{
 }>;
 
 
-export type GetCampaign = (
-  { __typename?: 'RootQueryType' }
-  & { org?: Types.Maybe<(
+export type GetCampaign = { org: Types.Maybe<(
     { __typename?: 'Org' }
-    & { campaign?: Types.Maybe<(
+    & { campaign: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'id' | 'externalId' | 'name' | 'title'>
-      & { stats?: Types.Maybe<(
+      & { stats: Types.Maybe<(
         { __typename?: 'CampaignStats' }
         & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount?: Types.Maybe<Array<(
+        & { actionCount: Types.Maybe<Array<(
           { __typename?: 'ActionTypeCount' }
           & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
         )>> }
       )> }
     )> }
-  )> }
-);
+  )> };
 
 export type GetActionPageVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -68,42 +62,36 @@ export type GetActionPageVariables = Types.Exact<{
 }>;
 
 
-export type GetActionPage = (
-  { __typename?: 'RootQueryType' }
-  & { org?: Types.Maybe<(
+export type GetActionPage = { org: Types.Maybe<(
     { __typename?: 'Org' }
     & Pick<Types.Org, 'name' | 'title'>
-    & { actionPage?: Types.Maybe<(
+    & { actionPage: (
       { __typename?: 'ActionPage' }
       & Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters' | 'thankYouTemplateRef' | 'journey' | 'config'>
-      & { campaign?: Types.Maybe<(
+      & { campaign: Types.Maybe<(
         { __typename?: 'Campaign' }
         & Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>
       )> }
-    )> }
-  )> }
-);
+    ) }
+  )> };
 
 export type ListActionPagesVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListActionPages = (
-  { __typename?: 'RootQueryType' }
-  & { org?: Types.Maybe<(
+export type ListActionPages = { org: Types.Maybe<(
     { __typename?: 'Org' }
     & Pick<Types.Org, 'name' | 'title'>
-    & { actionPages?: Types.Maybe<Array<Types.Maybe<(
+    & { actionPages: Array<(
       { __typename?: 'ActionPage' }
       & Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters'>
-      & { campaign?: Types.Maybe<(
+      & { campaign: Types.Maybe<(
         { __typename?: 'Campaign' }
         & Pick<Types.Campaign, 'name' | 'id' | 'externalId'>
       )> }
-    )>>> }
-  )> }
-);
+    )> }
+  )> };
 
 export type ExportCampaignActionsVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -116,25 +104,23 @@ export type ExportCampaignActionsVariables = Types.Exact<{
 }>;
 
 
-export type ExportCampaignActions = (
-  { __typename?: 'RootQueryType' }
-  & { exportActions?: Types.Maybe<Array<Types.Maybe<(
+export type ExportCampaignActions = { exportActions: Types.Maybe<Array<Types.Maybe<(
     { __typename?: 'Action' }
     & Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
     & { contact: (
       { __typename?: 'Contact' }
       & Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
-      & { publicKey?: Types.Maybe<(
+      & { publicKey: Types.Maybe<(
         { __typename?: 'Key' }
         & Pick<Types.Key, 'id' | 'public'>
-      )>, signKey?: Types.Maybe<(
+      )>, signKey: Types.Maybe<(
         { __typename?: 'Key' }
         & Pick<Types.Key, 'id' | 'public'>
       )> }
     ), fields: Array<(
       { __typename?: 'CustomField' }
       & Pick<Types.CustomField, 'key' | 'value'>
-    )>, tracking?: Types.Maybe<(
+    )>, tracking: Types.Maybe<(
       { __typename?: 'Tracking' }
       & Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>
     )>, actionPage: (
@@ -144,8 +130,7 @@ export type ExportCampaignActions = (
       { __typename?: 'Consent' }
       & Pick<Types.Consent, 'optIn'>
     ) }
-  )>>> }
-);
+  )>>> };
 
 export type ExportOrgActionsVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -156,25 +141,23 @@ export type ExportOrgActionsVariables = Types.Exact<{
 }>;
 
 
-export type ExportOrgActions = (
-  { __typename?: 'RootQueryType' }
-  & { exportActions?: Types.Maybe<Array<Types.Maybe<(
+export type ExportOrgActions = { exportActions: Types.Maybe<Array<Types.Maybe<(
     { __typename?: 'Action' }
     & Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
     & { contact: (
       { __typename?: 'Contact' }
       & Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
-      & { publicKey?: Types.Maybe<(
+      & { publicKey: Types.Maybe<(
         { __typename?: 'Key' }
         & Pick<Types.Key, 'id' | 'public'>
-      )>, signKey?: Types.Maybe<(
+      )>, signKey: Types.Maybe<(
         { __typename?: 'Key' }
         & Pick<Types.Key, 'id' | 'public'>
       )> }
     ), fields: Array<(
       { __typename?: 'CustomField' }
       & Pick<Types.CustomField, 'key' | 'value'>
-    )>, tracking?: Types.Maybe<(
+    )>, tracking: Types.Maybe<(
       { __typename?: 'Tracking' }
       & Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>
     )>, actionPage: (
@@ -187,8 +170,7 @@ export type ExportOrgActions = (
       { __typename?: 'Consent' }
       & Pick<Types.Consent, 'optIn'>
     ) }
-  )>>> }
-);
+  )>>> };
 
 export type UpdateActionPageVariables = Types.Exact<{
   id: Types.Scalars['Int'];
@@ -196,13 +178,10 @@ export type UpdateActionPageVariables = Types.Exact<{
 }>;
 
 
-export type UpdateActionPage = (
-  { __typename?: 'RootMutationType' }
-  & { updateActionPage?: Types.Maybe<(
+export type UpdateActionPage = { updateActionPage: Types.Maybe<(
     { __typename?: 'ActionPage' }
     & Pick<Types.ActionPage, 'id'>
-  )> }
-);
+  )> };
 
 export type UpsertCampaignVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -210,29 +189,23 @@ export type UpsertCampaignVariables = Types.Exact<{
 }>;
 
 
-export type UpsertCampaign = (
-  { __typename?: 'RootMutationType' }
-  & { upsertCampaign?: Types.Maybe<(
+export type UpsertCampaign = { upsertCampaign: Types.Maybe<(
     { __typename?: 'Campaign' }
     & Pick<Types.Campaign, 'id'>
-  )> }
-);
+  )> };
 
 export type ListKeysVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListKeys = (
-  { __typename?: 'RootQueryType' }
-  & { org?: Types.Maybe<(
+export type ListKeys = { org: Types.Maybe<(
     { __typename?: 'Org' }
     & { keys: Array<(
       { __typename?: 'Key' }
       & Pick<Types.Key, 'id' | 'name' | 'public' | 'active' | 'expired' | 'expiredAt'>
     )> }
-  )> }
-);
+  )> };
 
 export type GenerateKeyVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -240,13 +213,10 @@ export type GenerateKeyVariables = Types.Exact<{
 }>;
 
 
-export type GenerateKey = (
-  { __typename?: 'RootMutationType' }
-  & { generateKey?: Types.Maybe<(
+export type GenerateKey = { generateKey: Types.Maybe<(
     { __typename?: 'KeyWithPrivate' }
     & Pick<Types.KeyWithPrivate, 'id' | 'name' | 'public' | 'private' | 'active' | 'expired' | 'expiredAt'>
-  )> }
-);
+  )> };
 
 export type ActivateKeyVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -254,62 +224,50 @@ export type ActivateKeyVariables = Types.Exact<{
 }>;
 
 
-export type ActivateKey = (
-  { __typename?: 'RootMutationType' }
-  & { activateKey?: Types.Maybe<(
+export type ActivateKey = { activateKey: Types.Maybe<(
     { __typename?: 'ActivateKeyResult' }
     & Pick<Types.ActivateKeyResult, 'status'>
-  )> }
-);
+  )> };
 
 export type AddOrgVariables = Types.Exact<{
   org: Types.OrgInput;
 }>;
 
 
-export type AddOrg = (
-  { __typename?: 'RootMutationType' }
-  & { addOrg?: Types.Maybe<(
+export type AddOrg = { addOrg: Types.Maybe<(
     { __typename?: 'Org' }
     & Pick<Types.Org, 'id' | 'name'>
-  )> }
-);
+  )> };
 
 export type ActionPageUpsertedVariables = Types.Exact<{
   org?: Types.Maybe<Types.Scalars['String']>;
 }>;
 
 
-export type ActionPageUpserted = (
-  { __typename?: 'RootSubscriptionType' }
-  & { actionPageUpserted?: Types.Maybe<(
+export type ActionPageUpserted = { actionPageUpserted: Types.Maybe<(
     { __typename?: 'PublicActionPage' }
     & Pick<Types.PublicActionPage, 'id' | 'name' | 'locale' | 'journey' | 'config'>
-    & { campaign?: Types.Maybe<(
+    & { campaign: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>
-    )>, org?: Types.Maybe<(
+    )>, org: Types.Maybe<(
       { __typename?: 'PublicOrg' }
       & Pick<Types.PublicOrg, 'title'>
     )> }
-  )> }
-);
+  )> };
 
 export type CurrentUserOrgsVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type CurrentUserOrgs = (
-  { __typename?: 'RootQueryType' }
-  & { currentUser?: Types.Maybe<(
+export type CurrentUserOrgs = { currentUser: Types.Maybe<(
     { __typename?: 'User' }
     & Pick<Types.User, 'id' | 'email'>
-    & { roles?: Types.Maybe<Array<(
+    & { roles: Array<(
       { __typename?: 'UserRole' }
       & Pick<Types.UserRole, 'role'>
       & { org: (
         { __typename?: 'Org' }
-        & Pick<Types.Org, 'id' | 'name'>
+        & Pick<Types.Org, 'id' | 'name' | 'title'>
       ) }
-    )>> }
-  )> }
-);
+    )> }
+  )> };

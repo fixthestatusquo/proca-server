@@ -141,7 +141,7 @@ query CurrentUserOrgs {
     email,
     roles {
     	role, org {
-        id, name
+        id, name, title
     	}
     }
   }

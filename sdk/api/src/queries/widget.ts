@@ -13,31 +13,28 @@ export type GetActionPageVariables = Types.Exact<{
 }>;
 
 
-export type GetActionPage = (
-  { __typename?: 'RootQueryType' }
-  & { actionPage?: Types.Maybe<(
+export type GetActionPage = { actionPage: Types.Maybe<(
     { __typename?: 'PublicActionPage' }
     & Pick<Types.PublicActionPage, 'id' | 'config' | 'locale' | 'journey' | 'name'>
-    & { org?: Types.Maybe<(
+    & { org: Types.Maybe<(
       { __typename?: 'PublicOrg' }
       & Pick<Types.PublicOrg, 'name' | 'title'>
-    )>, campaign?: Types.Maybe<(
+    )>, campaign: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'id' | 'title' | 'name' | 'externalId'>
-      & { stats?: Types.Maybe<(
+      & { stats: Types.Maybe<(
         { __typename?: 'CampaignStats' }
         & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount?: Types.Maybe<Array<(
+        & { actionCount: Types.Maybe<Array<(
           { __typename?: 'ActionTypeCount' }
           & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
         )>> }
-      )>, org?: Types.Maybe<(
+      )>, org: Types.Maybe<(
         { __typename?: 'PublicOrg' }
         & Pick<Types.PublicOrg, 'name' | 'title'>
       )> }
     )> }
-  )> }
-);
+  )> };
 
 export type GetStatsVariables = Types.Exact<{
   name?: Types.Maybe<Types.Scalars['String']>;
@@ -45,23 +42,20 @@ export type GetStatsVariables = Types.Exact<{
 }>;
 
 
-export type GetStats = (
-  { __typename?: 'RootQueryType' }
-  & { actionPage?: Types.Maybe<(
+export type GetStats = { actionPage: Types.Maybe<(
     { __typename?: 'PublicActionPage' }
-    & { campaign?: Types.Maybe<(
+    & { campaign: Types.Maybe<(
       { __typename?: 'Campaign' }
-      & { stats?: Types.Maybe<(
+      & { stats: Types.Maybe<(
         { __typename?: 'CampaignStats' }
         & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount?: Types.Maybe<Array<(
+        & { actionCount: Types.Maybe<Array<(
           { __typename?: 'ActionTypeCount' }
           & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
         )>> }
       )> }
     )> }
-  )> }
-);
+  )> };
 
 export type GetPublicResultVariables = Types.Exact<{
   name?: Types.Maybe<Types.Scalars['String']>;
@@ -71,39 +65,36 @@ export type GetPublicResultVariables = Types.Exact<{
 }>;
 
 
-export type GetPublicResult = (
-  { __typename?: 'RootQueryType' }
-  & { actionPage?: Types.Maybe<(
+export type GetPublicResult = { actionPage: Types.Maybe<(
     { __typename?: 'PublicActionPage' }
     & Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
-    & { campaign?: Types.Maybe<(
+    & { campaign: Types.Maybe<(
       { __typename?: 'Campaign' }
       & Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
-      & { stats?: Types.Maybe<(
+      & { stats: Types.Maybe<(
         { __typename?: 'CampaignStats' }
         & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount?: Types.Maybe<Array<(
+        & { actionCount: Types.Maybe<Array<(
           { __typename?: 'ActionTypeCount' }
           & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
         )>> }
-      )>, actions?: Types.Maybe<(
+      )>, actions: Types.Maybe<(
         { __typename?: 'PublicActionsResult' }
         & Pick<Types.PublicActionsResult, 'fieldKeys'>
-        & { list?: Types.Maybe<Array<Types.Maybe<(
+        & { list: Types.Maybe<Array<Types.Maybe<(
           { __typename?: 'ActionCustomFields' }
           & Pick<Types.ActionCustomFields, 'actionType' | 'insertedAt'>
-          & { fields?: Types.Maybe<Array<(
+          & { fields: Types.Maybe<Array<(
             { __typename?: 'CustomField' }
             & Pick<Types.CustomField, 'key' | 'value'>
           )>> }
         )>>> }
-      )>, org?: Types.Maybe<(
+      )>, org: Types.Maybe<(
         { __typename?: 'PublicOrg' }
         & Pick<Types.PublicOrg, 'title'>
       )> }
     )> }
-  )> }
-);
+  )> };
 
 export type AddActionContactVariables = Types.Exact<{
   id: Types.Scalars['Int'];
@@ -116,13 +107,10 @@ export type AddActionContactVariables = Types.Exact<{
 }>;
 
 
-export type AddActionContact = (
-  { __typename?: 'RootMutationType' }
-  & { addActionContact?: Types.Maybe<(
+export type AddActionContact = { addActionContact: Types.Maybe<(
     { __typename?: 'ContactReference' }
     & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
-  )> }
-);
+  )> };
 
 export type AddActionVariables = Types.Exact<{
   id: Types.Scalars['Int'];
@@ -133,10 +121,7 @@ export type AddActionVariables = Types.Exact<{
 }>;
 
 
-export type AddAction = (
-  { __typename?: 'RootMutationType' }
-  & { addAction?: Types.Maybe<(
+export type AddAction = { addAction: Types.Maybe<(
     { __typename?: 'ContactReference' }
     & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
-  )> }
-);
+  )> };

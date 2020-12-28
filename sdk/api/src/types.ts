@@ -26,7 +26,7 @@ export type Tracking = {
 export type UserRole = {
   __typename?: 'UserRole';
   org: Org;
-  role?: Maybe<Scalars['String']>;
+  role: Maybe<Scalars['String']>;
 };
 
 export type SelectActionPage = {
@@ -39,10 +39,10 @@ export type KeyWithPrivate = {
   id: Scalars['Int'];
   public: Scalars['String'];
   private: Scalars['String'];
-  name?: Maybe<Scalars['String']>;
-  active?: Maybe<Scalars['Boolean']>;
-  expired?: Maybe<Scalars['Boolean']>;
-  expiredAt?: Maybe<Scalars['DateTime']>;
+  name: Maybe<Scalars['String']>;
+  active: Maybe<Scalars['Boolean']>;
+  expired: Maybe<Scalars['Boolean']>;
+  expiredAt: Maybe<Scalars['DateTime']>;
 };
 
 export type SimpleActionPage = {
@@ -100,7 +100,7 @@ export enum ContactSchema {
 
 export type RootSubscriptionType = {
   __typename?: 'RootSubscriptionType';
-  actionPageUpserted?: Maybe<PublicActionPage>;
+  actionPageUpserted: Maybe<PublicActionPage>;
 };
 
 
@@ -111,7 +111,7 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 export type ActionCampaign = {
   __typename?: 'ActionCampaign';
   name: Scalars['String'];
-  externalId?: Maybe<Scalars['Int']>;
+  externalId: Maybe<Scalars['Int']>;
 };
 
 /** ActionPage declaration (using the legacy url attribute) */
@@ -152,22 +152,22 @@ export type GenKeyInput = {
 /** Result of actions query */
 export type PublicActionsResult = {
   __typename?: 'PublicActionsResult';
-  fieldKeys?: Maybe<Array<Scalars['String']>>;
-  list?: Maybe<Array<Maybe<ActionCustomFields>>>;
+  fieldKeys: Maybe<Array<Scalars['String']>>;
+  list: Maybe<Array<Maybe<ActionCustomFields>>>;
 };
 
 export type ActivateKeyResult = {
   __typename?: 'ActivateKeyResult';
-  status?: Maybe<Status>;
+  status: Maybe<Status>;
 };
 
 /** Campaign statistics */
 export type CampaignStats = {
   __typename?: 'CampaignStats';
   /** Signature count (naive at the moment) */
-  supporterCount?: Maybe<Scalars['Int']>;
+  supporterCount: Maybe<Scalars['Int']>;
   /** Action counts for selected action types */
-  actionCount?: Maybe<Array<ActionTypeCount>>;
+  actionCount: Maybe<Array<ActionTypeCount>>;
 };
 
 export type ActionCustomFields = {
@@ -175,7 +175,7 @@ export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['DateTime'];
-  fields?: Maybe<Array<CustomField>>;
+  fields: Maybe<Array<CustomField>>;
 };
 
 export type Action = {
@@ -185,7 +185,7 @@ export type Action = {
   actionType: Scalars['String'];
   contact: Contact;
   fields: Array<CustomField>;
-  tracking?: Maybe<Tracking>;
+  tracking: Maybe<Tracking>;
   campaign: ActionCampaign;
   actionPage: SimpleActionPage;
   privacy: Consent;
@@ -202,33 +202,33 @@ export type RootMutationType = {
    * matching names. It will create new action pages if you pass new names. No
    * Action Pages will be removed (principle of not removing signature data).
    */
-  upsertCampaign?: Maybe<Campaign>;
+  upsertCampaign: Maybe<Campaign>;
   /** Deprecated, use upsert_campaign. */
-  declareCampaign?: Maybe<Campaign>;
+  declareCampaign: Maybe<Campaign>;
   /** Update an Action Page */
-  updateActionPage?: Maybe<ActionPage>;
+  updateActionPage: Maybe<ActionPage>;
   /**
    * Adds a new Action Page based on another Action Page. Intended to be used to
    * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
    */
-  copyActionPage?: Maybe<ActionPage>;
+  copyActionPage: Maybe<ActionPage>;
   /** Adds an action referencing contact data via contactRef */
-  addAction?: Maybe<ContactReference>;
+  addAction: Maybe<ContactReference>;
   /** Adds an action with contact data */
-  addActionContact?: Maybe<ContactReference>;
+  addActionContact: Maybe<ContactReference>;
   /** Link actions with refs to contact with contact reference */
-  linkActions?: Maybe<ContactReference>;
-  addOrgUser?: Maybe<User>;
-  deleteOrgUser?: Maybe<DeleteUserResult>;
-  updateOrgUser?: Maybe<User>;
-  addOrg?: Maybe<Org>;
-  deleteOrg?: Maybe<Scalars['Boolean']>;
-  updateOrg?: Maybe<Org>;
-  joinOrg?: Maybe<JoinOrgResult>;
-  generateKey?: Maybe<KeyWithPrivate>;
-  addKey?: Maybe<Key>;
+  linkActions: Maybe<ContactReference>;
+  addOrgUser: Maybe<User>;
+  deleteOrgUser: Maybe<DeleteUserResult>;
+  updateOrgUser: Maybe<User>;
+  addOrg: Maybe<Org>;
+  deleteOrg: Maybe<Scalars['Boolean']>;
+  updateOrg: Maybe<Org>;
+  joinOrg: Maybe<JoinOrgResult>;
+  generateKey: Maybe<KeyWithPrivate>;
+  addKey: Maybe<Key>;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
-  activateKey?: Maybe<ActivateKeyResult>;
+  activateKey: Maybe<ActivateKeyResult>;
 };
 
 
@@ -344,13 +344,13 @@ export type RootMutationTypeActivateKeyArgs = {
 export type RootQueryType = {
   __typename?: 'RootQueryType';
   /** Get a list of campains */
-  campaigns?: Maybe<Array<Maybe<Campaign>>>;
+  campaigns: Maybe<Array<Maybe<Campaign>>>;
   /** Get action page */
-  actionPage?: Maybe<PublicActionPage>;
-  exportActions?: Maybe<Array<Maybe<Action>>>;
-  currentUser?: Maybe<User>;
+  actionPage: Maybe<PublicActionPage>;
+  exportActions: Maybe<Array<Maybe<Action>>>;
+  currentUser: Maybe<User>;
   /** Organization api (authenticated) */
-  org?: Maybe<Org>;
+  org: Maybe<Org>;
 };
 
 
@@ -385,52 +385,52 @@ export type RootQueryTypeOrgArgs = {
 export type PublicOrg = {
   __typename?: 'PublicOrg';
   /** Organisation short name */
-  name?: Maybe<Scalars['String']>;
+  name: Maybe<Scalars['String']>;
   /** Organisation title (human readable name) */
-  title?: Maybe<Scalars['String']>;
+  title: Maybe<Scalars['String']>;
 };
 
 export type ActionPage = {
   __typename?: 'ActionPage';
-  id?: Maybe<Scalars['Int']>;
+  id: Maybe<Scalars['Int']>;
   /** Locale for the widget, in i18n format */
-  locale?: Maybe<Scalars['String']>;
+  locale: Maybe<Scalars['String']>;
   /** Name where the widget is hosted */
-  name?: Maybe<Scalars['String']>;
+  name: Maybe<Scalars['String']>;
   /** Reference to thank you email templated of this Action Page */
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
+  thankYouTemplateRef: Maybe<Scalars['String']>;
   /** List of steps in journey */
-  journey?: Maybe<Array<Scalars['String']>>;
+  journey: Maybe<Array<Scalars['String']>>;
   /** Config JSON of this action page */
-  config?: Maybe<Scalars['Json']>;
+  config: Maybe<Scalars['Json']>;
   /** Extra supporters (added to supporters count) */
-  extraSupporters?: Maybe<Scalars['Int']>;
+  extraSupporters: Maybe<Scalars['Int']>;
   /** Campaign this widget belongs to */
-  campaign?: Maybe<Campaign>;
-  org?: Maybe<PublicOrg>;
+  campaign: Maybe<Campaign>;
+  org: Maybe<PublicOrg>;
 };
 
 export type PublicActionPage = {
   __typename?: 'PublicActionPage';
-  id?: Maybe<Scalars['Int']>;
+  id: Maybe<Scalars['Int']>;
   /** Locale for the widget, in i18n format */
-  locale?: Maybe<Scalars['String']>;
+  locale: Maybe<Scalars['String']>;
   /** Name where the widget is hosted */
-  name?: Maybe<Scalars['String']>;
+  name: Maybe<Scalars['String']>;
   /** Reference to thank you email templated of this Action Page */
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
+  thankYouTemplateRef: Maybe<Scalars['String']>;
   /** List of steps in journey */
-  journey?: Maybe<Array<Scalars['String']>>;
+  journey: Maybe<Array<Scalars['String']>>;
   /** Config JSON of this action page */
-  config?: Maybe<Scalars['Json']>;
+  config: Maybe<Scalars['Json']>;
   /** Campaign this widget belongs to */
-  campaign?: Maybe<Campaign>;
-  org?: Maybe<PublicOrg>;
+  campaign: Maybe<Campaign>;
+  org: Maybe<PublicOrg>;
 };
 
 export type DeleteUserResult = {
   __typename?: 'DeleteUserResult';
-  status?: Maybe<Status>;
+  status: Maybe<Status>;
 };
 
 /** Campaign input */
@@ -494,7 +494,7 @@ export type PersonalData = {
   /** Email opt in enabled */
   emailOptIn: Scalars['Boolean'];
   /** Email opt in template name */
-  emailOptInTemplate?: Maybe<Scalars['String']>;
+  emailOptInTemplate: Maybe<Scalars['String']>;
 };
 
 export type SelectCampaign = {
@@ -503,20 +503,20 @@ export type SelectCampaign = {
 
 export type Campaign = {
   __typename?: 'Campaign';
-  id?: Maybe<Scalars['Int']>;
+  id: Maybe<Scalars['Int']>;
   /** Internal name of the campaign */
-  name?: Maybe<Scalars['String']>;
+  name: Maybe<Scalars['String']>;
   /** External ID (if set) */
-  externalId?: Maybe<Scalars['Int']>;
+  externalId: Maybe<Scalars['Int']>;
   /** Full, official name of the campaign */
-  title?: Maybe<Scalars['String']>;
+  title: Maybe<Scalars['String']>;
   /** Custom config map */
-  config?: Maybe<Scalars['Json']>;
+  config: Maybe<Scalars['Json']>;
   /** Campaign statistics */
-  stats?: Maybe<CampaignStats>;
+  stats: Maybe<CampaignStats>;
   /** Fetch public actions */
-  actions?: Maybe<PublicActionsResult>;
-  org?: Maybe<PublicOrg>;
+  actions: Maybe<PublicActionsResult>;
+  org: Maybe<PublicOrg>;
 };
 
 
@@ -530,31 +530,31 @@ export type Key = {
   __typename?: 'Key';
   id: Scalars['Int'];
   public: Scalars['String'];
-  name?: Maybe<Scalars['String']>;
-  active?: Maybe<Scalars['Boolean']>;
-  expired?: Maybe<Scalars['Boolean']>;
-  expiredAt?: Maybe<Scalars['DateTime']>;
+  name: Maybe<Scalars['String']>;
+  active: Maybe<Scalars['Boolean']>;
+  expired: Maybe<Scalars['Boolean']>;
+  expiredAt: Maybe<Scalars['DateTime']>;
 };
 
 export type Org = {
   __typename?: 'Org';
   /** Organization id */
-  id?: Maybe<Scalars['Int']>;
+  id: Scalars['Int'];
   /** Organisation short name */
-  name?: Maybe<Scalars['String']>;
+  name: Scalars['String'];
   /** Organisation title (human readable name) */
-  title?: Maybe<Scalars['String']>;
+  title: Scalars['String'];
   personalData: PersonalData;
   keys: Array<Key>;
-  key?: Maybe<Key>;
+  key: Maybe<Key>;
   /** List campaigns this org is leader or partner of */
-  campaigns?: Maybe<Array<Maybe<Campaign>>>;
+  campaigns: Array<Campaign>;
   /** List action pages this org has */
-  actionPages?: Maybe<Array<Maybe<ActionPage>>>;
+  actionPages: Array<ActionPage>;
   /** Action Page */
-  actionPage?: Maybe<ActionPage>;
+  actionPage: ActionPage;
   /** Get campaign this org is leader or partner of by id */
-  campaign?: Maybe<Campaign>;
+  campaign: Maybe<Campaign>;
 };
 
 
@@ -591,23 +591,23 @@ export type OrgCampaignArgs = {
 export type ContactReference = {
   __typename?: 'ContactReference';
   /** Contact's reference */
-  contactRef?: Maybe<Scalars['String']>;
+  contactRef: Maybe<Scalars['String']>;
   /** Contacts first name */
-  firstName?: Maybe<Scalars['String']>;
+  firstName: Maybe<Scalars['String']>;
 };
 
 export type Contact = {
   __typename?: 'Contact';
   contactRef: Scalars['String'];
-  payload?: Maybe<Scalars['String']>;
-  nonce?: Maybe<Scalars['String']>;
-  publicKey?: Maybe<Key>;
-  signKey?: Maybe<Key>;
+  payload: Maybe<Scalars['String']>;
+  nonce: Maybe<Scalars['String']>;
+  publicKey: Maybe<Key>;
+  signKey: Maybe<Key>;
 };
 
 export type JoinOrgResult = {
   __typename?: 'JoinOrgResult';
-  status?: Maybe<Status>;
+  status: Maybe<Status>;
 };
 
 /** Custom field with a key and value. Both are strings. */
@@ -673,5 +673,5 @@ export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
-  roles?: Maybe<Array<UserRole>>;
+  roles: Array<UserRole>;
 };

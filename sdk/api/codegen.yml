@@ -3,10 +3,17 @@ schema: "schema/schema.graphql"
 generates:
   ./graphql.schema.json:
     plugins:
-      - "introspection"
+      - introspection
+
   src/types.ts:
     plugins:
       - typescript
+    config:
+      omitOperationSuffix: true
+      avoidOptionals:
+        field: true
+        inputValue: false
+      skipTypeNameForRoot: true
 
   src/queries/widget.ts:
     documents:
@@ -19,6 +26,10 @@ generates:
       typesPath: ../types
     config:
       omitOperationSuffix: true
+      avoidOptionals:
+        field: true
+        inputValue: false
+      skipTypeNameForRoot: true
 
   src/queries/admin.ts:
     documents:
@@ -31,4 +42,7 @@ generates:
       typesPath: ../types
     config:
       omitOperationSuffix: true
-
+      avoidOptionals:
+        field: true
+        inputValue: false
+      skipTypeNameForRoot: true
