@@ -60,6 +60,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :confirming, description: "Operation awaiting confirmation"
   end
 
+  # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)
   end

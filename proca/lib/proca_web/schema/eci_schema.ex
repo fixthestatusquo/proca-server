@@ -16,7 +16,7 @@ defmodule ProcaWeb.Schema.EciSchema do
 
   query do
     @desc "Get action page"
-    field :action_page, :public_action_page do
+    field :action_page, non_null(:public_action_page) do
       @desc "Get action page by id."
       arg(:id, :integer)
       @desc "Get action page by name the widget is displayed on"
@@ -30,7 +30,7 @@ defmodule ProcaWeb.Schema.EciSchema do
 
   mutation do
     @desc "Adds an action with contact data"
-    field :add_action_contact, type: :contact_reference do
+    field :add_action_contact, type: non_null(:contact_reference) do
       middleware(Resolvers.IncludeExtensions)
       middleware(Resolvers.Captcha)
 

@@ -9,7 +9,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org_queries do
     @desc "Organization api (authenticated)"
-    field :org, :org do
+    field :org, non_null(:org) do
       middleware(Authorized, access: [:org, by: [:name]])
 
       @desc "Name of organisation"
@@ -23,11 +23,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org do
     @desc "Organization id"
-    field :id, :integer
+    field :id, non_null(:integer)
     @desc "Organisation short name"
-    field :name, :string
+    field :name, non_null(:string)
     @desc "Organisation title (human readable name)"
-    field :title, :string
+    field :title, non_null(:string)
     field :personal_data, non_null(:personal_data) do
       resolve(&Resolvers.Org.org_personal_data/3)
     end
@@ -36,7 +36,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg :select, :select_key
       resolve(&Resolvers.Org.list_keys/3)
     end
-    field :key, :key do
+    field :key, non_null(:key) do
       middleware Authorized, can?: :export_contacts
       arg :select, non_null(:select_key)
       resolve(&Resolvers.Org.get_key/3)
@@ -64,26 +64,26 @@ defmodule ProcaWeb.Schema.OrgTypes do
     #  field :sqs_deliver, :boolean
 
     @desc "List campaigns this org is leader or partner of"
-    field :campaigns, list_of(:campaign) do
+    field :campaigns, non_null(list_of(non_null(:campaign))) do
       arg :select, :select_campaign
       resolve(&Resolvers.Org.campaigns/3)
     end
 
     @desc "List action pages this org has"
-    field :action_pages, list_of(:action_page) do
+    field :action_pages, non_null(list_of(non_null(:action_page))) do
       arg :select, :select_action_page
       resolve(&Resolvers.Org.action_pages/3)
     end
 
     @desc "Action Page"
-    field :action_page, :action_page do
+    field :action_page, non_null(:action_page) do
       arg(:id, :integer)
       arg(:name, :string)
       resolve(&Resolvers.Org.action_page/3)
     end
 
     @desc "Get campaign this org is leader or partner of by id"
-    field :campaign, :campaign do
+    field :campaign, non_null(:campaign) do
       arg(:id, :integer)
       resolve(&Resolvers.Org.campaign_by_id/3)
     end
@@ -108,7 +108,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
 
   object :org_mutations do
-    field :add_org, type: :org do
+    field :add_org, type: non_null(:org) do
       middleware Authorized
 
       arg :input, non_null(:org_input)
@@ -116,7 +116,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.add_org/3)
     end
 
-    field :delete_org, type: :boolean do
+    field :delete_org, type: non_null(:boolean) do
       middleware Authorized, access: [:org, by: [:name]], can?: :org_owner
       @desc "Name of organisation"
       arg :name, non_null(:string)
@@ -124,7 +124,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.delete_org/3)
     end
 
-    field :update_org, type: :org do
+    field :update_org, type: non_null(:org) do
       middleware Authorized,
         access: [:org, by: [:name]],
         can?: [:change_org_settings]
@@ -136,12 +136,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.update_org/3)
     end
 
-    field :join_org, type: :join_org_result do
+    field :join_org, type: non_null(:join_org_result) do
       middleware Authorized
       arg :name, non_null(:string)
     end
 
-    field :generate_key, type: :key_with_private do
+    field :generate_key, type: non_null(:key_with_private) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:change_org_settings, :export_contacts]
@@ -153,7 +153,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.generate_key/3)
     end
 
-    field :add_key, type: :key do
+    field :add_key, type: non_null(:key) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:change_org_settings, :export_contacts]
@@ -166,7 +166,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     end
 
     @desc "A separate key activate operation, because you also need to add the key to receiving system before it is used"
-    field :activate_key, type: :activate_key_result do
+    field :activate_key, type: non_null(:activate_key_result) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:change_org_settings, :export_contacts]
@@ -183,10 +183,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :public_org do
     @desc "Organisation short name"
-    field :name, :string
+    field :name, non_null(:string)
 
     @desc "Organisation title (human readable name)"
-    field :title, :string
+    field :title, non_null(:string)
   end
 
   enum :contact_schema do
@@ -210,20 +210,20 @@ defmodule ProcaWeb.Schema.OrgTypes do
   object :key do
     field :id, non_null(:integer)
     field :public, non_null(:string)
-    field :name, :string
-    field :active, :boolean
-    field :expired, :boolean
-    field :expired_at, :date_time
+    field :name, non_null(:string)
+    field :active, non_null(:boolean)
+    field :expired, non_null(:boolean)
+    field :expired_at, non_null(:date_time)
   end
 
   object :key_with_private do
     field :id, non_null(:integer)
     field :public, non_null(:string)
     field :private, non_null(:string)
-    field :name, :string
-    field :active, :boolean
-    field :expired, :boolean
-    field :expired_at, :date_time
+    field :name, non_null(:string)
+    field :active, non_null(:boolean)
+    field :expired, non_null(:boolean)
+    field :expired_at, non_null(:date_time)
   end
 
   input_object :add_key_input do
@@ -242,10 +242,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :join_org_result do
-    field :status, :status
+    field :status, non_null(:status)
   end
 
   object :activate_key_result do
-    field :status, :status
+    field :status, non_null(:status)
   end
 end

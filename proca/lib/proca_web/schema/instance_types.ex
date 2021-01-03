@@ -4,8 +4,7 @@ defmodule ProcaWeb.Schema.InstanceTypes do
   alias ProcaWeb.Resolvers.Authorized
 
   object :instance_queries do
-
-    field :instance, :instance do
+    field :instance, non_null(:instance) do
       middleware Authorized
     end
   end
