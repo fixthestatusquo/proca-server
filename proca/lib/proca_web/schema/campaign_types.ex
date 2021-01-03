@@ -9,7 +9,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
   object :campaign_queries do
     @desc "Get a list of campains"
-    field :campaigns, list_of(:campaign) do
+    field :campaigns, non_null(list_of(non_null(:campaign))) do
       @desc "Filter campaigns by title using LIKE format (% means any sequence of characters)"
       arg(:title, :string)
 
@@ -21,7 +21,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     end
 
     @desc "Get action page"
-    field :action_page, :public_action_page do
+    field :action_page, non_null(:public_action_page) do
       @desc "Get action page by id."
       arg(:id, :integer)
       @desc "Get action page by name the widget is displayed on"
@@ -34,23 +34,23 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   end
 
   object :campaign do
-    field :id, :integer
+    field :id, non_null(:integer)
     @desc "Internal name of the campaign"
-    field :name, :string
+    field :name, non_null(:string)
     @desc "External ID (if set)"
     field :external_id, :integer
     @desc "Full, official name of the campaign"
-    field :title, :string
+    field :title, non_null(:string)
     @desc "Custom config map"
-    field :config, :json
+    field :config, non_null(:json)
 
     @desc "Campaign statistics"
-    field :stats, :campaign_stats do
+    field :stats, non_null(:campaign_stats) do
       resolve(&Resolvers.Campaign.stats/3)
     end
 
     @desc "Fetch public actions"
-    field :actions, :public_actions_result do
+    field :actions, non_null(:public_actions_result) do
       @desc "Return actions of this action type"
       arg(:action_type, non_null(:string))
       @desc "Limit the number of returned actions, default is 10, max is 100)"
@@ -58,24 +58,24 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
-    field :org, :public_org
+    field :org, non_null(:public_org)
   end
 
   object :action_page do
-    field :id, :integer
+    field :id, non_null(:integer)
     @desc "Locale for the widget, in i18n format"
-    field :locale, :string
+    field :locale, non_null(:string)
     @desc "Name where the widget is hosted"
-    field :name, :string
+    field :name, non_null(:string)
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
     @desc "List of steps in journey"
     field :journey, list_of(non_null(:string))
     @desc "Config JSON of this action page"
-    field :config, :json
+    field :config, non_null(:json)
     @desc "Extra supporters (added to supporters count)"
-    field :extra_supporters, :integer
-    @desc "Campaign this widget belongs to"
+    field :extra_supporters, non_null(:integer)
+    @desc "Campaign this widget belongs to. Can be null for trashed action pages"
     field :campaign, :campaign do
       resolve(&Resolvers.ActionPage.campaign/3)
     end
@@ -85,23 +85,23 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   end
 
   object :public_action_page do
-    field :id, :integer
+    field :id, non_null(:integer)
     @desc "Locale for the widget, in i18n format"
-    field :locale, :string
+    field :locale, non_null(:string)
     @desc "Name where the widget is hosted"
-    field :name, :string
+    field :name, non_null(:string)
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
     @desc "List of steps in journey"
-    field :journey, list_of(non_null(:string))
+    field :journey, non_null(list_of(non_null(:string)))
     @desc "Config JSON of this action page"
-    field :config, :json
-    @desc "Campaign this widget belongs to"
-    field :campaign, :campaign do
+    field :config, non_null(:json)
+    @desc "Campaign this widget belongs to. Can't be null because trashed action pages are not public"
+    field :campaign, non_null(:campaign) do
       resolve(&Resolvers.ActionPage.campaign/3)
     end
 
-    field :org, :public_org
+    field :org, non_null(:public_org)
   end
 
 
@@ -114,7 +114,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     matching names. It will create new action pages if you pass new names. No
     Action Pages will be removed (principle of not removing signature data).
     """
-    field :upsert_campaign, type: :campaign do
+    field :upsert_campaign, type: non_null(:campaign) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:manage_campaigns, :manage_action_pages]
@@ -126,11 +126,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.Campaign.upsert/3)
     end
 
-    # XXX deprecated. 
+    # XXX deprecated.
     @desc """
     Deprecated, use upsert_campaign.
     """
-    field :declare_campaign, type: :campaign do
+    field :declare_campaign, type: non_null(:campaign) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:manage_campaigns, :manage_action_pages]
@@ -156,7 +156,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc """
     Update an Action Page
     """
-    field :update_action_page, type: :action_page do
+    field :update_action_page, type: non_null(:action_page) do
       middleware Authorized,
         access: [:action_page, by: [:id]],
         can?: [:manage_action_pages]
@@ -175,7 +175,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Adds a new Action Page based on another Action Page. Intended to be used to
     create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
     """
-    field :copy_action_page, type: :action_page do
+    field :copy_action_page, type: non_null(:action_page) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:manage_action_pages]
@@ -220,7 +220,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     scoped to particular organization, so it does not have to change when the
     slugs/names change (eg. some.org/1234). However, frontent Widget can
     ask for ActionPage by it's current location.href (but without https://), in which case it is useful
-    to make this url match the real widget location. 
+    to make this url match the real widget location.
     """
     field :name, :string
 
@@ -231,7 +231,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :thank_you_template_ref, :string
 
     @desc """
-    Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. 
+    Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here.
     """
     field :extra_supporters, :integer
 
@@ -261,10 +261,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   @desc "Campaign statistics"
   object :campaign_stats do
     @desc "Signature count (naive at the moment)"
-    field :supporter_count, :integer
+    field :supporter_count, non_null(:integer)
 
     @desc "Action counts for selected action types"
-    field :action_count, list_of(non_null(:action_type_count))
+    field :action_count, non_null(list_of(non_null(:action_type_count)))
   end
 
   @desc "Count of actions for particular action type"
@@ -280,7 +280,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
     field :inserted_at, non_null(:date_time)
-    field :fields, list_of(non_null(:custom_field))
+    field :fields, non_null(list_of(non_null(:custom_field)))
   end
 
   @desc "Result of actions query"

@@ -2,7 +2,7 @@ defmodule Proca.Repo.Migrations.AddCitextExtension do
   use Ecto.Migration
 
   def up do
-    execute "CREATE EXTENSION citext"
+    execute "CREATE EXTENSION IF NOT EXISTS citext"
   end
 
   def down do

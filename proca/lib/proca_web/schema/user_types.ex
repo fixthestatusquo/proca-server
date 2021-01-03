@@ -1,22 +1,24 @@
 defmodule ProcaWeb.Schema.UserTypes do
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers.Authorized
+  alias ProcaWeb.Resolvers
 
   object :user_queries do
-    field :current_user, :user do
+    field :current_user, non_null(:user) do
       middleware Authorized
+      resolve(&Resolvers.User.current_user/3)
     end
   end
 
   object :user do
     field :id, non_null(:integer)
     field :email, non_null(:string)
-    field :roles, list_of(non_null(:user_role))
+    field :roles, non_null(list_of(non_null(:user_role)))
   end
 
   object :user_role do
     field :org, non_null(:org)
-    field :role, :string
+    field :role, non_null(:string)
   end
 
   object :user_mutations do
@@ -44,7 +46,7 @@ defmodule ProcaWeb.Schema.UserTypes do
   end
 
   object :delete_user_result do
-    field :status, :status
+    field :status, non_null(:status)
   end
 
   object :update_user_result do

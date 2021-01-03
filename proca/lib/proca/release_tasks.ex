@@ -60,6 +60,18 @@ defmodule Proca.ReleaseTasks do
     :init.stop()
   end
 
+  def make_admin(email) do
+    instance_org = Proca.Repo.get_by(Proca.Org, %{name: Application.get_env(:proca, Proca)[:org_name]})
+
+    case Proca.Repo.get_by(Proca.Users.User, %{email: email}) do
+      u when not is_nil(u) ->
+        Proca.Staffer.build_for_user(u, instance_org.id, Proca.Staffer.Role.permissions(:admin))
+        |>Proca.Repo.insert()
+        IO.puts("Added #{email} as admin")
+      _ -> IO.puts("Can't find user #{email}")
+    end
+  end
+
   def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
   defp run_migrations_for(app) do

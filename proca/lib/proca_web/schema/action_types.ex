@@ -8,7 +8,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
   alias ProcaWeb.Resolvers.Authorized
 
   object :action_queries do
-    field :export_actions, list_of(:action) do
+    field :export_actions, non_null(list_of(:action)) do
       middleware Authorized,
         access: [:org, by: [name: :org_name]],
         can?: [:export_contacts]
@@ -38,7 +38,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   object :action_mutations do
     @desc "Adds an action referencing contact data via contactRef"
-    field :add_action, type: :contact_reference do
+    field :add_action, type: non_null(:contact_reference) do
       arg(:action_page_id, non_null(:integer))
       @desc "Action data"
       arg(:action, non_null(:action_input))
@@ -53,7 +53,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     end
 
     @desc "Adds an action with contact data"
-    field :add_action_contact, type: :contact_reference do
+    field :add_action_contact, type: non_null(:contact_reference) do
       arg(:action_page_id, non_null(:integer))
 
       @desc "Action data"
@@ -76,7 +76,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     end
 
     @desc "Link actions with refs to contact with contact reference"
-    field :link_actions, type: :contact_reference do
+    field :link_actions, type: non_null(:contact_reference) do
       @desc "Action Page id"
       arg(:action_page_id, non_null(:integer))
 
@@ -191,7 +191,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   object :contact do
     field :contact_ref, non_null(:string)
-    field :payload, :string
+    field :payload, non_null(:string)
     field :nonce, :string
     field :public_key, :key
     field :sign_key, :key
@@ -242,7 +242,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   object :contact_reference do
     @desc "Contact's reference"
-    field :contact_ref, :string
+    field :contact_ref, non_null(:string)
 
     @desc "Contacts first name"
     field :first_name, :string

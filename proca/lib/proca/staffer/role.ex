@@ -64,7 +64,9 @@ defmodule Proca.Staffer.Role do
     end
   end
 
+  def findrole(staffer = %Staffer{}), do: findrole(staffer, Keyword.keys(@roles))
+
   def permissions(role) do
-    @roles[role] || 0
+    @roles[role] || []
   end
 end
