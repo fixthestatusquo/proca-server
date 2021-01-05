@@ -1,7 +1,7 @@
 defmodule Proca.Pipes.OrgSupervisor do
   alias Proca.Org
 
-  def start_link(org ) do
+  def start_link(org) do
     Supervisor.start_link(__MODULE__, org, name: process_name(org))
   end
 
@@ -9,20 +9,45 @@ defmodule Proca.Pipes.OrgSupervisor do
     {:via, Registry, {Proca.Pipes.Registry, {__MODULE__, org_id}}}
   end
 
-  def whereis(org = %Org{}) do
-    Process.whereis(process_name(org))
+  def whereis(o = %Org{}) do
+    {:via, Registry, {reg, nam}} = process_name(o)
+    case Registry.lookup(reg, nam) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
   end
 
+  def child_spec(org = %Org{}) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [org]},
+      restart: :transient,
+      type: :supervisor
+    }
+  end
+
+  # @impl true
   def init(org = %Org{}) do
-    children = [
-      {Proca.Pipes.Topology, org}
-      # Broadway processes
-    ]
+    topology = {Proca.Pipes.Topology, org}
 
-    Supervisor.init(children, strategy: :rest_for_one)
+    has_email_services = (not is_nil(org.email_backend_id)) and (not is_nil(org.template_backend_id))
+
+    workers = [
+      {
+        Proca.Stage.ThankYou, has_email_services
+      },
+      {
+        Proca.Stage.SQS, org.system_sqs_deliver
+      }
+    ]
+    |> Enum.filter(fn {_, enabled?} -> enabled? end)
+    |> Enum.map(fn {mod, _} -> {mod, org} end)
+
+    Supervisor.init([topology | workers], strategy: :rest_for_one)
   end
 
-  def dispatch(%Org{id: org_id}, func) do
-    Registry.dispatch(Proca.Pipes.Registry, {__MODULE__, org_id}, func)
+  def dispatch(o = %Org{}, func) do
+    {:via, Registry, {reg, nam}} = process_name(o)
+    Registry.dispatch(reg, nam, func)
   end
 end

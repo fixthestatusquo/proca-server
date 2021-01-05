@@ -10,14 +10,16 @@ defmodule Proca.Stage.ThankYou do
   alias Proca.Repo
   import Ecto.Query
   import Logger
-  
+
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
-  def start_link(_opts) do
+  def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
-      name: __MODULE__,
+      name: String.to_atom(Atom.to_string(__MODULE__) <> ".#{org_id}"),
       producer: [
-        module: Proca.Stage.Support.queue("system.email.thankyou", [retry: true]),
+        module: Proca.Pipes.Topology.broadway_producer(
+          org, "deliver", "email.thank", routing_key: "#"
+        ),
         concurrency: 1
       ],
       processors: [

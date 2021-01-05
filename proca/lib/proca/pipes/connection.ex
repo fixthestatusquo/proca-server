@@ -15,7 +15,7 @@ defmodule Proca.Pipes.Connection do
   Connect, (todo: reconnect) functionality
   """
   @impl true
-  def handle_continue(:connect, %{url: url}) do
+  def handle_continue(:connect, st = %{url: url}) do
     case AMQP.Connection.open(url) do
       {:ok, c} ->
         # Inform us when AMQP connection is down
@@ -28,7 +28,7 @@ defmodule Proca.Pipes.Connection do
             conn: c
           }
         }
-      {:error, reason} -> {:stop, reason}
+      {:error, reason} -> {:stop, reason, st}
     end
   end
 
@@ -36,6 +36,7 @@ defmodule Proca.Pipes.Connection do
   def handle_info({:DOWN, _, :process, pid, reason}, %{conn: %{pid: pid}}) do
     Logger.critical([message: "Queue connection down", reason: reason])
     # XXX stop Pipes ?
+
     # Stop GenServer. Will be restarted by Supervisor.
     # Wait, re-connect?
     {:stop, {:connection_lost, reason}, nil}
@@ -59,5 +60,4 @@ defmodule Proca.Pipes.Connection do
   def connection_url() do
     GenServer.call(__MODULE__, :connection_url)
   end
-
 end
