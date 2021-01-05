@@ -44,6 +44,12 @@ defmodule Proca.Application do
         children
       end
 
+    # AMQP logging is very verbose so quiet it:
+    :logger.add_primary_filter(
+      :ignore_rabbitmq_progress_reports,
+      {&:logger_filters.domain/2, {:stop, :equal, [:progress]}}
+    )
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Proca.Supervisor]
