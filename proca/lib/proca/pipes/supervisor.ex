@@ -4,7 +4,7 @@ defmodule Proca.Pipes.Supervisor do
   """
   use DynamicSupervisor
   alias Proca.Pipes
-  alias Proca.{Repo,Org}
+  alias Proca.{Repo, Org}
 
   def start_link(_arg),
     do: DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
@@ -21,16 +21,7 @@ defmodule Proca.Pipes.Supervisor do
 
   def start_child(org = %Org{}) do
     DynamicSupervisor.start_child(
-      __MODULE__,
-      %{id: Pipes.OrgSupervisor,
-        start: {
-          Pipes.OrgSupervisor,
-          :start_link,
-          [org]
-        },
-        restart: :transient,
-        type: :supervisor
-      })
+      __MODULE__, {Pipes.OrgSupervisor, org})
   end
 
   def terminate_child(org = %Org{}) do

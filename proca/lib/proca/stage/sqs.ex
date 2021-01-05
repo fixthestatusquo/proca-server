@@ -9,9 +9,9 @@ defmodule Proca.Stage.SQS do
   alias Proca.{Org, Service}
   require Logger
 
-  def start_link(_opts) do
+  def start_link(%Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
-      name: __MODULE__,
+      name: String.to_atom(Atom.to_string(__MODULE__) <> ".#{org_id}"),
       producer: [
         module:
           {
