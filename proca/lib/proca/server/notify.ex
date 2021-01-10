@@ -4,6 +4,7 @@ defmodule Proca.Server.Notify do
   """
   alias Proca.Repo
   alias Proca.{Action, Org, PublicKey}
+  alias Proca.Pipes
 
   @spec action_created(%Action{}, boolean()) :: :ok
   def action_created(action, created_supporter) do
@@ -35,7 +36,41 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
-  # common side-effects
+  def org_created(org = %Org{}) do
+    start_org_pipes(org)
+  end
+
+  def org_updated(org = %Org{}, changeset) do
+    restart_org_pipes(org, changeset)
+  end
+
+  def org_deleted(org = %Org{}) do
+    stop_org_pipes(org)
+  end
+
+  ##### SIDE EFFECTS
+
+  def start_org_pipes(org = %Org{}) do
+      Pipes.Supervisor.start_child(org)
+  end
+
+  def restart_org_pipes(org = %Org{}, %Ecto.Changeset{changes: changes}) do
+    relevant_changes = Enum.any?([
+      :email_backend_id, # transactional emails
+      :email_template_id,
+      :system_sqs_deliver
+    ], fn prop -> Map.has_key?(changes, prop) end)
+
+    if relevant_changes do
+      Pipes.Supervisor.terminate_child(org)
+      Pipes.Supervisor.start_child(org)
+    end
+  end
+
+  def stop_org_pipes(org = %Org{}) do
+    Pipes.Supervisor.terminate_child(org)
+  end
+
 
   defp process_action(action) do
     Proca.Server.Processing.process_async(action)

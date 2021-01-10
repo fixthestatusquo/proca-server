@@ -34,6 +34,7 @@ defmodule Proca.Pipes.Topology do
   require Logger
   alias Proca.Org
   alias Proca.Pipes
+  alias Proca.Stage
   alias AMQP.{Channel, Queue, Exchange}
   import AMQP.Basic
 
@@ -53,6 +54,7 @@ defmodule Proca.Pipes.Topology do
     try do
       declare_exchanges(chan, org)
       declare_retry_circuit(chan, org)
+      declare_worker_queues(chan, org)
       declare_custom_queues(chan, org)
     rescue
       _ -> Channel.close(chan)
@@ -95,6 +97,19 @@ defmodule Proca.Pipes.Topology do
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
   end
 
+  def declare_worker_queues(chan, o = %Org{}) do
+    [
+      {xn(o, "confirm.supporter"), wqn(o, "email.supporter"),
+       bind: Stage.ThankYou.start_for?(o) and o.email_opt_in, route: "#"},
+      {xn(o, "deliver"), wqn(o, "email.supporter"),
+       bind: Stage.ThankYou.start_for?(o), route: "#"},
+      {xn(o, "deliver"), wqn(o, "email.supporter"),
+       bind: Stage.SQS.start_for?(o), route: "#"},
+
+    ]
+    |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
+  end
+
   def retry_queue_arguments(o = %Org{}, queue_name) do
     [
       {"x-dead-letter-exchange", :longstr, xn(o, "fail")},
@@ -103,9 +118,9 @@ defmodule Proca.Pipes.Topology do
   end
 
   def declare_retrying_queue(chan, o = %Org{}, {exchange_name, queue_name, [bind: bind?, route: rk]}) do
-    Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
 
     if bind? do
+      Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
       Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
       Queue.bind(chan, queue_name, xn(o, "retry"), routing_key: queue_name)
     else
@@ -115,13 +130,11 @@ defmodule Proca.Pipes.Topology do
     end
   end
 
-  def broadway_producer(o = %Org{}, stage, work_type, bind_opts \\ []) do
+  def broadway_producer(o = %Org{}, work_type) do
     queue_name = wqn(o, work_type)
     {
       BroadwayRabbitMQ.Producer,
       queue: queue_name,
-      declare: [durable: true, arguments: retry_queue_arguments(o, queue_name)],
-      bindings: [{xn(o, stage), bind_opts}],
       connection: Proca.Pipes.Connection.connection_url(),
       qos: [
         prefetch_count: 10

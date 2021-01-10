@@ -30,18 +30,12 @@ defmodule Proca.Pipes.OrgSupervisor do
   def init(org = %Org{}) do
     topology = {Proca.Pipes.Topology, org}
 
-    has_email_services = (not is_nil(org.email_backend_id)) and (not is_nil(org.template_backend_id))
-
     workers = [
-      {
-        Proca.Stage.ThankYou, has_email_services
-      },
-      {
-        Proca.Stage.SQS, org.system_sqs_deliver
-      }
+      Proca.Stage.ThankYou,
+      Proca.Stage.SQS,
     ]
-    |> Enum.filter(fn {_, enabled?} -> enabled? end)
-    |> Enum.map(fn {mod, _} -> {mod, org} end)
+    |> Enum.filter(fn mod -> apply(mod, :start_for?, [org]) end)
+    |> Enum.map(fn mod -> {mod, org} end)
 
     Supervisor.init([topology | workers], strategy: :rest_for_one)
   end
