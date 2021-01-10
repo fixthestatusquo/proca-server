@@ -99,13 +99,26 @@ defmodule Proca.Pipes.Topology do
 
   def declare_worker_queues(chan, o = %Org{}) do
     [
-      {xn(o, "confirm.supporter"), wqn(o, "email.supporter"),
-       bind: Stage.ThankYou.start_for?(o) and o.email_opt_in, route: "#"},
-      {xn(o, "deliver"), wqn(o, "email.supporter"),
-       bind: Stage.ThankYou.start_for?(o), route: "#"},
-      {xn(o, "deliver"), wqn(o, "email.supporter"),
-       bind: Stage.SQS.start_for?(o), route: "#"},
+      {
+        xn(o, "confirm.supporter"),
+        wqn(o, "email.supporter"),
+        bind: Stage.ThankYou.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
+        route: "#"
+      },
 
+      {
+        xn(o, "deliver"),
+        wqn(o, "email.supporter"),
+        bind: Stage.ThankYou.start_for?(o),
+        route: "#"
+      },
+
+      {
+        xn(o, "deliver"),
+        wqn(o, "email.supporter"),
+        bind: Stage.SQS.start_for?(o),
+        route: "#"
+      },
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
   end
