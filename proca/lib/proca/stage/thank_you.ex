@@ -30,15 +30,20 @@ defmodule Proca.Stage.ThankYou do
         ]
       ],
       batchers: [
-        transactional: [
+        thank_you: [
           batch_size: 5,
           batch_timeout: 10_000,
           concurrency: 1
         ],
-        noop: [
-          batch_size: 1,
-          concurrency: 1
+        opt_in: [
+          batch_size: 5,
+          batch_timeout: 10_000,
+          conurrency: 1
         ]
+        # noop: [
+        #   batch_size: 1,
+        #   concurrency: 1
+        # ]
       ]
     )
   end
@@ -53,18 +58,35 @@ defmodule Proca.Stage.ThankYou do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
-    # IO.inspect(message.metadata, label: "metadata")
     case JSON.decode(data) do
       {:ok,
-       %{"actionPageId" => action_page_id, "actionId" => action_id} = action} ->
+       %{
+         "stage" => "deliver",
+         "actionPageId" => action_page_id,
+         "actionId" => action_id
+       } = action
+      } ->
         if send_thank_you?(action_page_id, action_id) do
           message
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batch_key(action_page_id)
-          |> Message.put_batcher(:transactional)
+          |> Message.put_batcher(:thank_you)
         else
+          Message.ack_immediately([message])
+          |> List.first
+        end
+
+        {:ok,
+         %{
+           "stage" => "confirm.supporter",
+           "orgId" => org_id,
+           "actionId" => action_id
+         } = action
+        } ->
+        if send_opt_in?(org_id, action_id) do
           message
-          |> Message.put_batcher(:noop)
+          |> Message.update_data(fn _ -> action end)
+          |> Message.put_batcher(:opt_in)
         end
 
       {:error, reason} ->
@@ -75,7 +97,7 @@ defmodule Proca.Stage.ThankYou do
   end
 
   @impl true
-  def handle_batch(:transactional, messages, %BatchInfo{batch_key: ap_id}, _) do
+  def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) do
     ap =
       from(ap in ActionPage,
         where: ap.id == ^ap_id,
@@ -99,10 +121,40 @@ defmodule Proca.Stage.ThankYou do
   end
 
   @impl true
-  def handle_batch(:noop, messages, _, _) do
-    messages
-    |> Message.ack_immediately()
+  def handle_batch(:opt_in, [fm|_] = messages, _, _) do
+    org_id = fm.data.orgId
+
+    org = from(org in Org,
+      where: org.id == ^org_id,
+      preload: [[email_backend: :org], :template_backend]
+    )
+    |> Repo.one()
+
+    recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
+    tmpl = %EmailTemplate{ref: org.email_opt_in_template}
+
+    # XXX we need links to be generated to confirm/reject the thing
+    # is this a place to generate Confirm objects
+    # or maybe the link should be in the message? This makes sense...
+    # Processing would create a proper Confirm models;
+    # then the Confirm is passed to Stage.support to generate links
+    # then this worker just uses them in a template
+    # XXX -> the confirm link should maybe support changing the scope? Useful for campaign vs all opt in
+    try do
+      EmailBackend.deliver(recipients, org, tmpl)
+      messages
+    rescue
+      x in EmailBackend.NotDeliverd ->
+        error("Failed to send email batch #{x.message}")
+      Enum.map(messages, &Message.failed(&1, x.message))
+    end
   end
+
+  # @impl true
+  # def handle_batch(:noop, messages, _, _) do
+  #   messages
+  #   |> Message.ack_immediately()
+  # end
 
   defp send_thank_you?(action_page_id, action_id) do
     from(a in Action,
@@ -120,5 +172,21 @@ defmodule Proca.Stage.ThankYou do
           not is_nil(o.email_from)
     )
     |> Repo.one() != nil
+  end
+
+  # The message was already queued for this optin, so lets check
+  # for sending invariants, that is, template existence
+  defp send_opt_in?(org_id, action_id) do
+    action = Repo.get(Action, action_id)
+
+    if action.with_consent do
+      org = Repo.get(Org, org_id)
+
+      is_bitstring(org.email_opt_in_template) and
+      is_number(org.email_backend_id) and
+      is_number(org.template_backend_id)
+    else
+      false
+    end
   end
 end

@@ -90,23 +90,30 @@ defmodule ProcaWeb.Resolvers.Org do
     end)
 
     case Repo.transaction(op) do
-      {:ok, %{org: org}} -> {:ok, org}
+      {:ok, %{org: org}} ->
+        Proca.Server.Notify.org_created(org)
+        {:ok, org}
       {:error, _fail_op, fail_val, _ch} -> {:error, Helper.format_errors(fail_val)}
     end
   end
 
   def delete_org(_, _, %{context: %{org: org}}) do
     case Repo.delete(org) do
-      {:ok, _} -> {:ok, true}
+      {:ok, _} ->
+        Proca.Server.Notify.org_deleted(org)
+        {:ok, true}
       {:error, ch} -> {:error, Helper.format_errors(ch)}
     end
   end
 
   def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
-    case Org.changeset(org, attrs) |> Repo.update()
+    changeset = Org.changeset(org, attrs)
+    case changeset |> Repo.update()
       do
       {:error, ch} -> {:error, Helper.format_errors(ch)}
-      {:ok, org}
+      {:ok, org} ->
+        Proca.Server.Notify.org_updated(org, changeset)
+        {:ok, org}
     end
   end
 
