@@ -13,13 +13,15 @@ defmodule Proca.Stage.ThankYou do
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
+  def start_for?(org = %Org{}) do
+    (not is_nil(org.email_backend_id)) and (not is_nil(org.template_backend_id))
+  end
+
   def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
       name: String.to_atom(Atom.to_string(__MODULE__) <> ".#{org_id}"),
       producer: [
-        module: Proca.Pipes.Topology.broadway_producer(
-          org, "deliver", "email.thank", routing_key: "#"
-        ),
+        module: Proca.Pipes.Topology.broadway_producer(org, "email.supporter"),
         concurrency: 1
       ],
       processors: [
