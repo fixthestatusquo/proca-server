@@ -14,7 +14,7 @@ export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
   if (result.errors) throw result.errors
 
   result.data.org.campaigns
-    .map(c => fmt.campaign(c))
+    .map(c => fmt.campaign(c as types.Campaign))
     .forEach((c) => {
       console.log(c)
     })
@@ -33,7 +33,7 @@ export async function getCampaign(argv : IdOpt & FormatOpts, config : CliConfig)
 
   if (errors) throw errors
 
-  console.log(fmt.campaign(data.org.campaign))
+  console.log(fmt.campaign(data.org.campaign as types.Campaign))
 }
 
 
@@ -45,7 +45,7 @@ export async function listActionPages(argv : FormatOpts, config : CliConfig) {
   if (errors) throw errors
 
   data.org.actionPages
-    .map(ap => fmt.actionPage(ap, data.org))
+    .map(ap => fmt.actionPage(ap as types.ActionPage, data.org))
     .forEach((ap) => {console.log(ap)})
 
   data.org.actionPages
@@ -82,13 +82,13 @@ export async function getActionPage(argv : GetActionPageOpts & FormatOpts, confi
   if (argv.public) {
     const {data, errors} = await request(c, widget.GetActionPageDocument, vars)
     if (errors) throw errors
-    t = fmt.actionPage(data.actionPage, data.actionPage.org)
+    t = fmt.actionPage(data.actionPage as types.PublicActionPage, data.actionPage.org)
     console.log(t)
     return data.actionPage
   } else {
     const {data, errors} = await request(c, admin.GetActionPageDocument, vars)
     if (errors) throw errors
-    t = fmt.actionPage(data.org.actionPage, data.org)
+    t = fmt.actionPage(data.org.actionPage as types.ActionPage, data.org)
     console.log(t)
     return data.org.actionPage
   }
