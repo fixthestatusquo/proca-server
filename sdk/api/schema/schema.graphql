@@ -14,7 +14,7 @@ type Tracking {
 
 type UserRole {
   org: Org!
-  role: String
+  role: String!
 }
 
 input SelectActionPage {
@@ -27,9 +27,9 @@ type KeyWithPrivate {
   id: Int!
   public: String!
   private: String!
-  name: String
-  active: Boolean
-  expired: Boolean
+  name: String!
+  active: Boolean!
+  expired: Boolean!
   expiredAt: DateTime
 }
 
@@ -88,7 +88,7 @@ enum ContactSchema {
 }
 
 type RootSubscriptionType {
-  actionPageUpserted(orgName: String): PublicActionPage
+  actionPageUpserted(orgName: String): PublicActionPage!
 }
 
 type ActionCampaign {
@@ -140,23 +140,23 @@ type PublicActionsResult {
 }
 
 type ActivateKeyResult {
-  status: Status
+  status: Status!
 }
 
 "Campaign statistics"
 type CampaignStats {
   "Signature count (naive at the moment)"
-  supporterCount: Int
+  supporterCount: Int!
 
   "Action counts for selected action types"
-  actionCount: [ActionTypeCount!]
+  actionCount: [ActionTypeCount!]!
 }
 
 type ActionCustomFields {
   actionId: Int!
   actionType: String!
   insertedAt: DateTime!
-  fields: [CustomField!]
+  fields: [CustomField!]!
 }
 
 type Action {
@@ -187,7 +187,7 @@ type RootMutationType {
 
     "Org name"
     orgName: String!
-  ): Campaign
+  ): Campaign!
 
   "Deprecated, use upsert_campaign."
   declareCampaign(
@@ -205,7 +205,7 @@ type RootMutationType {
 
     "Org name"
     orgName: String!
-  ): Campaign
+  ): Campaign!
 
   "Update an Action Page"
   updateActionPage(
@@ -213,7 +213,7 @@ type RootMutationType {
 
     "Action Page id"
     id: Int!
-  ): ActionPage
+  ): ActionPage!
 
   """
   Adds a new Action Page based on another Action Page. Intended to be used to
@@ -228,7 +228,7 @@ type RootMutationType {
 
     "Org owner of new Action Page"
     orgName: String!
-  ): ActionPage
+  ): ActionPage!
 
   "Adds an action referencing contact data via contactRef"
   addAction(
@@ -242,7 +242,7 @@ type RootMutationType {
     action: ActionInput!
 
     actionPageId: Int!
-  ): ContactReference
+  ): ContactReference!
 
   "Adds an action with contact data"
   addActionContact(
@@ -262,7 +262,7 @@ type RootMutationType {
     action: ActionInput!
 
     actionPageId: Int!
-  ): ContactReference
+  ): ContactReference!
 
   "Link actions with refs to contact with contact reference"
   linkActions(
@@ -274,7 +274,7 @@ type RootMutationType {
 
     "Action Page id"
     actionPageId: Int!
-  ): ContactReference
+  ): ContactReference!
 
   addOrgUser(input: UserInput!, orgName: String!): User
 
@@ -282,35 +282,35 @@ type RootMutationType {
 
   updateOrgUser(input: UserInput!, orgName: String!): User
 
-  addOrg(input: OrgInput!): Org
+  addOrg(input: OrgInput!): Org!
 
   deleteOrg(
     "Name of organisation"
     name: String!
-  ): Boolean
+  ): Boolean!
 
   updateOrg(
     input: OrgInput!
 
     "Name of organisation, used for lookup, can't be used to change org name"
     name: String!
-  ): Org
+  ): Org!
 
-  joinOrg(name: String!): JoinOrgResult
+  joinOrg(name: String!): JoinOrgResult!
 
   generateKey(
     input: GenKeyInput!
 
     "Name of organisation"
     orgName: String!
-  ): KeyWithPrivate
+  ): KeyWithPrivate!
 
   addKey(
     input: AddKeyInput!
 
     "Name of organisation"
     orgName: String!
-  ): Key
+  ): Key!
 
   "A separate key activate operation, because you also need to add the key to receiving system before it is used"
   activateKey(
@@ -318,7 +318,7 @@ type RootMutationType {
     id: Int!
 
     orgName: String!
-  ): ActivateKeyResult
+  ): ActivateKeyResult!
 }
 
 type RootQueryType {
@@ -329,7 +329,7 @@ type RootQueryType {
 
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
-  ): [Campaign]
+  ): [Campaign!]!
 
   "Get action page"
   actionPage(
@@ -341,7 +341,7 @@ type RootQueryType {
 
     "Get action page by id."
     id: Int
-  ): PublicActionPage
+  ): PublicActionPage!
 
   exportActions(
     "Only download opted in contacts and actions (default true)"
@@ -367,33 +367,33 @@ type RootQueryType {
 
     "Organization name"
     orgName: String!
-  ): [Action]
+  ): [Action]!
 
-  currentUser: User
+  currentUser: User!
 
   "Organization api (authenticated)"
   org(
     "Name of organisation"
     name: String!
-  ): Org
+  ): Org!
 }
 
 type PublicOrg {
   "Organisation short name"
-  name: String
+  name: String!
 
   "Organisation title (human readable name)"
-  title: String
+  title: String!
 }
 
 type ActionPage {
-  id: Int
+  id: Int!
 
   "Locale for the widget, in i18n format"
-  locale: String
+  locale: String!
 
   "Name where the widget is hosted"
-  name: String
+  name: String!
 
   "Reference to thank you email templated of this Action Page"
   thankYouTemplateRef: String
@@ -402,43 +402,43 @@ type ActionPage {
   journey: [String!]
 
   "Config JSON of this action page"
-  config: Json
+  config: Json!
 
   "Extra supporters (added to supporters count)"
-  extraSupporters: Int
+  extraSupporters: Int!
 
-  "Campaign this widget belongs to"
+  "Campaign this widget belongs to. Can be null for trashed action pages"
   campaign: Campaign
 
   org: PublicOrg
 }
 
 type PublicActionPage {
-  id: Int
+  id: Int!
 
   "Locale for the widget, in i18n format"
-  locale: String
+  locale: String!
 
   "Name where the widget is hosted"
-  name: String
+  name: String!
 
   "Reference to thank you email templated of this Action Page"
   thankYouTemplateRef: String
 
   "List of steps in journey"
-  journey: [String!]
+  journey: [String!]!
 
   "Config JSON of this action page"
-  config: Json
+  config: Json!
 
-  "Campaign this widget belongs to"
-  campaign: Campaign
+  "Campaign this widget belongs to. Can't be null because trashed action pages are not public"
+  campaign: Campaign!
 
-  org: PublicOrg
+  org: PublicOrg!
 }
 
 type DeleteUserResult {
-  status: Status
+  status: Status!
 }
 
 "Campaign input"
@@ -525,22 +525,22 @@ input SelectCampaign {
 }
 
 type Campaign {
-  id: Int
+  id: Int!
 
   "Internal name of the campaign"
-  name: String
+  name: String!
 
   "External ID (if set)"
   externalId: Int
 
   "Full, official name of the campaign"
-  title: String
+  title: String!
 
   "Custom config map"
-  config: Json
+  config: Json!
 
   "Campaign statistics"
-  stats: CampaignStats
+  stats: CampaignStats!
 
   "Fetch public actions"
   actions(
@@ -549,18 +549,18 @@ type Campaign {
 
     "Return actions of this action type"
     actionType: String!
-  ): PublicActionsResult
+  ): PublicActionsResult!
 
-  org: PublicOrg
+  org: PublicOrg!
 }
 
 "Encryption or sign key with integer id (database)"
 type Key {
   id: Int!
   public: String!
-  name: String
-  active: Boolean
-  expired: Boolean
+  name: String!
+  active: Boolean!
+  expired: Boolean!
   expiredAt: DateTime
 }
 
@@ -574,11 +574,12 @@ type Org {
   "Organisation title (human readable name)"
   title: String!
 
+  "Personal data settings for this org"
   personalData: PersonalData!
 
   keys(select: SelectKey): [Key!]!
 
-  key(select: SelectKey!): Key
+  key(select: SelectKey!): Key!
 
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
@@ -590,12 +591,12 @@ type Org {
   actionPage(name: String, id: Int): ActionPage!
 
   "Get campaign this org is leader or partner of by id"
-  campaign(id: Int): Campaign
+  campaign(id: Int): Campaign!
 }
 
 type ContactReference {
   "Contact's reference"
-  contactRef: String
+  contactRef: String!
 
   "Contacts first name"
   firstName: String
@@ -603,14 +604,14 @@ type ContactReference {
 
 type Contact {
   contactRef: String!
-  payload: String
+  payload: String!
   nonce: String
   publicKey: Key
   signKey: Key
 }
 
 type JoinOrgResult {
-  status: Status
+  status: Status!
 }
 
 "Custom field with a key and value. Both are strings."

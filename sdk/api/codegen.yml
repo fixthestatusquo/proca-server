@@ -10,7 +10,8 @@ generates:
       - typescript
     config:
       omitOperationSuffix: true
-      avoidOptionals:
+      avoidOptionals: &avoidOptionals
+        object: false
         field: true
         inputValue: false
       skipTypeNameForRoot: true
@@ -27,8 +28,7 @@ generates:
     config:
       omitOperationSuffix: true
       avoidOptionals:
-        field: true
-        inputValue: false
+        <<: *avoidOptionals
       skipTypeNameForRoot: true
 
   src/queries/admin.ts:
@@ -43,6 +43,5 @@ generates:
     config:
       omitOperationSuffix: true
       avoidOptionals:
-        field: true
-        inputValue: false
+        <<: *avoidOptionals
       skipTypeNameForRoot: true
