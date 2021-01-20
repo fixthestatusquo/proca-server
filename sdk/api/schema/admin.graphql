@@ -46,6 +46,18 @@ query ListActionPages($org: String!) {
   }
 }
 
+query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
+  org(name: $org) {
+    name,
+    title,
+    actionPages(select: {campaignId: $campaignId}) {
+      id, name, locale,
+      extraSupporters,
+      campaign { name, id, externalId }
+    }
+  }
+}
+
 query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String,
                             $start: Int, $after: DateTime, $limit: Int,
                             $onlyOptIn: Boolean) {
@@ -135,6 +147,8 @@ subscription ActionPageUpserted($org: String) {
   }
 }
 
+# Dashboard queries
+
 query CurrentUserOrgs {
   currentUser {
     id
@@ -143,6 +157,17 @@ query CurrentUserOrgs {
     	role, org {
         id, name, title
     	}
+    }
+  }
+}
+
+query DashOrgOverview($org: String!) {
+ 	org(name: $org) {
+    id, name, title,
+    campaigns {
+      id,  externalId, name, title, org { name, title },
+      config,
+      stats { supporterCount }
     }
   }
 }
