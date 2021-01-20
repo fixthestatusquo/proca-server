@@ -9,7 +9,8 @@ export interface FormatOpts {
   json?: boolean,
   csv?: boolean,
   campaign?: string,
-  fields?: string
+  fields?: string,
+  indent?: number,
 }
 
 interface OrgDetails {
@@ -170,13 +171,20 @@ class Terminal {
 
 
 class Json extends Terminal {
+  indent: number
+
+  constructor(opts : FormatOpts) {
+    super(opts)
+    this.indent = opts.indent === undefined ? 2 : opts.indent
+  }
+
   actionPage(ap : types.ActionPage, org : any) {
     const config = this.addAPkeysToConfig(ap, org)
-    return JSON.stringify(config, null, 2)
+    return JSON.stringify(config, null, this.indent)
   }
 
   action(a : ActionWithPII) {
-    return JSON.stringify(a)
+    return JSON.stringify(a, null, this.indent)
   }
 
 }

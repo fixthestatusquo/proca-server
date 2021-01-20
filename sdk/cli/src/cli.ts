@@ -30,6 +30,7 @@ export interface CliOpts {
   debug?: boolean,
   json?: boolean,
   csv?: boolean,
+  indent?: number,
   id?: number,
   name?: string,
   title?: string,
@@ -149,6 +150,11 @@ export default function cli() {
       type: 'boolean',
       describe: 'Format output in JSON',
       default: false
+    })
+    .option('indent', {
+      type: 'number',
+      describe: 'Indent in JSON formatting',
+      default: 2
     })
     .option('csv', {
       alias: 'X',
