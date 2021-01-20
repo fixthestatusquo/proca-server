@@ -5,7 +5,7 @@ import {listCampaigns, getCampaign, listActionPages, getActionPage,
         updateActionPage, upsertCampaign, upsertActionPage} from  './campaign'
 import {listKeys, addOrg, addKey} from './org'
 import {exportActions} from './export'
-import {testQueue, syncQueue} from './queue'
+import {testQueue, syncQueue, syncFile} from './queue'
 import {setup} from './setup'
 import {showToken} from './util'
 import {watchPages} from './watch'
@@ -16,8 +16,9 @@ import {watchPages} from './watch'
 export interface ServiceOpts {
   service?: string,
   service_url?: string,
-  queueName?: String,
-  backoff?: boolean
+  queueName?: string,
+  backoff?: boolean,
+  filePath?: string
 }
 
 export interface CliOpts {
@@ -51,7 +52,9 @@ export interface CliOpts {
   queueName?: string,
   service?: string,
   service_url?: string,
-  backoff?: boolean
+  backoff?: boolean,
+  // file:sync
+  filePath?: string
 }
 
 export default function cli() {
@@ -375,6 +378,37 @@ export default function cli() {
         describe: 'Add backoff when calling syncAction'
       }
     }, cmd(syncQueue))
+    .command('file:sync', 'sync file contents to service', {
+      filePath: {
+        alias: 'f',
+        type: 'string',
+        demandOption: true,
+        description: 'File with actions (json list format)'
+      },
+      decrypt: {
+        alias: 'd',
+        type: 'boolean',
+        description: 'Decrypt contact PII'
+      },
+      service: {
+        alias: 's',
+        type: 'string',
+        describe: 'Service to which deliver action data',
+        demandOption: true
+      },
+      service_url: {
+        alias: 'l',
+        type: 'string',
+        describe: 'Deliver to service at location',
+        default: config.service_url
+      },
+      'backoff': {
+        alias: 'B',
+        type: 'boolean',
+        describe: 'Add backoff when calling syncAction'
+      }
+    }, cmd(syncFile))
+
     .argv
         // .demandCommand().argv;
 }
