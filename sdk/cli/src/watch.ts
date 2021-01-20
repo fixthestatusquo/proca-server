@@ -1,5 +1,5 @@
 import client from './client'
-import {admin, subscribe} from '@proca/api'
+import {admin, subscribe, types} from '@proca/api'
 import {getFormatter,FormatOpts} from './format'
 import {execSync} from 'child_process'
 import {CliConfig} from './config'
@@ -20,7 +20,7 @@ export async function watchPages(argv : WatchOpts & FormatOpts, config: CliConfi
 
   const sub = query.subscribe(({data}) => {
         const ap = data.actionPageUpserted
-        const t = fmt.actionPage(ap, ap.org)
+        const t = fmt.actionPage(ap as types.PublicActionPage, ap.org)
 
         if (argv.exec) {
           try {

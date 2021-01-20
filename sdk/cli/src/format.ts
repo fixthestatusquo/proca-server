@@ -74,7 +74,7 @@ class Terminal {
     if (ap.id && ap.name && ap.locale) {
       t += `${ap.id} ${ap.name} [${ap.locale}]`
 
-      if (!isPublicActionPage(ap) && ap.extraSupporters != 0) {
+      if ('extraSupporters' in ap && ap.extraSupporters != 0) {
 
         t += ` (🧑‍ ${ap.extraSupporters} extra supporters)`
       }
