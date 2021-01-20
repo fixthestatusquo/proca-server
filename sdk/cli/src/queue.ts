@@ -1,4 +1,6 @@
 import amqplib from 'amqplib'
+import readline from 'readline'
+import fs from 'fs'
 import backoff from 'backoff'
 import {decryptAction, DecryptOpts} from './crypto'
 import {CliConfig} from './config'
@@ -83,6 +85,19 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
     })
     consumerTag = ret.consumerTag
   })
+}
+
+export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConfig) {
+  const service = getService(opts)
+  const lines = readline.createInterface({input: fs.createReadStream(opts.filePath)});
+
+  for await (const l of lines) {
+    let action = JSON.parse(l)
+
+    action = decryptAction(action, opts, config)
+
+    await service.syncAction(action, opts, config)
+  }
 }
 
 
