@@ -34,11 +34,6 @@
   dependencies:
     regenerator-runtime "^0.12.0"
 
-"@graphql-typed-document-node/core@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.1.0.tgz#0eee6373e11418bfe0b5638f654df7a4ca6a3950"
-  integrity sha512-wYn6r8zVZyQJ6rQaALBEln5B1pzxb9shV5Ef97kTvn6yVGrqyXVnDqnU24MXnFubR+rZjBY9NWuxX3FB2sTsjg==
-
 "@jumpn/utils-array@0.3.4":
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/@jumpn/utils-array/-/utils-array-0.3.4.tgz#fb4310120108f659dab54075ef93abc56137de5e"
@@ -68,13 +63,12 @@
     core-js "2.6.0"
     graphql "14.0.2"
 
-"@proca/api@0.2.0-beta.5":
-  version "0.2.0-beta.5"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.0-beta.5.tgz#c52548df32157feaa4b2a9be9db610151109a6b0"
-  integrity sha512-spYJ7pQ0ZtmDN5DSlBXDwm4M+WdtiH/yEXMGZrKS15Pu7JACsaj1blH/Z0NZAZEdy3mkrlqb0fILZjEaxVQtNQ==
+"@proca/api@^0.2.0-beta.1":
+  version "0.2.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.0-beta.1.tgz#3a13b2bf42faa1fd235eea585602a76423f92ebe"
+  integrity sha512-w5BSFftC2+YiXOOiFXTm/v/BST6DOMMp+bJM9mOp29h6SVjQjCv+WZKB8d2XeD0PXfbo9ts1dm7F8wi0elatsg==
   dependencies:
     "@absinthe/socket-apollo-link" "^0.2.1"
-    "@graphql-typed-document-node/core" "^3.1.0"
     apollo-link "^1.2.14"
     apollo-link-http "^1.5.17"
     js-base64 "^3.5.2"
