@@ -4,6 +4,7 @@ import {admin, widget, request, types} from '@proca/api'
 import {getFormatter, FormatOpts} from './format'
 import fs from 'fs'
 import {CliConfig} from './config'
+import {removeBlank} from './util';
 
 
 export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
@@ -117,12 +118,12 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
     }
   }
 
-  let actionPage : types.ActionPageInput = {
+  let actionPage : types.ActionPageInput = removeBlank({
     name: argv.name,
     thankYouTemplateRef: argv.tytpl,
     extraSupporters: argv.extra,
     config: json
-  }
+  })
 
   if (argv.json) {
     actionPage = fmt.addConfigKeysToAP(actionPage)
@@ -145,11 +146,11 @@ export async function upsertCampaign(argv : UpsertCampaign & FormatOpts, config 
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const campaign  : types.CampaignInput = {
+  const campaign  : types.CampaignInput = removeBlank({
     name: argv.name,
     title: argv.title,
     actionPages: []
-  }
+  })
 
   const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
   if (errors) throw errors
@@ -169,9 +170,9 @@ export async function upsertActionPage(argv : UpsertActionPage & FormatOpts, con
 
   const campaign  : types.CampaignInput = {
     name: argv.campaign,
-    actionPages: [{
+    actionPages: [removeBlank({
       name: argv.name, locale: argv.locale
-    }]
+    })]
   }
 
   const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
