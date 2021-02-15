@@ -132,6 +132,15 @@ export type SelectKey = {
 };
 
 
+/** Count of actions for particular action type */
+export type AreaCount = {
+  __typename?: 'AreaCount';
+  /** area */
+  area: Scalars['String'];
+  /** count of supporters in this area */
+  count: Scalars['Int'];
+};
+
 /** Custom field added to action. For signature it can be contact, for mail it can be subject and body */
 export type ActionInput = {
   /** Action Type */
@@ -164,8 +173,10 @@ export type ActivateKeyResult = {
 /** Campaign statistics */
 export type CampaignStats = {
   __typename?: 'CampaignStats';
-  /** Signature count (naive at the moment) */
+  /** Unique action tagers count */
   supporterCount: Scalars['Int'];
+  /** Unique action takers by area */
+  supporterCountByArea: Array<AreaCount>;
   /** Action counts for selected action types */
   actionCount: Array<ActionTypeCount>;
 };
@@ -544,6 +555,8 @@ export type Org = {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
+  /** config */
+  config: Scalars['Json'];
   /** Personal data settings for this org */
   personalData: PersonalData;
   keys: Array<Key>;
@@ -629,6 +642,8 @@ export type OrgInput = {
   emailOptIn?: Maybe<Scalars['Boolean']>;
   /** Email opt in template name */
   emailOptInTemplate?: Maybe<Scalars['String']>;
+  /** Config */
+  config?: Maybe<Scalars['Json']>;
 };
 
 /** Custom field with a key and value. */
