@@ -115,6 +115,15 @@ input SelectKey {
 
 scalar Date
 
+"Count of actions for particular action type"
+type AreaCount {
+  "area"
+  area: String!
+
+  "count of supporters in this area"
+  count: Int!
+}
+
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
 input ActionInput {
   "Action Type"
@@ -145,8 +154,11 @@ type ActivateKeyResult {
 
 "Campaign statistics"
 type CampaignStats {
-  "Signature count (naive at the moment)"
+  "Unique action tagers count"
   supporterCount: Int!
+
+  "Unique action takers by area"
+  supporterCountByArea: [AreaCount!]!
 
   "Action counts for selected action types"
   actionCount: [ActionTypeCount!]!
@@ -574,6 +586,9 @@ type Org {
   "Organisation title (human readable name)"
   title: String!
 
+  "config"
+  config: Json!
+
   "Personal data settings for this org"
   personalData: PersonalData!
 
@@ -636,6 +651,9 @@ input OrgInput {
 
   "Email opt in template name"
   emailOptInTemplate: String
+
+  "Config"
+  config: Json
 }
 
 "Custom field with a key and value."

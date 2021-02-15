@@ -33,14 +33,13 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
     }
 }
 
-# XXX add optional campaignId param to filter
 query ListActionPages($org: String!) {
   org(name: $org) {
     name,
     title,
     actionPages {
-      id, name, locale,
-      extraSupporters,
+      id, name, locale, 
+      extraSupporters, thankYouTemplateRef, journey, config,
       campaign { name, id, externalId }
     }
   }
@@ -52,7 +51,7 @@ query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
     title,
     actionPages(select: {campaignId: $campaignId}) {
       id, name, locale,
-      extraSupporters,
+      extraSupporters, thankYouTemplateRef, journey, config,
       campaign { name, id, externalId }
     }
   }
@@ -100,6 +99,24 @@ mutation UpdateActionPage(
       }
   }
 
+mutation CopyActionPage($fromName: String!, $toOrg: String!, $toName: String!) {
+  copyActionPage(fromName: $fromName,   name: $toName, orgName: $toOrg) {
+        id,
+        name,
+        locale,
+        extraSupporters, thankYouTemplateRef,
+        journey,
+        config,
+        campaign { id, name, title, externalId }
+  }
+}
+
+mutation JoinOrg($orgName: String!) {
+  joinOrg(name: $orgName) {
+    status
+  }
+}
+
 mutation UpsertCampaign(
          $org: String!,
          $campaign: CampaignInput!
@@ -127,6 +144,12 @@ mutation GenerateKey($org: String!, $input:GenKeyInput!) {
   }
 }
 
+mutation AddKey($org: String!, $input: AddKeyInput!) {
+  addKey(orgName:$org, input: $input) {
+    id, name, public, active, expired, expiredAt
+  }
+}
+
 mutation ActivateKey($org: String!, $id: Int!) {
   activateKey(orgName: $org, id: $id) {
     status
@@ -136,6 +159,15 @@ mutation ActivateKey($org: String!, $id: Int!) {
 mutation AddOrg($org: OrgInput!) {
   addOrg(input: $org) {
     id, name
+  }
+}
+
+mutation UpdateOrg($orgName: String!, $org: OrgInput!) {
+  updateOrg(name: $orgName, input: $org) {
+    id, name, title, config,
+    personalData {
+      contactSchema, emailOptIn, emailOptInTemplate
+    }
   }
 }
 
@@ -163,7 +195,10 @@ query CurrentUserOrgs {
 
 query DashOrgOverview($org: String!) {
  	org(name: $org) {
-    id, name, title,
+    id, name, title, config, 
+    personalData {
+      contactSchema, emailOptIn, emailOptInTemplate
+    },
     campaigns {
       id,  externalId, name, title, org { name, title },
       config,
@@ -171,3 +206,5 @@ query DashOrgOverview($org: String!) {
     }
   }
 }
+
+
