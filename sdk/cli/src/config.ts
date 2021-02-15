@@ -93,5 +93,13 @@ export type WidgetConfig = {
   lang: string,
   journey: string[],
   filename: string,
-  organisation: string
+  organisation: string,
+  campaign?: {
+    name: string,
+    title: string
+  },
+  lead?: {
+    name: string,
+    title: string
+  }
 }

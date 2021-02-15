@@ -104,12 +104,16 @@ class Terminal {
   addAPkeysToConfig(ap : types.ActionPage, org : OrgDetails) {
     const c = JSON.parse(ap.config || '{}') || {}
 
+    const pickLead = ({name, title} : {name: string, title:string}) => ({name, title}); // argh! All this to pick sub-keys. Typescript is terrible.
+
     const m : WidgetConfig = {
       actionpage: ap.id,
       lang: ap.locale,
       journey: ap.journey,
       filename: ap.name,
-      organisation: org.title || ''
+      organisation: org.title || '',
+      lead: ap.campaign?.org ? pickLead(ap.campaign.org) : undefined,
+      campaign: ap.campaign ? {title: ap.campaign.title, name: ap.campaign.name} : undefined
     }
 
     return Object.assign(c, m)
