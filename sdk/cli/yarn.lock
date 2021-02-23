@@ -126,9 +126,9 @@
   integrity sha512-KbbbBe5TphBalButPkEC8R6B2uhhj/STHUT5zrK8UhEguB1UybTjqHJ4CoJtTR07CS1lKJKL/yFcCLGdayJwLA==
 
 "@types/node@*", "@types/node@^14.14.7":
-  version "14.14.11"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.11.tgz#fc25a4248a5e8d0837019b1d170146d07334abe0"
-  integrity sha512-BJ97wAUuU3NUiUCp44xzUFquQEvnk1wu7q4CMEUYKJWjdkr0YWYDsm4RFtAvxYsNjLsKcrFt6RvK8r+mnzMbEQ==
+  version "14.14.22"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.22.tgz#0d29f382472c4ccf3bd96ff0ce47daf5b7b84b18"
+  integrity sha512-g+f/qj/cNcqKkc3tFqlXOYjrmZA+jNBiDzbP3kH+B+otKFqAdPgVTGP1IeKRdMml/aE69as5S4FqtxAbl+LaMw==
 
 "@types/through@*":
   version "0.0.30"
@@ -466,9 +466,9 @@ cross-fetch@^3.0.6:
     node-fetch "2.6.1"
 
 csv-stringify@^5.5.1:
-  version "5.5.1"
-  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-5.5.1.tgz#f42cdd379b0f7f142933a11f674b1a91ebd0fcd0"
-  integrity sha512-HM0/86Ks8OwFbaYLd495tqTs1NhscZL52dC4ieKYumy8+nawQYC0xZ63w1NqLf0M148T2YLYqowoImc1giPn0g==
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-5.6.0.tgz#3dcde51da7561f5052220f1847bfd4db7618fcfa"
+  integrity sha512-E0LNLevBrwaJ1WKsl4HUPOmK96WyhizTfY79mJgfr2dsIb6zyJd3B9+lToO7gSkTaKi8CIo0Pd0vDGfa0whozg==
 
 data-uri-to-buffer@1:
   version "1.2.0"
@@ -1375,6 +1375,11 @@ type-fest@^0.11.0:
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.11.0.tgz#97abf0872310fed88a5c466b25681576145e33f1"
   integrity sha512-OdjXJxnCN1AvyLSzeKIgXTXxV+99ZuXl3Hpo9XpJAv9MBcHrrJOQ5kV7ypXOuQie+AmWG25hLbiKdwYTifzcfQ==
+
+typescript@^4.1.2:
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.1.3.tgz#519d582bd94cba0cf8934c7d8e8467e473f53bb7"
+  integrity sha512-B3ZIOf1IKeH2ixgHhj6la6xdwR9QrLC5d1VKeCSY4tvkqhF2eqd9O7txNlS0PO3GrBAFIdr3L1ndNwteUbZLYg==
 
 unpipe@1.0.0:
   version "1.0.0"

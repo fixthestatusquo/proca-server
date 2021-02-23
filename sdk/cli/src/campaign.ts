@@ -109,15 +109,13 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
 
   let json = null
 
-  // json
-  if (argv.config) {
+  if (argv.config) { // json
     if (argv.config[0] == '{') {
       json = argv.config
     } else {
       json = fs.readFileSync(argv.config, 'utf8')
     }
   }
-
   let actionPage : types.ActionPageInput = removeBlank({
     name: argv.name,
     thankYouTemplateRef: argv.tytpl,
