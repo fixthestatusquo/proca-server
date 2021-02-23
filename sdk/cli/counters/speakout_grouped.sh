@@ -8,7 +8,7 @@
 
 echo "fetching  from the $2 with slug $1"
 DATA=$(curl -s https://$2/$1.json)
-TOTAL=$( echo $DATA | jq '.uniquersigns')
+TOTAL=$( echo $DATA | jq '.parent_group.rsigns')
 ID=$(./bin/proca-cli page -P -J --name $1 | jq .actionpage)
 echo "updating $ID with total $TOTAL"
 ./bin/proca-cli page:update --id $ID -e $TOTAL
