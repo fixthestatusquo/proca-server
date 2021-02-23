@@ -1,6 +1,6 @@
 {
   "name": "@proca/cli",
-  "version": "2.2.3-beta.0",
+  "version": "2.2.3-beta.1",
   "description": "cli[ent] for Proca",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
