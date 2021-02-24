@@ -57,7 +57,7 @@ export type GetActionPage = { org: (
     Pick<Types.Org, 'name' | 'title'>
     & { actionPage: (
       Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters' | 'thankYouTemplateRef' | 'journey' | 'config'>
-      & { campaign?: Types.Maybe<Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>> }
+      & { campaign: Types.Maybe<Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>> }
     ) }
   ) };
 
@@ -70,7 +70,7 @@ export type ListActionPages = { org: (
     Pick<Types.Org, 'name' | 'title'>
     & { actionPages: Array<(
       Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters' | 'thankYouTemplateRef' | 'journey' | 'config'>
-      & { campaign?: Types.Maybe<Pick<Types.Campaign, 'name' | 'id' | 'externalId'>> }
+      & { campaign: Types.Maybe<Pick<Types.Campaign, 'name' | 'id' | 'externalId'>> }
     )> }
   ) };
 
@@ -84,7 +84,7 @@ export type ListActionPagesByCampaign = { org: (
     Pick<Types.Org, 'name' | 'title'>
     & { actionPages: Array<(
       Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters' | 'thankYouTemplateRef' | 'journey' | 'config'>
-      & { campaign?: Types.Maybe<Pick<Types.Campaign, 'name' | 'id' | 'externalId'>> }
+      & { campaign: Types.Maybe<Pick<Types.Campaign, 'name' | 'id' | 'externalId'>> }
     )> }
   ) };
 
@@ -103,8 +103,8 @@ export type ExportCampaignActions = { exportActions: Array<Types.Maybe<(
     Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
     & { contact: (
       Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
-      & { publicKey?: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>>, signKey?: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>> }
-    ), fields: Array<Pick<Types.CustomField, 'key' | 'value'>>, tracking?: Types.Maybe<Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>>, actionPage: Pick<Types.SimpleActionPage, 'id' | 'name' | 'locale'>, privacy: Pick<Types.Consent, 'optIn'> }
+      & { publicKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>>, signKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>> }
+    ), fields: Array<Pick<Types.CustomField, 'key' | 'value'>>, tracking: Types.Maybe<Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>>, actionPage: Pick<Types.SimpleActionPage, 'id' | 'name' | 'locale'>, privacy: Pick<Types.Consent, 'optIn'> }
   )>> };
 
 export type ExportOrgActionsVariables = Types.Exact<{
@@ -120,8 +120,8 @@ export type ExportOrgActions = { exportActions: Array<Types.Maybe<(
     Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
     & { contact: (
       Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
-      & { publicKey?: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>>, signKey?: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>> }
-    ), fields: Array<Pick<Types.CustomField, 'key' | 'value'>>, tracking?: Types.Maybe<Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>>, actionPage: Pick<Types.SimpleActionPage, 'id' | 'name' | 'locale'>, campaign: Pick<Types.ActionCampaign, 'name' | 'externalId'>, privacy: Pick<Types.Consent, 'optIn'> }
+      & { publicKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>>, signKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>> }
+    ), fields: Array<Pick<Types.CustomField, 'key' | 'value'>>, tracking: Types.Maybe<Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>>, actionPage: Pick<Types.SimpleActionPage, 'id' | 'name' | 'locale'>, campaign: Pick<Types.ActionCampaign, 'name' | 'externalId'>, privacy: Pick<Types.Consent, 'optIn'> }
   )>> };
 
 export type UpdateActionPageVariables = Types.Exact<{
@@ -141,7 +141,7 @@ export type CopyActionPageVariables = Types.Exact<{
 
 export type CopyActionPage = { copyActionPage: (
     Pick<Types.ActionPage, 'id' | 'name' | 'locale' | 'extraSupporters' | 'thankYouTemplateRef' | 'journey' | 'config'>
-    & { campaign?: Types.Maybe<Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>> }
+    & { campaign: Types.Maybe<Pick<Types.Campaign, 'id' | 'name' | 'title' | 'externalId'>> }
   ) };
 
 export type JoinOrgVariables = Types.Exact<{
