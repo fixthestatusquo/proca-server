@@ -16,7 +16,6 @@ export type Scalars = {
 
 /** Tracking codes */
 export type Tracking = {
-  __typename?: 'Tracking';
   source: Scalars['String'];
   medium: Scalars['String'];
   campaign: Scalars['String'];
@@ -24,7 +23,6 @@ export type Tracking = {
 };
 
 export type UserRole = {
-  __typename?: 'UserRole';
   org: Org;
   role: Scalars['String'];
 };
@@ -35,7 +33,6 @@ export type SelectActionPage = {
 
 
 export type KeyWithPrivate = {
-  __typename?: 'KeyWithPrivate';
   id: Scalars['Int'];
   public: Scalars['String'];
   private: Scalars['String'];
@@ -46,7 +43,6 @@ export type KeyWithPrivate = {
 };
 
 export type SimpleActionPage = {
-  __typename?: 'SimpleActionPage';
   id: Scalars['Int'];
   name: Scalars['String'];
   locale: Scalars['String'];
@@ -71,7 +67,6 @@ export type NationalityInput = {
 
 /** GDPR consent data for this org */
 export type Consent = {
-  __typename?: 'Consent';
   optIn: Scalars['Boolean'];
 };
 
@@ -85,7 +80,6 @@ export type TrackingInput = {
 
 /** Count of actions for particular action type */
 export type ActionTypeCount = {
-  __typename?: 'ActionTypeCount';
   /** action type */
   actionType: Scalars['String'];
   /** count of actions of action type */
@@ -99,7 +93,6 @@ export enum ContactSchema {
 }
 
 export type RootSubscriptionType = {
-  __typename?: 'RootSubscriptionType';
   actionPageUpserted: PublicActionPage;
 };
 
@@ -109,7 +102,6 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 };
 
 export type ActionCampaign = {
-  __typename?: 'ActionCampaign';
   name: Scalars['String'];
   externalId: Maybe<Scalars['Int']>;
 };
@@ -134,7 +126,6 @@ export type SelectKey = {
 
 /** Count of actions for particular action type */
 export type AreaCount = {
-  __typename?: 'AreaCount';
   /** area */
   area: Scalars['String'];
   /** count of supporters in this area */
@@ -160,29 +151,34 @@ export type GenKeyInput = {
 
 /** Result of actions query */
 export type PublicActionsResult = {
-  __typename?: 'PublicActionsResult';
   fieldKeys: Maybe<Array<Scalars['String']>>;
   list: Maybe<Array<Maybe<ActionCustomFields>>>;
 };
 
 export type ActivateKeyResult = {
-  __typename?: 'ActivateKeyResult';
   status: Status;
 };
 
 /** Campaign statistics */
 export type CampaignStats = {
-  __typename?: 'CampaignStats';
   /** Unique action tagers count */
   supporterCount: Scalars['Int'];
   /** Unique action takers by area */
   supporterCountByArea: Array<AreaCount>;
+  /** Unique action takers by org */
+  suppoterCountByOrg: Array<OrgCount>;
+  supporterCountByOthers: Scalars['Int'];
   /** Action counts for selected action types */
   actionCount: Array<ActionTypeCount>;
 };
 
+
+/** Campaign statistics */
+export type CampaignStatsSupporterCountByOthersArgs = {
+  orgName: Scalars['String'];
+};
+
 export type ActionCustomFields = {
-  __typename?: 'ActionCustomFields';
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['DateTime'];
@@ -190,7 +186,6 @@ export type ActionCustomFields = {
 };
 
 export type Action = {
-  __typename?: 'Action';
   actionId: Scalars['Int'];
   createdAt: Scalars['DateTime'];
   actionType: Scalars['String'];
@@ -204,7 +199,6 @@ export type Action = {
 
 
 export type RootMutationType = {
-  __typename?: 'RootMutationType';
   /**
    * Upserts a campaign.
    * 
@@ -353,7 +347,6 @@ export type RootMutationTypeActivateKeyArgs = {
 };
 
 export type RootQueryType = {
-  __typename?: 'RootQueryType';
   /** Get a list of campains */
   campaigns: Array<Campaign>;
   /** Get action page */
@@ -394,7 +387,6 @@ export type RootQueryTypeOrgArgs = {
 };
 
 export type PublicOrg = {
-  __typename?: 'PublicOrg';
   /** Organisation short name */
   name: Scalars['String'];
   /** Organisation title (human readable name) */
@@ -402,7 +394,6 @@ export type PublicOrg = {
 };
 
 export type ActionPage = {
-  __typename?: 'ActionPage';
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -422,7 +413,6 @@ export type ActionPage = {
 };
 
 export type PublicActionPage = {
-  __typename?: 'PublicActionPage';
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -440,8 +430,15 @@ export type PublicActionPage = {
 };
 
 export type DeleteUserResult = {
-  __typename?: 'DeleteUserResult';
   status: Status;
+};
+
+/** Count of supporters for particular org */
+export type OrgCount = {
+  /** org */
+  org: PublicOrg;
+  /** count of supporters registered by org */
+  count: Scalars['Int'];
 };
 
 /** Campaign input */
@@ -499,7 +496,6 @@ export type ActionPageInput = {
 };
 
 export type PersonalData = {
-  __typename?: 'PersonalData';
   /** Schema for contact personal information */
   contactSchema: ContactSchema;
   /** Email opt in enabled */
@@ -513,7 +509,6 @@ export type SelectCampaign = {
 };
 
 export type Campaign = {
-  __typename?: 'Campaign';
   id: Scalars['Int'];
   /** Internal name of the campaign */
   name: Scalars['String'];
@@ -538,7 +533,6 @@ export type CampaignActionsArgs = {
 
 /** Encryption or sign key with integer id (database) */
 export type Key = {
-  __typename?: 'Key';
   id: Scalars['Int'];
   public: Scalars['String'];
   name: Scalars['String'];
@@ -548,7 +542,6 @@ export type Key = {
 };
 
 export type Org = {
-  __typename?: 'Org';
   /** Organization id */
   id: Scalars['Int'];
   /** Organisation short name */
@@ -603,7 +596,6 @@ export type OrgCampaignArgs = {
 };
 
 export type ContactReference = {
-  __typename?: 'ContactReference';
   /** Contact's reference */
   contactRef: Scalars['String'];
   /** Contacts first name */
@@ -611,16 +603,14 @@ export type ContactReference = {
 };
 
 export type Contact = {
-  __typename?: 'Contact';
   contactRef: Scalars['String'];
   payload: Scalars['String'];
   nonce: Maybe<Scalars['String']>;
-  publicKey: Maybe<Key>;
-  signKey: Maybe<Key>;
+  publicKey: Maybe<KeyIds>;
+  signKey: Maybe<KeyIds>;
 };
 
 export type JoinOrgResult = {
-  __typename?: 'JoinOrgResult';
   status: Status;
 };
 
@@ -648,7 +638,6 @@ export type OrgInput = {
 
 /** Custom field with a key and value. */
 export type CustomField = {
-  __typename?: 'CustomField';
   key: Scalars['String'];
   value: Scalars['String'];
 };
@@ -678,6 +667,11 @@ export type ContactInput = {
   nationality?: Maybe<NationalityInput>;
 };
 
+export type KeyIds = {
+  id: Scalars['Int'];
+  public: Scalars['String'];
+};
+
 export enum Status {
   /** Operation awaiting confirmation */
   Confirming = 'CONFIRMING',
@@ -686,7 +680,6 @@ export enum Status {
 }
 
 export type User = {
-  __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
   roles: Array<UserRole>;

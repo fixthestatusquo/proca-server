@@ -68,7 +68,7 @@ query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: Stri
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
         fields { key, value },
         tracking { source, medium, campaign, content },
-        actionPage { id, name },
+        actionPage { id, name, locale },
         privacy { optIn }
       }
 }
@@ -80,7 +80,7 @@ query ExportOrgActions($org: String!, $start: Int, $after: DateTime, $limit: Int
         contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
         fields { key, value },
         tracking { source, medium, campaign, content },
-        actionPage { id, name },
+        actionPage { id, name, locale },
         campaign { name, externalId },
         privacy { optIn }
       }
