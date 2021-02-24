@@ -15,6 +15,7 @@ generates:
         field: true
         inputValue: false
       skipTypeNameForRoot: true
+      skipTypename: true
 
   src/queries/widget.ts:
     documents:
@@ -30,6 +31,7 @@ generates:
       avoidOptionals:
         <<: *avoidOptionals
       skipTypeNameForRoot: true
+      skipTypename: true
 
   src/queries/admin.ts:
     documents:
@@ -45,3 +47,4 @@ generates:
       avoidOptionals:
         <<: *avoidOptionals
       skipTypeNameForRoot: true
+      skipTypename: true

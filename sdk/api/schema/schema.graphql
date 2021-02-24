@@ -160,6 +160,11 @@ type CampaignStats {
   "Unique action takers by area"
   supporterCountByArea: [AreaCount!]!
 
+  "Unique action takers by org"
+  suppoterCountByOrg: [OrgCount!]!
+
+  supporterCountByOthers(orgName: String!): Int!
+
   "Action counts for selected action types"
   actionCount: [ActionTypeCount!]!
 }
@@ -453,6 +458,15 @@ type DeleteUserResult {
   status: Status!
 }
 
+"Count of supporters for particular org"
+type OrgCount {
+  "org"
+  org: PublicOrg!
+
+  "count of supporters registered by org"
+  count: Int!
+}
+
 "Campaign input"
 input CampaignInput {
   "Campaign unchanging identifier"
@@ -621,8 +635,8 @@ type Contact {
   contactRef: String!
   payload: String!
   nonce: String
-  publicKey: Key
-  signKey: Key
+  publicKey: KeyIds
+  signKey: KeyIds
 }
 
 type JoinOrgResult {
@@ -692,6 +706,11 @@ input ContactInput {
 
   "Nationality information"
   nationality: NationalityInput
+}
+
+type KeyIds {
+  id: Int!
+  public: String!
 }
 
 enum Status {

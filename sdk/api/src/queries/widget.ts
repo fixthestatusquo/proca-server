@@ -14,25 +14,13 @@ export type GetActionPageVariables = Types.Exact<{
 
 
 export type GetActionPage = { actionPage: (
-    { __typename?: 'PublicActionPage' }
-    & Pick<Types.PublicActionPage, 'id' | 'config' | 'locale' | 'journey' | 'name'>
-    & { org: (
-      { __typename?: 'PublicOrg' }
-      & Pick<Types.PublicOrg, 'name' | 'title'>
-    ), campaign: (
-      { __typename?: 'Campaign' }
-      & Pick<Types.Campaign, 'id' | 'title' | 'name' | 'externalId'>
+    Pick<Types.PublicActionPage, 'id' | 'config' | 'locale' | 'journey' | 'name'>
+    & { org: Pick<Types.PublicOrg, 'name' | 'title'>, campaign: (
+      Pick<Types.Campaign, 'id' | 'title' | 'name' | 'externalId'>
       & { stats: (
-        { __typename?: 'CampaignStats' }
-        & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount: Array<(
-          { __typename?: 'ActionTypeCount' }
-          & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
-        )> }
-      ), org: (
-        { __typename?: 'PublicOrg' }
-        & Pick<Types.PublicOrg, 'name' | 'title'>
-      ) }
+        Pick<Types.CampaignStats, 'supporterCount'>
+        & { actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
+      ), org: Pick<Types.PublicOrg, 'name' | 'title'> }
     ) }
   ) };
 
@@ -42,20 +30,10 @@ export type GetStatsVariables = Types.Exact<{
 }>;
 
 
-export type GetStats = { actionPage: (
-    { __typename?: 'PublicActionPage' }
-    & { campaign: (
-      { __typename?: 'Campaign' }
-      & { stats: (
-        { __typename?: 'CampaignStats' }
-        & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount: Array<(
-          { __typename?: 'ActionTypeCount' }
-          & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
-        )> }
-      ) }
-    ) }
-  ) };
+export type GetStats = { actionPage: { campaign: { stats: (
+        Pick<Types.CampaignStats, 'supporterCount'>
+        & { actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
+      ) } } };
 
 export type GetPublicResultVariables = Types.Exact<{
   name?: Types.Maybe<Types.Scalars['String']>;
@@ -66,33 +44,19 @@ export type GetPublicResultVariables = Types.Exact<{
 
 
 export type GetPublicResult = { actionPage: (
-    { __typename?: 'PublicActionPage' }
-    & Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
+    Pick<Types.PublicActionPage, 'config' | 'locale' | 'journey' | 'name'>
     & { campaign: (
-      { __typename?: 'Campaign' }
-      & Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
+      Pick<Types.Campaign, 'title' | 'name' | 'externalId'>
       & { stats: (
-        { __typename?: 'CampaignStats' }
-        & Pick<Types.CampaignStats, 'supporterCount'>
-        & { actionCount: Array<(
-          { __typename?: 'ActionTypeCount' }
-          & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
-        )> }
+        Pick<Types.CampaignStats, 'supporterCount'>
+        & { actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
       ), actions: (
-        { __typename?: 'PublicActionsResult' }
-        & Pick<Types.PublicActionsResult, 'fieldKeys'>
+        Pick<Types.PublicActionsResult, 'fieldKeys'>
         & { list?: Types.Maybe<Array<Types.Maybe<(
-          { __typename?: 'ActionCustomFields' }
-          & Pick<Types.ActionCustomFields, 'actionType' | 'insertedAt'>
-          & { fields: Array<(
-            { __typename?: 'CustomField' }
-            & Pick<Types.CustomField, 'key' | 'value'>
-          )> }
+          Pick<Types.ActionCustomFields, 'actionType' | 'insertedAt'>
+          & { fields: Array<Pick<Types.CustomField, 'key' | 'value'>> }
         )>>> }
-      ), org: (
-        { __typename?: 'PublicOrg' }
-        & Pick<Types.PublicOrg, 'title'>
-      ) }
+      ), org: Pick<Types.PublicOrg, 'title'> }
     ) }
   ) };
 
@@ -107,10 +71,7 @@ export type AddActionContactVariables = Types.Exact<{
 }>;
 
 
-export type AddActionContact = { addActionContact: (
-    { __typename?: 'ContactReference' }
-    & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
-  ) };
+export type AddActionContact = { addActionContact: Pick<Types.ContactReference, 'contactRef' | 'firstName'> };
 
 export type AddActionVariables = Types.Exact<{
   id: Types.Scalars['Int'];
@@ -121,7 +82,4 @@ export type AddActionVariables = Types.Exact<{
 }>;
 
 
-export type AddAction = { addAction: (
-    { __typename?: 'ContactReference' }
-    & Pick<Types.ContactReference, 'contactRef' | 'firstName'>
-  ) };
+export type AddAction = { addAction: Pick<Types.ContactReference, 'contactRef' | 'firstName'> };
