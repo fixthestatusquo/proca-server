@@ -1,7 +1,13 @@
 import client from './client'
 import {admin, request} from '@proca/api'
-import {ActionWithEncryptedContact, DecryptOpts, ActionWithPII, decryptAction} from './crypto'
+import {
+  ActionWithEncryptedContact, 
+  ActionWithPII, 
+  readMixedFormat,
+  KeyStore
+  } from './crypto'
 import {getFormatter, FormatOpts} from './format'
+import {getContact, DecryptOpts} from './decrypt'
 import {CliConfig} from './config'
 
 interface ExportActionsOpts {
@@ -11,8 +17,11 @@ interface ExportActionsOpts {
   after?: string,
   campaign?: string,
   fields: string
-
 }
+
+
+
+
 export async function exportActions(argv : ExportActionsOpts & DecryptOpts & FormatOpts, config : CliConfig) {
   const c = client(config)
   const fmt = getFormatter(argv)
@@ -55,6 +64,12 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
 }
 
 
+export function decryptAction(action : ActionWithEncryptedContact, argv : DecryptOpts, config : CliConfig) {
+  const pii = getContact(action.contact, argv, config)
+  const action2 = action as ActionWithPII
+  action2.contact.pii = pii
+  return action2
+}
 
 // export async function getCsvSupporters(argv) {
 //   const c = argv2client(argv);

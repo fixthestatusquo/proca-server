@@ -1,4 +1,5 @@
-import {ProcessStage} from './queue'
+
+export type ProcessStage = "confirm" | "deliver"
 
 type Contact = {
   email: string,

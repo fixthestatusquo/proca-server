@@ -1,15 +1,8 @@
 import nacl from 'tweetnacl'
 import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
-import {readFileSync, writeFileSync} from 'fs'
 import {types} from '@proca/api'
-import {CliConfig} from './config'
-import {ActionMessage} from './queueMessage'
-
-export type DecryptOpts = {
-  decrypt?: boolean,
-  ignore?: boolean
-}
+import lo from "lodash";
 
 // keys ------
 export type KeyPair = {
@@ -23,17 +16,17 @@ export type KeyStore = {
   keys: KeyPair[]
 }
 
-type mixedFormatValue = {
+type MixedFormatValue = {
   private: string
 } | string
 
-type mixedFormat = Record<string, mixedFormatValue>
+export type MixedFormat = Record<string, MixedFormatValue>
 
-type fullFormatValue = {
+type FullFormatValue = {
   private: string
 }
 
-type fullFormat = Record<string, fullFormatValue>
+export type FullFormat = Record<string, FullFormatValue>
 
 // contact payload
 
@@ -57,7 +50,7 @@ export type ActionWithPII = Omit<types.Action, "contact"> & {
   contact: ContactWithPII,
 }
 
-function readMixedFormat(ks : KeyStore, keys : mixedFormat) {
+export function readMixedFormat(ks : KeyStore, keys : MixedFormat) {
   for (let [key, value] of Object.entries(keys)) {
     if (typeof key !== "string")
       throw new Error("keys must be a map keyed by public key")
@@ -73,41 +66,12 @@ function readMixedFormat(ks : KeyStore, keys : mixedFormat) {
     }
   }
 
+  ks.keys = lo.uniqBy(ks.keys, "public")
+
   return ks
 }
 
-export function loadKeys(config : CliConfig) : KeyStore {
-  if (config.keyData[0] === '{') {
-    // in env-memory key list -----------------------
-    const ks : KeyStore = {
-      filename: null,
-      readFromFile: false,
-      keys: []
-    }
 
-    const kd = JSON.parse(config.keyData)
-    return readMixedFormat(ks, kd)
-
-  } else {
-    // filename -------------------------------------
-    const ks : KeyStore = {
-      filename: config.keyData,
-      readFromFile: true,
-      keys: []
-    }
-    const kd = JSON.parse(readFileSync(ks.filename, 'utf8'))
-    return readMixedFormat(ks, kd)
-  }
-}
-
-export function storeKeys(ks : KeyStore) {
-  let data  : fullFormat = ks.keys.reduce<fullFormat>((m, k) => {
-    m[k.public] = {private: k.private}
-    return m
-  }, {})
-  const content = JSON.stringify(data, null, 2)
-  writeFileSync(ks.filename, content, {mode: 0o600})
-}
 
 
 function base64url2normal(s : string) {
@@ -140,55 +104,5 @@ export function decrypt(payload: string, nonce: string, public_key: KeyPair, sig
   }
 }
 
-export function decryptAction(action : ActionWithEncryptedContact, argv : DecryptOpts, config : CliConfig) {
-  const pii = getContact(action.contact, argv, config)
-  const action2 = action as ActionWithPII
-  action2.contact.pii = pii
-  return action2
-}
 
 
-export function decryptActionMessage(action : ActionMessage, argv : DecryptOpts, config : CliConfig) {
-  const contact : EncryptedContact = {
-    signKey: { public: action.contact.signKey},
-    publicKey: { public: action.contact.publicKey},
-    nonce: action.contact.nonce,
-    payload: action.contact.payload,
-    contactRef: action.contact.ref
-  }
-
-  const pii = getContact(contact, argv, config)
-  action.contact.pii = pii
-  if (!action.contact.firstName && action.contact.pii.firstName)
-    action.contact.firstName = action.contact.pii.firstName
-  if (!action.contact.email && action.contact.pii.email)
-    action.contact.email = action.contact.pii.email
-  return action
-}
-
-
-export function getContact(contact : EncryptedContact, argv : DecryptOpts, config : CliConfig) {
-  let {payload, nonce, publicKey, signKey} = contact
-  if (payload === undefined) throw new Error(`action contact has no payload: ${JSON.stringify(contact)}`)
-  if (publicKey === null || publicKey === undefined) {
-    // plain text
-    return JSON.parse(payload)
-  }
-
-  if (!argv.decrypt)
-    return {}
-
-  const ks = loadKeys(config)
-
-  const clear = decrypt(payload, nonce, publicKey, signKey, ks)
-
-  if (clear === null) {
-    if (argv.ignore) {
-      return {}
-    } else {
-      throw new Error(`Cannot decrypt action data encrypted for key ${JSON.stringify(publicKey)}`)
-    }
-  }
-
-  return JSON.parse(clear)
-}
