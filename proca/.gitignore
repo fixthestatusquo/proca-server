@@ -1,5 +1,6 @@
 # The directory Mix will write compiled artifacts to.
 /_build/
+/rel/templates/
 
 # If you run "mix test --cover", coverage assets end up here.
 /cover/
@@ -41,3 +42,9 @@ doc
 
 # logs
 log
+
+TAGS
+.dir-locals.el
+.env 
+.proca-cli
+

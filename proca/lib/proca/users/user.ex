@@ -22,8 +22,9 @@ defmodule Proca.Users.User do
   end
 
   def create(email) do
-    case Pow.Operations.create(params_for(email), @pow_config) do
-      {:ok, user} -> user
+    params = params_for(email)
+    case Pow.Operations.create(params, @pow_config) do
+      {:ok, user} -> %{user|password: params.password}
       _ -> nil
     end
   end

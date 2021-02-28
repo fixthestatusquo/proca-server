@@ -6,11 +6,12 @@ defmodule ProcaWeb.Schema.DataTypes do
   import Logger
 
   scalar :date_time do
-    parse(fn %{value: value} ->
-      case DateTime.from_iso8601(value) do
-        {:ok, datetime, _} -> {:ok, datetime}
-        _ -> :error
-      end
+    parse(fn 
+      %{value: value} when is_bitstring(value) ->
+        case DateTime.from_iso8601(value) do
+          {:ok, datetime, _} -> {:ok, datetime}
+          _ -> :error
+        end
       _ -> :error
     end)
 
@@ -21,11 +22,11 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   scalar :date do
-    parse(fn %{value: value} ->
-      case Date.from_iso8601(value) do
-        {:ok, date} -> {:ok, date}
-        _ -> :error
-      end
+    parse(fn %{value: value} when is_bitstring(value) ->
+        case Date.from_iso8601(value) do
+          {:ok, date} -> {:ok, date}
+          _ -> :error
+        end
       _ -> :error
     end)
 
@@ -35,15 +36,15 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   scalar :json do
-    parse(fn %{value: value} ->
-      case Jason.decode(value) do
-        {:ok, object} ->
-          {:ok, object}
+    parse(fn %{value: value} when is_bitstring(value) ->
+        case Jason.decode(value) do
+          {:ok, object} ->
+            {:ok, object}
 
-      x ->
-          error [why: "error while decoding json input", input: value, msg: x]
-          :error
-      end
+          x ->
+            error [why: "error while decoding json input", input: value, msg: x]
+            :error
+        end
       _ -> :error
     end)
 

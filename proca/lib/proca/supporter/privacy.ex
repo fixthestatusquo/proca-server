@@ -48,7 +48,7 @@ defmodule Proca.Supporter.Privacy do
   """
 
   alias Proca.Supporter.{Privacy, Consent}
-  alias Proca.ActionPage
+  alias Proca.{ActionPage, Org}
 
   defstruct opt_in: false,
             lead_opt_in: false
@@ -104,5 +104,22 @@ defmodule Proca.Supporter.Privacy do
       end
 
     widget_org ++ lead_org
+  end
+
+  def cleartext_fields(%ActionPage{org: %Org{high_security: true}}) do
+    [:area]
+  end
+
+  def cleartext_fields(_) do 
+    [:email, :first_name, :area] 
+  end
+
+  @doc "Which supporter fields are cleared after processing"
+  def transient_fields(%ActionPage{org: %Org{high_security: true}}) do
+    [:email, :first_name]
+  end
+
+  def transient_fields(_) do
+    [:email] 
   end
 end

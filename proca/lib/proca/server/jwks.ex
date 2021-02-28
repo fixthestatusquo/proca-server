@@ -7,6 +7,7 @@ defmodule Proca.Server.Jwks do
   XXX protect against forcing this server to retry getting a fake kid
   """
   use GenServer
+  import Logger
 
   def start_link(keys_url) do
     GenServer.start_link(__MODULE__, keys_url, name: __MODULE__)
@@ -22,6 +23,16 @@ defmodule Proca.Server.Jwks do
        get_keys(url),
        url
      }}
+  end
+
+  def get_keys("file://" <> path = _url) do
+    try do 
+      jwks_to_keys(File.read!(path))
+    rescue
+      e in File.Error -> 
+        error("Cannot #{e.action} #{e.path}: #{e.reason}")
+        %{}
+    end
   end
 
   def get_keys(url) do

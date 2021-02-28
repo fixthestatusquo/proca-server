@@ -34,7 +34,7 @@ defmodule Proca.Staffer do
     |> change(org_id: org_id, user_id: id, perms: Proca.Staffer.Permission.add(0, perms))
   end
 
-  def for_user_in_org(%User{id: id}, org_name) when is_binary(org_name) do
+  def for_user_in_org(%User{id: id}, org_name) when is_bitstring(org_name) do
     from(s in Staffer,
       join: o in assoc(s, :org),
       where: s.user_id == ^id and o.name == ^org_name,

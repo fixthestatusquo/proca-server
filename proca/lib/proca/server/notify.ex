@@ -3,12 +3,12 @@ defmodule Proca.Server.Notify do
   Server that decides what actions should be done after different events
   """
   alias Proca.Repo
-  alias Proca.{Action, Org, PublicKey}
+  alias Proca.{Action, Supporter, Org, PublicKey}
   alias Proca.Pipes
 
-  @spec action_created(%Action{}, boolean()) :: :ok
-  def action_created(action, created_supporter) do
-    increment_counter(action, created_supporter)
+  @spec action_created(%Action{}, %Supporter{} | nil) :: :ok
+  def action_created(action, supporter \\ nil) do
+    increment_counter(action, supporter)
     process_action(action)
     :ok
   end
@@ -76,9 +76,14 @@ defmodule Proca.Server.Notify do
     Proca.Server.Processing.process_async(action)
   end
 
-  defp increment_counter(%{campaign_id: cid, action_type: atype}, new_supporter) do
-    Proca.Server.Stats.increment(cid, atype, new_supporter)
+  defp increment_counter(%Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype}, nil) do
+    Proca.Server.Stats.increment(cid, org_id, atype, nil, false)
   end
+
+  defp increment_counter(%Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype}, %Supporter{area: area}) do
+    Proca.Server.Stats.increment(cid, org_id, atype, area, true)
+  end
+
 
   defp publish_subscription_event(record, routing_key) do
     Absinthe.Subscription.publish(ProcaWeb.Endpoint, record, routing_key)

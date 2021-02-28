@@ -5,7 +5,9 @@ FROM elixir AS builder
 ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
-RUN apt-get update && apt-get install -y npm
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -  && \
+    apt-get install -y nodejs 
+
 
 RUN mix local.hex --force  && \
     mix local.rebar --force
@@ -32,12 +34,13 @@ FROM debian:buster AS app
 ENV LANG=C.UTF-8
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/app/prod/rel/proca/bin
 ENV DEBIAN_FRONTEND=noninteractive
+ENV LOGS_DIR=/home/app/log
 
 # Install openssl
 RUN apt-get update && apt-get install -y openssl libtinfo6
 
 # Copy over the build artifact from the previous step and create a non root user
-RUN useradd --create-home app
+RUN useradd --create-home app && mkdir /home/app/log
 WORKDIR /home/app
 
 # add app
@@ -52,4 +55,4 @@ RUN mkdir ./prod/rel/proca/tmp && chmod 0777 ./prod/rel/proca/tmp \
 
 USER app
 
-CMD ["./prod/rel/proca/bin/proca", "start"]
+CMD ["sh", "-c", "setup && exec proca start"]

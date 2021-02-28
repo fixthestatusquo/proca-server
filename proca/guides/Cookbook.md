@@ -36,3 +36,22 @@ We provide a bash script to help with that: [get-action-page.sh](https://raw.git
 ```
 ./get-action-page.sh -n greenplanet.org/trees -o /home/wordpress/wp-content/uploads/petition.json -w -c
 ```
+
+## Sync the number of signatures to proca campaign
+
+You can add the number of signatures you have collected in another system with a campaign running on Proca, by setting *extra supporters* count of one of the campaign's widgets/action pages. 
+The *extra supporters* from all widgets/action pages of a campaign are added to the total deduplicated number of signatures collected on Proca.
+
+To do this:
+1. Know your org name (acronym), user email and secret access token
+1. Have a widget/action page participating in the campaign.
+2. Know the name of the action page eg. ourplanet.org/oceans (or it's numerical ID, eg. 123)
+3. Install command line too: proca-cli by running `sudo npm install -g @proca/cli` or for local user `npm install @proca/cli`. Former is recommended.
+4. To update the *extra supporters* of an action page with ID 123 to 10000 run:
+```
+proca-cli page:update -u your@email.com -p YOUR_TOKEN -o org_name -e 10000 -i 123 
+```
+5. To update the *extra supporters* of an action page with a NAME ourplanet.org/oceans run:
+```
+proca-cli page:update -u your@email.com -p YOUR_TOKEN -o org_name -e 10000 -i $(proca-cli page -P -n ourplanet.org/oceans |head -1 |cut -f 1 -d ' ') 
+```

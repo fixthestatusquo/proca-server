@@ -6,14 +6,24 @@ defmodule ProcaWeb.Resolvers.Captcha do
 
   Use:
   `middleware Captcha`
+
+  `middleware Captcha, defer: true` - if you want to verify the captcha inside processing.
   """
 
-  @behaviour Absinthe.Middleware
+  @doc """
+  Make sure the captcha extension is provided for the request.
 
-  def call(resolution, _opts) do
+  If defer: true, do not actually verify the captcha yet. Let the resolver call
+  verify() and check if the resolution is failed.
+  """
+  @behaviour Absinthe.Middleware
+  def call(resolution, opts) do
     case resolution.extensions do
-      %{captcha: code} ->
-        verify(resolution, code)
+      %{captcha: _code} ->
+        case Keyword.get(opts, :defer, false) do
+          true -> resolution
+          false -> verify(resolution)
+        end
 
       _a ->
         resolution
@@ -27,7 +37,12 @@ defmodule ProcaWeb.Resolvers.Captcha do
     end
   end
 
-  def verify(resolution, code) do
+
+  @doc """
+  If the hcaptcha is configured for the instance, verify the captcha. Otherwise, noop.
+  """
+
+  def verify(resolution = %{extensions: %{captcha: code}}) do
     case Application.get_env(:proca, __MODULE__)[:hcaptcha] do
       nil ->
         resolution
@@ -45,10 +60,14 @@ defmodule ProcaWeb.Resolvers.Captcha do
               {:error,
                %{
                  message: "Captcha code invalid (#{errors_as_str})",
-                 extensions: %{code: "bad_request"}
+                 extensions: %{code: "bad_captcha"}
                }}
             )
         end
     end
+  end
+
+  def verify(resolution) do
+    resolution
   end
 end

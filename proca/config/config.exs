@@ -19,19 +19,23 @@ config :proca, ProcaWeb.Endpoint,
   live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"],
   router: if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router
 
-config :proca, ProcaWeb.Resolvers.Captcha,
-  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
+# Willfully leaked Hcaptcha secret (used only for development)
+# config :proca, ProcaWeb.Resolvers.Captcha,
+#  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
 
 
 config :proca, Proca,
   org_name: "test",
-  stats_sync_interval: 0  # XXX move to Proca.Server.Stats
+  stats_sync_interval: 0,  # XXX move to Proca.Server.Stats
+  require_verified_email: false
 
+# FPR seed only for development
 config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
   url: "amqp://proca:proca@rabbitmq.docker/proca"
+
 
 config :proca, Proca.Server.Jwks,
   url: "https://account.fixthestatusquo.org/.well-known/jwks.json"
@@ -59,7 +63,7 @@ config :sentry,
   environment_name: Mix.env(),
   included_environments: [:prod],
   enable_source_code_context: true,
-  root_source_code_path: File.cwd!()
+  root_source_code_paths: [File.cwd!()]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

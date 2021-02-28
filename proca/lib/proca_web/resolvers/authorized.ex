@@ -156,10 +156,8 @@ defmodule ProcaWeb.Resolvers.Authorized do
   def query_for(user, :action_page) do
     from(
       a in ActionPage,
-      join: c in Campaign,
-      on: a.campaign_id == c.id,
       join: o in Org,
-      on: c.org_id == o.id,
+      on: a.org_id == o.id,
       join: s in Staffer,
       on: s.org_id == o.id,
       where: s.user_id == ^user.id,

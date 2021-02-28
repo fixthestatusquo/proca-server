@@ -20,6 +20,8 @@ defmodule Proca.Contact.EciData do
     field :street, :string
     field :street_number, :string
 
+    field :area, :string
+
     embeds_one :nationality, Input.Nationality
   end
 
@@ -87,10 +89,12 @@ defmodule Proca.Contact.EciData do
         ch
 
       address ->
+        residence_country = get_change(address, :country)
         address =
           address
           |> validate_required(required_address_fields)
-          |> validate_format(:postcode, EciDataRules.postcode_format(country))
+          |> update_change(:postcode, &String.replace(&1, ~r/[ -]/, ""))
+          |> validate_format(:postcode, EciDataRules.postcode_format(residence_country))
 
         put_embed(ch, :address, address)
     end
@@ -135,8 +139,10 @@ defmodule Proca.Contact.EciData do
         postcode: a.postcode,
         city: a.locality,
         street: a.street,
-        street_number: a.street_number
+        street_number: a.street_number,
+        area: d.nationality.country
       })
+      |> validate_length(:area, max: 5)
     else
       ch
     end

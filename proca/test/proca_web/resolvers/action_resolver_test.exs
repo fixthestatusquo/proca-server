@@ -32,7 +32,7 @@ defmodule ProcaWeb.ActionResolverTest do
 
     params = some_action_data(ap)
 
-    {:ok, created} = ProcaWeb.Resolvers.Action.add_action_contact(nil, params, nil)
+    {:ok, created} = ProcaWeb.Resolvers.Action.add_action_contact(nil, params, %Absinthe.Resolution{})
     Proca.Server.Processing.sync()
 
     assert %{contact_ref: ref, first_name: blx} = created
@@ -48,7 +48,8 @@ defmodule ProcaWeb.ActionResolverTest do
     assert length(sup.actions) == 1
     assert length(sup.contacts) == 1
 
-    assert is_nil(sup.first_name)
+    assert not is_nil(sup.first_name)
+    assert not is_nil(sup.area)
     assert is_nil(sup.email)
 
     assert %{
@@ -98,7 +99,7 @@ defmodule ProcaWeb.ActionResolverTest do
       some_action_data(ap)
       |> Map.put(:tracking, %{campaign: "email123", medium: "email", source: "team"})
 
-    {:ok, created} = ProcaWeb.Resolvers.Action.add_action_contact(nil, params, nil)
+    {:ok, created} = ProcaWeb.Resolvers.Action.add_action_contact(nil, params, %Absinthe.Resolution{})
     Proca.Server.Processing.sync()
 
     sup =

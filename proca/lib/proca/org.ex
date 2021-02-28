@@ -19,6 +19,9 @@ defmodule Proca.Org do
 
     field :contact_schema, ContactSchema, default: :basic
 
+    # avoid storing transient data in clear
+    field :high_security, :boolean, default: false
+
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
@@ -44,9 +47,9 @@ defmodule Proca.Org do
   @doc false
   def changeset(org, attrs) do
     org
-    |> cast(attrs, [:name, :title, :contact_schema, :email_opt_in, :email_opt_in_template])
+    |> cast(attrs, [:name, :title, :contact_schema, :email_opt_in, :email_opt_in_template, :config])
     |> validate_required([:name, :title])
-    |> validate_format(:name, ~r/^([[:alnum:]_-]+$)/)
+    |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
   end
 
@@ -79,6 +82,10 @@ defmodule Proca.Org do
 
   def get_by_id(id, preload \\ []) do
     Proca.Repo.one(from o in Proca.Org, where: o.id == ^id, preload: ^preload)
+  end
+
+  def instance_org_name do
+    Application.get_env(:proca, Proca)[:org_name]
   end
 
   def list(preloads \\ []) do

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+QUERY="query allSchemaTypes {
+    __schema {
+        types {
+            name
+            kind
+            description
+        }
+    }
+}"
+
+HOST=$1
+if [ -z "$HOST" ]; then
+  echo $0 sign.ecidomain.eu
+  echo "(Remember to mind whether you are testing staging or live)"
+  exit 1
+fi
+
+curl -v --data-urlencode "query=$QUERY" https://$HOST/api
+
+

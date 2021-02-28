@@ -43,7 +43,7 @@ defmodule Proca.Field do
     end)
   end
 
-  def transient_fields(action = %Action{}) do
+  def select_transient_fields(action = %Action{}) do
     from(f in Field, where: f.action_id == ^action.id and f.transient == true)
   end
 end

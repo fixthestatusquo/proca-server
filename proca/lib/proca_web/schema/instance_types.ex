@@ -10,8 +10,8 @@ defmodule ProcaWeb.Schema.InstanceTypes do
   end
 
   object :instance do
-    field :orgs, list_of(non_null(:org))
-    field :users, list_of(non_null(:user))
+    field :orgs, non_null(list_of(non_null(:org)))
+    field :users, non_null(list_of(non_null(:user)))
   end
 
   object :operation do

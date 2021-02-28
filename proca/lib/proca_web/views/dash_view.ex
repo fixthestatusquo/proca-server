@@ -47,7 +47,8 @@ defmodule ProcaWeb.DashView do
       {"Romanian", "ro"},
       {"Spanish", "es"},
       {"Swedish", "se"},
-      {"Serbian", "sr"}
+      {"Serbian", "sr"},
+      {"Slovenian", "sl"}
     ]
   end
 
