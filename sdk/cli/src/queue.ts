@@ -1,14 +1,15 @@
 import amqplib from 'amqplib'
-import readline from 'readline'
 import fs from 'fs'
 import backoff from 'backoff'
-import {decryptAction, DecryptOpts} from './crypto'
+import LineByLine from 'line-by-line'
+import {decrypt,EncryptedContact } from './crypto'
+import {getContact, DecryptOpts} from './decrypt'
+import {decryptAction} from './export'
 import {CliConfig} from './config'
 import {CliOpts, ServiceOpts} from './cli'
-import {ActionMessage} from './queueMessage'
-export {ActionMessage} from './queueMessage'
+import {ActionMessage, ProcessStage} from './queueMessage'
+export {ActionMessage, ProcessStage} from './queueMessage'
 
-export type ProcessStage = "confirm" | "deliver"
 export type SyncFunction = (action : ActionMessage, argv : ServiceOpts, config : CliConfig) => any
 
 
@@ -89,15 +90,16 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
 
 export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConfig) {
   const service = getService(opts)
-  const lines = readline.createInterface({input: fs.createReadStream(opts.filePath)});
+  const lines = new LineByLine(opts.filePath)
 
-  for await (const l of lines) {
+  lines.on('line', async (l) => {
     let action = JSON.parse(l)
-
+    
     action = decryptAction(action, opts, config)
-
+    lines.pause()
     await service.syncAction(action, opts, config)
-  }
+    lines.resume()
+  })
 }
 
 
@@ -128,4 +130,23 @@ export function addBackoff(fun : SyncFunction) {
     })
   }
   return newFun
+}
+
+
+export function decryptActionMessage(action : ActionMessage, argv : DecryptOpts, config : CliConfig) {
+  const contact : EncryptedContact = {
+    signKey: { public: action.contact.signKey},
+    publicKey: { public: action.contact.publicKey},
+    nonce: action.contact.nonce,
+    payload: action.contact.payload,
+    contactRef: action.contact.ref
+  }
+
+  const pii = getContact(contact, argv, config)
+  action.contact.pii = pii
+  if (!action.contact.firstName && action.contact.pii.firstName)
+    action.contact.firstName = action.contact.pii.firstName
+  if (!action.contact.email && action.contact.pii.email)
+    action.contact.email = action.contact.pii.email
+  return action
 }

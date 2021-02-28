@@ -1,8 +1,9 @@
 {
   "name": "@proca/cli",
-  "version": "2.2.2-beta.0",
+  "version": "2.2.3-beta.0",
   "description": "cli[ent] for Proca",
   "main": "dist/index.js",
+  "browser": "dist/browser.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "repository": "git@github.com:TechToThePeople/proca-gw.git",
@@ -34,6 +35,7 @@
     "email-validator": "^2.0.4",
     "esm": "^3.2.25",
     "inquirer": "^7.3.3",
+    "line-by-line": "^0.1.6",
     "node-fetch": "^2.6.1",
     "node-mailjet": "^3.3.1",
     "pry": "^0.8.12",
@@ -47,13 +49,14 @@
     "@types/bent": "^7.3.2",
     "@types/debug": "^4.1.5",
     "@types/inquirer": "^7.3.1",
+    "@types/line-by-line": "^0.1.4",
+    "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.7",
     "@types/yargs": "^15.0.11",
     "graphql": "^15.3.0",
     "typescript": "^4.1.2"
   },
-  "peerDependencies": {
-  },
+  "peerDependencies": {},
   "optionalDependencies": {
     "@types/node-mailjet": "^3.3.4",
     "bent": "^7.3.12",

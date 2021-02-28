@@ -126,6 +126,18 @@
     "@types/through" "*"
     rxjs "^6.4.0"
 
+"@types/line-by-line@^0.1.4":
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/@types/line-by-line/-/line-by-line-0.1.4.tgz#c8a3d9e37f7cf2beb851621d807066acfe849b98"
+  integrity sha512-H3v9Mge3+9p1Y5Zj10996zwlgnuv1mFls3uHxauUfuxaKqzBluToKK9p5FAb0dCfrOHQClVs+ECFpKv4jJ4yWw==
+  dependencies:
+    "@types/node" "*"
+
+"@types/lodash@^4.14.168":
+  version "4.14.168"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
+  integrity sha512-oVfRvqHV/V6D1yifJbVRU3TMp8OT6o6BG+U9MkwuJ3U8/CsDHvalRpsxBqivn71ztOFZBTfJMvETbqHiaNSj7Q==
+
 "@types/node-mailjet@^3.3.4":
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/@types/node-mailjet/-/node-mailjet-3.3.4.tgz#2a62f71953a211dff03dde79d05c446bfe79221a"
@@ -844,6 +856,11 @@ levn@~0.3.0:
   dependencies:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
+
+line-by-line@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/line-by-line/-/line-by-line-0.1.6.tgz#6236edd1db2d1695addf11f0268e74a181561c30"
+  integrity sha512-MmwVPfOyp0lWnEZ3fBA8Ah4pMFvxO6WgWovqZNu7Y4J0TNnGcsV4S1LzECHbdgqk1hoHc2mFP1Axc37YUqwafg==
 
 locate-path@^5.0.0:
   version "5.0.0"
