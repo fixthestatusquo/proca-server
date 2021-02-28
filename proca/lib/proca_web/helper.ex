@@ -15,18 +15,19 @@ defmodule ProcaWeb.Helper do
   name will not end up in messages. Maybe we should join all field names by a
   dot and return suchj field, for instance: contact.email instead of email
   """
-
-  def replace_placeholders(msg, opts) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(value))
-    end) 
-  end
-
   def format_errors(changeset) do
     changeset
     |> Changeset.traverse_errors(fn {msg, opts} -> %{message: replace_placeholders(msg, opts)} end)
     |> flatten_errors()
   end
+
+  def replace_placeholders(msg, opts) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end)
+  end
+
+
 
   @doc """
   Must be able to flatten an error structure like:
@@ -42,7 +43,10 @@ defmodule ProcaWeb.Helper do
 
   def flatten_errors([%{message: msg} = m | other_msg], path = [lastkey | _])
        when map_size(m) == 1 do
-    [%{message: "#{lastkey}: #{msg}", path: Enum.reverse(path)} | flatten_errors(other_msg, path)]
+    [%{
+        message: "#{lastkey}: #{msg}",
+        path: Enum.reverse(path)
+     } | flatten_errors(other_msg, path)]
   end
 
   # handle an associated list (like has_many)
@@ -60,7 +64,10 @@ defmodule ProcaWeb.Helper do
     map
     |> Map.keys()
     |> Enum.map(fn k ->
-      flatten_errors(Map.get(map, k), [k | path])
+      flatten_errors(
+        Map.get(map, k),
+        [ProperCase.camel_case(k) | path]
+      )
     end)
     |> Enum.concat()
   end

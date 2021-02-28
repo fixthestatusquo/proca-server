@@ -6,7 +6,6 @@ defmodule ProcaWeb.Router do
   import Phoenix.LiveView.Router
   use Pow.Phoenix.Router
   use Plug.ErrorHandler
-  use Sentry.Plug
 
   pipeline :browser do
     plug :accepts, ["html"]

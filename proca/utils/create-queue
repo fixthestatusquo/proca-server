@@ -3,6 +3,8 @@
 set -e
 set -u
 
+docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 'proca' already exists"
+
 VOL=/tmp/proca-queue
 mkdir $VOL || true
 docker run -d --hostname rabbitmq.docker \

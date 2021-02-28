@@ -56,7 +56,8 @@ config :proca, ProcaWeb.Resolvers.Captcha,
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
-  stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "5000")
+  stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "5000"),
+  require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
 
 config :proca, Proca.Supporter,
   fpr_seed: System.get_env("FINGERPRINT_SEED") || ""

@@ -5,7 +5,7 @@ defmodule Proca.Supporter do
   """
   use Ecto.Schema
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage}
+  alias Proca.{Supporter, Contact, ActionPage, Org}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
@@ -23,6 +23,7 @@ defmodule Proca.Supporter do
 
     field :first_name, :string
     field :email, :string
+    field :area, :string
 
     field :processing_status, ProcessingStatus, default: :new
 
@@ -38,7 +39,7 @@ defmodule Proca.Supporter do
 
   def new_supporter(data, action_page = %ActionPage{}) do
     %Supporter{}
-    |> change(Map.take(data, ActionPage.kept_personalization_fields(action_page)))
+    |> change(Map.take(data, Supporter.Privacy.cleartext_fields(action_page)))
     |> change(%{fingerprint: Data.fingerprint(data)})
     |> put_assoc(:campaign, action_page.campaign)
     |> put_assoc(:action_page, action_page)
@@ -90,10 +91,18 @@ defmodule Proca.Supporter do
     Base.url_decode64(encoded, padding: false)
   end
 
-  def transient_fields(supporter) do
+  def transient_fields(supporter) do 
+    Supporter.Privacy.transient_fields(supporter.action_page)
+    |> Enum.map(fn f -> {f, nil} end)
+  end
+
+
+# XXX rename this to something like "clear_transient_fields"
+  def nullify_transient_fields(supporter) do
+    clear_fields = transient_fields(supporter)
     from(s in Supporter,
       where: s.id == ^supporter.id,
-      update: [set: [first_name: nil, email: nil]]
+      update: [set: ^clear_fields]
     )
   end
 end

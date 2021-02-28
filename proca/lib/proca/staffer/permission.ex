@@ -56,6 +56,10 @@ defmodule Proca.Staffer.Permission do
     Enum.reduce(permission, perms, &add(&2, &1))
   end
 
+  def add(perms, permission) when is_integer(perms) and is_integer(permission) do 
+    perms ||| permission 
+  end
+
   def remove(perms, permission) when is_integer(perms) and is_atom(permission) do
     bit = @bits[permission]
     perms &&& bnot(bit)
@@ -63,6 +67,10 @@ defmodule Proca.Staffer.Permission do
 
   def remove(perms, permission) when is_integer(perms) and is_list(permission) do
     Enum.reduce(permission, perms, &remove(&2, &1))
+  end
+
+  def remove(perms, permission) when is_integer(perms) and is_integer(permission) do
+    perms &&& bnot(permission)
   end
 
   def to_list(perms) when is_integer(perms) do

@@ -46,14 +46,48 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def stats(campaign, _a, _c) do
-    {supporters, at_cts} = Proca.Server.Stats.stats(campaign.id)
+    %Proca.Server.Stats{
+      supporters: supporters, 
+      action: at_cts, 
+      area: supporters_by_areas,
+      org: supporter_count_by_org
+      } = Proca.Server.Stats.stats(campaign.id)
 
     {:ok,
      %{
        supporter_count: supporters,
-       action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct} end)
+       supporter_count_by_area: supporters_by_areas |> Enum.map(fn {area, ct} -> %{area: area, count: ct} end),
+       supporter_count_by_org: supporter_count_by_org,
+       action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct} end),
      }}
   end
+
+  def org_stats(%{supporter_count_by_org: org_st}, _, _) do 
+    org_ids = Map.keys(org_st)
+
+    with_names = 
+    from(o in Org, where: o.id in ^org_ids, select: {o.id, o.name, o.title})
+    |> Repo.all()
+    |> Enum.map(fn {id, name, title} -> 
+      %{
+        org: %{ name: name, title: title },
+        count: org_st[id]
+      }
+    end)
+
+    {:ok, with_names}
+  end
+
+  def org_stats_others(par, %{org_name: org_name}, ctx) do 
+    {:ok, by_names} = org_stats(par, %{}, ctx)
+
+    {:ok, 
+      by_names 
+      |> Enum.filter(fn %{org: %{name: name}} -> name != org_name end)
+      |> Enum.map(fn %{count: count} -> count end)
+      |> Enum.sum()
+    }
+  end 
 
   @doc "XXX deprecated in favor of upsert/3"
   def declare_upsert(p, attrs, res) do

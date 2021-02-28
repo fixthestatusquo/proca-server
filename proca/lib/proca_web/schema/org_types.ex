@@ -28,6 +28,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     @desc "Organisation title (human readable name)"
     field :title, non_null(:string)
+
+    @desc "config"
+    field :config, non_null(:json)
+
+    @desc "Personal data settings for this org"
     field :personal_data, non_null(:personal_data) do
       resolve(&Resolvers.Org.org_personal_data/3)
     end
@@ -104,6 +109,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Email opt in template name"
     field :email_opt_in_template, :string
+
+    @desc "Config"
+    field :config, :json
   end
 
 
@@ -139,6 +147,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :join_org, type: non_null(:join_org_result) do
       middleware Authorized
       arg :name, non_null(:string)
+
+      resolve(&Resolvers.Org.join_org/3)
     end
 
     field :generate_key, type: non_null(:key_with_private) do
@@ -213,7 +223,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     field :active, non_null(:boolean)
     field :expired, non_null(:boolean)
-    field :expired_at, non_null(:date_time)
+    field :expired_at, :date_time
   end
 
   object :key_with_private do
@@ -223,7 +233,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     field :active, non_null(:boolean)
     field :expired, non_null(:boolean)
-    field :expired_at, non_null(:date_time)
+    field :expired_at, :date_time
+  end
+
+  object :key_ids do 
+    field :id, non_null(:integer)
+    field :public, non_null(:string)
   end
 
   input_object :add_key_input do
@@ -243,6 +258,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :join_org_result do
     field :status, non_null(:status)
+    field :org, non_null(:org)
   end
 
   object :activate_key_result do

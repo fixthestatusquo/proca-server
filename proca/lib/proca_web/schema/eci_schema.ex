@@ -4,6 +4,7 @@ defmodule ProcaWeb.Schema.EciSchema do
   """
   use Absinthe.Schema
   alias ProcaWeb.Resolvers
+  alias ProcaWeb.Resolvers.ReportError
 
   import_types(ProcaWeb.Schema.DataTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)
@@ -25,6 +26,7 @@ defmodule ProcaWeb.Schema.EciSchema do
       arg(:url, :string)
 
       resolve(&Resolvers.ActionPage.find/3)
+      if ReportError.enabled?, do: middleware ReportError
     end
   end
 
@@ -32,7 +34,7 @@ defmodule ProcaWeb.Schema.EciSchema do
     @desc "Adds an action with contact data"
     field :add_action_contact, type: non_null(:contact_reference) do
       middleware(Resolvers.IncludeExtensions)
-      middleware(Resolvers.Captcha)
+      middleware(Resolvers.Captcha, defer: true)
 
       arg(:action_page_id, non_null(:integer))
 
@@ -52,6 +54,7 @@ defmodule ProcaWeb.Schema.EciSchema do
       arg(:contact_ref, :id)
 
       resolve(&Resolvers.Action.add_action_contact/3)
+      if ReportError.enabled?, do: middleware ReportError
     end
   end
 end

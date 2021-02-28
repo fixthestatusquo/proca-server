@@ -23,7 +23,15 @@ defmodule Proca.Staffer.Role do
       :instance_owner,
       :join_orgs,
       :manage_users,
-      :manage_orgs
+      :manage_orgs,
+      # same as owner
+      :org_owner,
+      :export_contacts,
+      :change_org_users,
+      :change_org_settings,
+      :manage_campaigns,
+      :manage_action_pages
+
     ],
     owner: [
       :org_owner,

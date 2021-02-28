@@ -95,6 +95,7 @@ defmodule Proca.PublicKey do
 
       :error ->
         %Proca.PublicKey{}
+        |> changeset(%{name: name, public: public})
         |> add_error(:public, "Cannot decode public key using Base64")
     end
   end

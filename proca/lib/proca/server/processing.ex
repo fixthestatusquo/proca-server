@@ -213,8 +213,8 @@ defmodule Proca.Server.Processing do
   end
 
   def clear_transient(action) do
-    Repo.delete_all(Field.transient_fields(action))
-    {_n, _res} = Repo.update_all(Supporter.transient_fields(action.supporter), [])
+    Repo.delete_all(Field.select_transient_fields(action))
+    {_n, _res} = Repo.update_all(Supporter.nullify_transient_fields(action.supporter), [])
 
     :ok
   end

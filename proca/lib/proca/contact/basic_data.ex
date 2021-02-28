@@ -18,6 +18,7 @@ defmodule Proca.Contact.BasicData do
     field :phone, :string
     field :country, :string
     field :postcode, :string
+    field :area, :string
   end
 
   @behaviour Input
@@ -40,8 +41,10 @@ defmodule Proca.Contact.BasicData do
         email: d.email,
         phone: d.phone,
         country: a.country,
-        postcode: a.postcode
+        postcode: a.postcode,
+        area: a.country  # XXX we can have some logic here to use some other area type
       })
+      |> validate_length(:area, max: 5)
     else
       ch
     end

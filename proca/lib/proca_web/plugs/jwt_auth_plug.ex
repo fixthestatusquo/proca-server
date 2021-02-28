@@ -28,16 +28,47 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   """
   def jwt_auth(conn, param) do
     with token when not is_nil(token) <- get_token(conn, param),
-         {true, jwt, _sig} <- Proca.Server.Jwks.verify(token) do
+         {true, jwt, _sig} <- Proca.Server.Jwks.verify(token),
+         :ok <- check_email_verified(jwt)
+     do
       conn
       |> get_or_create_user(jwt)
     else
       {false, _, _} ->
         error_halt(conn, 401, "unauthorized", "JWT token invalid")
 
+      :unverified -> 
+        error_halt(conn, 401, "unauthorized", "Email not verified")
+
       # no token
       nil ->
         conn
+    end
+  end
+
+  def check_email_verified(jwt) do 
+    if need_verified_email?() do
+      %JOSE.JWT{
+        fields: %{
+          "session" => %{
+            "identity" => %{
+              "traits" => %{"email" => email},
+              "verifiable_addresses" => emails
+            }
+          }
+        }
+      } = jwt
+
+      current = Enum.find(emails, 
+        fn %{"value" => v} -> v == email end) 
+
+      if current["verified"] do 
+        :ok 
+      else 
+        :unverified
+      end
+    else
+      :ok
     end
   end
 
@@ -49,7 +80,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
             "identity" => %{
               "traits" => %{"email" => email}
             }
-          }
+          } 
         }
       } ->
         case Repo.get_by(User, email: email) do
@@ -61,6 +92,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
         conn
     end
   end
+
 
   defp get_token(conn, nil) do
     case Conn.get_req_header(conn, "authorization") do
@@ -93,5 +125,9 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       user = %User{} -> conn |> Session.create(user, @pow_config) |> elem(0)
       _ -> conn
     end
+  end
+
+  defp need_verified_email? do
+    Application.get_env(:proca, Proca)[:require_verified_email]
   end
 end

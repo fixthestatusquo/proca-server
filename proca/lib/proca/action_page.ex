@@ -145,7 +145,7 @@ defmodule Proca.ActionPage do
   end
 
   def kept_personalization_fields(
-        action_page = %ActionPage{
+        %ActionPage{
           campaign: campaign,
           org: org
         }

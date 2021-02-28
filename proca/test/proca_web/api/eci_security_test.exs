@@ -39,12 +39,12 @@ defmodule ProcaWeb.Api.EciSecurityTest do
 
   test "Sending HTML tags in fields fails", %{conn: conn, pages: [ap]} do
     bad_input = [
-      {%{first_name: "<SCRIPT>alert()"}, "first_name: has invalid format"},
-      {%{first_name: "'-alert(1)-'"}, "first_name: has invalid format"},
-      {%{first_name: "http://217.69.168.225"}, "first_name: has invalid format"},
-      {%{first_name: "%77%77%77%2E%6B%6F%6D%70%75%72%69%74%79%2E%64%65"}, "first_name: has invalid format"},
-      {%{first_name: "http://0000331.0x0000045.168.0xE1"}, "first_name: has invalid format"},
-      {%{last_name: "<SCRIPT>alert()"}, "last_name: has invalid format"},
+      {%{first_name: "<SCRIPT>alert()"}, "firstName: has invalid format"},
+      {%{first_name: "'-alert(1)-'"}, "firstName: has invalid format"},
+      {%{first_name: "http://217.69.168.225"}, "firstName: has invalid format"},
+      {%{first_name: "%77%77%77%2E%6B%6F%6D%70%75%72%69%74%79%2E%64%65"}, "firstName: has invalid format"},
+      {%{first_name: "http://0000331.0x0000045.168.0xE1"}, "firstName: has invalid format"},
+      {%{last_name: "<SCRIPT>alert()"}, "lastName: has invalid format"},
       {%{birth_date: ""},
        "Argument \"contact\" has invalid value {nationality: {country: \"at\", documentType: \"passport\", documentNumber: \"R1234567\"}, firstName: \"Olaf\", lastName: \"Foobar\", birthDate: \"\", address: {country: \"\", postcode: \"\", locality: \"\", street: \"\"}}.\nIn field \"birthDate\": Expected type \"Date\", found \"\"."
        },
@@ -65,7 +65,7 @@ defmodule ProcaWeb.Api.EciSecurityTest do
 
   test "Send a very long field", %{conn: conn, pages: [ap]} do
     bad_input = [
-      {%{first_name: String.duplicate("Foo", 2000)}, "first_name: should be at most 64 character(s)"}
+      {%{first_name: String.duplicate("Foo", 2000)}, "firstName: should be at most 64 character(s)"}
     ]
  
     bad_input

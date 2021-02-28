@@ -32,15 +32,19 @@ defmodule Proca.Factory do
     }
   end
  
-  def action_page_factory do
-    org = insert(:org)
+  def action_page_factory(attrs) do
+    IO.puts("A")
+    org = Map.get(attrs, :org, build(:org))
+
     %Proca.ActionPage{
-      name: sequence("https://some.url.com/sign"),
+      name: sequence("some.url.com/sign"),
       org: org,
       locale: "en",
       campaign: build(:campaign, org: org),
       delivery: false
     }
+    |> merge_attributes(attrs) 
+    |> evaluate_lazy_attributes()
   end
 
   def user_factory do
@@ -96,6 +100,8 @@ defmodule Proca.Factory do
     Proca.Supporter.new_supporter(data, action_page)
     |> Proca.Supporter.add_contacts(contact, action_page, %Proca.Supporter.Privacy{opt_in: true})
     |> Ecto.Changeset.apply_changes
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 
   def contact_factory do
@@ -117,13 +123,18 @@ defmodule Proca.Factory do
     }
   end
 
-  def action_factory(%{action_page: ap, action_type: at}) do
-    s = build(:basic_data_pl_supporter_with_contact, action_page: ap)
+  def action_factory(attrs) do
+    s = build(:basic_data_pl_supporter_with_contact, %{
+      action_page: Map.get(attrs, :action_page, build(:action_page)),
+    })
+
     %Proca.Action{
-      action_type: at,
-      action_page: ap,
-      campaign: ap.campaign,
+      action_page: s.action_page,
+      campaign: s.action_page.campaign,
       supporter: s
     }
+    |> merge_attributes(attrs) 
+    |> evaluate_lazy_attributes()
+
   end
 end

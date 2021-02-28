@@ -17,6 +17,7 @@ defmodule Proca.ReleaseTasks do
   ]
 
   def migrate do
+    IO.puts "Migrate the database if necessary"
     load_and_run(fn _ ->
       # Run migrations
       Enum.each(@myapps, &run_migrations_for/1)
@@ -24,6 +25,7 @@ defmodule Proca.ReleaseTasks do
   end
 
   def seed do
+    IO.puts "Seeding the database (if not done already)"
     load_and_run(fn _ ->
       # Run the seed script if it exists
       seed_script = seed_path(:proca)
@@ -36,7 +38,6 @@ defmodule Proca.ReleaseTasks do
   end
 
   def load_and_run(func) do
-    IO.puts("Loading myapp..")
     # Load the code for myapp, but don't start it
     :ok =
       case Application.load(:proca) do
@@ -45,18 +46,14 @@ defmodule Proca.ReleaseTasks do
         _ -> :error
       end
 
-    IO.puts("Starting dependencies..")
     # Start apps necessary for executing migrations
     Enum.each(@start_apps, &Application.ensure_all_started/1)
 
     # Start the Repo(s) for myapp
-    IO.puts("Starting repos..")
     Enum.each(@repos, & &1.start_link(pool_size: 2))
 
     apply(func, [nil])
 
-    # Signal shutdown
-    IO.puts("Success!")
     :init.stop()
   end
 

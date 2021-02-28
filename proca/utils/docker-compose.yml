@@ -1,0 +1,76 @@
+
+# Version of docker-compose
+version: '3'
+
+# Containers we are going to run
+services:
+  # Our Phoenix container
+  proca:
+    # The build parameters for this container.
+    image: ftsq/proca-backend
+    # build:
+      # Here we define that it should build from the current directory
+     # context: ..
+    environment:
+      DATABASE_URL: postgres://proca:proca@db/proca
+      AMQP_URL: amqp://proca:proca@queue/proca
+      PORT: 4000
+      DOMAIN: ${DOMAIN:-proca-api.lvh.me}
+      ORG_NAME: instance
+      ADMIN_EMAIL: michal@wemove.eu
+      POOL_SIZE: 40
+      SECRET_KEY_BASE: ${SECRET1:-S989x3K2vxbsp7jkd8igjADuNfBACjQdry38b97h6NQNhxHTHppFn4ViUejYKsqE}
+      SIGNING_SALT: ${SECRET2:-qHw7w6NmN3LrwFMzEXErxZKQNywjBXyLkuWt7mXzRJwwLsZbC2pfoyHsYoP4s2eD}
+      LISTEN_IP: 0.0.0.0
+      # JWKS_URL: https://account.fixthestatusquo.org/.well-known/jwks.json
+      FINGERPRINT_SEED: ${SECRET3:-1D6F2CFB9847C}
+
+
+    ports:
+      # Mapping the port to make the Phoenix app accessible outside of the container
+      - "4000:4000"
+    depends_on:
+      - db
+      - queue
+  db:
+    # We use the predefined Postgres image
+    image: postgres:12
+    environment:
+      POSTGRES_DB: proca
+      POSTGRES_USER: proca
+      POSTGRES_PASSWORD: proca
+
+      # Set a path where Postgres should store the data
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  queue:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: proca
+      RABBITMQ_DEFAULT_PASS: proca
+      RABBITMQ_DEFAULT_VHOST: proca
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+
+  web:
+   restart: unless-stopped
+   image: staticfloat/nginx-certbot
+   ports:
+     - 80:80/tcp
+     - 443:443/tcp
+   environment:
+     CERTBOT_EMAIL: infra@wemove.eu
+     DOMAIN: ${DOMAIN:-proca-api.lvh.me}
+     ENVSUBST_VARS: DOMAIN
+   volumes:
+     - ./nginx.conf.d:/etc/nginx/user.conf.d:ro
+     - letsencrypt:/etc/letsencrypt
+# https://hub.docker.com/r/staticfloat/nginx-certbot/
+
+volumes:
+  pgdata:
+  letsencrypt:
+  rabbitmq:
