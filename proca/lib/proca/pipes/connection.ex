@@ -1,6 +1,9 @@
 defmodule Proca.Pipes.Connection do
   import Logger
   use GenServer
+  alias AMQP.Channel
+  alias AMQP.Connection
+  import AMQP.Basic
 
   def start_link(url) do
     GenServer.start_link(__MODULE__, url, name: __MODULE__)
@@ -16,7 +19,7 @@ defmodule Proca.Pipes.Connection do
   """
   @impl true
   def handle_continue(:connect, st = %{url: url}) do
-    case AMQP.Connection.open(url) do
+    case Connection.open(url) do
       {:ok, c} ->
         # Inform us when AMQP connection is down
         Process.monitor(c.pid)
@@ -59,5 +62,30 @@ defmodule Proca.Pipes.Connection do
 
   def connection_url() do
     GenServer.call(__MODULE__, :connection_url)
+  end
+
+  def with_chan(f) do
+    {:ok, chan} = Channel.open(connection())
+
+    try do
+      apply(f, [chan])
+    after
+      Channel.close(chan)
+    end
+  end
+
+  @spec publish(String.t(), String.t(), map()) :: :ok | :error
+  def publish(exchange, routing_key, data) do
+    options = [
+      mandatory: true,
+      persistent: true
+    ]
+
+    with_chan(fn chan ->
+      case JSON.encode(data) do
+        {:ok, payload} -> publish(chan, exchange, routing_key, payload, options)
+        _e -> :error
+      end
+    end)
   end
 end

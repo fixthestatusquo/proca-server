@@ -13,25 +13,11 @@ defmodule Proca.Stage.SQS do
     org.system_sqs_deliver
   end
 
-  def start_link(%Org{id: org_id}) do
+  def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
       name: String.to_atom(Atom.to_string(__MODULE__) <> ".#{org_id}"),
       producer: [
-        module:
-          {
-            BroadwayRabbitMQ.Producer,
-            # backoff from 1 second
-            # up to 10 mins
-            queue: "system.sqs",
-            connection: Proca.Server.Plumbing.connection_url(),
-            qos: [
-              prefetch_count: 10
-            ],
-            backoff_type: :exp,
-            backoff_min: 1_000,
-            backoff_max: 600_000,
-            on_failure: :reject_and_requeue
-          },
+        module: Proca.Pipes.Topology.broadway_producer(org, "sqs"),
         concurrency: 1
       ],
       processors: [

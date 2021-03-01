@@ -64,12 +64,14 @@ defmodule Proca.Pipes.Topology do
     {:ok, %{org_id: org_id}}
   end
 
+  @doc "Exchange name for an org, name is exchange name (stage name org fail, retry)"
   def xn(%Org{id: id}, name), do: "org.#{id}.#{name}"
 
+  @doc "Name of queue to which a worker is attached (like for email, SQS)"
   def wqn(%Org{id: id}, name), do: "wrk.#{id}.#{name}"
 
+  @doc "Name of queue for custom use (usually name is stage name)"
   def cqn(%Org{id: id}, name), do: "cus.#{id}.#{name}"
-
 
   def declare_exchanges(chan, o = %Org{}) do
     :ok = Exchange.declare(chan, xn(o, "confirm.supporter"), :topic, durable: true)
@@ -81,11 +83,14 @@ defmodule Proca.Pipes.Topology do
 
   def declare_retry_circuit(chan, o = %Org{}) do
     sec = 30
+    # fail queue = fail exchange
+    qn = xn(o, "fail")
 
-    Queue.declare(chan, "org.#{o.id}.fail", durable: true, arguments: [
+    Queue.declare(chan, qn, durable: true, arguments: [
           {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
           {"x-message-ttl", :long, round(sec * 1000)}
         ])
+    Queue.bind(chan, qn, qn)
   end
 
   def declare_custom_queues(chan, o = %Org{}) do
@@ -115,7 +120,7 @@ defmodule Proca.Pipes.Topology do
 
       {
         xn(o, "deliver"),
-        wqn(o, "email.supporter"),
+        wqn(o, "sqs"),
         bind: Stage.SQS.start_for?(o),
         route: "#"
       },
@@ -131,13 +136,14 @@ defmodule Proca.Pipes.Topology do
   end
 
   def declare_retrying_queue(chan, o = %Org{}, {exchange_name, queue_name, [bind: bind?, route: rk]}) do
+    IO.inspect({exchange_name, queue_name, o.name, [bind: bind?]}, label: "declare retrying queue")
 
     if bind? do
       Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
-      Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
-      Queue.bind(chan, queue_name, xn(o, "retry"), routing_key: queue_name)
+      :ok = Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
+      :ok = Queue.bind(chan, queue_name, xn(o, "retry"), routing_key: queue_name)
     else
-      Queue.unbind(chan, queue_name, exchange_name, routing_key: rk)
+      :ok = Queue.unbind(chan, queue_name, exchange_name, routing_key: rk)
       # do not unbind the retry queue because some messages might bewaiting for a retry there
       # and we do not want to just throw them away
     end

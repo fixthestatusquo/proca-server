@@ -13,9 +13,11 @@ defmodule Proca.Stage.ThankYou do
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
-  def start_for?(org = %Org{}) do
-    (not is_nil(org.email_backend_id)) and (not is_nil(org.template_backend_id))
+  def start_for?(%Org{email_backend_id: ebid, template_backend_id: tbid}) when is_number(ebid) and is_number(tbid) do
+    true
   end
+
+  def start_for?(_), do: false
 
   def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
@@ -38,7 +40,7 @@ defmodule Proca.Stage.ThankYou do
         opt_in: [
           batch_size: 5,
           batch_timeout: 10_000,
-          conurrency: 1
+          concurrency: 1
         ]
         # noop: [
         #   batch_size: 1,
@@ -58,13 +60,14 @@ defmodule Proca.Stage.ThankYou do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
+    IO.inspect(message, label: "MESSAGE")
     case JSON.decode(data) do
       {:ok,
-       %{
-         "stage" => "deliver",
-         "actionPageId" => action_page_id,
-         "actionId" => action_id
-       } = action
+      %{
+        "stage" => "deliver",
+        "actionPageId" => action_page_id,
+        "actionId" => action_id
+        } = action
       } ->
         if send_thank_you?(action_page_id, action_id) do
           message
@@ -76,19 +79,20 @@ defmodule Proca.Stage.ThankYou do
           |> List.first
         end
 
-        {:ok,
-         %{
-           "stage" => "confirm.supporter",
-           "orgId" => org_id,
-           "actionId" => action_id
-         } = action
-        } ->
+      {:ok,
+       %{
+         "stage" => "confirm.supporter",
+         "orgId" => org_id,
+         "actionId" => action_id
+       } = action
+      } ->
         if send_opt_in?(org_id, action_id) do
           message
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batcher(:opt_in)
         end
 
+      # ignore garbled message
       {:error, reason} ->
         message
         |> Message.configure_ack(on_failure: :ack)
