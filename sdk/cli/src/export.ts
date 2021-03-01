@@ -1,14 +1,15 @@
 import client from './client'
-import {admin, request} from '@proca/api'
+import {admin, request, types} from '@proca/api'
 import {
   ActionWithEncryptedContact, 
-  ActionWithPII, 
+  ActionWithPII,
   readMixedFormat,
   KeyStore
   } from './crypto'
 import {getFormatter, FormatOpts} from './format'
 import {getContact, DecryptOpts} from './decrypt'
 import {CliConfig} from './config'
+import {PartialBy} from './util'
 
 interface ExportActionsOpts {
   batch: number,
@@ -18,8 +19,13 @@ interface ExportActionsOpts {
   campaign?: string,
   fields: string
 }
-
-
+/*
+  What is happening here? We usually get Action data from an export, but we do not export all the associations of Action fully.
+  For instance, we might not fetch campaign for each action, if we just export actions for one campaign - so it saves space.
+  So here I contruct a type that is this cut-down version of Action and Contact, which we use in exports.
+ */
+export type ContactFromExport = Omit<types.Contact, "signKey" | "publicKey"> & Partial<Pick<types.Contact, "signKey" | "publicKey">>;
+export type ActionFromExport = Omit<PartialBy<types.Action, "campaign" | "tracking">, "contact"> & { contact: ContactFromExport };
 
 
 export async function exportActions(argv : ExportActionsOpts & DecryptOpts & FormatOpts, config : CliConfig) {
@@ -56,9 +62,9 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
       vars.start = action.actionId + 1
 
       // inplace
-      const action2 = decryptAction(action as ActionWithEncryptedContact, argv, config)
+      decryptAction(action as ActionWithEncryptedContact, argv, config)
 
-      console.log(fmt.action(action2))
+      console.log(fmt.action(action))
     }
   }
 }
@@ -68,7 +74,6 @@ export function decryptAction(action : ActionWithEncryptedContact, argv : Decryp
   const pii = getContact(action.contact, argv, config)
   const action2 = action as ActionWithPII
   action2.contact.pii = pii
-  return action2
 }
 
 // export async function getCsvSupporters(argv) {

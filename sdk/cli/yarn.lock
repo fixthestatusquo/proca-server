@@ -68,10 +68,10 @@
     core-js "2.6.0"
     graphql "14.0.2"
 
-"@proca/api@^0.2.0-beta.11":
-  version "0.2.0-beta.11"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.0-beta.11.tgz#f915d328ba66dda551a94ff94bac8c7636665415"
-  integrity sha512-uEgZxZxEtfSN02Mr6bw+fJSpjhl0UWEHeILrKKXwZEjmvEKo21LiYyCV7zok1ymmv7aPnA0dt0uMOVRS3/uh4w==
+"@proca/api@0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.1.tgz#ae05110616933ac58ec90672702cb5eaaf6f34f6"
+  integrity sha512-vEQxCtf7Ha4QoLrGZb3Z3Vi8tOfTtNVieNQETqPMG1gb5RCaK/d/AconDjDdEnKa4ChoWdoy4yNiSO3J5NDsZg==
   dependencies:
     "@absinthe/socket-apollo-link" "^0.2.1"
     "@graphql-typed-document-node/core" "^3.1.0"

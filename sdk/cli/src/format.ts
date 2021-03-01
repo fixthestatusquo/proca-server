@@ -2,6 +2,7 @@ import csvStringify from 'csv-stringify/lib/sync'
 import {admin,types} from '@proca/api'
 import {ActionWithPII, KeyStore} from './crypto'
 import {WidgetConfig} from './config'
+import {ActionFromExport} from './export'
 
 
 export interface FormatOpts {
@@ -86,7 +87,7 @@ class Terminal {
       }
     }
 
-    if (!isPublicActionPage(ap) && ap.thankYouTemplateRef) {
+    if (ap.thankYouTemplateRef) {
       t += `\nThankYou email template: ${ap.thankYouTemplateRef}`
     }
 
@@ -144,7 +145,7 @@ class Terminal {
     return ap
   }
 
-  action(a : ActionWithPII) {
+  action(a : ActionFromExport) {
     const c = a.campaign !== undefined ? a.campaign.name : ''
     const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
     return t
@@ -187,7 +188,7 @@ class Json extends Terminal {
     return JSON.stringify(config, null, this.indent)
   }
 
-  action(a : ActionWithPII) {
+  action(a : ActionFromExport) {
     return JSON.stringify(a, null, this.indent)
   }
 
@@ -207,15 +208,18 @@ class Csv extends Terminal {
     this.fields = argv.fields.split(',')
   }
 
-  getField(a : ActionWithPII, f : string) {
+  getField(a : ActionFromExport, f : string) {
     const kv = a.fields.find(({key}) => key == f)
     if (kv !== undefined)
       return kv.value
     return ''
   }
 
-  action(a : ActionWithPII) {
+  action(a : ActionFromExport) {
     let [input, opts] : Parameters<typeof csvStringify> = [[], {}]
+
+    const pii = 'pii' in a.contact ? 
+      (a.contact as ActionWithPII).contact.pii : undefined;
 
     if (this.rowCount == 0) {
       opts.columns = [
@@ -242,12 +246,12 @@ class Csv extends Terminal {
       a.campaign !== undefined ? a.campaign.name : this.campaignName,
       a.actionPage.name,
       a.actionType,
-      a.contact.pii.firstName,
-      a.contact.pii.lastName,
-      a.contact.pii.email,
-      a.contact.pii.phone,
-      a.contact.pii.postcode,
-      a.contact.pii.country,
+      pii?.firstName || '',
+      pii?.lastName || '',
+      pii?.email || '',
+      pii?.phone || '',
+      pii?.postcode || '',
+      pii?.country || '',
       a.createdAt,
       a.actionId,
       a.privacy.optIn

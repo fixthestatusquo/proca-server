@@ -32,12 +32,13 @@ export type FullFormat = Record<string, FullFormatValue>
 
 export interface EncryptedContact {
   payload: string,
-  nonce: string,
-  publicKey: KeyPair,
-  signKey: KeyPair,
+  nonce?: string
+  publicKey?: KeyPair
+  signKey?: KeyPair
   contactRef: string
 }
 
+// action with 
 export interface ActionWithEncryptedContact {
   contact: EncryptedContact
 }
@@ -46,8 +47,8 @@ export type ContactWithPII = EncryptedContact & {
   pii?: any
 }
 
-export type ActionWithPII = Omit<types.Action, "contact"> & {
-  contact: ContactWithPII,
+export interface ActionWithPII {
+  contact: ContactWithPII
 }
 
 export function readMixedFormat(ks : KeyStore, keys : MixedFormat) {

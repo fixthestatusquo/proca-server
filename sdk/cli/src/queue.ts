@@ -69,7 +69,7 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
     const ret = await ch.consume(qn, (msg : amqplib.Message) => {
       let action = JSON.parse(msg.content.toString())
 
-      action = decryptAction(action, opts, config)
+      decryptAction(action, opts, config)
 
       const syncing = service.syncAction(action, opts, config)
         .then((v : any) => {
@@ -95,7 +95,7 @@ export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConf
   lines.on('line', async (l) => {
     let action = JSON.parse(l)
     
-    action = decryptAction(action, opts, config)
+    decryptAction(action, opts, config)
     lines.pause()
     await service.syncAction(action, opts, config)
     lines.resume()
