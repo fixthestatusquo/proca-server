@@ -15,3 +15,5 @@ export function removeBlank<A>(obj :A) : A {
   }
   return obj
 }
+
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
