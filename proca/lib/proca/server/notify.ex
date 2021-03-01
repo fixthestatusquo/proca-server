@@ -58,7 +58,10 @@ defmodule Proca.Server.Notify do
     relevant_changes = Enum.any?([
       :email_backend_id, # transactional emails
       :email_template_id,
-      :system_sqs_deliver
+      :system_sqs_deliver,
+      :custom_supporter_confirm,
+      :custom_action_confirm,
+      :custom_action_deliver
     ], fn prop -> Map.has_key?(changes, prop) end)
 
     if relevant_changes do
