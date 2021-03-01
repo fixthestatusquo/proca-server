@@ -4,7 +4,9 @@ Library and CLI tool for querying Proca GraphQL API.
 
 ## Installation 
 
-`npm install proca_cli`
+it needs a recent version of nodejs installed (that will install npm too). Follow the specific instructions for your operating system
+
+`npm install --global proca_cli`
 
 ## Usage 
 ### Setup
