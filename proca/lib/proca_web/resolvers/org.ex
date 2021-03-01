@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
 
   alias Proca.{ActionPage, Campaign, Action}
-  alias Proca.{Org, Staffer, PublicKey}
+  alias Proca.{Org, Staffer, PublicKey, Service}
   alias ProcaWeb.Helper
   alias Ecto.Multi
   alias Proca.Server.Notify
@@ -140,6 +140,15 @@ defmodule ProcaWeb.Resolvers.Org do
     |> PublicKey.filter(criteria)
   end
 
+  def list_keys(%{id: org_id}, params, _) do
+    {
+      :ok,
+      list_keys(org_id, Map.get(params, :select, []))
+      |> Repo.all()
+      |> Enum.map(&format_key/1)
+    }
+  end
+
   def format_key(pk) do
     pk
     |> Map.put(:public, PublicKey.base_encode(pk.public))
@@ -147,12 +156,17 @@ defmodule ProcaWeb.Resolvers.Org do
     |> Map.put(:expired_at, if pk.expired do pk.updated_at else nil end)
   end
 
-  def list_keys(%{id: org_id}, params, _) do
+  def list_services(org_id) when is_number(org_id) do 
+    from(s in Service, 
+      where: s.org_id == ^org_id, 
+      order_by: s.id)
+  end
+
+  def list_services(%{id: org_id}, _, _) do 
     {
       :ok,
-      list_keys(org_id, Map.get(params, :select, []))
+      list_services(org_id)
       |> Repo.all()
-      |> Enum.map(&format_key/1)
     }
   end
 
