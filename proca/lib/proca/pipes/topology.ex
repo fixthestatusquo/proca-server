@@ -136,7 +136,7 @@ defmodule Proca.Pipes.Topology do
   end
 
   def declare_retrying_queue(chan, o = %Org{}, {exchange_name, queue_name, [bind: bind?, route: rk]}) do
-    IO.inspect({exchange_name, queue_name, o.name, [bind: bind?]}, label: "declare retrying queue")
+    # IO.inspect({exchange_name, queue_name, o.name, [bind: bind?]}, label: "declare retrying queue")
 
     if bind? do
       Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
