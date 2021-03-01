@@ -2,7 +2,7 @@ defmodule Proca.Server.Processing do
   use GenServer
   alias Proca.Repo
   alias Proca.{Action, ActionPage, Supporter, Field}
-  alias Proca.Server.Plumbing
+  alias Proca.Pipes.Connection
   import Proca.Stage.Support, only: [action_data: 1]
   import Ecto.Changeset
 
@@ -168,17 +168,14 @@ defmodule Proca.Server.Processing do
 
   """
   @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
-  def emit(action, :action, :deliver) do
-    routing =
-      if action.action_page.org.custom_action_deliver do
-        "#{action.action_page.org.name}.custom.action"
-      else
-        "#{action.action_page.org.name}.system.action"
-      end
+  def emit(action, :action, :deliver) when not is_nil(action) do
+
+    routing = routing_for(action)
+    exchange = exchange_for(action.action_page.org, :action, :deliver)
 
     data = action_data(action)
 
-    with :ok <- Plumbing.push(exchange_for(:action, :deliver), routing, data),
+    with :ok <- Connection.publish(exchange, routing, data),
          :ok <- clear_transient(action) do
       :ok
     else
@@ -186,17 +183,44 @@ defmodule Proca.Server.Processing do
     end
   end
 
-  def exchange_for(_, :confirm) do
-    "confirm"
+  def emit(action, entity, :confim) when not is_nil(action) do
+
+    routing = routing_for(action)
+    exchange = exchange_for(action.action_page.org, entity, :confirm)
+
+    data = action_data(action)
+
+    with :ok <- Connection.publish(exchange, routing, data) do
+      :ok
+    else
+      _ -> :error
+    end
   end
 
-  def exchange_for(_, :deliver) do
-    "deliver"
+  def routing_for(%{action_type: at, campaign: %{name: cname}}) do 
+    at <> "." <> cname
+  end
+
+  def routing_for(%{action_type: at, action_page: %{campaign: %{name: cname}}}) do 
+    at <> "." <> cname
+  end
+
+
+  def exchange_for(org, :supporter, :confirm) do
+    Proca.Pipes.Topology.xn(org, "confirm.supporter")
+  end
+
+  def exchange_for(org, :action, :confirm) do
+    Proca.Pipes.Topology.xn(org, "confirm.action")
+  end
+
+  def exchange_for(org, :action, :deliver) do
+    Proca.Pipes.Topology.xn(org, "deliver")
   end
 
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
-    action = Repo.preload(action, action_page: :org, supporter: :contacts)
+    action = Repo.preload(action, action_page: [:org, :campaign], supporter: :contacts)
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} -> 
