@@ -277,6 +277,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end 
 
   input_object :select_service do
+    field :name, :service_name
   end
 
   object :service do 
