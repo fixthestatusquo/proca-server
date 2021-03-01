@@ -50,7 +50,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     # TODO:
     # field :public_keys, non_null(list_of(non_null(:string)))
     # field :users, non_null(list_of(:org_user))
-    # field :services, non_null(list_of(:service))
+    field :services, non_null(list_of(:service)) do 
+      middleware Authorized, can?: :change_org_services
+      arg :select, :select_service
+      resolve (&Resolvers.Org.list_services/3)
+    end
 
     # field :personal_data, :personal_data
     #  field :contact_schema, :string
@@ -263,5 +267,23 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :activate_key_result do
     field :status, non_null(:status)
+  end
+
+  enum :service_name do 
+    value :ses 
+    value :sqs 
+    value :mailjet
+    value :wordpress
+  end 
+
+  input_object :select_service do
+  end
+
+  object :service do 
+    field :id, non_null(:integer)
+    field :name, non_null(:service_name)
+    field :host, :string
+    field :user, :string
+    field :path, :string
   end
 end
