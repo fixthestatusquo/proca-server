@@ -7,6 +7,7 @@ defmodule Proca.Factory do
 
   def org_factory do
     org_name = sequence("org")
+    IO.inspect(org_name, label: "factory org")
     %Proca.Org{
       name: org_name,
       title: "Org with name #{org_name}"
@@ -33,14 +34,14 @@ defmodule Proca.Factory do
   end
  
   def action_page_factory(attrs) do
-    IO.puts("A")
-    org = Map.get(attrs, :org, build(:org))
+    campaign = Map.get(attrs, :campaign, insert(:campaign))
+    org = Map.get(attrs, :org, campaign.org)
 
     %Proca.ActionPage{
       name: sequence("some.url.com/sign"),
       org: org,
       locale: "en",
-      campaign: build(:campaign, org: org),
+      campaign: campaign,
       delivery: false
     }
     |> merge_attributes(attrs) 
