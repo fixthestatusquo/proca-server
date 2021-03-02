@@ -141,6 +141,7 @@ defmodule Proca.ActionPage do
       :basic -> Proca.Contact.BasicData
       :popular_initiative -> Proca.Contact.PopularInitiativeData
       :eci -> Proca.Contact.EciData
+      :it_ci -> Proca.Contact.ItCiData
     end
   end
 

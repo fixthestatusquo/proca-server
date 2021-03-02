@@ -17,6 +17,7 @@ defimpl Jason.Encoder,
   for: [
     Proca.Contact.BasicData,
     Proca.Contact.PopularInitiativeData,
+    Proca.Contact.ItCiData,
     Proca.Contact.EciData,
     Proca.Contact.Input.Nationality,
     Proca.Contact.Input.Address
