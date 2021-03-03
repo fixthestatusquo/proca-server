@@ -3,7 +3,7 @@ defmodule Proca.Server.Processing do
   alias Proca.Repo
   alias Proca.{Action, ActionPage, Supporter, Field}
   alias Proca.Pipes.Connection
-  import Proca.Stage.Support, only: [action_data: 1]
+  import Proca.Stage.Support, only: [action_data: 1, action_data: 2]
   import Ecto.Changeset
 
   @moduledoc """
@@ -115,12 +115,24 @@ defmodule Proca.Server.Processing do
   end
 
   def transition(
+        %{
+          processing_status: :new,
+          supporter: %{processing_status: :confirming}
+        },
+        _ap
+      ) do
+    # Supporter is being confirmed, so this actio hsa to wait
+    :ok
+  end
+
+  def transition(
         action = %{
           processing_status: :new,
           supporter: %{processing_status: :accepted}
         },
         _ap
       ) do
+    # do the moderation (via email?) XXX need the thank_you handler
     # go strainght to delivered
     {
       change_status(action, :delivered, :accepted),
@@ -134,15 +146,24 @@ defmodule Proca.Server.Processing do
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
-        _ap
+        %ActionPage{org: %{email_opt_in: opt_in}}
       ) do
     # we should handle confirmation if required, but before it's implemented let's accept supporter
     # and instantly go to delivery
-    {
-      change_status(action, :delivered, :accepted),
-      :action,
-      :deliver
-    }
+
+    if opt_in do 
+      {
+        change_status(action, :new, :confirming),
+        :supporter,
+        :confirm
+      }
+    else
+      {
+        change_status(action, :delivered, :accepted),
+        :action,
+        :deliver
+      }
+    end
   end
 
   def transition(
@@ -164,7 +185,7 @@ defmodule Proca.Server.Processing do
   This method emits an effect on transition.
 
   If custom processing is enabled, we send whole action data, because a
-  different system will consume it straight from rabbitmq.
+   different system will consume it straight from rabbitmq.
 
   """
   @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
@@ -188,7 +209,9 @@ defmodule Proca.Server.Processing do
     routing = routing_for(action)
     exchange = exchange_for(action.action_page.org, entity, :confirm)
 
-    data = action_data(action)
+    stage = if entity == :action, do: :action_confirm, else: :supporter_confirm
+
+    data = action_data(action, stage)
 
     with :ok <- Connection.publish(exchange, routing, data) do
       :ok

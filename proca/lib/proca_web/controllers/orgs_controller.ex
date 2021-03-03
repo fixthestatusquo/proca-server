@@ -124,8 +124,7 @@ defmodule ProcaWeb.OrgsController do
   end
 
   def org_after_save(org) do
-    c = Proca.Server.Plumbing.connection()
-    Proca.Server.Plumbing.setup_org_queues(c, org)
+    Proca.Server.Notify.org_created(org)
   end
 
   def mount(_params, session, socket) do

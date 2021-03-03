@@ -20,6 +20,8 @@ defmodule Proca.Org do
     field :contact_schema, ContactSchema, default: :basic
 
     # avoid storing transient data in clear
+    # XXX rename to a more adequate :strict_privacy
+    # XXX also maybe move to campaign level
     field :high_security, :boolean, default: false
 
     # services and delivery options
