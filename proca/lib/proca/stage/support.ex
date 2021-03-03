@@ -162,33 +162,4 @@ defmodule Proca.Stage.Support do
     |> Map.put("schema", "proca:action:1")
     |> Map.put("stage", Atom.to_string(stage))
   end
-
-  @doc """
-  Broadway producer definition
-  """
-  def queue(queue_name, opts) do
-    retry = Keyword.get(opts, :retry, false)
-    on_failure = if retry do
-      :reject
-    else
-      :reject_and_requeue_once
-    end
-
-    metadata = if retry do
-      [:headers]
-    else
-      []
-    end
-
-    {
-      BroadwayRabbitMQ.Producer,
-      queue: queue_name,
-      connection: Proca.Server.Plumbing.connection_url(),
-      qos: [
-        prefetch_count: 10
-      ],
-      on_failure: on_failure,
-      metadata: metadata
-    }
-  end
 end

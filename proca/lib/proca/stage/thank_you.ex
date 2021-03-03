@@ -60,7 +60,6 @@ defmodule Proca.Stage.ThankYou do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
-    IO.inspect(message, label: "MESSAGE")
     case JSON.decode(data) do
       {:ok,
       %{
@@ -81,7 +80,7 @@ defmodule Proca.Stage.ThankYou do
 
       {:ok,
        %{
-         "stage" => "confirm.supporter",
+         "stage" => "confirm_supporter",
          "orgId" => org_id,
          "actionId" => action_id
        } = action
@@ -91,6 +90,11 @@ defmodule Proca.Stage.ThankYou do
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batcher(:opt_in)
         end
+
+      {:ok, action} -> 
+        error("ThankYou worker: Action not sorted for Email #{inspect(action)}")
+        message 
+        |> Message.failed("Not sorted")
 
       # ignore garbled message
       {:error, reason} ->
@@ -190,6 +194,7 @@ defmodule Proca.Stage.ThankYou do
       is_number(org.email_backend_id) and
       is_number(org.template_backend_id)
     else
+      error("Should not happen: action with no consent in supporter_confirm queue: #{action_id}")
       false
     end
   end
