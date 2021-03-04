@@ -110,7 +110,6 @@ defmodule Proca.Stage.ThankYou do
 
     recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
 
-    info("Sending thank you email to these recipients: #{inspect(recipients)}")
     tmpl = %EmailTemplate{ref: ap.thank_you_template_ref}
 
     try do
