@@ -10,6 +10,7 @@ defmodule Proca.Stage.ThankYou do
   alias Proca.Repo
   import Ecto.Query
   import Logger
+  import Proca.Stage.Support, only: [ignore: 1, ignore: 2]
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
@@ -74,8 +75,7 @@ defmodule Proca.Stage.ThankYou do
           |> Message.put_batch_key(action_page_id)
           |> Message.put_batcher(:thank_you)
         else
-          Message.ack_immediately([message])
-          |> List.first
+          ignore message
         end
 
       {:ok,
@@ -89,18 +89,13 @@ defmodule Proca.Stage.ThankYou do
           message
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batcher(:opt_in)
+        else
+          ignore message
         end
-
-      {:ok, action} -> 
-        error("ThankYou worker: Action not sorted for Email #{inspect(action)}")
-        message 
-        |> Message.failed("Not sorted")
 
       # ignore garbled message
       {:error, reason} ->
-        message
-        |> Message.configure_ack(on_failure: :ack)
-        |> Message.failed(reason)
+        ignore message, reason
     end
   end
 

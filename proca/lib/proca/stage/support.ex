@@ -8,6 +8,7 @@ defmodule Proca.Stage.Support do
   alias Proca.{Action, Supporter, PublicKey, Contact, Field}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
+  alias Broadway.Message
 
   # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
   # the AP.delivery flag
@@ -161,5 +162,11 @@ defmodule Proca.Stage.Support do
     map
     |> Map.put("schema", "proca:action:1")
     |> Map.put("stage", Atom.to_string(stage))
+  end
+
+  def ignore(message = %Broadway.Message{}, reason \\ "ignored") do 
+    message
+    |> Message.configure_ack(on_failure: :ack)
+    |> Message.failed(reason)
   end
 end
