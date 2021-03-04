@@ -204,7 +204,7 @@ defmodule Proca.Server.Processing do
     end
   end
 
-  def emit(action, entity, :confim) when not is_nil(action) do
+  def emit(action, entity, :confirm) when not is_nil(action) do
 
     routing = routing_for(action)
     exchange = exchange_for(action.action_page.org, entity, :confirm)
