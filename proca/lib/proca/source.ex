@@ -13,6 +13,7 @@ defmodule Proca.Source do
     field :content, :string, default: ""
     field :medium, :string
     field :source, :string
+    field :location, :string, default: ""
 
     timestamps()
   end
@@ -20,41 +21,26 @@ defmodule Proca.Source do
   @doc false
   def changeset(source, attrs) do
     source
-    |> cast(attrs, [:source, :medium, :campaign, :content])
-    |> validate_required([:source, :medium, :campaign, :content])
+    |> cast(attrs, [:source, :medium, :campaign, :content, :location])
+    |> validate_required([:source, :medium, :campaign, :content, :location])
   end
 
   def build_from_attrs(attrs) do
-    %Proca.Source{}
-    |> cast(attrs, [:source, :medium, :campaign, :content])
+    %Source{}
+    |> cast(attrs, [:source, :medium, :campaign, :content, :location])
     |> validate_required([:source, :medium, :campaign])
     |> trim(:source, 255)
     |> trim(:medium, 255)
     |> trim(:campaign, 255)
     |> trim(:content, 255)
-  end
-
-  def normalize_tracking_codes(tracking_codes = %{content: c}) when is_bitstring(c) do
-    tracking_codes
-  end
-
-  def normalize_tracking_codes(tracking_codes) do
-    Map.put(tracking_codes, :content, "")
+    |> trim(:location, 255)
   end
 
   def get_or_create_by(tracking_codes) do
-    t = normalize_tracking_codes(tracking_codes)
-    # look it up
-
-    %Source{
-      campaign: t.campaign,
-      source: t.source,
-      medium: t.medium,
-      content: t.content
-    }
+    build_from_attrs(tracking_codes)
     |> Repo.insert([
       on_conflict: [set: [updated_at: DateTime.utc_now]],
-      conflict_target: [:source, :medium, :campaign, :content]
+      conflict_target: [:source, :medium, :campaign, :content, :location]
     ])
   end
 end
