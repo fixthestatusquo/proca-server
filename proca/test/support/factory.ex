@@ -7,7 +7,6 @@ defmodule Proca.Factory do
 
   def org_factory do
     org_name = sequence("org")
-    IO.inspect(org_name, label: "factory org")
     %Proca.Org{
       name: org_name,
       title: "Org with name #{org_name}"
