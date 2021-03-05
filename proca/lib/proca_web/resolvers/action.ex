@@ -22,9 +22,17 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
+  defp add_tracking_location(tr, nil), do: tr 
+  defp add_tracking_location(tr, referer) when is_bitstring(referer) do 
+    [location|_] = String.split(referer, "?")
+    Map.put(tr, :location, location)
+  end
+
   defp add_tracking(action, %{tracking: tr}, referer) do
-    tr = Map.put(tr, :location, referer)
-    case Source.get_or_create_by(tr) do
+    case tr 
+      |> add_tracking_location(referer)
+      |> Source.get_or_create_by() 
+    do
       {:ok, src} -> put_assoc(action, :source, src)
       _ -> action
     end
