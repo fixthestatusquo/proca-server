@@ -16,7 +16,7 @@ config :proca, ProcaWeb.Endpoint,
   router: ProcaWeb.Router
 
 # Print only warnings and errors during test
-config :logger, level: :debug
-# config :logger, level: :warn
+# config :logger, level: :debug
+config :logger, level: :warn
 
 config :proca, Proca, org_name: "hq"
