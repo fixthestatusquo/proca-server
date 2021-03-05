@@ -16,7 +16,7 @@ defmodule ProcaWeb.Api.ActionTest do
       contact_ref: ref
     }
 
-    result = ProcaWeb.Resolvers.Action.add_action(:unused, params, :unused)
+    result = ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{} )
     assert result = {:ok, %{contact_ref: ref}}
   end
 
