@@ -57,8 +57,8 @@ defmodule Proca.Contact.Input do
     |> validate_format(:postcode, ~r/^[A-Z0-9- ]{1,10}/)
   end
 
-  def upcase_country(params) do
-    Map.update(params, :country, nil, fn
+  def upcase(params, field) when is_atom(field) do
+    Map.update(params, field, nil, fn
       cc when is_nil(cc) -> nil
       cc -> String.upcase(cc)
     end)
