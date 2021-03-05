@@ -16,7 +16,8 @@ defmodule Proca.Contact.Input.Address do
   def changeset(ch, params) do
     params =
       params
-      |> Input.upcase_country()
+      |> Input.upcase(:country)
+      |> Input.upcase(:postcode)
 
     ch
     |> cast(params, [:country, :postcode, :region, :locality, :street, :street_number])
