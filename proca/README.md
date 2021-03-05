@@ -59,8 +59,23 @@ $ ./utils/configure-development-environment.sh
 
 If things go wrong, you can refer to the script for the details of installing and configuring each piece.
 
-Once the installation / configuration is complete you can run the development app:
+Once the installation / configuration is complete you can setup an Organization and Admin user:
+
+    # Set up your ENV
+    $ export ADMIN_EMAIL=you@example.com MIX_ENV=dev ORGANIZATION='Fix the Status Quo'
+    $ mix run priv/repo/seeds.exs
+
+The seeds.exs command will print out your login and password:
+
+    #####
+    #####   Created Admin user aaron@wemove.eu  #####
+    #####   Password: VERY_RANDOM_PASSWORD
+    #####
+
+You can then run the development app - which will open a browser window, watch for changes in local files and reload the page.
 
 ```
 mix phx.server
 ```
+
+The development webserver is located at http://localhost:4000/session/new

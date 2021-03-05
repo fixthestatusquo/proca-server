@@ -30,6 +30,13 @@ case System.get_env("AMQP_URL") do
       url: amqp_url
 end
 
+case System.get_env("ORGANIZATION") do
+  nil -> nil
+
+  org_name ->
+    config :proca, Proca,
+      org_name: org_name
+end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
