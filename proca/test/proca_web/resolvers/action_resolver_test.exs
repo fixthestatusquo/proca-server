@@ -80,7 +80,7 @@ defmodule ProcaWeb.ActionResolverTest do
       }
     }
 
-    {:ok, created} = ProcaWeb.Resolvers.Action.add_action(nil, action_params, nil)
+    {:ok, created} = ProcaWeb.Resolvers.Action.add_action(nil, action_params, %Absinthe.Resolution{})
     Proca.Server.Processing.sync()
 
     sup = Repo.get_by(Supporter, fingerprint: Supporter.base_decode(ref) |> elem(1))
