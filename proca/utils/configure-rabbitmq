@@ -21,7 +21,7 @@ docker run --detach -p 5672:5672 -p 15672:15672  \
 
 echo "--- waiting 30 seconds for rabbitmq to start ----------"
 
-sleep 30
+while ! nc -z localhost 5672; do sleep 0.5; done
 
 echo "--- creating proca user -------------------------------"
 rabbitmq()
