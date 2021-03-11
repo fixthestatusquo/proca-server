@@ -25,18 +25,21 @@ grant all privileges on database proca to proca;
 grant all privileges on database proca_test to proca;
 "
 
+echo " ==== Setting up RabbitMQ    =========== "
+
+./utils/configure-rabbitmq
+
+
 echo " ==== Setting up Elixir      =========== "
 
 mix deps.get
 mix ecto.migrate --quiet 
-mix run priv/repo/seeds.exs
+
 # same for test db
 env MIX_ENV=test mix ecto.migrate --quiet
-env MIX_ENV=test  mix run priv/repo/seeds.exs
+env MIX_ENV=test mix run priv/repo/seeds.exs
 
-echo " ==== Setting up RabbitMQ    =========== "
-
-./utils/configure-rabbitmq
+mix run priv/repo/seeds.exs
 
 echo " ==== Running npm install in assets ==== "
 
