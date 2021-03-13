@@ -181,10 +181,10 @@ agent-base@4, agent-base@^4.1.0, agent-base@^4.2.0, agent-base@^4.3.0:
   dependencies:
     es6-promisify "^5.0.0"
 
-amqplib@^0.5.6:
-  version "0.5.6"
-  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-0.5.6.tgz#86a7850f4f39c568eaa0dd0300ef374e17941cf4"
-  integrity sha512-J4TR0WAMPBHN+tgTuhNsSObfM9eTVTZm/FNw0LyaGfbiLsBxqSameDNYpChUFXW4bnTKHDXy0ab+nuLhumnRrQ==
+amqplib@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-0.7.0.tgz#83ae81d5bce3406bc8c75a90b9c4789cbbd1e6c4"
+  integrity sha512-WIH+AV/p2UU7YUaP35m0uDlG871YFLm4pz5MKVVNz11OSWUYfWvbsPMklbSDTAbXscvbUB+QO4Z8HsgkfaqNeQ==
   dependencies:
     bitsyntax "~0.1.0"
     bluebird "^3.5.2"
