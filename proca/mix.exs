@@ -118,7 +118,7 @@ defmodule Proca.MixProject do
   defp docs do
     [
       main: "readme",
-      logo: "assets/static/images/proca-logo.png",
+      logo: "assets/static/images/proca-logo-light.png",
       extras: [
         "README.md",
         "code_of_conduct.md"
