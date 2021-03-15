@@ -57,7 +57,7 @@ if [ "$NAME" = "" ]; then
 fi
 
 
-QUERY="{actionPage(name:\"$NAME\"){config,locale,journey,name,campaign{title,name,externalId,stats{actionCount{actionType,count},supporterCount},org{title}}}}"
+QUERY="{actionPage(name:\"$NAME\"){config,locale,journey,name,campaign{title,name,externalId,stats{actionCount{actionType,count},supporterCount,supporterCountByArea{area,count}},org{title}}}}"
 
 if [ -n "$FILE" ]; then
     touch "$FILE"
