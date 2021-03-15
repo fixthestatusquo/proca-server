@@ -3,4 +3,6 @@
 set -u
 set -e
 
-rsync -avz doc/ kundera:proca_doc/
+
+rsync -avz doc/ steinem:/var/www/proca-docs
+#kundera:proca_doc/
