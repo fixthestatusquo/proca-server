@@ -92,7 +92,7 @@ defmodule Proca.Contact.EciDataRules do
     "MT" => %{"id.card" => %{"pattern_i" => "[a-z0-9]*", "skippable" => true}},
     "NL" => %{
       "postal.code" => %{
-        "pattern_i" => "[1-9][0-9]{3}[a-z]{2}",
+        "pattern_i" => "[1-9][0-9]{3}( ?[a-z]{2})?",
         "skippable" => true
       }
     },
@@ -258,6 +258,7 @@ defmodule Proca.Contact.EciDataRules do
     "FR" => ~r/^[0-9]{5}$/,
     "GR" => ~r/^[0-9]{5}$/,
     "LU" => ~r/^[0-9]{4}$/,
+    "NL" => ~r/^[1-9][0-9]{3}( ?[a-z]{2})?$/i,
     "SK" => ~r/^[089][0-9]{4}$/
   }
 
