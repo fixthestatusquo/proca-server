@@ -16,7 +16,6 @@ defmodule Proca.Contact.ItCiData do
 
     field :country, :string
     field :postcode, :string
-    field :locality, :string
     field :city, :string
     field :street, :string
     field :street_number, :string
@@ -33,21 +32,8 @@ defmodule Proca.Contact.ItCiData do
       get_change(ch, :nationality)
       |> validate_required(:country)
       |> validate_inclusion(:country, ["IT"])
-
-    nationality =
-      if nationality.valid? do
-        case get_change(nationality, :country) do
-          nil ->
-            nationality
-
-          country ->
-            nationality
-            |> EciData.validate_document_type(EciDataRules.required_document_types(country))
-            |> EciData.validate_document_number(country)
-        end
-      else
-        nationality
-      end
+      |> EciData.validate_document_type(EciDataRules.required_document_types("IT"))
+      |> EciData.validate_document_number("IT")
 
     put_embed(ch, :nationality, nationality)
   end
@@ -66,7 +52,6 @@ defmodule Proca.Contact.ItCiData do
           |> validate_required([:country, :locality, :postcode, :street])
           |> update_change(:postcode, &String.replace(&1, ~r/[ -]/, ""))
           |> validate_format(:postcode, EciDataRules.postcode_format(residence_country))
-          |> IO.inspect(label: "validating address")
 
         put_embed(ch, :address, address)
     end
@@ -101,14 +86,12 @@ defmodule Proca.Contact.ItCiData do
         birth_date: d.birth_date,
         nationality: d.nationality,
         country: a.country,
-        locality: a.locality,
         postcode: a.postcode,
         city: a.locality,
         street: a.street,
         street_number: a.street_number,
         area: Proca.Contact.ItRegions.postcode_to_region(a.postcode)
       })
-      |> validate_length(:area, max: 5)
     else
       ch
     end
