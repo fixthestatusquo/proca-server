@@ -34,7 +34,7 @@ config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
-  url: "amqp://proca:proca@rabbitmq.docker/proca"
+  url: "amqp://proca:proca@localhost/proca"
 
 
 config :proca, Proca.Server.Jwks,
