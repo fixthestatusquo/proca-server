@@ -36,7 +36,7 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 You'll need the following packages:
 
-erlang erlang-dev erlang-parsetools erlang-xmerl elixir
+    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
 
 ## RabbitMQ (version?)
 
