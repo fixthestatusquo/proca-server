@@ -248,7 +248,8 @@ defmodule Proca.Contact.EciDataRules do
     "personal.number",
     "personal.id",
     "national.id.number",
-    "citizens.card"
+    "citizens.card",
+    "driving.license" # not ever required by ECI but used by IT-CI
   ]
 
   @postcode_formats %{
@@ -299,7 +300,8 @@ defmodule Proca.Contact.EciDataRules do
     "IE" => %{},
     "IT" => %{
       "id.card" => ~r/^([a-z]{2}[0-9]{6,8})|([0-9]{7}[a-z]{2})|([a-z]{2}[0-9]{5}[a-z]{2})$/i,
-      "passport" => ~r/^([a-z]{2}[0-9]{7})|([a-z][0-9]{6})|([0-9]{6}[a-z])$/i
+      "passport" => ~r/^([a-z]{2}[0-9]{7})|([a-z][0-9]{6})|([0-9]{6}[a-z])$/i,
+      "driving.license" => ~r/^[a-z]{2}\d{7}[a-z]$/i
     },
     "LT" => %{"personal.number" => ~r/^[0-9]{11}$/},
     "LU" => %{},

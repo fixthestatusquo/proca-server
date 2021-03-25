@@ -25,6 +25,10 @@ defmodule Proca.Contact.ItCiData do
     embeds_one :nationality, Input.Nationality
   end
 
+  def required_document_types() do 
+    ["driving.license" | EciDataRules.required_document_types("IT")]
+  end
+
   def validate_nationality(ch = %{valid?: false}), do: ch
 
   def validate_nationality(ch = %{valid?: true}) do
@@ -32,7 +36,7 @@ defmodule Proca.Contact.ItCiData do
       get_change(ch, :nationality)
       |> validate_required(:country)
       |> validate_inclusion(:country, ["IT"])
-      |> EciData.validate_document_type(EciDataRules.required_document_types("IT"))
+      |> EciData.validate_document_type(required_document_types())
       |> EciData.validate_document_number("IT")
 
     put_embed(ch, :nationality, nationality)
