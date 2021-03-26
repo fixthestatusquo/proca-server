@@ -1,18 +1,34 @@
 query ListCampaigns($org: String!) {
     org(name: $org) {
       campaigns {
-        id, externalId, name, title,
+        id, externalId, name, title, config,
         org { name, title }
       }
     }
   }
 
+query ListActionPages($org: String!) {
+    org(name: $org) {
+      actionPages {
+        id, name, locale, config,
+        journey, extraSupporters, thankYouTemplateRef,
+        campaign { name, externalId }
+      }
+    }
+  }
+
+
 query GetCampaign($org: String!, $id: Int!) {
     org(name: $org) {
       campaign(id: $id) {
-        id, externalId, name, title,
+        id, externalId, name, title, config,
         stats {
-          supporterCount, actionCount { actionType, count }
+          supporterCount, 
+          supporterCountByOrg { 
+            org { name, title },
+            count
+          },
+          actionCount { actionType, count }
         }
       }
     }
@@ -31,18 +47,6 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
         campaign { id, name, title, externalId }
       }
     }
-}
-
-query ListActionPages($org: String!) {
-  org(name: $org) {
-    name,
-    title,
-    actionPages {
-      id, name, locale, 
-      extraSupporters, thankYouTemplateRef, journey, config,
-      campaign { name, id, externalId }
-    }
-  }
 }
 
 query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
@@ -193,6 +197,7 @@ query CurrentUserOrgs {
   }
 }
 
+# Deprecate
 query DashOrgOverview($org: String!) {
  	org(name: $org) {
     id, name, title, config, 
@@ -207,4 +212,19 @@ query DashOrgOverview($org: String!) {
   }
 }
 
+# Get main org data 
+# (could include service status?)
+# 
+query GetOrg($org: String!) {
+  org(name: $org) {
+    id, name, title, 
+    config,
+    personalData {
+      contactSchema, emailOptIn, emailOptInTemplate
+    },
+    keys(select: {active: true}) { 
+      id, active, expired, expiredAt, name, public
+    }
+  }
+}
 
