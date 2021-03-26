@@ -52,7 +52,7 @@ export type GetPublicResult = { actionPage: (
         & { actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
       ), actions: (
         Pick<Types.PublicActionsResult, 'fieldKeys'>
-        & { list?: Types.Maybe<Array<Types.Maybe<(
+        & { list: Types.Maybe<Array<Types.Maybe<(
           Pick<Types.ActionCustomFields, 'actionType' | 'insertedAt'>
           & { fields: Array<Pick<Types.CustomField, 'key' | 'value'>> }
         )>>> }
