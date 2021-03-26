@@ -213,7 +213,7 @@ export type Action = {
 export type RootMutationType = {
   /**
    * Upserts a campaign.
-   * 
+   *
    * Creates or appends campaign and it's action pages. In case of append, it
    * will change the campaign with the matching name, and action pages with
    * matching names. It will create new action pages if you pass new names. No
@@ -487,7 +487,7 @@ export type AddressInput = {
 export type ActionPageInput = {
   /**
    * Unique NAME identifying ActionPage.
-   * 
+   *
    * Does not have to exist, must be unique. Can be a 'technical' identifier
    * scoped to particular organization, so it does not have to change when the
    * slugs/names change (eg. some.org/1234). However, frontent Widget can
