@@ -113,7 +113,19 @@ input SelectKey {
   public: String
 }
 
+type Service {
+  id: Int!
+  name: ServiceName!
+  host: String
+  user: String
+  path: String
+}
+
 scalar Date
+
+input SelectService {
+  name: ServiceName
+}
 
 "Count of actions for particular action type"
 type AreaCount {
@@ -161,7 +173,7 @@ type CampaignStats {
   supporterCountByArea: [AreaCount!]!
 
   "Unique action takers by org"
-  suppoterCountByOrg: [OrgCount!]!
+  supporterCountByOrg: [OrgCount!]!
 
   supporterCountByOthers(orgName: String!): Int!
 
@@ -610,6 +622,8 @@ type Org {
 
   key(select: SelectKey!): Key!
 
+  services(select: SelectService): [Service]!
+
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
 
@@ -621,6 +635,13 @@ type Org {
 
   "Get campaign this org is leader or partner of by id"
   campaign(id: Int): Campaign!
+}
+
+enum ServiceName {
+  WORDPRESS
+  MAILJET
+  SQS
+  SES
 }
 
 type ContactReference {
@@ -641,6 +662,7 @@ type Contact {
 
 type JoinOrgResult {
   status: Status!
+  org: Org!
 }
 
 "Custom field with a key and value. Both are strings."

@@ -5,7 +5,7 @@ generates:
     plugins:
       - introspection
 
-  src/types.ts:
+  src/apiTypes.ts:
     plugins:
       - typescript
     config:
@@ -25,7 +25,7 @@ generates:
       - typescript-operations
     preset: import-types
     presetConfig:
-      typesPath: ../types
+      typesPath: ../apiTypes
     config:
       omitOperationSuffix: true
       avoidOptionals:
@@ -41,7 +41,7 @@ generates:
       - typescript-operations
     preset: import-types
     presetConfig:
-      typesPath: ../types
+      typesPath: ../apiTypes
     config:
       omitOperationSuffix: true
       avoidOptionals:
