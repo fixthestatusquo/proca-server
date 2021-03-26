@@ -267,7 +267,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :supporter_count_by_area, non_null(list_of(non_null(:area_count)))
 
     @desc "Unique action takers by org"
-    field :suppoter_count_by_org, non_null(list_of(non_null(:org_count))) do 
+    field :supporter_count_by_org, non_null(list_of(non_null(:org_count))) do 
       resolve(&Resolvers.Campaign.org_stats/3)
     end
 
