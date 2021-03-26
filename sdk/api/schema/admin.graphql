@@ -224,6 +224,9 @@ query GetOrg($org: String!) {
     },
     keys(select: {active: true}) { 
       id, active, expired, expiredAt, name, public
+    },
+    services {
+      id, name, host, user, path
     }
   }
 }
