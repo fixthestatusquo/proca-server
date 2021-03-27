@@ -70,4 +70,10 @@ defmodule ItCiDataTest do
     c = ItCiData.from_input(d)
     assert c.valid?
   end
+
+  test "validates with email added", %{italian_passport: d} do 
+    Map.put(d, :email, "test@envelopi.it")
+    c = ItCiData.from_input(d)
+    assert c.valid?
+  end
 end

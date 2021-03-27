@@ -10,6 +10,8 @@ defmodule Proca.Contact.ItCiData do
   # Proca.Contact.EciDataRules.schema()
 
   embedded_schema do
+    field :email, :string
+
     field :first_name, :string
     field :last_name, :string
     field :birth_date, :date
