@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+set -u
+
+#
+# XXX: this is for communicating between docker containers, the container below listens on localhost:15672
+#
+# docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 'proca' already exists"
+#
+
+VOL=/tmp/proca-queue
+URL=http://localhost:15672/api
+
+mkdir $VOL || true
+
+echo "--- starting rabbitmq as docker container ------------"
+docker run --detach -p 5672:5672 -p 15672:15672  \
+    -v $VOL:/var/lib/rabbitmq --name rabbitmq    \
+    rabbitmq:3-management
+
+echo "--- waiting 30 seconds for rabbitmq to start ----------"
+
+sleep 30
+
+echo "--- creating proca user -------------------------------"
+rabbitmq()
+{
+    curl -u guest:guest -H "content-type:application/json" "$@"
+}
+
+rabbitmq -XPUT $URL/vhosts/proca
+rabbitmq -d '{"password":"proca", "tags":""}' -XPUT $URL/users/proca 
+rabbitmq -d '{"configure":".*","write":".*","read":".*"}' -XPUT $URL/permissions/proca/proca
+
+

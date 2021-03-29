@@ -20,6 +20,17 @@ case System.get_env("DATABASE_URL") do
       ssl: true
 end
 
+case System.get_env("AMQP_URL") do
+  nil -> 
+    config :proca, Proca.Pipes,
+      url: "amqp://proca:proca@localhost/proca"
+
+  amqp_url ->
+    config :proca, Proca.Pipes,
+      url: amqp_url
+end
+
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
