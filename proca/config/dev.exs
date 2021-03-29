@@ -30,7 +30,7 @@ case System.get_env("AMQP_URL") do
       url: amqp_url
 end
 
-case System.get_env("ORGANIZATION") do
+case System.get_env("ORGANISATION") do
   nil -> nil
 
   org_name ->
