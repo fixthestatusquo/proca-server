@@ -7,8 +7,8 @@ for data processing. It is the backend / datastore for [Proca Widget](https://gi
 It is made with love, elixir and hope we can change the world for the better.
 
 Please note that this project is released with a [Contributor Code of Conduct](code_of_conduct.md). By participating in this project you agree to abide by its terms.
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md)
 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md)
 
 ## Features
 
@@ -25,6 +25,22 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 - Forward actions to AWS SQS, CRMs (needs a decrypting gateway proxy at Org premises)
 - Export action data in CSV
 
+
+# Prerequisites
+
+## PostgreSQL >= 10
+
+## Elixir >= 1.10
+
+[Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
+
+You'll need the following packages:
+
+    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
+
+## RabbitMQ
+
+## NodeJS (14.*.*)
 
 # Prerequisites
 
@@ -57,7 +73,7 @@ You'll need sudo to run the parts of the script that configure PostgreSQL.
 The seeds.exs command will print out your login and password:
 
     #####
-    #####   Created Admin user aaron@wemove.eu  #####
+    #####   Created Admin user email@example.com  #####
     #####   Password: VERY_RANDOM_PASSWORD
     #####
 
