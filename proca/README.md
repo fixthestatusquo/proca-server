@@ -48,7 +48,7 @@ The script utils/configure-development-environment.sh will setup PostgreSQL, the
 
 The script needs a few ENV varaibles set:
 
-`$ export ADMIN_EMAIL=you@example.com MIX_ENV=dev ORGANIZATION='fix-the-status-quo'`
+`$ export ADMIN_EMAIL=you@example.com MIX_ENV=dev ORGANISATION='fix-the-status-quo'`
 
 You'll need sudo to run the parts of the script that configure PostgreSQL.
 
