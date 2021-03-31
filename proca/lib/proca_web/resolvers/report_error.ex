@@ -17,7 +17,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
             name: get_in(resolution.arguments, [:name]),
             id: get_in(resolution.arguments, [:id])
           }
-          event = "User error " <> (info.path |> Enum.join(".")) <> " " <> (Enum.map(info.errors, &Map.get(&1, :message)) |> Enum.join(", "))
+          event = "User error " <> (info.path |> Enum.join(".")) <> " " <> (Enum.map(info.errors, &error_message/1) |> Enum.join(", "))
 
           Sentry.capture_message(event, extra: info)
         rescue 
@@ -30,6 +30,18 @@ defmodule ProcaWeb.Resolvers.ReportError do
 
   def call(reso, _) do 
     reso 
+  end
+
+  defp error_message(e) when is_map(e) do 
+    Map.get(e, :message)
+  end
+
+  defp error_message(e) when is_bitstring(e) do 
+    e
+  end
+  
+  defp error_message(e) do 
+    inspect(e)
   end
 
   def enabled? do
@@ -57,7 +69,13 @@ defmodule ProcaWeb.Resolvers.ReportError do
   end
 
   def censor_bars(a) when is_map(a) do 
-    for {k, v} <- a, into: %{}, do: {k, censor_bars(v)}
+    for {k, v} <- a, into: %{} do 
+      if Enum.member?(["country", "documentType"], k) do 
+        {k, v}
+      else
+        {k, censor_bars(v)}
+      end
+    end
   end
 
   def censor_bars(a) when is_list(a) do
