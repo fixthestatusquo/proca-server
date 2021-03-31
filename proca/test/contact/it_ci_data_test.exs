@@ -5,7 +5,9 @@ defmodule ItCiDataTest do
   alias Proca.Contact.ItCiData
   alias Proca.Contact.Data
   alias Proca.Contact.{Input}
+  import Proca.Repo
   import Ecto.Changeset
+  alias Proca.Factory
   import ProcaWeb.Helper, only: [format_errors: 1]
 
   setup do
@@ -40,6 +42,11 @@ defmodule ItCiDataTest do
       document_type: "driving.license",
       document_number: "AB1234567X"
     }
+
+    page = Factory.insert(:action_page)
+    org = change(page.org, contact_schema: :it_ci) |> update!
+    page = %{page|org: org, campaign: %{page.campaign| org: org}}
+
     # return
     %{
       italian_passport: %{
@@ -52,13 +59,28 @@ defmodule ItCiDataTest do
 
       driving_license: %{
         address: address, nationality: drv_lic
-      } |> Map.merge(names)
+      } |> Map.merge(names),
+
+      page: page
     }
   end
 
-  test "validates with passport", %{italian_passport: d} do 
+  test "validates with passport", %{italian_passport: d, page: page} do 
     c = ItCiData.from_input(d)
     assert c.valid?
+
+    {:ok, %{contact_ref: ref}} = ProcaWeb.Resolvers.Action.add_action_contact(nil, %{
+      action_page_id: page.id,
+      action: %{
+        action_type: "register"
+      },
+      contact: d,
+      privacy: %{
+        opt_in: true, lead_opt_in: false
+      }
+    }, %{context: %{}, extensions: %{}})
+
+    get_by(Proca.Supporter, fingerprint: ref) |> Proca.Repo.preload([:contacts]) |> IO.inspect(label: "stored")
   end
 
   test "validates with card", %{italian_card: d} do 
@@ -71,7 +93,7 @@ defmodule ItCiDataTest do
     assert c.valid?
   end
 
-  test "validates with email added", %{italian_passport: d} do 
+  test "validates with email added", %{italian_passport: d, page: page} do 
     Map.put(d, :email, "test@envelopi.it")
     c = ItCiData.from_input(d)
     assert c.valid?
