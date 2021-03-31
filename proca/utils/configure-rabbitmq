@@ -9,7 +9,7 @@ set -u
 # docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 'proca' already exists"
 #
 
-VOL=/tmp/proca-queue
+VOL=/tmp/proca-queuestart
 URL=http://localhost:15672/api
 
 mkdir $VOL || true
@@ -19,15 +19,16 @@ docker run --detach -p 5672:5672 -p 15672:15672  \
     -v $VOL:/var/lib/rabbitmq --name rabbitmq    \
     rabbitmq:3-management
 
-echo "--- waiting 30 seconds for rabbitmq to start ----------"
 
-while ! nc -z localhost 5672; do sleep 0.5; done
-
-echo "--- creating proca user -------------------------------"
 rabbitmq()
 {
     curl -u guest:guest -H "content-type:application/json" "$@"
 }
+
+echo "--- waiting for rabbitmq management to wake up ---"
+while ! rabbitmq $URL/vhosts 2>/dev/null >/dev/null; do sleep 0.5; done
+
+echo "--- creating proca user -------------------------------"
 
 rabbitmq -XPUT $URL/vhosts/proca
 rabbitmq -d '{"password":"proca", "tags":""}' -XPUT $URL/users/proca 
