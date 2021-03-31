@@ -207,6 +207,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     value :basic
     value :popular_initiative
     value :eci
+    value :it_ci
   end
 
   object :personal_data do
