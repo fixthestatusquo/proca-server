@@ -34,7 +34,6 @@ defmodule Proca.Contact.ItCiData do
   def validate_nationality(ch = %{valid?: false}), do: ch
 
   def validate_nationality(ch = %{valid?: true}) do
-    IO.inspect(get_change(get_change(ch, :nationality), :document_number), label: "BEFORE")
     nationality =
       get_change(ch, :nationality)
       |> validate_required(:country)
@@ -42,8 +41,6 @@ defmodule Proca.Contact.ItCiData do
       |> update_change(:document_number, &String.replace(&1, ~r/[ -]/, ""))
       |> EciData.validate_document_type(required_document_types())
       |> EciData.validate_document_number("IT")
-
-    IO.inspect(get_change(nationality, :document_number), label: "AFTER")
 
     put_embed(ch, :nationality, nationality)
   end
