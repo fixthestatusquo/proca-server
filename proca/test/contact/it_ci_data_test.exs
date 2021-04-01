@@ -39,7 +39,7 @@ defmodule ItCiDataTest do
 
     drv_lic = %{
       country: "IT",
-      document_type: "driving.license",
+      document_type: "driving.licence",
       document_number: "AB1234567X"
     }
 
@@ -57,7 +57,7 @@ defmodule ItCiDataTest do
         address: address, nationality: id_card
       } |> Map.merge(names),
 
-      driving_license: %{
+      driving_licence: %{
         address: address, nationality: drv_lic
       } |> Map.merge(names),
 

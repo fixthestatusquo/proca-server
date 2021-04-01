@@ -28,18 +28,22 @@ defmodule Proca.Contact.ItCiData do
   end
 
   def required_document_types() do 
-    ["driving.license" | EciDataRules.required_document_types("IT")]
+    ["driving.licence" | EciDataRules.required_document_types("IT")]
   end
 
   def validate_nationality(ch = %{valid?: false}), do: ch
 
   def validate_nationality(ch = %{valid?: true}) do
+    IO.inspect(get_change(get_change(ch, :nationality), :document_number), label: "BEFORE")
     nationality =
       get_change(ch, :nationality)
       |> validate_required(:country)
       |> validate_inclusion(:country, ["IT"])
+      |> update_change(:document_number, &String.replace(&1, ~r/[ -]/, ""))
       |> EciData.validate_document_type(required_document_types())
       |> EciData.validate_document_number("IT")
+
+    IO.inspect(get_change(nationality, :document_number), label: "AFTER")
 
     put_embed(ch, :nationality, nationality)
   end
