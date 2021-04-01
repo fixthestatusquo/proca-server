@@ -64,7 +64,14 @@ defmodule EciDataTest do
           street: "Some 123, 20"
         }
        }
+       |> Map.merge(names),
+       be: 
+       %{
+        birth_date: ~D[1990-04-28],
+        nationality: %{country: "BE", document_type: "national.id.number", document_number: "00.01.01-123.45"}
+       }
        |> Map.merge(names)
+
     }
   end
 
@@ -222,6 +229,11 @@ defmodule EciDataTest do
 
   test "Dutch postcode", %{nl: nl} do 
     c = EciData.from_input(nl)
+    assert c.valid?
+  end
+
+  test "Belgian ID", %{be: be} do 
+    c = EciData.from_input(be)
     assert c.valid?
   end
 end

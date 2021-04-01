@@ -21,7 +21,7 @@ defmodule Proca.Contact.Input.Nationality do
     |> Input.validate_country_format()
     |> validate_format(:document_type, ~r/^[a-z_.]+$/)
     |> validate_length(:document_type, max: 20)
-    |> update_change(:document_number, &String.replace(&1, ~r/ .-/, ""))
+    |> update_change(:document_number, &String.replace(&1, ~r/[ .-]/, ""))
     |> validate_format(:document_number, ~r/^[A-Z0-9._-]+$/i)
     |> validate_length(:document_number, max: 32)
   end

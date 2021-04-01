@@ -65,6 +65,12 @@ defmodule ItCiDataTest do
     }
   end
 
+  test "document type validation works with spaces", %{italian_card: d} do 
+    n = d.nationality
+    ch = Proca.Contact.Input.Nationality.changeset(%Proca.Contact.Input.Nationality{}, %{ n | document_number: "CA 00000AA"})
+    assert ch.valid?
+  end
+
   test "validates with passport", %{italian_passport: d, page: page} do 
     c = ItCiData.from_input(d)
     assert c.valid?
@@ -79,16 +85,18 @@ defmodule ItCiDataTest do
         opt_in: true, lead_opt_in: false
       }
     }, %{context: %{}, extensions: %{}})
-
-    get_by(Proca.Supporter, fingerprint: ref) |> Proca.Repo.preload([:contacts]) |> IO.inspect(label: "stored")
   end
 
   test "validates with card", %{italian_card: d} do 
     c = ItCiData.from_input(d)
     assert c.valid?
+
+    d2 = %{d | nationality: %{ d.nationality | document_number: "CA 00000AA"}}
+    c2  = ItCiData.from_input(d2)
+    assert c2.valid?
   end
 
-  test "validates with driving license", %{driving_license: d} do 
+  test "validates with driving license", %{driving_licence: d} do 
     c = ItCiData.from_input(d)
     assert c.valid?
   end
