@@ -41,6 +41,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :external_id, :integer
     @desc "Full, official name of the campaign"
     field :title, non_null(:string)
+    @desc "Schema for contact personal information"
+    field :contact_schema, non_null(:contact_schema)
     @desc "Custom config map"
     field :config, non_null(:json)
 
@@ -203,6 +205,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Campaign human readable title"
     field(:title, :string)
+
+    @desc "Schema for contact personal information"
+    field(:contact_schema, :contact_schema)
 
     @desc "Custom config as stringified JSON map"
     field(:config, :json)

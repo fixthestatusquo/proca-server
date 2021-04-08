@@ -56,6 +56,14 @@ defmodule ProcaWeb.Schema.DataTypes do
     end)
   end
 
+  enum :contact_schema do
+    value :basic
+    value :popular_initiative
+    value :eci
+    value :it_ci
+  end
+
+
   enum :status do
     value :success, description: "Operation completed succesfully"
     value :confirming, description: "Operation awaiting confirmation"

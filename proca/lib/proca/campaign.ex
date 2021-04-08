@@ -14,6 +14,7 @@ defmodule Proca.Campaign do
     field :title, :string
     field :force_delivery, :boolean
     field :public_actions, {:array, :string}, default: []
+    field :contact_schema, ContactSchema, default: :basic
     field :config, :map
 
     belongs_to :org, Proca.Org
@@ -25,19 +26,19 @@ defmodule Proca.Campaign do
   @doc false
   def changeset(campaign, attrs) do
     campaign
-    |> cast(attrs, [:name, :title, :external_id, :config])
-    |> validate_required([:name, :title])
+    |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
+    |> validate_required([:name, :title, :contact_schema])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
-    (Repo.get_by(Campaign, external_id: id, org_id: org.id) || %Campaign{})
+    (Repo.get_by(Campaign, external_id: id, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
     |> put_change(:org_id, org.id)
   end
 
   def upsert(org, attrs = %{name: cname}) do
-    (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{})
+    (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
     |> put_change(:org_id, org.id)
   end

@@ -44,8 +44,8 @@ defmodule ItCiDataTest do
     }
 
     page = Factory.insert(:action_page)
-    org = change(page.org, contact_schema: :it_ci) |> update!
-    page = %{page|org: org, campaign: %{page.campaign| org: org}}
+    campaign = change(page.campaign, contact_schema: :it_ci) |> update!
+    page = %{page| campaign: campaign}
 
     # return
     %{
