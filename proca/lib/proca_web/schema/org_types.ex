@@ -37,12 +37,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_personal_data/3)
     end
     field :keys, non_null(list_of(non_null(:key))) do
-      middleware Authorized, can?: :export_contacts
       arg :select, :select_key
       resolve(&Resolvers.Org.list_keys/3)
     end
     field :key, non_null(:key) do
-      middleware Authorized, can?: :export_contacts
       arg :select, non_null(:select_key)
       resolve(&Resolvers.Org.get_key/3)
     end
