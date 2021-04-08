@@ -136,7 +136,7 @@ defmodule Proca.ActionPage do
     Repo.one from a in ActionPage, where: a.name == ^name, preload: [:campaign, :org]
   end
 
-  def contact_schema(%ActionPage{campaign: %Campaign{org: %Org{contact_schema: cs}}}) do
+  def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do
       :basic -> Proca.Contact.BasicData
       :popular_initiative -> Proca.Contact.PopularInitiativeData

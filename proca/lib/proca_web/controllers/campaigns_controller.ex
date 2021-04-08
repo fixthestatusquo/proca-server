@@ -7,10 +7,12 @@ defmodule ProcaWeb.CampaignsController do
   alias Proca.Server.Notify
 
   def handle_event("campaign_new", _value, socket) do
+    %{contact_schema: contact_schema} = Repo.get(Org, socket.assigns[:staffer].org_id)
+
     {
       :noreply,
       socket
-      |> assign(:campaign, Campaign.changeset(%Campaign{}, %{}))
+      |> assign(:campaign, Campaign.changeset(%Campaign{contact_schema: contact_schema}, %{}))
     }
   end
 

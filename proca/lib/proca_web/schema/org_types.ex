@@ -201,13 +201,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :title, non_null(:string)
   end
 
-  enum :contact_schema do
-    value :basic
-    value :popular_initiative
-    value :eci
-    value :it_ci
-  end
-
   object :personal_data do
     @desc "Schema for contact personal information"
     field :contact_schema, non_null(:contact_schema)
