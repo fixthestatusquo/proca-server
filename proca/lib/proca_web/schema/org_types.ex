@@ -49,7 +49,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
     # field :public_keys, non_null(list_of(non_null(:string)))
     # field :users, non_null(list_of(:org_user))
     field :services, non_null(list_of(:service)) do 
-      middleware Authorized, can?: :change_org_services
       arg :select, :select_service
       resolve (&Resolvers.Org.list_services/3)
     end
