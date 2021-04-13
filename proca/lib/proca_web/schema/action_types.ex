@@ -72,7 +72,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       arg(:tracking, :tracking_input)
 
       # XXX is this handled?
-      @desc "Links to previous contact reference"
+      @desc "Links previous actions with just reference to this supporter data"
       arg(:contact_ref, :id)
 
       resolve(&Resolvers.Action.add_action_contact/3)
