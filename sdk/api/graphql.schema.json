@@ -609,6 +609,12 @@
         "interfaces": null,
         "enumValues": [
           {
+            "name": "IT_CI",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "ECI",
             "description": null,
             "isDeprecated": false,
@@ -3271,6 +3277,18 @@
             "deprecationReason": null
           },
           {
+            "name": "contactSchema",
+            "description": "Schema for contact personal information",
+            "type": {
+              "kind": "ENUM",
+              "name": "ContactSchema",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "config",
             "description": "Custom config as stringified JSON map",
             "type": {
@@ -3622,6 +3640,22 @@
               "ofType": {
                 "kind": "SCALAR",
                 "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "contactSchema",
+            "description": "Schema for contact personal information",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "ContactSchema",
                 "ofType": null
               }
             },
