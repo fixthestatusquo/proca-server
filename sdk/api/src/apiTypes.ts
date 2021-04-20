@@ -87,6 +87,7 @@ export type ActionTypeCount = {
 };
 
 export enum ContactSchema {
+  ItCi = 'IT_CI',
   Eci = 'ECI',
   PopularInitiative = 'POPULAR_INITIATIVE',
   Basic = 'BASIC'
@@ -461,6 +462,8 @@ export type CampaignInput = {
   externalId?: Maybe<Scalars['Int']>;
   /** Campaign human readable title */
   title?: Maybe<Scalars['String']>;
+  /** Schema for contact personal information */
+  contactSchema?: Maybe<ContactSchema>;
   /** Custom config as stringified JSON map */
   config?: Maybe<Scalars['Json']>;
   /** Action pages of this campaign */
@@ -528,6 +531,8 @@ export type Campaign = {
   externalId: Maybe<Scalars['Int']>;
   /** Full, official name of the campaign */
   title: Scalars['String'];
+  /** Schema for contact personal information */
+  contactSchema: ContactSchema;
   /** Custom config map */
   config: Scalars['Json'];
   /** Campaign statistics */

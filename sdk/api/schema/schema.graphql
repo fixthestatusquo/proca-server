@@ -82,6 +82,7 @@ type ActionTypeCount {
 }
 
 enum ContactSchema {
+  IT_CI
   ECI
   POPULAR_INITIATIVE
   BASIC
@@ -490,6 +491,9 @@ input CampaignInput {
   "Campaign human readable title"
   title: String
 
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
   "Custom config as stringified JSON map"
   config: Json
 
@@ -573,6 +577,9 @@ type Campaign {
 
   "Full, official name of the campaign"
   title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
 
   "Custom config map"
   config: Json!

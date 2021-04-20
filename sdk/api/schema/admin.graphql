@@ -1,7 +1,7 @@
 query ListCampaigns($org: String!) {
     org(name: $org) {
       campaigns {
-        id, externalId, name, title, config,
+        id, externalId, name, title, contactSchema, config,
         org { name, title }
       }
     }
@@ -12,7 +12,7 @@ query ListActionPages($org: String!) {
       actionPages {
         id, name, locale, config,
         journey, extraSupporters, thankYouTemplateRef,
-        campaign { name, externalId }
+        campaign { id, name, externalId }
       }
     }
   }
@@ -21,7 +21,7 @@ query ListActionPages($org: String!) {
 query GetCampaign($org: String!, $id: Int!) {
     org(name: $org) {
       campaign(id: $id) {
-        id, externalId, name, title, config,
+        id, externalId, name, title, contactSchema, config,
         stats {
           supporterCount, 
           supporterCountByOrg { 
@@ -44,7 +44,7 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
         extraSupporters, thankYouTemplateRef,
         journey,
         config,
-        campaign { id, name, title, externalId }
+        campaign { id, name, title, externalId, contactSchema }
       }
     }
 }
@@ -231,3 +231,13 @@ query GetOrg($org: String!) {
   }
 }
 
+
+query GetOrgAttrs($org: String!) {
+  org(name: $org) {
+    id, name, title, 
+    config,
+    personalData {
+      contactSchema, emailOptIn, emailOptInTemplate
+    }
+  }
+}
