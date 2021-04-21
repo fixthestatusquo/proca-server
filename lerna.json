@@ -1,7 +1,9 @@
 {
   "npmClient": "yarn",  
   "packages": [
-    "./*"
+    "proca",
+    "sdk/*",
+    "service/*"
   ],
   "version": "2.3.0",
   "command": {
