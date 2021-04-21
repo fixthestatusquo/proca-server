@@ -1,7 +1,11 @@
 {
   "devDependencies": {
-    "lerna": "^4.0.0"
+    "lerna": "^4.0.0",
+    "typescript": "^4.2.4"
   },
   "name": "proca-server",
-  "license": "AGPL-3.0"
+  "license": "AGPL-3.0",
+  "scripts": {
+    "build": "echo skipping build of proca server"
+  }
 }
