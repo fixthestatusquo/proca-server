@@ -1,6 +1,6 @@
 {
   "name": "@proca/cli",
-  "version": "2.2.3-beta.1",
+  "version": "2.3.0",
   "description": "cli[ent] for Proca",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
@@ -56,7 +56,6 @@
     "graphql": "^15.3.0",
     "typescript": "^4.1.2"
   },
-  "peerDependencies": {},
   "optionalDependencies": {
     "@types/node-mailjet": "^3.3.4",
     "bent": "^7.3.12",
