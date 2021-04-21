@@ -276,7 +276,7 @@ type RootMutationType {
 
   "Adds an action with contact data"
   addActionContact(
-    "Links to previous contact reference"
+    "Links previous actions with just reference to this supporter data"
     contactRef: ID
 
     "Tracking codes (UTM_*)"

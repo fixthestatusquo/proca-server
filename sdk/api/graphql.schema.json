@@ -1942,7 +1942,7 @@
             "args": [
               {
                 "name": "contactRef",
-                "description": "Links to previous contact reference",
+                "description": "Links previous actions with just reference to this supporter data",
                 "type": {
                   "kind": "SCALAR",
                   "name": "ID",
