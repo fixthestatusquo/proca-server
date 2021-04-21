@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "lerna": "^4.0.0"
+  },
+  "name": "proca-server",
+  "license": "AGPL-3.0"
+}

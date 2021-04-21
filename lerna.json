@@ -1,0 +1,12 @@
+{
+  "npmClient": "yarn",  
+  "packages": [
+    "./*"
+  ],
+  "version": "2.3.0",
+  "command": {
+    "ignore": [
+      "proca/assets"
+    ]
+  }
+}
