@@ -5,5 +5,12 @@
   "repository": "git@github.com:fixthestatusquo/proca-backend.git",
   "author": "Marcin Koziej <marcin@fixthestatusquo.org>",
   "license": "AGPL3",
-  "private": true
+  "private": true,
+  "scripts": {
+    "install.assets": "[ ! -d assets/node_modules ] && ( cd assets; npm install ) || true",
+    "install": "yarn install.assets; mix deps.get",
+    "build": "echo Backend does not need to be built",
+    "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema && mv schema.graphql ../sdk/api/schema/",
+    "test": "mix test"
+  }
 }

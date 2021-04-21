@@ -24,8 +24,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@proca/api": "0.2.1",
-    "@proca/cli": "2.3.0",
+    "@proca/api": "2.3.0",
     "@types/node-mailjet": "^3.3.4",
     "amqplib": "^0.7.0",
     "backoff": "^2.5.0",
