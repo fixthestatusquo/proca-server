@@ -13,6 +13,13 @@
   - sdk/queue (planned) - code refactored out from sdk/cli concerning reading from AMQP and message action format (slightly differing from api action format)
   - service/action-gw - action data decrypting gateway to decrypt actions on premises
 
+To add a new repository into this one, use `lerna import` tool. It will import all the commit history. Recommended way is:
+
+```
+yarn lerna import --flatten --dest service ../path/to/service-repo-on-disk
+```
+Make sure the dir name of repo is the same as one you want to be created under `service/`
+
 ### Caveats 
 
 1. Proca server is an Elixir project and tasks for it are run using `mix` tool. It contains `package.json` so lerna will treat it as a project; however, it is set to private and will not be published to npm repositories.
