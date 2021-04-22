@@ -8,9 +8,13 @@
   "private": true,
   "scripts": {
     "install.assets": "[ ! -d assets/node_modules ] && ( cd assets; npm install ) || true",
+    "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema",
+
     "install": "yarn install.assets; mix deps.get",
-    "build": "echo Backend does not need to be built",
-    "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema && mv schema.graphql ../sdk/api/schema/",
+    "postinstall": "mix compile",
+    "prepublish": "yarn gen.schema",
+    "prepare": "mix compile",
+
     "test": "mix test"
   }
 }

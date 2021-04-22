@@ -13,10 +13,11 @@
     "proca-cli": "bin/proca-cli"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "yarn build",
+    "test": "echo No tests for proca/cli",
     "build": "npx tsc",
-    "watch": "npx tsc -w"
+    "watch": "npx tsc -w",
+
+    "prepare": "yarn build"
   },
   "files": [
     "dist",
