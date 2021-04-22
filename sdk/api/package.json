@@ -7,19 +7,20 @@
   "sideEffects": false,
   "license": "AGPL-3.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "generate": "graphql-codegen --config codegen.yml",
-    "prebuild": "yarn generate",
-    "prepublish": "yarn build",
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+
+    "prepublish": "ln -sf ../../../proca/schema.graphql schema/schema.graphql",
+    "prepare": "yarn generate && yarn build",
+
+    "test": "echo No tests for proca/api"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fixthestatusquo/proca-api.git"
   },
   "author": "Marcin Koziej <code@fixthestatusquo.org>",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/fixthestatusquo/proca-api/issues"
   },
