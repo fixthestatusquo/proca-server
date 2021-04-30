@@ -97,6 +97,8 @@ export function toDataApi(action : ActionMessage,
   const custom_fields = []
   const metadata : Record<string, string> = {}
 
+  custom_fields.push({name: "contact_ref", value: action.contact.ref});
+
   for (const [key,value] of Object.entries(action.action.fields)) {
     if ((action_fields || []).includes(key.toLowerCase())) {
       metadata[key] = value
