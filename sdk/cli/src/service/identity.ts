@@ -37,7 +37,7 @@ export async function syncAction(action : ActionMessage, argv : ServiceOpts, con
   }
 
   if (Object.keys(action.contact.pii).length == 0) {
-    log(`Cannot decrypt PII; sender key is ${action.contact.signKey}`)
+    log(`Cannot decrypt PII; public key is ${action.contact.publicKey}`)
     throw "Cannot decrypt personal data, please check KEYS"
   }
 
