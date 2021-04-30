@@ -69,7 +69,7 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
     const ret = await ch.consume(qn, (msg : amqplib.Message) => {
       let action = JSON.parse(msg.content.toString())
 
-      decryptAction(action, opts, config)
+      decryptActionMessage(action, opts, config)
 
       const syncing = service.syncAction(action, opts, config)
         .then((v : any) => {
