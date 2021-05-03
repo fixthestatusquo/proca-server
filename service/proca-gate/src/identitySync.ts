@@ -25,7 +25,7 @@ function sentryHandler(lambdaHandler : SQSHandlerPromise)  {
 
 // Sync SQS event
 async function syncEvent(event : SQSEvent, _context : Context) : Promise<void> {
-  console.log('ENV', process.env)
+  // console.log('ENV', process.env)
   const sync_all = event.Records.map(async (record) => {
     let action = JSON.parse(record.body)
 
@@ -33,14 +33,14 @@ async function syncEvent(event : SQSEvent, _context : Context) : Promise<void> {
       action = queue.decryptActionMessage(action, {}, config)
 
     const response = await identity.syncAction(action, {}, config)
-    const result = await response.json()
-    console.log("Identity addAction API result", result)
+    // const result = await response.json()
+    console.log("Identity addAction API result", response)
 
-    if (result.ok !== true) {
-      throw Error(`Result is not ok: ${JSON.stringify(result)}`)
-    }
+    //if (result.ok !== true) {
+    //  throw Error(`Result is not ok: ${JSON.stringify(result)}`)
+    //}
 
-    return result
+    return response
   })
 
   return Promise.all(sync_all).then(_a => {})

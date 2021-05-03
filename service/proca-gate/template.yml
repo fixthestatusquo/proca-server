@@ -16,11 +16,11 @@ Globals:
   Function:
     Layers:
       # Our own layer that we are going to build
-      - !Ref RuntimeDependenciesLayer
+      - !Ref CollectDeps
     Timeout: 30
 
 Resources:
-  RuntimeDependenciesLayer:
+  CollectDeps:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile # This does the trick
@@ -38,7 +38,7 @@ Resources:
     Properties:
       Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
       Runtime: nodejs12.x
-      Handler: dist/handlers/identitySync.handler
+      Handler: identitySync.handler
       # This property associates this Lambda function with the SQS queue defined above, so that whenever the queue
       # receives a message, the Lambda function is invoked
       Events:
