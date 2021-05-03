@@ -3,6 +3,7 @@ import debug from 'debug'
 import {ActionMessage} from '../queueMessage'
 import {CliConfig} from '../config'
 import {ServiceOpts} from '../cli'
+import {removeBlank} from '../util'
 
 
 const log = debug('proca:service:identity')
@@ -17,9 +18,12 @@ type Consent = {
 }
 
 export async function syncAction(action : ActionMessage, argv : ServiceOpts, config : CliConfig) {
-  const url = argv.service_url
-  const api_token = config.identity_api_token
+  const url = argv.service_url || config.identity_url 
+  const api_token = config.identity_api_token 
   const comm_consent = config.identity_consent
+
+  if (!url) throw new Error("identity url not set")
+  if (!api_token) throw new Error("identity api token not set")
 
   let consent : ConsentConfig = null
   if (comm_consent === null || comm_consent === undefined) {
@@ -46,8 +50,8 @@ export async function syncAction(action : ActionMessage, argv : ServiceOpts, con
 
   payload.api_token = api_token
 
-  const post = bent(url, 'POST', 'json', 200)
-  const r = await post('/api/actions', payload)
+  const post = bent(url, 'POST', 200)
+  const r = await post('/api/actions', removeBlank(payload))
   return r
 }
 
