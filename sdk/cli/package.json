@@ -53,7 +53,9 @@
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.7",
     "@types/yargs": "^16.0.0",
-    "graphql": "^15.3.0",
+    "graphql": "^15.3.0"
+  },
+  "peerDependencies": {
     "typescript": "^4.1.2"
   },
   "optionalDependencies": {
@@ -61,5 +63,6 @@
     "bent": "^7.3.12",
     "debug": "^4.3.1",
     "node-mailjet": "^3.3.1"
-  }
+  },
+  "gitHead": "882a2495baef82279680a12f782c91a9beeff918"
 }
