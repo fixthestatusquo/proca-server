@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{   \"action\": {     \"actionType\": \"register\",     \"createdAt\": \"2021-04-30T14:16:25\",     \"fields\": {       \"LanguageCode\": \"de\",       \"postcardUrl\": \"https://collect-pdf.campax.org?postalcode=4556&canton=SO&birthdate=undefined&address=Beispielstrasse&locality=SteinhofBurgäschi&pdf=https%3A%2F%2Fcollect-backend.campax.org%2Fwp-content%2Fuploads%2F2021%2F04%2FAHVx13-DE-1.pdf&top=207\"     }   },   \"actionId\": 460533,   \"actionPage\": {     \"locale\": \"de\",     \"name\": \"collect.campax.org/174\",     \"thankYouTemplateRef\": \"https://collect-backend.campax.org/wp-json/wp/v2/campaign/174\"   },   \"actionPageId\": 344,   \"campaign\": {     \"externalId\": 171,     \"name\": \"initiative-ahvx13\",     \"title\": \"initiative-ahvx13\"   },   \"campaignId\": 70,   \"contact\": {     \"email\": \"marcin+example@fixthestatusquo.org\",     \"firstName\": \"Marcin\",     \"nonce\": \"__WoKG_x3LY4HY_F1mRV_VTnlb93yZB5\",     \"payload\": \"HTVzaa64FC6Dr_VCGmJ-eeS5m56XNqjHtmPP325c9Ryld6eqqG1HEDGRRasA0PFF-fUGNOWX4W3RhsIvUHo6lb9JHfMaO1VfpUhE240ayhcGHWbycga1anCxGtakaKzHH_DypKGY5s1teyKHc66Wef0JuWDEae-w7CATP3306Ad4HFZS3wPX-cHvHFQNn93_PlsugZM5pqqR5Y_y\",     \"publicKey\": \"vi_rMHwHx1hZAT_uJ4niqNCit6uSnV0Kk5mZHc7L0xc\",     \"ref\": \"ozfFaIizZQ5pBGzp3s-fmIl-eNMMX5TMcXkEeyHmam8\",     \"signKey\": \"vtPI2U6Kl3T0eZ2LrDuYw92Vqq7WE8Y8B3YTFFH00Qs\"   },   \"orgId\": 8,   \"privacy\": {     \"communication\": true,     \"givenAt\": \"2021-04-30T14:16:25Z\"   },   \"schema\": \"proca:action:1\",   \"stage\": \"deliver\",   \"tracking\": {     \"campaign\": \"blast2021-04-02\",     \"content\": \"\",     \"medium\": \"email\",     \"source\": \"campax\"   } }  ",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "3e4a227109db418be7393538bee7861d",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:MyQueue",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}
