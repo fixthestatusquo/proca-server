@@ -1,7 +1,7 @@
 {
     "name": "proca-gate",
     "description": "Proca action gateway for AWS Lambda",
-    "version": "0.0.1",
+    "version": "2.3.0",
     "private": true,
     "dependencies": {
         "@proca/cli": "2.3.0",
