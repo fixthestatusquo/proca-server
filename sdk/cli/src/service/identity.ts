@@ -46,7 +46,7 @@ export async function syncAction(action : ActionMessage, argv : ServiceOpts, con
 
   payload.api_token = api_token
 
-  const post = bent(url, 'POST', 200)
+  const post = bent(url, 'POST', 'json', 200)
   const r = await post('/api/actions', payload)
   return r
 }

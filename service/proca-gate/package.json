@@ -6,7 +6,8 @@
     "dependencies": {
         "@proca/cli": "^2.3.1",
         "@sentry/node": "^6.3.5",
-        "aws-sdk": "^2.815.0"
+        "aws-sdk": "^2.815.0",
+        "bent": "^7.3.12"
     },
     "devDependencies": {
         "@tsconfig/node12": "^1.0.7",
@@ -20,7 +21,6 @@
         "test": "jest --roots __tests__/unit",
         "integ-test": "jest --roots __tests__/integration",
         "build": "node_modules/typescript/bin/tsc",
-        "watch": "node_modules/typescript/bin/tsc -w --preserveWatchOutput",
-        "prepare": "which sam > /dev/null || echo 'REQUIRED INSTALL: sudo pip3 install aws-sam-cli' && sam build"
+        "watch": "node_modules/typescript/bin/tsc -w --preserveWatchOutput"
     }
 }
