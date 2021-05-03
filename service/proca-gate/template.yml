@@ -1,0 +1,62 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  proca-gate
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Layers:
+      # Our own layer that we are going to build
+      - !Ref RuntimeDependenciesLayer
+    Timeout: 30
+
+Resources:
+  RuntimeDependenciesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile # This does the trick
+    Properties:
+      Description: Runtime dependencies for Lambdas
+      ContentUri: ./
+      CompatibleRuntimes:
+        - nodejs12.x
+      RetentionPolicy: Retain
+
+  IdentitySync:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
+      Runtime: nodejs12.x
+      Handler: dist/handlers/identitySync.handler
+      # This property associates this Lambda function with the SQS queue defined above, so that whenever the queue
+      # receives a message, the Lambda function is invoked
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:eu-central-1:022052722226:identity-staging
+      Environment:
+        Variables:
+          IDENTITY_CONSENT: 'AA'
+          IDENTITY_CONTACT_FIELDS: ''
+          IDENTITY_ACTION_FIELDS: ''
+          IDENTITY_URL: ''
+          ORG_NAME: ''
+          KEYS: '{}'
+          SENTRY_DSN: ''
+          IDENTITY_API_TOKEN: ''
+          LOG_LEVEL: DEBUG
+
+      MemorySize: 128
+      Timeout: 25 # Chosen to be less than the default SQS Visibility Timeout of 30 seconds
