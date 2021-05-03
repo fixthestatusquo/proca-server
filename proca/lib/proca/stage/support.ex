@@ -33,7 +33,8 @@ defmodule Proca.Stage.Support do
       "source" => s.source,
       "medium" => s.medium,
       "campaign" => s.campaign,
-      "content" => s.content
+      "content" => s.content,
+      "location" => s.location
     }
   end
 
