@@ -68,10 +68,10 @@
     core-js "2.6.0"
     graphql "14.0.2"
 
-"@proca/api@0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-0.2.1.tgz#ae05110616933ac58ec90672702cb5eaaf6f34f6"
-  integrity sha512-vEQxCtf7Ha4QoLrGZb3Z3Vi8tOfTtNVieNQETqPMG1gb5RCaK/d/AconDjDdEnKa4ChoWdoy4yNiSO3J5NDsZg==
+"@proca/api@2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-2.3.0.tgz#5c8fb91004a5e0a50c3d11d3c411f45c8e42b672"
+  integrity sha512-xhRnaxs50fs4EMY3ZmC3CLKBtoeIVt8BU480ZbEhmdtK+rJv2YiQIAjm7mp5o5GDvReRcAnksr+psVanBE2gsQ==
   dependencies:
     "@absinthe/socket-apollo-link" "^0.2.1"
     "@graphql-typed-document-node/core" "^3.1.0"
@@ -80,33 +80,6 @@
     js-base64 "^3.5.2"
     phoenix "^1.5.5"
     ws "^7.3.1"
-
-"@proca/cli@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@proca/cli/-/cli-2.3.0.tgz#09a1f1360728c95fe973750455a702bd49e0b078"
-  integrity sha512-NwGHx41soKcM90Ln+gPywHpE+I+E8rSuiiA6i5+BF7UI+Gl0MpZZ72acVNjZssXlSrJ1RpU+tXB1GghREtqN2g==
-  dependencies:
-    "@proca/api" "0.2.1"
-    amqplib "^0.7.0"
-    backoff "^2.5.0"
-    base64url "^3.0.1"
-    cross-fetch "^3.0.6"
-    csv-stringify "^5.5.1"
-    dotenv "^8.2.0"
-    email-validator "^2.0.4"
-    esm "^3.2.25"
-    inquirer "^7.3.3"
-    line-by-line "^0.1.6"
-    node-fetch "^2.6.1"
-    pry "^0.8.12"
-    tweetnacl "^1.0.3"
-    tweetnacl-util "^0.15.1"
-    yargs "^16.2.0"
-  optionalDependencies:
-    "@types/node-mailjet" "^3.3.4"
-    bent "^7.3.12"
-    debug "^4.3.1"
-    node-mailjet "^3.3.1"
 
 "@types/amqplib@^0.5.16":
   version "0.5.17"

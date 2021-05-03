@@ -11,7 +11,7 @@ export function getContact(contact : EncryptedContact, argv : DecryptOpts, confi
     return JSON.parse(payload)
   }
 
-  if (!argv.decrypt)
+  if (argv.decrypt === false)
     return {}
 
   const ks = loadKeys(config)
