@@ -43,3 +43,9 @@ Word of warning: NPM 7 changed the lifecycle evens most notably splitting the `p
   - npm run prepublish in all bootstrapped packages (unless --ignore-prepublish is passed).
   - npm run prepare in all bootstrapped packages.
 
+## Build systems
+
+- lerna manages interdependencies, especially in JS projects 
+  - yarn (not npm) for individual packages
+    - make - used by AWS SAM in lambda projects
+  - mix - builder for Elixir
