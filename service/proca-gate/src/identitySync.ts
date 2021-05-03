@@ -32,14 +32,14 @@ async function syncEvent(event : SQSEvent, _context : Context) : Promise<void> {
     if (!action.contact.pii)
       action = queue.decryptActionMessage(action, {}, config)
 
-    const result = await identity.syncAction(action, {}, config)
+    const response = await identity.syncAction(action, {}, config)
+    const result = await response.json()
     console.log("Identity addAction API result", result)
 
     if (result.ok !== true) {
       throw Error(`Result is not ok: ${JSON.stringify(result)}`)
     }
 
-    result.body;
     return result
   })
 

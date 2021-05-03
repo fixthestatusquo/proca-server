@@ -561,7 +561,7 @@
     phoenix "^1.5.5"
     ws "^7.3.1"
 
-"@proca/cli@2.3.0":
+"@proca/cli@^2.3.1":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@proca/cli/-/cli-2.3.0.tgz#09a1f1360728c95fe973750455a702bd49e0b078"
   integrity sha512-NwGHx41soKcM90Ln+gPywHpE+I+E8rSuiiA6i5+BF7UI+Gl0MpZZ72acVNjZssXlSrJ1RpU+tXB1GghREtqN2g==
