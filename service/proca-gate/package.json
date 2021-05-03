@@ -1,10 +1,10 @@
 {
     "name": "proca-gate",
     "description": "Proca action gateway for AWS Lambda",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "private": true,
     "dependencies": {
-        "@proca/cli": "2.3.0",
+        "@proca/cli": "^2.3.1",
         "@sentry/node": "^6.3.5",
         "aws-sdk": "^2.815.0"
     },
@@ -19,10 +19,8 @@
     "scripts": {
         "test": "jest --roots __tests__/unit",
         "integ-test": "jest --roots __tests__/integration",
-
         "build": "node_modules/typescript/bin/tsc",
         "watch": "node_modules/typescript/bin/tsc -w --preserveWatchOutput",
-
         "prepare": "which sam > /dev/null || echo 'REQUIRED INSTALL: sudo pip3 install aws-sam-cli' && sam build"
     }
 }
