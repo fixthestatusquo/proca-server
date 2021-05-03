@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,10 +10,8 @@
     "generate": "graphql-codegen --config codegen.yml",
     "build": "tsc",
     "watch": "tsc -w",
-
     "prepublish": "ln -sf ../../../proca/schema.graphql schema/schema.graphql",
     "prepare": "yarn generate && yarn build",
-
     "test": "echo No tests for proca/api"
   },
   "repository": {
