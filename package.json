@@ -6,6 +6,7 @@
   "name": "proca-server",
   "license": "AGPL-3.0",
   "scripts": {
+    "install": "lerna bootstrap",
     "prepare": "lerna exec yarn prepare",
     "test": "lerna exec --scope @proca/server yarn test"
 
