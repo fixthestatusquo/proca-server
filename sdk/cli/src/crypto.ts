@@ -84,7 +84,7 @@ export function decrypt(payload: string, nonce: string, public_key: KeyPair, sig
     return payload // decrypted
   }
 
-  if (!(public_key && sign_key)) {
+  if (!(public_key && public_key.public && sign_key)) {
     throw new Error("Tried to decrypt a payload providing null public_key or sign_key")
   }
 

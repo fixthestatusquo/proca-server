@@ -2,7 +2,7 @@ import client from './client'
 import {request, admin, types} from '@proca/api'
 import {getFormatter,FormatOpts} from './format'
 import {loadKeys} from './keys'
-import {CliConfig} from 'config'
+import {CliConfig} from './config'
 
 function loadOrCreateKeys(config : CliConfig) {
   try {
