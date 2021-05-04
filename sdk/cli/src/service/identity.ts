@@ -68,6 +68,11 @@ type DataApiSource = {
   campaign: string
 }
 
+/* identity uses these keys to find Action
+ * - external_id
+ * - action_technical_type
+ * - language
+ */
 export function toDataApi(action : ActionMessage,
                           consent_map : ConsentConfig,
                           action_fields : string[],

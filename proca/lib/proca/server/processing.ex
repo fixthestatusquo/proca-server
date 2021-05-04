@@ -121,7 +121,7 @@ defmodule Proca.Server.Processing do
         },
         _ap
       ) do
-    # Supporter is being confirmed, so this actio hsa to wait
+    # Supporter is being confirmed, so this action has to wait
     :ok
   end
 
