@@ -2,7 +2,7 @@ import bent from 'bent'
 import debug from 'debug'
 import {ActionMessage} from '../queueMessage'
 import {CliConfig} from '../config'
-import {ServiceOpts} from '../cli'
+import {ServiceOpts} from '.'
 import {removeBlank} from '../util'
 
 
@@ -50,6 +50,7 @@ export async function syncAction(action : ActionMessage, argv : ServiceOpts, con
 
   payload.api_token = api_token
 
+
   const post = bent(url, 'POST', 200)
   const r = await post('/api/actions', removeBlank(payload))
   return r
@@ -80,7 +81,8 @@ export function toDataApi(action : ActionMessage,
     create_dt: action.action.createdAt,
     action_name: action.campaign.name,
     action_public_name: action.campaign.name,
-    external_id: action.campaignId,
+    language: action.actionPage.locale,
+    external_id: action.actionPageId,
     consents: Object.entries(consent_map).map(
       ([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)
     ).filter(x => x),

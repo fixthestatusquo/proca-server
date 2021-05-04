@@ -145,7 +145,7 @@ class Terminal {
     return ap
   }
 
-  action(a : ActionFromExport) {
+  action(a : ActionFromExport) : string {
     const c = a.campaign !== undefined ? a.campaign.name : ''
     const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
     return t

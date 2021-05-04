@@ -2,7 +2,7 @@
 import mailjet from "node-mailjet"
 import {ActionMessage} from '../queueMessage'
 import {CliConfig} from '../config'
-import {ServiceOpts} from '../cli'
+import {ServiceOpts} from '.'
 
 export async function syncAction(action : ActionMessage, _1: ServiceOpts, _2 : CliConfig) {
   const conn = connect()

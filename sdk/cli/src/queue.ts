@@ -1,16 +1,14 @@
 import amqplib from 'amqplib'
 import fs from 'fs'
-import backoff from 'backoff'
 import LineByLine from 'line-by-line'
 import {decrypt,EncryptedContact } from './crypto'
 import {getContact, DecryptOpts} from './decrypt'
 import {decryptAction} from './export'
 import {CliConfig} from './config'
-import {CliOpts, ServiceOpts} from './cli'
+import {CliOpts } from './cli'
 import {ActionMessage, ProcessStage} from './queueMessage'
+import {getService, ServiceOpts} from './service'
 export {ActionMessage, ProcessStage} from './queueMessage'
-
-export type SyncFunction = (action : ActionMessage, argv : ServiceOpts, config : CliConfig) => any
 
 
 export function connect(config : CliConfig) {
@@ -38,22 +36,6 @@ export async function testQueue(opts : ServiceOpts, config : CliConfig) {
     ch.close()
     conn.close()
   }
-}
-
-function getService(argv : ServiceOpts) {
-  if (typeof argv.service === 'string') {
-    let service = require(`./service/${argv.service}`);
-    if (argv.backoff) {
-      service.syncAction = addBackoff(service.syncAction);
-    }
-    return service
-  }
-
-  if (typeof argv.service === 'object') {
-    return argv.service
-  }
-
-  throw "argv.service should be a name of module in src/service or function"
 }
 
 
@@ -95,7 +77,7 @@ export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConf
   lines.on('line', async (l) => {
     let action = JSON.parse(l)
     
-    decryptAction(action, opts, config)
+    decryptActionMessage(action, opts, config)
     lines.pause()
     await service.syncAction(action, opts, config)
     lines.resume()
@@ -103,34 +85,6 @@ export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConf
 }
 
 
-export function addBackoff(fun : SyncFunction) {
-  async function newFun(...args : any[]) : Promise<any> {
-    return new Promise((ok, fail) => {
-      const bo = backoff.exponential({
-        randomisationFactor: 0,
-        initialDelay: 100,
-        maxDelay: 30000
-      });
-      bo.failAfter(10)
-      bo.on('ready', function(number, delay) {
-        try {
-          fun.apply(null, args).then((r : any) => ok(r )).catch((err : Error) => {
-            console.log(`😵 rejected: ${err}`)
-            bo.backoff()
-          })
-        } catch(error : any) {
-          console.log(`😵 exception: ${error}`)
-          bo.backoff()
-        }
-      })
-
-      bo.on('fail', () => fail('failed too many times'))
-
-      bo.backoff()
-    })
-  }
-  return newFun
-}
 
 
 export function decryptActionMessage(action : ActionMessage, argv : DecryptOpts, config : CliConfig) {

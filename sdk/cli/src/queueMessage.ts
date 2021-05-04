@@ -1,3 +1,5 @@
+import {types} from '@proca/api'
+import {ActionWithPII} from './crypto'
 
 export type ProcessStage = "confirm" | "deliver"
 
@@ -47,8 +49,8 @@ type Privacy = {
 export type ActionMessage = {
   actionId: number,
   actionPageId: number,
-  campaignId: number,
-  orgId: number,
+  // campaignId: number,
+  // orgId: number,
   action: Action,
   contact: Contact,
   campaign: Campaign,
@@ -58,4 +60,34 @@ export type ActionMessage = {
   schema: "proca:action:1",
   stage: ProcessStage
 
+}
+
+export const actionToActionMessage = (action : types.Action & ActionWithPII) : ActionMessage => {
+  const msg : ActionMessage = {
+    schema: "proca:action:1",
+    actionId: action.actionId,
+    actionPageId: action.actionPage.id,
+    action: {
+      actionType: action.actionType,
+      fields: action.fields.reduce((acc, f) => { acc[f.key] = f.value; return acc; }, {} as Record<string, string>),
+      createdAt: action.createdAt,
+    },
+    contact: {
+      ...action.contact,
+      ref: action.contact.contactRef,
+      firstName: action.contact.pii.firstName, 
+      email: action.contact.pii.email, 
+      signKey: action.contact.signKey?.public,
+      publicKey: action.contact.publicKey?.public
+    },
+    campaign: {...action.campaign, title: null}, // XXX fix this!!! campaign titles not in API export
+    actionPage: {...action.actionPage, thankYouTemplateRef: null},
+    tracking: action.tracking,
+    privacy: {
+      communication: action.privacy.optIn,
+      givenAt: action.privacy.givenAt 
+    },
+    stage: "deliver"
+  } 
+  return msg;
 }

@@ -6,10 +6,16 @@ import {
   readMixedFormat,
   KeyStore
   } from './crypto'
+import {ActionMessage, actionToActionMessage} from './queueMessage'
 import {getFormatter, FormatOpts} from './format'
 import {getContact, DecryptOpts} from './decrypt'
 import {CliConfig} from './config'
 import {PartialBy} from './util'
+import {getService, ServiceOpts} from './service'
+import LineByLine from 'line-by-line'
+import debug from 'debug';
+
+const log = debug('proca:export')
 
 interface ExportActionsOpts {
   batch: number,
@@ -75,6 +81,22 @@ export function decryptAction(action : ActionWithEncryptedContact, argv : Decryp
   const action2 = action as ActionWithPII
   action2.contact.pii = pii
 }
+
+export async function syncExportFile(opts : ServiceOpts & DecryptOpts, config: CliConfig) {
+  const service = getService(opts)
+  const lines = new LineByLine(opts.filePath)
+
+  lines.on('line', async (l) => {
+    let action : types.Action = JSON.parse(l)
+    log(`sync actionId: ${action.actionId}`)
+    
+    decryptAction(action, opts, config)
+    lines.pause()
+    await service.syncAction(actionToActionMessage(action), opts, config)
+    lines.resume()
+  })
+}
+
 
 // export async function getCsvSupporters(argv) {
 //   const c = argv2client(argv);
