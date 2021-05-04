@@ -68,6 +68,7 @@ export type NationalityInput = {
 /** GDPR consent data for this org */
 export type Consent = {
   optIn: Scalars['Boolean'];
+  givenAt: Scalars['DateTime'];
 };
 
 /** Tracking codes */

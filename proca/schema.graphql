@@ -62,6 +62,7 @@ input NationalityInput {
 "GDPR consent data for this org"
 type Consent {
   optIn: Boolean!
+  givenAt: DateTime!
 }
 
 "Tracking codes"

@@ -73,7 +73,7 @@ query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: Stri
         fields { key, value },
         tracking { source, medium, campaign, content },
         actionPage { id, name, locale },
-        privacy { optIn }
+        privacy { optIn, givenAt }
       }
 }
 
@@ -86,7 +86,7 @@ query ExportOrgActions($org: String!, $start: Int, $after: DateTime, $limit: Int
         tracking { source, medium, campaign, content },
         actionPage { id, name, locale },
         campaign { name, externalId },
-        privacy { optIn }
+        privacy { optIn, givenAt }
       }
 }
 

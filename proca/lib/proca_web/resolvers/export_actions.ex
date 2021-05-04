@@ -77,9 +77,10 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     }
   end
 
-  def format_privacy(%Contact{communication_consent: cc}) do
+  def format_privacy(%Contact{communication_consent: cc, inserted_at: given_at}) do
     %{
-      opt_in: cc
+      opt_in: cc,
+      given_at: given_at
     }
   end
 
