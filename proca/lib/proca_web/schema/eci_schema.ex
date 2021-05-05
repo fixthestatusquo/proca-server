@@ -6,6 +6,8 @@ defmodule ProcaWeb.Schema.EciSchema do
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.ReportError
 
+  import_types(Absinthe.Type.Custom)
+
   import_types(ProcaWeb.Schema.DataTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)
   import_types(ProcaWeb.Schema.ActionTypes)

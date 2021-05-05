@@ -4,6 +4,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
   """
 
   use Absinthe.Schema.Notation
+
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.Authorized
   alias ProcaWeb.Resolvers.ReportError
@@ -23,7 +24,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "return only actions with id starting from this argument (inclusive)"
       arg(:start, :integer)
       @desc "return only actions created at date time from this argument (inclusive)"
-      arg(:after, :date_time)
+      arg(:after, :datetime)
       @desc "Limit the number of returned actions"
       arg(:limit, :integer)
 
@@ -168,12 +169,15 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :action_type, non_null(:string)
     @desc "Other fields that accompany the signature"
     field :fields, list_of(non_null(:custom_field_input))
+
+    @desc "Donation payload"
+    field :donation, :donation_action_input
   end
 
   # XXX maybe rename to :exported_action or something
   object :action do
     field :action_id, non_null(:integer)
-    field :created_at, non_null(:date_time)
+    field :created_at, non_null(:naive_datetime)
     field :action_type, non_null(:string)
     field :contact, non_null(:contact)
     field :fields, non_null(list_of(non_null(:custom_field)))
@@ -227,7 +231,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
   @desc "GDPR consent data for this org"
   object :consent do
     field :opt_in, non_null(:boolean)
-    field :given_at, non_null(:date_time)
+    field :given_at, non_null(:naive_datetime)
   end
 
   @desc "Tracking codes"
@@ -252,5 +256,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Contacts first name"
     field :first_name, :string
+  end
+
+  input_object :donation_action_input do 
+    field :amount, :decimal
+    field :payload, :json
   end
 end

@@ -315,7 +315,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :action_custom_fields do
     field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
-    field :inserted_at, non_null(:date_time)
+    field :inserted_at, non_null(:naive_datetime)
     field :fields, non_null(list_of(non_null(:custom_field)))
   end
 

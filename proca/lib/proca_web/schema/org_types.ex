@@ -218,7 +218,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     field :active, non_null(:boolean)
     field :expired, non_null(:boolean)
-    field :expired_at, :date_time
+
+    @desc "When the key was expired, in UTC"
+    field :expired_at, :naive_datetime
   end
 
   object :key_with_private do
@@ -228,7 +230,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     field :active, non_null(:boolean)
     field :expired, non_null(:boolean)
-    field :expired_at, :date_time
+
+    @desc "When the key was expired, in UTC"
+    field :expired_at, :datetime
   end
 
   object :key_ids do 

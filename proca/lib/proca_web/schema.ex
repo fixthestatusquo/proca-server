@@ -1,8 +1,15 @@
 defmodule ProcaWeb.Schema do
   @moduledoc """
   Main API schema. See schema/ for details.
+
+  Note about date time types: 
+  - be conservative in what you do (return data using :native_datetime)
+  - be liberal about what you expect from others (accept :datetime possibly with a timezone)
+  (is this principle even a progressive one?)
   """
   use Absinthe.Schema
+
+  import_types(Absinthe.Type.Custom)
 
   import_types(ProcaWeb.Schema.DataTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)

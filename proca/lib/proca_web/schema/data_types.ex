@@ -3,37 +3,8 @@ defmodule ProcaWeb.Schema.DataTypes do
   Defines custom types used in API, and how to serialize/parse them
   """
   use Absinthe.Schema.Notation
+
   import Logger
-
-  scalar :date_time do
-    parse(fn 
-      %{value: value} when is_bitstring(value) ->
-        case DateTime.from_iso8601(value) do
-          {:ok, datetime, _} -> {:ok, datetime}
-          _ -> :error
-        end
-      _ -> :error
-    end)
-
-    serialize(fn datetime ->
-      DateTime.from_naive!(datetime, "Etc/UTC")
-      |> DateTime.to_iso8601()
-    end)
-  end
-
-  scalar :date do
-    parse(fn %{value: value} when is_bitstring(value) ->
-        case Date.from_iso8601(value) do
-          {:ok, date} -> {:ok, date}
-          _ -> :error
-        end
-      _ -> :error
-    end)
-
-    serialize(fn date ->
-      Date.to_iso8601(date)
-    end)
-  end
 
   scalar :json do
     parse(fn %{value: value} when is_bitstring(value) ->
