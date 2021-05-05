@@ -82,6 +82,7 @@ export default function cli() {
 
 
       cliMethod(opts, config).catch((error) => {
+        if (process.env['DEBUG']) throw error;
         if (error.message) {
           console.error(`Error:`, error.message)
 
