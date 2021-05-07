@@ -1,0 +1,35 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+  echo $0 host app_name
+  exit 1 
+fi
+
+if [ $# -lt 2 ]; then 
+ ssh $1 epmd -names
+ echo "now run $0 $1 app_port"
+ echo "make sure that remote node runs with -name (not -sname)"
+ echo "and the name is with domain (but not localhost, you can create one in /etc/hosts)"
+ exit 0
+fi
+
+HOST=$1
+APP=$2
+
+PORT=$(ssh $HOST epmd -names| grep "name $2 at port" |cut -f 5 -d ' ')
+if [ ! -n "$PORT" ]; then echo "Can't figure out port for $APP"; exit 1; fi
+echo "$APP distributed port is $PORT"
+
+BEAM=$(ssh $HOST ps awux |  grep -- "beam.*-name $APP")
+
+# echo $BEAM
+
+IEX_ARGS=$(echo $BEAM | sed -n 's/.*-setcookie \([^ ]*\).*/--cookie \1/p')
+if [ ! -n "$IEX_ARGS" ]; then echo "Can't figure out cookie  for $APP"; exit 1; fi
+
+echo In another terminal run:
+echo iex $IEX_ARGS  --name me@proca.node
+
+echo Running tunnel now
+ssh -L 4369:localhost:4369 -L $PORT:localhost:$PORT $HOST
+
