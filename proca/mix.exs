@@ -14,7 +14,8 @@ defmodule Proca.MixProject do
       docs: docs(),
       releases: [
         proca: [
-          steps: [:assemble, :tar]
+          steps: [:assemble, :tar],
+          strip_beams: false
         ]
       ]
     ]
@@ -26,7 +27,7 @@ defmodule Proca.MixProject do
   def application do
     [
       mod: {Proca.Application, []},
-      extra_applications: [:logger, :runtime_tools, :absinthe_plug, :sentry]
+      extra_applications: [:logger, :runtime_tools, :absinthe_plug, :sentry, :debugger]
     ]
   end
 
@@ -111,7 +112,8 @@ defmodule Proca.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema",
     ]
   end
 
