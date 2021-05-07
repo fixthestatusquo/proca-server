@@ -9,7 +9,7 @@ if [ $# -lt 2 ]; then
  ssh $1 epmd -names
  echo "now run $0 $1 app_port"
  echo "make sure that remote node runs with -name (not -sname)"
- echo "and the name is with domain (but not localhost, you can create one in /etc/hosts)"
+ echo "and the name is with full domain of the host."
  exit 0
 fi
 
@@ -24,12 +24,21 @@ BEAM=$(ssh $HOST ps awux |  grep -- "beam.*-name $APP")
 
 # echo $BEAM
 
-IEX_ARGS=$(echo $BEAM | sed -n 's/.*-setcookie \([^ ]*\).*/--cookie \1/p')
-if [ ! -n "$IEX_ARGS" ]; then echo "Can't figure out cookie  for $APP"; exit 1; fi
+COOKIE_ARGS=$(echo $BEAM | sed -n 's/.*-setcookie \([^ ]*\).*/--cookie \1/p')
+DOMAIN=$(echo $BEAM | sed -n 's/.*-name [^@]*@\([^ ]*\).*/\1/p')
 
-echo In another terminal run:
-echo iex $IEX_ARGS  --name me@proca.node
+if [ ! -n "$COOKIE_ARGS" ]; then echo "Can't figure out cookie  for $APP"; exit 1; fi
 
-echo Running tunnel now
+echo 1. Put into /etc/hosts:
+echo 127.0.0.1 $DOMAIN
+echo
+echo 2. In another terminal run:
+echo iex $COOKIE_ARGS  --name me@$DOMAIN -S mix run --no-start
+echo
+echo 3. Paste:
+echo Node.connect ":'$APP@$DOMAIN'"
+echo
+
+echo Running tunnel now....
 ssh -L 4369:localhost:4369 -L $PORT:localhost:$PORT $HOST
 
