@@ -21,15 +21,20 @@ input SelectActionPage {
   campaignId: Int
 }
 
-scalar DateTime
-
 type KeyWithPrivate {
   id: Int!
+
   public: String!
+
   private: String!
+
   name: String!
+
   active: Boolean!
+
   expired: Boolean!
+
+  "When the key was expired, in UTC"
   expiredAt: DateTime
 }
 
@@ -62,7 +67,7 @@ input NationalityInput {
 "GDPR consent data for this org"
 type Consent {
   optIn: Boolean!
-  givenAt: DateTime!
+  givenAt: NaiveDateTime!
 }
 
 "Tracking codes"
@@ -123,6 +128,10 @@ type Service {
   path: String
 }
 
+"""
+The `Date` scalar type represents a date. The Date appears in a JSON
+response as an ISO8601 formatted string, without a time component.
+"""
 scalar Date
 
 input SelectService {
@@ -145,6 +154,9 @@ input ActionInput {
 
   "Other fields that accompany the signature"
   fields: [CustomFieldInput!]
+
+  "Donation payload"
+  donation: DonationActionInput
 }
 
 input AddKeyInput {
@@ -186,13 +198,13 @@ type CampaignStats {
 type ActionCustomFields {
   actionId: Int!
   actionType: String!
-  insertedAt: DateTime!
+  insertedAt: NaiveDateTime!
   fields: [CustomField!]!
 }
 
 type Action {
   actionId: Int!
-  createdAt: DateTime!
+  createdAt: NaiveDateTime!
   actionType: String!
   contact: Contact!
   fields: [CustomField!]!
@@ -352,6 +364,13 @@ type RootMutationType {
   ): ActivateKeyResult!
 }
 
+"""
+The `Decimal` scalar type represents signed double-precision fractional
+values parsed by the `Decimal` library.  The Decimal appears in a JSON
+response as a string to preserve precision.
+"""
+scalar Decimal
+
 type RootQueryType {
   "Get a list of campains"
   campaigns(
@@ -467,6 +486,21 @@ type PublicActionPage {
 
   org: PublicOrg!
 }
+
+"""
+The `Naive DateTime` scalar type represents a naive date and time without
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string.
+"""
+scalar NaiveDateTime
+
+"""
+The `DateTime` scalar type represents a date and time in the UTC
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string, including UTC timezone ("Z"). The parsed date and time string will
+be converted to UTC if there is an offset.
+"""
+scalar DateTime
 
 type DeleteUserResult {
   status: Status!
@@ -603,11 +637,17 @@ type Campaign {
 "Encryption or sign key with integer id (database)"
 type Key {
   id: Int!
+
   public: String!
+
   name: String!
+
   active: Boolean!
+
   expired: Boolean!
-  expiredAt: DateTime
+
+  "When the key was expired, in UTC"
+  expiredAt: NaiveDateTime
 }
 
 type Org {
@@ -678,6 +718,11 @@ input CustomFieldInput {
   key: String!
   value: String!
   transient: Boolean
+}
+
+input DonationActionInput {
+  amount: Decimal
+  payload: Json
 }
 
 input OrgInput {
