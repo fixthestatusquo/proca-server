@@ -3,18 +3,18 @@
 # set -e
 
 echo <<INTRO
-============ COnfiguring Development Environment ===================== 
+============ Configuring Development Environment ===================== 
 
-       We'll configure PostgreSQL, RabbitMQ 
-       and setup the Elixir environment.    
+    We'll configure PostgreSQL, RabbitMQ 
+    and setup the Elixir environment.    
 
-       If anything goes wrong, we'll give up.    
+    If anything goes wrong, we'll give up.
 
 ======================================================================
 INTRO
 
 
-echo " ==== Initializing PostgrSQL =========== "
+echo " ==== Initializing PostgreSQL =========== "
 
 sudo -u postgres psql template1 -c 'create extension if not exists citext;'
 sudo -u postgres createdb proca;
@@ -27,7 +27,7 @@ grant all privileges on database proca_test to proca;
 
 echo " ==== Setting up RabbitMQ    =========== "
 
-./utils/configure-rabbitmq
+./utils/configure-rabbitmq-develop.sh
 
 
 echo " ==== Setting up Elixir      =========== "
