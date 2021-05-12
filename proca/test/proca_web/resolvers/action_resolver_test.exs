@@ -50,7 +50,7 @@ defmodule ProcaWeb.ActionResolverTest do
 
     assert not is_nil(sup.first_name)
     assert not is_nil(sup.area)
-    assert is_nil(sup.email)
+    assert sup.processing_status == :new or (sup.processing_status == :accepted  and is_nil(sup.email))
 
     assert %{
              communication_consent: true,
@@ -89,7 +89,7 @@ defmodule ProcaWeb.ActionResolverTest do
     assert length(sup.actions) == 2
 
     share = Enum.find(sup.actions, fn a -> a.action_type == "share" end)
-    assert [%{key: "medium", value: "tiktok", transient: false}] = share.fields
+    assert %{key: "medium", value: "tiktok", transient: false} = Enum.find(share.fields, fn f->f.key == "medium" end)
   end
 
   test "add signature with tracking" do
