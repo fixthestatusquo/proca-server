@@ -49,15 +49,11 @@ defmodule Proca.Pipes.Topology do
 
   ## Callbacks
   def init(org = %Org{id: org_id}) do
-    {:ok, chan} = Channel.open(Pipes.Connection.connection)
-
-    try do
+    Pipes.Connection.with_chan fn chan ->
       declare_exchanges(chan, org)
       declare_retry_circuit(chan, org)
       declare_worker_queues(chan, org)
       declare_custom_queues(chan, org)
-    rescue
-      _ -> Channel.close(chan)
     end
 
     # Setup queues (without the Broadway ones)
