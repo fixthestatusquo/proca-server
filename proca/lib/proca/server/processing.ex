@@ -24,21 +24,22 @@ defmodule Proca.Server.Processing do
 
   ```
       [ A(NEW) / nil ]
-          | linked?
+          | linking
           v
-      [ A(NEW) / S(NEW) ]           <-----.
-          |                                |  On new action bound to rejected contact
-          v                                |  Do we reset?
+      [ A(NEW) / S(NEW) ]            <-----.  linking new action to rejected supporter
+          | emit to supporter confirm      | 
+          v                                |  
       [ A(NEW) / S(CONFIRMING)] -> [ A(REJECTED) / S(REJECTED) ] --> stop (and remove the cookie?!)
-          |
+          | confirm 
           v
     ,->[ A(NEW) / S(ACCEPTED)]
-    |     |
+    |     | emit to action confirm
   n |     v
   e |  [ A(CONFIRMING) / S(ACCEPTED)] -> [ A(REJECTED) / S(ACCEPTED)] --> stop
-  w |     |
+  w |     | confirm
     |     v
     '--[ A(ACCEPTED) / S(ACCEPTED)] -> [ A(DELIVERED) / S(ACCEPTED)] --> stop
+                                   emit
   ```
   This mechanism is supposed to be able to run many times with same result if
   action and supporter bits do not change.
@@ -250,7 +251,7 @@ defmodule Proca.Server.Processing do
         Repo.transaction(fn ->
           case emit(action, thing, stage) do
             :ok -> Repo.update!(state_change)
-            :error -> raise "Cannot emit"
+            :error -> Repo.rollback(:publish_failed)
           end
         end)
         :ok

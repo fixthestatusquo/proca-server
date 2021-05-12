@@ -5,49 +5,105 @@ defmodule Proca.Pipes.Connection do
   alias AMQP.Connection
   import AMQP.Basic
 
+  @connection_down_reconnect 5
+  @econnrefused_reconnect 60 * 5
+  @connection_closed_reconnect 30
+
   def start_link(url) do
     GenServer.start_link(__MODULE__, url, name: __MODULE__)
   end
 
   @impl true
   def init(url) do
-    {:ok, %{url: url}, {:continue, :connect}}
+    {:ok, %{url: url, status: :starting}, {:continue, :connect}}
   end
 
   @doc """
   Connect, (todo: reconnect) functionality
   """
   @impl true
-  def handle_continue(:connect, st = %{url: url}) do
+  def handle_continue(:connect, st) do
+    do_connect(st)
+  end
+
+  @impl true
+  def handle_info({:DOWN, _, :process, pid, reason}, st = %{conn: %{pid: pid}}) do
+    do_reconnecting(st, @connection_down_reconnect)
+  end
+
+  @impl true 
+  def handle_info(:reconnect, st = %{status: :reconnecting}) do 
+    do_connect(st)
+  end
+
+  @impl true 
+  def handle_info(:reconnect, st) do 
+    # noop, we are not reconnecting
+    {:noreply, st}
+  end
+
+  @doc """
+  Attempts to connect to queue.
+  It can succeed and enter status: :connected
+  Or it can fail and enter status: :reconnecting
+  """
+  def do_connect(st = %{url: url}) do
     case Connection.open(url) do
       {:ok, c} ->
         # Inform us when AMQP connection is down
         Process.monitor(c.pid)
 
+        debug("Queue connection: success")
+        Proca.Pipes.Supervisor.handle_connected()
+
         {
           :noreply,
           %{
             url: url,
-            conn: c
+            conn: c,
+            status: :connected
           }
         }
-      {:error, reason} -> {:stop, reason, st}
+      
+      {:error, :econnrefused} -> 
+        do_reconnecting(st, @econnrefused_reconnect)
+        # Try reconnecting and run in lowered mode
+      
+      {:error, {:socket_closed_unexpectedly, _details}} -> 
+        do_reconnecting(st, @connection_closed_reconnect)
+
+      {:error, reason} -> 
+        error("Queue connection: failed with #{inspect(reason)}")
+        {:stop, reason, st}
     end
   end
 
-  @impl true
-  def handle_info({:DOWN, _, :process, pid, reason}, %{conn: %{pid: pid}}) do
-    Logger.critical([message: "Queue connection down", reason: reason])
-    # XXX stop Pipes ?
+  @doc """
+  Reconnecting procedure - shutdown processing and schedule connection attempt `after_seconds`
+  """
+  def do_reconnecting(%{url: url}, after_seconds) do
+    debug("Queue connection: Cannot connect. Running in degraded mode and will retry in #{after_seconds} sec")
+    Proca.Pipes.Supervisor.handle_disconnected()
+    Process.send_after(self(), :reconnect, after_seconds * 1000)
 
-    # Stop GenServer. Will be restarted by Supervisor.
-    # Wait, re-connect?
-    {:stop, {:connection_lost, reason}, nil}
+    {
+      :noreply,
+      %{
+        url: url,
+        status: :reconnecting
+      }
+    }
   end
+
 
   @impl true
   def handle_call(:connection, _from, %{conn: conn} = st) do
-    {:reply, conn, st}
+    {:reply, {:ok, conn}, st}
+  end
+
+  @impl true
+  def handle_call(:connection, _from, %{status: :reconnecting} = st) do 
+    {:reply, {:error, :reconnecting}, st}
   end
 
   @impl true
@@ -60,17 +116,29 @@ defmodule Proca.Pipes.Connection do
     GenServer.call(__MODULE__, :connection)
   end
 
+  def is_connected?() do 
+    case connection() do
+      {:ok, _conn} -> true
+      _ -> false 
+    end
+  end
+
   def connection_url() do
     GenServer.call(__MODULE__, :connection_url)
   end
 
   def with_chan(f) do
-    {:ok, chan} = Channel.open(connection())
+    case connection() do 
+      {:error, _reason} = e -> e
 
-    try do
-      apply(f, [chan])
-    after
-      Channel.close(chan)
+      {:ok, conn} ->
+        {:ok, chan} = Channel.open(conn)
+
+        try do
+          apply(f, [chan])
+        after
+          Channel.close(chan)
+        end
     end
   end
 
@@ -81,11 +149,16 @@ defmodule Proca.Pipes.Connection do
       persistent: true
     ]
 
-    with_chan(fn chan ->
+    r = with_chan(fn chan ->
       case JSON.encode(data) do
         {:ok, payload} -> publish(chan, exchange, routing_key, payload, options)
         _e -> :error
       end
     end)
+
+    case r do 
+      {:error, _reason} -> :error
+      x -> x
+    end
   end
 end
