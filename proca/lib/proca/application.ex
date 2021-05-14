@@ -23,7 +23,9 @@ defmodule Proca.Application do
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
       {Proca.Pipes.Connection, Application.get_env(:proca, Proca.Pipes)[:url]},
+
       {Proca.Server.Processing, []},
+      {Proca.Stages.ProcessOld, []},
 
       # {Proca.Stage.ThankYou, []},
       # {Proca.Stage.SQS, []}
