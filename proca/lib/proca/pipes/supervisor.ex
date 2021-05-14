@@ -1,6 +1,22 @@
 defmodule Proca.Pipes.Supervisor do
   @moduledoc """
-  Supervisor of Topology processes.
+  Supervisor of Topology processes and Processing Workers.
+
+  The processes involved are:
+
+  Pipes.Registry  - a process registry for all Pipes-related processes
+
+  Pipes.Connection - a process managing Queue connection
+
+  Pipes.Supervisor - supervises the whole processing hierarchy
+   |
+   |--- OrgSupervisor(org_id) --- Topology - manage queue/exchange setup for org_id
+   |                           `- Worker1
+   |                           `- Worker2
+   |--- OrgSupervisor(org_id2) -- Topology - for org_id2
+   .
+   .
+
   """
   use DynamicSupervisor
   alias Proca.Pipes
