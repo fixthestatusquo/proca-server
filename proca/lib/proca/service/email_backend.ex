@@ -39,13 +39,18 @@ defmodule Proca.Service.EmailBackend do
   @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t) :: %Email{}
   @callback deliver(%Email{}, %Org{}) :: any()
 
-  def service_module(:mailjet) do
-    Proca.Service.Mailjet
-  end
+  def service_module(:mailjet), do: Proca.Service.Mailjet
+
+  def service_module(:testmail), do: Proca.TestEmailBackend
 
   def supports_templates?(org = %Org{template_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:supports_templates?, [org])
+  end
+
+  def list_templates(org = %Org{template_backend: %Service{name: name}}) do 
+    service_module(name)
+    |> apply(:list_templates, [org])
   end
 
   @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok

@@ -69,7 +69,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
 
   def copy_from(_, %{name: name, from_name: from_name}, %{context: %{org: org}}) do
     with ap when not is_nil(ap) <- ActionPage.find(from_name),
-         {:ok, new_ap} <- create_copy_in(org, ap, %{name: name})
+         {:ok, new_ap} <- ActionPage.create_copy_in(org, ap, %{name: name})
     do
     Proca.Server.Notify.action_page_added(new_ap)
     {:ok, new_ap}
@@ -79,12 +79,4 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def create_copy_in(org, ap, attrs) do
-    %ActionPage{}
-    |> change(Map.take(ap, [:config, :delivery, :journey, :locale]))
-    |> ActionPage.changeset(attrs)
-    |> put_assoc(:org, org)
-    |> put_assoc(:campaign, ap.campaign)
-    |> Repo.insert()
-  end
 end
