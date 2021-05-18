@@ -7,3 +7,5 @@ defenum(ExternalService, ses: "ses", sqs: "sqs", mailjet: "mailjet", wordpress: 
 
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)
 
+defenum(DonateSchema, stripe_payment_intent: 0)
+

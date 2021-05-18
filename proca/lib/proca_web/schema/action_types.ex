@@ -72,7 +72,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Tracking codes (UTM_*)"
       arg(:tracking, :tracking_input)
 
-      # XXX is this handled?
       @desc "Links previous actions with just reference to this supporter data"
       arg(:contact_ref, :id)
 
@@ -171,7 +170,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :fields, list_of(non_null(:custom_field_input))
 
     @desc "Donation payload"
-    field :donation, :donation_action_input
+    field :donate, :donate_action_input
   end
 
   # XXX maybe rename to :exported_action or something
@@ -258,8 +257,13 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :first_name, :string
   end
 
-  input_object :donation_action_input do 
+  input_object :donate_action_input do 
+    @desc "Provide payload schema to validate, eg. stripe_payment_intent"
+    field :schema, :donate_schema
+    @desc "Provide amount of this donation"
     field :amount, :decimal
-    field :payload, :json
+    @desc "Provide currency of this donation"
+    field :currency, :string
+    field :payload, non_null(:json)
   end
 end
