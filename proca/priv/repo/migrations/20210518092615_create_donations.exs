@@ -1,9 +1,9 @@
-defmodule Proca.Repo.Migrations.CreateDonates do
+defmodule Proca.Repo.Migrations.CreateDonation do
   use Ecto.Migration
 
   def change do
-    create table(:donates) do
-      add :schema, DonateSchema.type(), default: nil, null: true
+    create table(:donations) do
+      add :schema, DonationSchema.type(), default: nil, null: true
       add :payload, :map, null: false
       add :amount, :decimal, null: false
       add :currency, :text, null: false
@@ -12,6 +12,6 @@ defmodule Proca.Repo.Migrations.CreateDonates do
       timestamps()
     end
 
-    create index(:donates, [:action_id])
+    create index(:donations, [:action_id])
   end
 end

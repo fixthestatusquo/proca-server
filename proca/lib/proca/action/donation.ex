@@ -1,10 +1,10 @@
-defmodule Proca.Action.Donate do
+defmodule Proca.Action.Donation do
   use Ecto.Schema
-  alias Proca.Action.Donate
+  alias Proca.Action.Donation
   import Ecto.Changeset
 
-  schema "donates" do
-    field :schema, DonateSchema, default: nil
+  schema "donations" do
+    field :schema, DonationSchema, default: nil
     field :payload, :map, default: %{}
     field :amount, :decimal
     field :currency, :string, default: "EUR"
@@ -15,8 +15,8 @@ defmodule Proca.Action.Donate do
   end
 
   @doc false
-  def changeset(donate, attrs) do
-    donate
+  def changeset(donation, attrs) do
+    donation
     |> cast(attrs, [:schema, :payload, :amount, :currency])
     |> extract_amount()
     |> extract_currency()
@@ -28,7 +28,7 @@ defmodule Proca.Action.Donate do
   end
 
   def changeset(attrs) when is_map(attrs) do 
-    changeset(%Donate{}, attrs)
+    changeset(%Donation{}, attrs)
   end
 
   def extract_amount(%Ecto.Changeset{changes: %{payload: payload}} = ch) do 

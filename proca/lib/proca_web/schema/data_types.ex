@@ -34,7 +34,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :it_ci
   end
 
-  enum :donate_schema do 
+  enum :donation_schema do 
     value :stripe_payment_intent 
   end
 
