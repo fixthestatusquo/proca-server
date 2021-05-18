@@ -122,10 +122,10 @@ defmodule ProcaWeb.Api.ActionTest do
   }
   """
 
-  test "create stripe donate action", %{org: org, pages: [ap]} do 
+  test "create stripe donation action", %{org: org, pages: [ap]} do 
     {:ok, %{contact_ref: ref}} = action_with_contact(org, ap, %{
-        action_type: "stripe-donate",
-        donate: %{
+        action_type: "stripe-donation",
+        donation: %{
           schema: :stripe_payment_intent,
           payload: Jason.decode!(@stripe_payment_intent_example1)
         }
@@ -135,7 +135,7 @@ defmodule ProcaWeb.Api.ActionTest do
         address: %{country: "PL", postcode: "03-123"}}
     )
 
-    # fetch last donate action
+    # fetch last donation action
     {:ok, ref} = Supporter.base_decode(ref)
     last_action = from(s in Supporter, 
       left_join: a in  assoc(s, :actions), 
@@ -145,11 +145,11 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert not is_nil(last_action)
 
-    last_action = Repo.preload(last_action, :donate)
-    assert not is_nil(last_action.donate)
-    assert Decimal.eq?(last_action.donate.amount, "10.99")
-    assert last_action.donate.currency == "USD"
-    IO.inspect last_action.donate
+    last_action = Repo.preload(last_action, :donation)
+    assert not is_nil(last_action.donation)
+    assert Decimal.eq?(last_action.donation.amount, "10.99")
+    assert last_action.donation.currency == "USD"
+    IO.inspect last_action.donation
 
   end
 
