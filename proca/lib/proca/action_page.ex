@@ -128,6 +128,16 @@ defmodule Proca.ActionPage do
     |> put_change(:org_id, org.id)
   end
 
+  def create_copy_in(org, ap, attrs) do
+    ap = Repo.preload(ap, [:campaign])
+    %ActionPage{}
+    |> change(Map.take(ap, [:config, :delivery, :journey, :locale]))
+    |> ActionPage.changeset(attrs)
+    |> put_assoc(:org, org)
+    |> put_assoc(:campaign, ap.campaign)
+    |> Repo.insert()
+  end
+
   def find(id) when is_integer(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]
   end
@@ -157,5 +167,15 @@ defmodule Proca.ActionPage do
   def new_data(params, action_page) do
     schema = contact_schema(action_page)
     apply(schema, :from_input, [params])
+  end
+
+  def name_domain(name) when is_bitstring(name) do 
+    [d|_] = String.split(name, "/")
+    d
+  end
+
+  def name_path(name) when is_bitstring(name) do 
+    [_|p] = String.split(name, "/")
+    p |> Enum.join("/")
   end
 end

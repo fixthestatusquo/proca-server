@@ -79,4 +79,32 @@ defmodule Proca.Action do
     )
     |> Repo.one()
   end
+
+  def get_by_id_and_ref(action_id, ref) do 
+    action = from(a in Action, 
+      join: s in Supporter, on: s.id == a.supporter_id,
+      where: a.id == ^action_id and s.fingerprint == ^ref, 
+      preload: [supporter: s])
+    |> Repo.one()
+  end
+
+  def confirm(action = %Action{}) do 
+    case action.processing_status do 
+      :new -> {:error, "not allowed"}
+      :confirming -> Repo.update(change(action, processing_status: :accepted))
+      :rejected -> {:error, "data already rejected"}
+      :accepted -> {:noop, "already accepted"}
+      :delivered -> {:noop, "already accepted"}
+    end
+  end
+
+  def reject(action = %Action{}) do 
+    case action.processing_status do 
+      :new -> {:error, "not allowed"}
+      :confirming -> Repo.update(change(action, processing_status: :rejected))
+      :rejected -> {:noop, "already rejected"}
+      :accepted -> Repo.update(change(action, processing_status: :rejected))
+      :delivered -> Repo.update(change(action, processing_status: :rejected))
+    end
+  end
 end

@@ -7,6 +7,7 @@ defmodule Proca.Org do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Proca.Org
 
   schema "orgs" do
     field :name, :string
@@ -105,5 +106,13 @@ defmodule Proca.Org do
   def active_public_key(org) do
     org = Proca.Repo.preload(org, [:active_public_keys])
     List.first(org.public_keys)
+  end
+
+  def put_service(%Org{} = org, %Proca.Service{name: name} = service) 
+    when name in [:mailjet, :testmail]
+    do
+    change(org)
+    |> put_assoc(:email_backend, service)
+    |> put_assoc(:template_backend, service)
   end
 end

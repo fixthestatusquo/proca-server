@@ -36,6 +36,20 @@ defmodule Proca.Service.EmailRecipient do
 
     %{rcpt | fields: fields}
   end
+
+  def put_confirm(
+    rcpt = %EmailRecipient{fields: fields}, 
+    cnf = %Proca.Confirm{code: confirm_code, email: email, object_id: obj_id}
+    ) do 
+      cflds = %{
+        "confirm_code" => confirm_code, 
+        "confirm_email" => email,
+        "confirm_object_id" => obj_id,
+        "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
+        "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)
+      }
+      %{rcpt | fields: Map.merge(fields, cflds)}
+  end
 end
 
 defimpl Bamboo.Formatter, for: Proca.Service.EmailRecipient do

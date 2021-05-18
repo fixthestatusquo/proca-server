@@ -3,7 +3,6 @@ defmodule ProcaWeb.Resolvers.Authorized do
   Absinthe middleware to mark authenticated API calls.
 
   `middleware Authorized` - checks if context has :user
-  `middleware Authorized` - can?: {:org | :campaign | :action_page, perms}, get_by: [:id, [name: :org_name]]
   `middleware Authorized` - can?: perms, access: [:org | :campaign | :action_page, by: [:id, [name: :org_name]]]
 
   """
@@ -13,6 +12,7 @@ defmodule ProcaWeb.Resolvers.Authorized do
   alias Proca.Repo
   alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer}
   import Ecto.Query
+  import ProcaWeb.Helper, only: [msg_ext: 3, cant_msg: 1, msg_ext: 2]
 
   def call(resolution, opts) do
     case resolution.context do
@@ -24,11 +24,7 @@ defmodule ProcaWeb.Resolvers.Authorized do
       _ ->
         resolution
         |> Absinthe.Resolution.put_result(
-          {:error,
-           %{
-             message: "Authentication is required for this API call",
-             extensions: %{code: "unauthorized"}
-           }}
+          {:error, msg_ext("Authentication is required for this API call", "unauthorized")}
         )
     end
   end
@@ -44,13 +40,7 @@ defmodule ProcaWeb.Resolvers.Authorized do
       nil ->
         resolution
         |> Absinthe.Resolution.put_result(
-          {:error,
-           %{
-             message: "User is not a member of team responsible for resource",
-             extensions: %{
-               code: "permission_denied"
-             }
-           }}
+          {:error, msg_ext("User is not a member of team responsible for resource","permission_denied")}
         )
 
       {staffer, resource} ->
@@ -78,30 +68,15 @@ defmodule ProcaWeb.Resolvers.Authorized do
     else
       resolution
       |> Absinthe.Resolution.put_result(
-        {:error,
-         %{
-           message: "User does not have sufficient permissions",
-           extensions: %{
-             code: "permission_denied",
-             required: perms
-           }
-         }}
+        {:error, cant_msg(perms)}
       )
     end
   end
 
   def verify_perms(resolution = %{context: %{}}, _perms) do
-    IO.inspect(resolution.state, label: "STATE")
     resolution
-    |> Absinthe.Resolution.put_result(
-      {
-        :error,
-        %{
-          message: "No object accessed, thus no permission can be verified",
-          extensions: %{
-            code: "permission_denied"
-          }
-        }
+    |> Absinthe.Resolution.put_result({
+        :error, msg_ext("No object accessed, thus no permission can be verified", "permission_denied")
       })
   end
 

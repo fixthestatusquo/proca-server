@@ -38,6 +38,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   enum :status do
     value :success, description: "Operation completed succesfully"
     value :confirming, description: "Operation awaiting confirmation"
+    value :noop, description: "Operation had no effect (already done)"
   end
 
   # XXX should this not be moved out from here?
