@@ -9,9 +9,31 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  DateTime: any;
+  /**
+   * The `Date` scalar type represents a date. The Date appears in a JSON
+   * response as an ISO8601 formatted string, without a time component.
+   */
   Date: any;
   Json: any;
+  /**
+   * The `Decimal` scalar type represents signed double-precision fractional
+   * values parsed by the `Decimal` library.  The Decimal appears in a JSON
+   * response as a string to preserve precision.
+   */
+  Decimal: any;
+  /**
+   * The `Naive DateTime` scalar type represents a naive date and time without
+   * timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+   * string.
+   */
+  NaiveDateTime: any;
+  /**
+   * The `DateTime` scalar type represents a date and time in the UTC
+   * timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+   * string, including UTC timezone ("Z"). The parsed date and time string will
+   * be converted to UTC if there is an offset.
+   */
+  DateTime: any;
 };
 
 /** Tracking codes */
@@ -31,7 +53,6 @@ export type SelectActionPage = {
   campaignId?: Maybe<Scalars['Int']>;
 };
 
-
 export type KeyWithPrivate = {
   id: Scalars['Int'];
   public: Scalars['String'];
@@ -39,6 +60,7 @@ export type KeyWithPrivate = {
   name: Scalars['String'];
   active: Scalars['Boolean'];
   expired: Scalars['Boolean'];
+  /** When the key was expired, in UTC */
   expiredAt: Maybe<Scalars['DateTime']>;
 };
 
@@ -68,7 +90,7 @@ export type NationalityInput = {
 /** GDPR consent data for this org */
 export type Consent = {
   optIn: Scalars['Boolean'];
-  givenAt: Scalars['DateTime'];
+  givenAt: Scalars['NaiveDateTime'];
 };
 
 /** Tracking codes */
@@ -152,6 +174,8 @@ export type ActionInput = {
   actionType: Scalars['String'];
   /** Other fields that accompany the signature */
   fields?: Maybe<Array<CustomFieldInput>>;
+  /** Donation payload */
+  donation?: Maybe<DonationActionInput>;
 };
 
 export type AddKeyInput = {
@@ -195,13 +219,13 @@ export type CampaignStatsSupporterCountByOthersArgs = {
 export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
-  insertedAt: Scalars['DateTime'];
+  insertedAt: Scalars['NaiveDateTime'];
   fields: Array<CustomField>;
 };
 
 export type Action = {
   actionId: Scalars['Int'];
-  createdAt: Scalars['DateTime'];
+  createdAt: Scalars['NaiveDateTime'];
   actionType: Scalars['String'];
   contact: Contact;
   fields: Array<CustomField>;
@@ -360,6 +384,7 @@ export type RootMutationTypeActivateKeyArgs = {
   orgName: Scalars['String'];
 };
 
+
 export type RootQueryType = {
   /** Get a list of campains */
   campaigns: Array<Campaign>;
@@ -442,6 +467,8 @@ export type PublicActionPage = {
   campaign: Campaign;
   org: PublicOrg;
 };
+
+
 
 export type DeleteUserResult = {
   status: Status;
@@ -556,7 +583,8 @@ export type Key = {
   name: Scalars['String'];
   active: Scalars['Boolean'];
   expired: Scalars['Boolean'];
-  expiredAt: Maybe<Scalars['DateTime']>;
+  /** When the key was expired, in UTC */
+  expiredAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
 export type Org = {
@@ -651,6 +679,11 @@ export type CustomFieldInput = {
   key: Scalars['String'];
   value: Scalars['String'];
   transient?: Maybe<Scalars['Boolean']>;
+};
+
+export type DonationActionInput = {
+  amount?: Maybe<Scalars['Decimal']>;
+  payload?: Maybe<Scalars['Json']>;
 };
 
 export type OrgInput = {

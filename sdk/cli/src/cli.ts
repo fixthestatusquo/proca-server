@@ -100,8 +100,8 @@ export default function cli() {
 
         }
 
-        if (error.result && error.result.errors && error.result.errors.length > 0) {
-          const {message, extensions, path} = error.result.errors[0]
+        if (error.result && error.result.error && error.result.error.length > 0) {
+          const {message, extensions, path} = error.result.error[0]
           console.error(
             message
               + (extensions && extensions.code ? `, code: ${extensions.code}` : ``)

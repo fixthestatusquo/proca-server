@@ -161,8 +161,8 @@ class Terminal {
   }
 
   error(err : any) {
-    if (err.response && err.response.errors) {
-      const x = err.response.errors.map((e : any) => {
+    if (err.response && err.response.error) {
+      const x = err.response.error.map((e : any) => {
         return e.message || '(no error message)'
       })
 

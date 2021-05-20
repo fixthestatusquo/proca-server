@@ -172,16 +172,6 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "DateTime",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "OBJECT",
         "name": "KeyWithPrivate",
         "description": null,
@@ -284,7 +274,7 @@
           },
           {
             "name": "expiredAt",
-            "description": null,
+            "description": "When the key was expired, in UTC",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -489,7 +479,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "DateTime",
+                "name": "NaiveDateTime",
                 "ofType": null
               }
             },
@@ -962,7 +952,7 @@
       {
         "kind": "SCALAR",
         "name": "Date",
-        "description": null,
+        "description": "The `Date` scalar type represents a date. The Date appears in a JSON\nresponse as an ISO8601 formatted string, without a time component.",
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1072,6 +1062,18 @@
                   "ofType": null
                 }
               }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "donation",
+            "description": "Donation payload",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "DonationActionInput",
+              "ofType": null
             },
             "defaultValue": null,
             "isDeprecated": false,
@@ -1404,7 +1406,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "DateTime",
+                "name": "NaiveDateTime",
                 "ofType": null
               }
             },
@@ -1471,7 +1473,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "DateTime",
+                "name": "NaiveDateTime",
                 "ofType": null
               }
             },
@@ -2573,6 +2575,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "Decimal",
+        "description": "The `Decimal` scalar type represents signed double-precision fractional\nvalues parsed by the `Decimal` library.  The Decimal appears in a JSON\nresponse as a string to preserve precision.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "RootQueryType",
         "description": null,
@@ -3173,6 +3185,26 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "NaiveDateTime",
+        "description": "The `Naive DateTime` scalar type represents a naive date and time without\ntimezone. The DateTime appears in a JSON response as an ISO8601 formatted\nstring.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "DateTime",
+        "description": "The `DateTime` scalar type represents a date and time in the UTC\ntimezone. The DateTime appears in a JSON response as an ISO8601 formatted\nstring, including UTC timezone (\"Z\"). The parsed date and time string will\nbe converted to UTC if there is an offset.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -3868,11 +3900,11 @@
           },
           {
             "name": "expiredAt",
-            "description": null,
+            "description": "When the key was expired, in UTC",
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "DateTime",
+              "name": "NaiveDateTime",
               "ofType": null
             },
             "isDeprecated": false,
@@ -4462,6 +4494,41 @@
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "DonationActionInput",
+        "description": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "amount",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Decimal",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "payload",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Json",
               "ofType": null
             },
             "defaultValue": null,
