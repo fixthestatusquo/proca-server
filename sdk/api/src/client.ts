@@ -45,10 +45,9 @@
 
 // apollo stack
 
-import {split, ApolloLink, execute, makePromise, ExecutionResult, FetchResult, Observable} from "apollo-link"
+import {createClient, Client, OperationResult } from '@urql/core';
+import {Source} from 'wonka';
 
-// http stack
-import {createHttpLink} from "apollo-link-http"
 
 // websocket stack
 import {createAbsintheSocketLink} from "@absinthe/socket-apollo-link"
@@ -139,13 +138,17 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
   x['transport'] = WebSocket
 
   const wsLink = createAbsintheSocketLink(AbsintheSocket.create(phoenixSocket))
-  const httpLink = createHttpLink({uri: config.url, headers: auth, includeExtensions: true})
+  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth}})
 
+/*
   return split(
     (op) => hasSubscription(op.query),
     wsLink as ApolloLink,  // AbsintheSocketLink supposed to be compatible but a cast still needed.
     httpLink
   )
+  */
+
+  return httpLink
 }
 
 export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) {
@@ -153,7 +156,7 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
     throw new Error("api url must not be null or undefined")
   }
   const config = apiUrls(url, options ? options.wsUrl : undefined)
-  const httpLink = createHttpLink({uri: config.url, headers: auth, includeExtensions: true})
+  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth}})
   return httpLink
 }
 
@@ -167,24 +170,22 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
  *
  */
 
+
 export async function request<Q,R>(
-  link: ApolloLink,
+  link: Client,
   query: DocumentNode<Q,R>,
   variables: R,
-  extensions?: Extensions) : Promise<ExecutionResult<Q> & ExecutionErrors & FetchResult> {
-  return makePromise(
-    execute(link, {
-      query,
-      variables,
-      extensions
-    }) as Observable<ExecutionResult<Q> & ExecutionErrors & FetchResult>
-  )
+  extensions?: Extensions) : Promise<OperationResult<Q, R>> {
+    const res = link.query(query, variables as undefined as object).toPromise();
+    return res as undefined as Promise<OperationResult<Q,R>>;
 }
 
 export function subscribe<Q,R>(
-  link: ApolloLink,
+  link: Client,
   query: DocumentNode<Q,R>,
   variables: R
-) : Observable<ExecutionResult<Q> & FetchResult> {
-  return execute(link, {query, variables}) as Observable<ExecutionResult<Q> & FetchResult>
+)  {
+  const source = link.subscription(query, variables as unknown as object)
+  return source as undefined as Source<OperationResult<Q,R>>
 }
+
