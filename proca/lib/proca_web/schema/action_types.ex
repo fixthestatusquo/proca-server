@@ -184,6 +184,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :campaign, non_null(:action_campaign)
     field :action_page, non_null(:simple_action_page)
     field :privacy, non_null(:consent)
+    field :donation, :donation
   end
 
   object :action_campaign do
@@ -264,6 +265,16 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :amount, :decimal
     @desc "Provide currency of this donation"
     field :currency, :string
+    field :payload, non_null(:json)
+  end
+
+  object :donation do 
+    field :schema, :donation_schema
+    @desc "Provide amount of this donation"
+    field :amount, non_null(:decimal)
+    @desc "Provide currency of this donation"
+    field :currency, non_null(:string)
+    @desc "Donation data"
     field :payload, non_null(:json)
   end
 end

@@ -1,5 +1,6 @@
 import EctoEnum
 # Remember to update the GraphQL enums to match these!
+# You can do this in lib/proca_web/schema/data_types.ex file
 
 defenum(ProcessingStatus, new: 0, confirming: 1, rejected: 2, accepted: 3, delivered: 4)
 
