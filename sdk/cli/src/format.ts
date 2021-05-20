@@ -92,9 +92,8 @@ class Terminal {
     }
 
     if (ap.config) {
-      const conf = JSON.parse(ap.config)
       t += t ? "\n" : ""
-      t += JSON.stringify(conf, null, 2)
+      t += JSON.stringify(ap.config, null, 2)
     }
 
     return t
@@ -103,7 +102,7 @@ class Terminal {
   // The standalone json files used to generate widget for action page
   // is using a different format today
   addAPkeysToConfig(ap : types.ActionPage, org : OrgDetails) {
-    const c = JSON.parse(ap.config || '{}') || {}
+    const c = ap.config || {}
 
     const pickLead = ({name, title} : {name: string, title:string}) => ({name, title}); // argh! All this to pick sub-keys. Typescript is terrible.
 
@@ -124,7 +123,7 @@ class Terminal {
     if (!ap.config) {
       return ap
     }
-    const config = JSON.parse(ap.config)
+    const config = ap.config
 
     delete config.actionpage
 
@@ -139,8 +138,6 @@ class Terminal {
     delete config.filename
 
     // organisation - we ignore it
-
-    ap.config = JSON.stringify(config)
 
     return ap
   }
