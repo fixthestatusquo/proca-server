@@ -7,7 +7,6 @@ defmodule ProcaWeb.Resolvers.Campaign do
   alias Proca.{Campaign, ActionPage, Staffer, Org}
   import Proca.Staffer.Permission
   alias ProcaWeb.Helper
-  alias Proca.Server.Notify
 
   def list(_, %{id: id}, _) do
     cl =
@@ -110,7 +109,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
       |> Enum.map(&fix_page_legacy_url/1)
       |> Enum.each(fn page ->
         ap = upsert_action_page(org, campaign, page)
-        Notify.action_page_updated(ap)
+        Proca.Server.Notify.action_page_updated(ap)
         ap
       end)
 
