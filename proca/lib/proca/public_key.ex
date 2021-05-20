@@ -110,7 +110,7 @@ defmodule Proca.PublicKey do
 
   def base_decode_changeset(ch) do
     [:public, :private]
-    |> Enum.reduce(ch, fn f ->
+    |> Enum.reduce(ch, fn f, ch ->
       case get_change(ch, f) do
         encoded -> case base_decode(encoded) do
                      {:ok, decoded} -> change(ch, %{f => decoded})
