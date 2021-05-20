@@ -15,9 +15,9 @@ defmodule Proca.ActionPage do
   schema "action_pages" do
     field :locale, :string
     field :name, :string
-    field :delivery, :boolean
+    field :delivery, :boolean, default: true
     field :journey, {:array, :string}, default: ["Petition", "Share"]
-    field :config, :map
+    field :config, :map, default: %{}
 
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org
