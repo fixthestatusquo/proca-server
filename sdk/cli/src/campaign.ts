@@ -115,6 +115,7 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
     } else {
       json = fs.readFileSync(argv.config, 'utf8')
     }
+    json = JSON.parse(json)
   }
   let actionPage : types.ActionPageInput = removeBlank({
     name: argv.name,
@@ -130,8 +131,16 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
   // DEBUG
   // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
 
-  const {error} = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage})
-  if (error) { throw error }
+  let response 
+  try {
+    response = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage})
+  } catch (e) {
+    console.error(e)
+  }
+  if (response.error) { 
+    console.error(response.error)
+    throw response.error 
+  }
 }
 
 interface UpsertCampaign {

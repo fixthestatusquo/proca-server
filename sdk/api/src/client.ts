@@ -1,59 +1,18 @@
 /*
   NodeJS compatibile Apollo Client
 
-  GraphQL, JavaScript and TypeScript is just a big ball of mud and this is why
-  this file is terrible.
-
-  Apollo Link is the abstract type of link inplemented by "transports", that
-  know how to deliver a query to the server. The transport can ble "split" so
-  there is a different method to run query or mutation (normal HTTP call), then
-  import 'corss-fetch/pollyfill'
-  to run subscription (Websocket).
-
-  On top of that, the WebSocket is a layered interface, custom for each server
-  (Apollo GraphQL implementation differs from how Phoenix/Absinthe handles
-  things). For instance, the Phoenix websocket is multiplexing data and absinthe
-  is just one of the "channels". So we need to use a special PhoenixSocket that
-  handles this, and then wrap it in an apollo compatible socket, to play with
-  Apollo.
-
-  On top of that, browser and nodejs have different implementations of
-  WebSocket. Node is missing it and you need to use 'ws' package which is good
-  except it is not compatible in the "typed" sense - it does not implement the
-  whole standard. 'ws' package devs know that but say that you can go implement
-  it your self or GTFO (https://github.com/websockets/ws/issues/1583).
-
-  A picture is worth a thousand words so:
-
-        ApolloLink
-            |
-          (query hasSubscription?)
-           / \
-          no  yes
-         /     \
- httpLink     wsLink (Apollo Style)
-               |
-              AbsintheSocketLink (an adapter)
-               |
-              AbsintheSocket (Absinthe way of using the channel)
-               |
-              PhoenixSocket (Phoenix way of using the channel)
-               |
-              WebSocket (from 'ws' or browser native)
 
 */
 
 // apollo stack
 
-import {createClient, Client, OperationResult } from '@urql/core';
-import {Source} from 'wonka';
+import {createClient, Client, OperationResult, Exchange, dedupExchange, fetchExchange} from '@urql/core';
+import {Source, subscribe as makeSink, pipe} from 'wonka';
+
 
 
 // websocket stack
-import {createAbsintheSocketLink} from "@absinthe/socket-apollo-link"
-import * as AbsintheSocket from "@absinthe/socket"
-import {Socket as PhoenixSocket} from "phoenix"
-import WebSocket from "ws"
+import createAbsintheExchange from './absintheExchange'
 
 // Types used in our queries
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
@@ -79,7 +38,8 @@ export interface ExecutionErrors {
 }
 
 type LinkOptions = {
-  wsUrl?: string
+  wsUrl?: string,
+  exchanges: Exchange[]
 }
 
 // hasSubscription - helper func to see if we have an operation with subscription
@@ -123,39 +83,34 @@ export function apiUrls(apiUrl: string, wsUrl = "/socket") {
   }
 }
 
-export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
+function apiUrlsConfig (url: string, options?: LinkOptions) {
   if (url === null || url === undefined) {
     throw new Error("api url must not be null or undefined")
   }
   const config = apiUrls(url, options ? options.wsUrl : undefined)
+  return config;
+  
+}
 
-  const phoenixSocket = new PhoenixSocket(config.wsUrl, {transport: "WebSocket"})
+export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
+  const config = apiUrlsConfig(url, options);
 
-  // horrible hack, but @types/phoenix does not allow to pass WebSocket as
-  // transport because it allows only strings. We set a dummy value and set the "private" transport
-  // field here. yey
-  const x = phoenixSocket as any
-  x['transport'] = WebSocket
+  const absintheExchange = createAbsintheExchange(config.wsUrl)
 
-  const wsLink = createAbsintheSocketLink(AbsintheSocket.create(phoenixSocket))
-  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth}})
+  const exchanges = [dedupExchange, fetchExchange, absintheExchange]
+  if (options.exchanges) exchanges.splice(1, 0, ...options.exchanges)
 
-/*
-  return split(
-    (op) => hasSubscription(op.query),
-    wsLink as ApolloLink,  // AbsintheSocketLink supposed to be compatible but a cast still needed.
-    httpLink
-  )
-  */
+  const link = createClient({url: config.url, fetchOptions: {headers: auth}, exchanges})
 
-  return httpLink
+  return link
 }
 
 export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) {
-  if (url === null || url === undefined) {
-    throw new Error("api url must not be null or undefined")
-  }
-  const config = apiUrls(url, options ? options.wsUrl : undefined)
+  const config = apiUrlsConfig(url, options)
+
+  const exchanges = [dedupExchange, fetchExchange]
+  if (options.exchanges) exchanges.splice(1, 0, ...options.exchanges)
+
   const httpLink = createClient({url: config.url, fetchOptions: {headers: auth}})
   return httpLink
 }
@@ -180,7 +135,7 @@ export async function request<Q,R>(
     return res as undefined as Promise<OperationResult<Q,R>>;
 }
 
-export function subscribe<Q,R>(
+export function subscription<Q,R>(
   link: Client,
   query: DocumentNode<Q,R>,
   variables: R
@@ -188,4 +143,18 @@ export function subscribe<Q,R>(
   const source = link.subscription(query, variables as unknown as object)
   return source as undefined as Source<OperationResult<Q,R>>
 }
+
+export function subscribe<Q,R>(
+  source: Source<OperationResult<Q,R>>,
+  callback : (event : OperationResult<Q,R>)=>void
+) {
+  const sink = makeSink(callback)
+
+  return pipe(
+    source,
+    sink
+  ) // returns [unsubscribe] fun
+}
+
+
 
