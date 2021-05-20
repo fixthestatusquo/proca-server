@@ -40,7 +40,7 @@ defmodule ProcaWeb.EncryptionController do
 
     socket =
       if pk.valid? do
-        with pk2 <- changeset_from_base64(pk),
+        with pk2 <- PublicKey.base_decode_changeset(pk) ,
              {:ok, _saved} <- save_as_only_active(pk2, org) do
 
           empty_pk = PublicKey.changeset(%PublicKey{}, %{})
