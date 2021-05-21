@@ -6,10 +6,28 @@
 
 // apollo stack
 
-import {createClient, Client, OperationResult, Exchange, dedupExchange, fetchExchange} from '@urql/core';
-import {Source, subscribe as makeSink, pipe} from 'wonka';
+import {createClient, Client, OperationResult, Exchange, dedupExchange, fetchExchange} from '@urql/core'
+import {Source, subscribe as makeSink, pipe} from 'wonka'
+import util from 'util'
+import {tap} from 'wonka'
 
-
+export const debugExchange: Exchange = ({ forward }) => {
+    if (process.env.NODE_ENV === 'production') {
+      return ops$ => forward(ops$);
+  } else {
+      return ops$ =>
+      pipe(
+          ops$,
+        // eslint-disable-next-line no-console
+        tap(op => console.log('[Exchange debug]: Incoming operation: ', util.inspect(op, true, 10, true))),
+        forward,
+        tap(result =>
+          // eslint-disable-next-line no-console
+          console.log('[Exchange debug]: Completed operation: ', result)
+        )
+      );
+  }
+};
 
 // websocket stack
 import createAbsintheExchange from './absintheExchange'
