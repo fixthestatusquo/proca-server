@@ -103,6 +103,20 @@ mutation UpdateActionPage(
       }
   }
 
+
+mutation Update1ActionPage(
+      $id: Int!,
+      $config: Json!
+      ) {
+      updateActionPage(
+        id: $id,
+        input: { config: $config }
+      )
+      {
+        id
+      }
+  }
+
 mutation CopyActionPage($fromName: String!, $toOrg: String!, $toName: String!) {
   copyActionPage(fromName: $fromName,   name: $toName, orgName: $toOrg) {
         id,

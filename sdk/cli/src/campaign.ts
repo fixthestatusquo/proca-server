@@ -133,7 +133,7 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
 
   let response 
   try {
-    response = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage})
+    response = await request(c, admin.Update1ActionPageDocument, {id: argv.id, config: actionPage.config})
   } catch (e) {
     console.error(e)
   }
