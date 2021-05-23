@@ -30,9 +30,9 @@
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.1.0",
     "@urql/core": "^2.1.2",
+    "urql-serialize-scalars-exchange": "^0.1.1",
     "js-base64": "^3.5.2",
     "phoenix": "^1.5.9",
-    "urql-custom-scalars-exchange": "^0.1.5",
     "ws": "^7.3.1"
   },
   "devDependencies": {
@@ -47,6 +47,7 @@
     "@graphql-codegen/typescript-urql": "^2.0.6",
     "@types/phoenix": "^1.5.1",
     "@types/ws": "^7.2.7",
+    "codegen-graphql-scalar-locations": "^0.1.1",
     "graphql": "^15.5.0",
     "graphql-tag": "^2.11.0"
   },

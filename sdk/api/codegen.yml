@@ -1,9 +1,16 @@
 overwrite: true
 schema: "schema/schema.graphql"
 generates:
-  ./src/graphql.schema.json:
+  ./graphql.schema.json:
     plugins:
       - introspection
+
+  ./src/queries/scalarLocations.ts:
+    plugins:
+      - graphql-scalar-locations
+    config:
+      scalars: 
+        - Json
 
   src/apiTypes.ts:
     plugins:

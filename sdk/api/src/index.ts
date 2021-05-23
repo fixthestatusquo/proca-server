@@ -21,5 +21,3 @@ export {
   ExecutionErrors
 } from './client'
 
-export { jsonExchange } from './jsonExchange'
-
