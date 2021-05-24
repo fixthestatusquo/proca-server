@@ -101,7 +101,16 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       campaign: Map.take(action.campaign, [:name, :external_id]),
       action_page: Map.take(action.action_page, [:id, :name, :locale])
     }
+    |> put_action_donation(action.donation)
   end
+
+  def put_action_donation(action_map, donation = %Action.Donation{}) do 
+    action_map 
+    |> Map.put(:donation, donation)
+  end
+
+  def put_action_donation(action_map, donation) when is_nil(donation), do: action_map
+
 
   @default_limit 100
   def export_actions(_parent, params, %{context: %{org: org}}) do
@@ -114,13 +123,15 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         on: c.supporter_id == s.id and c.org_id == ^org.id,
         left_join: pk in assoc(c, :public_key),
         left_join: sk in assoc(c, :sign_key),
+        left_join: ad in assoc(a, :donation),
         limit: ^lim,
         preload: [
           [supporter: {s, [contacts: {c, [:public_key, :sign_key]}]}],
           :action_page,
           :campaign,
           :source,
-          :fields
+          :fields,
+          :donation
         ]
       )
       |> filter_start(params)

@@ -34,6 +34,9 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :it_ci
   end
 
+  enum :donation_schema do 
+    value :stripe_payment_intent 
+  end
 
   enum :status do
     value :success, description: "Operation completed succesfully"
