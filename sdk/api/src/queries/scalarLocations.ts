@@ -158,6 +158,7 @@ export const scalarLocations : Record<string,Node> = {
         }
       }
     },
+    "stripeCreatePaymentIntent": "Json",
     "campaigns": {
       "config": "Json"
     },
@@ -165,6 +166,11 @@ export const scalarLocations : Record<string,Node> = {
       "config": "Json",
       "campaign": {
         "config": "Json"
+      }
+    },
+    "exportActions": {
+      "donation": {
+        "payload": "Json"
       }
     },
     "currentUser": {
