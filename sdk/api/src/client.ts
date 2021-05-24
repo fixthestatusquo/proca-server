@@ -101,9 +101,9 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
   const absintheExchange = createAbsintheExchange(config.wsUrl)
 
   const exchanges = [ serializeScalarsExchange, dedupExchange, fetchExchange, absintheExchange]
-  if (options.exchanges) exchanges.splice(1, 0, ...options.exchanges)
+  if (options?.exchanges) exchanges.splice(1, 0, ...options.exchanges)
 
-  const link = createClient({url: config.url, fetchOptions: {headers: auth}, exchanges})
+  const link = createClient({url: config.url, fetchOptions: {headers: auth || {}}, exchanges})
 
   return link
 }
@@ -112,9 +112,9 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
   const config = apiUrlsConfig(url, options)
 
   const exchanges = [serializeScalarsExchange, dedupExchange, fetchExchange]
-  if (options.exchanges) exchanges.splice(1, 0, ...options.exchanges)
+  if (options?.exchanges) exchanges.splice(1, 0, ...options.exchanges)
 
-  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth}})
+  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth || {}}})
   return httpLink
 }
 

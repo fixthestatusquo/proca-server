@@ -46,6 +46,7 @@ export type Action = {
   campaign: ActionCampaign;
   actionPage: SimpleActionPage;
   privacy: Consent;
+  donation: Maybe<Donation>;
 };
 
 export type ActionCampaign = {
@@ -301,10 +302,29 @@ export type DeleteUserResult = {
   status: Status;
 };
 
-export type DonationActionInput = {
-  amount?: Maybe<Scalars['Decimal']>;
-  payload?: Maybe<Scalars['Json']>;
+export type Donation = {
+  schema: Maybe<DonationSchema>;
+  /** Provide amount of this donation */
+  amount: Scalars['Decimal'];
+  /** Provide currency of this donation */
+  currency: Scalars['String'];
+  /** Donation data */
+  payload: Scalars['Json'];
 };
+
+export type DonationActionInput = {
+  /** Provide payload schema to validate, eg. stripe_payment_intent */
+  schema?: Maybe<DonationSchema>;
+  /** Provide amount of this donation */
+  amount?: Maybe<Scalars['Decimal']>;
+  /** Provide currency of this donation */
+  currency?: Maybe<Scalars['String']>;
+  payload: Scalars['Json'];
+};
+
+export enum DonationSchema {
+  StripePaymentIntent = 'STRIPE_PAYMENT_INTENT'
+}
 
 export type GenKeyInput = {
   name: Scalars['String'];
@@ -436,6 +456,12 @@ export type OrgInput = {
   config?: Maybe<Scalars['Json']>;
 };
 
+export type PaymentIntentInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
+};
+
 export type PersonalData = {
   /** Schema for contact personal information */
   contactSchema: ContactSchema;
@@ -511,6 +537,7 @@ export type RootMutationType = {
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  stripeCreatePaymentIntent: Scalars['Json'];
 };
 
 
@@ -621,6 +648,12 @@ export type RootMutationTypeAddKeyArgs = {
 export type RootMutationTypeActivateKeyArgs = {
   id: Scalars['Int'];
   orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeStripeCreatePaymentIntentArgs = {
+  input: PaymentIntentInput;
+  actionPageId: Scalars['Int'];
 };
 
 export type RootQueryType = {
