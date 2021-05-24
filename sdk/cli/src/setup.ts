@@ -77,8 +77,8 @@ async function setupAuth(config : CliConfig) {
   console.log(`Thanks! Fetching campaign list to check the credentials`)
   try {
     await listCampaigns({}, config)
-  } catch(errors) {
-    console.error(`Nope, something is not ok with your sign-in: `, errors.message)
+  } catch(error) {
+    console.error(`Nope, something is not ok with your sign-in: `, error.message)
   }
 
   return config
@@ -135,8 +135,8 @@ async function setupKeys(config : CliConfig) {
 
 async function activate(config: CliConfig) {
   const c = client(config)
-  const {data, errors} = await request(c, admin.ListKeysDocument, {"org": config.org})
-  if (errors) return console.error("Cannot list keys on server", errors)
+  const {data, error} = await request(c, admin.ListKeysDocument, {"org": config.org})
+  if (error) return console.error("Cannot list keys on server", error)
 
   const keys = data.org.keys.filter(({expired}) => {return !expired})
 
@@ -162,7 +162,7 @@ async function activate(config: CliConfig) {
   console.log(`Setting that key as active..`)
   const op = await request(c, admin.ActivateKeyDocument, {org: config.org, id: akey.keyId})
 
-  console.log(op.errors? `Failed to activate key ${op.errors[0].message}` : `Activated key: ${op.data.activateKey.status}`)
+  console.log(op.error? `Failed to activate key ${op.error.message}` : `Activated key: ${op.data.activateKey.status}`)
   
 }
 
@@ -221,8 +221,8 @@ async function generateKey(keys : KeyStore, config : CliConfig) {
   ])
   const c = client(config)
 
-  const {data, errors} = await request(c, admin.GenerateKeyDocument, {org: config.org, input})
-  if (errors) throw errors
+  const {data, error} = await request(c, admin.GenerateKeyDocument, {org: config.org, input})
+  if (error) throw error
 
   const newKey = data.generateKey
 
@@ -244,8 +244,9 @@ async function generateKey(keys : KeyStore, config : CliConfig) {
 
   if (activation.activate) {
     const activateOp = await request(c, admin.ActivateKeyDocument, {org: config.org, id: newKey.id})
-    if (activateOp.errors) throw activateOp.errors
-    console.log(`Activating key: ${activateOp.data.status}`)
+    if (activateOp.error) throw activateOp.error
+    
+    console.log(`Activating key: ${activateOp.data.activateKey.status}`)
   }
 
   return keys

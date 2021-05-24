@@ -232,7 +232,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :expired, non_null(:boolean)
 
     @desc "When the key was expired, in UTC"
-    field :expired_at, :datetime
+    field :expired_at, :naive_datetime
   end
 
   object :key_ids do 

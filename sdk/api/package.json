@@ -28,12 +28,11 @@
     "dist"
   ],
   "dependencies": {
-    "@absinthe/socket-apollo-link": "^0.2.1",
     "@graphql-typed-document-node/core": "^3.1.0",
-    "apollo-link": "^1.2.14",
-    "apollo-link-http": "^1.5.17",
+    "@urql/core": "^2.1.2",
+    "urql-serialize-scalars-exchange": "^0.1.1",
     "js-base64": "^3.5.2",
-    "phoenix": "^1.5.5",
+    "phoenix": "^1.5.9",
     "ws": "^7.3.1"
   },
   "devDependencies": {
@@ -45,12 +44,11 @@
     "@graphql-codegen/typescript": "1.20.2",
     "@graphql-codegen/typescript-graphql-request": "^2.0.0",
     "@graphql-codegen/typescript-operations": "^1.17.8",
-    "@types/absinthe__socket": "^0.2.1",
-    "@types/absinthe__socket-apollo-link": "^0.2.1",
-    "@types/graphql": "^14.5.0",
+    "@graphql-codegen/typescript-urql": "^2.0.6",
+    "@types/phoenix": "^1.5.1",
     "@types/ws": "^7.2.7",
-    "get-graphql-schema": "^2.1.2",
-    "graphql": "^15.3.0",
+    "codegen-graphql-scalar-locations": "^0.1.1",
+    "graphql": "^15.5.0",
     "graphql-tag": "^2.11.0"
   },
   "peerDependencies": {
