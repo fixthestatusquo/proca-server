@@ -65,7 +65,7 @@ export type AddActionContactVariables = Types.Exact<{
   contact: Types.ContactInput;
   contactRef?: Types.Maybe<Types.Scalars['ID']>;
   actionType: Types.Scalars['String'];
-  fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
+  fields?: Types.Maybe<Array<Types.CustomFieldInput> | Types.CustomFieldInput>;
   privacy: Types.ConsentInput;
   tracking?: Types.Maybe<Types.TrackingInput>;
 }>;
@@ -77,7 +77,7 @@ export type AddActionVariables = Types.Exact<{
   id: Types.Scalars['Int'];
   contactRef: Types.Scalars['ID'];
   actionType: Types.Scalars['String'];
-  fields?: Types.Maybe<Array<Types.CustomFieldInput>>;
+  fields?: Types.Maybe<Array<Types.CustomFieldInput> | Types.CustomFieldInput>;
   tracking?: Types.Maybe<Types.TrackingInput>;
 }>;
 

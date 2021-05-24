@@ -5,6 +5,13 @@ generates:
     plugins:
       - introspection
 
+  ./src/queries/scalarLocations.ts:
+    plugins:
+      - graphql-scalar-locations
+    config:
+      scalars: 
+        - Json
+
   src/apiTypes.ts:
     plugins:
       - typescript

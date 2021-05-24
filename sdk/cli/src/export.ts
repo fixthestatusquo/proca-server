@@ -51,12 +51,12 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
   const query = argv.campaign !== undefined ? admin.ExportCampaignActionsDocument : admin.ExportOrgActionsDocument
 
   for (;;) {
-    const {data, errors} = await request(c, query, vars)
+    const {data, error} = await request(c, query, vars)
 
     delete argv.after  // we will use id to paginate
 
-    if (errors) {
-      console.error(fmt.error(errors))
+    if (error) {
+      console.error(fmt.error(error))
       break
     }
 

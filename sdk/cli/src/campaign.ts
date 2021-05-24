@@ -12,7 +12,7 @@ export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
   const fmt = getFormatter(argv)
 
   const result = await request(c, admin.ListCampaignsDocument, {"org": config.org})
-  if (result.errors) throw result.errors
+  if (result.error) throw result.error
 
   result.data.org.campaigns
     .map(c => fmt.campaign(c as types.Campaign))
@@ -30,9 +30,9 @@ export async function getCampaign(argv : IdOpt & FormatOpts, config : CliConfig)
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.GetCampaignDocument, {"org": config.org, "id": argv.id})
+  const {data, error} = await request(c, admin.GetCampaignDocument, {"org": config.org, "id": argv.id})
 
-  if (errors) throw errors
+  if (error) throw error
 
   console.log(fmt.campaign(data.org.campaign as types.Campaign))
 }
@@ -42,8 +42,8 @@ export async function listActionPages(argv : FormatOpts, config : CliConfig) {
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const {data, errors} = await request(c, admin.ListActionPagesDocument, {"org": config.org})
-  if (errors) throw errors
+  const {data, error} = await request(c, admin.ListActionPagesDocument, {"org": config.org})
+  if (error) throw error
 
   data.org.actionPages
     .map(ap => fmt.actionPage(ap as types.ActionPage, data.org))
@@ -81,14 +81,14 @@ export async function getActionPage(argv : GetActionPageOpts & FormatOpts, confi
     vars.org = config.org
 
   if (argv.public) {
-    const {data, errors} = await request(c, widget.GetActionPageDocument, vars)
-    if (errors) throw errors
+    const {data, error} = await request(c, widget.GetActionPageDocument, vars)
+    if (error) throw error
     t = fmt.actionPage(data.actionPage as types.PublicActionPage, data.actionPage.org)
     console.log(t)
     return data.actionPage
   } else {
-    const {data, errors} = await request(c, admin.GetActionPageDocument, vars)
-    if (errors) throw errors
+    const {data, error} = await request(c, admin.GetActionPageDocument, vars)
+    if (error) throw error
     t = fmt.actionPage(data.org.actionPage as types.ActionPage, data.org)
     console.log(t)
     return data.org.actionPage
@@ -115,6 +115,7 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
     } else {
       json = fs.readFileSync(argv.config, 'utf8')
     }
+    json = JSON.parse(json)
   }
   let actionPage : types.ActionPageInput = removeBlank({
     name: argv.name,
@@ -130,8 +131,16 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
   // DEBUG
   // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
 
-  const {errors} = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage})
-  if (errors) { throw errors }
+  let response 
+  try {
+    response = await request(c, admin.Update1ActionPageDocument, {id: argv.id, config: actionPage.config})
+  } catch (e) {
+    console.error(e)
+  }
+  if (response.error) { 
+    console.error(response.error)
+    throw response.error 
+  }
 }
 
 interface UpsertCampaign {
@@ -150,8 +159,8 @@ export async function upsertCampaign(argv : UpsertCampaign & FormatOpts, config 
     actionPages: []
   })
 
-  const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
-  if (errors) throw errors
+  const {data, error} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
+  if (error) throw error
 
   console.log(`Created campaign id: ${data.upsertCampaign.id}`)
 }
@@ -173,8 +182,8 @@ export async function upsertActionPage(argv : UpsertActionPage & FormatOpts, con
     })]
   }
 
-  const {data, errors} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
-  if (errors) throw errors
+  const {data, error} = await request(c, admin.UpsertCampaignDocument, {org: config.org, campaign})
+  if (error) throw error
 
   console.log(`Created action page`)
 }

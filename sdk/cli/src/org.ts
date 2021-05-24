@@ -22,8 +22,8 @@ export async function listKeys(argv : FormatOpts, config : CliConfig) {
   const fmt = getFormatter(argv)
   const keys = loadOrCreateKeys(config)
 
-  const {data, errors} = await request(c, admin.ListKeysDocument, {"org": config.org})
-  if (errors) throw errors
+  const {data, error} = await request(c, admin.ListKeysDocument, {"org": config.org})
+  if (error) throw error
   data.org.keys
     .forEach((k) => {
       console.log(fmt.key(k, keys))
@@ -55,9 +55,9 @@ export async function addOrg(argv : AddOrgOpts & FormatOpts, config : CliConfig)
     contactSchema: contactSchemaFromString(argv.schema.toUpperCase())
   }
   console.log(org)
-  const {data, errors} = await request(c, admin.AddOrgDocument, {org})
+  const {data, error} = await request(c, admin.AddOrgDocument, {org})
 
-  if (errors) throw errors
+  if (error) throw error
 
   console.log(`Added org ${data.addOrg.name} with id ${data.addOrg.id}`)
 

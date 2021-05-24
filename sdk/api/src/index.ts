@@ -16,6 +16,8 @@ export {
   link,     // advanced link that can do both get and subscribe requests
   httpLink, // simple link that can do get requests
   request,  // run get request
-  subscribe, // run subscribe request
+  subscription, // run subscribe request
+  subscribe,  // attach to subscription to receive data
   ExecutionErrors
 } from './client'
+
