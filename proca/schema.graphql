@@ -103,6 +103,19 @@ type ActionCampaign {
   externalId: Int
 }
 
+type Donation {
+  schema: DonationSchema
+
+  "Provide amount of this donation"
+  amount: Decimal!
+
+  "Provide currency of this donation"
+  currency: String!
+
+  "Donation data"
+  payload: Json!
+}
+
 "ActionPage declaration (using the legacy url attribute)"
 input ActionPageInputLegacyUrl {
   id: Int
@@ -212,6 +225,7 @@ type Action {
   campaign: ActionCampaign!
   actionPage: SimpleActionPage!
   privacy: Consent!
+  donation: Donation
 }
 
 scalar Json
@@ -362,6 +376,8 @@ type RootMutationType {
 
     orgName: String!
   ): ActivateKeyResult!
+
+  stripeCreatePaymentIntent(input: PaymentIntentInput!, actionPageId: Int!): Json!
 }
 
 """
@@ -515,6 +531,12 @@ type OrgCount {
   count: Int!
 }
 
+input PaymentIntentInput {
+  amount: Float!
+  currency: String!
+  paymentMethodTypes: [String!]
+}
+
 "Campaign input"
 input CampaignInput {
   "Campaign unchanging identifier"
@@ -595,6 +617,10 @@ type PersonalData {
 
   "Email opt in template name"
   emailOptInTemplate: String
+}
+
+enum DonationSchema {
+  STRIPE_PAYMENT_INTENT
 }
 
 input SelectCampaign {
@@ -721,8 +747,16 @@ input CustomFieldInput {
 }
 
 input DonationActionInput {
+  "Provide payload schema to validate, eg. stripe_payment_intent"
+  schema: DonationSchema
+
+  "Provide amount of this donation"
   amount: Decimal
-  payload: Json
+
+  "Provide currency of this donation"
+  currency: String
+
+  payload: Json!
 }
 
 input OrgInput {

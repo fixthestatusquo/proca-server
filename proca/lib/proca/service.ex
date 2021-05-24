@@ -40,6 +40,8 @@ defmodule Proca.Service do
     |> Repo.one()
   end
 
+
+  # AWS helpers. 
   def aws_request(req, name, org = %Org{}) do
     case get_one_for_org(name, org) do
       srv = %Service{} -> aws_request(req, srv)
@@ -56,6 +58,7 @@ defmodule Proca.Service do
     )
   end
 
+  # Generic JSON request helpers
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
