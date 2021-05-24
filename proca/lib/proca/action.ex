@@ -24,6 +24,7 @@ defmodule Proca.Action do
     belongs_to :action_page, Proca.ActionPage
     belongs_to :source, Proca.Source
 
+    has_one :donation, Proca.Action.Donation
     has_many :fields, Proca.Field
 
     field :processing_status, ProcessingStatus, default: :new
@@ -61,6 +62,7 @@ defmodule Proca.Action do
         _ -> []
       end
     )
+    |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
   end
 
   @doc """

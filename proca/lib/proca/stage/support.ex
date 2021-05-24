@@ -70,7 +70,8 @@ defmodule Proca.Stage.Support do
          %Supporter{
            fingerprint: ref,
            first_name: first_name,
-           email: email
+           email: email,
+           area: area
          },
          %Contact{
            payload: payload
@@ -79,6 +80,7 @@ defmodule Proca.Stage.Support do
     %{
       "ref" => Supporter.base_encode(ref),
       "firstName" => first_name,
+      "area" => area,
       "email" => email,
       "payload" => payload
     }
@@ -88,7 +90,8 @@ defmodule Proca.Stage.Support do
          %Supporter{
            fingerprint: ref,
            first_name: first_name,
-           email: email
+           email: email,
+           area: area
          },
          contact
        )
@@ -97,6 +100,7 @@ defmodule Proca.Stage.Support do
       "ref" => Supporter.base_encode(ref),
       "firstName" => first_name,
       "email" => email,
+      "area" => area,
       "payload" => ""
     }
   end
@@ -110,7 +114,8 @@ defmodule Proca.Stage.Support do
           :action_page,
           :campaign,
           :source,
-          :fields
+          :fields,
+          :donation
         ]
       )
 
@@ -141,7 +146,7 @@ defmodule Proca.Stage.Support do
         "actionType" => action.action_type,
         "fields" => Field.list_to_map(action.fields),
         "createdAt" => action.inserted_at |> NaiveDateTime.to_iso8601()
-      },
+      } |> put_action_donation(action.donation),
       "actionPage" => %{
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
@@ -164,6 +169,21 @@ defmodule Proca.Stage.Support do
     |> Map.put("schema", "proca:action:1")
     |> Map.put("stage", Atom.to_string(stage))
   end
+
+  def put_action_donation(action_map, donation = %Action.Donation{}) do 
+    donation_map = %{
+      "payload" => donation.payload,
+      "amount" => donation.amount,
+      "currency" => donation.currency
+    }
+
+    donation_map = if is_nil(donation.schema), do: donation_map, else: Map.put(donation_map, "schema", Atom.to_string(donation.schema))
+
+    action_map 
+    |> Map.put("donation", donation_map)
+  end
+
+  def put_action_donation(action_map, donation) when is_nil(donation), do: action_map
 
   def ignore(message = %Broadway.Message{}, reason \\ "ignored") do 
     message
