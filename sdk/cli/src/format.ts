@@ -99,7 +99,7 @@ class Terminal {
     return t
   }
 
-  // The standalone json files used to generate widget for action page
+  // The json files used to generate widget for action page
   // is using a different format today
   addAPkeysToConfig(ap : types.ActionPage, org : OrgDetails) {
     const c = ap.config || {}
