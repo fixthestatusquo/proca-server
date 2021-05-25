@@ -25,6 +25,7 @@ defmodule Proca.Service do
     |> put_change(:org_id, org_id)
   end
 
+  # XXX potential problem - org.services might not be sorted from latest updated
   def get_one_for_org(name, %Org{services: lst}) when is_list(lst) do
     case Enum.filter(lst, fn srv -> srv.name == name end) do
       [s | _] -> s
