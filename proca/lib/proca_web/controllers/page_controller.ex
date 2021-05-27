@@ -3,13 +3,11 @@ defmodule ProcaWeb.PageController do
   use ProcaWeb, :controller
   alias Proca.Staffer
   alias Proca.Repo
-  alias ProcaWeb.Live.AuthHelper
+  alias ProcaWeb.Controller.AuthHelper
   import Ecto.Query
 
   def index(conn, params) do
     conn = signin(conn, params["org_name"])
-
-    orgs = Proca.Org.list()
 
     user_orgs =
       if conn.assigns[:user] do
@@ -21,7 +19,6 @@ defmodule ProcaWeb.PageController do
 
     render(conn, "index.html", %{
       staffer: conn.assigns[:staffer],
-      orgs: orgs,
       user_orgs: user_orgs
     })
   end
