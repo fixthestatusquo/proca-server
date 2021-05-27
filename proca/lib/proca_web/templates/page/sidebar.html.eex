@@ -7,62 +7,10 @@
       <img src="<%= Routes.static_path(@conn, "/images/proca-icon-dark.png") %>" style="width: 50px; height: 50px">
     </div>
     <div class="sidebar-brand-text">
-      <h2><%= if @user && @staffer, do: @staffer.org.name %></h2>
+      <h2>Proca</h2>
     </div>
   </a>
 
-  <%= if @user do %>
-  <li class="nav-item"> 
-    <%=  link to: Routes.live_path(@conn, ProcaWeb.DashController), class: 'nav-link' do %>
-      <i class="fas fa-fw fa-couch"></i>
-      <span>Dashboard</span></a>
-    <% end %>
-  </li>
-
-  <!-- Nav Item - Dashboard -->
-  <%= if Proca.Staffer.Permission.can? @staffer, [:manage_orgs] do %>
-  <li class="nav-item"> <%# XXX add support for active class here %>
-    <%=  link to: Routes.live_path(@conn, ProcaWeb.OrgsController), class: 'nav-link' do %>
-      <i class="fas fa-fw fa-fist-raised"></i>
-      <span>Organisations</span></a>
-    <% end %>
-  </li>
-  <% end %>
-
-  <li class="nav-item ">
-    <%=  link to: Routes.live_path(@conn, ProcaWeb.CampaignsController), class: 'nav-link' do %>
-      <i class="fas fa-fw fa-flag"></i>
-      <span>Campaigns</span></a>
-    <% end %>
-  </li>
-
-  <!-- Divider -->
-  <hr class="sidebar-divider">
-
-  <!-- Heading -->
-  <!-- <div class="sidebar-heading">
-       Interface
-       </div>
-  -->
-  <!-- Nav Item - Pages Collapse Menu -->
-  <li class="nav-item">
-    <a class="nav-link collapsed" href="#sidebar-settings" data-toggle="collapse" aria-expanded="true" aria-controls="sidebar-settings" data-parent="#sidebar">
-      <i class="fas fa-fw fa-cog"></i>
-      <span>Settings</span>
-    </a>
-    <div id="sidebar-settings" class="collapse" aria-labelledby="headingTwo" >
-      <div class="bg-white py-2 collapse-inner rounded">
-        <h6 class="collapse-header">Settings:</h6>
-        <%= link "Team", to: Routes.live_path(@conn, ProcaWeb.TeamController), class: "collapse-item" %>
-        <%= link "Encryption", to: Routes.live_path(@conn, ProcaWeb.EncryptionController), class: "collapse-item" %>
-      </div>
-    </div>
-  </li>
-
-
-  <!-- Divider -->
-  <hr class="sidebar-divider d-none d-md-block">
-  <% end %>
 
   <!-- Sign in and out -->
   <%= if is_nil(@user) do %>

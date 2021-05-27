@@ -32,21 +32,8 @@ defmodule ProcaWeb.Router do
   scope "/" do
     pipe_through :browser
 
-    # For keeping the session from expiring when user is just using websocket (in liveview)
-    get "/keep-alive", ProcaWeb.HelperController, :noop
-
     get "/", ProcaWeb.PageController, :index
     pow_routes()
-  end
-
-  scope "/dash", ProcaWeb do
-    pipe_through [:browser, :auth]
-
-    live "/orgs", OrgsController
-    live "/campaigns", CampaignsController
-    live "/settings/encryption", EncryptionController
-    live "/settings/team", TeamController
-    live "/", DashController
   end
 
   scope "/api" do
