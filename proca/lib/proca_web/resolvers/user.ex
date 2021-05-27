@@ -18,6 +18,7 @@ defmodule ProcaWeb.Resolvers.User do
 
   def current_user(_, _, %{context: %{user: user}}) do
     user = Repo.preload(user, [staffers: :org])
+    # last_used_staffers = user.staffers |> Enum.sort(&())
 
     {:ok,
      %{

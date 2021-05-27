@@ -29,10 +29,24 @@ query GetCampaign($org: String!, $id: Int!) {
             count
           },
           actionCount { actionType, count }
+        },
+        org { name, title },
+        partnerships {
+          org {
+            name, title
+          }
         }
       }
     }
   }
+
+query FindPublicCampaign($name: String,$title: String) {
+  campaigns(title: $title, name: $name) {
+    id, name, externalId, 
+    title, config, contactSchema, 
+    org { name, title }
+  }
+}
 
 query GetActionPage($org: String!, $id: Int, $name: String) {
     org(name: $org) {

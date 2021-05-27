@@ -39,8 +39,13 @@ defmodule ProcaWeb.Resolvers.Authorized do
   end
 
   def verify_access(resolution, user, [resource_type | opts]) do
+    args = case Keyword.get(opts, :from, :arguments) do
+      :arguments -> resolution.arguments 
+      :parent -> resolution.source
+    end
+
     by_fields = Keyword.get(opts, :by, [:id, :name])
-    case get_staffer_for_resource(user, resource_type, resolution.arguments, by_fields) do
+    case get_staffer_for_resource(user, resource_type, args, by_fields) do
       nil ->
         resolution
         |> Absinthe.Resolution.put_result(

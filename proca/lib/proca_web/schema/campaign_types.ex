@@ -60,6 +60,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
+    field :partnerships, list_of(non_null(:partnership)) do 
+      middleware Authorized
+      resolve(&Resolvers.Campaign.partnerships/3)
+    end
+
     field :org, non_null(:public_org)
   end
 
@@ -105,6 +110,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     field :org, non_null(:public_org)
   end
+
+  object :partnership do 
+    field :org, non_null(:public_org)
+   end
+
 
 
   object :campaign_mutations do

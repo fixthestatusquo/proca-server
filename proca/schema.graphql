@@ -94,6 +94,10 @@ enum ContactSchema {
   BASIC
 }
 
+type Partnership {
+  org: PublicOrg!
+}
+
 type RootSubscriptionType {
   actionPageUpserted(orgName: String): PublicActionPage!
 }
@@ -656,6 +660,8 @@ type Campaign {
     "Return actions of this action type"
     actionType: String!
   ): PublicActionsResult!
+
+  partnerships: [Partnership!]
 
   org: PublicOrg!
 }
