@@ -9,9 +9,31 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  DateTime: any;
+  /**
+   * The `Date` scalar type represents a date. The Date appears in a JSON
+   * response as an ISO8601 formatted string, without a time component.
+   */
   Date: any;
   Json: any;
+  /**
+   * The `Decimal` scalar type represents signed double-precision fractional
+   * values parsed by the `Decimal` library.  The Decimal appears in a JSON
+   * response as a string to preserve precision.
+   */
+  Decimal: any;
+  /**
+   * The `Naive DateTime` scalar type represents a naive date and time without
+   * timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+   * string.
+   */
+  NaiveDateTime: any;
+  /**
+   * The `DateTime` scalar type represents a date and time in the UTC
+   * timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+   * string, including UTC timezone ("Z"). The parsed date and time string will
+   * be converted to UTC if there is an offset.
+   */
+  DateTime: any;
 };
 
 /** Tracking codes */
@@ -31,7 +53,6 @@ export type SelectActionPage = {
   campaignId?: Maybe<Scalars['Int']>;
 };
 
-
 export type KeyWithPrivate = {
   id: Scalars['Int'];
   public: Scalars['String'];
@@ -39,6 +60,7 @@ export type KeyWithPrivate = {
   name: Scalars['String'];
   active: Scalars['Boolean'];
   expired: Scalars['Boolean'];
+  /** When the key was expired, in UTC */
   expiredAt: Maybe<Scalars['DateTime']>;
 };
 
@@ -68,7 +90,7 @@ export type NationalityInput = {
 /** GDPR consent data for this org */
 export type Consent = {
   optIn: Scalars['Boolean'];
-  givenAt: Scalars['DateTime'];
+  givenAt: Scalars['NaiveDateTime'];
 };
 
 /** Tracking codes */
@@ -94,6 +116,10 @@ export enum ContactSchema {
   Basic = 'BASIC'
 }
 
+export type Partnership = {
+  org: PublicOrg;
+};
+
 export type RootSubscriptionType = {
   actionPageUpserted: PublicActionPage;
 };
@@ -106,6 +132,16 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 export type ActionCampaign = {
   name: Scalars['String'];
   externalId: Maybe<Scalars['Int']>;
+};
+
+export type Donation = {
+  schema: Maybe<DonationSchema>;
+  /** Provide amount of this donation */
+  amount: Scalars['Decimal'];
+  /** Provide currency of this donation */
+  currency: Scalars['String'];
+  /** Donation data */
+  payload: Scalars['Json'];
 };
 
 /** ActionPage declaration (using the legacy url attribute) */
@@ -152,6 +188,8 @@ export type ActionInput = {
   actionType: Scalars['String'];
   /** Other fields that accompany the signature */
   fields?: Maybe<Array<CustomFieldInput>>;
+  /** Donation payload */
+  donation?: Maybe<DonationActionInput>;
 };
 
 export type AddKeyInput = {
@@ -195,13 +233,13 @@ export type CampaignStatsSupporterCountByOthersArgs = {
 export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
-  insertedAt: Scalars['DateTime'];
+  insertedAt: Scalars['NaiveDateTime'];
   fields: Array<CustomField>;
 };
 
 export type Action = {
   actionId: Scalars['Int'];
-  createdAt: Scalars['DateTime'];
+  createdAt: Scalars['NaiveDateTime'];
   actionType: Scalars['String'];
   contact: Contact;
   fields: Array<CustomField>;
@@ -209,6 +247,7 @@ export type Action = {
   campaign: ActionCampaign;
   actionPage: SimpleActionPage;
   privacy: Consent;
+  donation: Maybe<Donation>;
 };
 
 
@@ -248,6 +287,7 @@ export type RootMutationType = {
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  stripeCreatePaymentIntent: Scalars['Json'];
 };
 
 
@@ -360,6 +400,13 @@ export type RootMutationTypeActivateKeyArgs = {
   orgName: Scalars['String'];
 };
 
+
+export type RootMutationTypeStripeCreatePaymentIntentArgs = {
+  input: PaymentIntentInput;
+  actionPageId: Scalars['Int'];
+};
+
+
 export type RootQueryType = {
   /** Get a list of campains */
   campaigns: Array<Campaign>;
@@ -443,6 +490,8 @@ export type PublicActionPage = {
   org: PublicOrg;
 };
 
+
+
 export type DeleteUserResult = {
   status: Status;
 };
@@ -453,6 +502,12 @@ export type OrgCount = {
   org: PublicOrg;
   /** count of supporters registered by org */
   count: Scalars['Int'];
+};
+
+export type PaymentIntentInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
 };
 
 /** Campaign input */
@@ -520,6 +575,10 @@ export type PersonalData = {
   emailOptInTemplate: Maybe<Scalars['String']>;
 };
 
+export enum DonationSchema {
+  StripePaymentIntent = 'STRIPE_PAYMENT_INTENT'
+}
+
 export type SelectCampaign = {
   id?: Maybe<Scalars['Int']>;
 };
@@ -540,6 +599,7 @@ export type Campaign = {
   stats: CampaignStats;
   /** Fetch public actions */
   actions: PublicActionsResult;
+  partnerships: Maybe<Array<Partnership>>;
   org: PublicOrg;
 };
 
@@ -556,7 +616,8 @@ export type Key = {
   name: Scalars['String'];
   active: Scalars['Boolean'];
   expired: Scalars['Boolean'];
-  expiredAt: Maybe<Scalars['DateTime']>;
+  /** When the key was expired, in UTC */
+  expiredAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
 export type Org = {
@@ -651,6 +712,16 @@ export type CustomFieldInput = {
   key: Scalars['String'];
   value: Scalars['String'];
   transient?: Maybe<Scalars['Boolean']>;
+};
+
+export type DonationActionInput = {
+  /** Provide payload schema to validate, eg. stripe_payment_intent */
+  schema?: Maybe<DonationSchema>;
+  /** Provide amount of this donation */
+  amount?: Maybe<Scalars['Decimal']>;
+  /** Provide currency of this donation */
+  currency?: Maybe<Scalars['String']>;
+  payload: Scalars['Json'];
 };
 
 export type OrgInput = {

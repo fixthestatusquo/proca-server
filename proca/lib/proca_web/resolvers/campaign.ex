@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   Resolvers for campaign queries in mutations
   """
   import Ecto.Query
-  alias Proca.Repo
+  import Proca.Repo
   alias Proca.{Campaign, ActionPage, Staffer, Org}
   import Proca.Staffer.Permission
   alias ProcaWeb.Helper
@@ -13,7 +13,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], x.id == ^id)
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
@@ -22,7 +22,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], x.name == ^name)
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
@@ -31,13 +31,13 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], like(x.title, ^title))
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
 
   def list(_, _, _) do
-    cl = Proca.Repo.all(list_query())
+    cl = all(list_query())
     {:ok, cl}
   end
 
@@ -67,7 +67,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
     with_names = 
     from(o in Org, where: o.id in ^org_ids, select: {o.id, o.name, o.title})
-    |> Repo.all()
+    |> all()
     |> Enum.map(fn {id, name, title} -> 
       %{
         org: %{ name: name, title: title },
@@ -104,7 +104,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
         end
       end)
 
-    result = Repo.transaction(fn ->
+    result = transaction(fn ->
       campaign = upsert_campaign(org, attrs)
       pages
       |> Enum.map(&fix_page_legacy_url/1)
@@ -139,13 +139,13 @@ defmodule ProcaWeb.Resolvers.Campaign do
     campaign = Campaign.upsert(org, attrs)
 
     if not campaign.valid? do
-      Repo.rollback(campaign)
+      rollback(campaign)
     end
 
     if campaign.data.id do
-      Repo.update!(campaign)
+      update!(campaign)
     else
-      Repo.insert!(campaign)
+      insert!(campaign)
     end
   end
 
@@ -153,13 +153,33 @@ defmodule ProcaWeb.Resolvers.Campaign do
     ap = ActionPage.upsert(org, campaign, attrs)
 
     if not ap.valid? do
-      Repo.rollback(ap)
+      rollback(ap)
     end
 
     if ap.data.id do
-      Repo.update!(ap)
+      update!(ap)
     else
-      Repo.insert!(ap)
+      insert!(ap)
+    end
+  end
+
+  def partnerships(%Campaign{id: c_id, org_id: lead_id} = campaign, _, %{context: %{user: user}}) do 
+    case Proca.Staffer.for_user_in_org(user, lead_id) do 
+      nil -> 
+        {:ok, nil}
+      staffer -> 
+        all_partner_ids = from(
+          ap in ActionPage, 
+          where: ap.campaign_id == ^c_id and ap.org_id != ^lead_id, 
+          select: ap.org_id, 
+          distinct: true
+        )
+        partnerships = from(o in Org, 
+          where: o.id in subquery(all_partner_ids)
+        )
+        |> all()
+        |> Enum.map(fn o -> %{org: o} end)
+        {:ok, partnerships}
     end
   end
 end
