@@ -14,7 +14,7 @@ defmodule ProcaWeb.Resolvers.Service do
         payment_intent_metadata(ap)
         |> put_referer(context))
 
-      case Service.Stripe.create_payment_intent(stripe, pi) |> IO.inspect(label: "pi") do
+      case Service.Stripe.create_payment_intent(stripe, pi) do
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
       end
@@ -22,6 +22,28 @@ defmodule ProcaWeb.Resolvers.Service do
       nil -> {:error, "Action Page not found or does not support Stripe"}
     end
   end
+
+  def stripe_create_subscription(
+        _parent,
+        _params = %{action_page_id: ap_id, input: input},
+        context
+      ) do
+    with ap = %ActionPage{} <- ActionPage.find(ap_id),
+         stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
+      sbscr = input
+      |> Map.put(:metadata,
+        payment_intent_metadata(ap)
+        |> put_referer(context))
+
+      case Service.Stripe.create_subscription(stripe, sbscr) do
+        {:ok, result} -> {:ok, result}
+        {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
+      end
+    else
+      nil -> {:error, "Action Page not found or does not support Stripe"}
+    end
+  end
+
 
   defp payment_intent_metadata(%ActionPage{
          name: name,
