@@ -10,3 +10,5 @@ defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)
 
 defenum(DonationSchema, stripe_payment_intent: 0)
 
+defenum(DonationFrequencyUnit, one_off: 0, weekly: 1, monthly: 2)
+
