@@ -174,7 +174,8 @@ defmodule Proca.Stage.Support do
     donation_map = %{
       "payload" => donation.payload,
       "amount" => donation.amount,
-      "currency" => donation.currency
+      "currency" => donation.currency,
+      "frequencyUnit" => donation.frequency_unit
     }
 
     donation_map = if is_nil(donation.schema), do: donation_map, else: Map.put(donation_map, "schema", Atom.to_string(donation.schema))

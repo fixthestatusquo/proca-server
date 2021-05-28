@@ -265,6 +265,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :amount, :decimal
     @desc "Provide currency of this donation"
     field :currency, :string
+    field :frequency_unit, :donation_frequency_unit
     field :payload, non_null(:json)
   end
 
@@ -276,5 +277,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :currency, non_null(:string)
     @desc "Donation data"
     field :payload, non_null(:json)
+    @desc "Donation frequency unit"
+    field :frequency_unit, non_null(:donation_frequency_unit)
   end
 end
