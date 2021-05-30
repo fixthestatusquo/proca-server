@@ -64,6 +64,12 @@ defmodule Proca.Service.Mailjet do
     |> MailjetHelper.template_language(true)
   end
 
+  def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
+    when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
+    
+    %{email | subject: subject, html_body: html, text_body: text}
+  end
+
   @impl true
   def put_reply_to(email, reply_to_email) do
     email

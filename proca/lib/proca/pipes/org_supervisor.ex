@@ -31,7 +31,7 @@ defmodule Proca.Pipes.OrgSupervisor do
     topology = {Proca.Pipes.Topology, org}
 
     workers = [
-      Proca.Stage.ThankYou,
+      Proca.Stage.EmailSupporter,
       Proca.Stage.SQS,
     ]
     |> Enum.filter(fn mod -> apply(mod, :start_for?, [org]) end)

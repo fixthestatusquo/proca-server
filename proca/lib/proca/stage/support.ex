@@ -5,7 +5,7 @@ defmodule Proca.Stage.Support do
   (system) or externally (custom).
   """
 
-  alias Proca.{Action, Supporter, PublicKey, Contact, Field}
+  alias Proca.{Action, Supporter, PublicKey, Contact, Field, Confirm}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Broadway.Message
@@ -184,6 +184,27 @@ defmodule Proca.Stage.Support do
   end
 
   def put_action_donation(action_map, donation) when is_nil(donation), do: action_map
+
+  defp link_verb(:confirm), do: "accept"
+  defp link_verb(:reject), do: "reject"
+
+  def supporter_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}, op) do 
+    ref = Supporter.base_encode(fpr)
+
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, ref, link_verb(op))
+  end
+
+  def confirm_link(%Confirm{code: code, email: email}, op) when is_bitstring(code) and is_bitstring(email) do 
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code, email: email)
+  end
+
+  def confirm_link(%Confirm{code: code, object_id: id}, op) when is_bitstring(code) and is_number(id) do 
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code, id: id)
+  end
+
+  def confirm_link(%Confirm{code: code}, op) when is_bitstring(code) do 
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code)
+  end
 
   def ignore(message = %Broadway.Message{}, reason \\ "ignored") do 
     message

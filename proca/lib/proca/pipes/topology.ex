@@ -103,14 +103,14 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "confirm.supporter"),
         wqn(o, "email.supporter"),
-        bind: Stage.ThankYou.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
+        bind: Stage.EmailSupporter.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
         route: "#"
       },
 
       {
         xn(o, "deliver"),
         wqn(o, "email.supporter"),
-        bind: Stage.ThankYou.start_for?(o),
+        bind: Stage.EmailSuporter.start_for?(o),
         route: "#"
       },
 

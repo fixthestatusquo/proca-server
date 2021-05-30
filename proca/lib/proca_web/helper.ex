@@ -99,4 +99,29 @@ defmodule ProcaWeb.Helper do
       _ -> {:error, "User cannot manage this action page"}
     end
   end
+
+  def cant_msg(perms), do: %{
+    message: "User does not have sufficient permissions",
+    extensions: %{
+      code: "permission_denied",
+      required: perms
+    }
+  }
+
+  def msg_ext(msg, code, ext \\ %{}), do: %{
+    message: msg,
+    extensions: %{code: code} |> Map.merge(ext)
+  }
+
+  def has_error?(errors, field, msg) 
+  when is_list(errors) and is_atom(field) and is_bitstring(msg) do 
+    errors 
+    |> Enum.any?(fn {^field, {^msg, _}} -> true; _ -> false end)
+  end
+
+  def request_basic_auth(conn, msg) do 
+    conn
+    |> Plug.Conn.put_resp_header("WWW-Authenticate", "Basic realm=\"Proca\"")
+    |> Plug.Conn.resp(401, msg)
+  end
 end
