@@ -9,7 +9,17 @@ defmodule Proca.Factory do
     org_name = sequence("org")
     %Proca.Org{
       name: org_name,
-      title: "Org with name #{org_name}"
+      title: "Org with name #{org_name}",
+      services: [build(:email_backend)]
+    }
+  end
+
+  def email_backend_factory do 
+    %Proca.Service{
+      name: :testmail,
+      host: "email.host.com",
+      user: "user",
+      password: "password1234"
     }
   end
 
@@ -20,24 +30,26 @@ defmodule Proca.Factory do
     |> Ecto.Changeset.apply_changes
   end
 
-  def campaign_factory do
+  def campaign_factory(attrs) do
     name = sequence("petition")
     title = sequence("petition", &"Petition about Foo (#{&1})")
 
     %Proca.Campaign{
       name: name,
       title: title,
-      org: build(:org),
+      org: Map.get(attrs, :org) || insert(:org),
       force_delivery: false
     }
+    |> merge_attributes(attrs) 
+    |> evaluate_lazy_attributes()
   end
  
   def action_page_factory(attrs) do
-    campaign = Map.get(attrs, :campaign, insert(:campaign))
+    campaign = Map.get(attrs, :campaign) || build(:campaign)
     org = Map.get(attrs, :org, campaign.org)
 
     %Proca.ActionPage{
-      name: sequence("some.url.com/sign"),
+      name: sequence("action_page", &"some.url.com/sign/#{&1}"),
       org: org,
       locale: "en",
       campaign: campaign,
@@ -84,15 +96,17 @@ defmodule Proca.Factory do
   end
 
   def basic_data_pl_supporter_factory(attrs) do
-    action_page = Map.get(attrs, :action_page) || Factory.build(:action_page)
+    action_page = Map.get(attrs, :action_page) || build(:action_page)
     data = Map.get(attrs, :data) || build(:basic_data_pl)
 
     Proca.Supporter.new_supporter(data, action_page)
     |> Ecto.Changeset.apply_changes
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 
   def basic_data_pl_supporter_with_contact_factory(attrs) do
-    action_page = Map.get(attrs, :action_page) || Factory.build(:action_page)
+    action_page = Map.get(attrs, :action_page) || build(:action_page)
     data = Map.get(attrs, :data) || build(:basic_data_pl)
 
     contact = Proca.Contact.Data.to_contact(data, action_page)
@@ -124,11 +138,14 @@ defmodule Proca.Factory do
   end
 
   def action_factory(attrs) do
-    s = build(:basic_data_pl_supporter_with_contact, %{
-      action_page: Map.get(attrs, :action_page, build(:action_page)),
+    # NOTE: insert here so AP is reused in both action and supporter
+    # if I used build it would try to insert both (copies) of AP and result in name conflict
+    s = Map.get(attrs, :supporter) || build(:basic_data_pl_supporter_with_contact, %{
+      action_page: Map.get(attrs, :action_page) || insert(:action_page)
     })
 
     %Proca.Action{
+      action_type: "register",
       action_page: s.action_page,
       campaign: s.action_page.campaign,
       supporter: s
