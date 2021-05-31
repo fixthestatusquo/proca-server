@@ -10,7 +10,7 @@ query ListCampaigns($org: String!) {
 query ListActionPages($org: String!) {
     org(name: $org) {
       actionPages {
-        id, name, locale, config,
+        id, name, locale, config, live,
         journey, extraSupporters, thankYouTemplateRef,
         campaign { id, name, externalId }
       }
@@ -58,6 +58,7 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
         extraSupporters, thankYouTemplateRef,
         journey,
         config,
+        live,
         campaign { id, name, title, externalId, contactSchema }
       }
     }
@@ -68,8 +69,8 @@ query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
     name,
     title,
     actionPages(select: {campaignId: $campaignId}) {
-      id, name, locale,
-      extraSupporters, thankYouTemplateRef, journey, config,
+      id, name, locale, 
+      extraSupporters, thankYouTemplateRef, journey, config, live,
       campaign { name, id, externalId }
     }
   }
@@ -124,7 +125,19 @@ mutation CopyActionPage($fromName: String!, $toOrg: String!, $toName: String!) {
         locale,
         extraSupporters, thankYouTemplateRef,
         journey,
-        config,
+        config, live,
+        campaign { id, name, title, externalId }
+  }
+}
+
+mutation CopyCampaignActionPage($fromCampaign: String!, $toOrg: String!, $toName: String!) {
+  copyCampaignActionPage(fromCampaignName: $fromCampaign,   name: $toName, orgName: $toOrg) {
+        id,
+        name,
+        locale,
+        extraSupporters, thankYouTemplateRef,
+        journey,
+        config, live,
         campaign { id, name, title, externalId }
   }
 }

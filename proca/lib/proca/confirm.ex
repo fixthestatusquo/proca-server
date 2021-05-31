@@ -3,7 +3,7 @@ defmodule Proca.Confirm do
   Confirm represents an action deferred in time.
 
   OPERATION
-  SUBJECT_ID
+  SUBJECT_ID - requester id 
   OBJECT_ID
   CODE
 

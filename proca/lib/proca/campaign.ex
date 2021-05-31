@@ -53,7 +53,16 @@ defmodule Proca.Campaign do
   end
 
   def get_with_local_pages(campaign_id) when is_integer(campaign_id) do 
-    q = from(c in Campaign, where: c.id == ^campaign_id,
+    from(c in Campaign, where: c.id == ^campaign_id,
+      left_join: a in assoc(c, :action_pages),
+      where: a.org_id == c.org_id,
+      order_by: [desc: a.id],
+      preload: [:org, action_pages: a])
+    |> Repo.one()
+  end
+
+  def get_with_local_pages(campaign_name) when is_bitstring(campaign_name) do 
+    from(c in Campaign, where: c.name == ^campaign_name,
       left_join: a in assoc(c, :action_pages),
       where: a.org_id == c.org_id,
       order_by: [desc: a.id],
