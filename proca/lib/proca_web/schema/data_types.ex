@@ -38,6 +38,12 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :stripe_payment_intent 
   end
 
+  enum :donation_frequency_unit do 
+    value :one_off 
+    value :weekly 
+    value :monthly
+  end 
+
   enum :status do
     value :success, description: "Operation completed succesfully"
     value :confirming, description: "Operation awaiting confirmation"
