@@ -7,7 +7,8 @@ defmodule Proca.Service.Stripe do
         params = %{
           amount: amount,
           currency: currency
-        }
+        },
+        metadata
       )
       when is_float(amount) and is_bitstring(currency) do
     intent_args =
@@ -16,18 +17,19 @@ defmodule Proca.Service.Stripe do
         currency: String.downcase(currency)
       }
       |> add_if_given(params, :payment_method_types)
-      |> add_if_given(params, :metadata)
+      |> add_metadata(metadata)
 
     Stripe.PaymentIntent.create(intent_args, api_key: api_key)
   end
 
   def create_subscription(
     %Service{name: :stripe, password: api_key},
-    params = %{ 
+    %{ 
       amount: amount, 
       currency: currency,
       frequency_unit: unit 
-    }
+    },
+    metadata
   ) 
   when is_float(amount) and is_bitstring(currency)
   do 
@@ -41,11 +43,11 @@ defmodule Proca.Service.Stripe do
         },
         product_data: %{
           name: "Donation"
-        } |> add_if_given(params, :metadata)
+        } 
     }
 
 
-    with {:ok, customer} <- Stripe.Customer.create(customer(params), opt),
+    with {:ok, customer} <- Stripe.Customer.create(customer(metadata), opt),
          {:ok, price} <- Stripe.Price.create(price_param, opt)
       do
 
@@ -54,19 +56,19 @@ defmodule Proca.Service.Stripe do
         items: [ %{ price: price.id } ],
         payment_behavior: "default_incomplete",
         expand: ["latest_invoice.payment_intent"]
-      }
-      |> IO.inspect(label: "subscription params")
+      } 
+      |> add_metadata(metadata)
       |> Stripe.Subscription.create(api_key: api_key)
     else
       {:error, e} -> {:error, e}
     end
   end
 
-  defp customer(%{contact_ref: ref}) do 
+  defp customer(%{"contactRef" => ref}) when not is_nil(ref) do 
     %{metadata: %{"contactRef" => ref} }
   end
 
-  defp customer( _par), do: %{}
+  defp customer(_ref), do: %{}
 
 
   # hmm nothing similar in standard library...
@@ -76,6 +78,9 @@ defmodule Proca.Service.Stripe do
       value -> Map.put(map, key, value)
     end
   end
+
+  defp add_metadata(map, metadata) when is_nil(metadata) or map_size(metadata) == 0, do: map
+  defp add_metadata(map, metadata), do: Map.put(map, :metadata, metadata)
 
   defp to_interval(:weekly), do: "week"
   defp to_interval(:monthly), do: "month"

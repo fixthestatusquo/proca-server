@@ -11,6 +11,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     field :stripe_create_payment_intent, type: non_null(:json) do 
       arg :action_page_id, non_null(:integer)
       arg :input, non_null(:stripe_payment_intent_input)
+      arg :contact_ref, :id
 
       resolve(&Resolvers.Service.stripe_create_payment_intent/3)
     end
@@ -18,6 +19,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     field :stripe_create_subscription, type: non_null(:json) do 
       arg :action_page_id, non_null(:integer)
       arg :input, non_null(:stripe_subscription_input)
+      arg :contact_ref, :id
 
       resolve(&Resolvers.Service.stripe_create_subscription/3)
     end

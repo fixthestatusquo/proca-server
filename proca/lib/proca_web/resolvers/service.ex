@@ -4,17 +4,20 @@ defmodule ProcaWeb.Resolvers.Service do
 
   def stripe_create_payment_intent(
         _parent,
-        _params = %{action_page_id: ap_id, input: input},
+        params = %{action_page_id: ap_id, input: input},
         context
       ) do
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
          stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
       pi = input
-      |> Map.put(:metadata,
-        payment_intent_metadata(ap)
-        |> put_referer(context))
 
-      case Service.Stripe.create_payment_intent(stripe, pi) do
+      meta = payment_intent_metadata(ap)
+      |> put_referer(context)
+      |> put_contact_ref(params)
+
+
+
+      case Service.Stripe.create_payment_intent(stripe, pi, meta) do
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
       end
@@ -25,17 +28,18 @@ defmodule ProcaWeb.Resolvers.Service do
 
   def stripe_create_subscription(
         _parent,
-        _params = %{action_page_id: ap_id, input: input},
+        params = %{action_page_id: ap_id, input: input},
         context
       ) do
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
          stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
-      sbscr = input
-      |> Map.put(:metadata,
-        payment_intent_metadata(ap)
-        |> put_referer(context))
 
-      case Service.Stripe.create_subscription(stripe, sbscr) do
+      sbscr = input
+      meta = payment_intent_metadata(ap)
+      |> put_referer(context)
+      |> put_contact_ref(params)
+
+      case Service.Stripe.create_subscription(stripe, sbscr, meta) do
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
       end
@@ -58,4 +62,8 @@ defmodule ProcaWeb.Resolvers.Service do
 
     defp put_referer(map, %{headers: %{referer: referer}}), do: Map.put(map, "referer", referer)
     defp put_referer(map, _ctx), do: map
+
+    defp put_contact_ref(map, %{contact_ref: ref}), do: Map.put(map, "contactRef", ref)
+    defp put_contact_ref(map, _meta), do: map
+    
 end
