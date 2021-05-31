@@ -199,7 +199,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
   end
 
   object :contact do
-    field :contact_ref, non_null(:string)
+    field :contact_ref, non_null(:id)
     field :payload, non_null(:string)
     field :nonce, :string
     field :public_key, :key_ids
