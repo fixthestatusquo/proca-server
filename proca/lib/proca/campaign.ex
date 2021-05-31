@@ -29,6 +29,7 @@ defmodule Proca.Campaign do
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
     |> validate_required([:name, :title, :contact_schema])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+    |> unique_constraint(:name)
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do

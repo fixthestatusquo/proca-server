@@ -13,15 +13,15 @@ defmodule ProcaWeb.Resolvers.Confirm do
     Proca.Confirm.by_open_code(code)
   end
 
-  def org_confirm(_, %{invite: inv}, %{context: %{staffer: st}}) do 
-    case get(inv) do 
+  def org_confirm(_, %{confirm: cnf}, %{context: %{staffer: st}}) do 
+    case get(cnf) do 
       nil -> {:error, [%{message: "code invalid"}]}
       confirm -> Proca.Confirm.confirm(confirm, st) |> retval()
     end
   end
 
-  def org_reject(_, %{invite: inv}, %{context: %{staffer: st}}) do 
-    case get(inv) do 
+  def org_reject(_, %{confirm: cnf}, %{context: %{staffer: st}}) do 
+    case get(cnf) do 
       nil -> {:error, [%{message: "code invalid"}]}
       confirm -> Proca.Confirm.reject(confirm, st) |> retval()
     end

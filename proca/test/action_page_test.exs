@@ -16,7 +16,7 @@ defmodule ActionPageTest do
     ActionPage.upsert(red_org, red_camp, %{
       id: red_ap.id,
       locale: "en",
-      name: "https://stop-fires.org/petition"
+      name: "stop-fires.org/petition"
     })
     |> Repo.insert_or_update!()
 
@@ -27,7 +27,7 @@ defmodule ActionPageTest do
 
   test "Action page validates name format" do
     [
-      {"https://act.movemove.org/petition1", true},
+      {"act.movemove.org/petition1", true},
       {"act.movemove.org/petition/a", true},
       {"act_now.movemove.org/petition/a", false},
       {"act-now.movemove.org/petition/a", true},
@@ -36,13 +36,12 @@ defmodule ActionPageTest do
       {"org_name", false},
       {"org-name/petition", true},
       {"test_this.now/123", false},
-      {"https://org-name/petition", true},
-      {"https://org-name/campaign-locale-34", true},
-      {"https://org-name/campaign/locale/34", true},
-      {"https://org-name", false},
-      {"ftp://org-name", false},
-      {"https://test/", false},
-      {"https:///test", false},
+      {"org-name/petition", true},
+      {"org-name/campaign-locale-34", true},
+      {"org-name/campaign/locale/34", true},
+      {"org-name", false},
+      {"test/", false},
+      {"/test", false},
       {"domain.pl/../../../../etc/shadow", false},
       {"domain.pl////", false}
     ]

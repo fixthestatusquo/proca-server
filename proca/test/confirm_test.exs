@@ -44,9 +44,9 @@ defmodule ConfirmTest do
       
       query = """
         mutation Conf {
-          acceptOrgInvite(
+          acceptOrgConfirm(
             name: "#{red_org.name}", 
-            invite: {code: "#{cnf.code}", email: "#{cnf.email}"}
+            confirm: {code: "#{cnf.code}", email: "#{cnf.email}"}
           )
           { status, actionPage {id, name} }
         } 
@@ -55,13 +55,13 @@ defmodule ConfirmTest do
       res = conn |> auth_api_post(query, red_bot.user.email)
       data = Jason.decode!(res.resp_body)
 
-      assert data["data"]["acceptOrgInvite"]["actionPage"]["name"] == "red/sign"
+      assert data["data"]["acceptOrgConfirm"]["actionPage"]["name"] == "#{red_org.name}/sign"
 
       new_ap = from(ap in Proca.ActionPage, 
         where: ap.org_id == ^red_org.id, 
         order_by: [desc: :id], limit: 1) |> Repo.one()
 
-      assert new_ap.id == data["data"]["acceptOrgInvite"]["actionPage"]["id"]
+      assert new_ap.id == data["data"]["acceptOrgConfirm"]["actionPage"]["id"]
     end
   end
 

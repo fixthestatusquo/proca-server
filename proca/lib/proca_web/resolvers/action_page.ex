@@ -36,12 +36,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   def find(_, %{name: name}, _) do
-    find_one(&by_name(&1, ActionPage.remove_schema_from_name(name)))
-  end
-
-  # XXX legacy
-  def find(_, %{url: url}, _) do
-    find_one(&by_name(&1, ActionPage.remove_schema_from_name(url)))
+    find_one(&by_name(&1, name))
   end
 
   def find(_, %{}, _) do
