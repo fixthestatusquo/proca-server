@@ -26,8 +26,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:id, :integer)
       @desc "Get action page by name the widget is displayed on"
       arg(:name, :string)
-      @desc "Get action page by url the widget is displayed on (DEPRECATED, use name)"
-      arg(:url, :string)
 
       resolve(&Resolvers.ActionPage.find/3)
     end

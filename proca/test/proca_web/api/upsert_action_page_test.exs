@@ -38,7 +38,7 @@ defmodule ProcaWeb.Api.UpsertActionPage do
       updateActionPage(id: #{ap.id},
       input: {
         locale: "jp",
-        name: "https://yellow.org/other",
+        name: "yellow.org/other",
         journey: ["sign", "share"],
         config: "{\\"foo\\": 123}"
       }

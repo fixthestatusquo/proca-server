@@ -46,51 +46,21 @@ defmodule Proca.ActionPage do
     |> unique_constraint(:name)
     |> validate_format(
       :name,
-      ~r/^(?:http(s)?:\/\/)?([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/
+      ~r/^([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/
     )
-    |> remove_schema_from_name()
-    # |> cast_json(:config, Map.get(attrs, :config, nil))
   end
 
   def changeset(attrs) do
     changeset(%ActionPage{}, attrs)
   end
 
-  # XXX move to helper
-  def cast_json(changeset, _key, json_string) when is_nil(json_string) do
-    changeset
-  end
-
-  def cast_json(changeset, key, json_string) do
-    case Jason.decode(json_string) do
-      {:ok, map} ->
-        change(changeset, %{key => map})
-
-      {:error, %Jason.DecodeError{data: err_data, position: err_pos, token: err_token}} ->
-        add_error(
-          changeset,
-          key,
-          "Cannot decode json for #{key}: #{err_data} at #{err_pos} (token: #{err_token})"
-        )
+  def go_live(action_page) do 
+    case action_page do 
+      %{live: true} -> {:ok, action_page}
+      %{live: false} -> 
+        # XXX do the health checks! 
+        change(action_page, live: true) |> Repo.update
     end
-  end
-
-  @doc "Remove http or https schema from changeset name attribute, or string. (Legacy of ActionPage.url)"
-  def remove_schema_from_name(changeset = %Ecto.Changeset{changes: %{name: name}}) do
-    name = remove_schema_from_name(name)
-    change(changeset, name: name)
-  end
-
-  def remove_schema_from_name(changeset = %Ecto.Changeset{}) do
-    changeset
-  end
-
-  def remove_schema_from_name(name) when is_bitstring(name) do
-    Regex.replace(~r/^https?:\/\//, name, "")
-  end
-
-  def stringify_config(action_page = %ActionPage{}) do
-    %{action_page | config: Jason.encode!(action_page.config)}
   end
 
   @doc """
@@ -99,6 +69,8 @@ defmodule Proca.ActionPage do
   org - what org does it belong to
   campaign - what campaign does it belong to
   attrs - attributes. The id and name will be tried in that order to lookup existing action page. If not found, it will be created.
+
+  XXX what about live status ? probably the upsert API needs to have an optional live=true param
   """
   def upsert(org, campaign, attrs = %{id: id}) do
     (Repo.get_by(ActionPage,
