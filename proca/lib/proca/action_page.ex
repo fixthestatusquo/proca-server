@@ -18,6 +18,7 @@ defmodule Proca.ActionPage do
     field :delivery, :boolean
     field :journey, {:array, :string}, default: ["Petition", "Share"]
     field :config, :map
+    field :live, :boolean, default: false
 
     belongs_to :campaign, Proca.Campaign
     belongs_to :org, Proca.Org

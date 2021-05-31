@@ -1,4 +1,10 @@
 defmodule Proca.Confirm.JoinCampaign do 
+  @moduledoc """
+  Confirm a request to join campaign.
+  Partner sends such request to campaign lead.
+  v1. A successful confirm makes live all pages in that campaign for org.
+  v2. A successful confirm creates a partnership.
+  """
   alias Proca.Confirm
   alias Proca.{Campaign, ActionPage, Staffer, Org}
   alias Proca.Repo
@@ -7,7 +13,7 @@ defmodule Proca.Confirm.JoinCampaign do
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Staffer.Permission, only: [can?: 2]
 
-  def create(%Campaign{id: campaign_id} = campaign, %Staffer{org_id: org_id} = st) do 
+  def create(%Campaign{id: campaign_id} = campaign, %Staffer{org_id: org_id}) do 
     # XXX test for campaign manager
     %{
       operation: :join_campaign,
@@ -16,7 +22,7 @@ defmodule Proca.Confirm.JoinCampaign do
     } |> Confirm.create()
   end
 
-  defp can_approve?(saffer, campaign) do 
+  defp can_approve?(staffer, campaign) do 
     staffer.org_id == campaign.org_id and can?(staffer, [:manage_campaigns])
   end
 
@@ -26,23 +32,23 @@ defmodule Proca.Confirm.JoinCampaign do
     object_id: campaign_id
   }, :confirm, st) do
 
-    with 
-      org <- Org.get_by_id(org-id) when not is_nil(org),
-      c <- Campaign.get_with_local_pages(campaign_id) when not is_nil(c),
-      {:p, true} <- {:p, can_approve?(st, c)},
-      [page | _] <- c.action_pages
+    with org when not is_nil(org) <- Org.get_by_id(org_id),
+         c  when not is_nil(c) <- Repo.get(Campaign, campaign_id),
+         {:perms, true} <- {:perms, can_approve?(st, c)}
      do
-      new_name = org.name <> "/" <> ActionPage.name_path(page.name)
 
-      Confirm.AddPartner.try_create_copy(org, page, new_name)
+
+      from(ap in ActionPage, where: ap.org_id == ^org_id and ap.campaign_id == ^campaign_id and ap.live == false)
+      |> Repo.update_all([live: true])
+      :ok
+
     else
       nil -> {:error, msg_ext("campaign not found", "not_found")}
-      {:p, false} -> {:error, cant_msg([:manage_campaigns])}
-      [] -> {:error, msg_ext("campaign has no action_pages", "not_found")}
+      {:perms, false} -> {:error, cant_msg([:manage_campaigns])}
     end
   end
 
-  def run(%Confirm{operation: join_campaign}, :reject, _st), do: :ok     
+  def run(%Confirm{operation: :join_campaign}, :reject, _st), do: :ok     
 
 
 
@@ -56,10 +62,5 @@ defmodule Proca.Confirm.JoinCampaign do
 #        true <- st.org_id == 
 #        true <- can?(st, [:manage_action_pages]) 
 #      do 
-
-
-
-
-  end
 
 end

@@ -142,6 +142,8 @@ export type Donation = {
   currency: Scalars['String'];
   /** Donation data */
   payload: Scalars['Json'];
+  /** Donation frequency unit */
+  frequencyUnit: DonationFrequencyUnit;
 };
 
 /** ActionPage declaration (using the legacy url attribute) */
@@ -169,9 +171,21 @@ export type Service = {
   path: Maybe<Scalars['String']>;
 };
 
+export type Invite = {
+  code: Scalars['String'];
+  email?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['Int']>;
+};
+
 
 export type SelectService = {
   name?: Maybe<ServiceName>;
+};
+
+export type StripeSubscriptionInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  frequencyUnit: DonationFrequencyUnit;
 };
 
 /** Count of actions for particular action type */
@@ -180,6 +194,13 @@ export type AreaCount = {
   area: Scalars['String'];
   /** count of supporters in this area */
   count: Scalars['Int'];
+};
+
+export type ConfirmResult = {
+  status: Status;
+  actionPage: Maybe<ActionPage>;
+  campaign: Maybe<Campaign>;
+  org: Maybe<Org>;
 };
 
 /** Custom field added to action. For signature it can be contact, for mail it can be subject and body */
@@ -270,6 +291,11 @@ export type RootMutationType = {
    * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
    */
   copyActionPage: ActionPage;
+  /**
+   * Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
+   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   */
+  copyCampaignActionPage: ActionPage;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
   /** Adds an action with contact data */
@@ -288,6 +314,9 @@ export type RootMutationType = {
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
   stripeCreatePaymentIntent: Scalars['Json'];
+  stripeCreateSubscription: Scalars['Json'];
+  acceptOrgInvite: ConfirmResult;
+  rejectOrgInvite: ConfirmResult;
 };
 
 
@@ -314,6 +343,13 @@ export type RootMutationTypeUpdateActionPageArgs = {
 
 export type RootMutationTypeCopyActionPageArgs = {
   fromName: Scalars['String'];
+  name: Scalars['String'];
+  orgName: Scalars['String'];
+};
+
+
+export type RootMutationTypeCopyCampaignActionPageArgs = {
+  fromCampaignName: Scalars['String'];
   name: Scalars['String'];
   orgName: Scalars['String'];
 };
@@ -402,8 +438,26 @@ export type RootMutationTypeActivateKeyArgs = {
 
 
 export type RootMutationTypeStripeCreatePaymentIntentArgs = {
-  input: PaymentIntentInput;
+  input: StripePaymentIntentInput;
   actionPageId: Scalars['Int'];
+};
+
+
+export type RootMutationTypeStripeCreateSubscriptionArgs = {
+  input: StripeSubscriptionInput;
+  actionPageId: Scalars['Int'];
+};
+
+
+export type RootMutationTypeAcceptOrgInviteArgs = {
+  invite: Invite;
+  name: Scalars['String'];
+};
+
+
+export type RootMutationTypeRejectOrgInviteArgs = {
+  invite: Invite;
+  name: Scalars['String'];
 };
 
 
@@ -462,6 +516,8 @@ export type ActionPage = {
   name: Scalars['String'];
   /** Reference to thank you email templated of this Action Page */
   thankYouTemplateRef: Maybe<Scalars['String']>;
+  /** Is live? */
+  live: Scalars['Boolean'];
   /** List of steps in journey */
   journey: Maybe<Array<Scalars['String']>>;
   /** Config JSON of this action page */
@@ -481,6 +537,8 @@ export type PublicActionPage = {
   name: Scalars['String'];
   /** Reference to thank you email templated of this Action Page */
   thankYouTemplateRef: Maybe<Scalars['String']>;
+  /** Is live? */
+  live: Scalars['Boolean'];
   /** List of steps in journey */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
@@ -502,12 +560,6 @@ export type OrgCount = {
   org: PublicOrg;
   /** count of supporters registered by org */
   count: Scalars['Int'];
-};
-
-export type PaymentIntentInput = {
-  amount: Scalars['Float'];
-  currency: Scalars['String'];
-  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
 };
 
 /** Campaign input */
@@ -565,6 +617,12 @@ export type ActionPageInput = {
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
 };
+
+export enum DonationFrequencyUnit {
+  Monthly = 'MONTHLY',
+  Weekly = 'WEEKLY',
+  OneOff = 'ONE_OFF'
+}
 
 export type PersonalData = {
   /** Schema for contact personal information */
@@ -694,6 +752,12 @@ export type ContactReference = {
   firstName: Maybe<Scalars['String']>;
 };
 
+export type StripePaymentIntentInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
+};
+
 export type Contact = {
   contactRef: Scalars['String'];
   payload: Scalars['String'];
@@ -721,6 +785,7 @@ export type DonationActionInput = {
   amount?: Maybe<Scalars['Decimal']>;
   /** Provide currency of this donation */
   currency?: Maybe<Scalars['String']>;
+  frequencyUnit?: Maybe<DonationFrequencyUnit>;
   payload: Scalars['Json'];
 };
 
@@ -776,6 +841,8 @@ export type KeyIds = {
 };
 
 export enum Status {
+  /** Operation had no effect (already done) */
+  Noop = 'NOOP',
   /** Operation awaiting confirmation */
   Confirming = 'CONFIRMING',
   /** Operation completed succesfully */

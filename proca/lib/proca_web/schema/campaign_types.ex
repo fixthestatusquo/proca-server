@@ -76,6 +76,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :name, non_null(:string)
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
+    @desc "Is live?"
+    field :live, non_null(:boolean)
     @desc "List of steps in journey"
     field :journey, list_of(non_null(:string))
     @desc "Config JSON of this action page"
@@ -99,6 +101,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :name, non_null(:string)
     @desc "Reference to thank you email templated of this Action Page"
     field :thank_you_template_ref, :string
+    @desc "Is live?"
+    field :live, non_null(:boolean)
     @desc "List of steps in journey"
     field :journey, non_null(list_of(non_null(:string)))
     @desc "Config JSON of this action page"
@@ -203,7 +207,31 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       resolve(&Resolvers.ActionPage.copy_from/3)
     end
+
+    @desc """
+    Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
+    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+    """
+    field :copy_campaign_action_page, type: non_null(:action_page) do
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:manage_action_pages]
+
+      @desc "Org owner of new Action Page"
+      arg :org_name, non_null(:string)
+
+      @desc "New Action Page name"
+      arg :name, non_null(:string)
+
+      @desc "Name of Action Page this one is cloned from"
+      arg :from_campaign_name, non_null(:string)
+
+      resolve(&Resolvers.ActionPage.copy_from_campaign/3)
+    end
+
   end
+
+
 
   @desc "Campaign input"
   input_object :campaign_input do

@@ -118,6 +118,9 @@ type Donation {
 
   "Donation data"
   payload: Json!
+
+  "Donation frequency unit"
+  frequencyUnit: DonationFrequencyUnit!
 }
 
 "ActionPage declaration (using the legacy url attribute)"
@@ -145,6 +148,12 @@ type Service {
   path: String
 }
 
+input Invite {
+  code: String!
+  email: String
+  id: Int
+}
+
 """
 The `Date` scalar type represents a date. The Date appears in a JSON
 response as an ISO8601 formatted string, without a time component.
@@ -155,6 +164,12 @@ input SelectService {
   name: ServiceName
 }
 
+input StripeSubscriptionInput {
+  amount: Float!
+  currency: String!
+  frequencyUnit: DonationFrequencyUnit!
+}
+
 "Count of actions for particular action type"
 type AreaCount {
   "area"
@@ -162,6 +177,13 @@ type AreaCount {
 
   "count of supporters in this area"
   count: Int!
+}
+
+type ConfirmResult {
+  status: Status!
+  actionPage: ActionPage
+  campaign: Campaign
+  org: Org
 }
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
@@ -291,6 +313,21 @@ type RootMutationType {
     orgName: String!
   ): ActionPage!
 
+  """
+  Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
+  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  """
+  copyCampaignActionPage(
+    "Name of Action Page this one is cloned from"
+    fromCampaignName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Org owner of new Action Page"
+    orgName: String!
+  ): ActionPage!
+
   "Adds an action referencing contact data via contactRef"
   addAction(
     "Tracking codes (UTM_*)"
@@ -381,7 +418,13 @@ type RootMutationType {
     orgName: String!
   ): ActivateKeyResult!
 
-  stripeCreatePaymentIntent(input: PaymentIntentInput!, actionPageId: Int!): Json!
+  stripeCreatePaymentIntent(input: StripePaymentIntentInput!, actionPageId: Int!): Json!
+
+  stripeCreateSubscription(input: StripeSubscriptionInput!, actionPageId: Int!): Json!
+
+  acceptOrgInvite(invite: Invite!, name: String!): ConfirmResult!
+
+  rejectOrgInvite(invite: Invite!, name: String!): ConfirmResult!
 }
 
 """
@@ -468,6 +511,9 @@ type ActionPage {
   "Reference to thank you email templated of this Action Page"
   thankYouTemplateRef: String
 
+  "Is live?"
+  live: Boolean!
+
   "List of steps in journey"
   journey: [String!]
 
@@ -494,6 +540,9 @@ type PublicActionPage {
 
   "Reference to thank you email templated of this Action Page"
   thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
 
   "List of steps in journey"
   journey: [String!]!
@@ -533,12 +582,6 @@ type OrgCount {
 
   "count of supporters registered by org"
   count: Int!
-}
-
-input PaymentIntentInput {
-  amount: Float!
-  currency: String!
-  paymentMethodTypes: [String!]
 }
 
 "Campaign input"
@@ -610,6 +653,12 @@ input ActionPageInput {
 
   "JSON string containing Action Page config"
   config: Json
+}
+
+enum DonationFrequencyUnit {
+  MONTHLY
+  WEEKLY
+  ONE_OFF
 }
 
 type PersonalData {
@@ -732,6 +781,12 @@ type ContactReference {
   firstName: String
 }
 
+input StripePaymentIntentInput {
+  amount: Float!
+  currency: String!
+  paymentMethodTypes: [String!]
+}
+
 type Contact {
   contactRef: String!
   payload: String!
@@ -761,6 +816,8 @@ input DonationActionInput {
 
   "Provide currency of this donation"
   currency: String
+
+  frequencyUnit: DonationFrequencyUnit
 
   payload: Json!
 }
@@ -829,6 +886,9 @@ type KeyIds {
 }
 
 enum Status {
+  "Operation had no effect (already done)"
+  NOOP
+
   "Operation awaiting confirmation"
   CONFIRMING
 
