@@ -269,6 +269,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     value :sqs 
     value :mailjet
     value :wordpress
+    value :stripe
   end 
 
   input_object :select_service do

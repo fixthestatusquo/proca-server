@@ -3,7 +3,7 @@ defmodule Proca.Server.Notify do
   Server that decides what actions should be done after different events
   """
   alias Proca.Repo
-  alias Proca.{Action, Supporter, Org, PublicKey}
+  alias Proca.{Action, Supporter, Org, PublicKey, Confirm}
   alias Proca.Pipes
 
   @spec action_created(%Action{}, %Supporter{} | nil) :: :ok
@@ -46,6 +46,15 @@ defmodule Proca.Server.Notify do
 
   def org_deleted(org = %Org{}) do
     stop_org_pipes(org)
+  end
+
+  def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
+    recipients = 
+    Repo.preload(org, [staffers: :user]).staffers
+    |> Enum.map(fn %{user: user} -> user.email end)
+
+    Proca.Confirm.notify_by_email(cnf, recipients)
+    |> IO.inspect(label: "email notif")
   end
 
   ##### SIDE EFFECTS

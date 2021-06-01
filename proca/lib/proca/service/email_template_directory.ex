@@ -1,6 +1,6 @@
 defmodule Proca.Service.EmailTemplateDirectory do 
   use GenServer
-  alias Proca.{Service, Org}
+  alias Proca.{Service, Org, Repo}
   alias Proca.Service.{EmailBackend,EmailTemplate}
   import Ex2ms
 
@@ -20,11 +20,20 @@ defmodule Proca.Service.EmailTemplateDirectory do
     {{service_id, tmpl.ref}, tmpl}
   end
 
+  def delete_templates(%Org{template_backend_id: tb_id}) do
+    spec = fun do {{id, ref}, template} when id == ^tb_id -> true end
+    :ets.select_delete(table_name(), spec)
+  end
+
   def load_templates(%Org{template_backend: tb} = org) do 
-    templates = EmailBackend.list_templates(org)
+    templates = EmailBackend.list_templates(Repo.preload(org, [:template_backend]))
+
+    delete_templates(org)
+
     for t <- templates do 
       :ets.insert(table_name(), record(tb, t))
     end
+
     {:ok, length(templates)}
   end
 

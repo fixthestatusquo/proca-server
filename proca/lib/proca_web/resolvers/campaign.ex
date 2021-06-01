@@ -182,4 +182,5 @@ defmodule ProcaWeb.Resolvers.Campaign do
         {:ok, partnerships}
     end
   end
+
 end

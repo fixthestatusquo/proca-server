@@ -133,22 +133,37 @@ defmodule Proca.Confirm do
     String.split(email, "@") |> List.first
   end
 
-  def notify_template(%Confirm{operation: :join_campaign}), do: "join_campaign"
-  def notify_template(%Confirm{operation: :add_partner}), do: "add_partner"
 
-  def notify_by_email(cnf = %Confirm{email: email}) do 
-    instance = Org.get_by_name(Org.instance_org_name, [:email_backend, :template_backend])
-    recipient = %EmailRecipient{
-      first_name: notify_first_name(email),
-      email: email 
-    }
-    |> EmailRecipient.put_confirm(cnf)
+  @doc """
+  Send a confirm operation specific email notification to list of emails or to confirm email.
+  Uses dynamic dispatch to get template name and personalisation fields from each Confirm operation module.
+  Will send the email from instance org backend.
+  """
+  def notify_by_email(cnf = %Confirm{email: email}), do: notify_by_email(cnf, [email])
+  def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do 
+    alias Proca.Service.EmailTemplateDirectory
 
-    with {:ok, template_ref} <- Proca.Service.EmailTemplateDirectory.ref_by_name_reload(instance, notify_template(cnf))
+    operation = Confirm.Operation.mod(cnf)
+
+    instance = Org.get_by_name(Org.instance_org_name, 
+      [:email_backend, :template_backend])
+
+    recipients = emails 
+    |> Enum.map(fn email -> 
+      %EmailRecipient{
+        first_name: notify_first_name(email),
+        email: email,
+        fields: operation.email_fields(cnf)
+      }
+      |> EmailRecipient.put_confirm(cnf)
+    end)
+
+    with {:ok, template_ref} <- EmailTemplateDirectory.ref_by_name_reload(
+                                    instance, operation.email_template(cnf))
       do 
         template = %EmailTemplate{ref: template_ref}
 
-        EmailBackend.deliver([recipient], instance, template) |> hd
+        EmailBackend.deliver(recipients, instance, template)
       else 
         :not_found -> {:error, :no_tempalte}
         :not_configured -> {:error, :no_template}

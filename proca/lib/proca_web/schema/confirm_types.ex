@@ -23,9 +23,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
   end
   
   object :confirm_mutations do 
-    @doc """
-    Accept a confirm on behalf of organisation.
-    """
+    @desc "Accept a confirm on behalf of organisation."
     field :accept_org_confirm, type: non_null(:confirm_result) do 
       middleware Authorized, access: [:org, by: [:name]]
 
@@ -35,9 +33,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       resolve &ProcaWeb.Resolvers.Confirm.org_confirm/3
     end
 
-    @doc """
-    Reject a confirm on behalf of organisation.
-    """
+    @desc "Reject a confirm on behalf of organisation."
     field :reject_org_confirm, type: non_null(:confirm_result) do 
       middleware Authorized, access: [:org, by: [:name]]
 
@@ -45,6 +41,14 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       arg :confirm, non_null(:confirm_input)
 
       resolve &ProcaWeb.Resolvers.Confirm.org_reject/3
+    end
+
+    field :request_signoff_page, type: non_null(:status) do
+      middleware Authorized, access: [:action_page, by: [:name]]
+
+      arg :name, non_null(:string) 
+
+      resolve &ProcaWeb.Resolvers.ActionPage.request_signoff_page/3
     end
   end
 

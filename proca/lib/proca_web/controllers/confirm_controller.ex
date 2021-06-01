@@ -101,7 +101,7 @@ defmodule ProcaWeb.ConfirmController do
       |> halt()
     else
       {:error, 401, msg} -> conn |> request_basic_auth(msg) |> halt()
-      {:error, status, msg} -> conn |> resp(status, error_msg(msg)) |> halt()
+      {:error, status, msg} -> conn |> resp(status, msg) |> halt()
       nil -> conn |> resp(400, error_msg("code invalid")) |> halt()
     end
   end
@@ -174,4 +174,6 @@ defmodule ProcaWeb.ConfirmController do
   defp error_msg(msg = %Ecto.Changeset{}) do 
     %{errors: ProcaWeb.Helper.format_errors(msg)} |> Jason.encode!
   end
+
+  defp error_msg(other), do: other |>Jason.encode!()
 end 

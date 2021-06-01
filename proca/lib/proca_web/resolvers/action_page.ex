@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   Resolvers for action page related mutations
   """
   import Ecto.Query
-  alias Proca.{ActionPage, Campaign}
+  alias Proca.{ActionPage, Campaign, Org}
   alias Proca.Repo
   alias ProcaWeb.Helper
   alias Proca.Server.Notify
@@ -88,4 +88,16 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
+  def request_signoff_page(_, %{name: name}, %{context: %{staffer: st}}) do 
+    with ap = %ActionPage{} <- ActionPage.find(name),
+        org <- Org.get_by_id(ap.campaign.org_id)
+    do 
+      cnf = Proca.Confirm.SignoffPage.create(ap)
+      Proca.Server.Notify.org_confirm_created(cnf, org)
+
+      {:ok, :confirming}
+    else 
+      nil -> {:error, [%{message: "action page not found"}]}
+    end
+  end
 end
