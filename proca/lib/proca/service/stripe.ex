@@ -2,31 +2,19 @@ defmodule Proca.Service.Stripe do
   import Ecto.Changeset
   alias Proca.Service
 
+  @spec create_payment_intent(any, any) :: none
   def create_payment_intent(
         %Service{name: :stripe, password: api_key},
-        params = %{
+        %{
           amount: amount,
           currency: currency
-        }
+        } = intent_args
       )
       when is_float(amount) and is_bitstring(currency) do
-    intent_args =
-      %{
-        amount: to_cents(amount),
-        currency: String.upcase(currency)
-      }
-      |> add_if_given(params, :payment_method_types)
-      |> add_if_given(params, :metadata)
+    to_send =
+      Map.merge(intent_args, %{amount: to_cents(amount), currency: String.downcase(currency)})
 
-    Stripe.PaymentIntent.create(intent_args, api_key: api_key)
-  end
-
-  # hmm nothing similar in standard library...
-  defp add_if_given(map, params, key) do
-    case Map.get(params, key) do
-      nil -> map
-      value -> Map.put(map, key, value)
-    end
+    Stripe.PaymentIntent.create(to_send, api_key: api_key)
   end
 
   defp to_cents(amount) do
@@ -42,7 +30,8 @@ defmodule Proca.Service.Stripe do
      [
        %{
          message: message,
-         extensions: %{
+         extensions:
+           %{
              code: Atom.to_string(code_atom)
            }
            |> Map.merge(info)
@@ -50,7 +39,6 @@ defmodule Proca.Service.Stripe do
      ]}
   end
 end
-
 
 require Protocol
 
