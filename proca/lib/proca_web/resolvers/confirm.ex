@@ -1,4 +1,5 @@
 defmodule ProcaWeb.Resolvers.Confirm do 
+  import Proca.Repo
   alias Proca.{ActionPage, Campaign, Org}
 
   def get(%{code: code, email: email}) when is_bitstring(code) and is_bitstring(email) do 
@@ -29,13 +30,13 @@ defmodule ProcaWeb.Resolvers.Confirm do
 
   defp retval(result) do 
     case result do 
-        :ok ->  {:ok, %{status: :success}}
-        {:ok, ap = %ActionPage{}} -> {:ok, %{status: :success, action_page: ap}}
-        {:ok, ca = %Campaign{}} -> {:ok, %{status: :success, campaign: ca}}
-        {:ok, org = %Org{}} -> {:ok, %{status: :success, org: org}}
-        {:noop, _} -> {:ok, %{status: :noop}}
-        {:error, e} -> {:error, e}
-      end
-
+      :ok ->  {:ok, %{status: :success}}
+      {:ok, ap = %ActionPage{}} -> {:ok, %{status: :success, action_page: ap}}
+      {:ok, ca = %Campaign{}} -> {:ok, %{status: :success, campaign: ca}}
+      {:ok, org = %Org{}} -> {:ok, %{status: :success, org: org}}
+      {:noop, _} -> {:ok, %{status: :noop}}
+      {:error, e} -> {:error, e}
+    end
   end
+
 end

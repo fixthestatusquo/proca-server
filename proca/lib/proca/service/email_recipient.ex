@@ -43,8 +43,8 @@ defmodule Proca.Service.EmailRecipient do
     ) do 
       cflds = %{
         "confirm_code" => confirm_code, 
-        "confirm_email" => email,
-        "confirm_object_id" => obj_id,
+        "confirm_email" => email || "",
+        "confirm_object_id" => obj_id || "",
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)
       }

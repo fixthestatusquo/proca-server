@@ -4,6 +4,7 @@ defmodule Proca.Confirm.AddPartner do
 
   """
   alias Proca.{Action, ActionPage, Confirm, Staffer}
+  @behaviour Confirm.Operation
   import Proca.Changeset 
   import Proca.Repo
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
@@ -41,10 +42,12 @@ defmodule Proca.Confirm.AddPartner do
     end
   end
 
+  @impl true
   def run(%Confirm{operation: :add_partner}, :confirm, nil) do 
     {:error, "unauthorized"}
   end
 
+  @impl true
   def run(%Confirm{operation: :add_partner, subject_id: ap_id}, :confirm, st) do
     org = Ecto.assoc(st, :org) |> one()
     with page = %ActionPage{} <- get(ActionPage, ap_id), 
@@ -58,6 +61,12 @@ defmodule Proca.Confirm.AddPartner do
     end
   end
 
-
+  @impl true
   def run(%Confirm{operation: add_partner}, :reject, _), do: :ok
+
+  @impl true
+  def email_template(%Confirm{operation: :add_partner}), do: "add_partner"
+
+  @impl true 
+  def email_fields(_), do: %{}
 end
