@@ -50,7 +50,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     # field :users, non_null(list_of(:org_user))
     field :services, non_null(list_of(:service)) do 
       arg :select, :select_service
-      resolve (&Resolvers.Org.list_services/3)
+      resolve(&Resolvers.Org.list_services/3)
+    end
+
+    field :users, non_null(list_of(:org_user)) do 
+      resolve(&Resolvers.User.list_org_users/3)
     end
 
     # field :personal_data, :personal_data

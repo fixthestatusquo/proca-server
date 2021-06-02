@@ -12,13 +12,13 @@ defmodule ProcaWeb.Schema do
   import_types(Absinthe.Type.Custom)
 
   import_types(ProcaWeb.Schema.DataTypes)
+  import_types(ProcaWeb.Schema.ConfirmTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)
   import_types(ProcaWeb.Schema.ActionTypes)
   import_types(ProcaWeb.Schema.UserTypes)
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
   import_types(ProcaWeb.Schema.ServiceTypes)
-  import_types(ProcaWeb.Schema.ConfirmTypes)
 
   query do
     import_fields(:campaign_queries)

@@ -115,8 +115,18 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
   object :partnership do 
     field :org, non_null(:public_org)
+    field :action_pages, non_null(list_of(non_null(:action_page))) do 
+      resolve(&Resolvers.Campaign.partnership_action_pages/3)
+    end
+
+    field :launch_requests, non_null(list_of(non_null(:confirm))) do 
+      resolve(&Resolvers.Campaign.partnership_launch_requests/3)
+    end
    end
 
+  object :launch_action_page_result do 
+    field :status, non_null(:status)
+  end
 
 
   object :campaign_mutations do
@@ -227,7 +237,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionPage.copy_from_campaign/3)
     end
 
+
+    field :launch_action_page, type: non_null(:launch_action_page_result) do
+      middleware Authorized, access: [:action_page, by: [:name]]
+
+      arg :name, non_null(:string) 
+
+      resolve &ProcaWeb.Resolvers.ActionPage.launch_page/3
+    end
   end
+
 
 
 

@@ -9,6 +9,7 @@ defmodule ProcaWeb.Schema.EciSchema do
   import_types(Absinthe.Type.Custom)
 
   import_types(ProcaWeb.Schema.DataTypes)
+  import_types(ProcaWeb.Schema.ConfirmTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)
   import_types(ProcaWeb.Schema.ActionTypes)
   import_types(ProcaWeb.Schema.OrgTypes)

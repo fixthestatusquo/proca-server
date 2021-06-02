@@ -40,7 +40,6 @@ defmodule ProcaWeb.Resolvers.Org do
       Campaign.select_by_org(org)
       |> preload([c], [:org])
       |> Repo.all()
-      |> IO.inspect(label: "campaign list")
 
     {:ok, cl}
   end

@@ -43,21 +43,14 @@ defmodule Proca.Staffer.Role do
     ]
   ]
 
+  @spec from_string(String.t) :: atom() | nil
   def from_string(rs) when is_bitstring(rs) do
     Keyword.keys(@roles)
     |> Enum.find(fn r -> Atom.to_string(r) == rs end)
   end
 
-  def change(staffer = %Staffer{perms: perms}, role) do
-    np =
-      Keyword.keys(@roles)
-      |> List.keydelete(role, 0)
-      |> Enum.reduce(perms, fn r, p ->
-        Permission.remove(p, @roles[r])
-      end)
-      |> Permission.add(@roles[role])
-
-    Changeset.change(staffer, perms: np)
+  def change(staffer = %Staffer{}, role) when is_atom(role) do
+    Changeset.change(staffer, perms: Permission.add(0, @roles[role]))
   end
 
   def findrole(%Staffer{}, []) do
@@ -76,5 +69,9 @@ defmodule Proca.Staffer.Role do
 
   def permissions(role) do
     @roles[role] || []
+  end
+
+  def lesser_equal?(weaker, stronger) when is_atom(weaker) and is_atom(stronger) do 
+    @roles[weaker] -- @roles[stronger] == []
   end
 end

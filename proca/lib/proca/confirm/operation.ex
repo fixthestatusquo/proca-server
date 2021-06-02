@@ -11,7 +11,7 @@ defmodule Proca.Confirm.Operation do
 
   def mod(:add_partner), do: Proca.Confirm.AddPartner
   def mod(:confirm_action), do: Proca.Confirm.ConfirmAction
-  def mod(:signoff_page), do: Proca.Confirm.SignoffPage
+  def mod(:launch_page), do: Proca.Confirm.LaunchPage
 
   @callback run(%Confirm{}, :confirm | :reject, Staffer) :: 
     :ok | {:ok, %ActionPage{}} | {:ok, %Campaign{}}, {:ok, %Org{}} | {:error, any()}
