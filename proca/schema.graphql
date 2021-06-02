@@ -87,6 +87,16 @@ type ActionTypeCount {
   count: Int!
 }
 
+input ConfirmInput {
+  code: String!
+  email: String
+  objectId: Int
+}
+
+type ChangeUserStatus {
+  status: Status!
+}
+
 enum ContactSchema {
   IT_CI
   ECI
@@ -96,6 +106,8 @@ enum ContactSchema {
 
 type Partnership {
   org: PublicOrg!
+  actionPages: [ActionPage!]!
+  launchRequests: [Confirm!]!
 }
 
 type RootSubscriptionType {
@@ -123,6 +135,12 @@ type Donation {
   frequencyUnit: DonationFrequencyUnit!
 }
 
+type Confirm {
+  code: String!
+  email: String
+  objectId: Int
+}
+
 "ActionPage declaration (using the legacy url attribute)"
 input ActionPageInputLegacyUrl {
   id: Int
@@ -146,12 +164,6 @@ type Service {
   host: String
   user: String
   path: String
-}
-
-input Invite {
-  code: String!
-  email: String
-  id: Int
 }
 
 """
@@ -179,13 +191,6 @@ type AreaCount {
   count: Int!
 }
 
-type ConfirmResult {
-  status: Status!
-  actionPage: ActionPage
-  campaign: Campaign
-  org: Org
-}
-
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
 input ActionInput {
   "Action Type"
@@ -196,6 +201,13 @@ input ActionInput {
 
   "Donation payload"
   donation: DonationActionInput
+}
+
+type ConfirmResult {
+  status: Status!
+  actionPage: ActionPage
+  campaign: Campaign
+  org: Org
 }
 
 input AddKeyInput {
@@ -239,6 +251,14 @@ type ActionCustomFields {
   actionType: String!
   insertedAt: NaiveDateTime!
   fields: [CustomField!]!
+}
+
+type OrgUser {
+  email: String!
+  role: String!
+  createdAt: NaiveDateTime!
+  joinedAt: NaiveDateTime!
+  lastSigninAt: NaiveDateTime
 }
 
 type Action {
@@ -328,6 +348,8 @@ type RootMutationType {
     orgName: String!
   ): ActionPage!
 
+  launchActionPage(name: String!): LaunchActionPageResult!
+
   "Adds an action referencing contact data via contactRef"
   addAction(
     "Tracking codes (UTM_*)"
@@ -374,11 +396,11 @@ type RootMutationType {
     actionPageId: Int!
   ): ContactReference!
 
-  addOrgUser(input: UserInput!, orgName: String!): User
+  addOrgUser(input: UserInput!, orgName: String!): ChangeUserStatus!
+
+  updateOrgUser(input: UserInput!, orgName: String!): ChangeUserStatus!
 
   deleteOrgUser(email: String!, orgName: String!): DeleteUserResult
-
-  updateOrgUser(input: UserInput!, orgName: String!): User
 
   addOrg(input: OrgInput!): Org!
 
@@ -418,13 +440,15 @@ type RootMutationType {
     orgName: String!
   ): ActivateKeyResult!
 
-  stripeCreatePaymentIntent(input: StripePaymentIntentInput!, actionPageId: Int!): Json!
+  stripeCreatePaymentIntent(contactRef: ID, input: StripePaymentIntentInput!, actionPageId: Int!): Json!
 
-  stripeCreateSubscription(input: StripeSubscriptionInput!, actionPageId: Int!): Json!
+  stripeCreateSubscription(contactRef: ID, input: StripeSubscriptionInput!, actionPageId: Int!): Json!
 
-  acceptOrgInvite(invite: Invite!, name: String!): ConfirmResult!
+  "Accept a confirm on behalf of organisation."
+  acceptOrgConfirm(confirm: ConfirmInput!, name: String!): ConfirmResult!
 
-  rejectOrgInvite(invite: Invite!, name: String!): ConfirmResult!
+  "Reject a confirm on behalf of organisation."
+  rejectOrgConfirm(confirm: ConfirmInput!, name: String!): ConfirmResult!
 }
 
 """
@@ -446,9 +470,6 @@ type RootQueryType {
 
   "Get action page"
   actionPage(
-    "Get action page by url the widget is displayed on (DEPRECATED, use name)"
-    url: String
-
     "Get action page by name the widget is displayed on"
     name: String
 
@@ -605,6 +626,10 @@ input CampaignInput {
   actionPages: [ActionPageInput!]!
 }
 
+type LaunchActionPageResult {
+  status: Status!
+}
+
 "Address type which can hold different addres fields."
 input AddressInput {
   "Country code (two-letter)."
@@ -753,6 +778,8 @@ type Org {
 
   services(select: SelectService): [Service]!
 
+  users: [OrgUser]!
+
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
 
@@ -767,6 +794,7 @@ type Org {
 }
 
 enum ServiceName {
+  STRIPE
   WORDPRESS
   MAILJET
   SQS
@@ -788,7 +816,7 @@ input StripePaymentIntentInput {
 }
 
 type Contact {
-  contactRef: String!
+  contactRef: ID!
   payload: String!
   nonce: String
   publicKey: KeyIds
@@ -850,7 +878,7 @@ type CustomField {
 
 input UserInput {
   email: String!
-  roles: [String!]
+  role: String!
 }
 
 "Contact information"

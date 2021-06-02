@@ -109,6 +109,16 @@ export type ActionTypeCount = {
   count: Scalars['Int'];
 };
 
+export type ConfirmInput = {
+  code: Scalars['String'];
+  email?: Maybe<Scalars['String']>;
+  objectId?: Maybe<Scalars['Int']>;
+};
+
+export type ChangeUserStatus = {
+  status: Status;
+};
+
 export enum ContactSchema {
   ItCi = 'IT_CI',
   Eci = 'ECI',
@@ -118,6 +128,8 @@ export enum ContactSchema {
 
 export type Partnership = {
   org: PublicOrg;
+  actionPages: Array<ActionPage>;
+  launchRequests: Array<Confirm>;
 };
 
 export type RootSubscriptionType = {
@@ -146,6 +158,12 @@ export type Donation = {
   frequencyUnit: DonationFrequencyUnit;
 };
 
+export type Confirm = {
+  code: Scalars['String'];
+  email: Maybe<Scalars['String']>;
+  objectId: Maybe<Scalars['Int']>;
+};
+
 /** ActionPage declaration (using the legacy url attribute) */
 export type ActionPageInputLegacyUrl = {
   id?: Maybe<Scalars['Int']>;
@@ -171,12 +189,6 @@ export type Service = {
   path: Maybe<Scalars['String']>;
 };
 
-export type Invite = {
-  code: Scalars['String'];
-  email?: Maybe<Scalars['String']>;
-  id?: Maybe<Scalars['Int']>;
-};
-
 
 export type SelectService = {
   name?: Maybe<ServiceName>;
@@ -196,13 +208,6 @@ export type AreaCount = {
   count: Scalars['Int'];
 };
 
-export type ConfirmResult = {
-  status: Status;
-  actionPage: Maybe<ActionPage>;
-  campaign: Maybe<Campaign>;
-  org: Maybe<Org>;
-};
-
 /** Custom field added to action. For signature it can be contact, for mail it can be subject and body */
 export type ActionInput = {
   /** Action Type */
@@ -211,6 +216,13 @@ export type ActionInput = {
   fields?: Maybe<Array<CustomFieldInput>>;
   /** Donation payload */
   donation?: Maybe<DonationActionInput>;
+};
+
+export type ConfirmResult = {
+  status: Status;
+  actionPage: Maybe<ActionPage>;
+  campaign: Maybe<Campaign>;
+  org: Maybe<Org>;
 };
 
 export type AddKeyInput = {
@@ -258,6 +270,14 @@ export type ActionCustomFields = {
   fields: Array<CustomField>;
 };
 
+export type OrgUser = {
+  email: Scalars['String'];
+  role: Scalars['String'];
+  createdAt: Scalars['NaiveDateTime'];
+  joinedAt: Scalars['NaiveDateTime'];
+  lastSigninAt: Maybe<Scalars['NaiveDateTime']>;
+};
+
 export type Action = {
   actionId: Scalars['Int'];
   createdAt: Scalars['NaiveDateTime'];
@@ -296,15 +316,16 @@ export type RootMutationType = {
    * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
    */
   copyCampaignActionPage: ActionPage;
+  launchActionPage: LaunchActionPageResult;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
   /** Adds an action with contact data */
   addActionContact: ContactReference;
   /** Link actions with refs to contact with contact reference */
   linkActions: ContactReference;
-  addOrgUser: Maybe<User>;
+  addOrgUser: ChangeUserStatus;
+  updateOrgUser: ChangeUserStatus;
   deleteOrgUser: Maybe<DeleteUserResult>;
-  updateOrgUser: Maybe<User>;
   addOrg: Org;
   deleteOrg: Scalars['Boolean'];
   updateOrg: Org;
@@ -315,8 +336,10 @@ export type RootMutationType = {
   activateKey: ActivateKeyResult;
   stripeCreatePaymentIntent: Scalars['Json'];
   stripeCreateSubscription: Scalars['Json'];
-  acceptOrgInvite: ConfirmResult;
-  rejectOrgInvite: ConfirmResult;
+  /** Accept a confirm on behalf of organisation. */
+  acceptOrgConfirm: ConfirmResult;
+  /** Reject a confirm on behalf of organisation. */
+  rejectOrgConfirm: ConfirmResult;
 };
 
 
@@ -355,6 +378,11 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
 };
 
 
+export type RootMutationTypeLaunchActionPageArgs = {
+  name: Scalars['String'];
+};
+
+
 export type RootMutationTypeAddActionArgs = {
   tracking?: Maybe<TrackingInput>;
   contactRef: Scalars['ID'];
@@ -386,14 +414,14 @@ export type RootMutationTypeAddOrgUserArgs = {
 };
 
 
-export type RootMutationTypeDeleteOrgUserArgs = {
-  email: Scalars['String'];
+export type RootMutationTypeUpdateOrgUserArgs = {
+  input: UserInput;
   orgName: Scalars['String'];
 };
 
 
-export type RootMutationTypeUpdateOrgUserArgs = {
-  input: UserInput;
+export type RootMutationTypeDeleteOrgUserArgs = {
+  email: Scalars['String'];
   orgName: Scalars['String'];
 };
 
@@ -438,25 +466,27 @@ export type RootMutationTypeActivateKeyArgs = {
 
 
 export type RootMutationTypeStripeCreatePaymentIntentArgs = {
+  contactRef?: Maybe<Scalars['ID']>;
   input: StripePaymentIntentInput;
   actionPageId: Scalars['Int'];
 };
 
 
 export type RootMutationTypeStripeCreateSubscriptionArgs = {
+  contactRef?: Maybe<Scalars['ID']>;
   input: StripeSubscriptionInput;
   actionPageId: Scalars['Int'];
 };
 
 
-export type RootMutationTypeAcceptOrgInviteArgs = {
-  invite: Invite;
+export type RootMutationTypeAcceptOrgConfirmArgs = {
+  confirm: ConfirmInput;
   name: Scalars['String'];
 };
 
 
-export type RootMutationTypeRejectOrgInviteArgs = {
-  invite: Invite;
+export type RootMutationTypeRejectOrgConfirmArgs = {
+  confirm: ConfirmInput;
   name: Scalars['String'];
 };
 
@@ -480,7 +510,6 @@ export type RootQueryTypeCampaignsArgs = {
 
 
 export type RootQueryTypeActionPageArgs = {
-  url?: Maybe<Scalars['String']>;
   name?: Maybe<Scalars['String']>;
   id?: Maybe<Scalars['Int']>;
 };
@@ -576,6 +605,10 @@ export type CampaignInput = {
   config?: Maybe<Scalars['Json']>;
   /** Action pages of this campaign */
   actionPages: Array<ActionPageInput>;
+};
+
+export type LaunchActionPageResult = {
+  status: Status;
 };
 
 /** Address type which can hold different addres fields. */
@@ -692,6 +725,7 @@ export type Org = {
   keys: Array<Key>;
   key: Key;
   services: Array<Maybe<Service>>;
+  users: Array<Maybe<OrgUser>>;
   /** List campaigns this org is leader or partner of */
   campaigns: Array<Campaign>;
   /** List action pages this org has */
@@ -739,6 +773,7 @@ export type OrgCampaignArgs = {
 };
 
 export enum ServiceName {
+  Stripe = 'STRIPE',
   Wordpress = 'WORDPRESS',
   Mailjet = 'MAILJET',
   Sqs = 'SQS',
@@ -759,7 +794,7 @@ export type StripePaymentIntentInput = {
 };
 
 export type Contact = {
-  contactRef: Scalars['String'];
+  contactRef: Scalars['ID'];
   payload: Scalars['String'];
   nonce: Maybe<Scalars['String']>;
   publicKey: Maybe<KeyIds>;
@@ -812,7 +847,7 @@ export type CustomField = {
 
 export type UserInput = {
   email: Scalars['String'];
-  roles?: Maybe<Array<Scalars['String']>>;
+  role: Scalars['String'];
 };
 
 /** Contact information */
