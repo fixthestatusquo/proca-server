@@ -21,28 +21,45 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :role, non_null(:string)
   end
 
+  object :org_user do 
+    field :email, non_null(:string)
+    field :role, non_null(:string)
+    field :created_at, non_null(:naive_datetime)
+    field :joined_at, non_null(:naive_datetime)
+    field :last_signin_at, :naive_datetime
+  end
+
   object :user_mutations do
-    field :add_org_user, type: :user do
+    field :add_org_user, type: non_null(:change_user_status) do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :input, non_null(:user_input)
+      resolve(&Resolvers.User.add_org_user/3)
+    end
+
+    field :update_org_user, type: non_null(:change_user_status) do
+      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
+      arg :org_name, non_null(:string)
+      arg :input, non_null(:user_input)
+      resolve(&Resolvers.User.update_org_user/3)
     end
 
     field :delete_org_user, type: :delete_user_result do
-      arg :org_name, non_null(:string)
-      arg :email, non_null(:string)
-    end
-
-    field :update_org_user, type: :user do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
-      arg :input, non_null(:user_input)
+      arg :email, non_null(:string)
+      resolve(&Resolvers.User.delete_org_user/3)
+
     end
   end
 
   input_object :user_input do
     field :email, non_null(:string)
-    field :roles, list_of(non_null(:string))
+    field :role, non_null(:string)
+  end
+
+  object :change_user_status do 
+    field :status, non_null(:status)
   end
 
   object :delete_user_result do

@@ -1,17 +1,17 @@
-defmodule Proca.Confirm.SignoffPage do
+defmodule Proca.Confirm.LaunchPage do
    @moduledoc """
    Confirm operation of making action page live.
 
    Who is the subject? -> Campaign id
    1. Campaign lead
-   2. Campaign manager (we have a persmission for this) (we have signoff_action_page permission)
+   2. Campaign manager (we have a persmission for this) (we have launch_action_page permission)
    """
    alias Proca.Confirm
    @behaviour Confirm.Operation
 
    alias Proca.{Campaign, ActionPage, Staffer, Org}
    import Proca.Repo
-   import Ecto.Query
+   import Ecto.Query, only: [from: 2]
 
    import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
    import Proca.Staffer.Permission, only: [can?: 2]
@@ -19,7 +19,7 @@ defmodule Proca.Confirm.SignoffPage do
    def create(%ActionPage{id: ap_id, campaign_id: campaign_id}) do
       # XXX test for campaign manager
       %{
-         operation: :signoff_page,
+         operation: :launch_page,
          subject_id: campaign_id,
          object_id: ap_id
       }
@@ -27,23 +27,27 @@ defmodule Proca.Confirm.SignoffPage do
    end
 
 
-   defp can_approve?(staffer, campaign) do
-      staffer.org_id == campaign.org_id and can?(staffer, [:manage_campaigns])
+   defp can_approve?(user_id, campaign) do
+      case Staffer.for_user_in_org(%Proca.Users.User{id: user_id}, campaign.org_id) do 
+         nil -> false 
+         staffer -> can?(staffer, [:manage_campaigns])
+      end
    end
 
    @impl true
    def run(
    %Confirm{
-      operation: :signoff_page,
+      operation: :launch_page,
       subject_id: campaign_id,
       object_id: ap_id
       },
       :confirm,
       st
       ) do
+
    with camp when not is_nil(camp) <- get(Campaign, campaign_id),
       ap when not is_nil(ap) <- ActionPage.find(ap_id),
-      {:perms, true} <- {:perms, can_approve?(st, camp)} do
+      {:perms, true} <- {:perms, can_approve?(st.user_id, camp)} do
 
          ActionPage.go_live(ap)
       else
@@ -54,11 +58,11 @@ defmodule Proca.Confirm.SignoffPage do
 
    # XXX remove the AP? Rude but makes sense
    @impl true
-   def run(%Confirm{operation: :signoff_page}, :reject, _st), do: :ok
+   def run(%Confirm{operation: :launch_page}, :reject, _st), do: :ok
 
 
    @impl true
-   def email_template(%Confirm{operation: :signoff_page}), do: "signoff_page"
+   def email_template(%Confirm{operation: :launch_page}), do: "launch_page"
 
 
    @impl true

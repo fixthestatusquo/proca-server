@@ -42,14 +42,13 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
 
       resolve &ProcaWeb.Resolvers.Confirm.org_reject/3
     end
+  end
 
-    field :request_signoff_page, type: non_null(:status) do
-      middleware Authorized, access: [:action_page, by: [:name]]
 
-      arg :name, non_null(:string) 
-
-      resolve &ProcaWeb.Resolvers.ActionPage.request_signoff_page/3
-    end
+  object :confirm do 
+    field :code, non_null(:string)
+    field :email, :string 
+    field :object_id, :integer
   end
 
 end

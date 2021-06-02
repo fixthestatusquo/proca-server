@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   """
   import Ecto.Query
   import Proca.Repo
-  alias Proca.{Campaign, ActionPage, Staffer, Org}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm}
   import Proca.Staffer.Permission
   alias ProcaWeb.Helper
   alias Proca.Server.Notify
@@ -163,7 +163,11 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
+  @doc """
+  We do not have a partnership object yet but lets simulate it by getting all partner orgs with ap in that campaign
+  """
   def partnerships(%Campaign{id: c_id, org_id: lead_id} = campaign, _, %{context: %{user: user}}) do 
+    # XXX create visible_for helper which calls a fn ?
     case Proca.Staffer.for_user_in_org(user, lead_id) do 
       nil -> 
         {:ok, nil}
@@ -178,9 +182,26 @@ defmodule ProcaWeb.Resolvers.Campaign do
           where: o.id in subquery(all_partner_ids)
         )
         |> all()
-        |> Enum.map(fn o -> %{org: o} end)
+        |> Enum.map(fn o -> %{org: o, campaign: campaign} end)
         {:ok, partnerships}
     end
+  end
+
+  def partnership_action_pages(%{org: %Org{id: org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
+    {:ok, 
+      from(a in ActionPage, where: a.org_id == ^org_id and a.campaign_id == ^campaign_id) |> all()
+    }
+  end
+
+
+
+  def partnership_launch_requests(%{org: %Org{id: _org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
+    {
+      :ok, 
+      from(c in Confirm, where: c.operation == :launch_page and c.subject_id == ^campaign_id) 
+      |> where([c], c.charges > 0)
+      |> all()
+    }
   end
 
 end

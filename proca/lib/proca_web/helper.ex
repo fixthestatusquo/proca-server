@@ -7,6 +7,10 @@ defmodule ProcaWeb.Helper do
   alias Proca.{ActionPage, Campaign, Staffer}
   alias Proca.Staffer.Permission
 
+
+  def format_result({:ok, value}), do: {:ok, value}
+  def fromat_result({:error, changeset = %Ecto.Changeset{}}), do: {:error, format_errors(changeset)}
+
   @doc """
   GraphQL expect a flat list of %{message: "some text"}. Traverse changeset and
   flat error messages to such list.

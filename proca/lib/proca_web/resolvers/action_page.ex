@@ -88,14 +88,14 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def request_signoff_page(_, %{name: name}, %{context: %{staffer: st}}) do 
+  def launch_page(_, %{name: name}, %{context: %{staffer: st}}) do 
     with ap = %ActionPage{} <- ActionPage.find(name),
         org <- Org.get_by_id(ap.campaign.org_id)
     do 
-      cnf = Proca.Confirm.SignoffPage.create(ap)
+      cnf = Proca.Confirm.LaunchPage.create(ap)
       Proca.Server.Notify.org_confirm_created(cnf, org)
 
-      {:ok, :confirming}
+      {:ok, %{status: :confirming}}
     else 
       nil -> {:error, [%{message: "action page not found"}]}
     end

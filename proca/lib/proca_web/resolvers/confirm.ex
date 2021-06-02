@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.Confirm do
     Proca.Confirm.by_email_code(email, code)
   end
 
-  def get(%{code: code, id: id}) when is_bitstring(code) and is_number(id) do 
+  def get(%{code: code, object_id: id}) when is_bitstring(code) and is_number(id) do 
     Proca.Confirm.by_object_code(id, code)
   end
 
