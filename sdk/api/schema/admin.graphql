@@ -34,6 +34,12 @@ query GetCampaign($org: String!, $id: Int!) {
         partnerships {
           org {
             name, title
+          },
+          actionPages { 
+            id, name, locale, config, live, journey, extraSupporters, thankYouTemplateRef
+          },
+          launchRequests {
+            code, email, objectId
           }
         }
       }
