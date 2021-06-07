@@ -54,7 +54,7 @@ You'll need the following packages:
 
     erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
 
-## RabbitMQ (version?)
+## RabbitMQ (3.x, tested on 3.8)
 
 ## NodeJS (>= 10?) / npm >= 7?
 
