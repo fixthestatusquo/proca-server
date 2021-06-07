@@ -1,8 +1,40 @@
+
+fragment CampaignFields on Campaign {
+  id, name, externalId, 
+  title, 
+  contactSchema, config
+}
+
+fragment CampaignOwner on Campaign {
+  org { name, title }
+}
+
+fragment ActionPagePublicFields on PublicActionPage {
+  id, name, locale, 
+  thankYouTemplateRef, 
+  journey,
+  config
+}
+
+fragment ActionPageFields on ActionPage {
+  id, name, locale, 
+  thankYouTemplateRef, 
+  journey,
+  config,
+  extraSupporters
+}
+
+fragment ActionPageOwner on ActionPage {
+  campaign { id, name, externalId }
+  org { name, title }
+}
+
+
 query ListCampaigns($org: String!) {
     org(name: $org) {
       campaigns {
-        id, externalId, name, title, contactSchema, config,
-        org { name, title }
+        ...CampaignFields,
+        ...CampaignOwner
       }
     }
   }
@@ -10,9 +42,8 @@ query ListCampaigns($org: String!) {
 query ListActionPages($org: String!) {
     org(name: $org) {
       actionPages {
-        id, name, locale, config,
-        journey, extraSupporters, thankYouTemplateRef,
-        campaign { id, name, externalId }
+        ...ActionPageFields,
+        ...ActionPageOwner
       }
     }
   }
