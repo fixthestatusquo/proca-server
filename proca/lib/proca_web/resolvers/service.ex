@@ -61,9 +61,16 @@ defmodule ProcaWeb.Resolvers.Service do
     end
   end
 
-  def assemble_stripe_objects(%{payment_intent: pi}, stripe) do 
-      Service.Stripe.create_payment_intent_raw(pi, stripe)
+  def assemble_stripe_objects(params = %{customer: customer, payment_intent: pi}, stripe) do 
+    case Service.Stripe.create_customer_raw(customer, stripe) do 
+      {:ok , %{id: id}} -> 
+        Map.delete(params, :customer)
+        |> Map.put(:payment_intent, Map.put(pi, :customer, id))
+        |> assemble_stripe_objects(stripe)
+      e -> e
+    end
   end
+  
 
   def assemble_stripe_objects(params = %{customer: customer, subscription: sbscr}, stripe) do 
     case Service.Stripe.create_customer_raw(customer, stripe) do 
@@ -83,6 +90,10 @@ defmodule ProcaWeb.Resolvers.Service do
         |> assemble_stripe_objects(stripe)
       e -> e
     end
+  end
+
+  def assemble_stripe_objects(%{payment_intent: pi}, stripe) do 
+      Service.Stripe.create_payment_intent_raw(pi, stripe)
   end
 
   def assemble_stripe_objects(%{price: price}, stripe) do 
