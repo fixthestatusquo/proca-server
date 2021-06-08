@@ -23,6 +23,17 @@ defmodule ProcaWeb.Schema.ServiceTypes do
 
       resolve(&Resolvers.Service.stripe_create_subscription/3)
     end
+
+#  payment intent, create customer, create subscription
+    field :stripe_create_raw, type: non_null(:json) do 
+      arg :action_page_id, non_null(:integer)
+
+      arg :payment_intent, :json
+      arg :customer, :json 
+      arg :subscription, :json
+
+      resolve(&Resolvers.Service.stripe_create_raw/3)
+    end
   end
 
   input_object :stripe_payment_intent_input do
