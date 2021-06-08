@@ -3,7 +3,7 @@ defmodule Proca.Service.Stripe do
   alias Proca.Service
 
   def create_payment_intent(
-        %Service{name: :stripe, password: api_key},
+        service,
         params = %{
           amount: amount,
           currency: currency
@@ -11,7 +11,7 @@ defmodule Proca.Service.Stripe do
         metadata
       )
       when is_float(amount) and is_bitstring(currency) do
-    intent_args =
+    intent_params =
       %{
         amount: to_cents(amount),
         currency: String.downcase(currency)
@@ -19,11 +19,27 @@ defmodule Proca.Service.Stripe do
       |> add_if_given(params, :payment_method_types)
       |> add_metadata(metadata)
 
-    Stripe.PaymentIntent.create(intent_args, api_key: api_key)
+    create_payment_intent_raw(intent_params, service)
+  end
+
+  def create_payment_intent_raw(params, %Service{name: :stripe, password: api_key}) do 
+    Stripe.PaymentIntent.create(params, api_key: api_key)
+  end
+
+  def create_customer_raw(params, %Service{name: :stripe, password: api_key}) do 
+    Stripe.Customer.create(params, api_key: api_key)
+  end
+
+  def create_price_raw(params, %Service{name: :stripe, password: api_key}) do 
+    Stripe.Price.create(params, api_key: api_key)
+  end
+
+  def create_subscription_raw(params, %Service{name: :stripe, password: api_key}) do 
+    Stripe.Subscription.create(params, api_key: api_key)
   end
 
   def create_subscription(
-    %Service{name: :stripe, password: api_key},
+    service,
     %{ 
       amount: amount, 
       currency: currency,
@@ -33,7 +49,6 @@ defmodule Proca.Service.Stripe do
   ) 
   when is_float(amount) and is_bitstring(currency)
   do 
-    opt = [api_key: api_key]
 
     price_param = %{
         currency: currency,
@@ -47,8 +62,8 @@ defmodule Proca.Service.Stripe do
     }
 
 
-    with {:ok, customer} <- Stripe.Customer.create(customer(metadata), opt),
-         {:ok, price} <- Stripe.Price.create(price_param, opt)
+    with {:ok, customer} <- create_customer_raw(customer(metadata), service),
+         {:ok, price} <- create_price_raw(price_param, service)
       do
 
       %{
@@ -58,7 +73,7 @@ defmodule Proca.Service.Stripe do
         expand: ["latest_invoice.payment_intent"]
       } 
       |> add_metadata(metadata)
-      |> Stripe.Subscription.create(api_key: api_key)
+      |> create_subscription_raw(service)
     else
       {:error, e} -> {:error, e}
     end

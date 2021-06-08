@@ -38,6 +38,12 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
+  defp add_tracking(action, %{}, referer) when is_bitstring(referer) do 
+    add_tracking(action, %{
+      source: "", medium: "", campaign: ""
+    }, referer)
+  end
+
   defp add_tracking(action, %{}, _referer) do
     action
   end
