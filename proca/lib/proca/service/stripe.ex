@@ -19,22 +19,22 @@ defmodule Proca.Service.Stripe do
       |> add_if_given(params, :payment_method_types)
       |> add_metadata(metadata)
 
-    create_payment_intent_raw(intent_params, service)
+    do_create_payment_intent(intent_params, service)
   end
 
-  def create_payment_intent_raw(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_payment_intent(params, %Service{name: :stripe, password: api_key}) do 
     Stripe.PaymentIntent.create(params, api_key: api_key)
   end
 
-  def create_customer_raw(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_customer(params, %Service{name: :stripe, password: api_key}) do 
     Stripe.Customer.create(params, api_key: api_key)
   end
 
-  def create_price_raw(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_price(params, %Service{name: :stripe, password: api_key}) do 
     Stripe.Price.create(params, api_key: api_key)
   end
 
-  def create_subscription_raw(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_subscription(params, %Service{name: :stripe, password: api_key}) do 
     Stripe.Subscription.create(params, api_key: api_key)
   end
 
@@ -62,8 +62,8 @@ defmodule Proca.Service.Stripe do
     }
 
 
-    with {:ok, customer} <- create_customer_raw(customer(metadata), service),
-         {:ok, price} <- create_price_raw(price_param, service)
+    with {:ok, customer} <- do_create_customer(customer(metadata), service),
+         {:ok, price} <- do_create_price(price_param, service)
       do
 
       %{
@@ -73,7 +73,7 @@ defmodule Proca.Service.Stripe do
         expand: ["latest_invoice.payment_intent"]
       } 
       |> add_metadata(metadata)
-      |> create_subscription_raw(service)
+      |> do_create_subscription(service)
     else
       {:error, e} -> {:error, e}
     end

@@ -2,7 +2,7 @@ defmodule ProcaWeb.Resolvers.Service do
   alias Proca.ActionPage
   alias Proca.Service
 
-  def stripe_create_payment_intent(
+  def add_stripe_payment_intent(
         _parent,
         params = %{action_page_id: ap_id, input: input},
         context
@@ -25,7 +25,7 @@ defmodule ProcaWeb.Resolvers.Service do
     end
   end
 
-  def stripe_create_subscription(
+  def add_stripe_subscription(
         _parent,
         params = %{action_page_id: ap_id, input: input},
         context
@@ -48,7 +48,7 @@ defmodule ProcaWeb.Resolvers.Service do
     end
   end
 
-  def stripe_create_raw(_parent, params = %{ action_page_id: ap_id }, _ctx) do 
+  def add_stripe_object(_parent, params = %{ action_page_id: ap_id }, _ctx) do 
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
          stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
 
@@ -62,7 +62,7 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def assemble_stripe_objects(params = %{customer: customer, payment_intent: pi}, stripe) do 
-    case Service.Stripe.create_customer_raw(customer, stripe) do 
+    case Service.Stripe.do_create_customer(customer, stripe) do 
       {:ok , %{id: id}} -> 
         Map.delete(params, :customer)
         |> Map.put(:payment_intent, Map.put(pi, :customer, id))
@@ -73,7 +73,7 @@ defmodule ProcaWeb.Resolvers.Service do
   
 
   def assemble_stripe_objects(params = %{customer: customer, subscription: sbscr}, stripe) do 
-    case Service.Stripe.create_customer_raw(customer, stripe) do 
+    case Service.Stripe.do_create_customer(customer, stripe) do 
       {:ok , %{id: id}} -> 
         Map.delete(params, :customer)
         |> Map.put(:subscription, Map.put(sbscr, :customer, id))
@@ -83,7 +83,7 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def assemble_stripe_objects(params = %{price: price, subscription: sbscr}, stripe) do 
-    case Service.Stripe.create_price_raw(price, stripe) do 
+    case Service.Stripe.do_create_price(price, stripe) do 
       {:ok , %{id: id}} -> 
         Map.delete(params, :price)
         |> Map.put(:subscription, Map.put(sbscr, :items, [ %{ price: id } ]))
@@ -93,20 +93,20 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def assemble_stripe_objects(%{payment_intent: pi}, stripe) do 
-      Service.Stripe.create_payment_intent_raw(pi, stripe)
+      Service.Stripe.do_create_payment_intent(pi, stripe)
   end
 
   def assemble_stripe_objects(%{price: price}, stripe) do 
-      Service.Stripe.create_price_raw(price, stripe)
+      Service.Stripe.do_create_price(price, stripe)
   end
 
   def assemble_stripe_objects(%{customer: customer}, stripe) do 
-      Service.Stripe.create_customer_raw(customer, stripe)
+      Service.Stripe.do_create_customer(customer, stripe)
   end
 
 
   def assemble_stripe_objects(%{subscription: sbscr}, stripe) do 
-      Service.Stripe.create_subscription_raw(sbscr, stripe)
+      Service.Stripe.do_create_subscription(sbscr, stripe)
   end
 
   def assemble_stripe_objects(%{}, _stripe) do 
