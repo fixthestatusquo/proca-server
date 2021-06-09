@@ -1,4 +1,4 @@
-defmodule Proca.Stage.Email do
+defmodule Proca.Stage.EmailSupporter do
   @moduledoc """
   Processing "stage" that sends thank you emails
   """
