@@ -1,0 +1,47 @@
+fragment campaignIds on Campaign { 
+  id externalId name
+}
+
+fragment campaignFields on Campaign {
+  id externalId
+  name
+  title 
+  contactSchema
+  config
+}
+
+fragment campaignPrivateFields on Campaign { 
+  forceDelivery
+}
+
+fragment campaignStats on Campaign { 
+  stats {
+    supporterCount 
+    supporterCountByOrg { 
+      org { name title }
+      count
+    }
+    actionCount { actionType count }
+  }
+}
+
+
+fragment actionPageFields on ActionPage {
+  id
+  name
+  locale 
+  config
+  live
+  journey
+  thankYouTemplateRef
+}
+
+fragment actionPagePrivateFields on ActionPage {
+  extraSupporters 
+  delivery
+}
+
+
+fragment orgIds on PublicOrg {
+  name title
+}
