@@ -8,7 +8,7 @@ generates:
   src/apiTypes.ts:
     plugins:
       - typescript
-    config:
+    config: &config
       omitOperationSuffix: true
       avoidOptionals: &avoidOptionals
         object: false
@@ -17,8 +17,9 @@ generates:
       skipTypeNameForRoot: true
       skipTypename: true
 
-  src/queries/widget.ts:
+  src/queries/widget.ts: &apiSet
     documents:
+      - schema/common.graphql
       - schema/widget.graphql
     plugins:
       - typed-document-node
@@ -27,24 +28,11 @@ generates:
     presetConfig:
       typesPath: ../apiTypes
     config:
-      omitOperationSuffix: true
-      avoidOptionals:
-        <<: *avoidOptionals
-      skipTypeNameForRoot: true
-      skipTypename: true
+      <<: *config
 
   src/queries/admin.ts:
+    <<: *apiSet
     documents:
+      - schema/common.graphql
       - schema/admin.graphql
-    plugins:
-      - typed-document-node
-      - typescript-operations
-    preset: import-types
-    presetConfig:
-      typesPath: ../apiTypes
-    config:
-      omitOperationSuffix: true
-      avoidOptionals:
-        <<: *avoidOptionals
-      skipTypeNameForRoot: true
-      skipTypename: true
+

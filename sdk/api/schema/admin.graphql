@@ -1,8 +1,8 @@
 query ListCampaigns($org: String!) {
     org(name: $org) {
       campaigns {
-        id, externalId, name, title, contactSchema, config,
-        org { name, title }
+        ...campaignFields
+        org { ...orgIds }
       }
     }
   }
@@ -10,9 +10,8 @@ query ListCampaigns($org: String!) {
 query ListActionPages($org: String!) {
     org(name: $org) {
       actionPages {
-        id, name, locale, config, live,
-        journey, extraSupporters, thankYouTemplateRef,
-        campaign { id, name, externalId }
+        ...actionPageFields
+        campaign { ...campaignIds }
       }
     }
   }
@@ -21,22 +20,15 @@ query ListActionPages($org: String!) {
 query GetCampaign($org: String!, $id: Int!) {
     org(name: $org) {
       campaign(id: $id) {
-        id, externalId, name, title, contactSchema, config,
-        stats {
-          supporterCount, 
-          supporterCountByOrg { 
-            org { name, title },
-            count
-          },
-          actionCount { actionType, count }
-        },
-        org { name, title },
+        ...campaignFields
+        ...campaignStats
+        org { ...orgIds }
         partnerships {
           org {
-            name, title
+            ...orgIds
           },
           actionPages { 
-            id, name, locale, config, live, journey, extraSupporters, thankYouTemplateRef
+            ...actionPageFields
           },
           launchRequests {
             code, email, objectId
@@ -48,9 +40,8 @@ query GetCampaign($org: String!, $id: Int!) {
 
 query FindPublicCampaign($name: String,$title: String) {
   campaigns(title: $title, name: $name) {
-    id, name, externalId, 
-    title, config, contactSchema, 
-    org { name, title }
+    ...campaignFields
+    org { ...orgIds }
   }
 }
 
@@ -58,14 +49,9 @@ query GetActionPage($org: String!, $id: Int, $name: String) {
     org(name: $org) {
       name, title,
       actionPage(id: $id, name: $name) {
-        id,
-        name,
-        locale,
-        extraSupporters, thankYouTemplateRef,
-        journey,
-        config,
-        live,
-        campaign { id, name, title, externalId, contactSchema }
+        ...actionPageFields
+        ...actionPagePrivateFields
+        campaign { ...campaignFields }
       }
     }
 }
