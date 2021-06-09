@@ -41,6 +41,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :title, non_null(:string)
     @desc "Schema for contact personal information"
     field :contact_schema, non_null(:contact_schema)
+    @desc "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
+    field :force_delivery, non_null(:boolean)
     @desc "Custom config map"
     field :config, non_null(:json)
 
@@ -82,6 +84,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :config, non_null(:json)
     @desc "Extra supporters (added to supporters count)"
     field :extra_supporters, non_null(:integer)
+    @desc "Action page collects also opt-out actions"
+    field :delivery, non_null(:boolean)
     @desc "Campaign this widget belongs to. Can be null for trashed action pages"
     field :campaign, :campaign do
       resolve(&Resolvers.ActionPage.campaign/3)
