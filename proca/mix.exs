@@ -76,7 +76,7 @@ defmodule Proca.MixProject do
       {:hackney, "~> 1.17.4"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
-      {:jose, "~> 1.10.0"},
+      {:jose, "~> 1.11.1"},
       {:json, "~> 1.3.0"},  # XXX migrate to jason
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
