@@ -110,7 +110,7 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "deliver"),
         wqn(o, "email.supporter"),
-        bind: Stage.EmailSuporter.start_for?(o),
+        bind: Stage.EmailSupporter.start_for?(o),
         route: "#"
       },
 
