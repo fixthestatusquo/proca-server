@@ -1,7 +1,77 @@
+"Represents a schema"
 schema {
   query: RootQueryType
   mutation: RootMutationType
   subscription: RootSubscriptionType
+}
+
+"Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
+interface Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign statistics"
+  stats: CampaignStats!
+
+  org: Org!
+
+  "Fetch public actions"
+  actions(
+    "Return actions of this action type"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+}
+
+type PublicCampaign implements Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign statistics"
+  stats: CampaignStats!
+
+  org: Org!
+
+  "Fetch public actions"
+  actions(
+    "Return actions of this action type"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
 }
 
 "Tracking codes"
@@ -38,12 +108,6 @@ type KeyWithPrivate {
   expiredAt: DateTime
 }
 
-type SimpleActionPage {
-  id: Int!
-  name: String!
-  locale: String!
-}
-
 "GDPR consent data structure"
 input ConsentInput {
   "Has contact consented to receiving communication from widget owner?"
@@ -54,13 +118,13 @@ input ConsentInput {
 }
 
 input NationalityInput {
-  "Nationality / issuer of id document"
+  "Nationality \/ issuer of id document"
   country: String!
 
   "Document type"
   documentType: String
 
-  "Document serial id/number"
+  "Document serial id\/number"
   documentNumber: String
 }
 
@@ -98,25 +162,20 @@ type ChangeUserStatus {
 }
 
 enum ContactSchema {
-  IT_CI
-  ECI
-  POPULAR_INITIATIVE
   BASIC
+  POPULAR_INITIATIVE
+  ECI
+  IT_CI
 }
 
 type Partnership {
-  org: PublicOrg!
+  org: Org!
   actionPages: [ActionPage!]!
   launchRequests: [Confirm!]!
 }
 
 type RootSubscriptionType {
-  actionPageUpserted(orgName: String): PublicActionPage!
-}
-
-type ActionCampaign {
-  name: String!
-  externalId: Int
+  actionPageUpserted(orgName: String): ActionPage!
 }
 
 type Donation {
@@ -141,17 +200,6 @@ type Confirm {
   objectId: Int
 }
 
-"ActionPage declaration (using the legacy url attribute)"
-input ActionPageInputLegacyUrl {
-  id: Int
-  url: String
-  locale: String
-  thankYouTemplateRef: String
-  extraSupporters: Int
-  journey: [String!]
-  config: String
-}
-
 input SelectKey {
   id: Int
   active: Boolean
@@ -164,6 +212,67 @@ type Service {
   host: String
   user: String
   path: String
+}
+
+interface ActionPage {
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]!
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+}
+
+type PrivateActionPage implements ActionPage {
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]!
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+
+  extraSupporters: Int!
+
+  "Action page collects also opt-out actions"
+  delivery: Boolean!
 }
 
 """
@@ -268,8 +377,8 @@ type Action {
   contact: Contact!
   fields: [CustomField!]!
   tracking: Tracking
-  campaign: ActionCampaign!
-  actionPage: SimpleActionPage!
+  campaign: Campaign!
+  actionPage: ActionPage!
   privacy: Consent!
   donation: Donation
 }
@@ -286,36 +395,18 @@ type RootMutationType {
   Action Pages will be removed (principle of not removing signature data).
   """
   upsertCampaign(
+    "Org name"
+    orgName: String!
+
     input: CampaignInput!
-
-    "Org name"
-    orgName: String!
-  ): Campaign!
-
-  "Deprecated, use upsert_campaign."
-  declareCampaign(
-    "Action pages of this campaign"
-    actionPages: [ActionPageInputLegacyUrl]!
-
-    "Campaign human readable title"
-    title: String!
-
-    "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-    externalId: Int
-
-    "Campaign unchanging identifier"
-    name: String!
-
-    "Org name"
-    orgName: String!
   ): Campaign!
 
   "Update an Action Page"
   updateActionPage(
-    input: ActionPageInput!
-
     "Action Page id"
     id: Int!
+
+    input: ActionPageInput!
   ): ActionPage!
 
   """
@@ -323,14 +414,14 @@ type RootMutationType {
   create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
   """
   copyActionPage(
-    "Name of Action Page this one is cloned from"
-    fromName: String!
+    "Org owner of new Action Page"
+    orgName: String!
 
     "New Action Page name"
     name: String!
 
-    "Org owner of new Action Page"
-    orgName: String!
+    "Name of Action Page this one is cloned from"
+    fromName: String!
   ): ActionPage!
 
   """
@@ -338,69 +429,69 @@ type RootMutationType {
   create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
   """
   copyCampaignActionPage(
-    "Name of Action Page this one is cloned from"
-    fromCampaignName: String!
+    "Org owner of new Action Page"
+    orgName: String!
 
     "New Action Page name"
     name: String!
 
-    "Org owner of new Action Page"
-    orgName: String!
+    "Name of Action Page this one is cloned from"
+    fromCampaignName: String!
   ): ActionPage!
 
   launchActionPage(name: String!): LaunchActionPageResult!
 
   "Adds an action referencing contact data via contactRef"
   addAction(
-    "Tracking codes (UTM_*)"
-    tracking: TrackingInput
-
-    "Contact reference"
-    contactRef: ID!
+    actionPageId: Int!
 
     "Action data"
     action: ActionInput!
 
-    actionPageId: Int!
+    "Contact reference"
+    contactRef: ID!
+
+    "Tracking codes (UTM_*)"
+    tracking: TrackingInput
   ): ContactReference!
 
   "Adds an action with contact data"
   addActionContact(
-    "Links previous actions with just reference to this supporter data"
-    contactRef: ID
-
-    "Tracking codes (UTM_*)"
-    tracking: TrackingInput
-
-    "Signature action data"
-    privacy: ConsentInput!
-
-    "GDPR communication opt"
-    contact: ContactInput!
+    actionPageId: Int!
 
     "Action data"
     action: ActionInput!
 
-    actionPageId: Int!
+    "GDPR communication opt"
+    contact: ContactInput!
+
+    "Signature action data"
+    privacy: ConsentInput!
+
+    "Tracking codes (UTM_*)"
+    tracking: TrackingInput
+
+    "Links previous actions with just reference to this supporter data"
+    contactRef: ID
   ): ContactReference!
 
   "Link actions with refs to contact with contact reference"
   linkActions(
-    "Link actions with these references (if unlinked to supporter)"
-    linkRefs: [String!]
+    "Action Page id"
+    actionPageId: Int!
 
     "Contact reference"
     contactRef: ID!
 
-    "Action Page id"
-    actionPageId: Int!
+    "Link actions with these references (if unlinked to supporter)"
+    linkRefs: [String!]
   ): ContactReference!
 
-  addOrgUser(input: UserInput!, orgName: String!): ChangeUserStatus!
+  addOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
 
-  updateOrgUser(input: UserInput!, orgName: String!): ChangeUserStatus!
+  updateOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
 
-  deleteOrgUser(email: String!, orgName: String!): DeleteUserResult
+  deleteOrgUser(orgName: String!, email: String!): DeleteUserResult
 
   addOrg(input: OrgInput!): Org!
 
@@ -410,45 +501,66 @@ type RootMutationType {
   ): Boolean!
 
   updateOrg(
-    input: OrgInput!
-
     "Name of organisation, used for lookup, can't be used to change org name"
     name: String!
+
+    input: OrgInput!
   ): Org!
 
   joinOrg(name: String!): JoinOrgResult!
 
   generateKey(
-    input: GenKeyInput!
-
     "Name of organisation"
     orgName: String!
+
+    input: GenKeyInput!
   ): KeyWithPrivate!
 
   addKey(
-    input: AddKeyInput!
-
     "Name of organisation"
     orgName: String!
+
+    input: AddKeyInput!
   ): Key!
 
   "A separate key activate operation, because you also need to add the key to receiving system before it is used"
   activateKey(
+    orgName: String!
+
     "Key id"
     id: Int!
-
-    orgName: String!
   ): ActivateKeyResult!
 
-  stripeCreatePaymentIntent(contactRef: ID, input: StripePaymentIntentInput!, actionPageId: Int!): Json!
+  addStripePaymentIntent(actionPageId: Int!, input: StripePaymentIntentInput!, contactRef: ID): Json!
 
-  stripeCreateSubscription(contactRef: ID, input: StripeSubscriptionInput!, actionPageId: Int!): Json!
+  addStripeSubscription(actionPageId: Int!, input: StripeSubscriptionInput!, contactRef: ID): Json!
+
+  """
+  Create stripe object using Stripe key associated with action page owning org.
+  Pass any of paymentIntent, subscription, customer, price json params to be sent as-is to Stripe API. The result is a JSON returned by Stripe API or a GraphQL Error object.
+  If you provide customer along payment intent or subscription, it will be first created, then their id will be added to params for the payment intent or subscription, so you can pack 2 Stripe API calls into one. You can do the same with price object in case of a subscription.
+  """
+  addStripeObject(
+    actionPageId: Int!
+
+    "Parameters for Stripe Payment Intent creation"
+    paymentIntent: Json
+
+    "Parameters for Stripe Subscription creation"
+    subscription: Json
+
+    "Parameters for Stripe Customer creation"
+    customer: Json
+
+    "Parameters for Stripe Price creation"
+    price: Json
+  ): Json!
 
   "Accept a confirm on behalf of organisation."
-  acceptOrgConfirm(confirm: ConfirmInput!, name: String!): ConfirmResult!
+  acceptOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
 
   "Reject a confirm on behalf of organisation."
-  rejectOrgConfirm(confirm: ConfirmInput!, name: String!): ConfirmResult!
+  rejectOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
 }
 
 """
@@ -461,46 +573,46 @@ scalar Decimal
 type RootQueryType {
   "Get a list of campains"
   campaigns(
-    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
-    name: String
-
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
+
+    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
+    name: String
   ): [Campaign!]!
 
   "Get action page"
   actionPage(
-    "Get action page by name the widget is displayed on"
-    name: String
-
     "Get action page by id."
     id: Int
-  ): PublicActionPage!
+
+    "Get action page by name the widget is displayed on"
+    name: String
+  ): ActionPage!
 
   exportActions(
-    "Only download opted in contacts and actions (default true)"
-    onlyOptIn: Boolean
-
-    "Only download opted in contacts and actions (default true)"
-    onlyOptIn: Boolean
-
-    "Limit the number of returned actions"
-    limit: Int
-
-    "return only actions created at date time from this argument (inclusive)"
-    after: DateTime
-
-    "return only actions with id starting from this argument (inclusive)"
-    start: Int
-
-    "Limit results to campaign id"
-    campaignId: Int
+    "Organization name"
+    orgName: String!
 
     "Limit results to campaign name"
     campaignName: String
 
-    "Organization name"
-    orgName: String!
+    "Limit results to campaign id"
+    campaignId: Int
+
+    "return only actions with id starting from this argument (inclusive)"
+    start: Int
+
+    "return only actions created at date time from this argument (inclusive)"
+    after: DateTime
+
+    "Limit the number of returned actions"
+    limit: Int
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
   ): [Action]!
 
   currentUser: User!
@@ -509,10 +621,10 @@ type RootQueryType {
   org(
     "Name of organisation"
     name: String!
-  ): Org!
+  ): PrivateOrg!
 }
 
-type PublicOrg {
+interface Org {
   "Organisation short name"
   name: String!
 
@@ -520,37 +632,15 @@ type PublicOrg {
   title: String!
 }
 
-type ActionPage {
-  id: Int!
-
-  "Locale for the widget, in i18n format"
-  locale: String!
-
-  "Name where the widget is hosted"
+type PublicOrg implements Org {
+  "Organisation short name"
   name: String!
 
-  "Reference to thank you email templated of this Action Page"
-  thankYouTemplateRef: String
-
-  "Is live?"
-  live: Boolean!
-
-  "List of steps in journey"
-  journey: [String!]
-
-  "Config JSON of this action page"
-  config: Json!
-
-  "Extra supporters (added to supporters count)"
-  extraSupporters: Int!
-
-  "Campaign this widget belongs to. Can be null for trashed action pages"
-  campaign: Campaign
-
-  org: PublicOrg
+  "Organisation title (human readable name)"
+  title: String!
 }
 
-type PublicActionPage {
+type PublicActionPage implements ActionPage {
   id: Int!
 
   "Locale for the widget, in i18n format"
@@ -571,10 +661,11 @@ type PublicActionPage {
   "Config JSON of this action page"
   config: Json!
 
-  "Campaign this widget belongs to. Can't be null because trashed action pages are not public"
+  "Campaign this action page belongs to."
   campaign: Campaign!
 
-  org: PublicOrg!
+  "Org the action page belongs to"
+  org: Org!
 }
 
 """
@@ -599,7 +690,7 @@ type DeleteUserResult {
 "Count of supporters for particular org"
 type OrgCount {
   "org"
-  org: PublicOrg!
+  org: Org!
 
   "count of supporters registered by org"
   count: Int!
@@ -638,7 +729,7 @@ input AddressInput {
   "Postcode, in format correct for country locale"
   postcode: String
 
-  "Locality, which can be a city/town/village"
+  "Locality, which can be a city\/town\/village"
   locality: String
 
   "Region, being province, voyevodship, county"
@@ -681,9 +772,9 @@ input ActionPageInput {
 }
 
 enum DonationFrequencyUnit {
-  MONTHLY
-  WEEKLY
   ONE_OFF
+  WEEKLY
+  MONTHLY
 }
 
 type PersonalData {
@@ -705,14 +796,15 @@ input SelectCampaign {
   id: Int
 }
 
-type Campaign {
+type PrivateCampaign implements Campaign {
+  "Campaign id"
   id: Int!
-
-  "Internal name of the campaign"
-  name: String!
 
   "External ID (if set)"
   externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
 
   "Full, official name of the campaign"
   title: String!
@@ -726,18 +818,22 @@ type Campaign {
   "Campaign statistics"
   stats: CampaignStats!
 
+  org: Org!
+
   "Fetch public actions"
   actions(
-    "Limit the number of returned actions, default is 10, max is 100)"
-    limit: Int!
-
     "Return actions of this action type"
     actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
   ): PublicActionsResult!
 
-  partnerships: [Partnership!]
+  "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
+  forceDelivery: Boolean!
 
-  org: PublicOrg!
+  "List of partnerships and requests"
+  partnerships: [Partnership!]
 }
 
 "Encryption or sign key with integer id (database)"
@@ -756,15 +852,15 @@ type Key {
   expiredAt: NaiveDateTime
 }
 
-type Org {
-  "Organization id"
-  id: Int!
-
+type PrivateOrg implements Org {
   "Organisation short name"
   name: String!
 
   "Organisation title (human readable name)"
   title: String!
+
+  "Organization id"
+  id: Int!
 
   "config"
   config: Json!
@@ -787,18 +883,18 @@ type Org {
   actionPages(select: SelectActionPage): [ActionPage!]!
 
   "Action Page"
-  actionPage(name: String, id: Int): ActionPage!
+  actionPage(id: Int, name: String): ActionPage!
 
   "Get campaign this org is leader or partner of by id"
   campaign(id: Int): Campaign!
 }
 
 enum ServiceName {
-  STRIPE
-  WORDPRESS
-  MAILJET
-  SQS
   SES
+  SQS
+  MAILJET
+  WORDPRESS
+  STRIPE
 }
 
 type ContactReference {
@@ -914,14 +1010,14 @@ type KeyIds {
 }
 
 enum Status {
-  "Operation had no effect (already done)"
-  NOOP
+  "Operation completed succesfully"
+  SUCCESS
 
   "Operation awaiting confirmation"
   CONFIRMING
 
-  "Operation completed succesfully"
-  SUCCESS
+  "Operation had no effect (already done)"
+  NOOP
 }
 
 type User {

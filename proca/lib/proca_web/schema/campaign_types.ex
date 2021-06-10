@@ -19,30 +19,20 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       @desc "Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
       resolve(&Resolvers.Campaign.list/3)
     end
-
-    @desc "Get action page"
-    field :action_page, non_null(:public_action_page) do
-      @desc "Get action page by id."
-      arg(:id, :integer)
-      @desc "Get action page by name the widget is displayed on"
-      arg(:name, :string)
-
-      resolve(&Resolvers.ActionPage.find/3)
-    end
   end
 
-  object :campaign do
+  interface :campaign do
+    @desc "Campaign id"
     field :id, non_null(:integer)
-    @desc "Internal name of the campaign"
-    field :name, non_null(:string)
     @desc "External ID (if set)"
     field :external_id, :integer
+
+    @desc "Internal name of the campaign"
+    field :name, non_null(:string)
     @desc "Full, official name of the campaign"
     field :title, non_null(:string)
     @desc "Schema for contact personal information"
     field :contact_schema, non_null(:contact_schema)
-    @desc "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
-    field :force_delivery, non_null(:boolean)
     @desc "Custom config map"
     field :config, non_null(:json)
 
@@ -50,6 +40,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :stats, non_null(:campaign_stats) do
       resolve(&Resolvers.Campaign.stats/3)
     end
+
+    field :org, non_null(:org)
 
     @desc "Fetch public actions"
     field :actions, non_null(:public_actions_result) do
@@ -60,65 +52,34 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
+    resolve_type fn 
+      %{org_id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_campaign
+      _, _ -> :public_campaign
+    end
+  end
+
+  object :public_campaign do 
+    interface :campaign
+    import_fields :campaign
+  end
+
+  object :private_campaign do 
+    interface :campaign
+    import_fields :campaign
+
+
+    @desc "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
+    field :force_delivery, non_null(:boolean)
+
+    @desc "List of partnerships and requests"
     field :partnerships, list_of(non_null(:partnership)) do 
-      middleware Authorized
       resolve(&Resolvers.Campaign.partnerships/3)
     end
-
-    field :org, non_null(:public_org)
   end
 
-  object :action_page do
-    field :id, non_null(:integer)
-    @desc "Locale for the widget, in i18n format"
-    field :locale, non_null(:string)
-    @desc "Name where the widget is hosted"
-    field :name, non_null(:string)
-    @desc "Reference to thank you email templated of this Action Page"
-    field :thank_you_template_ref, :string
-    @desc "Is live?"
-    field :live, non_null(:boolean)
-    @desc "List of steps in journey"
-    field :journey, list_of(non_null(:string))
-    @desc "Config JSON of this action page"
-    field :config, non_null(:json)
-    @desc "Extra supporters (added to supporters count)"
-    field :extra_supporters, non_null(:integer)
-    @desc "Action page collects also opt-out actions"
-    field :delivery, non_null(:boolean)
-    @desc "Campaign this widget belongs to. Can be null for trashed action pages"
-    field :campaign, :campaign do
-      resolve(&Resolvers.ActionPage.campaign/3)
-    end
-
-    # XXX ^^ resolve association similarly
-    field :org, :public_org
-  end
-
-  object :public_action_page do
-    field :id, non_null(:integer)
-    @desc "Locale for the widget, in i18n format"
-    field :locale, non_null(:string)
-    @desc "Name where the widget is hosted"
-    field :name, non_null(:string)
-    @desc "Reference to thank you email templated of this Action Page"
-    field :thank_you_template_ref, :string
-    @desc "Is live?"
-    field :live, non_null(:boolean)
-    @desc "List of steps in journey"
-    field :journey, non_null(list_of(non_null(:string)))
-    @desc "Config JSON of this action page"
-    field :config, non_null(:json)
-    @desc "Campaign this widget belongs to. Can't be null because trashed action pages are not public"
-    field :campaign, non_null(:campaign) do
-      resolve(&Resolvers.ActionPage.campaign/3)
-    end
-
-    field :org, non_null(:public_org)
-  end
-
+  # Partnership
   object :partnership do 
-    field :org, non_null(:public_org)
+    field :org, non_null(:org)
     field :action_pages, non_null(list_of(non_null(:action_page))) do 
       resolve(&Resolvers.Campaign.partnership_action_pages/3)
     end
@@ -126,7 +87,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :launch_requests, non_null(list_of(non_null(:confirm))) do 
       resolve(&Resolvers.Campaign.partnership_launch_requests/3)
     end
-   end
+  end
 
   object :launch_action_page_result do 
     field :status, non_null(:status)
@@ -153,102 +114,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       resolve(&Resolvers.Campaign.upsert/3)
     end
-
-    # XXX deprecated.
-    @desc """
-    Deprecated, use upsert_campaign.
-    """
-    field :declare_campaign, type: non_null(:campaign) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_campaigns, :manage_action_pages]
-
-      @desc "Org name"
-      arg(:org_name, non_null(:string))
-
-      @desc "Campaign unchanging identifier"
-      arg(:name, non_null(:string))
-
-      @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-      arg(:external_id, :integer)
-
-      @desc "Campaign human readable title"
-      arg(:title, non_null(:string))
-
-      @desc "Action pages of this campaign"
-      arg(:action_pages, non_null(list_of(:action_page_input_legacy_url)))
-
-      resolve(&Resolvers.Campaign.declare_upsert/3)
-    end
-
-    @desc """
-    Update an Action Page
-    """
-    field :update_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:action_page, by: [:id]],
-        can?: [:manage_action_pages]
-
-      # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
-      @desc """
-      Action Page id
-      """
-      arg :id, non_null(:integer)
-      arg :input, non_null(:action_page_input)
-
-      resolve(&Resolvers.ActionPage.update/3)
-    end
-
-    @desc """
-    Adds a new Action Page based on another Action Page. Intended to be used to
-    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
-    """
-    field :copy_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_action_pages]
-
-      @desc "Org owner of new Action Page"
-      arg :org_name, non_null(:string)
-
-      @desc "New Action Page name"
-      arg :name, non_null(:string)
-
-      @desc "Name of Action Page this one is cloned from"
-      arg :from_name, non_null(:string)
-
-      resolve(&Resolvers.ActionPage.copy_from/3)
-    end
-
-    @desc """
-    Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
-    """
-    field :copy_campaign_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_action_pages]
-
-      @desc "Org owner of new Action Page"
-      arg :org_name, non_null(:string)
-
-      @desc "New Action Page name"
-      arg :name, non_null(:string)
-
-      @desc "Name of Action Page this one is cloned from"
-      arg :from_campaign_name, non_null(:string)
-
-      resolve(&Resolvers.ActionPage.copy_from_campaign/3)
-    end
-
-
-    field :launch_action_page, type: non_null(:launch_action_page_result) do
-      middleware Authorized, access: [:action_page, by: [:name]]
-
-      arg :name, non_null(:string) 
-
-      resolve &ProcaWeb.Resolvers.ActionPage.launch_page/3
-    end
   end
 
 
@@ -273,52 +138,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Action pages of this campaign"
     field(:action_pages, non_null(list_of(non_null(:action_page_input))))
-  end
-
-  @desc "ActionPage input"
-  input_object :action_page_input do
-    @desc """
-    Unique NAME identifying ActionPage.
-
-    Does not have to exist, must be unique. Can be a 'technical' identifier
-    scoped to particular organization, so it does not have to change when the
-    slugs/names change (eg. some.org/1234). However, frontent Widget can
-    ask for ActionPage by it's current location.href (but without https://), in which case it is useful
-    to make this url match the real widget location.
-    """
-    field :name, :string
-
-    @desc "2-letter, lowercase, code of ActionPage language"
-    field :locale, :string
-
-    @desc "A reference to thank you email template of this ActionPage"
-    field :thank_you_template_ref, :string
-
-    @desc """
-    Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here.
-    """
-    field :extra_supporters, :integer
-
-    @desc """
-    List of steps in the journey
-    """
-    field :journey, list_of(non_null(:string))
-
-    @desc """
-    JSON string containing Action Page config
-    """
-    field :config, :json
-  end
-
-  @desc "ActionPage declaration (using the legacy url attribute)"
-  input_object :action_page_input_legacy_url do
-    field :id, :integer
-    field :url, :string
-    field :locale, :string
-    field :thank_you_template_ref, :string
-    field :extra_supporters, :integer
-    field :journey, list_of(non_null(:string))
-    field :config, :string
   end
 
   # public counters
@@ -365,7 +184,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   @desc "Count of supporters for particular org"
   object :org_count do
     @desc "org"
-    field :org, non_null(:public_org)
+    field :org, non_null(:org)
 
     @desc "count of supporters registered by org"
     field :count, non_null(:integer)
@@ -386,9 +205,5 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
   input_object :select_campaign do
     field :id, :integer
-  end
-
-  input_object :select_action_page do
-    field :campaign_id, :integer
   end
 end

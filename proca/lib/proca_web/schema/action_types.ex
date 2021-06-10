@@ -173,7 +173,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :donation, :donation_action_input
   end
 
-  # XXX maybe rename to :exported_action or something
   object :action do
     field :action_id, non_null(:integer)
     field :created_at, non_null(:naive_datetime)
@@ -181,21 +180,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :contact, non_null(:contact)
     field :fields, non_null(list_of(non_null(:custom_field)))
     field :tracking, :tracking
-    field :campaign, non_null(:action_campaign)
-    field :action_page, non_null(:simple_action_page)
+    field :campaign, non_null(:campaign)
+    field :action_page, non_null(:action_page)
     field :privacy, non_null(:consent)
     field :donation, :donation
-  end
-
-  object :action_campaign do
-    field :name, non_null(:string)
-    field :external_id, :integer
-  end
-
-  object :simple_action_page do
-    field :id, non_null(:integer)
-    field :name, non_null(:string)
-    field :locale, non_null(:string)
   end
 
   object :contact do
