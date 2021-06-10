@@ -9,7 +9,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org_queries do
     @desc "Organization api (authenticated)"
-    field :org, non_null(:org) do
+    field :org, non_null(:private_org) do
       middleware(Authorized, access: [:org, by: [:name]])
 
       @desc "Name of organisation"
@@ -20,14 +20,29 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   # MAIN TYPE
-
-  object :org do
-    @desc "Organization id"
-    field :id, non_null(:integer)
+  interface :org do 
     @desc "Organisation short name"
     field :name, non_null(:string)
     @desc "Organisation title (human readable name)"
     field :title, non_null(:string)
+
+    resolve_type fn 
+      %{id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_org
+      _, _ -> :public_org
+    end
+  end
+
+  object :public_org do 
+    interface :org 
+    import_fields :org
+  end
+
+  object :private_org do
+    interface :org 
+    import_fields :org
+
+    @desc "Organization id"
+    field :id, non_null(:integer)
 
     @desc "config"
     field :config, non_null(:json)
@@ -195,14 +210,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   # OTHER TYPES
-
-  object :public_org do
-    @desc "Organisation short name"
-    field :name, non_null(:string)
-
-    @desc "Organisation title (human readable name)"
-    field :title, non_null(:string)
-  end
 
   object :personal_data do
     @desc "Schema for contact personal information"

@@ -1,136 +1,161 @@
 query ListCampaigns($org: String!) {
-    org(name: $org) {
-      campaigns {
-        ...campaignFields
-        org { ...orgIds }
+  org(name: $org) {
+    campaigns {
+      ...campaignFields
+      ...campaignPrivateFields
+      org {
+        ...orgIds
       }
     }
   }
+}
 
 query ListActionPages($org: String!) {
-    org(name: $org) {
-      actionPages {
-        ...actionPageFields
-        campaign { ...campaignIds }
+  org(name: $org) {
+    actionPages {
+      ...actionPageFields
+      ...actionPagePrivateFields
+      campaign {
+        ...campaignIds
       }
     }
   }
-
+}
 
 query GetCampaign($org: String!, $id: Int!) {
-    org(name: $org) {
-      campaign(id: $id) {
-        ...campaignFields
-        ...campaignStats
-        org { ...orgIds }
-        partnerships {
-          org {
-            ...orgIds
-          },
-          actionPages { 
-            ...actionPageFields
-          },
-          launchRequests {
-            code, email, objectId
-          }
-        }
+  org(name: $org) {
+    campaign(id: $id) {
+      ...campaignFields
+      ...campaignStats
+      org {
+        ...orgIds
       }
+      ...campaignPartnerships
     }
   }
+}
 
-query FindPublicCampaign($name: String,$title: String) {
+query FindPublicCampaign($name: String, $title: String) {
   campaigns(title: $title, name: $name) {
     ...campaignFields
-    org { ...orgIds }
+    org {
+      ...orgIds
+    }
   }
 }
 
 query GetActionPage($org: String!, $id: Int, $name: String) {
-    org(name: $org) {
-      name, title,
-      actionPage(id: $id, name: $name) {
-        ...actionPageFields
-        ...actionPagePrivateFields
-        campaign { ...campaignFields }
+  org(name: $org) {
+    name
+    title
+    actionPage(id: $id, name: $name) {
+      ...actionPageFields
+      ...actionPagePrivateFields
+      campaign {
+        ...campaignFields
+        ...campaignPrivateFields
       }
     }
+  }
 }
 
 query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
   org(name: $org) {
-    name,
-    title,
-    actionPages(select: {campaignId: $campaignId}) {
-      id, name, locale, 
-      extraSupporters, thankYouTemplateRef, journey, config, live,
-      campaign { name, id, externalId }
+    name
+    title
+    actionPages(select: { campaignId: $campaignId }) {
+      ...actionPageFields
+      ...actionPagePrivateFields
+      campaign {
+        ...campaignFields
+      }
     }
   }
 }
 
-query ExportCampaignActions($org: String!, $campaignId: Int, $campaignName: String,
-                            $start: Int, $after: DateTime, $limit: Int,
-                            $onlyOptIn: Boolean) {
-
-      exportActions(orgName: $org, campaignId: $campaignId, campaignName: $campaignName,
-                    start: $start, after: $after, limit: $limit, onlyOptIn: $onlyOptIn)
-      {
-        actionId, actionType, createdAt,
-        contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
-        fields { key, value },
-        tracking { source, medium, campaign, content },
-        actionPage { id, name, locale },
-        privacy { optIn, givenAt }
-      }
-}
-
-query ExportOrgActions($org: String!, $start: Int, $after: DateTime, $limit: Int, $onlyOptIn: Boolean) {
-      exportActions(orgName: $org, start: $start, after: $after, limit: $limit, onlyOptIn: $onlyOptIn)
-      {
-        actionId, actionType, createdAt,
-        contact { contactRef, payload, nonce, publicKey { id, public }, signKey { id, public } },
-        fields { key, value },
-        tracking { source, medium, campaign, content },
-        actionPage { id, name, locale },
-        campaign { name, externalId },
-        privacy { optIn, givenAt }
-      }
-}
-
-mutation UpdateActionPage(
-      $id: Int!,
-      $actionPage: ActionPageInput!
-      ) {
-      updateActionPage(
-        id: $id,
-        input: $actionPage
-      )
-      {
-        id
-      }
+query ExportCampaignActions(
+  $org: String!
+  $campaignId: Int
+  $campaignName: String
+  $start: Int
+  $after: DateTime
+  $limit: Int
+  $onlyOptIn: Boolean
+) {
+  exportActions(
+    orgName: $org
+    campaignId: $campaignId
+    campaignName: $campaignName
+    start: $start
+    after: $after
+    limit: $limit
+    onlyOptIn: $onlyOptIn
+  ) {
+    ...actionExport
+    actionPage {
+      ...actionPageIds
+    }
   }
+}
+
+query ExportOrgActions(
+  $org: String!
+  $start: Int
+  $after: DateTime
+  $limit: Int
+  $onlyOptIn: Boolean
+) {
+  exportActions(
+    orgName: $org
+    start: $start
+    after: $after
+    limit: $limit
+    onlyOptIn: $onlyOptIn
+  ) {
+    ...actionExport
+    actionPage {
+      ...actionPageIds
+    }
+    campaign {
+      ...campaignExportIds
+    }
+  }
+}
+
+mutation UpdateActionPage($id: Int!, $actionPage: ActionPageInput!) {
+  updateActionPage(id: $id, input: $actionPage) {
+    id
+  }
+}
 
 mutation CopyActionPage($fromName: String!, $toOrg: String!, $toName: String!) {
-  copyActionPage(fromName: $fromName,   name: $toName, orgName: $toOrg) {
-        id,
-        name,
-        locale,
-        extraSupporters, thankYouTemplateRef,
-        journey,
-        config, live,
-        campaign { id, name, title, externalId }
+  copyActionPage(fromName: $fromName, name: $toName, orgName: $toOrg) {
+    ...actionPageFields
+    ...actionPagePrivateFields
+    campaign {
+      ...campaignFields
+    }
   }
 }
 
-mutation CopyCampaignActionPage($fromCampaign: String!, $toOrg: String!, $toName: String!) {
-  copyCampaignActionPage(fromCampaignName: $fromCampaign,   name: $toName, orgName: $toOrg) {
-        id,
-        name,
-        locale,
-        extraSupporters, thankYouTemplateRef,
-        journey,
-        config, live,
-        campaign { id, name, title, externalId }
+mutation CopyCampaignActionPage(
+  $fromCampaign: String!
+  $toOrg: String!
+  $toName: String!
+) {
+  copyCampaignActionPage(
+    fromCampaignName: $fromCampaign
+    name: $toName
+    orgName: $toOrg
+  ) {
+    ...actionPageFields
+    ...actionPagePrivateFields
+    campaign {
+      id
+      name
+      title
+      externalId
+    }
   }
 }
 
@@ -140,36 +165,40 @@ mutation JoinOrg($orgName: String!) {
   }
 }
 
-mutation UpsertCampaign(
-         $org: String!,
-         $campaign: CampaignInput!
-        ) {
-        upsertCampaign(
-          orgName: $org,
-          input: $campaign
-        ) {
-          id
-        }
-      }
+mutation UpsertCampaign($org: String!, $campaign: CampaignInput!) {
+  upsertCampaign(orgName: $org, input: $campaign) {
+    id
+  }
+}
 
-
-query ListKeys($org: String!){
+query ListKeys($org: String!) {
   org(name: $org) {
     keys {
-      id, name, public, active, expired, expiredAt
+      ...keyFields
     }
   }
 }
 
-mutation GenerateKey($org: String!, $input:GenKeyInput!) {
+mutation GenerateKey($org: String!, $input: GenKeyInput!) {
   generateKey(orgName: $org, input: $input) {
-    id, name, public, private, active, expired, expiredAt
+    id
+    name
+    public
+    private
+    active
+    expired
+    expiredAt
   }
 }
 
 mutation AddKey($org: String!, $input: AddKeyInput!) {
-  addKey(orgName:$org, input: $input) {
-    id, name, public, active, expired, expiredAt
+  addKey(orgName: $org, input: $input) {
+    id
+    name
+    public
+    active
+    expired
+    expiredAt
   }
 }
 
@@ -181,24 +210,27 @@ mutation ActivateKey($org: String!, $id: Int!) {
 
 mutation AddOrg($org: OrgInput!) {
   addOrg(input: $org) {
-    id, name
+    ...orgIds
   }
 }
 
 mutation UpdateOrg($orgName: String!, $org: OrgInput!) {
   updateOrg(name: $orgName, input: $org) {
-    id, name, title, config,
-    personalData {
-      contactSchema, emailOptIn, emailOptInTemplate
-    }
+    ...orgFields
+    ...orgPrivateFields
   }
 }
 
 subscription ActionPageUpserted($org: String) {
   actionPageUpserted(orgName: $org) {
-    id, name, locale, journey, config,
-    campaign { id, name, title, externalId },
-    org { title }
+    ...actionPageFields
+    ...actionPagePrivateFields
+    campaign {
+      ...campaignIds
+    }
+    org {
+      ...orgIds
+    }
   }
 }
 
@@ -207,56 +239,53 @@ subscription ActionPageUpserted($org: String) {
 query CurrentUserOrgs {
   currentUser {
     id
-    email,
+    email
     roles {
-    	role, org {
-        id, name, title
-    	}
+      role
+      org {
+        ...orgIds
+      }
     }
   }
 }
 
 # Deprecate
 query DashOrgOverview($org: String!) {
- 	org(name: $org) {
-    id, name, title, config, 
-    personalData {
-      contactSchema, emailOptIn, emailOptInTemplate
-    },
-    campaigns {
-      id,  externalId, name, title, org { name, title },
-      config,
-      stats { supporterCount }
+  org(name: $org) {
+    name
+    title
+    ...orgPrivateFields
+    ... on PrivateOrg {
+      campaigns {
+        ...campaignFields
+        ...campaignStats
+        org {
+          ...orgIds
+        }
+      }
     }
   }
 }
 
-# Get main org data 
+# Get main org data
 # (could include service status?)
-# 
+#
 query GetOrg($org: String!) {
   org(name: $org) {
-    id, name, title, 
-    config,
-    personalData {
-      contactSchema, emailOptIn, emailOptInTemplate
-    },
-    keys(select: {active: true}) { 
-      id, active, expired, expiredAt, name, public
-    },
+    ...orgFields
+    ...orgPrivateFields
+    keys(select: { active: true }) {
+      ...keyFields
+    }
     services {
-      id, name, host, user, path
+      ...serviceFields
     }
   }
 }
-
 
 query GetOrgAttrs($org: String!) {
   org(name: $org) {
-    id, name, title, 
-    config,
-    personalData {
-      contactSchema, emailOptIn, emailOptInTemplate
-    }
+    ...orgFields
+    ...orgPrivateFields
   }
 }

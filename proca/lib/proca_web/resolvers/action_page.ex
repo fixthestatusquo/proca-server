@@ -50,6 +50,13 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     }
   end
 
+  def org(ap, %{}, _) do 
+    {
+      :ok,
+      Repo.preload(ap, :org).org
+    }
+  end
+
   def update(_, %{input: attrs}, %{context: %{action_page: ap}}) do
     case ap
     |> ActionPage.changeset(attrs)

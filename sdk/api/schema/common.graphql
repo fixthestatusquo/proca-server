@@ -1,16 +1,32 @@
-fragment campaignIds on Campaign { 
-  id externalId name
+fragment orgIds on Org {
+  name title
+  ... on PrivateOrg {
+    id 
+  }
 }
 
+fragment campaignIds on Campaign { 
+  id 
+  externalId
+  name 
+  title
+}
+
+fragment campaignExportIds on Campaign { 
+  name externalId
+}
+
+
 fragment campaignFields on Campaign {
-  id externalId
   name
   title 
   contactSchema
   config
 }
 
-fragment campaignPrivateFields on Campaign { 
+fragment campaignPrivateFields on PrivateCampaign { 
+  id 
+  externalId
   forceDelivery
 }
 
@@ -25,6 +41,25 @@ fragment campaignStats on Campaign {
   }
 }
 
+fragment campaignPartnerships on PrivateCampaign {
+  partnerships {
+    org {
+      ...orgIds
+    }
+    actionPages {
+      ...actionPageFields
+    }
+    launchRequests {
+      code
+      email
+      objectId
+    }
+  }
+}
+
+fragment actionPageIds on ActionPage { 
+  id name locale
+}
 
 fragment actionPageFields on ActionPage {
   id
@@ -36,12 +71,63 @@ fragment actionPageFields on ActionPage {
   thankYouTemplateRef
 }
 
-fragment actionPagePrivateFields on ActionPage {
+fragment actionPagePrivateFields on PrivateActionPage {
   extraSupporters 
   delivery
 }
 
-
-fragment orgIds on PublicOrg {
-  name title
+fragment orgFields on Org {
+    name
+    title
 }
+
+fragment orgPrivateFields on PrivateOrg {
+    config
+    personalData {
+      contactSchema
+      emailOptIn
+      emailOptInTemplate
+    }
+}
+
+
+fragment keyFields on Key {
+  id, name, public, active, expired, expiredAt
+}
+
+fragment serviceFields on Service {
+  id
+  name
+  host
+  user
+  path
+}
+
+fragment contactExport on Contact { 
+  contactRef
+  payload
+  nonce
+  publicKey { id public }
+  signKey { id public }
+}
+
+fragment actionExport on Action {
+  actionId
+  actionType
+  createdAt
+  contact {
+    ...contactExport
+  }
+  fields { key value }
+  tracking {
+    source
+    medium
+    campaign
+    content
+  }
+  privacy {
+    optIn
+    givenAt
+  }
+}
+
