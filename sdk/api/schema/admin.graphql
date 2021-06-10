@@ -26,6 +26,7 @@ query GetCampaign($org: String!, $id: Int!) {
   org(name: $org) {
     campaign(id: $id) {
       ...campaignFields
+      ...campaignPrivateFields
       ...campaignStats
       org {
         ...orgIds
