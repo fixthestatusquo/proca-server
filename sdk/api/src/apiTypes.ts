@@ -65,6 +65,7 @@ export type CampaignActionsArgs = {
 };
 
 export type PublicCampaign = Campaign & {
+  __typename?: 'PublicCampaign';
   /** Campaign id */
   id: Scalars['Int'];
   /** External ID (if set) */
@@ -92,6 +93,7 @@ export type PublicCampaignActionsArgs = {
 
 /** Tracking codes */
 export type Tracking = {
+  __typename?: 'Tracking';
   source: Scalars['String'];
   medium: Scalars['String'];
   campaign: Scalars['String'];
@@ -99,6 +101,7 @@ export type Tracking = {
 };
 
 export type UserRole = {
+  __typename?: 'UserRole';
   org: Org;
   role: Scalars['String'];
 };
@@ -108,6 +111,7 @@ export type SelectActionPage = {
 };
 
 export type KeyWithPrivate = {
+  __typename?: 'KeyWithPrivate';
   id: Scalars['Int'];
   public: Scalars['String'];
   private: Scalars['String'];
@@ -137,6 +141,7 @@ export type NationalityInput = {
 
 /** GDPR consent data for this org */
 export type Consent = {
+  __typename?: 'Consent';
   optIn: Scalars['Boolean'];
   givenAt: Scalars['NaiveDateTime'];
 };
@@ -151,6 +156,7 @@ export type TrackingInput = {
 
 /** Count of actions for particular action type */
 export type ActionTypeCount = {
+  __typename?: 'ActionTypeCount';
   /** action type */
   actionType: Scalars['String'];
   /** count of actions of action type */
@@ -164,6 +170,7 @@ export type ConfirmInput = {
 };
 
 export type ChangeUserStatus = {
+  __typename?: 'ChangeUserStatus';
   status: Status;
 };
 
@@ -175,12 +182,14 @@ export enum ContactSchema {
 }
 
 export type Partnership = {
+  __typename?: 'Partnership';
   org: Org;
   actionPages: Array<ActionPage>;
   launchRequests: Array<Confirm>;
 };
 
 export type RootSubscriptionType = {
+  __typename?: 'RootSubscriptionType';
   actionPageUpserted: ActionPage;
 };
 
@@ -190,6 +199,7 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 };
 
 export type Donation = {
+  __typename?: 'Donation';
   schema: Maybe<DonationSchema>;
   /** Provide amount of this donation */
   amount: Scalars['Decimal'];
@@ -202,6 +212,7 @@ export type Donation = {
 };
 
 export type Confirm = {
+  __typename?: 'Confirm';
   code: Scalars['String'];
   email: Maybe<Scalars['String']>;
   objectId: Maybe<Scalars['Int']>;
@@ -214,6 +225,7 @@ export type SelectKey = {
 };
 
 export type Service = {
+  __typename?: 'Service';
   id: Scalars['Int'];
   name: ServiceName;
   host: Maybe<Scalars['String']>;
@@ -242,6 +254,7 @@ export type ActionPage = {
 };
 
 export type PrivateActionPage = ActionPage & {
+  __typename?: 'PrivateActionPage';
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -277,6 +290,7 @@ export type StripeSubscriptionInput = {
 
 /** Count of actions for particular action type */
 export type AreaCount = {
+  __typename?: 'AreaCount';
   /** area */
   area: Scalars['String'];
   /** count of supporters in this area */
@@ -294,6 +308,7 @@ export type ActionInput = {
 };
 
 export type ConfirmResult = {
+  __typename?: 'ConfirmResult';
   status: Status;
   actionPage: Maybe<ActionPage>;
   campaign: Maybe<Campaign>;
@@ -311,16 +326,19 @@ export type GenKeyInput = {
 
 /** Result of actions query */
 export type PublicActionsResult = {
+  __typename?: 'PublicActionsResult';
   fieldKeys: Maybe<Array<Scalars['String']>>;
   list: Maybe<Array<Maybe<ActionCustomFields>>>;
 };
 
 export type ActivateKeyResult = {
+  __typename?: 'ActivateKeyResult';
   status: Status;
 };
 
 /** Campaign statistics */
 export type CampaignStats = {
+  __typename?: 'CampaignStats';
   /** Unique action tagers count */
   supporterCount: Scalars['Int'];
   /** Unique action takers by area */
@@ -339,6 +357,7 @@ export type CampaignStatsSupporterCountByOthersArgs = {
 };
 
 export type ActionCustomFields = {
+  __typename?: 'ActionCustomFields';
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['NaiveDateTime'];
@@ -346,6 +365,7 @@ export type ActionCustomFields = {
 };
 
 export type OrgUser = {
+  __typename?: 'OrgUser';
   email: Scalars['String'];
   role: Scalars['String'];
   createdAt: Scalars['NaiveDateTime'];
@@ -354,6 +374,7 @@ export type OrgUser = {
 };
 
 export type Action = {
+  __typename?: 'Action';
   actionId: Scalars['Int'];
   createdAt: Scalars['NaiveDateTime'];
   actionType: Scalars['String'];
@@ -368,6 +389,7 @@ export type Action = {
 
 
 export type RootMutationType = {
+  __typename?: 'RootMutationType';
   /**
    * Upserts a campaign.
    *
@@ -571,6 +593,7 @@ export type RootMutationTypeRejectOrgConfirmArgs = {
 
 
 export type RootQueryType = {
+  __typename?: 'RootQueryType';
   /** Get a list of campains */
   campaigns: Array<Campaign>;
   /** Get action page */
@@ -617,6 +640,7 @@ export type Org = {
 };
 
 export type PublicOrg = Org & {
+  __typename?: 'PublicOrg';
   /** Organisation short name */
   name: Scalars['String'];
   /** Organisation title (human readable name) */
@@ -624,6 +648,7 @@ export type PublicOrg = Org & {
 };
 
 export type PublicActionPage = ActionPage & {
+  __typename?: 'PublicActionPage';
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -646,11 +671,13 @@ export type PublicActionPage = ActionPage & {
 
 
 export type DeleteUserResult = {
+  __typename?: 'DeleteUserResult';
   status: Status;
 };
 
 /** Count of supporters for particular org */
 export type OrgCount = {
+  __typename?: 'OrgCount';
   /** org */
   org: Org;
   /** count of supporters registered by org */
@@ -674,6 +701,7 @@ export type CampaignInput = {
 };
 
 export type LaunchActionPageResult = {
+  __typename?: 'LaunchActionPageResult';
   status: Status;
 };
 
@@ -724,6 +752,7 @@ export enum DonationFrequencyUnit {
 }
 
 export type PersonalData = {
+  __typename?: 'PersonalData';
   /** Schema for contact personal information */
   contactSchema: ContactSchema;
   /** Email opt in enabled */
@@ -741,6 +770,7 @@ export type SelectCampaign = {
 };
 
 export type PrivateCampaign = Campaign & {
+  __typename?: 'PrivateCampaign';
   /** Campaign id */
   id: Scalars['Int'];
   /** External ID (if set) */
@@ -772,6 +802,7 @@ export type PrivateCampaignActionsArgs = {
 
 /** Encryption or sign key with integer id (database) */
 export type Key = {
+  __typename?: 'Key';
   id: Scalars['Int'];
   public: Scalars['String'];
   name: Scalars['String'];
@@ -782,6 +813,7 @@ export type Key = {
 };
 
 export type PrivateOrg = Org & {
+  __typename?: 'PrivateOrg';
   /** Organisation short name */
   name: Scalars['String'];
   /** Organisation title (human readable name) */
@@ -851,6 +883,7 @@ export enum ServiceName {
 }
 
 export type ContactReference = {
+  __typename?: 'ContactReference';
   /** Contact's reference */
   contactRef: Scalars['String'];
   /** Contacts first name */
@@ -864,6 +897,7 @@ export type StripePaymentIntentInput = {
 };
 
 export type Contact = {
+  __typename?: 'Contact';
   contactRef: Scalars['ID'];
   payload: Scalars['String'];
   nonce: Maybe<Scalars['String']>;
@@ -872,6 +906,7 @@ export type Contact = {
 };
 
 export type JoinOrgResult = {
+  __typename?: 'JoinOrgResult';
   status: Status;
   org: Org;
 };
@@ -911,6 +946,7 @@ export type OrgInput = {
 
 /** Custom field with a key and value. */
 export type CustomField = {
+  __typename?: 'CustomField';
   key: Scalars['String'];
   value: Scalars['String'];
 };
@@ -941,6 +977,7 @@ export type ContactInput = {
 };
 
 export type KeyIds = {
+  __typename?: 'KeyIds';
   id: Scalars['Int'];
   public: Scalars['String'];
 };
@@ -955,6 +992,7 @@ export enum Status {
 }
 
 export type User = {
+  __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
   roles: Array<UserRole>;

@@ -1,4 +1,5 @@
 fragment orgIds on Org {
+  __typename
   name title
   ... on PrivateOrg {
     id 
@@ -6,6 +7,7 @@ fragment orgIds on Org {
 }
 
 fragment campaignIds on Campaign { 
+  __typename
   id 
   externalId
   name 
@@ -13,11 +15,15 @@ fragment campaignIds on Campaign {
 }
 
 fragment campaignExportIds on Campaign { 
+  __typename
   name externalId
 }
 
 
 fragment campaignFields on Campaign {
+  __typename
+  id 
+  externalId
   name
   title 
   contactSchema
@@ -25,8 +31,7 @@ fragment campaignFields on Campaign {
 }
 
 fragment campaignPrivateFields on PrivateCampaign { 
-  id 
-  externalId
+  __typename
   forceDelivery
 }
 
@@ -42,6 +47,7 @@ fragment campaignStats on Campaign {
 }
 
 fragment campaignPartnerships on PrivateCampaign {
+  __typename
   partnerships {
     org {
       ...orgIds
@@ -62,6 +68,7 @@ fragment actionPageIds on ActionPage {
 }
 
 fragment actionPageFields on ActionPage {
+  __typename
   id
   name
   locale 
@@ -72,22 +79,25 @@ fragment actionPageFields on ActionPage {
 }
 
 fragment actionPagePrivateFields on PrivateActionPage {
+  __typename
   extraSupporters 
   delivery
 }
 
 fragment orgFields on Org {
-    name
-    title
+  __typename
+  name
+  title
 }
 
 fragment orgPrivateFields on PrivateOrg {
-    config
-    personalData {
-      contactSchema
-      emailOptIn
-      emailOptInTemplate
-    }
+  __typename
+  config
+  personalData {
+    contactSchema
+    emailOptIn
+    emailOptInTemplate
+  }
 }
 
 

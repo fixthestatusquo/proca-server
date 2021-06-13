@@ -152,10 +152,7 @@ mutation CopyCampaignActionPage(
     ...actionPageFields
     ...actionPagePrivateFields
     campaign {
-      id
-      name
-      title
-      externalId
+      ...campaignIds
     }
   }
 }
@@ -288,5 +285,26 @@ query GetOrgAttrs($org: String!) {
   org(name: $org) {
     ...orgFields
     ...orgPrivateFields
+  }
+}
+
+mutation launchActionPage($name: String!) {
+  launchActionPage(name: $name) {
+    status
+  }
+}
+
+mutation acceptLaunchRequest($org: String!, $confirm: ConfirmInput!) {
+  acceptOrgConfirm(name: $org, confirm: $confirm) {
+    status
+    actionPage { 
+      ...actionPageFields
+    }
+  }
+}
+
+mutation rejectLaunchRequest($org: String!, $confirm: ConfirmInput!) {
+  rejectOrgConfirm(name: $org, confirm: $confirm) {
+    status
   }
 }
