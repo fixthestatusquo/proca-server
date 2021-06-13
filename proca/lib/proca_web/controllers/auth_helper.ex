@@ -1,4 +1,4 @@
-defmodule ProcaWeb.Live.AuthHelper do
+defmodule ProcaWeb.Controller.AuthHelper do
   @moduledoc """
     Will assign the user and staffer from the session token, to the live view socket.
 

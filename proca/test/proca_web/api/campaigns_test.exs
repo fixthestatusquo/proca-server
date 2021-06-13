@@ -11,7 +11,7 @@ defmodule ProcaWeb.Campaigns do
     test "get campaings list by", %{conn: conn, pages: [action_page]} do
       query = """
       {
-         campaigns(name: "whales") {
+         campaigns(name: "#{action_page.campaign.name}") {
                 id, title
          }
       }

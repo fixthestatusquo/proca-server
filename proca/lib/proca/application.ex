@@ -20,6 +20,8 @@ defmodule Proca.Application do
 
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
 
+      {Proca.Service.EmailTemplateDirectory, []},
+
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
       {Proca.Pipes.Connection, Application.get_env(:proca, Proca.Pipes)[:url]},
@@ -27,8 +29,7 @@ defmodule Proca.Application do
       {Proca.Server.Processing, []},
       {Proca.Stages.ProcessOld, []},
 
-      # {Proca.Stage.ThankYou, []},
-      # {Proca.Stage.SQS, []}
+
       # Starts a worker by calling: Proca.Worker.start_link(arg)
       # {Proca.Worker, arg},
     ]

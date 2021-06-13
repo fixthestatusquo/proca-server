@@ -29,7 +29,7 @@ defmodule Proca.Staffer.Permission do
     change_org_services: 1 <<< 16, # sames as change_org_settings, maybe will be split in the future
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
-    signoff_action_page: 1 <<< 19  # XXX this is unused but maybe could be usefull for moderation
+    launch_action_page: 1 <<< 19  # XXX this is unused but maybe could be usefull for moderation
   ]
 
   def can?(%Staffer{perms: perms}, permission) when is_atom(permission) do

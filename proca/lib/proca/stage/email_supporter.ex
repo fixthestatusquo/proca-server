@@ -1,4 +1,4 @@
-defmodule Proca.Stage.ThankYou do
+defmodule Proca.Stage.EmailSupporter do
   @moduledoc """
   Processing "stage" that sends thank you emails
   """
@@ -132,7 +132,10 @@ defmodule Proca.Stage.ThankYou do
     )
     |> Repo.one()
 
-    recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
+    recipients = Enum.map(messages, fn m -> 
+      EmailRecipient.from_action_data(m.data) 
+      |> add_opt_in_confirm(m.data["actionId"])
+    end)
     tmpl = %EmailTemplate{ref: org.email_opt_in_template}
 
     # XXX we need links to be generated to confirm/reject the thing
@@ -191,5 +194,10 @@ defmodule Proca.Stage.ThankYou do
       error("Should not happen: action with no consent in supporter_confirm queue: #{action_id}")
       false
     end
+  end
+
+  defp add_opt_in_confirm(rcpt = %EmailRecipient{}, action_id) do 
+    confirm = Proca.Confirm.ConfirmAction.create(%Action{id: action_id})
+    EmailRecipient.put_confirm(rcpt, confirm)
   end
 end

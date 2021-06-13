@@ -25,7 +25,7 @@ defmodule Proca.Stages.ProcessOldTest do
     |> Repo.reload
     |> Repo.preload([:supporter])
 
-    if Proca.Pipes.enabled? |> IO.inspect() do
+    if Proca.Pipes.enabled? do
       assert action.processing_status == :delivered
       assert action.supporter.processing_status == :accepted
     else

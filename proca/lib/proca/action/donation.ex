@@ -8,6 +8,7 @@ defmodule Proca.Action.Donation do
     field :payload, :map, default: %{}
     field :amount, :decimal
     field :currency, :string, default: "EUR"
+    field :frequency_unit, DonationFrequencyUnit, default: :one_off
 
     belongs_to :action, Proca.Action
 
@@ -17,7 +18,7 @@ defmodule Proca.Action.Donation do
   @doc false
   def changeset(donation, attrs) do
     donation
-    |> cast(attrs, [:schema, :payload, :amount, :currency])
+    |> cast(attrs, [:schema, :payload, :amount, :currency, :frequency_unit])
     |> extract_amount()
     |> extract_currency()
     |> validate_required([:payload, :amount, :currency])

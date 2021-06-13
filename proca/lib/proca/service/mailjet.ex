@@ -1,6 +1,12 @@
 defmodule Proca.Service.Mailjet do
   @moduledoc """
   Mailjet Email Backend
+
+  Templates:
+  - Use transactional templates (not campaign)
+  - Test thoroughly with their preview - MJ provides no debugging otherwise (just HTTP500 on send)
+  - Fields can have underscores
+  - use {{var:foo_bar}} or {{var:foo_bar:"Default"}}
   """
 
   @behaviour Proca.Service.EmailBackend
@@ -62,6 +68,14 @@ defmodule Proca.Service.Mailjet do
     email
     |> MailjetHelper.template(ref)
     |> MailjetHelper.template_language(true)
+  end
+
+
+
+  def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
+    when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
+    
+    %{email | subject: subject, html_body: html, text_body: text}
   end
 
   @impl true

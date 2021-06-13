@@ -64,7 +64,7 @@ defmodule ProcaWeb.AuthorizedTest do
     assert r3.context.staffer.id == staffer.id
     assert r3.context.org.id == org.id
 
-    r4 = Authorized.call(r, access: [:org], can?: [:signoff_action_page])
+    r4 = Authorized.call(r, access: [:org], can?: [:launch_action_page])
     assert [%{extensions: %{code: "permission_denied"}}] = r4.errors
   end
 

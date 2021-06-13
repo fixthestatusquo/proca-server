@@ -4,25 +4,12 @@
   </heading>
 
   <section>
-    <h3>Orgs in this instance:</h3>
+    <%= if @staffer != nil do %>
+    <h3>Hello, <%= @user.email %></h3>
+    <% else %>
+    <h3>Register and sign in on the right</h3>
+    <% end %>
 
-    <div class="card-columns">
-      <%= for org <- @orgs do %>
-        <div class="card m-3 <%= if @staffer != nil && @staffer.org_id == org.id, do: "bg-warning" %>">
-          <div class="card-body">
-            <h5 class="card-title"><%= org.title %></h5>
-            <p class="card-text"><code><%= org.name %></code></p>
-
-            <%= if Enum.member?(@user_orgs, org.id) do %>
-              <%= if @staffer != nil && @staffer.org_id == org.id do %>
-                <p><strong>You are signed in here</strong></p>
-              <% else %>
-                <a href="/?org_name=<%= org.name %>" class="btn btn-primary">Sign in</a>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
+    <p>The legacy dashboard was removed. Please use the <a href="https://www.npmjs.com/package/@proca/cli">Proca CLI</a></p>
   </section>
 </article>

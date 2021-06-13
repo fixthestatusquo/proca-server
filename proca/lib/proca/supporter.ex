@@ -60,6 +60,26 @@ defmodule Proca.Supporter do
     |> put_assoc(:contacts, contacts)
   end
 
+  def confirm(sup = %Supporter{}) do 
+    case sup.processing_status do 
+      :new -> {:error, "not allowed"}
+      :confirming -> Repo.update(change(sup, processing_status: :accepted))
+      :rejected -> {:error, "supporter data already rejected"}
+      :accepted -> {:noop, "supporter data already processed"}
+      :delivered -> {:noop, "supporter data already processed"}
+    end
+  end
+
+  def reject(sup = %Supporter{}) do 
+    case sup.processing_status do 
+      :new -> {:error, "not allowed"}
+      :confirming -> Repo.update(change(sup, processing_status: :rejected))
+      :rejected -> {:noop, "supporter data already rejected"}
+      :accepted -> {:noop, "supporter data already processed"}
+      :delivered -> {:error, "supporter data already processed"}
+    end
+  end
+
   def privacy_defaults(p = %{opt_in: _opt_in, lead_opt_in: _lead_opt_in}) do
     p
   end
@@ -89,6 +109,16 @@ defmodule Proca.Supporter do
 
   def base_decode(encoded) when is_bitstring(encoded) do
     Base.url_decode64(encoded, padding: false)
+  end
+
+  def decode_ref(changeset = %Ecto.Changeset{}, field) do 
+    case get_change(changeset, field) do 
+      nil -> changeset
+      base -> case base_decode(base) do 
+        {:ok, val} -> put_change(changeset, field, val)
+        :error -> add_error(changeset, field, "Cannot decode from Base64url")
+      end
+    end
   end
 
   def transient_fields(supporter) do 

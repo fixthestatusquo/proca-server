@@ -1,5 +1,3 @@
-export * as widget from './queries/widget'
-export * as admin from './queries/admin'
 export * as types from './types'
 
 // Authentication primitives

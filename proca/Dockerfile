@@ -1,6 +1,6 @@
 # --- Builder --------------------------------------------
 
-FROM elixir AS builder
+FROM elixir:1.11 AS builder
 
 ENV MIX_ENV=prod \
     LANG=C.UTF-8

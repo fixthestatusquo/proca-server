@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "0.2.0",
+      version: "2.4.0-alpha.1",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -27,7 +27,13 @@ defmodule Proca.MixProject do
   def application do
     [
       mod: {Proca.Application, []},
-      extra_applications: [:logger, :runtime_tools, :absinthe_plug, :sentry, :debugger]
+      extra_applications: [
+        :logger, 
+        :runtime_tools, 
+        :absinthe_plug, 
+        :sentry, 
+        :debugger
+      ]
     ]
   end
 
@@ -44,17 +50,18 @@ defmodule Proca.MixProject do
       {:phoenix_pubsub, "~> 2.0"}, # See below
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.1"},
+      {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},
-      {:postgrex, ">= 0.0.0"},
+      {:ex2ms, "~> 1.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.2"},
       {:sentry, "~> 8.0"},
       {:plug_cowboy, "~> 2.3"},
-      {:absinthe, "1.5.0"},
-      {:absinthe_phoenix, "~> 2.0"},
-      {:absinthe_plug, "~> 1.5.0"},
+      {:absinthe, "1.6.4"},
+      {:absinthe_phoenix, "~> 2.0.1"},
+      {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
       {:amqp, "~> 1.4"},
@@ -69,7 +76,7 @@ defmodule Proca.MixProject do
       {:hackney, "~> 1.17.4"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
-      {:jose, "~> 1.10.0"},
+      {:jose, "~> 1.11.1"},
       {:json, "~> 1.3.0"},  # XXX migrate to jason
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
@@ -80,7 +87,7 @@ defmodule Proca.MixProject do
       {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this
       {:mix_systemd, "~> 0.7.3"},
       {:floki, ">= 0.0.0", only: :test},
-      {:ex_machina, "~> 2.6", only: :test},
+      {:ex_machina, "~> 2.7", only: :test},
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}

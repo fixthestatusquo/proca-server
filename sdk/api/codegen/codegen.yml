@@ -1,0 +1,24 @@
+overwrite: true
+schema: "node_modules/@proca/api/schema/schema.graphql"
+documents: ./src/**/*.graphql
+generates:
+  src/proca.ts:
+    plugins:
+      #- typescript
+      - typed-document-node
+      - typescript-operations
+    config: &config
+      omitOperationSuffix: true
+      avoidOptionals: &avoidOptionals
+        object: false
+        field: true
+        inputValue: false
+      skipTypeNameForRoot: false
+      skipTypename: false
+
+  src/scalarLocations.ts:
+    plugins:
+      - graphql-scalar-locations
+    config:
+      scalars: 
+        - Json

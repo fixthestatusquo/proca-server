@@ -7,6 +7,10 @@ defmodule ProcaWeb.Helper do
   alias Proca.{ActionPage, Campaign, Staffer}
   alias Proca.Staffer.Permission
 
+
+  def format_result({:ok, value}), do: {:ok, value}
+  def fromat_result({:error, changeset = %Ecto.Changeset{}}), do: {:error, format_errors(changeset)}
+
   @doc """
   GraphQL expect a flat list of %{message: "some text"}. Traverse changeset and
   flat error messages to such list.
@@ -98,5 +102,30 @@ defmodule ProcaWeb.Helper do
     else
       _ -> {:error, "User cannot manage this action page"}
     end
+  end
+
+  def cant_msg(perms), do: %{
+    message: "User does not have sufficient permissions",
+    extensions: %{
+      code: "permission_denied",
+      required: perms
+    }
+  }
+
+  def msg_ext(msg, code, ext \\ %{}), do: %{
+    message: msg,
+    extensions: %{code: code} |> Map.merge(ext)
+  }
+
+  def has_error?(errors, field, msg) 
+  when is_list(errors) and is_atom(field) and is_bitstring(msg) do 
+    errors 
+    |> Enum.any?(fn {^field, {^msg, _}} -> true; _ -> false end)
+  end
+
+  def request_basic_auth(conn, msg) do 
+    conn
+    |> Plug.Conn.put_resp_header("WWW-Authenticate", "Basic realm=\"Proca\"")
+    |> Plug.Conn.resp(401, msg)
   end
 end

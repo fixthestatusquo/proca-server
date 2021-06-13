@@ -12,7 +12,9 @@ defmodule ProcaWeb.Schema do
   import_types(Absinthe.Type.Custom)
 
   import_types(ProcaWeb.Schema.DataTypes)
+  import_types(ProcaWeb.Schema.ConfirmTypes)
   import_types(ProcaWeb.Schema.CampaignTypes)
+  import_types(ProcaWeb.Schema.ActionPageTypes)
   import_types(ProcaWeb.Schema.ActionTypes)
   import_types(ProcaWeb.Schema.UserTypes)
   import_types(ProcaWeb.Schema.OrgTypes)
@@ -21,6 +23,7 @@ defmodule ProcaWeb.Schema do
 
   query do
     import_fields(:campaign_queries)
+    import_fields(:action_page_queries)
     import_fields(:action_queries)
     import_fields(:user_queries)
     import_fields(:org_queries)
@@ -28,10 +31,12 @@ defmodule ProcaWeb.Schema do
 
   mutation do
     import_fields(:campaign_mutations)
+    import_fields(:action_page_mutations)
     import_fields(:action_mutations)
     import_fields(:user_mutations)
     import_fields(:org_mutations)
     import_fields(:service_mutations)
+    import_fields(:confirm_mutations)
   end
 
   subscription do
