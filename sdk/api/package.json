@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "2.4.0-alpha.1",
+  "version": "3.0.0-alpha.0",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,20 +34,20 @@
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.1.0",
     "@urql/core": "^2.1.2",
-    "urql-serialize-scalars-exchange": "^0.1.1",
     "js-base64": "^3.5.2",
     "phoenix": "^1.5.9",
+    "urql-serialize-scalars-exchange": "^0.1.1",
     "ws": "^7.3.1"
   },
   "devDependencies": {
     "@graphql-codegen/add": "^2.0.1",
     "@graphql-codegen/cli": "1.20.1",
     "@graphql-codegen/typescript": "1.20.2",
+    "@types/graphql": "^14.5.0",
     "@types/phoenix": "^1.5.1",
     "@types/ws": "^7.2.7",
     "codegen-graphql-scalar-locations": "^0.1.1",
     "graphql": "^15.5.0",
-    "@types/graphql": "^14.5.0",
     "graphql-tag": "^2.11.0"
   },
   "peerDependencies": {
