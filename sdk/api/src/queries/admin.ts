@@ -1,18 +1,18 @@
 import * as Types from '../apiTypes';
 
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
-export const CampaignIds: DocumentNode<CampaignIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]};
-export const CampaignExportIds: DocumentNode<CampaignExportIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignExportIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}}]}}]};
-export const CampaignFields: DocumentNode<CampaignFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"config"}}]}}]};
-export const CampaignPrivateFields: DocumentNode<CampaignPrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"forceDelivery"}}]}}]};
+export const CampaignIds: DocumentNode<CampaignIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]};
+export const CampaignExportIds: DocumentNode<CampaignExportIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignExportIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}}]}}]};
+export const CampaignFields: DocumentNode<CampaignFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"config"}}]}}]};
+export const CampaignPrivateFields: DocumentNode<CampaignPrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"forceDelivery"}}]}}]};
 export const CampaignStats: DocumentNode<CampaignStats, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"supporterCount"}},{"kind":"Field","name":{"kind":"Name","value":"supporterCountByOrg"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionType"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]};
-export const OrgIds: DocumentNode<OrgIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]};
-export const ActionPageFields: DocumentNode<ActionPageFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"journey"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]};
-export const CampaignPartnerships: DocumentNode<CampaignPartnerships, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPartnerships"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partnerships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"launchRequests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"objectId"}}]}}]}}]}},...OrgIds.definitions,...ActionPageFields.definitions]};
+export const OrgIds: DocumentNode<OrgIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]};
+export const ActionPageFields: DocumentNode<ActionPageFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"journey"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]};
+export const CampaignPartnerships: DocumentNode<CampaignPartnerships, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPartnerships"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"partnerships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"launchRequests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"objectId"}}]}}]}}]}},...OrgIds.definitions,...ActionPageFields.definitions]};
 export const ActionPageIds: DocumentNode<ActionPageIds, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}}]}}]};
-export const ActionPagePrivateFields: DocumentNode<ActionPagePrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPagePrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"extraSupporters"}},{"kind":"Field","name":{"kind":"Name","value":"delivery"}}]}}]};
-export const OrgFields: DocumentNode<OrgFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]};
-export const OrgPrivateFields: DocumentNode<OrgPrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"personalData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptInTemplate"}}]}}]}}]};
+export const ActionPagePrivateFields: DocumentNode<ActionPagePrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPagePrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"extraSupporters"}},{"kind":"Field","name":{"kind":"Name","value":"delivery"}}]}}]};
+export const OrgFields: DocumentNode<OrgFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]};
+export const OrgPrivateFields: DocumentNode<OrgPrivateFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"personalData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptInTemplate"}}]}}]}}]};
 export const KeyFields: DocumentNode<KeyFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"keyFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Key"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"expired"}},{"kind":"Field","name":{"kind":"Name","value":"expiredAt"}}]}}]};
 export const ServiceFields: DocumentNode<ServiceFields, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"serviceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Service"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"host"}},{"kind":"Field","name":{"kind":"Name","value":"user"}},{"kind":"Field","name":{"kind":"Name","value":"path"}}]}}]};
 export const ContactExport: DocumentNode<ContactExport, unknown> = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"contactExport"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Contact"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactRef"}},{"kind":"Field","name":{"kind":"Name","value":"payload"}},{"kind":"Field","name":{"kind":"Name","value":"nonce"}},{"kind":"Field","name":{"kind":"Name","value":"publicKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}},{"kind":"Field","name":{"kind":"Name","value":"signKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}}]}}]};
@@ -41,33 +41,76 @@ export const CurrentUserOrgsDocument: DocumentNode<CurrentUserOrgs, CurrentUserO
 export const DashOrgOverviewDocument: DocumentNode<DashOrgOverview, DashOrgOverviewVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DashOrgOverview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgPrivateFields"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignStats"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}}]}}]}}]}}]}},...OrgPrivateFields.definitions,...CampaignFields.definitions,...CampaignStats.definitions,...OrgIds.definitions]};
 export const GetOrgDocument: DocumentNode<GetOrg, GetOrgVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrg"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgPrivateFields"}},{"kind":"Field","name":{"kind":"Name","value":"keys"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"select"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"active"},"value":{"kind":"BooleanValue","value":true}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"keyFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"services"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"serviceFields"}}]}}]}}]}},...OrgFields.definitions,...OrgPrivateFields.definitions,...KeyFields.definitions,...ServiceFields.definitions]};
 export const GetOrgAttrsDocument: DocumentNode<GetOrgAttrs, GetOrgAttrsVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrgAttrs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgPrivateFields"}}]}}]}},...OrgFields.definitions,...OrgPrivateFields.definitions]};
+export const LaunchActionPageDocument: DocumentNode<LaunchActionPage, LaunchActionPageVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"launchActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"launchActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]};
+export const AcceptLaunchRequestDocument: DocumentNode<AcceptLaunchRequest, AcceptLaunchRequestVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"acceptLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"acceptOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}}]}}]}},...ActionPageFields.definitions]};
+export const RejectLaunchRequestDocument: DocumentNode<RejectLaunchRequest, RejectLaunchRequestVariables> = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"rejectLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]};
 export type ListCampaignsVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListCampaigns = { org: { campaigns: Array<(
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+export type ListCampaigns = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { campaigns: Array<(
+      { __typename?: 'PublicCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PublicCampaign_
     ) | (
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+      { __typename?: 'PrivateCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PrivateCampaign_
       & CampaignPrivateFields
-    )> } };
+    )> }
+  ) }
+);
 
 export type ListActionPagesVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListActionPages = { org: { actionPages: Array<(
-      { campaign: CampaignIds_PublicCampaign_ | CampaignIds_PrivateCampaign_ }
+export type ListActionPages = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { actionPages: Array<(
+      { __typename?: 'PrivateActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignIds_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignIds_PrivateCampaign_
+      ) }
       & ActionPageFields_PrivateActionPage_
       & ActionPagePrivateFields
     ) | (
-      { campaign: CampaignIds_PublicCampaign_ | CampaignIds_PrivateCampaign_ }
+      { __typename?: 'PublicActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignIds_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignIds_PrivateCampaign_
+      ) }
       & ActionPageFields_PublicActionPage_
-    )> } };
+    )> }
+  ) }
+);
 
 export type GetCampaignVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -75,17 +118,37 @@ export type GetCampaignVariables = Types.Exact<{
 }>;
 
 
-export type GetCampaign = { org: { campaign: (
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+export type GetCampaign = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PublicCampaign_
       & CampaignStats_PublicCampaign_
     ) | (
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+      { __typename?: 'PrivateCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PrivateCampaign_
       & CampaignPrivateFields
       & CampaignStats_PrivateCampaign_
       & CampaignPartnerships
-    ) } };
+    ) }
+  ) }
+);
 
 export type FindPublicCampaignVariables = Types.Exact<{
   name?: Types.Maybe<Types.Scalars['String']>;
@@ -93,13 +156,30 @@ export type FindPublicCampaignVariables = Types.Exact<{
 }>;
 
 
-export type FindPublicCampaign = { campaigns: Array<(
-    { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+export type FindPublicCampaign = (
+  { __typename?: 'RootQueryType' }
+  & { campaigns: Array<(
+    { __typename?: 'PublicCampaign' }
+    & { org: (
+      { __typename?: 'PublicOrg' }
+      & OrgIds_PublicOrg_
+    ) | (
+      { __typename?: 'PrivateOrg' }
+      & OrgIds_PrivateOrg_
+    ) }
     & CampaignFields_PublicCampaign_
   ) | (
-    { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+    { __typename?: 'PrivateCampaign' }
+    & { org: (
+      { __typename?: 'PublicOrg' }
+      & OrgIds_PublicOrg_
+    ) | (
+      { __typename?: 'PrivateOrg' }
+      & OrgIds_PrivateOrg_
+    ) }
     & CampaignFields_PrivateCampaign_
-  )> };
+  )> }
+);
 
 export type GetActionPageVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -108,23 +188,37 @@ export type GetActionPageVariables = Types.Exact<{
 }>;
 
 
-export type GetActionPage = { org: (
-    Pick<Types.PrivateOrg, 'name' | 'title'>
+export type GetActionPage = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & Pick<Types.PrivateOrg, 'name' | 'title'>
     & { actionPage: (
-      { campaign: CampaignFields_PublicCampaign_ | (
-        CampaignFields_PrivateCampaign_
+      { __typename?: 'PrivateActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignFields_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignFields_PrivateCampaign_
         & CampaignPrivateFields
       ) }
       & ActionPageFields_PrivateActionPage_
       & ActionPagePrivateFields
     ) | (
-      { campaign: CampaignFields_PublicCampaign_ | (
-        CampaignFields_PrivateCampaign_
+      { __typename?: 'PublicActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignFields_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignFields_PrivateCampaign_
         & CampaignPrivateFields
       ) }
       & ActionPageFields_PublicActionPage_
     ) }
-  ) };
+  ) }
+);
 
 export type ListActionPagesByCampaignVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -132,17 +226,35 @@ export type ListActionPagesByCampaignVariables = Types.Exact<{
 }>;
 
 
-export type ListActionPagesByCampaign = { org: (
-    Pick<Types.PrivateOrg, 'name' | 'title'>
+export type ListActionPagesByCampaign = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & Pick<Types.PrivateOrg, 'name' | 'title'>
     & { actionPages: Array<(
-      { campaign: CampaignFields_PublicCampaign_ | CampaignFields_PrivateCampaign_ }
+      { __typename?: 'PrivateActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignFields_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignFields_PrivateCampaign_
+      ) }
       & ActionPageFields_PrivateActionPage_
       & ActionPagePrivateFields
     ) | (
-      { campaign: CampaignFields_PublicCampaign_ | CampaignFields_PrivateCampaign_ }
+      { __typename?: 'PublicActionPage' }
+      & { campaign: (
+        { __typename?: 'PublicCampaign' }
+        & CampaignFields_PublicCampaign_
+      ) | (
+        { __typename?: 'PrivateCampaign' }
+        & CampaignFields_PrivateCampaign_
+      ) }
       & ActionPageFields_PublicActionPage_
     )> }
-  ) };
+  ) }
+);
 
 export type ExportCampaignActionsVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -155,10 +267,20 @@ export type ExportCampaignActionsVariables = Types.Exact<{
 }>;
 
 
-export type ExportCampaignActions = { exportActions: Array<Types.Maybe<(
-    { actionPage: ActionPageIds_PrivateActionPage_ | ActionPageIds_PublicActionPage_ }
+export type ExportCampaignActions = (
+  { __typename?: 'RootQueryType' }
+  & { exportActions: Array<Types.Maybe<(
+    { __typename?: 'Action' }
+    & { actionPage: (
+      { __typename?: 'PrivateActionPage' }
+      & ActionPageIds_PrivateActionPage_
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & ActionPageIds_PublicActionPage_
+    ) }
     & ActionExport
-  )>> };
+  )>> }
+);
 
 export type ExportOrgActionsVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -169,10 +291,26 @@ export type ExportOrgActionsVariables = Types.Exact<{
 }>;
 
 
-export type ExportOrgActions = { exportActions: Array<Types.Maybe<(
-    { actionPage: ActionPageIds_PrivateActionPage_ | ActionPageIds_PublicActionPage_, campaign: CampaignExportIds_PublicCampaign_ | CampaignExportIds_PrivateCampaign_ }
+export type ExportOrgActions = (
+  { __typename?: 'RootQueryType' }
+  & { exportActions: Array<Types.Maybe<(
+    { __typename?: 'Action' }
+    & { actionPage: (
+      { __typename?: 'PrivateActionPage' }
+      & ActionPageIds_PrivateActionPage_
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & ActionPageIds_PublicActionPage_
+    ), campaign: (
+      { __typename?: 'PublicCampaign' }
+      & CampaignExportIds_PublicCampaign_
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & CampaignExportIds_PrivateCampaign_
+    ) }
     & ActionExport
-  )>> };
+  )>> }
+);
 
 export type UpdateActionPageVariables = Types.Exact<{
   id: Types.Scalars['Int'];
@@ -180,7 +318,16 @@ export type UpdateActionPageVariables = Types.Exact<{
 }>;
 
 
-export type UpdateActionPage = { updateActionPage: Pick<Types.PrivateActionPage, 'id'> | Pick<Types.PublicActionPage, 'id'> };
+export type UpdateActionPage = (
+  { __typename?: 'RootMutationType' }
+  & { updateActionPage: (
+    { __typename?: 'PrivateActionPage' }
+    & Pick<Types.PrivateActionPage, 'id'>
+  ) | (
+    { __typename?: 'PublicActionPage' }
+    & Pick<Types.PublicActionPage, 'id'>
+  ) }
+);
 
 export type CopyActionPageVariables = Types.Exact<{
   fromName: Types.Scalars['String'];
@@ -189,14 +336,31 @@ export type CopyActionPageVariables = Types.Exact<{
 }>;
 
 
-export type CopyActionPage = { copyActionPage: (
-    { campaign: CampaignFields_PublicCampaign_ | CampaignFields_PrivateCampaign_ }
+export type CopyActionPage = (
+  { __typename?: 'RootMutationType' }
+  & { copyActionPage: (
+    { __typename?: 'PrivateActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & CampaignFields_PublicCampaign_
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & CampaignFields_PrivateCampaign_
+    ) }
     & ActionPageFields_PrivateActionPage_
     & ActionPagePrivateFields
   ) | (
-    { campaign: CampaignFields_PublicCampaign_ | CampaignFields_PrivateCampaign_ }
+    { __typename?: 'PublicActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & CampaignFields_PublicCampaign_
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & CampaignFields_PrivateCampaign_
+    ) }
     & ActionPageFields_PublicActionPage_
-  ) };
+  ) }
+);
 
 export type CopyCampaignActionPageVariables = Types.Exact<{
   fromCampaign: Types.Scalars['String'];
@@ -205,21 +369,44 @@ export type CopyCampaignActionPageVariables = Types.Exact<{
 }>;
 
 
-export type CopyCampaignActionPage = { copyCampaignActionPage: (
-    { campaign: Pick<Types.PublicCampaign, 'id' | 'name' | 'title' | 'externalId'> | Pick<Types.PrivateCampaign, 'id' | 'name' | 'title' | 'externalId'> }
+export type CopyCampaignActionPage = (
+  { __typename?: 'RootMutationType' }
+  & { copyCampaignActionPage: (
+    { __typename?: 'PrivateActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & Pick<Types.PublicCampaign, 'id' | 'name' | 'title' | 'externalId'>
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & Pick<Types.PrivateCampaign, 'id' | 'name' | 'title' | 'externalId'>
+    ) }
     & ActionPageFields_PrivateActionPage_
     & ActionPagePrivateFields
   ) | (
-    { campaign: Pick<Types.PublicCampaign, 'id' | 'name' | 'title' | 'externalId'> | Pick<Types.PrivateCampaign, 'id' | 'name' | 'title' | 'externalId'> }
+    { __typename?: 'PublicActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & Pick<Types.PublicCampaign, 'id' | 'name' | 'title' | 'externalId'>
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & Pick<Types.PrivateCampaign, 'id' | 'name' | 'title' | 'externalId'>
+    ) }
     & ActionPageFields_PublicActionPage_
-  ) };
+  ) }
+);
 
 export type JoinOrgVariables = Types.Exact<{
   orgName: Types.Scalars['String'];
 }>;
 
 
-export type JoinOrg = { joinOrg: Pick<Types.JoinOrgResult, 'status'> };
+export type JoinOrg = (
+  { __typename?: 'RootMutationType' }
+  & { joinOrg: (
+    { __typename?: 'JoinOrgResult' }
+    & Pick<Types.JoinOrgResult, 'status'>
+  ) }
+);
 
 export type UpsertCampaignVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -227,14 +414,32 @@ export type UpsertCampaignVariables = Types.Exact<{
 }>;
 
 
-export type UpsertCampaign = { upsertCampaign: Pick<Types.PublicCampaign, 'id'> | Pick<Types.PrivateCampaign, 'id'> };
+export type UpsertCampaign = (
+  { __typename?: 'RootMutationType' }
+  & { upsertCampaign: (
+    { __typename?: 'PublicCampaign' }
+    & Pick<Types.PublicCampaign, 'id'>
+  ) | (
+    { __typename?: 'PrivateCampaign' }
+    & Pick<Types.PrivateCampaign, 'id'>
+  ) }
+);
 
 export type ListKeysVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type ListKeys = { org: { keys: Array<KeyFields> } };
+export type ListKeys = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { keys: Array<(
+      { __typename?: 'Key' }
+      & KeyFields
+    )> }
+  ) }
+);
 
 export type GenerateKeyVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -242,7 +447,13 @@ export type GenerateKeyVariables = Types.Exact<{
 }>;
 
 
-export type GenerateKey = { generateKey: Pick<Types.KeyWithPrivate, 'id' | 'name' | 'public' | 'private' | 'active' | 'expired' | 'expiredAt'> };
+export type GenerateKey = (
+  { __typename?: 'RootMutationType' }
+  & { generateKey: (
+    { __typename?: 'KeyWithPrivate' }
+    & Pick<Types.KeyWithPrivate, 'id' | 'name' | 'public' | 'private' | 'active' | 'expired' | 'expiredAt'>
+  ) }
+);
 
 export type AddKeyVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -250,7 +461,13 @@ export type AddKeyVariables = Types.Exact<{
 }>;
 
 
-export type AddKey = { addKey: Pick<Types.Key, 'id' | 'name' | 'public' | 'active' | 'expired' | 'expiredAt'> };
+export type AddKey = (
+  { __typename?: 'RootMutationType' }
+  & { addKey: (
+    { __typename?: 'Key' }
+    & Pick<Types.Key, 'id' | 'name' | 'public' | 'active' | 'expired' | 'expiredAt'>
+  ) }
+);
 
 export type ActivateKeyVariables = Types.Exact<{
   org: Types.Scalars['String'];
@@ -258,14 +475,29 @@ export type ActivateKeyVariables = Types.Exact<{
 }>;
 
 
-export type ActivateKey = { activateKey: Pick<Types.ActivateKeyResult, 'status'> };
+export type ActivateKey = (
+  { __typename?: 'RootMutationType' }
+  & { activateKey: (
+    { __typename?: 'ActivateKeyResult' }
+    & Pick<Types.ActivateKeyResult, 'status'>
+  ) }
+);
 
 export type AddOrgVariables = Types.Exact<{
   org: Types.OrgInput;
 }>;
 
 
-export type AddOrg = { addOrg: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ };
+export type AddOrg = (
+  { __typename?: 'RootMutationType' }
+  & { addOrg: (
+    { __typename?: 'PublicOrg' }
+    & OrgIds_PublicOrg_
+  ) | (
+    { __typename?: 'PrivateOrg' }
+    & OrgIds_PrivateOrg_
+  ) }
+);
 
 export type UpdateOrgVariables = Types.Exact<{
   orgName: Types.Scalars['String'];
@@ -273,157 +505,411 @@ export type UpdateOrgVariables = Types.Exact<{
 }>;
 
 
-export type UpdateOrg = { updateOrg: OrgFields_PublicOrg_ | (
-    OrgFields_PrivateOrg_
+export type UpdateOrg = (
+  { __typename?: 'RootMutationType' }
+  & { updateOrg: (
+    { __typename?: 'PublicOrg' }
+    & OrgFields_PublicOrg_
+  ) | (
+    { __typename?: 'PrivateOrg' }
+    & OrgFields_PrivateOrg_
     & OrgPrivateFields
-  ) };
+  ) }
+);
 
 export type ActionPageUpsertedVariables = Types.Exact<{
   org?: Types.Maybe<Types.Scalars['String']>;
 }>;
 
 
-export type ActionPageUpserted = { actionPageUpserted: (
-    { campaign: CampaignIds_PublicCampaign_ | CampaignIds_PrivateCampaign_, org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+export type ActionPageUpserted = (
+  { __typename?: 'RootSubscriptionType' }
+  & { actionPageUpserted: (
+    { __typename?: 'PrivateActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & CampaignIds_PublicCampaign_
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & CampaignIds_PrivateCampaign_
+    ), org: (
+      { __typename?: 'PublicOrg' }
+      & OrgIds_PublicOrg_
+    ) | (
+      { __typename?: 'PrivateOrg' }
+      & OrgIds_PrivateOrg_
+    ) }
     & ActionPageFields_PrivateActionPage_
     & ActionPagePrivateFields
   ) | (
-    { campaign: CampaignIds_PublicCampaign_ | CampaignIds_PrivateCampaign_, org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+    { __typename?: 'PublicActionPage' }
+    & { campaign: (
+      { __typename?: 'PublicCampaign' }
+      & CampaignIds_PublicCampaign_
+    ) | (
+      { __typename?: 'PrivateCampaign' }
+      & CampaignIds_PrivateCampaign_
+    ), org: (
+      { __typename?: 'PublicOrg' }
+      & OrgIds_PublicOrg_
+    ) | (
+      { __typename?: 'PrivateOrg' }
+      & OrgIds_PrivateOrg_
+    ) }
     & ActionPageFields_PublicActionPage_
-  ) };
+  ) }
+);
 
 export type CurrentUserOrgsVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type CurrentUserOrgs = { currentUser: (
-    Pick<Types.User, 'id' | 'email'>
+export type CurrentUserOrgs = (
+  { __typename?: 'RootQueryType' }
+  & { currentUser: (
+    { __typename?: 'User' }
+    & Pick<Types.User, 'id' | 'email'>
     & { roles: Array<(
-      Pick<Types.UserRole, 'role'>
-      & { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+      { __typename?: 'UserRole' }
+      & Pick<Types.UserRole, 'role'>
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
     )> }
-  ) };
+  ) }
+);
 
 export type DashOrgOverviewVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type DashOrgOverview = { org: (
-    Pick<Types.PrivateOrg, 'name' | 'title'>
+export type DashOrgOverview = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & Pick<Types.PrivateOrg, 'name' | 'title'>
     & { campaigns: Array<(
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+      { __typename?: 'PublicCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PublicCampaign_
       & CampaignStats_PublicCampaign_
     ) | (
-      { org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_ }
+      { __typename?: 'PrivateCampaign' }
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & OrgIds_PublicOrg_
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & OrgIds_PrivateOrg_
+      ) }
       & CampaignFields_PrivateCampaign_
       & CampaignStats_PrivateCampaign_
     )> }
     & OrgPrivateFields
-  ) };
+  ) }
+);
 
 export type GetOrgVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type GetOrg = { org: (
-    { keys: Array<KeyFields>, services: Array<Types.Maybe<ServiceFields>> }
+export type GetOrg = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { keys: Array<(
+      { __typename?: 'Key' }
+      & KeyFields
+    )>, services: Array<Types.Maybe<(
+      { __typename?: 'Service' }
+      & ServiceFields
+    )>> }
     & OrgFields_PrivateOrg_
     & OrgPrivateFields
-  ) };
+  ) }
+);
 
 export type GetOrgAttrsVariables = Types.Exact<{
   org: Types.Scalars['String'];
 }>;
 
 
-export type GetOrgAttrs = { org: (
-    OrgFields_PrivateOrg_
+export type GetOrgAttrs = (
+  { __typename?: 'RootQueryType' }
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & OrgFields_PrivateOrg_
     & OrgPrivateFields
-  ) };
+  ) }
+);
 
-type OrgIds_PublicOrg_ = Pick<Types.PublicOrg, 'name' | 'title'>;
+export type LaunchActionPageVariables = Types.Exact<{
+  name: Types.Scalars['String'];
+}>;
 
-type OrgIds_PrivateOrg_ = Pick<Types.PrivateOrg, 'id' | 'name' | 'title'>;
+
+export type LaunchActionPage = (
+  { __typename?: 'RootMutationType' }
+  & { launchActionPage: (
+    { __typename?: 'LaunchActionPageResult' }
+    & Pick<Types.LaunchActionPageResult, 'status'>
+  ) }
+);
+
+export type AcceptLaunchRequestVariables = Types.Exact<{
+  org: Types.Scalars['String'];
+  confirm: Types.ConfirmInput;
+}>;
+
+
+export type AcceptLaunchRequest = (
+  { __typename?: 'RootMutationType' }
+  & { acceptOrgConfirm: (
+    { __typename?: 'ConfirmResult' }
+    & Pick<Types.ConfirmResult, 'status'>
+    & { actionPage: Types.Maybe<(
+      { __typename?: 'PrivateActionPage' }
+      & ActionPageFields_PrivateActionPage_
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & ActionPageFields_PublicActionPage_
+    )> }
+  ) }
+);
+
+export type RejectLaunchRequestVariables = Types.Exact<{
+  org: Types.Scalars['String'];
+  confirm: Types.ConfirmInput;
+}>;
+
+
+export type RejectLaunchRequest = (
+  { __typename?: 'RootMutationType' }
+  & { rejectOrgConfirm: (
+    { __typename?: 'ConfirmResult' }
+    & Pick<Types.ConfirmResult, 'status'>
+  ) }
+);
+
+type OrgIds_PublicOrg_ = (
+  { __typename: 'PublicOrg' }
+  & Pick<Types.PublicOrg, 'name' | 'title'>
+);
+
+type OrgIds_PrivateOrg_ = (
+  { __typename: 'PrivateOrg' }
+  & Pick<Types.PrivateOrg, 'id' | 'name' | 'title'>
+);
 
 export type OrgIds = OrgIds_PublicOrg_ | OrgIds_PrivateOrg_;
 
-type CampaignIds_PublicCampaign_ = Pick<Types.PublicCampaign, 'id' | 'externalId' | 'name' | 'title'>;
+type CampaignIds_PublicCampaign_ = (
+  { __typename: 'PublicCampaign' }
+  & Pick<Types.PublicCampaign, 'id' | 'externalId' | 'name' | 'title'>
+);
 
-type CampaignIds_PrivateCampaign_ = Pick<Types.PrivateCampaign, 'id' | 'externalId' | 'name' | 'title'>;
+type CampaignIds_PrivateCampaign_ = (
+  { __typename: 'PrivateCampaign' }
+  & Pick<Types.PrivateCampaign, 'id' | 'externalId' | 'name' | 'title'>
+);
 
 export type CampaignIds = CampaignIds_PublicCampaign_ | CampaignIds_PrivateCampaign_;
 
-type CampaignExportIds_PublicCampaign_ = Pick<Types.PublicCampaign, 'name' | 'externalId'>;
+type CampaignExportIds_PublicCampaign_ = (
+  { __typename: 'PublicCampaign' }
+  & Pick<Types.PublicCampaign, 'name' | 'externalId'>
+);
 
-type CampaignExportIds_PrivateCampaign_ = Pick<Types.PrivateCampaign, 'name' | 'externalId'>;
+type CampaignExportIds_PrivateCampaign_ = (
+  { __typename: 'PrivateCampaign' }
+  & Pick<Types.PrivateCampaign, 'name' | 'externalId'>
+);
 
 export type CampaignExportIds = CampaignExportIds_PublicCampaign_ | CampaignExportIds_PrivateCampaign_;
 
-type CampaignFields_PublicCampaign_ = Pick<Types.PublicCampaign, 'name' | 'title' | 'contactSchema' | 'config'>;
+type CampaignFields_PublicCampaign_ = (
+  { __typename: 'PublicCampaign' }
+  & Pick<Types.PublicCampaign, 'id' | 'externalId' | 'name' | 'title' | 'contactSchema' | 'config'>
+);
 
-type CampaignFields_PrivateCampaign_ = Pick<Types.PrivateCampaign, 'name' | 'title' | 'contactSchema' | 'config'>;
+type CampaignFields_PrivateCampaign_ = (
+  { __typename: 'PrivateCampaign' }
+  & Pick<Types.PrivateCampaign, 'id' | 'externalId' | 'name' | 'title' | 'contactSchema' | 'config'>
+);
 
 export type CampaignFields = CampaignFields_PublicCampaign_ | CampaignFields_PrivateCampaign_;
 
-export type CampaignPrivateFields = Pick<Types.PrivateCampaign, 'id' | 'externalId' | 'forceDelivery'>;
+export type CampaignPrivateFields = (
+  { __typename: 'PrivateCampaign' }
+  & Pick<Types.PrivateCampaign, 'forceDelivery'>
+);
 
-type CampaignStats_PublicCampaign_ = { stats: (
-    Pick<Types.CampaignStats, 'supporterCount'>
+type CampaignStats_PublicCampaign_ = (
+  { __typename?: 'PublicCampaign' }
+  & { stats: (
+    { __typename?: 'CampaignStats' }
+    & Pick<Types.CampaignStats, 'supporterCount'>
     & { supporterCountByOrg: Array<(
-      Pick<Types.OrgCount, 'count'>
-      & { org: Pick<Types.PublicOrg, 'name' | 'title'> | Pick<Types.PrivateOrg, 'name' | 'title'> }
-    )>, actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
-  ) };
+      { __typename?: 'OrgCount' }
+      & Pick<Types.OrgCount, 'count'>
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & Pick<Types.PublicOrg, 'name' | 'title'>
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & Pick<Types.PrivateOrg, 'name' | 'title'>
+      ) }
+    )>, actionCount: Array<(
+      { __typename?: 'ActionTypeCount' }
+      & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
+    )> }
+  ) }
+);
 
-type CampaignStats_PrivateCampaign_ = { stats: (
-    Pick<Types.CampaignStats, 'supporterCount'>
+type CampaignStats_PrivateCampaign_ = (
+  { __typename?: 'PrivateCampaign' }
+  & { stats: (
+    { __typename?: 'CampaignStats' }
+    & Pick<Types.CampaignStats, 'supporterCount'>
     & { supporterCountByOrg: Array<(
-      Pick<Types.OrgCount, 'count'>
-      & { org: Pick<Types.PublicOrg, 'name' | 'title'> | Pick<Types.PrivateOrg, 'name' | 'title'> }
-    )>, actionCount: Array<Pick<Types.ActionTypeCount, 'actionType' | 'count'>> }
-  ) };
+      { __typename?: 'OrgCount' }
+      & Pick<Types.OrgCount, 'count'>
+      & { org: (
+        { __typename?: 'PublicOrg' }
+        & Pick<Types.PublicOrg, 'name' | 'title'>
+      ) | (
+        { __typename?: 'PrivateOrg' }
+        & Pick<Types.PrivateOrg, 'name' | 'title'>
+      ) }
+    )>, actionCount: Array<(
+      { __typename?: 'ActionTypeCount' }
+      & Pick<Types.ActionTypeCount, 'actionType' | 'count'>
+    )> }
+  ) }
+);
 
 export type CampaignStats = CampaignStats_PublicCampaign_ | CampaignStats_PrivateCampaign_;
 
-export type CampaignPartnerships = { partnerships: Types.Maybe<Array<{ org: OrgIds_PublicOrg_ | OrgIds_PrivateOrg_, actionPages: Array<ActionPageFields_PrivateActionPage_ | ActionPageFields_PublicActionPage_>, launchRequests: Array<Pick<Types.Confirm, 'code' | 'email' | 'objectId'>> }>> };
+export type CampaignPartnerships = (
+  { __typename: 'PrivateCampaign' }
+  & { partnerships: Types.Maybe<Array<(
+    { __typename?: 'Partnership' }
+    & { org: (
+      { __typename?: 'PublicOrg' }
+      & OrgIds_PublicOrg_
+    ) | (
+      { __typename?: 'PrivateOrg' }
+      & OrgIds_PrivateOrg_
+    ), actionPages: Array<(
+      { __typename?: 'PrivateActionPage' }
+      & ActionPageFields_PrivateActionPage_
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & ActionPageFields_PublicActionPage_
+    )>, launchRequests: Array<(
+      { __typename?: 'Confirm' }
+      & Pick<Types.Confirm, 'code' | 'email' | 'objectId'>
+    )> }
+  )>> }
+);
 
-type ActionPageIds_PrivateActionPage_ = Pick<Types.PrivateActionPage, 'id' | 'name' | 'locale'>;
+type ActionPageIds_PrivateActionPage_ = (
+  { __typename?: 'PrivateActionPage' }
+  & Pick<Types.PrivateActionPage, 'id' | 'name' | 'locale'>
+);
 
-type ActionPageIds_PublicActionPage_ = Pick<Types.PublicActionPage, 'id' | 'name' | 'locale'>;
+type ActionPageIds_PublicActionPage_ = (
+  { __typename?: 'PublicActionPage' }
+  & Pick<Types.PublicActionPage, 'id' | 'name' | 'locale'>
+);
 
 export type ActionPageIds = ActionPageIds_PrivateActionPage_ | ActionPageIds_PublicActionPage_;
 
-type ActionPageFields_PrivateActionPage_ = Pick<Types.PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>;
+type ActionPageFields_PrivateActionPage_ = (
+  { __typename: 'PrivateActionPage' }
+  & Pick<Types.PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>
+);
 
-type ActionPageFields_PublicActionPage_ = Pick<Types.PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>;
+type ActionPageFields_PublicActionPage_ = (
+  { __typename: 'PublicActionPage' }
+  & Pick<Types.PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>
+);
 
 export type ActionPageFields = ActionPageFields_PrivateActionPage_ | ActionPageFields_PublicActionPage_;
 
-export type ActionPagePrivateFields = Pick<Types.PrivateActionPage, 'extraSupporters' | 'delivery'>;
+export type ActionPagePrivateFields = (
+  { __typename: 'PrivateActionPage' }
+  & Pick<Types.PrivateActionPage, 'extraSupporters' | 'delivery'>
+);
 
-type OrgFields_PublicOrg_ = Pick<Types.PublicOrg, 'name' | 'title'>;
+type OrgFields_PublicOrg_ = (
+  { __typename: 'PublicOrg' }
+  & Pick<Types.PublicOrg, 'name' | 'title'>
+);
 
-type OrgFields_PrivateOrg_ = Pick<Types.PrivateOrg, 'name' | 'title'>;
+type OrgFields_PrivateOrg_ = (
+  { __typename: 'PrivateOrg' }
+  & Pick<Types.PrivateOrg, 'name' | 'title'>
+);
 
 export type OrgFields = OrgFields_PublicOrg_ | OrgFields_PrivateOrg_;
 
 export type OrgPrivateFields = (
-  Pick<Types.PrivateOrg, 'config'>
-  & { personalData: Pick<Types.PersonalData, 'contactSchema' | 'emailOptIn' | 'emailOptInTemplate'> }
+  { __typename: 'PrivateOrg' }
+  & Pick<Types.PrivateOrg, 'config'>
+  & { personalData: (
+    { __typename?: 'PersonalData' }
+    & Pick<Types.PersonalData, 'contactSchema' | 'emailOptIn' | 'emailOptInTemplate'>
+  ) }
 );
 
-export type KeyFields = Pick<Types.Key, 'id' | 'name' | 'public' | 'active' | 'expired' | 'expiredAt'>;
+export type KeyFields = (
+  { __typename?: 'Key' }
+  & Pick<Types.Key, 'id' | 'name' | 'public' | 'active' | 'expired' | 'expiredAt'>
+);
 
-export type ServiceFields = Pick<Types.Service, 'id' | 'name' | 'host' | 'user' | 'path'>;
+export type ServiceFields = (
+  { __typename?: 'Service' }
+  & Pick<Types.Service, 'id' | 'name' | 'host' | 'user' | 'path'>
+);
 
 export type ContactExport = (
-  Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
-  & { publicKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>>, signKey: Types.Maybe<Pick<Types.KeyIds, 'id' | 'public'>> }
+  { __typename?: 'Contact' }
+  & Pick<Types.Contact, 'contactRef' | 'payload' | 'nonce'>
+  & { publicKey: Types.Maybe<(
+    { __typename?: 'KeyIds' }
+    & Pick<Types.KeyIds, 'id' | 'public'>
+  )>, signKey: Types.Maybe<(
+    { __typename?: 'KeyIds' }
+    & Pick<Types.KeyIds, 'id' | 'public'>
+  )> }
 );
 
 export type ActionExport = (
-  Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
-  & { contact: ContactExport, fields: Array<Pick<Types.CustomField, 'key' | 'value'>>, tracking: Types.Maybe<Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>>, privacy: Pick<Types.Consent, 'optIn' | 'givenAt'> }
+  { __typename?: 'Action' }
+  & Pick<Types.Action, 'actionId' | 'actionType' | 'createdAt'>
+  & { contact: (
+    { __typename?: 'Contact' }
+    & ContactExport
+  ), fields: Array<(
+    { __typename?: 'CustomField' }
+    & Pick<Types.CustomField, 'key' | 'value'>
+  )>, tracking: Types.Maybe<(
+    { __typename?: 'Tracking' }
+    & Pick<Types.Tracking, 'source' | 'medium' | 'campaign' | 'content'>
+  )>, privacy: (
+    { __typename?: 'Consent' }
+    & Pick<Types.Consent, 'optIn' | 'givenAt'>
+  ) }
 );

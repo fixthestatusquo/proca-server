@@ -14,8 +14,8 @@ generates:
         object: false
         field: true
         inputValue: false
-      skipTypeNameForRoot: true
-      skipTypename: true
+      skipTypeNameForRoot: false
+      skipTypename: false
 
   src/queries/widget.ts: &apiSet
     documents:
