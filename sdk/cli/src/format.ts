@@ -2,7 +2,6 @@ import csvStringify from 'csv-stringify/lib/sync'
 import {admin,types} from '@proca/api'
 import {ActionWithPII, KeyStore} from './crypto'
 import {WidgetConfig} from './config'
-import {ActionFromExport} from './export'
 
 
 export interface FormatOpts {
@@ -19,8 +18,12 @@ interface OrgDetails {
   name: string
 }
 
-function isPublicActionPage(ap: types.ActionPage | types.PublicActionPage):  ap is types.PublicActionPage {
-  return (ap as types.ActionPage).extraSupporters === undefined
+function isPublicActionPage(ap: types.PrivateActionPage | types.PublicActionPage):  ap is types.PublicActionPage {
+  return (ap as types.PrivateActionPage).extraSupporters === undefined
+}
+
+function isPrivateActionPage(ap: types.ActionPage): ap is types.PrivateActionPage {
+  return (ap as types.PrivateActionPage).extraSupporters !== undefined
 }
 
 const actionTypeEmojis : { [key: string]: string } = {
@@ -43,7 +46,7 @@ class Terminal {
   }
 
   campaign(c : types.Campaign) {
-    let t = `${c.id}`
+    let t = c.id !== undefined ? `${c.id}` : ''
     if (c.externalId) {
       t += ` (external: ${c.externalId})`
     }
@@ -71,12 +74,13 @@ class Terminal {
   }
 
 
-  actionPage(ap : types.ActionPage | types.PublicActionPage, org : any) {
+  actionPage(ap : types.ActionPage, org : any) {
+    console.log(ap)
     let t = ''
     if (ap.id && ap.name && ap.locale) {
       t += `${ap.id} ${ap.name} [${ap.locale}]`
 
-      if ('extraSupporters' in ap && ap.extraSupporters != 0) {
+      if (isPrivateActionPage(ap) && ap.extraSupporters != 0) {
 
         t += ` (🧑‍ ${ap.extraSupporters} extra supporters)`
       }
@@ -142,7 +146,7 @@ class Terminal {
     return ap
   }
 
-  action(a : ActionFromExport) : string {
+  action(a : admin.ActionExport & {campaign?: admin.CampaignIds}) : string {
     const c = a.campaign !== undefined ? a.campaign.name : ''
     const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
     return t
@@ -185,7 +189,7 @@ class Json extends Terminal {
     return JSON.stringify(config, null, this.indent)
   }
 
-  action(a : ActionFromExport) {
+  action(a : admin.ActionExport & {campaign?: admin.CampaignIds}) {
     return JSON.stringify(a, null, this.indent)
   }
 
@@ -205,14 +209,14 @@ class Csv extends Terminal {
     this.fields = argv.fields.split(',')
   }
 
-  getField(a : ActionFromExport, f : string) {
+  getField(a : admin.ActionExport, f : string) {
     const kv = a.fields.find(({key}) => key == f)
     if (kv !== undefined)
       return kv.value
     return ''
   }
 
-  action(a : ActionFromExport) {
+  action(a : admin.ActionExport & { campaign?: admin.CampaignIds, actionPage: admin.ActionPageIds}) {
     let [input, opts] : Parameters<typeof csvStringify> = [[], {}]
 
     const pii = 'pii' in a.contact ? 

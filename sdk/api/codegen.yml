@@ -1,17 +1,6 @@
 overwrite: true
 schema: "schema/schema.graphql"
 generates:
-  ./graphql.schema.json:
-    plugins:
-      - introspection
-
-  ./src/queries/scalarLocations.ts:
-    plugins:
-      - graphql-scalar-locations
-    config:
-      scalars: 
-        - Json
-
   src/apiTypes.ts:
     plugins:
       - typescript
@@ -21,37 +10,5 @@ generates:
         object: false
         field: true
         inputValue: false
-      skipTypeNameForRoot: true
-      skipTypename: true
-
-  src/queries/widget.ts:
-    documents:
-      - schema/widget.graphql
-    plugins:
-      - typed-document-node
-      - typescript-operations
-    preset: import-types
-    presetConfig:
-      typesPath: ../apiTypes
-    config:
-      omitOperationSuffix: true
-      avoidOptionals:
-        <<: *avoidOptionals
-      skipTypeNameForRoot: true
-      skipTypename: true
-
-  src/queries/admin.ts:
-    documents:
-      - schema/admin.graphql
-    plugins:
-      - typed-document-node
-      - typescript-operations
-    preset: import-types
-    presetConfig:
-      typesPath: ../apiTypes
-    config:
-      omitOperationSuffix: true
-      avoidOptionals:
-        <<: *avoidOptionals
       skipTypeNameForRoot: true
       skipTypename: true

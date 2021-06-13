@@ -26,6 +26,7 @@ defmodule ProcaWeb.Resolvers.Org do
     c =
       Campaign.select_by_org(org)
       |> where([c], c.id == ^camp_id)
+      |> preload([c], [:org])
       |> Repo.one()
 
     case c do

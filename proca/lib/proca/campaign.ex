@@ -29,6 +29,7 @@ defmodule Proca.Campaign do
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
     |> validate_required([:name, :title, :contact_schema])
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+    |> unique_constraint(:name)
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
@@ -50,5 +51,23 @@ defmodule Proca.Campaign do
       where: ap.org_id == ^org.id or c.org_id == ^org.id
     )
     |> distinct(true)
+  end
+
+  def get_with_local_pages(campaign_id) when is_integer(campaign_id) do 
+    from(c in Campaign, where: c.id == ^campaign_id,
+      left_join: a in assoc(c, :action_pages),
+      where: a.org_id == c.org_id,
+      order_by: [desc: a.id],
+      preload: [:org, action_pages: a])
+    |> Repo.one()
+  end
+
+  def get_with_local_pages(campaign_name) when is_bitstring(campaign_name) do 
+    from(c in Campaign, where: c.name == ^campaign_name,
+      left_join: a in assoc(c, :action_pages),
+      where: a.org_id == c.org_id,
+      order_by: [desc: a.id],
+      preload: [:org, action_pages: a])
+    |> Repo.one()
   end
 end

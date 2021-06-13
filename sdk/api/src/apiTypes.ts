@@ -43,15 +43,10 @@ export type Action = {
   contact: Contact;
   fields: Array<CustomField>;
   tracking: Maybe<Tracking>;
-  campaign: ActionCampaign;
-  actionPage: SimpleActionPage;
+  campaign: Campaign;
+  actionPage: ActionPage;
   privacy: Consent;
   donation: Maybe<Donation>;
-};
-
-export type ActionCampaign = {
-  name: Scalars['String'];
-  externalId: Maybe<Scalars['Int']>;
 };
 
 export type ActionCustomFields = {
@@ -79,15 +74,16 @@ export type ActionPage = {
   name: Scalars['String'];
   /** Reference to thank you email templated of this Action Page */
   thankYouTemplateRef: Maybe<Scalars['String']>;
+  /** Is live? */
+  live: Scalars['Boolean'];
   /** List of steps in journey */
-  journey: Maybe<Array<Scalars['String']>>;
+  journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
-  /** Extra supporters (added to supporters count) */
-  extraSupporters: Scalars['Int'];
-  /** Campaign this widget belongs to. Can be null for trashed action pages */
-  campaign: Maybe<Campaign>;
-  org: Maybe<PublicOrg>;
+  /** Campaign this action page belongs to. */
+  campaign: Campaign;
+  /** Org the action page belongs to */
+  org: Org;
 };
 
 /** ActionPage input */
@@ -112,17 +108,6 @@ export type ActionPageInput = {
   journey?: Maybe<Array<Scalars['String']>>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
-};
-
-/** ActionPage declaration (using the legacy url attribute) */
-export type ActionPageInputLegacyUrl = {
-  id?: Maybe<Scalars['Int']>;
-  url?: Maybe<Scalars['String']>;
-  locale?: Maybe<Scalars['String']>;
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
-  extraSupporters?: Maybe<Scalars['Int']>;
-  journey?: Maybe<Array<Scalars['String']>>;
-  config?: Maybe<Scalars['String']>;
 };
 
 /** Count of actions for particular action type */
@@ -166,12 +151,14 @@ export type AreaCount = {
   count: Scalars['Int'];
 };
 
+/** Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list */
 export type Campaign = {
+  /** Campaign id */
   id: Scalars['Int'];
-  /** Internal name of the campaign */
-  name: Scalars['String'];
   /** External ID (if set) */
   externalId: Maybe<Scalars['Int']>;
+  /** Internal name of the campaign */
+  name: Scalars['String'];
   /** Full, official name of the campaign */
   title: Scalars['String'];
   /** Schema for contact personal information */
@@ -180,15 +167,16 @@ export type Campaign = {
   config: Scalars['Json'];
   /** Campaign statistics */
   stats: CampaignStats;
+  org: Org;
   /** Fetch public actions */
   actions: PublicActionsResult;
-  org: PublicOrg;
 };
 
 
+/** Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list */
 export type CampaignActionsArgs = {
-  limit: Scalars['Int'];
   actionType: Scalars['String'];
+  limit: Scalars['Int'];
 };
 
 /** Campaign input */
@@ -226,6 +214,29 @@ export type CampaignStatsSupporterCountByOthersArgs = {
   orgName: Scalars['String'];
 };
 
+export type ChangeUserStatus = {
+  status: Status;
+};
+
+export type Confirm = {
+  code: Scalars['String'];
+  email: Maybe<Scalars['String']>;
+  objectId: Maybe<Scalars['Int']>;
+};
+
+export type ConfirmInput = {
+  code: Scalars['String'];
+  email?: Maybe<Scalars['String']>;
+  objectId?: Maybe<Scalars['Int']>;
+};
+
+export type ConfirmResult = {
+  status: Status;
+  actionPage: Maybe<ActionPage>;
+  campaign: Maybe<Campaign>;
+  org: Maybe<Org>;
+};
+
 /** GDPR consent data for this org */
 export type Consent = {
   optIn: Scalars['Boolean'];
@@ -241,7 +252,7 @@ export type ConsentInput = {
 };
 
 export type Contact = {
-  contactRef: Scalars['String'];
+  contactRef: Scalars['ID'];
   payload: Scalars['String'];
   nonce: Maybe<Scalars['String']>;
   publicKey: Maybe<KeyIds>;
@@ -276,10 +287,10 @@ export type ContactReference = {
 };
 
 export enum ContactSchema {
-  ItCi = 'IT_CI',
-  Eci = 'ECI',
+  Basic = 'BASIC',
   PopularInitiative = 'POPULAR_INITIATIVE',
-  Basic = 'BASIC'
+  Eci = 'ECI',
+  ItCi = 'IT_CI'
 }
 
 /** Custom field with a key and value. */
@@ -310,6 +321,8 @@ export type Donation = {
   currency: Scalars['String'];
   /** Donation data */
   payload: Scalars['Json'];
+  /** Donation frequency unit */
+  frequencyUnit: DonationFrequencyUnit;
 };
 
 export type DonationActionInput = {
@@ -319,8 +332,15 @@ export type DonationActionInput = {
   amount?: Maybe<Scalars['Decimal']>;
   /** Provide currency of this donation */
   currency?: Maybe<Scalars['String']>;
+  frequencyUnit?: Maybe<DonationFrequencyUnit>;
   payload: Scalars['Json'];
 };
+
+export enum DonationFrequencyUnit {
+  OneOff = 'ONE_OFF',
+  Weekly = 'WEEKLY',
+  Monthly = 'MONTHLY'
+}
 
 export enum DonationSchema {
   StripePaymentIntent = 'STRIPE_PAYMENT_INTENT'
@@ -363,6 +383,10 @@ export type KeyWithPrivate = {
   expiredAt: Maybe<Scalars['DateTime']>;
 };
 
+export type LaunchActionPageResult = {
+  status: Status;
+};
+
 
 export type NationalityInput = {
   /** Nationality / issuer of id document */
@@ -374,69 +398,16 @@ export type NationalityInput = {
 };
 
 export type Org = {
-  /** Organization id */
-  id: Scalars['Int'];
   /** Organisation short name */
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
-  /** config */
-  config: Scalars['Json'];
-  /** Personal data settings for this org */
-  personalData: PersonalData;
-  keys: Array<Key>;
-  key: Key;
-  services: Array<Maybe<Service>>;
-  /** List campaigns this org is leader or partner of */
-  campaigns: Array<Campaign>;
-  /** List action pages this org has */
-  actionPages: Array<ActionPage>;
-  /** Action Page */
-  actionPage: ActionPage;
-  /** Get campaign this org is leader or partner of by id */
-  campaign: Campaign;
-};
-
-
-export type OrgKeysArgs = {
-  select?: Maybe<SelectKey>;
-};
-
-
-export type OrgKeyArgs = {
-  select: SelectKey;
-};
-
-
-export type OrgServicesArgs = {
-  select?: Maybe<SelectService>;
-};
-
-
-export type OrgCampaignsArgs = {
-  select?: Maybe<SelectCampaign>;
-};
-
-
-export type OrgActionPagesArgs = {
-  select?: Maybe<SelectActionPage>;
-};
-
-
-export type OrgActionPageArgs = {
-  name?: Maybe<Scalars['String']>;
-  id?: Maybe<Scalars['Int']>;
-};
-
-
-export type OrgCampaignArgs = {
-  id?: Maybe<Scalars['Int']>;
 };
 
 /** Count of supporters for particular org */
 export type OrgCount = {
   /** org */
-  org: PublicOrg;
+  org: Org;
   /** count of supporters registered by org */
   count: Scalars['Int'];
 };
@@ -456,10 +427,18 @@ export type OrgInput = {
   config?: Maybe<Scalars['Json']>;
 };
 
-export type PaymentIntentInput = {
-  amount: Scalars['Float'];
-  currency: Scalars['String'];
-  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
+export type OrgUser = {
+  email: Scalars['String'];
+  role: Scalars['String'];
+  createdAt: Scalars['NaiveDateTime'];
+  joinedAt: Scalars['NaiveDateTime'];
+  lastSigninAt: Maybe<Scalars['NaiveDateTime']>;
+};
+
+export type Partnership = {
+  org: Org;
+  actionPages: Array<ActionPage>;
+  launchRequests: Array<Confirm>;
 };
 
 export type PersonalData = {
@@ -471,7 +450,7 @@ export type PersonalData = {
   emailOptInTemplate: Maybe<Scalars['String']>;
 };
 
-export type PublicActionPage = {
+export type PrivateActionPage = ActionPage & {
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -479,13 +458,130 @@ export type PublicActionPage = {
   name: Scalars['String'];
   /** Reference to thank you email templated of this Action Page */
   thankYouTemplateRef: Maybe<Scalars['String']>;
+  /** Is live? */
+  live: Scalars['Boolean'];
   /** List of steps in journey */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
-  /** Campaign this widget belongs to. Can't be null because trashed action pages are not public */
+  /** Campaign this action page belongs to. */
   campaign: Campaign;
-  org: PublicOrg;
+  /** Org the action page belongs to */
+  org: Org;
+  extraSupporters: Scalars['Int'];
+  /** Action page collects also opt-out actions */
+  delivery: Scalars['Boolean'];
+};
+
+export type PrivateCampaign = Campaign & {
+  /** Campaign id */
+  id: Scalars['Int'];
+  /** External ID (if set) */
+  externalId: Maybe<Scalars['Int']>;
+  /** Internal name of the campaign */
+  name: Scalars['String'];
+  /** Full, official name of the campaign */
+  title: Scalars['String'];
+  /** Schema for contact personal information */
+  contactSchema: ContactSchema;
+  /** Custom config map */
+  config: Scalars['Json'];
+  /** Campaign statistics */
+  stats: CampaignStats;
+  org: Org;
+  /** Fetch public actions */
+  actions: PublicActionsResult;
+  /** Campaign onwer collects opt-out actions for delivery even if campaign partner is */
+  forceDelivery: Scalars['Boolean'];
+  /** List of partnerships and requests */
+  partnerships: Maybe<Array<Partnership>>;
+};
+
+
+export type PrivateCampaignActionsArgs = {
+  actionType: Scalars['String'];
+  limit: Scalars['Int'];
+};
+
+export type PrivateOrg = Org & {
+  /** Organisation short name */
+  name: Scalars['String'];
+  /** Organisation title (human readable name) */
+  title: Scalars['String'];
+  /** Organization id */
+  id: Scalars['Int'];
+  /** config */
+  config: Scalars['Json'];
+  /** Personal data settings for this org */
+  personalData: PersonalData;
+  keys: Array<Key>;
+  key: Key;
+  services: Array<Maybe<Service>>;
+  users: Array<Maybe<OrgUser>>;
+  /** List campaigns this org is leader or partner of */
+  campaigns: Array<Campaign>;
+  /** List action pages this org has */
+  actionPages: Array<ActionPage>;
+  /** Action Page */
+  actionPage: ActionPage;
+  /** Get campaign this org is leader or partner of by id */
+  campaign: Campaign;
+};
+
+
+export type PrivateOrgKeysArgs = {
+  select?: Maybe<SelectKey>;
+};
+
+
+export type PrivateOrgKeyArgs = {
+  select: SelectKey;
+};
+
+
+export type PrivateOrgServicesArgs = {
+  select?: Maybe<SelectService>;
+};
+
+
+export type PrivateOrgCampaignsArgs = {
+  select?: Maybe<SelectCampaign>;
+};
+
+
+export type PrivateOrgActionPagesArgs = {
+  select?: Maybe<SelectActionPage>;
+};
+
+
+export type PrivateOrgActionPageArgs = {
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
+};
+
+
+export type PrivateOrgCampaignArgs = {
+  id?: Maybe<Scalars['Int']>;
+};
+
+export type PublicActionPage = ActionPage & {
+  id: Scalars['Int'];
+  /** Locale for the widget, in i18n format */
+  locale: Scalars['String'];
+  /** Name where the widget is hosted */
+  name: Scalars['String'];
+  /** Reference to thank you email templated of this Action Page */
+  thankYouTemplateRef: Maybe<Scalars['String']>;
+  /** Is live? */
+  live: Scalars['Boolean'];
+  /** List of steps in journey */
+  journey: Array<Scalars['String']>;
+  /** Config JSON of this action page */
+  config: Scalars['Json'];
+  /** Campaign this action page belongs to. */
+  campaign: Campaign;
+  /** Org the action page belongs to */
+  org: Org;
 };
 
 /** Result of actions query */
@@ -494,7 +590,33 @@ export type PublicActionsResult = {
   list: Maybe<Array<Maybe<ActionCustomFields>>>;
 };
 
-export type PublicOrg = {
+export type PublicCampaign = Campaign & {
+  /** Campaign id */
+  id: Scalars['Int'];
+  /** External ID (if set) */
+  externalId: Maybe<Scalars['Int']>;
+  /** Internal name of the campaign */
+  name: Scalars['String'];
+  /** Full, official name of the campaign */
+  title: Scalars['String'];
+  /** Schema for contact personal information */
+  contactSchema: ContactSchema;
+  /** Custom config map */
+  config: Scalars['Json'];
+  /** Campaign statistics */
+  stats: CampaignStats;
+  org: Org;
+  /** Fetch public actions */
+  actions: PublicActionsResult;
+};
+
+
+export type PublicCampaignActionsArgs = {
+  actionType: Scalars['String'];
+  limit: Scalars['Int'];
+};
+
+export type PublicOrg = Org & {
   /** Organisation short name */
   name: Scalars['String'];
   /** Organisation title (human readable name) */
@@ -511,8 +633,6 @@ export type RootMutationType = {
    * Action Pages will be removed (principle of not removing signature data).
    */
   upsertCampaign: Campaign;
-  /** Deprecated, use upsert_campaign. */
-  declareCampaign: Campaign;
   /** Update an Action Page */
   updateActionPage: ActionPage;
   /**
@@ -520,15 +640,21 @@ export type RootMutationType = {
    * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
    */
   copyActionPage: ActionPage;
+  /**
+   * Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
+   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   */
+  copyCampaignActionPage: ActionPage;
+  launchActionPage: LaunchActionPageResult;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
   /** Adds an action with contact data */
   addActionContact: ContactReference;
   /** Link actions with refs to contact with contact reference */
   linkActions: ContactReference;
-  addOrgUser: Maybe<User>;
+  addOrgUser: ChangeUserStatus;
+  updateOrgUser: ChangeUserStatus;
   deleteOrgUser: Maybe<DeleteUserResult>;
-  updateOrgUser: Maybe<User>;
   addOrg: Org;
   deleteOrg: Scalars['Boolean'];
   updateOrg: Org;
@@ -537,78 +663,92 @@ export type RootMutationType = {
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
-  stripeCreatePaymentIntent: Scalars['Json'];
+  addStripePaymentIntent: Scalars['Json'];
+  addStripeSubscription: Scalars['Json'];
+  /**
+   * Create stripe object using Stripe key associated with action page owning org.
+   * Pass any of paymentIntent, subscription, customer, price json params to be sent as-is to Stripe API. The result is a JSON returned by Stripe API or a GraphQL Error object.
+   * If you provide customer along payment intent or subscription, it will be first created, then their id will be added to params for the payment intent or subscription, so you can pack 2 Stripe API calls into one. You can do the same with price object in case of a subscription.
+   */
+  addStripeObject: Scalars['Json'];
+  /** Accept a confirm on behalf of organisation. */
+  acceptOrgConfirm: ConfirmResult;
+  /** Reject a confirm on behalf of organisation. */
+  rejectOrgConfirm: ConfirmResult;
 };
 
 
 export type RootMutationTypeUpsertCampaignArgs = {
+  orgName: Scalars['String'];
   input: CampaignInput;
-  orgName: Scalars['String'];
-};
-
-
-export type RootMutationTypeDeclareCampaignArgs = {
-  actionPages: Array<Maybe<ActionPageInputLegacyUrl>>;
-  title: Scalars['String'];
-  externalId?: Maybe<Scalars['Int']>;
-  name: Scalars['String'];
-  orgName: Scalars['String'];
 };
 
 
 export type RootMutationTypeUpdateActionPageArgs = {
-  input: ActionPageInput;
   id: Scalars['Int'];
+  input: ActionPageInput;
 };
 
 
 export type RootMutationTypeCopyActionPageArgs = {
-  fromName: Scalars['String'];
-  name: Scalars['String'];
   orgName: Scalars['String'];
+  name: Scalars['String'];
+  fromName: Scalars['String'];
+};
+
+
+export type RootMutationTypeCopyCampaignActionPageArgs = {
+  orgName: Scalars['String'];
+  name: Scalars['String'];
+  fromCampaignName: Scalars['String'];
+};
+
+
+export type RootMutationTypeLaunchActionPageArgs = {
+  name: Scalars['String'];
 };
 
 
 export type RootMutationTypeAddActionArgs = {
-  tracking?: Maybe<TrackingInput>;
-  contactRef: Scalars['ID'];
-  action: ActionInput;
   actionPageId: Scalars['Int'];
+  action: ActionInput;
+  contactRef: Scalars['ID'];
+  tracking?: Maybe<TrackingInput>;
 };
 
 
 export type RootMutationTypeAddActionContactArgs = {
-  contactRef?: Maybe<Scalars['ID']>;
-  tracking?: Maybe<TrackingInput>;
-  privacy: ConsentInput;
-  contact: ContactInput;
-  action: ActionInput;
   actionPageId: Scalars['Int'];
+  action: ActionInput;
+  contact: ContactInput;
+  privacy: ConsentInput;
+  tracking?: Maybe<TrackingInput>;
+  contactRef?: Maybe<Scalars['ID']>;
 };
 
 
 export type RootMutationTypeLinkActionsArgs = {
-  linkRefs?: Maybe<Array<Scalars['String']>>;
-  contactRef: Scalars['ID'];
   actionPageId: Scalars['Int'];
+  contactRef: Scalars['ID'];
+  linkRefs?: Maybe<Array<Scalars['String']>>;
 };
 
 
 export type RootMutationTypeAddOrgUserArgs = {
+  orgName: Scalars['String'];
   input: UserInput;
-  orgName: Scalars['String'];
-};
-
-
-export type RootMutationTypeDeleteOrgUserArgs = {
-  email: Scalars['String'];
-  orgName: Scalars['String'];
 };
 
 
 export type RootMutationTypeUpdateOrgUserArgs = {
-  input: UserInput;
   orgName: Scalars['String'];
+  input: UserInput;
+};
+
+
+export type RootMutationTypeDeleteOrgUserArgs = {
+  orgName: Scalars['String'];
+  email: Scalars['String'];
 };
 
 
@@ -623,8 +763,8 @@ export type RootMutationTypeDeleteOrgArgs = {
 
 
 export type RootMutationTypeUpdateOrgArgs = {
-  input: OrgInput;
   name: Scalars['String'];
+  input: OrgInput;
 };
 
 
@@ -634,61 +774,89 @@ export type RootMutationTypeJoinOrgArgs = {
 
 
 export type RootMutationTypeGenerateKeyArgs = {
-  input: GenKeyInput;
   orgName: Scalars['String'];
+  input: GenKeyInput;
 };
 
 
 export type RootMutationTypeAddKeyArgs = {
-  input: AddKeyInput;
   orgName: Scalars['String'];
+  input: AddKeyInput;
 };
 
 
 export type RootMutationTypeActivateKeyArgs = {
-  id: Scalars['Int'];
   orgName: Scalars['String'];
+  id: Scalars['Int'];
 };
 
 
-export type RootMutationTypeStripeCreatePaymentIntentArgs = {
-  input: PaymentIntentInput;
+export type RootMutationTypeAddStripePaymentIntentArgs = {
   actionPageId: Scalars['Int'];
+  input: StripePaymentIntentInput;
+  contactRef?: Maybe<Scalars['ID']>;
+};
+
+
+export type RootMutationTypeAddStripeSubscriptionArgs = {
+  actionPageId: Scalars['Int'];
+  input: StripeSubscriptionInput;
+  contactRef?: Maybe<Scalars['ID']>;
+};
+
+
+export type RootMutationTypeAddStripeObjectArgs = {
+  actionPageId: Scalars['Int'];
+  paymentIntent?: Maybe<Scalars['Json']>;
+  subscription?: Maybe<Scalars['Json']>;
+  customer?: Maybe<Scalars['Json']>;
+  price?: Maybe<Scalars['Json']>;
+};
+
+
+export type RootMutationTypeAcceptOrgConfirmArgs = {
+  name: Scalars['String'];
+  confirm: ConfirmInput;
+};
+
+
+export type RootMutationTypeRejectOrgConfirmArgs = {
+  name: Scalars['String'];
+  confirm: ConfirmInput;
 };
 
 export type RootQueryType = {
   /** Get a list of campains */
   campaigns: Array<Campaign>;
   /** Get action page */
-  actionPage: PublicActionPage;
+  actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
   currentUser: User;
   /** Organization api (authenticated) */
-  org: Org;
+  org: PrivateOrg;
 };
 
 
 export type RootQueryTypeCampaignsArgs = {
-  name?: Maybe<Scalars['String']>;
   title?: Maybe<Scalars['String']>;
+  name?: Maybe<Scalars['String']>;
 };
 
 
 export type RootQueryTypeActionPageArgs = {
-  url?: Maybe<Scalars['String']>;
-  name?: Maybe<Scalars['String']>;
   id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
 };
 
 
 export type RootQueryTypeExportActionsArgs = {
-  onlyOptIn?: Maybe<Scalars['Boolean']>;
-  limit?: Maybe<Scalars['Int']>;
-  after?: Maybe<Scalars['DateTime']>;
-  start?: Maybe<Scalars['Int']>;
-  campaignId?: Maybe<Scalars['Int']>;
-  campaignName?: Maybe<Scalars['String']>;
   orgName: Scalars['String'];
+  campaignName?: Maybe<Scalars['String']>;
+  campaignId?: Maybe<Scalars['Int']>;
+  start?: Maybe<Scalars['Int']>;
+  after?: Maybe<Scalars['DateTime']>;
+  limit?: Maybe<Scalars['Int']>;
+  onlyOptIn?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -697,7 +865,7 @@ export type RootQueryTypeOrgArgs = {
 };
 
 export type RootSubscriptionType = {
-  actionPageUpserted: PublicActionPage;
+  actionPageUpserted: ActionPage;
 };
 
 
@@ -732,24 +900,33 @@ export type Service = {
 };
 
 export enum ServiceName {
-  Wordpress = 'WORDPRESS',
-  Mailjet = 'MAILJET',
+  Ses = 'SES',
   Sqs = 'SQS',
-  Ses = 'SES'
+  Mailjet = 'MAILJET',
+  Wordpress = 'WORDPRESS',
+  Stripe = 'STRIPE'
 }
-
-export type SimpleActionPage = {
-  id: Scalars['Int'];
-  name: Scalars['String'];
-  locale: Scalars['String'];
-};
 
 export enum Status {
+  /** Operation completed succesfully */
+  Success = 'SUCCESS',
   /** Operation awaiting confirmation */
   Confirming = 'CONFIRMING',
-  /** Operation completed succesfully */
-  Success = 'SUCCESS'
+  /** Operation had no effect (already done) */
+  Noop = 'NOOP'
 }
+
+export type StripePaymentIntentInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
+};
+
+export type StripeSubscriptionInput = {
+  amount: Scalars['Float'];
+  currency: Scalars['String'];
+  frequencyUnit: DonationFrequencyUnit;
+};
 
 /** Tracking codes */
 export type Tracking = {
@@ -775,7 +952,7 @@ export type User = {
 
 export type UserInput = {
   email: Scalars['String'];
-  roles?: Maybe<Array<Scalars['String']>>;
+  role: Scalars['String'];
 };
 
 export type UserRole = {

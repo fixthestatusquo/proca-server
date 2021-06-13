@@ -3,8 +3,8 @@ defmodule ProcaWeb.Resolvers.Campaign do
   Resolvers for campaign queries in mutations
   """
   import Ecto.Query
-  alias Proca.Repo
-  alias Proca.{Campaign, ActionPage, Staffer, Org}
+  import Proca.Repo
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm}
   import Proca.Staffer.Permission
   alias ProcaWeb.Helper
 
@@ -12,7 +12,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], x.id == ^id)
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
@@ -21,7 +21,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], x.name == ^name)
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
@@ -30,13 +30,13 @@ defmodule ProcaWeb.Resolvers.Campaign do
     cl =
       list_query()
       |> where([x], like(x.title, ^title))
-      |> Proca.Repo.all()
+      |> all()
 
     {:ok, cl}
   end
 
   def list(_, _, _) do
-    cl = Proca.Repo.all(list_query())
+    cl = all(list_query())
     {:ok, cl}
   end
 
@@ -66,7 +66,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
     with_names = 
     from(o in Org, where: o.id in ^org_ids, select: {o.id, o.name, o.title})
-    |> Repo.all()
+    |> all()
     |> Enum.map(fn {id, name, title} -> 
       %{
         org: %{ name: name, title: title },
@@ -103,7 +103,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
         end
       end)
 
-    result = Repo.transaction(fn ->
+    result = transaction(fn ->
       campaign = upsert_campaign(org, attrs)
       pages
       |> Enum.map(&fix_page_legacy_url/1)
@@ -138,13 +138,13 @@ defmodule ProcaWeb.Resolvers.Campaign do
     campaign = Campaign.upsert(org, attrs)
 
     if not campaign.valid? do
-      Repo.rollback(campaign)
+      rollback(campaign)
     end
 
     if campaign.data.id do
-      Repo.update!(campaign)
+      update!(campaign)
     else
-      Repo.insert!(campaign)
+      insert!(campaign)
     end
   end
 
@@ -152,13 +152,55 @@ defmodule ProcaWeb.Resolvers.Campaign do
     ap = ActionPage.upsert(org, campaign, attrs)
 
     if not ap.valid? do
-      Repo.rollback(ap)
+      rollback(ap)
     end
 
     if ap.data.id do
-      Repo.update!(ap)
+      update!(ap)
     else
-      Repo.insert!(ap)
+      insert!(ap)
     end
   end
+
+  @doc """
+  We do not have a partnership object yet but lets simulate it by getting all partner orgs with ap in that campaign
+  """
+  def partnerships(%Campaign{id: c_id, org_id: lead_id} = campaign, _, %{context: %{user: user}}) do 
+    # XXX create visible_for helper which calls a fn ?
+    case Proca.Staffer.for_user_in_org(user, lead_id) do 
+      nil -> 
+        {:ok, nil}
+      staffer -> 
+        all_partner_ids = from(
+          ap in ActionPage, 
+          where: ap.campaign_id == ^c_id and ap.org_id != ^lead_id, 
+          select: ap.org_id, 
+          distinct: true
+        )
+        partnerships = from(o in Org, 
+          where: o.id in subquery(all_partner_ids)
+        )
+        |> all()
+        |> Enum.map(fn o -> %{org: o, campaign: campaign} end)
+        {:ok, partnerships}
+    end
+  end
+
+  def partnership_action_pages(%{org: %Org{id: org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
+    {:ok, 
+      from(a in ActionPage, where: a.org_id == ^org_id and a.campaign_id == ^campaign_id) |> all()
+    }
+  end
+
+
+
+  def partnership_launch_requests(%{org: %Org{id: _org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
+    {
+      :ok, 
+      from(c in Confirm, where: c.operation == :launch_page and c.subject_id == ^campaign_id) 
+      |> where([c], c.charges > 0)
+      |> all()
+    }
+  end
+
 end

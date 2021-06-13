@@ -1,12 +1,20 @@
-export * from './apiTypes'
 import * as types from './apiTypes'
 
 
-// The types exported from GraphQL have relations included.
-// The *Record types contain only record fields, not relations
-export type ActionPageRecord = Omit<types.ActionPage, 'org' | 'campaign' | "config"> & {config: any};
-export type CampaignRecord = Omit<types.Campaign, 'org' | 'stats' | 'actions' | "config"> & {config: any};
-export type OrgRecord = Omit<types.Org, 'services' | 'key' | 'keys' | 'campaign' | 'campaigns' | 'actionPages' | 'actionPage' | 'config'> & { config: any};
-export type CampaignIds = types.ActionCampaign;
+export function isPublicActionPage(ap: types.PrivateActionPage | types.PublicActionPage):  ap is types.PublicActionPage {
+  return (ap as types.PrivateActionPage).extraSupporters === undefined
+}
+
+export function isPrivateActionPage(ap: types.ActionPage): ap is types.PrivateActionPage {
+  return (ap as types.PrivateActionPage).extraSupporters !== undefined
+}
+
+export function isPrivateCampaign(c : types.Campaign): c is types.PrivateCampaign {
+  return (c as types.PrivateCampaign).id !== undefined
+}
+
+export function isPublicCampaign(c : types.Campaign): c is types.PublicCampaign {
+  return (c as types.PublicCampaign).id === undefined
+}
 
 

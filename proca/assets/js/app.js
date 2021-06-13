@@ -17,7 +17,5 @@ import "phoenix_html"
 // import socket from "./socket"
 import liveSocket from "./live_socket"
 
-import keepAlive from "./keep_alive"
-keepAlive()
 
 import "./sb_admin"

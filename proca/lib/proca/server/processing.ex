@@ -179,7 +179,17 @@ defmodule Proca.Server.Processing do
 
   def change_status(action, action_status, supporter_status) do
     sup = change(action.supporter, processing_status: supporter_status)
-    change(action, processing_status: action_status, supporter: sup)
+    act = change(action, processing_status: action_status)
+
+    if act.changes == %{} do 
+      sup
+    else 
+      if sup.changes == %{} do 
+        act
+      else
+        change(act, supporter: sup)
+      end
+    end
   end
 
   @doc """

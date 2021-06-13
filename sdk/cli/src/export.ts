@@ -25,14 +25,6 @@ interface ExportActionsOpts {
   campaign?: string,
   fields: string
 }
-/*
-  What is happening here? We usually get Action data from an export, but we do not export all the associations of Action fully.
-  For instance, we might not fetch campaign for each action, if we just export actions for one campaign - so it saves space.
-  So here I contruct a type that is this cut-down version of Action and Contact, which we use in exports.
- */
-export type ContactFromExport = Omit<types.Contact, "signKey" | "publicKey"> & Partial<Pick<types.Contact, "signKey" | "publicKey">>;
-export type ActionFromExport = Omit<PartialBy<types.Action, "campaign" | "tracking">, "contact"> & { contact: ContactFromExport };
-
 
 export async function exportActions(argv : ExportActionsOpts & DecryptOpts & FormatOpts, config : CliConfig) {
   const c = client(config)

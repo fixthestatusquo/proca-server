@@ -1,16 +1,16 @@
 {
   "name": "@proca/api",
-  "version": "2.3.4",
+  "version": "2.4.0-alpha.1",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "license": "AGPL-3.0",
   "scripts": {
-    "generate": "graphql-codegen --config codegen.yml",
     "build": "tsc",
     "watch": "tsc -w",
     "prepublish": "ln -sf ../../../proca/schema.graphql schema/schema.graphql",
+    "generate": "yarn graphql-codegen",
     "prepare": "yarn generate && yarn build",
     "test": "echo No tests for proca/api"
   },
@@ -25,8 +25,12 @@
   "homepage": "https://github.com/fixthestatusquo/proca-api#readme",
   "files": [
     "README.MD",
-    "dist"
+    "dist",
+    "codegen"
   ],
+  "bin": {
+    "add-codegen": "./codegen/add-codegen.sh"
+  },
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.1.0",
     "@urql/core": "^2.1.2",
@@ -38,17 +42,12 @@
   "devDependencies": {
     "@graphql-codegen/add": "^2.0.1",
     "@graphql-codegen/cli": "1.20.1",
-    "@graphql-codegen/import-types-preset": "^1.17.9",
-    "@graphql-codegen/introspection": "^1.17.8",
-    "@graphql-codegen/typed-document-node": "^1.17.9",
     "@graphql-codegen/typescript": "1.20.2",
-    "@graphql-codegen/typescript-graphql-request": "^2.0.0",
-    "@graphql-codegen/typescript-operations": "^1.17.8",
-    "@graphql-codegen/typescript-urql": "^2.0.6",
     "@types/phoenix": "^1.5.1",
     "@types/ws": "^7.2.7",
     "codegen-graphql-scalar-locations": "^0.1.1",
     "graphql": "^15.5.0",
+    "@types/graphql": "^14.5.0",
     "graphql-tag": "^2.11.0"
   },
   "peerDependencies": {

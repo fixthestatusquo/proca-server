@@ -59,6 +59,6 @@ export async function addOrg(argv : AddOrgOpts & FormatOpts, config : CliConfig)
 
   if (error) throw error
 
-  console.log(`Added org ${data.addOrg.name} with id ${data.addOrg.id}`)
+  console.log(`Added org ${data.addOrg.name}`)
 
 }

@@ -3,7 +3,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   Resolvers for action page related mutations
   """
   import Ecto.Query
-  alias Proca.ActionPage
+  alias Proca.{ActionPage, Campaign, Org}
   alias Proca.Repo
   alias ProcaWeb.Helper
   import Ecto.Changeset
@@ -35,12 +35,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   def find(_, %{name: name}, _) do
-    find_one(&by_name(&1, ActionPage.remove_schema_from_name(name)))
-  end
-
-  # XXX legacy
-  def find(_, %{url: url}, _) do
-    find_one(&by_name(&1, ActionPage.remove_schema_from_name(url)))
+    find_one(&by_name(&1, name))
   end
 
   def find(_, %{}, _) do
@@ -51,6 +46,13 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     {
       :ok,
       Repo.preload(ap, campaign: :org).campaign
+    }
+  end
+
+  def org(ap, %{}, _) do 
+    {
+      :ok,
+      Repo.preload(ap, :org).org
     }
   end
 
@@ -68,7 +70,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
 
   def copy_from(_, %{name: name, from_name: from_name}, %{context: %{org: org}}) do
     with ap when not is_nil(ap) <- ActionPage.find(from_name),
-         {:ok, new_ap} <- create_copy_in(org, ap, %{name: name})
+         {:ok, new_ap} <- ActionPage.create_copy_in(org, ap, %{name: name})
     do
     Proca.Server.Notify.action_page_added(new_ap)
     {:ok, new_ap}
@@ -78,12 +80,30 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def create_copy_in(org, ap, attrs) do
-    %ActionPage{}
-    |> change(Map.take(ap, [:config, :delivery, :journey, :locale]))
-    |> ActionPage.changeset(attrs)
-    |> put_assoc(:org, org)
-    |> put_assoc(:campaign, ap.campaign)
-    |> Repo.insert()
+  def copy_from_campaign(_, %{name: name, from_campaign_name: camp_name}, %{context: %{org: org}}) do
+    with campaign when not is_nil(campaign) <- Campaign.get_with_local_pages(camp_name),
+        [ap | _] <- campaign.action_pages,
+        {:ok, new_ap} <- ActionPage.create_copy_in(org, ap, %{name: name})
+    do
+    Proca.Server.Notify.action_page_added(new_ap)
+    {:ok, new_ap}
+    else
+      nil -> {:error, "Campaign named #{camp_name} not found"}
+      [] -> {:error, "Campaign #{camp_name} does not have action pages"}
+      {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
+  def launch_page(_, %{name: name}, %{context: %{staffer: st}}) do 
+    with ap = %ActionPage{} <- ActionPage.find(name),
+        org <- Org.get_by_id(ap.campaign.org_id)
+    do 
+      cnf = Proca.Confirm.LaunchPage.create(ap)
+      Proca.Server.Notify.org_confirm_created(cnf, org)
+
+      {:ok, %{status: :confirming}}
+    else 
+      nil -> {:error, [%{message: "action page not found"}]}
+    end
   end
 end
