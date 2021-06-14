@@ -16,7 +16,8 @@
     "test": "echo No tests for proca/cli",
     "build": "npx tsc",
     "watch": "npx tsc -w",
-    "prepare": "yarn build"
+    "codegen": "yarn graphql-codegen",
+    "prepare": "yarn codegen && yarn build"
   },
   "files": [
     "dist",
@@ -41,9 +42,15 @@
     "pry": "^0.8.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
+    "urql-serialize-scalars-exchange": "^1.0.0-0",
     "yargs": "^16.2.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^1.21.5",
+    "@graphql-codegen/introspection": "^1.18.2",
+    "@graphql-codegen/typed-document-node": "^1.18.6",
+    "@graphql-codegen/typescript": "^1.22.1",
+    "@graphql-codegen/typescript-operations": "^1.18.0",
     "@types/amqplib": "^0.5.16",
     "@types/backoff": "^2.5.1",
     "@types/bent": "^7.3.2",
@@ -53,7 +60,11 @@
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.7",
     "@types/yargs": "^16.0.0",
-    "graphql": "^15.3.0"
+    "codegen-graphql-scalar-locations": "1.0.0-0",
+    "graphql": "15.5.0"
+  },
+  "resolutions": {
+    "graphql": "15.5.0"
   },
   "peerDependencies": {
     "typescript": "^4.1.2"
@@ -64,5 +75,5 @@
     "debug": "^4.3.1",
     "node-mailjet": "^3.3.1"
   },
-  "gitHead": "882a2495baef82279680a12f782c91a9beeff918"
+  "gitHead": "ce2f10e2ffa76707775dd9c73b74a08180d36136"
 }

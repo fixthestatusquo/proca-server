@@ -1,4 +1,4 @@
-import {types} from '@proca/api'
+import * as admin from './proca'
 import {ActionWithPII} from './crypto'
 
 export type ProcessStage = "confirm" | "deliver"
@@ -62,7 +62,7 @@ export type ActionMessage = {
 
 }
 
-export const actionToActionMessage = (action : types.Action & ActionWithPII) : ActionMessage => {
+export const actionToActionMessage = (action : admin.Action & ActionWithPII) : ActionMessage => {
   const msg : ActionMessage = {
     schema: "proca:action:1",
     actionId: action.actionId,

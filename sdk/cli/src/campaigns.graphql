@@ -1,0 +1,109 @@
+
+fragment CampaignOverview on PrivateCampaign {
+  ...campaignFields
+  ...campaignPrivateFields
+  ...campaignAllStats
+  org {
+    ...orgIds
+  }
+  ...campaignPartnerships
+}
+
+query GetCampaign($org: String!, $id: Int!) {
+  org(name: $org) {
+    campaign(id: $id) {
+      ...campaignFields
+      ...campaignPrivateFields
+      ...campaignAllStats
+      org {
+        ...orgIds
+      }
+      ...campaignPartnerships
+    }
+  }
+}
+
+query FindPublicCampaign($name: String, $title: String) {
+  campaigns(title: $title, name: $name) {
+    ...campaignFields
+    org {
+      ...orgIds
+    }
+  }
+}
+
+query ListCampaigns($org: String!) {
+  org(name: $org) {
+    campaigns {
+      ...campaignFields
+      ...campaignPrivateFields
+      org {
+        ...orgIds
+      }
+    }
+  }
+}
+
+fragment actionPageOwners on ActionPage {
+  ...actionPageFields 
+  campaign {
+    ...campaignIds 
+    org { 
+      ...orgIds
+    }
+  }
+  org {
+    ...orgIds
+  }
+}
+
+query ListActionPages($org: String!) {
+  org(name: $org) {
+    actionPages {
+      ...actionPageOwners
+      ...actionPagePrivateFields
+    }
+  }
+}
+
+query GetActionPage($org: String!, $id: Int, $name: String) {
+  org(name: $org) {
+    name
+    title
+    actionPage(id: $id, name: $name) {
+      ...actionPageOwners
+      ...actionPagePrivateFields
+      campaign {
+        ...campaignFields
+        ...campaignPrivateFields
+      }
+    }
+  }
+}
+
+query GetPublicActionPage($name: String, $id: Int) {
+  actionPage(name: $name, id: $id) {
+    ...actionPageOwners
+  }
+}
+
+query ListActionPagesByCampaign($org: String!, $campaignId: Int!) {
+  org(name: $org) {
+    name
+    title
+    actionPages(select: { campaignId: $campaignId }) {
+      ...actionPageFields
+      ...actionPagePrivateFields
+      campaign {
+        ...campaignFields
+      }
+    }
+  }
+}
+
+mutation UpdateActionPage($id: Int!, $actionPage: ActionPageInput!) {
+  updateActionPage(id: $id, input: $actionPage) {
+    id
+  }
+}
+

@@ -1,5 +1,5 @@
 import csvStringify from 'csv-stringify/lib/sync'
-import {admin,types} from '@proca/api'
+import * as admin from './proca'
 import {ActionWithPII, KeyStore} from './crypto'
 import {WidgetConfig} from './config'
 
@@ -18,12 +18,20 @@ interface OrgDetails {
   name: string
 }
 
-function isPublicActionPage(ap: types.PrivateActionPage | types.PublicActionPage):  ap is types.PublicActionPage {
-  return (ap as types.PrivateActionPage).extraSupporters === undefined
+export function isPublicActionPage(ap: admin.PrivateActionPage | admin.PublicActionPage):  ap is admin.PublicActionPage {
+  return (ap as admin.PrivateActionPage).extraSupporters === undefined
 }
 
-function isPrivateActionPage(ap: types.ActionPage): ap is types.PrivateActionPage {
-  return (ap as types.PrivateActionPage).extraSupporters !== undefined
+export function isPrivateActionPage(ap: admin.ActionPage): ap is admin.PrivateActionPage {
+  return (ap as admin.PrivateActionPage).extraSupporters !== undefined
+}
+
+export function isPublicCampaign(ap: admin.PrivateCampaign | admin.PublicCampaign): ap is admin.PublicCampaign {
+  return (ap as admin.PrivateCampaign).forceDelivery === undefined
+}
+
+export function isPrivateCampaign(ap: admin.PrivateCampaign | admin.PublicCampaign): ap is admin.PrivateCampaign {
+  return (ap as admin.PrivateCampaign).forceDelivery !== undefined
 }
 
 const actionTypeEmojis : { [key: string]: string } = {
@@ -45,45 +53,25 @@ class Terminal {
     this.org = options.org
   }
 
-  campaign(c : types.Campaign) {
-    let t = c.id !== undefined ? `${c.id}` : ''
-    if (c.externalId) {
-      t += ` (external: ${c.externalId})`
-    }
-    t += ` 🏁 ${c.name}: ${c.title}`
-
-    if (c.org && this.org !== c.org.name) {
-      t += ` partner of ${c.org.name} (${c.org.title})`
-    }
-
-    if (c.stats) {
-      t += ` (🧑‍ ${c.stats.supporterCount} supporters)`
-
-      if (c.stats.actionCount) {
-        const x = c.stats.actionCount.map(({actionType, count}) => {
-          const emoji = actionTypeEmojis[actionType] || actionTypeOtherEmoji
-
-          return `    ${emoji} ${actionType}: ${count}`
-        })
-
-        t += "\n" + x.join("\n")
-      }
-    }
-
-    return t
+  campaign(c : admin.CampaignFields & {org: admin.OrgIds}) {
+    let t = `${c.id}. ${c.name}: ${c.title}`
+    if (this.org !== c.org.name)
+      t += ` partner of ${c.org.title} (${c.org.name})`
+    return t 
   }
 
+  campaignStats({stats} : admin.CampaignAllStats) {
+    let t = `unique supporters: ${stats.supporterCount}`;
+    stats.actionCount.forEach(({actionType, count}) => {
+      t += ` ${actionTypeEmojis[actionType]} ${actionType}: ${count}`
+    })
+    return t 
+  }
 
-  actionPage(ap : types.ActionPage, org : any) {
-    console.log(ap)
+  actionPage(ap : admin.ActionPageOwners, org : any) {
     let t = ''
     if (ap.id && ap.name && ap.locale) {
       t += `${ap.id} ${ap.name} [${ap.locale}]`
-
-      if (isPrivateActionPage(ap) && ap.extraSupporters != 0) {
-
-        t += ` (🧑‍ ${ap.extraSupporters} extra supporters)`
-      }
 
       if (ap.campaign) {
         const ex_id = ap.campaign.externalId ? `, ${ap.campaign.externalId}` : ''
@@ -103,9 +91,17 @@ class Terminal {
     return t
   }
 
+  actionPagePrivate(ap : admin.ActionPagePrivateFields) {
+    let t = ``;
+    if (ap.extraSupporters !== 0) 
+      t += `extra supporters: ${ap.extraSupporters}`
+    t += ' ' + ap.delivery ? 'collects data for delivery' : 'does not collect data for delivery' 
+    return t
+  }
+
   // The json files used to generate widget for action page
   // is using a different format today
-  addAPkeysToConfig(ap : types.ActionPage, org : OrgDetails) {
+  addAPkeysToConfig(ap : admin.ActionPageOwners, org : OrgDetails) {
     const c = ap.config || {}
 
     const pickLead = ({name, title} : {name: string, title:string}) => ({name, title}); // argh! All this to pick sub-keys. Typescript is terrible.
@@ -123,7 +119,7 @@ class Terminal {
     return Object.assign(c, m)
   }
 
-  addConfigKeysToAP(ap : types.ActionPageInput) {
+  addConfigKeysToAP(ap : admin.ActionPageInput) {
     if (!ap.config) {
       return ap
     }
@@ -152,11 +148,11 @@ class Terminal {
     return t
   }
 
-  hasPublicKey(key : types.Key, keyStore : KeyStore) {
+  hasPublicKey(key : admin.Key, keyStore : KeyStore) {
     return keyStore && keyStore.keys.some((k) => k.public == key.public)
   }
 
-  key(k : types.Key, keys : KeyStore) {
+  key(k : admin.Key, keys : KeyStore) {
     const present = this.hasPublicKey(k, keys)
     return `[${present?"*":" "}] ${k.active?"active> ":"        "}${k.public} ${k.name} ${k.expired?"(expired: " + k.expiredAt +")" : ""}`
   }
@@ -184,7 +180,7 @@ class Json extends Terminal {
     this.indent = opts.indent === undefined ? 2 : opts.indent
   }
 
-  actionPage(ap : types.ActionPage, org : any) {
+  actionPage(ap : admin.ActionPageOwners, org : any) {
     const config = this.addAPkeysToConfig(ap, org)
     return JSON.stringify(config, null, this.indent)
   }

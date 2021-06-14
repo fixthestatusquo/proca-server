@@ -11,9 +11,6 @@ import {Source, subscribe as makeSink, pipe} from 'wonka'
 import util from 'util'
 import {tap} from 'wonka'
 
-// scalar serializing exchange
-import serializeScalarsExchange from './serializeScalarsExchange';
-
 // websocket stack
 import createAbsintheExchange from './absintheExchange'
 
@@ -100,8 +97,8 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
 
   const absintheExchange = createAbsintheExchange(config.wsUrl)
 
-  const exchanges = [ serializeScalarsExchange, dedupExchange, fetchExchange, absintheExchange]
-  if (options?.exchanges) exchanges.splice(1, 0, ...options.exchanges)
+  const exchanges = [ dedupExchange, fetchExchange, absintheExchange]
+  if (options?.exchanges) exchanges.splice(0, 0, ...options.exchanges)
 
   const link = createClient({url: config.url, fetchOptions: {headers: auth || {}}, exchanges})
 
@@ -111,10 +108,10 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
 export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) {
   const config = apiUrlsConfig(url, options)
 
-  const exchanges = [serializeScalarsExchange, dedupExchange, fetchExchange]
-  if (options?.exchanges) exchanges.splice(1, 0, ...options.exchanges)
+  const exchanges = [dedupExchange, fetchExchange]
+  if (options?.exchanges) exchanges.splice(0, 0, ...options.exchanges)
 
-  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth || {}}})
+  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth || {}}, exchanges})
   return httpLink
 }
 

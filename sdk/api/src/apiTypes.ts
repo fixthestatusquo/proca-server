@@ -380,7 +380,7 @@ export type KeyWithPrivate = {
   active: Scalars['Boolean'];
   expired: Scalars['Boolean'];
   /** When the key was expired, in UTC */
-  expiredAt: Maybe<Scalars['DateTime']>;
+  expiredAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
 export type LaunchActionPageResult = {

@@ -1,7 +1,8 @@
 
 import client from './client'
-import {admin, widget, request, types} from '@proca/api'
-import {getFormatter, FormatOpts} from './format'
+import {request, types} from '@proca/api'
+import * as admin from './proca'
+import {getFormatter, FormatOpts, isPrivateCampaign} from './format'
 import fs from 'fs'
 import {CliConfig} from './config'
 import {removeBlank} from './util';
@@ -15,7 +16,7 @@ export async function listCampaigns(argv : FormatOpts, config : CliConfig) {
   if (result.error) throw result.error
 
   result.data.org.campaigns
-    .map(c => fmt.campaign(c as types.Campaign))
+    .map(c => fmt.campaign(c))
     .forEach((c) => {
       console.log(c)
     })
@@ -34,7 +35,10 @@ export async function getCampaign(argv : IdOpt & FormatOpts, config : CliConfig)
 
   if (error) throw error
 
-  console.log(fmt.campaign(data.org.campaign as types.Campaign))
+  const campaign = data.org.campaign;
+  console.log(fmt.campaign(campaign))
+
+  console.log(fmt.campaignStats(campaign))
 }
 
 
@@ -46,7 +50,7 @@ export async function listActionPages(argv : FormatOpts, config : CliConfig) {
   if (error) throw error
 
   data.org.actionPages
-    .map(ap => fmt.actionPage(ap as types.ActionPage, data.org))
+    .map(ap => fmt.actionPage(ap, data.org))
     .forEach((ap) => {console.log(ap)})
 
   data.org.actionPages
@@ -81,15 +85,15 @@ export async function getActionPage(argv : GetActionPageOpts & FormatOpts, confi
     vars.org = config.org
 
   if (argv.public) {
-    const {data, error} = await request(c, widget.GetActionPageDocument, vars)
+    const {data, error} = await request(c, admin.GetPublicActionPageDocument, vars)
     if (error) throw error
-    t = fmt.actionPage(data.actionPage as types.PublicActionPage, data.actionPage.org)
+    t = fmt.actionPage(data.actionPage, data.actionPage.org)
     console.log(t)
     return data.actionPage
   } else {
     const {data, error} = await request(c, admin.GetActionPageDocument, vars)
     if (error) throw error
-    t = fmt.actionPage(data.org.actionPage as types.ActionPage, data.org)
+    t = fmt.actionPage(data.org.actionPage, data.org)
     console.log(t)
     return data.org.actionPage
   }
@@ -117,7 +121,7 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
     }
     json = JSON.parse(json)
   }
-  let actionPage : types.ActionPageInput = removeBlank({
+  let actionPage : admin.ActionPageInput = removeBlank({
     name: argv.name,
     thankYouTemplateRef: argv.tytpl,
     extraSupporters: argv.extra,
@@ -128,12 +132,9 @@ export async function updateActionPage(argv : UpdateActionPageOpts & FormatOpts,
     actionPage = fmt.addConfigKeysToAP(actionPage)
   }
 
-  // DEBUG
-  // console.debug(`updateActionPage(${JSON.stringify(ap_in)})`)
-
   let response 
   try {
-    response = await request(c, admin.Update1ActionPageDocument, {id: argv.id, config: actionPage.config})
+    response = await request(c, admin.UpdateActionPageDocument, {id: argv.id, actionPage: { config: actionPage.config} })
   } catch (e) {
     console.error(e)
   }
@@ -153,7 +154,7 @@ export async function upsertCampaign(argv : UpsertCampaign & FormatOpts, config 
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const campaign  : types.CampaignInput = removeBlank({
+  const campaign  : admin.CampaignInput = removeBlank({
     name: argv.name,
     title: argv.title,
     actionPages: []
@@ -175,7 +176,7 @@ export async function upsertActionPage(argv : UpsertActionPage & FormatOpts, con
   const c = client(config)
   const fmt = getFormatter(argv)
 
-  const campaign  : types.CampaignInput = {
+  const campaign  : admin.CampaignInput = {
     name: argv.campaign,
     actionPages: [removeBlank({
       name: argv.name, locale: argv.locale

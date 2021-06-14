@@ -1,6 +1,7 @@
 import inquirer from 'inquirer'
 import emailValidator from 'email-validator'
-import {request,admin} from '@proca/api'
+import {request} from '@proca/api'
+import * as admin from './proca'
 import client from './client'
 import {CliConfig, storeConfig} from './config'
 import {KeyStore} from './crypto'
@@ -245,7 +246,7 @@ async function generateKey(keys : KeyStore, config : CliConfig) {
   if (activation.activate) {
     const activateOp = await request(c, admin.ActivateKeyDocument, {org: config.org, id: newKey.id})
     if (activateOp.error) throw activateOp.error
-    
+
     console.log(`Activating key: ${activateOp.data.activateKey.status}`)
   }
 

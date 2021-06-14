@@ -1,5 +1,6 @@
 import client from './client'
-import {request, admin, types} from '@proca/api'
+import {request,  types} from '@proca/api'
+import * as admin from "./proca"
 import {getFormatter,FormatOpts} from './format'
 import {loadKeys} from './keys'
 import {CliConfig} from './config'
@@ -41,8 +42,8 @@ interface AddOrgOpts {
   schema?: string
 }
 
-function contactSchemaFromString(value : string) : types.ContactSchema | undefined {
-  return Object.values(types.ContactSchema).find((v) => value == v)
+function contactSchemaFromString(value : string) : admin.ContactSchema | undefined {
+  return Object.values(admin.ContactSchema).find((v) => value == v)
 }
 
 export async function addOrg(argv : AddOrgOpts & FormatOpts, config : CliConfig) {
