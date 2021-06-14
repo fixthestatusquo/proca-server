@@ -19,3 +19,4 @@ export {
   ExecutionErrors
 } from './client'
 
+export {default as scalarSerializers} from './scalars'

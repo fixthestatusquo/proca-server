@@ -1,0 +1,230 @@
+query PubListCampaign($name: String!) {
+  campaigns(name: $name) {
+    ...campaignFields
+  }
+}
+
+
+query ExportCampaignActions(
+  $org: String!
+  $campaignId: Int
+  $campaignName: String
+  $start: Int
+  $after: DateTime
+  $limit: Int
+  $onlyOptIn: Boolean
+) {
+  exportActions(
+    orgName: $org
+    campaignId: $campaignId
+    campaignName: $campaignName
+    start: $start
+    after: $after
+    limit: $limit
+    onlyOptIn: $onlyOptIn
+  ) {
+    ...actionExport
+    actionPage {
+      ...actionPageIds
+    }
+  }
+}
+
+query ExportOrgActions(
+  $org: String!
+  $start: Int
+  $after: DateTime
+  $limit: Int
+  $onlyOptIn: Boolean
+) {
+  exportActions(
+    orgName: $org
+    start: $start
+    after: $after
+    limit: $limit
+    onlyOptIn: $onlyOptIn
+  ) {
+    ...actionExport
+    actionPage {
+      ...actionPageIds
+    }
+    campaign {
+      ...campaignExportIds
+    }
+  }
+}
+
+
+mutation CopyActionPage($fromName: String!, $toOrg: String!, $toName: String!) {
+  copyActionPage(fromName: $fromName, name: $toName, orgName: $toOrg) {
+    ...actionPageFields
+    ...actionPagePrivateFields
+    campaign {
+      ...campaignFields
+    }
+  }
+}
+
+mutation CopyCampaignActionPage(
+  $fromCampaign: String!
+  $toOrg: String!
+  $toName: String!
+) {
+  copyCampaignActionPage(
+    fromCampaignName: $fromCampaign
+    name: $toName
+    orgName: $toOrg
+  ) {
+    ...actionPageFields
+    ...actionPagePrivateFields
+    campaign {
+      ...campaignIds
+    }
+  }
+}
+
+mutation JoinOrg($orgName: String!) {
+  joinOrg(name: $orgName) {
+    status
+  }
+}
+
+mutation UpsertCampaign($org: String!, $campaign: CampaignInput!) {
+  upsertCampaign(orgName: $org, input: $campaign) {
+    id
+  }
+}
+
+query ListKeys($org: String!) {
+  org(name: $org) {
+    keys {
+      ...keyFields
+    }
+  }
+}
+
+mutation GenerateKey($org: String!, $input: GenKeyInput!) {
+  generateKey(orgName: $org, input: $input) {
+    id
+    name
+    public
+    private
+    active
+    expired
+    expiredAt
+  }
+}
+
+mutation AddKey($org: String!, $input: AddKeyInput!) {
+  addKey(orgName: $org, input: $input) {
+    id
+    name
+    public
+    active
+    expired
+    expiredAt
+  }
+}
+
+mutation ActivateKey($org: String!, $id: Int!) {
+  activateKey(orgName: $org, id: $id) {
+    status
+  }
+}
+
+mutation AddOrg($org: OrgInput!) {
+  addOrg(input: $org) {
+    ...orgIds
+  }
+}
+
+mutation UpdateOrg($orgName: String!, $org: OrgInput!) {
+  updateOrg(name: $orgName, input: $org) {
+    ...orgFields
+    ...orgPrivateFields
+  }
+}
+
+subscription ActionPageUpserted($org: String) {
+  actionPageUpserted(orgName: $org) {
+    ...actionPageOwners
+    ...actionPagePrivateFields
+  }
+}
+
+# Dashboard queries
+
+query CurrentUserOrgs {
+  currentUser {
+    id
+    email
+    roles {
+      role
+      org {
+        ...orgIds
+      }
+    }
+  }
+}
+
+# Deprecate
+query DashOrgOverview($org: String!) {
+  org(name: $org) {
+    name
+    title
+    ...orgPrivateFields
+    ... on PrivateOrg {
+      campaigns {
+        ...campaignFields
+        ...campaignAllStats
+        org {
+          ...orgIds
+        }
+      }
+    }
+  }
+}
+
+# Get main org data
+# (could include service status?)
+#
+query GetOrg($org: String!) {
+  org(name: $org) {
+    ...orgFields
+    ...orgPrivateFields
+    keys(select: { active: true }) {
+      ...keyFields
+    }
+    services {
+      ...serviceFields
+    }
+  }
+}
+
+query GetOrgAttrs($org: String!) {
+  org(name: $org) {
+    ...orgFields
+    ...orgPrivateFields
+  }
+}
+
+mutation launchActionPage($name: String!) {
+  launchActionPage(name: $name) {
+    status
+  }
+}
+
+mutation acceptLaunchRequest($org: String!, $confirm: ConfirmInput!) {
+  acceptOrgConfirm(name: $org, confirm: $confirm) {
+    status
+    actionPage { 
+      ...actionPageFields
+    }
+  }
+}
+
+mutation rejectLaunchRequest($org: String!, $confirm: ConfirmInput!) {
+  rejectOrgConfirm(name: $org, confirm: $confirm) {
+    status
+  }
+}

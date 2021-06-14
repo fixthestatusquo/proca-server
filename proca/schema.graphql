@@ -105,7 +105,7 @@ type KeyWithPrivate {
   expired: Boolean!
 
   "When the key was expired, in UTC"
-  expiredAt: DateTime
+  expiredAt: NaiveDateTime
 }
 
 "GDPR consent data structure"

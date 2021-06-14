@@ -2,6 +2,10 @@ overwrite: true
 schema: "node_modules/@proca/api/schema/schema.graphql"
 documents: ./src/**/*.graphql
 generates:
+  ./introspection.json:
+    plugins:
+      - introspection
+
   src/proca.ts:
     plugins:
       - typescript

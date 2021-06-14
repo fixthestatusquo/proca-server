@@ -1,5 +1,6 @@
 import client from './client'
-import {admin, request, types} from '@proca/api'
+import {request, types} from '@proca/api'
+import * as admin from './proca'
 import {
   ActionWithEncryptedContact, 
   ActionWithPII,
@@ -79,7 +80,7 @@ export async function syncExportFile(opts : ServiceOpts & DecryptOpts, config: C
   const lines = new LineByLine(opts.filePath)
 
   lines.on('line', async (l) => {
-    let action : types.Action = JSON.parse(l)
+    let action : admin.Action = JSON.parse(l)
     log(`sync actionId: ${action.actionId}`)
     
     decryptAction(action, opts, config)

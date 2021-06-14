@@ -1374,11 +1374,6 @@ code-point-at@^1.0.0:
   resolved "https://registry.yarnpkg.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
   integrity sha1-DQcLTQQ6W+ozovGkDi7bPZpMz3c=
 
-codegen-graphql-scalar-locations@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/codegen-graphql-scalar-locations/-/codegen-graphql-scalar-locations-0.1.1.tgz#efa3be792f016c84083e1b1bdb31551c43b2874d"
-  integrity sha512-O1i8dY8494rUI6geyInQocWHTG38YVWhvdocQSDRx96CnOzhuuezmm2FPQroAvpPe2ar4T1LBIoruLulseic6A==
-
 color-convert@^1.9.0:
   version "1.9.3"
   resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-1.9.3.tgz#bb71850690e1f136567de629d2d5471deda4c1e8"
@@ -3366,13 +3361,6 @@ url-parse-lax@^3.0.0:
   integrity sha1-FrXK/Afb42dsGxmZF3gj1lA6yww=
   dependencies:
     prepend-http "^2.0.0"
-
-urql-serialize-scalars-exchange@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-0.1.1.tgz#e0c416045f1b126ef33d1d8c6b169fbb58cc21eb"
-  integrity sha512-21fM1PBbwQ9IettLuPQFpi6RLgA52kw1Lt/PuQDrtKWh1nitmrZgmghT0JUca9HO34+qCQw31xeRaIMLYgPgtQ==
-  dependencies:
-    "@urql/core" "^2.1.2"
 
 valid-url@1.0.9, valid-url@^1.0.9:
   version "1.0.9"

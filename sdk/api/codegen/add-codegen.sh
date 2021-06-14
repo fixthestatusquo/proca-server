@@ -6,7 +6,11 @@ set -u
 echo Adding codegen to current project
 curdir=$(dirname $0)
 
-cp -v $curdir/codegen.yml .
+if [ -f $curdir/codegen.yml ]; then
+    cp -v $curdir/codegen.yml .
+else
+    cp -v node_modules/@proca/api/codegen/codegen.yml .
+fi
 
 yarn add -D \
 graphql@15.3.0 \

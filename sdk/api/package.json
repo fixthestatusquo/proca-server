@@ -36,7 +36,6 @@
     "@urql/core": "^2.1.2",
     "js-base64": "^3.5.2",
     "phoenix": "^1.5.9",
-    "urql-serialize-scalars-exchange": "^0.1.1",
     "ws": "^7.3.1"
   },
   "devDependencies": {
@@ -46,11 +45,11 @@
     "@types/graphql": "^14.5.0",
     "@types/phoenix": "^1.5.1",
     "@types/ws": "^7.2.7",
-    "codegen-graphql-scalar-locations": "^0.1.1",
     "graphql": "^15.5.0",
     "graphql-tag": "^2.11.0"
   },
   "peerDependencies": {
     "typescript": "^4.1.2"
-  }
+  },
+  "gitHead": "ce2f10e2ffa76707775dd9c73b74a08180d36136"
 }
