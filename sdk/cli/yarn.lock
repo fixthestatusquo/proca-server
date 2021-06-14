@@ -864,6 +864,18 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@proca/api@^3.0.0-alpha.0":
+  version "3.0.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.0-alpha.0.tgz#efd6e1c551103d1e2444994b8ccb0e75d08c2b0b"
+  integrity sha512-IbXCSpNdK75KlOPXz53FuuxJ/lBi6zawJ714SNm+oFVQfNhM1m2uc9s4plrKgx4mgpswNfnJDRKdqry1XTUs8w==
+  dependencies:
+    "@graphql-typed-document-node/core" "^3.1.0"
+    "@urql/core" "^2.1.2"
+    js-base64 "^3.5.2"
+    phoenix "^1.5.9"
+    urql-serialize-scalars-exchange "^0.1.1"
+    ws "^7.3.1"
+
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.1.tgz#a21117b19ee9be70c379ec1877537ef2e1c63301"
@@ -2661,6 +2673,11 @@ iterall@^1.2.1:
   resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.3.0.tgz#afcb08492e2915cbd8a0884eb93a8c94d0d72fea"
   integrity sha512-QZ9qOMdF+QLHxy1QIpUHUU1D5pS2CG2P69LF6L6CPjPYA/XMOmKV3PZpawHoAjHNyB0swdVTRxdYT4tbBbxqwg==
 
+js-base64@^3.5.2:
+  version "3.6.1"
+  resolved "https://registry.yarnpkg.com/js-base64/-/js-base64-3.6.1.tgz#555aae398b74694b4037af1f8a5a6209d170efbe"
+  integrity sha512-Frdq2+tRRGLQUIQOgsIGSCd1VePCS2fsddTG5dTCqR0JHgltXWfsxnY0gIXPoMeRmdom6Oyq+UMOFg5suduOjQ==
+
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -3339,6 +3356,11 @@ path-type@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/path-type/-/path-type-4.0.0.tgz#84ed01c0a7ba380afe09d90a8c180dcd9d03043b"
   integrity sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==
+
+phoenix@^1.5.9:
+  version "1.5.9"
+  resolved "https://registry.yarnpkg.com/phoenix/-/phoenix-1.5.9.tgz#5aad82072c8d90e7e20a187063c5db9b9ab9b5cd"
+  integrity sha512-NBRQaCYIrXL/wd5+OoO+DLlNTIdRvxKat0DSkfJ/c8qwYqKK7jNrf1GWPBOPzSVJ9HNMPjgmniJ87m9Os9IQGg==
 
 picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.3:
   version "2.3.0"
@@ -4121,10 +4143,17 @@ url-parse@~1.4.3:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
 
-urql-serialize-scalars-exchange@^1.0.0-0:
-  version "1.0.0-0"
-  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-1.0.0-0.tgz#e20fd20be5331afe10ff6d5ffa1dbe49ab266e2f"
-  integrity sha512-poq/BoKk4h7wJD8fY/UfT851KvJOVgu2UeiMzbZO0oARQI8PK0Eh2LGRzUzB54deTidOa9F9sB5lqe0/GuxUtg==
+urql-serialize-scalars-exchange@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-0.1.1.tgz#e0c416045f1b126ef33d1d8c6b169fbb58cc21eb"
+  integrity sha512-21fM1PBbwQ9IettLuPQFpi6RLgA52kw1Lt/PuQDrtKWh1nitmrZgmghT0JUca9HO34+qCQw31xeRaIMLYgPgtQ==
+  dependencies:
+    "@urql/core" "^2.1.2"
+
+urql-serialize-scalars-exchange@^1.0.1-0:
+  version "1.0.1-0"
+  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-1.0.1-0.tgz#594e1523bbd0e1d54cb60669b73c54a52751c92e"
+  integrity sha512-stRUAOzjis3R3ybXwLuOIuCdS0yGlnt6eZaZvQTGfOoKV7f1RjpF4iwsZSeV0bVlCvI/zlIX3lvSvZeD+PpPpQ==
   dependencies:
     "@urql/core" "^2.1.2"
 
@@ -4210,7 +4239,7 @@ ws@7.4.5:
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.5.tgz#a484dd851e9beb6fdb420027e3885e8ce48986c1"
   integrity sha512-xzyu3hFvomRfXKH8vOFMU3OguG6oOvhXMo3xsGy3xWExqaM2dxBbVxuD99O7m3ZUFMvvscsZDqxfgMaRr/Nr1g==
 
-"ws@^5.2.0 || ^6.0.0 || ^7.0.0":
+"ws@^5.2.0 || ^6.0.0 || ^7.0.0", ws@^7.3.1:
   version "7.4.6"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.6.tgz#5654ca8ecdeee47c33a9a4bf6d28e2be2980377c"
   integrity sha512-YmhHDO4MzaDLB+M9ym/mDA5z0naX8j7SIlT8f8z+I0VtzsRbekxEutHSme7NPS2qE8StCYQNUnfWdXta/Yu85A==

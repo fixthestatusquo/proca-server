@@ -42,7 +42,7 @@
     "pry": "^0.8.12",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
-    "urql-serialize-scalars-exchange": "^1.0.0-0",
+    "urql-serialize-scalars-exchange": "^1.0.1-0",
     "yargs": "^16.2.0"
   },
   "devDependencies": {
