@@ -26,7 +26,8 @@
   "files": [
     "README.MD",
     "dist",
-    "codegen"
+    "codegen",
+    "schema/schema.graphql"
   ],
   "bin": {
     "add-codegen": "./codegen/add-codegen.sh"
