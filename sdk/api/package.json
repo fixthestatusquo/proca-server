@@ -9,9 +9,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "prepublish": "ln -sf ../../../proca/schema.graphql schema/schema.graphql",
-    "prepack": "rm -f schema/schema.graphql && cp -f ../../../proca/schema.graphql schema/schema.graphql",
-    "generate": "yarn graphql-codegen",
+    "generate": "cp -f ../../proca/schema.graphql schema/schema.graphql && yarn graphql-codegen",
     "prepare": "yarn generate && yarn build",
     "test": "echo No tests for proca/api"
   },
@@ -53,5 +51,5 @@
   "peerDependencies": {
     "typescript": "^4.1.2"
   },
-  "gitHead": "ce2f10e2ffa76707775dd9c73b74a08180d36136"
+  "gitHead": "6c97686c4d6a3d70a908f97bf4fe836774716d22"
 }
