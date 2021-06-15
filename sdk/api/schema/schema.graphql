@@ -1,1 +1,1027 @@
-../../../proca/schema.graphql
+"Represents a schema"
+schema {
+  query: RootQueryType
+  mutation: RootMutationType
+  subscription: RootSubscriptionType
+}
+
+"Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
+interface Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign statistics"
+  stats: CampaignStats!
+
+  org: Org!
+
+  "Fetch public actions"
+  actions(
+    "Return actions of this action type"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+}
+
+type PublicCampaign implements Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign statistics"
+  stats: CampaignStats!
+
+  org: Org!
+
+  "Fetch public actions"
+  actions(
+    "Return actions of this action type"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+}
+
+"Tracking codes"
+type Tracking {
+  source: String!
+  medium: String!
+  campaign: String!
+  content: String!
+}
+
+type UserRole {
+  org: Org!
+  role: String!
+}
+
+input SelectActionPage {
+  campaignId: Int
+}
+
+type KeyWithPrivate {
+  id: Int!
+
+  public: String!
+
+  private: String!
+
+  name: String!
+
+  active: Boolean!
+
+  expired: Boolean!
+
+  "When the key was expired, in UTC"
+  expiredAt: NaiveDateTime
+}
+
+"GDPR consent data structure"
+input ConsentInput {
+  "Has contact consented to receiving communication from widget owner?"
+  optIn: Boolean!
+
+  "Opt in to the campaign leader"
+  leadOptIn: Boolean
+}
+
+input NationalityInput {
+  "Nationality \/ issuer of id document"
+  country: String!
+
+  "Document type"
+  documentType: String
+
+  "Document serial id\/number"
+  documentNumber: String
+}
+
+"GDPR consent data for this org"
+type Consent {
+  optIn: Boolean!
+  givenAt: NaiveDateTime!
+}
+
+"Tracking codes"
+input TrackingInput {
+  source: String!
+  medium: String!
+  campaign: String!
+  content: String
+}
+
+"Count of actions for particular action type"
+type ActionTypeCount {
+  "action type"
+  actionType: String!
+
+  "count of actions of action type"
+  count: Int!
+}
+
+input ConfirmInput {
+  code: String!
+  email: String
+  objectId: Int
+}
+
+type ChangeUserStatus {
+  status: Status!
+}
+
+enum ContactSchema {
+  BASIC
+  POPULAR_INITIATIVE
+  ECI
+  IT_CI
+}
+
+type Partnership {
+  org: Org!
+  actionPages: [ActionPage!]!
+  launchRequests: [Confirm!]!
+}
+
+type RootSubscriptionType {
+  actionPageUpserted(orgName: String): ActionPage!
+}
+
+type Donation {
+  schema: DonationSchema
+
+  "Provide amount of this donation"
+  amount: Decimal!
+
+  "Provide currency of this donation"
+  currency: String!
+
+  "Donation data"
+  payload: Json!
+
+  "Donation frequency unit"
+  frequencyUnit: DonationFrequencyUnit!
+}
+
+type Confirm {
+  code: String!
+  email: String
+  objectId: Int
+}
+
+input SelectKey {
+  id: Int
+  active: Boolean
+  public: String
+}
+
+type Service {
+  id: Int!
+  name: ServiceName!
+  host: String
+  user: String
+  path: String
+}
+
+interface ActionPage {
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]!
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+}
+
+type PrivateActionPage implements ActionPage {
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]!
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+
+  extraSupporters: Int!
+
+  "Action page collects also opt-out actions"
+  delivery: Boolean!
+}
+
+"""
+The `Date` scalar type represents a date. The Date appears in a JSON
+response as an ISO8601 formatted string, without a time component.
+"""
+scalar Date
+
+input SelectService {
+  name: ServiceName
+}
+
+input StripeSubscriptionInput {
+  amount: Float!
+  currency: String!
+  frequencyUnit: DonationFrequencyUnit!
+}
+
+"Count of actions for particular action type"
+type AreaCount {
+  "area"
+  area: String!
+
+  "count of supporters in this area"
+  count: Int!
+}
+
+"Custom field added to action. For signature it can be contact, for mail it can be subject and body"
+input ActionInput {
+  "Action Type"
+  actionType: String!
+
+  "Other fields that accompany the signature"
+  fields: [CustomFieldInput!]
+
+  "Donation payload"
+  donation: DonationActionInput
+}
+
+type ConfirmResult {
+  status: Status!
+  actionPage: ActionPage
+  campaign: Campaign
+  org: Org
+}
+
+input AddKeyInput {
+  name: String!
+  public: String!
+}
+
+input GenKeyInput {
+  name: String!
+}
+
+"Result of actions query"
+type PublicActionsResult {
+  fieldKeys: [String!]
+  list: [ActionCustomFields]
+}
+
+type ActivateKeyResult {
+  status: Status!
+}
+
+"Campaign statistics"
+type CampaignStats {
+  "Unique action tagers count"
+  supporterCount: Int!
+
+  "Unique action takers by area"
+  supporterCountByArea: [AreaCount!]!
+
+  "Unique action takers by org"
+  supporterCountByOrg: [OrgCount!]!
+
+  supporterCountByOthers(orgName: String!): Int!
+
+  "Action counts for selected action types"
+  actionCount: [ActionTypeCount!]!
+}
+
+type ActionCustomFields {
+  actionId: Int!
+  actionType: String!
+  insertedAt: NaiveDateTime!
+  fields: [CustomField!]!
+}
+
+type OrgUser {
+  email: String!
+  role: String!
+  createdAt: NaiveDateTime!
+  joinedAt: NaiveDateTime!
+  lastSigninAt: NaiveDateTime
+}
+
+type Action {
+  actionId: Int!
+  createdAt: NaiveDateTime!
+  actionType: String!
+  contact: Contact!
+  fields: [CustomField!]!
+  tracking: Tracking
+  campaign: Campaign!
+  actionPage: ActionPage!
+  privacy: Consent!
+  donation: Donation
+}
+
+scalar Json
+
+type RootMutationType {
+  """
+  Upserts a campaign.
+
+  Creates or appends campaign and it's action pages. In case of append, it
+  will change the campaign with the matching name, and action pages with
+  matching names. It will create new action pages if you pass new names. No
+  Action Pages will be removed (principle of not removing signature data).
+  """
+  upsertCampaign(
+    "Org name"
+    orgName: String!
+
+    input: CampaignInput!
+  ): Campaign!
+
+  "Update an Action Page"
+  updateActionPage(
+    "Action Page id"
+    id: Int!
+
+    input: ActionPageInput!
+  ): ActionPage!
+
+  """
+  Adds a new Action Page based on another Action Page. Intended to be used to
+  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  """
+  copyActionPage(
+    "Org owner of new Action Page"
+    orgName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Name of Action Page this one is cloned from"
+    fromName: String!
+  ): ActionPage!
+
+  """
+  Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
+  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  """
+  copyCampaignActionPage(
+    "Org owner of new Action Page"
+    orgName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Name of Action Page this one is cloned from"
+    fromCampaignName: String!
+  ): ActionPage!
+
+  launchActionPage(name: String!): LaunchActionPageResult!
+
+  "Adds an action referencing contact data via contactRef"
+  addAction(
+    actionPageId: Int!
+
+    "Action data"
+    action: ActionInput!
+
+    "Contact reference"
+    contactRef: ID!
+
+    "Tracking codes (UTM_*)"
+    tracking: TrackingInput
+  ): ContactReference!
+
+  "Adds an action with contact data"
+  addActionContact(
+    actionPageId: Int!
+
+    "Action data"
+    action: ActionInput!
+
+    "GDPR communication opt"
+    contact: ContactInput!
+
+    "Signature action data"
+    privacy: ConsentInput!
+
+    "Tracking codes (UTM_*)"
+    tracking: TrackingInput
+
+    "Links previous actions with just reference to this supporter data"
+    contactRef: ID
+  ): ContactReference!
+
+  "Link actions with refs to contact with contact reference"
+  linkActions(
+    "Action Page id"
+    actionPageId: Int!
+
+    "Contact reference"
+    contactRef: ID!
+
+    "Link actions with these references (if unlinked to supporter)"
+    linkRefs: [String!]
+  ): ContactReference!
+
+  addOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+
+  updateOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+
+  deleteOrgUser(orgName: String!, email: String!): DeleteUserResult
+
+  addOrg(input: OrgInput!): Org!
+
+  deleteOrg(
+    "Name of organisation"
+    name: String!
+  ): Boolean!
+
+  updateOrg(
+    "Name of organisation, used for lookup, can't be used to change org name"
+    name: String!
+
+    input: OrgInput!
+  ): Org!
+
+  joinOrg(name: String!): JoinOrgResult!
+
+  generateKey(
+    "Name of organisation"
+    orgName: String!
+
+    input: GenKeyInput!
+  ): KeyWithPrivate!
+
+  addKey(
+    "Name of organisation"
+    orgName: String!
+
+    input: AddKeyInput!
+  ): Key!
+
+  "A separate key activate operation, because you also need to add the key to receiving system before it is used"
+  activateKey(
+    orgName: String!
+
+    "Key id"
+    id: Int!
+  ): ActivateKeyResult!
+
+  addStripePaymentIntent(actionPageId: Int!, input: StripePaymentIntentInput!, contactRef: ID): Json!
+
+  addStripeSubscription(actionPageId: Int!, input: StripeSubscriptionInput!, contactRef: ID): Json!
+
+  """
+  Create stripe object using Stripe key associated with action page owning org.
+  Pass any of paymentIntent, subscription, customer, price json params to be sent as-is to Stripe API. The result is a JSON returned by Stripe API or a GraphQL Error object.
+  If you provide customer along payment intent or subscription, it will be first created, then their id will be added to params for the payment intent or subscription, so you can pack 2 Stripe API calls into one. You can do the same with price object in case of a subscription.
+  """
+  addStripeObject(
+    actionPageId: Int!
+
+    "Parameters for Stripe Payment Intent creation"
+    paymentIntent: Json
+
+    "Parameters for Stripe Subscription creation"
+    subscription: Json
+
+    "Parameters for Stripe Customer creation"
+    customer: Json
+
+    "Parameters for Stripe Price creation"
+    price: Json
+  ): Json!
+
+  "Accept a confirm on behalf of organisation."
+  acceptOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
+
+  "Reject a confirm on behalf of organisation."
+  rejectOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
+}
+
+"""
+The `Decimal` scalar type represents signed double-precision fractional
+values parsed by the `Decimal` library.  The Decimal appears in a JSON
+response as a string to preserve precision.
+"""
+scalar Decimal
+
+type RootQueryType {
+  "Get a list of campains"
+  campaigns(
+    "Filter campaigns by title using LIKE format (% means any sequence of characters)"
+    title: String
+
+    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
+    name: String
+  ): [Campaign!]!
+
+  "Get action page"
+  actionPage(
+    "Get action page by id."
+    id: Int
+
+    "Get action page by name the widget is displayed on"
+    name: String
+  ): ActionPage!
+
+  exportActions(
+    "Organization name"
+    orgName: String!
+
+    "Limit results to campaign name"
+    campaignName: String
+
+    "Limit results to campaign id"
+    campaignId: Int
+
+    "return only actions with id starting from this argument (inclusive)"
+    start: Int
+
+    "return only actions created at date time from this argument (inclusive)"
+    after: DateTime
+
+    "Limit the number of returned actions"
+    limit: Int
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+  ): [Action]!
+
+  currentUser: User!
+
+  "Organization api (authenticated)"
+  org(
+    "Name of organisation"
+    name: String!
+  ): PrivateOrg!
+}
+
+interface Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+}
+
+type PublicOrg implements Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+}
+
+type PublicActionPage implements ActionPage {
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Reference to thank you email templated of this Action Page"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]!
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+}
+
+"""
+The `Naive DateTime` scalar type represents a naive date and time without
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string.
+"""
+scalar NaiveDateTime
+
+"""
+The `DateTime` scalar type represents a date and time in the UTC
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string, including UTC timezone ("Z"). The parsed date and time string will
+be converted to UTC if there is an offset.
+"""
+scalar DateTime
+
+type DeleteUserResult {
+  status: Status!
+}
+
+"Count of supporters for particular org"
+type OrgCount {
+  "org"
+  org: Org!
+
+  "count of supporters registered by org"
+  count: Int!
+}
+
+"Campaign input"
+input CampaignInput {
+  "Campaign unchanging identifier"
+  name: String!
+
+  "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+  externalId: Int
+
+  "Campaign human readable title"
+  title: String
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
+  "Custom config as stringified JSON map"
+  config: Json
+
+  "Action pages of this campaign"
+  actionPages: [ActionPageInput!]!
+}
+
+type LaunchActionPageResult {
+  status: Status!
+}
+
+"Address type which can hold different addres fields."
+input AddressInput {
+  "Country code (two-letter)."
+  country: String
+
+  "Postcode, in format correct for country locale"
+  postcode: String
+
+  "Locality, which can be a city\/town\/village"
+  locality: String
+
+  "Region, being province, voyevodship, county"
+  region: String
+
+  "Street name"
+  street: String
+
+  "Street number"
+  streetNumber: String
+}
+
+"ActionPage input"
+input ActionPageInput {
+  """
+  Unique NAME identifying ActionPage.
+
+  Does not have to exist, must be unique. Can be a 'technical' identifier
+  scoped to particular organization, so it does not have to change when the
+  slugs/names change (eg. some.org/1234). However, frontent Widget can
+  ask for ActionPage by it's current location.href (but without https://), in which case it is useful
+  to make this url match the real widget location.
+  """
+  name: String
+
+  "2-letter, lowercase, code of ActionPage language"
+  locale: String
+
+  "A reference to thank you email template of this ActionPage"
+  thankYouTemplateRef: String
+
+  "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
+  extraSupporters: Int
+
+  "List of steps in the journey"
+  journey: [String!]
+
+  "JSON string containing Action Page config"
+  config: Json
+}
+
+enum DonationFrequencyUnit {
+  ONE_OFF
+  WEEKLY
+  MONTHLY
+}
+
+type PersonalData {
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Email opt in enabled"
+  emailOptIn: Boolean!
+
+  "Email opt in template name"
+  emailOptInTemplate: String
+}
+
+enum DonationSchema {
+  STRIPE_PAYMENT_INTENT
+}
+
+input SelectCampaign {
+  id: Int
+}
+
+type PrivateCampaign implements Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign statistics"
+  stats: CampaignStats!
+
+  org: Org!
+
+  "Fetch public actions"
+  actions(
+    "Return actions of this action type"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+
+  "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
+  forceDelivery: Boolean!
+
+  "List of partnerships and requests"
+  partnerships: [Partnership!]
+}
+
+"Encryption or sign key with integer id (database)"
+type Key {
+  id: Int!
+
+  public: String!
+
+  name: String!
+
+  active: Boolean!
+
+  expired: Boolean!
+
+  "When the key was expired, in UTC"
+  expiredAt: NaiveDateTime
+}
+
+type PrivateOrg implements Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+
+  "Organization id"
+  id: Int!
+
+  "config"
+  config: Json!
+
+  "Personal data settings for this org"
+  personalData: PersonalData!
+
+  keys(select: SelectKey): [Key!]!
+
+  key(select: SelectKey!): Key!
+
+  services(select: SelectService): [Service]!
+
+  users: [OrgUser]!
+
+  "List campaigns this org is leader or partner of"
+  campaigns(select: SelectCampaign): [Campaign!]!
+
+  "List action pages this org has"
+  actionPages(select: SelectActionPage): [ActionPage!]!
+
+  "Action Page"
+  actionPage(id: Int, name: String): ActionPage!
+
+  "Get campaign this org is leader or partner of by id"
+  campaign(id: Int): Campaign!
+}
+
+enum ServiceName {
+  SES
+  SQS
+  MAILJET
+  WORDPRESS
+  STRIPE
+}
+
+type ContactReference {
+  "Contact's reference"
+  contactRef: String!
+
+  "Contacts first name"
+  firstName: String
+}
+
+input StripePaymentIntentInput {
+  amount: Float!
+  currency: String!
+  paymentMethodTypes: [String!]
+}
+
+type Contact {
+  contactRef: ID!
+  payload: String!
+  nonce: String
+  publicKey: KeyIds
+  signKey: KeyIds
+}
+
+type JoinOrgResult {
+  status: Status!
+  org: Org!
+}
+
+"Custom field with a key and value. Both are strings."
+input CustomFieldInput {
+  key: String!
+  value: String!
+  transient: Boolean
+}
+
+input DonationActionInput {
+  "Provide payload schema to validate, eg. stripe_payment_intent"
+  schema: DonationSchema
+
+  "Provide amount of this donation"
+  amount: Decimal
+
+  "Provide currency of this donation"
+  currency: String
+
+  frequencyUnit: DonationFrequencyUnit
+
+  payload: Json!
+}
+
+input OrgInput {
+  "Name used to rename"
+  name: String
+
+  "Organisation title (human readable name)"
+  title: String
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
+  "Email opt in enabled"
+  emailOptIn: Boolean
+
+  "Email opt in template name"
+  emailOptInTemplate: String
+
+  "Config"
+  config: Json
+}
+
+"Custom field with a key and value."
+type CustomField {
+  key: String!
+  value: String!
+}
+
+input UserInput {
+  email: String!
+  role: String!
+}
+
+"Contact information"
+input ContactInput {
+  "Full name"
+  name: String
+
+  "First name (when you provide full name split into first and last)"
+  firstName: String
+
+  "Last name (when you provide full name split into first and last)"
+  lastName: String
+
+  "Email"
+  email: String
+
+  "Contacts phone number"
+  phone: String
+
+  "Date of birth in format YYYY-MM-DD"
+  birthDate: Date
+
+  "Contacts address"
+  address: AddressInput
+
+  "Nationality information"
+  nationality: NationalityInput
+}
+
+type KeyIds {
+  id: Int!
+  public: String!
+}
+
+enum Status {
+  "Operation completed succesfully"
+  SUCCESS
+
+  "Operation awaiting confirmation"
+  CONFIRMING
+
+  "Operation had no effect (already done)"
+  NOOP
+}
+
+type User {
+  id: Int!
+  email: String!
+  roles: [UserRole!]!
+}
