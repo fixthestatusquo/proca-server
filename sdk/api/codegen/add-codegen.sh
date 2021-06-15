@@ -20,6 +20,10 @@ graphql@15.3.0 \
 @graphql-codegen/typescript-operations \
 codegen-graphql-scalar-locations
 
+
+yarn add \
+urql-serialize-scalars-exchange
+
 # not used any more
 # @graphql-codegen/import-types-preset \
 # @graphql-codegen/introspection \
