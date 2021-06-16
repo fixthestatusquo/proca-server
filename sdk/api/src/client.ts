@@ -24,19 +24,6 @@ type Extensions = {
   captcha?: string
 }
 
-type Error = {
-  message: string,
-  extensions?: {
-    [key: string]: string
-  },
-  path: string[],
-  locations: [ [Object] ],
-}
-
-export interface ExecutionErrors {
-  errors?: Error[]
-}
-
 type LinkOptions = {
   wsUrl?: string,
   exchanges: Exchange[]
@@ -119,8 +106,8 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
  * Because the query document has a generic type narrowed for <Q - thing we get, R - arguments we send>,
  * these two generics are used to cast the result:
  * it is composed from:
- * - ExecutionResult: data: Q
- * - ExecutionErrors: errors?: Error  - not sure why apollo-link does not provide this type
+ * - OperationResult: data: Q
+ * - CombinedError: error (from @urql/core)
  * - FetchResult: other keys like extensions
  *
  */
