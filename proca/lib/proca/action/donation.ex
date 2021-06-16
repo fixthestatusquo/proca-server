@@ -36,19 +36,23 @@ defmodule Proca.Action.Donation do
     schema = get_field(ch, :schema)
     case amount_in_schema(schema, payload) do 
       :error -> add_error(ch, :payload, "payload does not contain amount, schema: #{schema}")
-      x when is_nil(x) -> ch
+      nil -> ch
       amount -> put_change(ch, :amount, amount)
     end
   end
+
+  def extract_amount(ch), do: ch
 
   def extract_currency(%Ecto.Changeset{changes: %{payload: payload}} = ch) do 
     schema = get_field(ch, :schema)
     case currency_in_schema(schema, payload) do 
       :error -> add_error(ch, :payload, "payload does not contain currency, schema: #{schema}")
-      x when is_nil(x) -> ch
+      nil -> ch
       amount -> put_change(ch, :currency, amount)
     end
   end
+
+  def extract_currency(ch), do: ch
 
   def amount_in_schema(:stripe_payment_intent, payload) do 
     case payload do 
