@@ -147,7 +147,7 @@ defmodule ProcaWeb.Api.ActionTest do
 
     last_action = Repo.preload(last_action, :donation)
     assert not is_nil(last_action.donation)
-    assert Decimal.eq?(last_action.donation.amount, "10.99")
+    assert last_action.donation.amount == 1099
     assert last_action.donation.currency == "USD"
     assert last_action.donation.frequency_unit == :one_off
     # IO.inspect last_action.donation
