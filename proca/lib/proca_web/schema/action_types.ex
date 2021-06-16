@@ -249,8 +249,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
   input_object :donation_action_input do 
     @desc "Provide payload schema to validate, eg. stripe_payment_intent"
     field :schema, :donation_schema
-    @desc "Provide amount of this donation"
-    field :amount, :decimal
+    @desc "Provide amount of this donation, in smallest units for currency"
+    field :amount, :integer
     @desc "Provide currency of this donation"
     field :currency, :string
     field :frequency_unit, :donation_frequency_unit
@@ -259,8 +259,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   object :donation do 
     field :schema, :donation_schema
-    @desc "Provide amount of this donation"
-    field :amount, non_null(:decimal)
+    @desc "Provide amount of this donation, in smallest units for currency"
+    field :amount, non_null(:integer)
     @desc "Provide currency of this donation"
     field :currency, non_null(:string)
     @desc "Donation data"

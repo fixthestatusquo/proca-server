@@ -19,6 +19,7 @@ defmodule ProcaWeb.Resolvers.Service do
       case Service.Stripe.create_payment_intent(stripe, pi, meta) do
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
+        {:error, %Ecto.Changeset{} = ch} -> {:error, ProcaWeb.Helper.format_errors(ch)}
       end
     else
       nil -> {:error, "Action Page not found or does not support Stripe"}
@@ -42,6 +43,7 @@ defmodule ProcaWeb.Resolvers.Service do
       case Service.Stripe.create_subscription(stripe, sbscr, meta) do
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
+        {:error, %Ecto.Changeset{} = ch} -> {:error, ProcaWeb.Helper.format_errors(ch)}
       end
     else
       nil -> {:error, "Action Page not found or does not support Stripe"}

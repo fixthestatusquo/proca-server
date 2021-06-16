@@ -47,13 +47,13 @@ defmodule ProcaWeb.Schema.ServiceTypes do
   end
 
   input_object :stripe_payment_intent_input do
-    field :amount, non_null(:float)
+    field :amount, non_null(:integer)
     field :currency, non_null(:string)
     field :payment_method_types, list_of(non_null(:string))
   end
 
   input_object :stripe_subscription_input do
-    field :amount, non_null(:float)
+    field :amount, non_null(:integer)
     field :currency, non_null(:string)
     field :frequency_unit, non_null(:donation_frequency_unit)
     # field :payment_method_types, list_of(non_null(:string))

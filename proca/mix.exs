@@ -52,6 +52,7 @@ defmodule Proca.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},
+      {:money, "~> 1.4"},
       {:ex2ms, "~> 1.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},

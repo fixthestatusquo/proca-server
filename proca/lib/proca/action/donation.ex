@@ -6,7 +6,7 @@ defmodule Proca.Action.Donation do
   schema "donations" do
     field :schema, DonationSchema, default: nil
     field :payload, :map, default: %{}
-    field :amount, :decimal
+    field :amount, :integer
     field :currency, :string, default: "EUR"
     field :frequency_unit, DonationFrequencyUnit, default: :one_off
 
@@ -23,6 +23,7 @@ defmodule Proca.Action.Donation do
     |> extract_currency()
     |> validate_required([:payload, :amount, :currency])
     |> validate_format(:currency, ~r/^[A-Z]{3}$/)
+    |> validate_currency(:currency)
     |> validate_change(:amount, fn :amount, amount -> 
       if Decimal.gt?(amount, 0), do: [], else: [amount: "must be positive"]
     end)
@@ -57,7 +58,7 @@ defmodule Proca.Action.Donation do
   def amount_in_schema(:stripe_payment_intent, payload) do 
     case payload do 
       %{"amount" => cents} when is_integer(cents) -> 
-        Decimal.new(cents) |> Decimal.div(100)
+        cents
       _ -> :error
     end
   end
@@ -72,4 +73,18 @@ defmodule Proca.Action.Donation do
   end
 
   def currency_in_schema(_other, _payload), do: nil
+
+  def validate_currency(ch = %Ecto.Changeset{}, field) do 
+    validate_change ch, field, fn ^field, cur -> 
+      if not Money.Currency.exists?(cur) do 
+        [{field, "does not exist"}]
+      else
+        []
+      end
+    end
+  end
+
+  def validate_amount(ch = %Ecto.Changeset{}, field) do 
+    validate_number(ch, field, greater_than: 0)
+  end
 end
