@@ -33,15 +33,44 @@ defmodule Proca.Campaign do
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
-    (Repo.get_by(Campaign, external_id: id, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
+    (get(org: org, external_id: id) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
     |> put_assoc(:org, org)
   end
 
   def upsert(org, attrs = %{name: cname}) do
-    (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
+    (get(org: org, name: cname) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
     |> put_assoc(:org, org)
+  end
+
+  def get(queryable, [{:org, org} | criteria]) do 
+    from(c in queryable, where: c.org_id == ^org.id)
+    |> get(criteria)
+  end
+
+  def get(queryable, [name: name]) do 
+    from(c in queryable, where: c.name == ^name)
+    |> preloads()
+    |> Repo.one()
+  end
+
+  def get(queryable, [external_id: id]) do 
+    from(c in queryable, where: c.external_id == ^id) 
+    |> preloads()
+    |> Repo.one()
+  end
+
+  def get(queryable, [id: id]) do 
+    from(c in queryable, where: c.id == ^id) 
+    |> preloads()
+    |> Repo.one()
+  end
+
+  def get(crit), do: get(Campaign, crit)
+
+  def preloads(queryable) do 
+    queryable |> preload([c], [:org])
   end
 
   def select_by_org(org) do
