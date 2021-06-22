@@ -151,4 +151,9 @@ defmodule Proca.ActionPage do
     [_|p] = String.split(name, "/")
     p |> Enum.join("/")
   end
+
+  # XXX deprecated url support
+  def remove_schema_from_name(name) when is_bitstring(name) do
+    Regex.replace(~r/^https?:\/\//, name, "")
+  end
 end
