@@ -864,10 +864,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@proca/api@^3.0.0-alpha.4":
-  version "3.0.0-alpha.4"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.0-alpha.4.tgz#f67d86b173d2231f91fdb07f03880683b782eda0"
-  integrity sha512-pX8+1xhE5lZfl6AFLCdpcQKgPdnfz3E5lnhKc9MLu+FjylniDyHbzimNkr/ozirsTEZdwtRFFstxdSUcsDjm+Q==
+"@proca/api@^3.0.0-alpha.6":
+  version "3.0.0-alpha.6"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.0-alpha.6.tgz#8c82274f7e944cc0ddfc5222b9164967443bc8be"
+  integrity sha512-C/GYBLnrNW8JI8l/dSJo69kJHEnFk0ezRYt/JlNm8qnt2BxkK9PtbX5bvoX4Sd7Iuv9SiG54bs/M3Qy0T1/kCw==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.0"
     "@urql/core" "^2.1.2"
@@ -4142,10 +4142,10 @@ url-parse@~1.4.3:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
 
-urql-serialize-scalars-exchange@^1.0.1-0:
-  version "1.0.1-0"
-  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-1.0.1-0.tgz#594e1523bbd0e1d54cb60669b73c54a52751c92e"
-  integrity sha512-stRUAOzjis3R3ybXwLuOIuCdS0yGlnt6eZaZvQTGfOoKV7f1RjpF4iwsZSeV0bVlCvI/zlIX3lvSvZeD+PpPpQ==
+urql-serialize-scalars-exchange@1.0.5-0:
+  version "1.0.5-0"
+  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-1.0.5-0.tgz#13c9ec2f51de6f5ce45c8b1ca3f414b79c265d09"
+  integrity sha512-U8pOZvhv+hUR1gTEImdJiFTJ+LpPq5tvQkQgNOZ0RljYbD6JXYejItPOmpFvayZSqlXvk+p/dNJpZhaE66IJwQ==
   dependencies:
     "@urql/core" "^2.1.2"
 
