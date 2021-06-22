@@ -864,16 +864,15 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@proca/api@^3.0.0-alpha.0":
-  version "3.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.0-alpha.0.tgz#efd6e1c551103d1e2444994b8ccb0e75d08c2b0b"
-  integrity sha512-IbXCSpNdK75KlOPXz53FuuxJ/lBi6zawJ714SNm+oFVQfNhM1m2uc9s4plrKgx4mgpswNfnJDRKdqry1XTUs8w==
+"@proca/api@^3.0.0-alpha.4":
+  version "3.0.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.0-alpha.4.tgz#f67d86b173d2231f91fdb07f03880683b782eda0"
+  integrity sha512-pX8+1xhE5lZfl6AFLCdpcQKgPdnfz3E5lnhKc9MLu+FjylniDyHbzimNkr/ozirsTEZdwtRFFstxdSUcsDjm+Q==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.0"
     "@urql/core" "^2.1.2"
     js-base64 "^3.5.2"
     phoenix "^1.5.9"
-    urql-serialize-scalars-exchange "^0.1.1"
     ws "^7.3.1"
 
 "@samverschueren/stream-to-observable@^0.3.0":
@@ -4142,13 +4141,6 @@ url-parse@~1.4.3:
   dependencies:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
-
-urql-serialize-scalars-exchange@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/urql-serialize-scalars-exchange/-/urql-serialize-scalars-exchange-0.1.1.tgz#e0c416045f1b126ef33d1d8c6b169fbb58cc21eb"
-  integrity sha512-21fM1PBbwQ9IettLuPQFpi6RLgA52kw1Lt/PuQDrtKWh1nitmrZgmghT0JUca9HO34+qCQw31xeRaIMLYgPgtQ==
-  dependencies:
-    "@urql/core" "^2.1.2"
 
 urql-serialize-scalars-exchange@^1.0.1-0:
   version "1.0.1-0"
