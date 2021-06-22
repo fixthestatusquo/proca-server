@@ -16,7 +16,6 @@ export {
   request,  // run get request
   subscription, // run subscribe request
   subscribe,  // attach to subscription to receive data
-  ExecutionErrors
 } from './client'
 
 export {default as scalarSerializers} from './scalars'
