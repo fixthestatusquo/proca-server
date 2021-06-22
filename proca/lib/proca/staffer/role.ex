@@ -74,4 +74,16 @@ defmodule Proca.Staffer.Role do
   def lesser_equal?(weaker, stronger) when is_atom(weaker) and is_atom(stronger) do 
     @roles[weaker] -- @roles[stronger] == []
   end
+
+  def add_user_as(%Proca.Users.User{} = user, %Proca.Org{} = org, role) do 
+    Staffer.build_for_user(user, org.id, Proca.Staffer.Permission.add(0, permissions(role)))
+  end
+
+  def add_user_as(email, org,  role) when is_bitstring(email) do 
+    user = Proca.Repo.get_by Proca.Users.User, email: email
+    case user do 
+      nil -> {:error, :not_found}
+      user -> add_user_as(user, org, role)
+    end
+  end
 end
