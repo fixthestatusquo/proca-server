@@ -30,7 +30,7 @@ defmodule Proca.Staffer do
     change(staffer, perms: perms_changer.(staffer.perms))
   end
 
-  def build_for_user(%User{id: id}, org_id, perms) do
+  def build_for_user(%User{id: id}, org_id, perms) when is_integer(org_id) do
     %Staffer{}
     |> change(org_id: org_id, user_id: id, perms: Proca.Staffer.Permission.add(0, perms))
   end
