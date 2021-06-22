@@ -12,10 +12,10 @@ defmodule Proca.Campaign do
     field :name, :string
     field :external_id, :integer
     field :title, :string
-    field :force_delivery, :boolean
+    field :force_delivery, :boolean, default: false
     field :public_actions, {:array, :string}, default: []
     field :contact_schema, ContactSchema, default: :basic
-    field :config, :map
+    field :config, :map, default: %{}
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -35,13 +35,13 @@ defmodule Proca.Campaign do
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
     (Repo.get_by(Campaign, external_id: id, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
-    |> put_change(:org_id, org.id)
+    |> put_assoc(:org, org)
   end
 
   def upsert(org, attrs = %{name: cname}) do
     (Repo.get_by(Campaign, name: cname, org_id: org.id) || %Campaign{contact_schema: org.contact_schema})
     |> Campaign.changeset(attrs)
-    |> put_change(:org_id, org.id)
+    |> put_assoc(:org, org)
   end
 
   def select_by_org(org) do
