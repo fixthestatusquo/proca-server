@@ -21,7 +21,6 @@ export async function watchPages(argv : WatchOpts & FormatOpts, config: CliConfi
   const query = subscription(c, admin.ActionPageUpsertedDocument, {org: orgName})
 
   const sub = subscribe(query, (x) => {
-    console.log('sub: '+util.inspect(x, {depth: 10}))
     const {data} = x
     const ap = data.actionPageUpserted;
     const t = fmt.actionPage(ap, ap.org)
