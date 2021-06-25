@@ -103,10 +103,19 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     with ap = %ActionPage{} <- ActionPage.find(name),
         org <- Org.get_by_id(ap.campaign.org_id)
     do 
-      cnf = Proca.Confirm.LaunchPage.create(ap)
-      Proca.Server.Notify.org_confirm_created(cnf, org)
+      if st.org_id == org.id do 
+        # lead org
+        case ActionPage.go_live(ap) do
+          {:ok, _} -> {:ok, %{status: :success}}
+          {:error, ch} -> {:error, Helper.format_errors(ch)}
+        end
+      else
+        # partner org
+        cnf = Proca.Confirm.LaunchPage.create(ap)
+        Proca.Server.Notify.org_confirm_created(cnf, org)
 
-      {:ok, %{status: :confirming}}
+        {:ok, %{status: :confirming}}
+      end
     else 
       nil -> {:error, [%{message: "action page not found"}]}
     end
