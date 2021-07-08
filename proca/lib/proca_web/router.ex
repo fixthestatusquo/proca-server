@@ -16,9 +16,11 @@ defmodule ProcaWeb.Router do
     plug :put_root_layout, {ProcaWeb.LayoutView, :root}
   end
 
+  allowed_origins = Application.get_env(:proca, Proca)[:allowed_origins]
+
   pipeline :api do
     plug :accepts, ["json"]
-    plug CORSPlug, origin: "*"
+    plug CORSPlug, origin: allowed_origins
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
     plug ProcaWeb.Plugs.BasicAuthPlug
     plug ProcaWeb.Plugs.JwtAuthPlug
@@ -36,12 +38,12 @@ defmodule ProcaWeb.Router do
     pow_routes()
   end
 
-  scope "/link" do 
+  scope "/link" do
     pipe_through :api
 
     get "/s/:action_id/:verb/:ref", ProcaWeb.ConfirmController, :supporter
     get "/:verb/:code", ProcaWeb.ConfirmController, :confirm
-    #get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
+    # get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
   end
 
   scope "/api" do

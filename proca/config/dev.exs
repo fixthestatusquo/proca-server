@@ -38,6 +38,14 @@ case System.get_env("ORGANISATION") do
       org_name: org_name
 end
 
+case System.get_env("CORS_ALLOWED_ORIGINS") do
+  nil -> ["*"]
+  
+  allowed ->
+    config :proca, Proca,
+      allowed_origins: String.split(allowed, ",")
+end
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
