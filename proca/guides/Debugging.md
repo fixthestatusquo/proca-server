@@ -1,4 +1,7 @@
 
+0. Add :debugger to extra applications in mix.exs
+
+      extra_applications: [ ... ,:debugger]
 
 1. run utils/epmd-tunnel host app-name
 2. copy the iex command line and:
