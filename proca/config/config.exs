@@ -17,7 +17,11 @@ config :proca, ProcaWeb.Endpoint,
   render_errors: [view: ProcaWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Proca.PubSub,
   live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"],
+  allow_origin: "*",
   router: if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router
+
+config :cors_plug,
+  origin: &ProcaWeb.Router.allow_origin/0
 
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,

@@ -7,6 +7,8 @@ defmodule ProcaWeb.Router do
   use Pow.Phoenix.Router
   use Plug.ErrorHandler
 
+  def allow_origin, do: Application.get_env( :proca, ProcaWeb.Endpoint)[:allow_origin]
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -18,7 +20,7 @@ defmodule ProcaWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug CORSPlug, origin: "*"
+    plug CORSPlug
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
     plug ProcaWeb.Plugs.BasicAuthPlug
     plug ProcaWeb.Plugs.JwtAuthPlug
