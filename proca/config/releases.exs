@@ -47,7 +47,8 @@ config :proca, ProcaWeb.Endpoint,
     port: String.to_integer(System.get_env("PORT") || "4000")
     # transport_options: [socket_opts: [:inet6]]
   ],
-  check_origin: ["//" <> System.get_env("DOMAIN")],
+  check_origin: ["//" <> System.get_env("DOMAIN")], # for WebSocket security
+  allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base
 
 config :proca, ProcaWeb.Resolvers.Captcha,
