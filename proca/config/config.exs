@@ -26,6 +26,7 @@ config :cors_plug,
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
+#  procaptcha_url: "https://captcha.proca.app"
 
 
 config :proca, Proca,
