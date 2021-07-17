@@ -51,9 +51,14 @@ config :proca, ProcaWeb.Endpoint,
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base
 
-config :proca, ProcaWeb.Resolvers.Captcha,
-  hcaptcha: System.get_env("HCAPTCHA_KEY")
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN") || nil
 
+config :proca, ProcaWeb.Resolvers.Captcha,
+  hcaptcha_key: System.get_env("HCAPTCHA_KEY")
+
+config :proca, Proca.Service.Procaptcha,
+  url: System.get_env("PROCAPTCHA_URL")
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),

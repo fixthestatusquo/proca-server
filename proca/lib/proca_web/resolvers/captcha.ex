@@ -16,6 +16,10 @@ defmodule ProcaWeb.Resolvers.Captcha do
   If defer: true, do not actually verify the captcha yet. Let the resolver call
   verify() and check if the resolution is failed.
   """
+  alias Absinthe.Resolution
+  alias Proca.Service
+  import ProcaWeb.Helper, only: [msg_ext: 2]
+
   @behaviour Absinthe.Middleware
   def call(resolution, opts) do
     case resolution.extensions do
@@ -27,7 +31,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
 
       _a ->
         resolution
-        |> Absinthe.Resolution.put_result(
+        |> Resolution.put_result(
           {:error,
            %{
              message: "Captcha code is required for this API call",
@@ -37,33 +41,44 @@ defmodule ProcaWeb.Resolvers.Captcha do
     end
   end
 
+  def captcha_error(msg, code) do 
+    msg_ext(msg, code)
+    |> Map.put(:path, ["captcha"])
+  end
+
+  def verify_hcaptcha(resolution = %{extensions: %{captcha: code}}, secret) do
+    case Hcaptcha.verify(code, secret: secret) do
+      {:ok, _r} ->
+        resolution
+
+      {:error, errors} ->
+        errors_as_str = Enum.map(errors, &Atom.to_string/1) |> Enum.join(", ")
+
+        resolution
+        |> Resolution.put_result(
+          {:error, captcha_error("Captcha code invalid (#{errors_as_str})", "bad_captcha")}
+        )
+    end
+  end
+
+
 
   @doc """
   If the hcaptcha is configured for the instance, verify the captcha. Otherwise, noop.
   """
-
   def verify(resolution = %{extensions: %{captcha: code}}) do
-    case Application.get_env(:proca, __MODULE__)[:hcaptcha] do
-      nil ->
-        resolution
+    cond do 
+      secret = Application.get_env(:proca, __MODULE__)[:hcaptcha_key] ->
+        verify_hcaptcha(resolution, secret)
 
-      secret ->
-        case Hcaptcha.verify(code, secret: secret) do
-          {:ok, _r} ->
-            resolution
-
-          {:error, errors} ->
-            errors_as_str = Enum.map(errors, &Atom.to_string/1) |> Enum.join(", ")
-
-            resolution
-            |> Absinthe.Resolution.put_result(
-              {:error,
-               %{
-                 message: "Captcha code invalid (#{errors_as_str})",
-                 extensions: %{code: "bad_captcha"}
-               }}
-            )
+      Service.Procaptcha.enabled?() -> 
+        case Service.Procaptcha.verify(code) do
+          :ok -> resolution
+          {:error, msg} -> resolution
+          |> Resolution.put_result({:error, captcha_error(msg, "bad_captcha")})
         end
+
+      true -> resolution
     end
   end
 
