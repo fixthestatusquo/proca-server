@@ -2,6 +2,8 @@ defmodule Proca.Repo.Migrations.ChangeNamesToCitext do
   use Ecto.Migration
 
   def up do
+    execute "CREATE EXTENSION IF NOT EXISTS citext"
+
     alter table(:orgs) do
       modify :name, :citext, null: false
     end
