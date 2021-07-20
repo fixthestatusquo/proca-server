@@ -72,7 +72,7 @@ config :sentry,
   capture_log_messages: true
 
 config :logger,
-  level: :warning
+  level: :info
 
 config :money,
   default_currency: :EUR
