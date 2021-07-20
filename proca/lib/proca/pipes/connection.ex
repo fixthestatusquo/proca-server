@@ -48,7 +48,7 @@ defmodule Proca.Pipes.Connection do
   Or it can fail and enter status: :reconnecting
   """
   def do_connect(st = %{url: url}) do
-    case Connection.open(url) do
+    case Connection.open(url, connect_opts()) do
       {:ok, c} ->
         # Inform us when AMQP connection is down
         Process.monitor(c.pid)
@@ -77,6 +77,22 @@ defmodule Proca.Pipes.Connection do
         {:stop, reason, st}
     end
   end
+
+  @doc """
+  Allow setting SSL client connection options
+  """
+  def connect_opts() do
+    opt = Application.get_env(:proca, Proca.Pipes)[:ssl_options]
+    need = [:cacertfile, :certfile, :keyfile]
+    extra_opt = [verify: :verify_peer, fail_if_no_peer_cert: true]
+
+    if opt != nil and Enum.all?(need, fn k -> Keyword.get(opt, k) != nil end) do 
+      [ssl_options: opt ++ extra_opt]
+    else
+      []
+    end
+  end
+
 
   @doc """
   Reconnecting procedure - shutdown processing and schedule connection attempt `after_seconds`

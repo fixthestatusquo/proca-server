@@ -15,7 +15,11 @@ config :proca, Proca.Repo,
   queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000")
 
 config :proca, Proca.Pipes,
-  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL")
+  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL"),
+  ssl_options:
+    cacertfile: System.get_env("AMQP_CACERTFILE"),
+    certfile: System.get_env("AMQP_CERTFILE"),
+    keyfile: System.get_env("AMQP_KEYFILE")
 
 config :proca, Proca.Server.Jwks,
   url: System.get_env("JWKS_URL")

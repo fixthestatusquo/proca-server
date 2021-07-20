@@ -39,7 +39,8 @@ config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
-  url: "amqp://proca:proca@localhost/proca"
+  url: "amqp://proca:proca@localhost/proca",
+  ssl_options: nil
 
 
 config :proca, Proca.Server.Jwks,
