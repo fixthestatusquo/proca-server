@@ -70,10 +70,18 @@ config :proca, Proca.Supporter,
 
 # Configures Elixir's Logger
 config :logger,
-  backends: [:console, Sentry.LoggerBackend, {LoggerFileBackend, :error_log}],
-  format: "$time $metadata[$level] $message\n",
+  backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],
+  format: "$date $time $metadata[$level] $message\n",
   metadata: [:request_id]
 
 config :logger, :error_log,
+  format: "$date $time $metadata[$level] $message\n",
   path: System.get_env("LOGS_DIR") <> "/error.log",
   level: :error
+
+config :logger, :audit_log,
+  path: System.get_env("LOGS_DIR") <> "/audit.log",
+  level: :info,
+  format: "$date $time [$level] $metadata $message\n",
+  metadata: [:user, :op],
+  metadata_filter: [audit: true]
