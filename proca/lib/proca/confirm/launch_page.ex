@@ -16,12 +16,13 @@ defmodule Proca.Confirm.LaunchPage do
    import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
    import Proca.Staffer.Permission, only: [can?: 2]
 
-   def create(%ActionPage{id: ap_id, campaign_id: campaign_id}) do
+   def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, message \\ nil) do
       # XXX test for campaign manager
       %{
          operation: :launch_page,
          subject_id: campaign_id,
-         object_id: ap_id
+         object_id: ap_id,
+         message: message
       }
       |> Confirm.create()
    end

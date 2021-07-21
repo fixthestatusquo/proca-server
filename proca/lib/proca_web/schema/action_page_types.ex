@@ -134,6 +134,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
       arg :name, non_null(:string) 
 
+      @desc "Optional message for approver"
+      arg :message, :string
+
       resolve &ProcaWeb.Resolvers.ActionPage.launch_page/3
     end
   end

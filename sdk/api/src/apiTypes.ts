@@ -21,12 +21,6 @@ export type Scalars = {
    * be converted to UTC if there is an offset.
    */
   DateTime: any;
-  /**
-   * The `Decimal` scalar type represents signed double-precision fractional
-   * values parsed by the `Decimal` library.  The Decimal appears in a JSON
-   * response as a string to preserve precision.
-   */
-  Decimal: any;
   Json: any;
   /**
    * The `Naive DateTime` scalar type represents a naive date and time without
@@ -221,6 +215,7 @@ export type ChangeUserStatus = {
 export type Confirm = {
   code: Scalars['String'];
   email: Maybe<Scalars['String']>;
+  message: Maybe<Scalars['String']>;
   objectId: Maybe<Scalars['Int']>;
 };
 
@@ -308,15 +303,14 @@ export type CustomFieldInput = {
 
 
 
-
 export type DeleteUserResult = {
   status: Status;
 };
 
 export type Donation = {
   schema: Maybe<DonationSchema>;
-  /** Provide amount of this donation */
-  amount: Scalars['Decimal'];
+  /** Provide amount of this donation, in smallest units for currency */
+  amount: Scalars['Int'];
   /** Provide currency of this donation */
   currency: Scalars['String'];
   /** Donation data */
@@ -328,8 +322,8 @@ export type Donation = {
 export type DonationActionInput = {
   /** Provide payload schema to validate, eg. stripe_payment_intent */
   schema?: Maybe<DonationSchema>;
-  /** Provide amount of this donation */
-  amount?: Maybe<Scalars['Decimal']>;
+  /** Provide amount of this donation, in smallest units for currency */
+  amount?: Maybe<Scalars['Int']>;
   /** Provide currency of this donation */
   currency?: Maybe<Scalars['String']>;
   frequencyUnit?: Maybe<DonationFrequencyUnit>;
@@ -706,6 +700,7 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
 
 export type RootMutationTypeLaunchActionPageArgs = {
   name: Scalars['String'];
+  message?: Maybe<Scalars['String']>;
 };
 
 
@@ -846,6 +841,7 @@ export type RootQueryTypeCampaignsArgs = {
 export type RootQueryTypeActionPageArgs = {
   id?: Maybe<Scalars['Int']>;
   name?: Maybe<Scalars['String']>;
+  url?: Maybe<Scalars['String']>;
 };
 
 
@@ -917,13 +913,13 @@ export enum Status {
 }
 
 export type StripePaymentIntentInput = {
-  amount: Scalars['Float'];
+  amount: Scalars['Int'];
   currency: Scalars['String'];
   paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
 };
 
 export type StripeSubscriptionInput = {
-  amount: Scalars['Float'];
+  amount: Scalars['Int'];
   currency: Scalars['String'];
   frequencyUnit: DonationFrequencyUnit;
 };
