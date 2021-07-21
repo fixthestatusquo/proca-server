@@ -181,8 +181,8 @@ type RootSubscriptionType {
 type Donation {
   schema: DonationSchema
 
-  "Provide amount of this donation"
-  amount: Decimal!
+  "Provide amount of this donation, in smallest units for currency"
+  amount: Int!
 
   "Provide currency of this donation"
   currency: String!
@@ -197,6 +197,7 @@ type Donation {
 type Confirm {
   code: String!
   email: String
+  message: String
   objectId: Int
 }
 
@@ -286,7 +287,7 @@ input SelectService {
 }
 
 input StripeSubscriptionInput {
-  amount: Float!
+  amount: Int!
   currency: String!
   frequencyUnit: DonationFrequencyUnit!
 }
@@ -439,7 +440,12 @@ type RootMutationType {
     fromCampaignName: String!
   ): ActionPage!
 
-  launchActionPage(name: String!): LaunchActionPageResult!
+  launchActionPage(
+    name: String!
+
+    "Optional message for approver"
+    message: String
+  ): LaunchActionPageResult!
 
   "Adds an action referencing contact data via contactRef"
   addAction(
@@ -563,13 +569,6 @@ type RootMutationType {
   rejectOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
 }
 
-"""
-The `Decimal` scalar type represents signed double-precision fractional
-values parsed by the `Decimal` library.  The Decimal appears in a JSON
-response as a string to preserve precision.
-"""
-scalar Decimal
-
 type RootQueryType {
   "Get a list of campains"
   campaigns(
@@ -587,6 +586,9 @@ type RootQueryType {
 
     "Get action page by name the widget is displayed on"
     name: String
+
+    "Get action page by url the widget is displayed on (DEPRECATED, use name)"
+    url: String
   ): ActionPage!
 
   exportActions(
@@ -906,7 +908,7 @@ type ContactReference {
 }
 
 input StripePaymentIntentInput {
-  amount: Float!
+  amount: Int!
   currency: String!
   paymentMethodTypes: [String!]
 }
@@ -935,8 +937,8 @@ input DonationActionInput {
   "Provide payload schema to validate, eg. stripe_payment_intent"
   schema: DonationSchema
 
-  "Provide amount of this donation"
-  amount: Decimal
+  "Provide amount of this donation, in smallest units for currency"
+  amount: Int
 
   "Provide currency of this donation"
   currency: String
