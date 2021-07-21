@@ -88,7 +88,7 @@ defmodule Proca.Server.Jwks do
         _ -> {false, nil, nil}
       end
     rescue
-      # JOSE will throw different errors if token is not a proper string,
+      # JOSE will raise different errors if token is not a proper string,
       # and also we can get an error because Jwks is not running
       _ -> {false, nil, nil}
     end
