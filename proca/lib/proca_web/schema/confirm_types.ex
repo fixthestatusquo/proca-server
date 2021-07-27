@@ -48,6 +48,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
   object :confirm do 
     field :code, non_null(:string)
     field :email, :string 
+    field :message, :string
     field :object_id, :integer
   end
 

@@ -63,12 +63,15 @@ defmodule Proca.Service do
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
-    case :hackney.request(req.method, url, req.headers) do
-      {:ok, code, _hdrs, ref} ->
+    case :hackney.request(req.method, url, req.headers, req.body) do
+      {:ok, 200, _hdrs, ref} ->
         case json_request_read_body(ref) do
-          {:ok, data} -> {:ok, code, data}
+          {:ok, data} -> {:ok, 200, data}
           x -> x
         end
+
+      {:ok, code, _hdrs, _ref} ->
+        {:ok, code} 
 
       {:error, reason} ->
         {:error, reason}
@@ -87,6 +90,7 @@ defmodule Proca.Service do
   defp json_request_opts(req, opts, srv) when map_size(req) == 0 do
     req = %{
       method: :get,
+      body: "",
       headers: [Accepts: "application/json", "Content-Type": "application/json"]
     }
 
@@ -101,6 +105,15 @@ defmodule Proca.Service do
     auth = "#{srv.user}:#{srv.password}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:form, form} | rest], srv) do 
+    %{req | 
+      method: :post, 
+      body: {:form, form}, 
+      headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
+      }
     |> json_request_opts(rest, srv)
   end
 end

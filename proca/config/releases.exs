@@ -15,7 +15,12 @@ config :proca, Proca.Repo,
   queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000")
 
 config :proca, Proca.Pipes,
-  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL")
+  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL"),
+  ssl_options: [
+    cacertfile: System.get_env("AMQP_CACERTFILE"),
+    certfile: System.get_env("AMQP_CERTFILE"),
+    keyfile: System.get_env("AMQP_KEYFILE")
+  ]
 
 config :proca, Proca.Server.Jwks,
   url: System.get_env("JWKS_URL")
@@ -51,9 +56,14 @@ config :proca, ProcaWeb.Endpoint,
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base
 
-config :proca, ProcaWeb.Resolvers.Captcha,
-  hcaptcha: System.get_env("HCAPTCHA_KEY")
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN") || nil
 
+config :proca, ProcaWeb.Resolvers.Captcha,
+  hcaptcha_key: System.get_env("HCAPTCHA_KEY")
+
+config :proca, Proca.Service.Procaptcha,
+  url: System.get_env("PROCAPTCHA_URL")
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
@@ -65,10 +75,18 @@ config :proca, Proca.Supporter,
 
 # Configures Elixir's Logger
 config :logger,
-  backends: [:console, Sentry.LoggerBackend, {LoggerFileBackend, :error_log}],
-  format: "$time $metadata[$level] $message\n",
+  backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],
+  format: "$date $time $metadata[$level] $message\n",
   metadata: [:request_id]
 
 config :logger, :error_log,
+  format: "$date $time $metadata[$level] $message\n",
   path: System.get_env("LOGS_DIR") <> "/error.log",
   level: :error
+
+config :logger, :audit_log,
+  path: System.get_env("LOGS_DIR") <> "/audit.log",
+  level: :info,
+  format: "$date $time [$level] $metadata $message\n",
+  metadata: [:user, :op],
+  metadata_filter: [audit: true]

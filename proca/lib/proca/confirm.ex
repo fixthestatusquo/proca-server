@@ -47,6 +47,7 @@ defmodule Proca.Confirm do
     field :email, :string
     field :code, :string
     field :charges, :integer, default: 1
+    field :message, :string
 
     timestamps()
   end
@@ -55,7 +56,7 @@ defmodule Proca.Confirm do
   @doc false
   def changeset(confirm, attrs) do
     confirm
-    |> cast(attrs, [:operation, :subject_id, :object_id, :email, :charges])
+    |> cast(attrs, [:operation, :subject_id, :object_id, :email, :message, :charges])
     |> add_code()
     |> validate_required([:operation, :subject_id, :charges, :code])
   end

@@ -99,7 +99,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def launch_page(_, %{name: name}, %{context: %{staffer: st}}) do 
+  def launch_page(_, %{name: name} = params, %{context: %{staffer: st}}) do 
     with ap = %ActionPage{} <- ActionPage.find(name),
         org <- Org.get_by_id(ap.campaign.org_id)
     do 
@@ -111,7 +111,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         end
       else
         # partner org
-        cnf = Proca.Confirm.LaunchPage.create(ap)
+        cnf = Proca.Confirm.LaunchPage.create(ap, Map.get(params, :message))
         Proca.Server.Notify.org_confirm_created(cnf, org)
 
         {:ok, %{status: :confirming}}
