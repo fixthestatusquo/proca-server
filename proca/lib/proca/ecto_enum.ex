@@ -12,5 +12,5 @@ defenum(ConfirmOperation, confirm_action: 0, join_campaign: 1, add_partner: 2, l
 
 defenum(DonationSchema, stripe_payment_intent: 0)
 
-defenum(DonationFrequencyUnit, one_off: 0, weekly: 1, monthly: 2)
+defenum(DonationFrequencyUnit, one_off: 0, weekly: 1, monthly: 2, daily: 16)
 

@@ -42,6 +42,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :one_off 
     value :weekly 
     value :monthly
+    value :daily
   end 
 
   enum :status do
