@@ -39,11 +39,13 @@ defmodule Proca.Service.EmailRecipient do
 
   def put_confirm(
     rcpt = %EmailRecipient{fields: fields}, 
-    cnf = %Proca.Confirm{code: confirm_code, email: email, object_id: obj_id}
+    cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
     ) do 
       cflds = %{
         "confirm_code" => confirm_code, 
         "confirm_email" => email || "",
+        "confirm_message" => message || "",
+        "confirm_subject_id" => subj_id,
         "confirm_object_id" => obj_id || "",
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)

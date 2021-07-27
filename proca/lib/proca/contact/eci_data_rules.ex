@@ -406,7 +406,7 @@ defmodule Proca.Contact.EciDataRules do
       |> Map.get(document_type)
 
     case p do
-      # throw "no pattern for document number #{country} #{document_type}"
+      # raise "no pattern for document number #{country} #{document_type}"
       nil -> ~r//
       p -> p
     end

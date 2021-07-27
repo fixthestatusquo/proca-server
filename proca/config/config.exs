@@ -26,6 +26,7 @@ config :cors_plug,
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
+#  procaptcha_url: "https://captcha.proca.app"
 
 
 config :proca, Proca,
@@ -38,7 +39,8 @@ config :proca, Proca.Supporter,
   fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
-  url: "amqp://proca:proca@localhost/proca"
+  url: "amqp://proca:proca@localhost/proca",
+  ssl_options: nil
 
 
 config :proca, Proca.Server.Jwks,
@@ -67,10 +69,11 @@ config :sentry,
   environment_name: Mix.env(),
   included_environments: [:prod],
   enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()]
+  root_source_code_paths: [File.cwd!()],
+  capture_log_messages: true
 
 config :logger,
-  level: :warning
+  level: :info
 
 config :money,
   default_currency: :EUR

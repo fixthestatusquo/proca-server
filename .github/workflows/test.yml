@@ -25,37 +25,30 @@ jobs:
       with:
         # Docker postgres image tag for available image tags please see https://hub.docker.com/_/postgres
         postgres_image_tag: 12.7 # optional, default is latest
+        postgres_user: proca 
+        postgres_password: proca
         # POSTGRES_USER - create the user with the superuser power
-        postgres_user: # optional, default is postgres
+        #postgres_user: # optional, default is postgres
         # POSTGRES_DB - postgres database
-        postgres_db: # optional, default is postgres
+        #postgres_db: # optional, default is postgres
         # POSTGRES_PASSWORD - superuser password
-        postgres_password: # optional
+        #postgres_password: # optional
         # POSTGRES_EXTENSIONS - List of postgres extensions separated by space to install in template1 database
         postgres_extensions: citext # optional
         # APP_USER - unprivileged postgres user
-        app_user: proca # optional, default is app
+        #app_user: proca # optional, default is app
         # APP_PASSWORD_USER - password for unprivileged postgres user
-        app_user_password: proca # optional, default is app
+        #app_user_password: proca # optional, default is app
         # APP_DB - database or list of databases separated by space for unprivileged postgres user
-        app_db: proca_test # optional, default is app
+        #app_db: proca_test # optional, default is app
         # EXPOSED_POSTGRES_PORT - exposed postgres port
-        exposed_postgres_port: # optional, default is 5432
+        #exposed_postgres_port: # optional, default is 5432
     - name: Install RabbitMQ
       # You may pin to the exact commit or the version.
       # uses: mer-team/rabbitmq-mng-action@8efa214ee17181617aada9d7aab74a701a6a49bb
       uses: mer-team/rabbitmq-mng-action@v1.2
       with:
-        # RabbitMQ Username
-        RABBITMQ_USER: # optional, default is guest
-        # RabbitMQ Password
-        RABBITMQ_PASS: # optional, default is guest
-        # RabbitMQ Port
-        RABBITMQ_PORT: # optional, default is 5672
-        # RabbitMQ Management Port
-        RABBITMQ_MNG_PORT: # optional, default is 15672
-        # RabbitMQ Image Tag
-        RABBITMQ_TAG: 3-management # optional, default is 3-alpine
+        RABBITMQ_TAG: 3-management-alpine # optional, default is 3-alpine
     - name: Restore dependencies cache
       uses: actions/cache@v2
       with:
@@ -69,6 +62,12 @@ jobs:
 
     - name: Install dependencies
       run: mix deps.get
+      working-directory: proca
+
+    - name: Setup app db (migrate)
+      run: mix ecto.setup
+      env:
+        MIX_ENV: test
       working-directory: proca
 
     - name: Run tests
