@@ -30,7 +30,14 @@ defmodule Proca.ActionPage do
     timestamps()
   end
 
-  @doc false
+  @doc """
+  Casts and validates values to change an Action Page.
+
+  The name validation is a pattern that allows two styles of action names: 
+  1. identifier/path1/path2/path3 - where identifiers and paths are alphanumeric + - _
+  2. domain.com.pl/some/campaign - url style (very similar but _ is not allowed for domain part)
+  See test/action_page_test.exs for examples of valid and invalid names
+  """
   def changeset(action_page, attrs) do
     action_page
     |> cast(attrs, [
