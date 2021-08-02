@@ -78,11 +78,13 @@ defmodule Proca.Confirm.LaunchPage do
   def email_org_config_fields(%Org{config: config}) do
     data = %{
       "org_twitter_picture" => get_in(config, ["twitter", "picture"]),
-      "org_twitter_description" => get_in(config, ["twitter", "picture"]),
+      "org_twitter_description" => get_in(config, ["twitter", "description"]),
       "org_twitter_url" => get_in(config, ["twitter", "url"])
     }
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)
   end
+
+  
 end
 
