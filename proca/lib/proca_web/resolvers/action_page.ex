@@ -111,7 +111,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         end
       else
         # partner org
-        cnf = Proca.Confirm.LaunchPage.create(ap, Map.get(params, :message))
+        cnf = Proca.Confirm.LaunchPage.create(ap, st, Map.get(params, :message))
         Proca.Server.Notify.org_confirm_created(cnf, org)
 
         {:ok, %{status: :confirming}}

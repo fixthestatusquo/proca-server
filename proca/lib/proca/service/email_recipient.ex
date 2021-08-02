@@ -41,15 +41,19 @@ defmodule Proca.Service.EmailRecipient do
     rcpt = %EmailRecipient{fields: fields}, 
     cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
     ) do 
+
       cflds = %{
         "confirm_code" => confirm_code, 
         "confirm_email" => email || "",
         "confirm_message" => message || "",
         "confirm_subject_id" => subj_id,
         "confirm_object_id" => obj_id || "",
+        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.user.email, else: ""),
+
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)
       }
+
       %{rcpt | fields: Map.merge(fields, cflds)}
   end
 end

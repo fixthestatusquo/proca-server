@@ -48,6 +48,7 @@ defmodule Proca.Confirm do
     field :code, :string
     field :charges, :integer, default: 1
     field :message, :string
+    belongs_to :creator, Staffer
 
     timestamps()
   end
@@ -57,6 +58,8 @@ defmodule Proca.Confirm do
   def changeset(confirm, attrs) do
     confirm
     |> cast(attrs, [:operation, :subject_id, :object_id, :email, :message, :charges])
+    |> put_assoc(:creator, Map.get(attrs, :staffer, nil))
+
     |> add_code()
     |> validate_required([:operation, :subject_id, :charges, :code])
   end
