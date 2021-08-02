@@ -25,6 +25,7 @@ defmodule Proca.StoryFactory do
   end
 
   @api_perms Proca.Staffer.Permission.add(0, [:use_api, :manage_campaigns, :manage_action_pages])
+  @owner_perms Proca.Staffer.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
 
   @red_website "red.org"
   @yellow_website "yellow.org"
@@ -37,8 +38,10 @@ defmodule Proca.StoryFactory do
     yellow_camp = Factory.insert(:campaign, name: sequence("free-beer"), title: "Donate beer", org: yellow_org)
     yellow_ap = Factory.insert(:action_page, campaign: yellow_camp, org: yellow_org, name: @yellow_website <> "/sign")
 
+    yellow_owner = Factory.insert(:staffer, org: yellow_org, perms: @owner_perms)
     red_bot = Factory.insert(:staffer, org: red_org, perms: @api_perms)
 
+    # red org joins yellows campaign
     orange_ap1 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-walk-with-yellow")
     orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-donate-with-yellow")
 
@@ -47,7 +50,7 @@ defmodule Proca.StoryFactory do
       red_campaign: red_camp, yellow_campaign: yellow_camp,
       red_ap: red_ap,         yellow_ap: yellow_ap,
       orange_aps: [orange_ap1, orange_ap2],
-      red_bot: red_bot
+      red_bot: red_bot,       yellow_owner: yellow_owner,
     }
 
   end
