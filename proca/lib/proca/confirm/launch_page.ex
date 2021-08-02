@@ -16,13 +16,15 @@ defmodule Proca.Confirm.LaunchPage do
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Staffer.Permission, only: [can?: 2]
 
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, message \\ nil) do
+  @spec create(ActionPage, Staffer, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
+  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, st = %Staffer{}, message \\ nil) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
       subject_id: campaign_id,
       object_id: ap_id,
-      message: message
+      message: message,
+      staffer: st
     }
     |> Confirm.create()
   end
@@ -77,6 +79,8 @@ defmodule Proca.Confirm.LaunchPage do
 
   def email_org_config_fields(%Org{config: config}) do
     data = %{
+      "org_twitter_name" => get_in(config, ["twitter", "name"]),
+      "org_twitter_screen_name" => get_in(config, ["twitter", "screen_name"]),
       "org_twitter_picture" => get_in(config, ["twitter", "picture"]),
       "org_twitter_description" => get_in(config, ["twitter", "description"]),
       "org_twitter_url" => get_in(config, ["twitter", "url"])
