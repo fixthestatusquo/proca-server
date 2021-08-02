@@ -129,9 +129,7 @@ defmodule Proca.Stage.Support do
         %{
           "communication" => contact.communication_consent,
           "givenAt" =>
-            contact.inserted_at
-            |> DateTime.from_naive!("Etc/UTC")
-            |> DateTime.to_iso8601()
+            contact.inserted_at |> to_iso8601()
         }
       else
         nil
@@ -145,7 +143,7 @@ defmodule Proca.Stage.Support do
       "action" => %{
         "actionType" => action.action_type,
         "fields" => Field.list_to_map(action.fields),
-        "createdAt" => action.inserted_at |> NaiveDateTime.to_iso8601()
+        "createdAt" => action.inserted_at |> to_iso8601()
       } |> put_action_donation(action.donation),
       "actionPage" => %{
         "locale" => action.action_page.locale,
@@ -211,5 +209,11 @@ defmodule Proca.Stage.Support do
     message
     |> Message.configure_ack(on_failure: :ack)
     |> Message.failed(reason)
+  end
+
+  def to_iso8601(naivedatetime) do 
+    naivedatetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
   end
 end
