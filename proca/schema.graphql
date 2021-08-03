@@ -274,6 +274,12 @@ type PrivateActionPage implements ActionPage {
 
   "Action page collects also opt-out actions"
   delivery: Boolean!
+
+  "Location of the widget as last seen in HTTP REFERER header"
+  location: String
+
+  "Status of action page"
+  status: ActionPageStatus
 }
 
 """
@@ -777,6 +783,18 @@ enum DonationFrequencyUnit {
   ONE_OFF
   WEEKLY
   MONTHLY
+  DAILY
+}
+
+enum ActionPageStatus {
+  "This action page is ready to receive first action or is stalled for over 1 year"
+  STANDBY
+
+  "This action page received actions lately"
+  ACTIVE
+
+  "This action page did not receive actions lately"
+  STALLED
 }
 
 type PersonalData {
