@@ -48,6 +48,12 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     resolve_type fn 
       %{org_id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_action_page
+      page, %{context: %{staffer: %{org_id: staffer_org_id}}} ->
+        if Proca.Repo.preload(page, [:campaign]).org_id == staffer_org_id do
+          :private_action_page
+        else
+          :public_action_page
+        end
       _, _ -> :public_action_page
     end
   end
