@@ -8,7 +8,6 @@ defmodule ProcaWeb.Plugs.HeadersPlug do
   alias Pow.Plug
   import ProcaWeb.Plugs.Helper
 
-  #   Absinthe.Plug.put_options(conn, context: context)
   def init(headers) when is_list(headers), do: headers
 
   def call(conn, headers) do
@@ -20,7 +19,7 @@ defmodule ProcaWeb.Plugs.HeadersPlug do
     for h <- headers, reduce: conn do 
       c -> case List.keyfind(conn.req_headers, h, 0) do
         {h, val} ->
-          c |> Absinthe.Plug.put_options(%{context: %{ headers: %{ h => val}}})
+          c |> Absinthe.Plug.assign_context(%{ headers: %{ h => val}})
         nil -> c
       end
     end
