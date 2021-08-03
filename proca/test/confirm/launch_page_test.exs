@@ -59,6 +59,7 @@ defmodule Proca.Confirm.LaunchPageTest do
     assert pf["confirm_creator_email"] == yellow_owner.user.email
     assert pf["org_twitter_description"] == "A sample campaigning organisation in social media"
     assert pf["org_twitter_picture"] == "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_400x400.jpg"
+    assert pf["org_twitter_followers_count"] == 100000
 
 
   end
