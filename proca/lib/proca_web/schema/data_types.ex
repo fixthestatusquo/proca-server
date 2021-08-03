@@ -51,6 +51,12 @@ defmodule ProcaWeb.Schema.DataTypes do
     value :noop, description: "Operation had no effect (already done)"
   end
 
+  enum :action_page_status do 
+    value :standby, description: "This action page is ready to receive first action or is stalled for over 1 year"
+    value :active, description: "This action page received actions lately"
+    value :stalled, description: "This action page did not receive actions lately"
+  end
+
   # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)

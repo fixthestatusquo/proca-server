@@ -26,15 +26,16 @@ defmodule ProcaWeb.Api.ActionTest do
     result
   end
 
-  def action_with_contact(_org, ap, action_info, contact_info) do
+  def action_with_contact(_org, ap, action_info, contact_info, 
+      other_params \\ %{}, context \\ %{}) do
     params = %{
       action: action_info,
       action_page_id: ap.id,
       contact: contact_info,
       privacy: %{opt_in: true}
-    }
+    } |> Map.merge(other_params)
     
-    result = ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{} )
+    result = ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{context: context} )
     assert {:ok, %{contact_ref: _ref}} = result
     result
   end
@@ -151,6 +152,16 @@ defmodule ProcaWeb.Api.ActionTest do
     assert last_action.donation.currency == "USD"
     assert last_action.donation.frequency_unit == :one_off
     # IO.inspect last_action.donation
+  end
+
+  test "create action with location tracking", %{org: org, pages: [ap]} do 
+    {:ok, result} = action_with_contact(org, ap, 
+      %{action_type: "x"}, %{first_name: "Jan", email: "j@a.n"}, 
+      %{}, %{headers: %{"referer" => "https://example.com/petition?foo=123"}}) 
+
+    action = Repo.one from(a in Action, order_by: [desc: a.id], limit: 1) 
+
+    assert action.source_id != nil
 
   end
 

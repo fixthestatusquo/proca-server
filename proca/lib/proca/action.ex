@@ -83,7 +83,7 @@ defmodule Proca.Action do
   end
 
   def get_by_id_and_ref(action_id, ref) do 
-    action = from(a in Action, 
+    from(a in Action, 
       join: s in Supporter, on: s.id == a.supporter_id,
       where: a.id == ^action_id and s.fingerprint == ^ref, 
       preload: [supporter: s])

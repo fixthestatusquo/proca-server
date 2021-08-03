@@ -28,6 +28,7 @@ defmodule Proca.Application do
 
       {Proca.Server.Processing, []},
       {Proca.Stages.ProcessOld, []},
+      {Proca.ActionPage.Status, []},
 
 
       # Starts a worker by calling: Proca.Worker.start_link(arg)

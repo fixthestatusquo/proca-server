@@ -27,24 +27,27 @@ defmodule ProcaWeb.Resolvers.Action do
     Map.put(tr, :location, location)
   end
 
-  defp add_tracking(action, %{tracking: tr}, referer) do
+  # utms given and referer header
+  defp get_tracking(%{tracking: tr}, referer) do
     case tr 
       |> add_tracking_location(referer)
       |> Source.get_or_create_by() 
     do
-      {:ok, src} -> put_assoc(action, :source, src)
-      _ -> action
+      {:ok, src} -> {:ok, src}
+      _ -> {:ok, nil}
     end
   end
 
-  defp add_tracking(action, %{}, referer) when is_bitstring(referer) do 
-    add_tracking(action, %{tracking: %{
-      source: "", medium: "", campaign: ""
+  # only refer header given, we provide n/a utm values to better look in stats
+  defp get_tracking(%{}, referer) when is_bitstring(referer) do 
+    get_tracking(%{tracking: %{
+      source: "n/a", medium: "n/a", campaign: "n/a"
     }}, referer)
   end
 
-  defp add_tracking(action, %{}, _referer) do
-    action
+  # no referer, programmatic api use
+  defp get_tracking(%{}, _referer) do
+    {:ok, nil}
   end
 
   defp output(%{first_name: first_name, fingerprint: fpr}) do
@@ -103,19 +106,22 @@ defmodule ProcaWeb.Resolvers.Action do
                {:ok, Map.has_key?(resolution.extensions, :captcha)}
            end
          end)
-         |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page} ->
+         |> Multi.run(:source, fn _repo, _ -> 
+          get_tracking(params, get_in(context, [:headers, "referer"]))
+         end)
+         |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page, source: source} ->
            Supporter.new_supporter(data, action_page)
            |> Supporter.add_contacts(
              Data.to_contact(data, action_page),
              action_page,
              struct!(Privacy, priv)
            )
-           |> add_tracking(params, get_in(context, [:headers, "referer"]))
+           |> put_assoc(:source, source)
            |> repo.insert()
          end)
-         |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page} ->
+         |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page, source: source} ->
            Action.create_for_supporter(action, supporter, action_page)
-           |> add_tracking(params, get_in(context, [:headers, "referer"]))
+           |> put_assoc(:source, source)
            |> put_change(:with_consent, true)
            |> repo.insert()
          end)
@@ -146,9 +152,12 @@ defmodule ProcaWeb.Resolvers.Action do
          |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->
            get_supporter(action_page, params)
          end)
-         |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter} ->
+         |> Multi.run(:source, fn _repo, _ -> 
+          get_tracking(params, get_in(context, [:headers, "referer"]))
+         end)
+         |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter, source: source} ->
            Action.create_for_supporter(action_attrs, supporter, action_page)
-           |> add_tracking(params, get_in(context, [:headers, "referer"]))
+           |> put_assoc(:source, source)
            |> repo.insert()
          end)
          |> Repo.transaction() do

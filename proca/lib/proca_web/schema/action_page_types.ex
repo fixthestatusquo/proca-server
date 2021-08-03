@@ -59,6 +59,30 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     field :extra_supporters, non_null(:integer)
     @desc "Action page collects also opt-out actions"
     field :delivery, non_null(:boolean)
+
+    @desc "Location of the widget as last seen in HTTP REFERER header"
+    field :location, :string do 
+      resolve fn page, _, _ -> 
+        {:ok, Proca.ActionPage.Status.get_last_location(page.id)}
+      end
+    end
+
+    @desc "Status of action page"
+    field :status, :action_page_status do 
+      resolve fn page, _, _ -> 
+        case Proca.ActionPage.Status.get_last_at(page.id) do 
+          nil -> {:ok, :standby}
+          seen_at -> 
+            now = NaiveDateTime.utc_now()
+            if NaiveDateTime.diff(now, seen_at, :second) < Date.days_in_month(now) * 86_400  do 
+              {:ok, :active}
+            else 
+              {:ok, :stalled}
+            end
+
+        end
+      end
+    end
   end
 
   object :public_action_page do
