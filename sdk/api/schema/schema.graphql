@@ -638,6 +638,9 @@ interface Org {
 
   "Organisation title (human readable name)"
   title: String!
+
+  "config"
+  config: Json!
 }
 
 type PublicOrg implements Org {
@@ -646,6 +649,9 @@ type PublicOrg implements Org {
 
   "Organisation title (human readable name)"
   title: String!
+
+  "config"
+  config: Json!
 }
 
 type PublicActionPage implements ActionPage {
@@ -879,11 +885,11 @@ type PrivateOrg implements Org {
   "Organisation title (human readable name)"
   title: String!
 
-  "Organization id"
-  id: Int!
-
   "config"
   config: Json!
+
+  "Organization id"
+  id: Int!
 
   "Personal data settings for this org"
   personalData: PersonalData!

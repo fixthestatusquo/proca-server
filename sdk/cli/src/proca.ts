@@ -427,6 +427,8 @@ export type Org = {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
+  /** config */
+  config: Scalars['Json'];
 };
 
 /** Count of supporters for particular org */
@@ -544,10 +546,10 @@ export type PrivateOrg = Org & {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
-  /** Organization id */
-  id: Scalars['Int'];
   /** config */
   config: Scalars['Json'];
+  /** Organization id */
+  id: Scalars['Int'];
   /** Personal data settings for this org */
   personalData: PersonalData;
   keys: Array<Key>;
@@ -661,6 +663,8 @@ export type PublicOrg = Org & {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
+  /** config */
+  config: Scalars['Json'];
 };
 
 export type RootMutationType = {
@@ -2175,6 +2179,9 @@ export const scalarLocations : ScalarLocations = {
         "PublicOrg"
       ],
       "actions": "PublicActionsResult"
+    },
+    "PublicOrg": {
+      "config": "Json"
     },
     "RootSubscriptionType": {
       "actionPageUpserted": [
