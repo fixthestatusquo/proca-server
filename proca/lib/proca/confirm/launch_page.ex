@@ -83,7 +83,8 @@ defmodule Proca.Confirm.LaunchPage do
       "org_twitter_screen_name" => get_in(config, ["twitter", "screen_name"]),
       "org_twitter_picture" => get_in(config, ["twitter", "picture"]),
       "org_twitter_description" => get_in(config, ["twitter", "description"]),
-      "org_twitter_url" => get_in(config, ["twitter", "url"])
+      "org_twitter_url" => get_in(config, ["twitter", "url"]),
+      "org_twitter_followers_count" => get_in(config, ["twitter", "followers_count"])
     }
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)

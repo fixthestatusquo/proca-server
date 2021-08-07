@@ -274,6 +274,12 @@ type PrivateActionPage implements ActionPage {
 
   "Action page collects also opt-out actions"
   delivery: Boolean!
+
+  "Location of the widget as last seen in HTTP REFERER header"
+  location: String
+
+  "Status of action page"
+  status: ActionPageStatus
 }
 
 """
@@ -632,6 +638,9 @@ interface Org {
 
   "Organisation title (human readable name)"
   title: String!
+
+  "config"
+  config: Json!
 }
 
 type PublicOrg implements Org {
@@ -640,6 +649,9 @@ type PublicOrg implements Org {
 
   "Organisation title (human readable name)"
   title: String!
+
+  "config"
+  config: Json!
 }
 
 type PublicActionPage implements ActionPage {
@@ -777,6 +789,18 @@ enum DonationFrequencyUnit {
   ONE_OFF
   WEEKLY
   MONTHLY
+  DAILY
+}
+
+enum ActionPageStatus {
+  "This action page is ready to receive first action or is stalled for over 1 year"
+  STANDBY
+
+  "This action page received actions lately"
+  ACTIVE
+
+  "This action page did not receive actions lately"
+  STALLED
 }
 
 type PersonalData {
@@ -861,11 +885,11 @@ type PrivateOrg implements Org {
   "Organisation title (human readable name)"
   title: String!
 
-  "Organization id"
-  id: Int!
-
   "config"
   config: Json!
+
+  "Organization id"
+  id: Int!
 
   "Personal data settings for this org"
   personalData: PersonalData!

@@ -107,6 +107,15 @@ export type ActionPageInput = {
   config?: Maybe<Scalars['Json']>;
 };
 
+export enum ActionPageStatus {
+  /** This action page is ready to receive first action or is stalled for over 1 year */
+  Standby = 'STANDBY',
+  /** This action page received actions lately */
+  Active = 'ACTIVE',
+  /** This action page did not receive actions lately */
+  Stalled = 'STALLED'
+}
+
 /** Count of actions for particular action type */
 export type ActionTypeCount = {
   __typename?: 'ActionTypeCount';
@@ -349,7 +358,8 @@ export type DonationActionInput = {
 export enum DonationFrequencyUnit {
   OneOff = 'ONE_OFF',
   Weekly = 'WEEKLY',
-  Monthly = 'MONTHLY'
+  Monthly = 'MONTHLY',
+  Daily = 'DAILY'
 }
 
 export enum DonationSchema {
@@ -417,6 +427,8 @@ export type Org = {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
+  /** config */
+  config: Scalars['Json'];
 };
 
 /** Count of supporters for particular org */
@@ -491,6 +503,10 @@ export type PrivateActionPage = ActionPage & {
   extraSupporters: Scalars['Int'];
   /** Action page collects also opt-out actions */
   delivery: Scalars['Boolean'];
+  /** Location of the widget as last seen in HTTP REFERER header */
+  location: Maybe<Scalars['String']>;
+  /** Status of action page */
+  status: Maybe<ActionPageStatus>;
 };
 
 export type PrivateCampaign = Campaign & {
@@ -530,10 +546,10 @@ export type PrivateOrg = Org & {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
-  /** Organization id */
-  id: Scalars['Int'];
   /** config */
   config: Scalars['Json'];
+  /** Organization id */
+  id: Scalars['Int'];
   /** Personal data settings for this org */
   personalData: PersonalData;
   keys: Array<Key>;
@@ -647,6 +663,8 @@ export type PublicOrg = Org & {
   name: Scalars['String'];
   /** Organisation title (human readable name) */
   title: Scalars['String'];
+  /** config */
+  config: Scalars['Json'];
 };
 
 export type RootMutationType = {
@@ -2161,6 +2179,9 @@ export const scalarLocations : ScalarLocations = {
         "PublicOrg"
       ],
       "actions": "PublicActionsResult"
+    },
+    "PublicOrg": {
+      "config": "Json"
     },
     "RootSubscriptionType": {
       "actionPageUpserted": [

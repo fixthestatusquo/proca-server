@@ -9,7 +9,6 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
 
-  #   Absinthe.Plug.put_options(conn, context: context)
   def init(opts), do: opts
 
   def call(conn, _) do
@@ -53,7 +52,7 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   defp add_to_context(conn) do
     case conn.assigns.user do
       %User{} = u ->
-        Absinthe.Plug.put_options(conn, context: %{user: u})
+        Absinthe.Plug.assign_context(conn, %{user: u})
 
       nil ->
         conn
