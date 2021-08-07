@@ -122,7 +122,7 @@ defmodule Proca.Server.Keys do
     GenServer.call(__MODULE__, {:encryption, from_to})
   end
 
-  def update_key(org, key = %{active: true}) do
+  def update_key(org = %Org{}, key = %{active: true}) do
     GenServer.cast(__MODULE__, {:update_key, org.id, sensitive_data_wrap(key)})
     :ok
   end

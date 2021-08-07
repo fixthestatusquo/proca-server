@@ -10,6 +10,7 @@ defmodule Proca.Server.Notify do
   def action_created(action, supporter \\ nil) do
     increment_counter(action, supporter)
     process_action(action)
+    update_action_page_status(action)
     :ok
   end
 
@@ -88,6 +89,10 @@ defmodule Proca.Server.Notify do
 
   defp process_action(action) do
     Proca.Server.Processing.process_async(action)
+  end
+
+  defp update_action_page_status(action) do 
+    Proca.ActionPage.Status.track_action(action)
   end
 
   defp increment_counter(%Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype}, nil) do

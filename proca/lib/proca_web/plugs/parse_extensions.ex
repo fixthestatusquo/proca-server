@@ -8,7 +8,6 @@ defmodule ProcaWeb.Plugs.ParseExtensions do
   alias ProcaWeb.Plugs.Helper
   import Ecto.Changeset
 
-  #   Absinthe.Plug.put_options(conn, context: context)
   def init(opts \\ []) do
     Keyword.get(opts, :schema)
   end
@@ -23,7 +22,7 @@ defmodule ProcaWeb.Plugs.ParseExtensions do
         Helper.error_halt(conn, 400, "invalid_extensions", "Invalid extensions map")
 
       %{valid?: true} = ch ->
-        Absinthe.Plug.put_options(conn, context: %{extensions: apply_changes(ch)})
+        Absinthe.Plug.assign_context(conn, %{extensions: apply_changes(ch)})
     end
   end
 
