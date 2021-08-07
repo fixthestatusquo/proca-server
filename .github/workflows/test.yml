@@ -48,6 +48,10 @@ jobs:
       # uses: mer-team/rabbitmq-mng-action@8efa214ee17181617aada9d7aab74a701a6a49bb
       uses: mer-team/rabbitmq-mng-action@v1.2
       with:
+        RABBITMQ_USER: 'guest'
+        RABBITMQ_PASS: 'guest'
+        RABBITMQ_PORT: 5672
+        RABBITMQ_MNG_PORT: 15672
         RABBITMQ_TAG: 3-management-alpine # optional, default is 3-alpine
     - name: Restore dependencies cache
       uses: actions/cache@v2
