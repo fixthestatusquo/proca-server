@@ -67,7 +67,7 @@ defmodule Proca.Campaign do
     |> Repo.one()
   end
 
-  def get(crit), do: get(Campaign, crit)
+  def get(crit) when is_list(crit), do: get(Campaign, crit)
 
   def preloads(queryable) do 
     queryable |> preload([c], [:org])
