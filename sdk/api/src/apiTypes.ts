@@ -657,6 +657,7 @@ export type RootMutationType = {
    * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
    */
   copyCampaignActionPage: ActionPage;
+  addActionPage: ActionPage;
   launchActionPage: LaunchActionPageResult;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
@@ -713,6 +714,14 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
   orgName: Scalars['String'];
   name: Scalars['String'];
   fromCampaignName: Scalars['String'];
+};
+
+
+export type RootMutationTypeAddActionPageArgs = {
+  orgName: Scalars['String'];
+  name: Scalars['String'];
+  locale: Scalars['String'];
+  campaignName: Scalars['String'];
 };
 
 
