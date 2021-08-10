@@ -152,12 +152,31 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "New Action Page name"
       arg :name, non_null(:string)
 
-      @desc "Name of Action Page this one is cloned from"
+      @desc "Name of Campaign from which the page is copied"
       arg :from_campaign_name, non_null(:string)
 
       resolve(&Resolvers.ActionPage.copy_from_campaign/3)
     end
 
+    field :add_action_page, type: non_null(:action_page) do 
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:manage_action_pages]
+
+      @desc "Org owner of new Action Page"
+      arg :org_name, non_null(:string)
+
+      @desc "New Action Page name"
+      arg :name, non_null(:string)
+
+      @desc "Action Page locale"
+      arg :locale, non_null(:string)
+
+      @desc "Name of campaign where page is created"
+      arg :campaign_name, non_null(:string)
+
+      resolve(&Resolvers.ActionPage.add_action_page/3)
+    end
 
     field :launch_action_page, type: non_null(:launch_action_page_result) do
       middleware Authorized, access: [:action_page, by: [:name]]

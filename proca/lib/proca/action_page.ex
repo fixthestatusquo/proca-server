@@ -38,9 +38,9 @@ defmodule Proca.ActionPage do
   2. domain.com.pl/some/campaign - url style (very similar but _ is not allowed for domain part)
   See test/action_page_test.exs for examples of valid and invalid names
   """
-  def changeset(action_page, attrs) do
+  def changeset(action_page, params) do
     action_page
-    |> cast(attrs, [
+    |> cast(params, [
       :name,
       :locale,
       :extra_supporters,
@@ -110,13 +110,15 @@ defmodule Proca.ActionPage do
 
   def create_copy_in(org, ap, attrs) do
     ap = Repo.preload(ap, [:campaign])
-    %ActionPage{}
-    |> change(Map.take(ap, [:config, :delivery, :journey, :locale]))
-    |> ActionPage.changeset(attrs)
-    |> put_assoc(:org, org)
-    |> put_assoc(:campaign, ap.campaign)
-    |> Repo.insert()
+    create(copy: ap, params: attrs, org: org, campaign: ap.campaign)
   end
+
+
+  def create(kwlist) when is_list(kwlist), do: create(%ActionPage{}, kwlist)
+  def create(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> create(kw)
+  def create(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> create(kw)
+  def create(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :journey, :locale])) |> create(kw)
+  def create(ap, []), do: Repo.insert(ap)
 
   def find(id) when is_integer(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]
