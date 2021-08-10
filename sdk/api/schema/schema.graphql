@@ -442,8 +442,22 @@ type RootMutationType {
     "New Action Page name"
     name: String!
 
-    "Name of Action Page this one is cloned from"
+    "Name of Campaign from which the page is copied"
     fromCampaignName: String!
+  ): ActionPage!
+
+  addActionPage(
+    "Org owner of new Action Page"
+    orgName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Action Page locale"
+    locale: String!
+
+    "Name of campaign where page is created"
+    campaignName: String!
   ): ActionPage!
 
   launchActionPage(
