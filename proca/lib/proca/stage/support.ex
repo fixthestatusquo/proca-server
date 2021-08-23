@@ -20,8 +20,7 @@ defmodule Proca.Stage.Support do
         [supporter: [contacts: [:public_key, :sign_key]]],
         :action_page,
         :campaign,
-        :source,
-        :fields
+        :source
       ]
     )
     |> Repo.all()
@@ -114,7 +113,6 @@ defmodule Proca.Stage.Support do
           :action_page,
           :campaign,
           :source,
-          :fields,
           :donation
         ]
       )
@@ -142,7 +140,7 @@ defmodule Proca.Stage.Support do
       "orgId" => action.action_page.org_id,
       "action" => %{
         "actionType" => action.action_type,
-        "fields" => Field.list_to_map(action.fields),
+        "fields" => action.fields,
         "createdAt" => action.inserted_at |> to_iso8601()
       } |> put_action_donation(action.donation),
       "actionPage" => %{

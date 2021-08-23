@@ -59,8 +59,8 @@ defmodule Proca.MixProject do
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
-      {:amqp, "~> 1.4"},
-      {:broadway_rabbitmq, "~> 0.6.1"},
+      {:amqp, "~> 2.0"},
+      {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"}, # until support for amqp 2.0 is released
       {:bamboo, "~> 1.5.0"},
       # {:bamboo_mailjet, "~> 0.1.0"},
       {:bamboo_mailjet, github: "fixthestatusquo/bamboo_mailjet", branch: "feat/formatter_recipients"},
@@ -76,7 +76,7 @@ defmodule Proca.MixProject do
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
       {:phoenix_live_view, "~> 0.13.0"},
-      {:pow, "~> 1.0.20"},
+      {:pow, "~> 1.0.24"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this

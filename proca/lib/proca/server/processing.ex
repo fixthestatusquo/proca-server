@@ -271,8 +271,13 @@ defmodule Proca.Server.Processing do
   end
 
   def clear_transient(action) do
-    Repo.delete_all(Field.select_transient_fields(action))
-    {_n, _res} = Repo.update_all(Supporter.nullify_transient_fields(action.supporter), [])
+    tx = Ecto.Multi.new()
+    tx = Ecto.Multi.update_all(tx, :supporter, Supporter.clear_transient_fields_query(action.supporter), [])
+    tx = case Action.clear_transient_fields_query(action) do 
+      :noop -> tx
+      q -> Ecto.Multi.update_all(tx, :action, q, [])
+    end
+    {:ok, _} = Repo.transaction(tx)
 
     :ok
   end

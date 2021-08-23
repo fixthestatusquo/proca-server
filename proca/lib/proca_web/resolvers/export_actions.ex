@@ -95,7 +95,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       action_type: action.action_type,
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
-      fields: Enum.map(action.fields, &Map.take(&1, [:key, :value])),
+      fields: Enum.map(action.fields, fn {k, v} -> %{key: k, value: v} end),
       privacy: format_privacy(contact),
       trackng: action.source,
       campaign: Map.take(action.campaign, [:name, :external_id]),
@@ -130,7 +130,6 @@ defmodule ProcaWeb.Resolvers.ExportActions do
           :action_page,
           :campaign,
           :source,
-          :fields,
           :donation
         ]
       )
