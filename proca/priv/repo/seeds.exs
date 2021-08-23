@@ -21,18 +21,20 @@ create_keys = fn org ->
   |> Proca.Repo.insert()
   end
 
-create_admin = fn org, username ->
-  user = Proca.Users.User.create(username) || Proca.Repo.get_by( Proca.Users.User, email: username)
+create_admin = fn 
+  org, nil -> true
+  org, username ->
+    user = Proca.Users.User.create(username) || Proca.Repo.get_by( Proca.Users.User, email: username)
 
-  Proca.Staffer.build_for_user(user, org.id, [])
-  |> Ecto.Changeset.apply_changes()
-  |> Proca.Staffer.Role.change(:admin)
-  |> Proca.Repo.insert!()
+    Proca.Staffer.build_for_user(user, org.id, [])
+    |> Ecto.Changeset.apply_changes()
+    |> Proca.Staffer.Role.change(:admin)
+    |> Proca.Repo.insert!()
 
-  IO.puts "#####"
-  IO.puts "#####   Created Admin user #{username}  #####"
-  IO.puts "#####   Password: #{user.password}"
-  IO.puts "#####"
+    IO.puts "#####"
+    IO.puts "#####   Created Admin user #{username}  #####"
+    IO.puts "#####   Password: #{user.password}"
+    IO.puts "#####"
   end
 
 if is_nil(org) do
@@ -41,14 +43,12 @@ if is_nil(org) do
 
   create_keys.(org)
 
-  case System.get_env("ADMIN_EMAIL") do 
-    nil -> nil
-    email -> create_admin.(org, email)
-  end
+  create_admin.(org, System.get_env("ADMIN_EMAIL"))
 else
   case Proca.Org.active_public_keys(org.public_keys) do
     [%Proca.PublicKey{private: p} = pk | _] when not is_nil(p) -> {:ok, pk}
 
     [] -> create_keys.(org)
   end
+  create_admin.(org, System.get_env("ADMIN_EMAIL"))
 end

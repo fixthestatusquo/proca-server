@@ -14,6 +14,7 @@ defmodule Proca.Campaign do
     field :title, :string
     field :force_delivery, :boolean, default: false
     field :public_actions, {:array, :string}, default: []
+    field :transient_actions, {:array, :string}, default: []
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
 

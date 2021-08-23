@@ -194,7 +194,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
     field :inserted_at, non_null(:naive_datetime)
-    field :fields, non_null(list_of(non_null(:custom_field)))
+    field :fields, non_null(list_of(non_null(:custom_field))) do 
+      resolve fn action, _p, _c -> 
+        Enum.map(action.fields, fn {k,v} -> %{key: k, value: v} end)
+      end
+    end
   end
 
   @desc "Result of actions query"
