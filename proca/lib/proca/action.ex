@@ -109,14 +109,18 @@ defmodule Proca.Action do
     |> Repo.one()
   end
 
-  def clear_transient_fields_query(%Action{id: id, action_type: atype, fields: fields, action_page: page}) do 
-    keys = Supporter.Privacy.transient_action_fields(atype, page)
-    fields2 = keys |> Enum.reduce(fields, fn f, acc -> Map.delete(acc, f) end)
-    
-    if fields2 == fields do 
+  def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do 
+    keys = Supporter.Privacy.transient_action_fields(action, page)
+
+    if keys == [] do 
       :noop
     else
-      from(a in Action, where: a.id == ^id, update: [set: [fields: ^fields2]])
+      fields2 = Map.drop(fields, keys)
+      if fields2 == fields do 
+        :noop
+      else
+        from(a in Action, where: a.id == ^id, update: [set: [fields: ^fields2]])
+      end
     end
   end
 

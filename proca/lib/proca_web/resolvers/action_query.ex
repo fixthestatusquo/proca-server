@@ -4,10 +4,14 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
   """
   import Ecto.Query
   alias Proca.Repo
-  alias Proca.Action
+  alias Proca.{Action, Campaign}
 
   @max_list_size 100
-  def list_by_action_type(%{id: campaign_id, public_actions: public_actions}, params = %{action_type: action_type}, _ctx) do
+  def list_by_action_type(
+    campaign = %{id: campaign_id}, 
+    params = %{action_type: action_type}, 
+    _ctx) 
+    do
     limit = min(params.limit, @max_list_size)
 
 
@@ -15,35 +19,21 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
       join: c in assoc(a, :campaign),
       where: c.id == ^campaign_id and a.action_type == ^action_type and a.processing_status in [:accepted, :delivered],
       order_by: [desc: :inserted_at],
-      limit: ^limit,
-      select: a.id
+      limit: ^limit
     )
 
-    query = from(a in Action,
-      join: f in assoc(a, :fields),
-      where: a.id in subquery(select_actions),
-      where: fragment("? || ':' || ?", a.action_type, f.key) in ^public_actions,
-      preload: [fields: f]
-    )
-
-    # from(a in Action,
-    #   join: c in assoc(a, :campaign),
-    #   join: f in assoc(a, :fields),
-    #   where: c.id == ^campaign_id,
-    #   where: fragment("? || ':' || ?", a.action_type, f.key) in c.public_actions,
-    #   preload: [:fields]
-
-    list = query
+    list = select_actions
     |> Repo.all()
-    |> Enum.map(fn a -> %{
-                        action_id: a.id,
-                        action_type: a.action_type,
-                        inserted_at: a.inserted_at,
-                        fields: Enum.map(a.fields, fn {k, v} -> %{key: k, value: v} end)
-                    } end)
+    |> Enum.map(fn a -> 
+      %{
+        action_id: a.id,
+        action_type: a.action_type,
+        inserted_at: a.inserted_at,
+        custom_fields: Map.take(a.fields, Campaign.public_action_keys(campaign, action_type))
+      } end)
 
     field_keys =
-      Enum.map(list, fn %{fields: fields} -> Enum.map(fields, &Map.get(&1, :key)) end)
+      Enum.map(list, fn %{custom_fields: cf} -> Map.keys(cf) end)
       |> List.flatten()
       |> MapSet.new()
       |> MapSet.to_list()

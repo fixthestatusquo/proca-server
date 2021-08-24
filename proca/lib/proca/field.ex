@@ -43,6 +43,17 @@ defmodule Proca.Field do
     end)
   end
 
+  def map_to_list(field_map) do 
+    Enum.map(field_map, fn {k, v} -> 
+      if is_list(v) do 
+        Enum.map(v, fn vi -> %{key: k, value: "#{vi}"} end)
+      else 
+        [%{key: k, value: "#{v}"}]
+      end
+    end)
+    |> List.flatten
+  end
+
   def select_transient_fields(action = %Action{}) do
     from(f in Field, where: f.action_id == ^action.id and f.transient == true)
   end
