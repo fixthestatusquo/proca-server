@@ -19,6 +19,7 @@ defmodule Proca.Org do
     has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
 
     field :contact_schema, ContactSchema, default: :basic
+    field :action_schema_version, :integer, default: 2
 
     # avoid storing transient data in clear
     # XXX rename to a more adequate :strict_privacy

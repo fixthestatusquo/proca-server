@@ -27,7 +27,7 @@ defmodule Proca.Application do
       {Proca.Pipes.Connection, Application.get_env(:proca, Proca.Pipes)[:url]},
 
       {Proca.Server.Processing, []},
-      {Proca.Stages.ProcessOld, []},
+      {Proca.Stage.ProcessOld, []},
       {Proca.ActionPage.Status, []},
 
 

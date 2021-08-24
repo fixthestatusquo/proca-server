@@ -42,6 +42,12 @@ defmodule Proca.Pipes.Connection do
     {:noreply, st}
   end
 
+  @impl true 
+  def handle_info({:basic_return, payload, meta}, st) do 
+    IO.inspect({payload, meta}, label: "basic_return")
+    {:noreply, st}
+  end
+
   @doc """
   Attempts to connect to queue.
   It can succeed and enter status: :connected
@@ -149,6 +155,7 @@ defmodule Proca.Pipes.Connection do
 
       {:ok, conn} ->
         {:ok, chan} = Channel.open(conn)
+        return chan, __MODULE__
 
         try do
           apply(f, [chan])
