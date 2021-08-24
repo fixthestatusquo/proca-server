@@ -100,4 +100,13 @@ defmodule Proca.Campaign do
       preload: [:org, action_pages: a])
     |> Repo.one()
   end
+
+  def public_action_keys(%Campaign{public_actions: public_actions}, action_type) 
+    when is_bitstring(action_type) 
+    do 
+    public_keys = public_actions 
+    |> Enum.map(fn p -> String.split(p, ":") end)
+    |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
+    |> Enum.reject(&is_nil/1)
+  end
 end

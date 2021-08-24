@@ -167,12 +167,11 @@ defmodule ProcaWeb.Schema.ActionTypes do
     @desc "Action Type"
     field :action_type, non_null(:string)
 
-    # XXX
-    #@desc "Custom fields added to action"
-    #field :custom_fields, :json
+    @desc "Custom fields added to action"
+    field :custom_fields, :json
 
     @desc "Deprecated format: Other fields added to action"
-    field :fields, list_of(non_null(:custom_field_input))
+    field :fields, list_of(non_null(:custom_field_input)), deprecate: "use custom_fields"
 
 
     @desc "Donation payload"
@@ -184,13 +183,13 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :created_at, non_null(:naive_datetime)
     field :action_type, non_null(:string)
     field :contact, non_null(:contact)
-    #field :custom_fields, non_null(:json) # XXX
+    field :custom_fields, non_null(:json)
 
     @desc "Deprecated, use customFields"
-    field :fields, non_null(list_of(non_null(:custom_field))) do 
+    field :fields, non_null(list_of(non_null(:custom_field))), deprecate: "use custom_fields" do 
       resolve(fn action, _p, _c -> 
-          action.fields |> Enum.map(fn {k, v} -> %{key: k, value: "#{v}"} end)
-        end)
+        {:ok, Proca.Field.map_to_list(action.custom_fields)}
+      end)
     end
     field :tracking, :tracking
     field :campaign, non_null(:campaign)
