@@ -1,4 +1,4 @@
-defmodule Proca.Stages.ProcessOld do 
+defmodule Proca.Stage.ProcessOld do 
   @moduledoc """
   Server which processes older actions, which might be unprocessed because of not queue was available, or processing failed.
 

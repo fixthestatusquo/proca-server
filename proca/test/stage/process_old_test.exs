@@ -1,8 +1,8 @@
-defmodule Proca.Stages.ProcessOldTest do 
+defmodule Proca.Stage.ProcessOldTest do 
   use Proca.DataCase
   import Proca.StoryFactory, only: [blue_story: 0]
   alias Proca.Factory 
-  alias Proca.Stages.ProcessOld
+  alias Proca.Stage.ProcessOld
   alias Proca.Repo
 
   setup do 
