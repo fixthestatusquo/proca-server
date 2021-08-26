@@ -34,7 +34,7 @@ defmodule Proca.CreateAdminAccount do
       IO.puts("User already exists - I'll grant admin permission, but won't reset the password")
       user
     else
-      Proca.Users.User.create(email)
+      Proca.Users.User.create!(email)
     end
 
     case user do

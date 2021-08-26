@@ -83,7 +83,7 @@ defmodule Proca.Staffer.Role do
   end
 
   def add_user_as(email, org,  role) when is_bitstring(email) do 
-    user = Proca.Repo.get_by Proca.Users.User, email: email
+    user = User.get(email: email)
     case user do 
       nil -> {:error, :not_found}
       user -> add_user_as(user, org, role)

@@ -6,7 +6,6 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
 
   alias Plug.Conn
   alias Pow.{Plug, Plug.Session}
-  alias Proca.Users.User
   alias Proca.Repo
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
@@ -82,8 +81,8 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
           } 
         }
       } ->
-        case Repo.get_by(User, email: email) do
-          nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config())
+        case User.get(email: email) do
+          nil -> Plug.assign_current_user(conn, User.create!(email), User.pow_config())
           user -> Plug.assign_current_user(conn, user, User.pow_config())
         end
 
