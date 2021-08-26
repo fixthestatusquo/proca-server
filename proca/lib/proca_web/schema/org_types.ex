@@ -32,6 +32,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     resolve_type fn 
       %{id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_org
+      # XXX maybe add created_by user_id so they could be matched here? that would mean they are forever owners?
+      # the access check here should be dynamic to work in add_org scenario, but it also must be fast
       _, _ -> :public_org
     end
   end
