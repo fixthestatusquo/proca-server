@@ -60,7 +60,7 @@ defmodule Proca.ReleaseTasks do
   def make_admin(email) do
     instance_org = Proca.Repo.get_by(Proca.Org, %{name: Application.get_env(:proca, Proca)[:org_name]})
 
-    case Proca.Repo.get_by(Proca.Users.User, %{email: email}) do
+    case Proca.Users.User.get(email: email) do
       u when not is_nil(u) ->
         Proca.Staffer.build_for_user(u, instance_org.id, Proca.Staffer.Role.permissions(:admin))
         |>Proca.Repo.insert()

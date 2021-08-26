@@ -51,7 +51,7 @@ defmodule ProcaWeb.Resolvers.User do
 
 
   defp existing(email, org) do 
-    user = get_by(User, email: email)
+    user = User.get(email: email)
     if is_nil(user) do 
       {nil, nil}
     else
