@@ -59,8 +59,8 @@ defmodule Proca.MixProject do
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
-      {:amqp, "~> 1.4"},
-      {:broadway_rabbitmq, "~> 0.6.1"},
+      {:amqp, "~> 2.0"},
+      {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"}, # until support for amqp 2.0 is released
       {:bamboo, "~> 1.5.0"},
       # {:bamboo_mailjet, "~> 0.1.0"},
       {:bamboo_mailjet, github: "fixthestatusquo/bamboo_mailjet", branch: "feat/formatter_recipients"},
