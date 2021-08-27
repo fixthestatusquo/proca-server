@@ -6,11 +6,11 @@ defmodule Proca.Stage.EmailSupporter do
 
   alias Broadway.Message
   alias Broadway.BatchInfo
-  alias Proca.{Org, ActionPage, Action}
+  alias Proca.{Org, ActionPage, Action, Supporter}
   alias Proca.Repo
   import Ecto.Query
   import Logger
-  import Proca.Stage.Support, only: [ignore: 1, ignore: 2]
+  import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 2]
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
@@ -80,7 +80,7 @@ defmodule Proca.Stage.EmailSupporter do
 
       {:ok,
        %{
-         "stage" => "confirm_supporter",
+         "stage" => "supporter_confirm",
          "orgId" => org_id,
          "actionId" => action_id
        } = action
@@ -124,27 +124,23 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_batch(:opt_in, [fm|_] = messages, _, _) do
-    org_id = fm.data.orgId
+    org_id = fm.data["orgId"]
 
     org = from(org in Org,
       where: org.id == ^org_id,
-      preload: [[email_backend: :org], :template_backend]
+      preload: [[email_backend: :org], [template_backend: :org]]
     )
     |> Repo.one()
 
     recipients = Enum.map(messages, fn m -> 
       EmailRecipient.from_action_data(m.data) 
-      |> add_opt_in_confirm(m.data["actionId"])
+      |> add_supporter_confirm(m)
     end)
-    tmpl = %EmailTemplate{ref: org.email_opt_in_template}
 
-    # XXX we need links to be generated to confirm/reject the thing
-    # is this a place to generate Confirm objects
-    # or maybe the link should be in the message? This makes sense...
-    # Processing would create a proper Confirm models;
-    # then the Confirm is passed to Stage.support to generate links
-    # then this worker just uses them in a template
-    # XXX -> the confirm link should maybe support changing the scope? Useful for campaign vs all opt in
+    tmpl = %EmailTemplate{
+      ref: org.email_opt_in_template || org.template_backend.org.email_opt_in_template
+    }
+
     try do
       EmailBackend.deliver(recipients, org, tmpl)
       messages
@@ -196,8 +192,18 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
-  defp add_opt_in_confirm(rcpt = %EmailRecipient{}, action_id) do 
+  defp add_action_confirm(rcpt = %EmailRecipient{}, action_id) do 
     confirm = Proca.Confirm.ConfirmAction.create(%Action{id: action_id})
     EmailRecipient.put_confirm(rcpt, confirm)
+  end
+
+  defp add_supporter_confirm(rcpt = %EmailRecipient{}, %Message{data: data}) do 
+    a = %Action{id: data["actionId"], supporter: %Supporter{fingerprint: data["contact"]["ref"]}}
+
+    EmailRecipient.from_action_data(data) 
+    |> EmailRecipient.put_fields([
+      confirm_link: supporter_link(a, :confirm),
+      reject_link: supporter_link(a, :reject)
+    ])
   end
 end
