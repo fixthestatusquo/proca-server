@@ -56,7 +56,18 @@ defmodule Proca.Service.EmailRecipient do
 
       %{rcpt | fields: Map.merge(fields, cflds)}
   end
+
+  def put_fields(rcpt = %EmailRecipient{fields: fields}, fields2) when is_map(fields) do 
+    %{rcpt | fields: Map.merge(fields, fields2)}
+  end
+
+  def put_fields(rcpt, []), do: rcpt
+  def put_fields(rcpt = %EmailRecipient{fields: fields}, [{key, val} | rest]) do
+    %{rcpt | fields: Map.put(fields, Atom.to_string(key), val)}
+    |> put_fields(rest)
+  end
 end
+
 
 defimpl Bamboo.Formatter, for: Proca.Service.EmailRecipient do
   def format_email_address(recipient, _opts) do

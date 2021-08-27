@@ -70,20 +70,22 @@ defmodule Proca.Service.EmailBackend do
     apply(backend, :deliver, [e, org])
   end
 
+  # Org uses own email backend
   defp from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
     {org.title, org.email_from}
   end
 
+  # org uses someone elses email backend
   defp from(org = %Org{email_backend: %Service{org: via_org}}) do
     via_from(org, via_org)
   end
 
   defp via_from(%{title: org_title, email_from: email_from}, %{email_from: via_email_from})
   when not is_nil(email_from) and not is_nil(via_email_from) do
-    [user, _domain] = Regex.split(~r/@/, email_from)
+    [_user, domain] = Regex.split(~r/@/, email_from)
     [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
 
-    {org_title, "#{via_user}+#{user}@#{via_domain}"}
+    {org_title, "#{via_user}+#{domain}@#{via_domain}"}
   end
 
   defp via_from(_o1, _o2) do

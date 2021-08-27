@@ -142,6 +142,7 @@ defmodule Proca.Server.Processing do
     }
   end
 
+  # Needs double opt-in 
   def transition(
         action = %{
           processing_status: :new,
