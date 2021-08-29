@@ -10,9 +10,9 @@ defmodule Proca.Stage.EmailSupporter do
   alias Proca.Repo
   import Ecto.Query
   import Logger
-  import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 2]
+  import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
 
-  alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
+  alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate, EmailTemplateDirectory}
 
   def start_for?(%Org{email_backend_id: ebid, template_backend_id: tbid}) when is_number(ebid) and is_number(tbid) do
     true
@@ -137,17 +137,22 @@ defmodule Proca.Stage.EmailSupporter do
       |> add_supporter_confirm(m)
     end)
 
-    tmpl = %EmailTemplate{
-      ref: org.email_opt_in_template || org.template_backend.org.email_opt_in_template
-    }
+    tmpl_name = org.email_opt_in_template || org.template_backend.org.email_opt_in_template
+    case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do 
+      {:ok, tmpl_ref} -> 
+        tmpl = %EmailTemplate{ref: tmpl_ref}
 
-    try do
-      EmailBackend.deliver(recipients, org, tmpl)
-      messages
-    rescue
-      x in EmailBackend.NotDeliverd ->
-        error("Failed to send email batch #{x.message}")
-      Enum.map(messages, &Message.failed(&1, x.message))
+        try do
+          EmailBackend.deliver(recipients, org, tmpl)
+          messages
+        rescue
+          x in EmailBackend.NotDeliverd ->
+            error("Failed to send email batch #{x.message}")
+          Enum.map(messages, &Message.failed(&1, x.message))
+        end
+
+      :not_found -> 
+        Enum.map(messages, &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})"))
     end
   end
 
@@ -198,12 +203,11 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   defp add_supporter_confirm(rcpt = %EmailRecipient{}, %Message{data: data}) do 
-    a = %Action{id: data["actionId"], supporter: %Supporter{fingerprint: data["contact"]["ref"]}}
-
-    EmailRecipient.from_action_data(data) 
-    |> EmailRecipient.put_fields([
-      confirm_link: supporter_link(a, :confirm),
-      reject_link: supporter_link(a, :reject)
+    action_id = data["actionId"]
+    ref = data["contact"]["ref"]
+    EmailRecipient.put_fields(rcpt, [
+      confirm_link: supporter_link(action_id, ref, :confirm),
+      reject_link: supporter_link(action_id, ref, :reject)
     ])
   end
 end

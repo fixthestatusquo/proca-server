@@ -57,7 +57,7 @@ defmodule Proca.Service.EmailRecipient do
       %{rcpt | fields: Map.merge(fields, cflds)}
   end
 
-  def put_fields(rcpt = %EmailRecipient{fields: fields}, fields2) when is_map(fields) do 
+  def put_fields(rcpt = %EmailRecipient{fields: fields}, fields2) when is_map(fields2) do 
     %{rcpt | fields: Map.merge(fields, fields2)}
   end
 

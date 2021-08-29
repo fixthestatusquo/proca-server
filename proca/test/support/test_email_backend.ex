@@ -51,11 +51,12 @@ defmodule Proca.TestEmailBackend do
 
   @impl true
   def list_templates(_srv) do
-    [
+    t = [
       %EmailTemplate{ref: "ref:thankyouemail", name: "thank_you", subject: "Thank you email", html: "Thank you body"},
       %EmailTemplate{ref: "ref:addpartner", name: "add_partner", subject: "You are invited to join a campaign", html: "Invite body"},
       %EmailTemplate{ref: "ref:launchpage", name: "launch_page", subject: "Partner request", html: "Can I join campaign?"}
     ]
+    {:ok, t}
   end
 
   @impl true

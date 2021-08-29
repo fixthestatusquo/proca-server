@@ -28,7 +28,7 @@ defmodule ProcaWeb.ConfirmController do
          :ok <- handle_supporter(action, args.verb)
     do
       conn
-      |> redirect(to: Map.get(args, :redir, "/"))
+      |> redirect(external: Map.get(args, :redir, "/"))
       |> halt()
     else 
       {:error, status, msg} -> 

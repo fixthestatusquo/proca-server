@@ -14,6 +14,7 @@ defmodule Proca.Service.Mailjet do
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailBackend}
   alias Bamboo.{MailjetAdapter, MailjetHelper, Email}
+  import Logger
 
   @api_url "https://api.mailjet.com/v3"
   @template_path "/REST/template"
@@ -26,9 +27,12 @@ defmodule Proca.Service.Mailjet do
   @impl true
   def list_templates(%Org{template_backend: %Service{} = srv}) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}", auth: :basic) do
-      {:ok, 200, %{"Data" => templates}} -> templates |> Enum.map(&template_from_json/1)
+      {:ok, 200, %{"Data" => templates}} -> {:ok, templates |> Enum.map(&template_from_json/1)}
+      {:ok, 401} -> {:error, "not authenticated"}
       {:error, err} -> {:error, err}
-      _x -> {:error, "unexpected return from mailjet list templates"}
+      x -> 
+        error("Mailjet List Template API unexpected result: #{inspect(x)}")
+        {:error, "unexpected return from mailjet list templates"}
     end
   end
 
@@ -69,8 +73,6 @@ defmodule Proca.Service.Mailjet do
     |> MailjetHelper.template(ref)
     |> MailjetHelper.template_language(true)
   end
-
-
 
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
     when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
