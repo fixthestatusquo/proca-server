@@ -26,7 +26,7 @@ defmodule Proca.Service.EmailBackend do
 
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
-  @callback list_templates(org :: %Org{}) :: [%EmailTemplate{}]
+  @callback list_templates(org :: %Org{}) :: {:ok, [%EmailTemplate{}]} | {:error, reason :: String.t()}
   @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) ::
               :ok | {:error, reason :: String.t()}
   @callback get_template(org :: %Org{}, ref :: String.t()) ::
