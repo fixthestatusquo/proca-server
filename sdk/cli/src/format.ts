@@ -109,7 +109,6 @@ class Terminal {
     const m : WidgetConfig = {
       actionpage: ap.id,
       lang: ap.locale,
-      journey: ap.journey,
       filename: ap.name,
       organisation: org.title || '',
       lead: ap.campaign?.org ? pickLead(ap.campaign.org) : undefined,
@@ -130,9 +129,6 @@ class Terminal {
     // actionpage (id) should be passed in options
     ap.locale = config.lang || ap.locale
     delete config.lang
-
-    ap.journey = config.journey || ap.journey
-    delete config.journey
 
     ap.name = config.filename || ap.name
     delete config.filename

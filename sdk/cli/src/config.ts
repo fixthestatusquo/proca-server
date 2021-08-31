@@ -91,7 +91,6 @@ export function overrideConfig(config : CliConfig, overrides : Partial<CliConfig
 export type WidgetConfig = {
   actionpage: number,
   lang: string,
-  journey: string[],
   filename: string,
   organisation: string,
   campaign?: {

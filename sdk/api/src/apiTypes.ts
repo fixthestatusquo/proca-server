@@ -70,7 +70,7 @@ export type ActionPage = {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -98,8 +98,6 @@ export type ActionPageInput = {
   thankYouTemplateRef?: Maybe<Scalars['String']>;
   /** Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. */
   extraSupporters?: Maybe<Scalars['Int']>;
-  /** List of steps in the journey */
-  journey?: Maybe<Array<Scalars['String']>>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -466,7 +464,7 @@ export type PrivateActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -584,7 +582,7 @@ export type PublicActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
