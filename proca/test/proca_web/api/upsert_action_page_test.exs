@@ -39,7 +39,6 @@ defmodule ProcaWeb.Api.UpsertActionPage do
       input: {
         locale: "jp",
         name: "yellow.org/other",
-        journey: ["sign", "share"],
         config: "{\\"foo\\": 123}"
       }
       )
@@ -61,7 +60,6 @@ defmodule ProcaWeb.Api.UpsertActionPage do
       updated = Proca.Repo.get(Proca.ActionPage, ap.id)
       assert updated.config == %{"foo" => 123}
       assert updated.name == "yellow.org/other"
-      assert updated.journey == ["sign", "share"]
     end
   end
 end

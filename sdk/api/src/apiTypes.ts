@@ -649,12 +649,12 @@ export type RootMutationType = {
   updateActionPage: ActionPage;
   /**
    * Adds a new Action Page based on another Action Page. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyActionPage: ActionPage;
   /**
    * Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyCampaignActionPage: ActionPage;
   addActionPage: ActionPage;

@@ -53,7 +53,8 @@ defmodule Proca.Factory do
       org: org,
       locale: "en",
       campaign: campaign,
-      delivery: false
+      delivery: false,
+      config: %{"journey" => ["Petition", "Share"]}
     }
     |> merge_attributes(attrs) 
     |> evaluate_lazy_attributes()

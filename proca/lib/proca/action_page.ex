@@ -16,7 +16,6 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :name, :string
     field :delivery, :boolean, default: true
-    field :journey, {:array, :string}, default: ["Petition", "Share"]
     field :config, :map, default: %{}
     field :live, :boolean, default: false
 
@@ -46,7 +45,6 @@ defmodule Proca.ActionPage do
       :extra_supporters,
       :delivery,
       :thank_you_template_ref,
-      :journey,
       :config
     ])
     |> validate_required([:name, :locale, :extra_supporters])
@@ -117,7 +115,7 @@ defmodule Proca.ActionPage do
   def create(kwlist) when is_list(kwlist), do: create(%ActionPage{}, kwlist)
   def create(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> create(kw)
   def create(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> create(kw)
-  def create(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :journey, :locale])) |> create(kw)
+  def create(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :locale])) |> create(kw)
   def create(ap, []), do: Repo.insert(ap)
 
   def find(id) when is_integer(id) do
