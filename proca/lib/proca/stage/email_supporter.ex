@@ -55,8 +55,7 @@ defmodule Proca.Stage.EmailSupporter do
   Not all actions generate thank you emails.
 
   1. Email and template backend must be configured for the org (Org, AP, )
-  2. ActionPage's action_type must be first in journey. Always send if no journey set [In DB]
-  3. ActionPage's email template must be set [present in JSON]. (XXX Or fallback to org one?)
+  2. ActionPage's email template must be set [present in JSON]. (XXX Or fallback to org one?)
   """
 
   @impl true
