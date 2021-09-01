@@ -4,7 +4,7 @@
 
 the vast majority of this repo is the [elixir server](./proca). However, we have put as well some client api code that often needs to stay in sync with the server.
 
-- Monorepo for Proca server
+- Monorepo for [Proca server](https://docs.proca.app)
 - SDK libraries in Typescript and Javascript, and common microservices (Managed by Lerna, JS monorepo manager)
 
 - Included packages:
