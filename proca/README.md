@@ -28,35 +28,16 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 # Prerequisites
 
-## PostgreSQL >= 10
+- PostgreSQL >= 10
+- Elixir >= 1.10
+  [Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
 
-## Elixir >= 1.10
+  You'll need the following packages:
+    `erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir`
 
-[Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
+- RabbitMQ (3.x, tested on 3.8)
 
-You'll need the following packages:
-
-    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
-
-## RabbitMQ
-
-## NodeJS (14.*.*)
-
-# Prerequisites
-
-## PostgreSQL >= 10
-
-## Elixir >= 1.10
-
-[Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
-
-You'll need the following packages:
-
-    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
-
-## RabbitMQ (3.x, tested on 3.8)
-
-## NodeJS (>= 10?) / npm >= 7?
+- NodeJS (>= 10)
 
 # Development setup
 

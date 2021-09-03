@@ -4,7 +4,7 @@ Contexts are [module groups](https://hexdocs.pm/phoenix/contexts.html) of relate
 
 - Actions - action, contact, supporter, field, sources, Actions.Message
 - Contact - all things related to contact validation
-- Stages - all things processing actions 
+- Stage - all things processing actions 
 - Pipes - proca queues integration
 - Orgs - org, staffer, public_key, encryption
 - Campaign, ActionPAge
