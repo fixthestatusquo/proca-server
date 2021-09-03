@@ -98,8 +98,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       fields: Enum.map(action.fields, &Map.take(&1, [:key, :value])),
       privacy: format_privacy(contact),
       trackng: action.source,
-      campaign: Map.take(action.campaign, [:name, :external_id]),
-      action_page: Map.take(action.action_page, [:id, :name, :locale])
+      campaign: action.campaign,
+      action_page: action.action_page
     }
     |> put_action_donation(action.donation)
   end
