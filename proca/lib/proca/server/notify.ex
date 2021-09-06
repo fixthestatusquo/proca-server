@@ -57,7 +57,6 @@ defmodule Proca.Server.Notify do
     cnf = Repo.preload(cnf, [creator: :user])
 
     Proca.Confirm.notify_by_email(cnf, recipients)
-    |> IO.inspect(label: "email notif")
   end
 
   ##### SIDE EFFECTS
