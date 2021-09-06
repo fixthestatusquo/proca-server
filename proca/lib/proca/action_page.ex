@@ -5,9 +5,10 @@ defmodule Proca.ActionPage do
   Action Page accepts data in many formats (See Contact.Data) and produces Contact and Supporter records.
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
 
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3]
 
   alias Proca.Repo
   alias Proca.{ActionPage, Campaign, Org}
@@ -125,6 +126,10 @@ defmodule Proca.ActionPage do
   def find(name) when is_bitstring(name) do
     Repo.one from a in ActionPage, where: a.name == ^name, preload: [:campaign, :org]
   end
+
+  def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
+  def all(q, [{:id, id} | kw]), do: where(q, [a], a.id == ^id) |> all(kw)
+
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do
