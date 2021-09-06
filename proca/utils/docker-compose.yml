@@ -17,7 +17,7 @@ services:
       PORT: 4000
       DOMAIN: ${DOMAIN:-proca-api.lvh.me}
       ORG_NAME: instance
-      ADMIN_EMAIL: michal@wemove.eu
+      ADMIN_EMAIL: admin@proca.app
       POOL_SIZE: 40
       SECRET_KEY_BASE: ${SECRET1:-S989x3K2vxbsp7jkd8igjADuNfBACjQdry38b97h6NQNhxHTHppFn4ViUejYKsqE}
       SIGNING_SALT: ${SECRET2:-qHw7w6NmN3LrwFMzEXErxZKQNywjBXyLkuWt7mXzRJwwLsZbC2pfoyHsYoP4s2eD}
