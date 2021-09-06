@@ -24,7 +24,7 @@ defmodule Proca.Repo.Migrations.MoveActionPageJourneyToConfig do
       (SELECT jsonb_array_elements_text((a2.config->>'journey')::jsonb) as step 
        FROM action_pages a2 
        WHERE a2.id = action_pages.id ) s)
-    WHERE config->>'journey' is not null;
+    WHERE config->>'journey' is not null
     """
   end
 end
