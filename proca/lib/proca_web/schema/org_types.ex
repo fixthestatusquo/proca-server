@@ -112,7 +112,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
-      arg(:id, :integer)
+      arg(:id, non_null(:integer))
       resolve(&Resolvers.Org.campaign_by_id/3)
     end
   end
