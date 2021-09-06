@@ -131,12 +131,12 @@ defmodule Proca.Server.Processing do
           processing_status: :new,
           supporter: %{processing_status: :accepted}
         },
-        _ap
+        %ActionPage{live: live}
       ) do
     # do the moderation (via email?) XXX need the thank_you handler
     # go strainght to delivered
     {
-      change_status(action, :delivered, :accepted),
+      change_status(action, live && :delivered || :testing, :accepted),
       :action,
       :deliver
     }
@@ -148,7 +148,7 @@ defmodule Proca.Server.Processing do
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
-        %ActionPage{org: %{email_opt_in: opt_in}}
+        %ActionPage{org: %{email_opt_in: opt_in}, live: live}
       ) do
     # we should handle confirmation if required, but before it's implemented let's accept supporter
     # and instantly go to delivery
@@ -161,7 +161,7 @@ defmodule Proca.Server.Processing do
       }
     else
       {
-        change_status(action, :delivered, :accepted),
+        change_status(action, live && :delivered || :testing, :accepted),
         :action,
         :deliver
       }
@@ -176,6 +176,10 @@ defmodule Proca.Server.Processing do
       ) do
     # Action already delivered
     :ok
+  end
+
+  def transition(%{processing_status: :test}, _ap) do 
+    :ok 
   end
 
   def change_status(action, action_status, supporter_status) do

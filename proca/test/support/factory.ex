@@ -54,6 +54,7 @@ defmodule Proca.Factory do
       locale: "en",
       campaign: campaign,
       delivery: false,
+      live: true,
       config: %{"journey" => ["Petition", "Share"]}
     }
     |> merge_attributes(attrs) 
