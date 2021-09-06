@@ -21,11 +21,14 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
-  defp add_tracking_location(tr, nil), do: tr 
-  defp add_tracking_location(tr, referer) when is_bitstring(referer) do 
-    [location|_] = String.split(referer, "?")
-    Map.put(tr, :location, location)
+  defp add_tracking_location(tr, referer) do
+    location = Map.get(tr, :location, nil)
+    case Source.get_tracking_location(location, referer) do 
+      nil -> Map.delete(tr, :location)
+      url -> Map.put(tr, :location, url)
+    end
   end
+
 
   # utms given and referer header
   defp get_tracking(%{tracking: tr}, referer) do
