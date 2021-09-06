@@ -45,7 +45,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
   end
 
   def enabled? do
-    not is_nil Sentry.Config.dsn
+    Application.get_env(:proca, __MODULE__)[:enable] and not is_nil Sentry.Config.dsn
   end
 
 

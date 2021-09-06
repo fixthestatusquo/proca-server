@@ -59,6 +59,9 @@ config :proca, ProcaWeb.Endpoint,
 config :sentry,
   dsn: System.get_env("SENTRY_DSN") || nil
 
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: System.get_env("REPORT_USER_ERRORS") == "true" || false
+
 config :proca, ProcaWeb.Resolvers.Captcha,
   hcaptcha_key: System.get_env("HCAPTCHA_KEY")
 
