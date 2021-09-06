@@ -72,6 +72,9 @@ config :sentry,
   root_source_code_paths: [File.cwd!()],
   capture_log_messages: true
 
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: false
+
 config :logger,
   level: :info
 
