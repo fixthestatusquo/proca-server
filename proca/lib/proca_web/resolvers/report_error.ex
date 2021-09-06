@@ -60,11 +60,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
   end
 
   def scrub_headers(conn) do
-    # default is: Sentry.Plug.default_header_scrubber(conn)
-    #
-    # We do not want to include Content-Type or User-Agent in reported
-    # headers, so we drop them.
-    Enum.into(conn.req_headers, %{})
+    Sentry.PlugContext.default_header_scrubber(conn)
     |> Map.drop(["X-Forwarded-For", "X-Real-Ip"])
   end
 
