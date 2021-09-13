@@ -12,7 +12,7 @@
     "install": "yarn install.assets; mix deps.get",
     "postinstall": "mix compile",
     "prepublish": "yarn gen.schema",
-    "prepare": "mix compile",
+    "prepare": "mix compile && docker build -t $(git describe --tags) .",
     "test": "mix test"
   }
 }
