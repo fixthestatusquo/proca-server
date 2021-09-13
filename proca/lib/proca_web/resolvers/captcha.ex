@@ -62,16 +62,24 @@ defmodule ProcaWeb.Resolvers.Captcha do
   end
 
 
+  defp hcaptcha_key() do 
+    Application.get_env(:proca, __MODULE__)[:hcaptcha_key] 
+  end
+
+  defp default_service() do 
+    Application.get_env(:proca, :captcha_service) 
+  end
 
   @doc """
   If the hcaptcha is configured for the instance, verify the captcha. Otherwise, noop.
   """
-  def verify(resolution = %{extensions: %{captcha: code}}) do
+  def verify(resolution = %{extensions: ext = %{captcha: code}}) do
+    preferred_service = Map.get(ext, :captcha_service, default_service()) 
     cond do 
-      secret = Application.get_env(:proca, __MODULE__)[:hcaptcha_key] ->
+      secret = hcaptcha_key() and preferred_service == "hcaptcha" ->
         verify_hcaptcha(resolution, secret)
 
-      Service.Procaptcha.enabled?() -> 
+      Service.Procaptcha.enabled?() and preferred_service == "procaptcha" -> 
         case Service.Procaptcha.verify(code) do
           :ok -> resolution
           {:error, msg} -> resolution
