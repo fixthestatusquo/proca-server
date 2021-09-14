@@ -170,11 +170,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
     case Proca.Staffer.for_user_in_org(user, lead_id) do 
       nil -> 
         {:ok, nil}
-      staffer -> 
+      _staffer -> 
         all_partner_ids = from(
           ap in ActionPage, 
           where: ap.campaign_id == ^c_id and ap.org_id != ^lead_id, 
           select: ap.org_id, 
+          order_by: [desc: ap.id],
           distinct: true
         )
         partnerships = from(o in Org, 
