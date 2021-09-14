@@ -142,8 +142,8 @@ defmodule Proca.ActionPage do
 
   def kept_personalization_fields(
         %ActionPage{
-          campaign: campaign,
-          org: org
+          campaign: _campaign,
+          org: _org
         }
       ) do
     [:email, :first_name]
@@ -154,9 +154,16 @@ defmodule Proca.ActionPage do
     apply(schema, :from_input, [params])
   end
 
+  @doc """
+  Get the name part before /
+  """
   def name_domain(name) when is_bitstring(name) do 
     [d|_] = String.split(name, "/")
     d
+  end
+
+  def location(%ActionPage{id: id}) do 
+    Proca.ActionPage.Status.get_last_location(id) 
   end
 
   def name_path(name) when is_bitstring(name) do 
