@@ -73,7 +73,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do 
       resolve fn page, _, _ -> 
-        {:ok, Proca.ActionPage.Status.get_last_location(page.id)}
+        {:ok, Proca.ActionPage.location(page)}
       end
     end
 
