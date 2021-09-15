@@ -26,6 +26,7 @@ defmodule Proca.ActionPage do
     field :extra_supporters, :integer, default: 0
 
     field :thank_you_template_ref, :string
+    # XXX add :thank_you_template and calculate the ref via TemplateDictionary
 
     timestamps()
   end

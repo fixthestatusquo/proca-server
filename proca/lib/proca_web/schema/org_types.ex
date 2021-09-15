@@ -155,7 +155,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.delete_org/3)
     end
 
-    field :update_org, type: non_null(:org) do
+    field :update_org, type: non_null(:private_org) do
       middleware Authorized,
         access: [:org, by: [:name]],
         can?: [:change_org_settings]
@@ -223,6 +223,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Email opt in template name"
     field :email_opt_in_template, :string
+
+    @desc "High data security enabled"
+    field :high_security, non_null(:boolean)
   end
 
   @desc "Encryption or sign key with integer id (database)"

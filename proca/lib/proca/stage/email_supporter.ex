@@ -152,6 +152,9 @@ defmodule Proca.Stage.EmailSupporter do
 
       :not_found -> 
         Enum.map(messages, &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})"))
+
+      :not_configured -> 
+        Enum.map(messages, &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})"))
     end
   end
 
