@@ -82,11 +82,11 @@ defmodule ProcaWeb.Resolvers.Org do
   def org_personal_data(org, _args, _ctx) do
     {
       :ok,
-      %{
-        contact_schema: org.contact_schema,
-        email_opt_in: org.email_opt_in,
-        email_opt_in_template: org.email_opt_in_template
-      }
+      Map.take(org, [
+        :contact_schema, 
+        :email_opt_in, :email_opt_in_template, 
+        :high_security
+      ])
     }
   end
 
