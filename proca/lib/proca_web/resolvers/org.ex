@@ -90,6 +90,31 @@ defmodule ProcaWeb.Resolvers.Org do
     }
   end
 
+  def org_processing(org, _args, _ctx) do 
+    service = case Repo.preload(org, [:email_backend]) do
+      %{email_backend: srv} when not is_nil(srv) -> srv.name
+      _ -> nil 
+    end
+
+    {:ok, %{
+      email_from: org.email_from,
+      email_backend: service
+      }}
+  end
+
+  def update_org_processing(_, args, %{context: %{org: org}}) do 
+    chset = Org.changeset(org, args)
+    case Repo.update(chset) do 
+      {:ok, org} -> 
+        Proca.Server.Notify.org_updated(org, chset)
+        {:ok, org}
+      {:error, errors} -> {:error, Helper.format_errors(errors) }
+    end
+  end
+
+
+
+
   def add_org(_, %{input: params}, %{context: %{user: user}}) do
     perms = Staffer.Role.permissions(:owner)
 

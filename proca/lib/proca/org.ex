@@ -55,6 +55,7 @@ defmodule Proca.Org do
     |> cast(attrs, [
       :name, :title, 
       :contact_schema, 
+      :email_from,
       :email_opt_in, :email_opt_in_template, 
       :config, 
       :high_security
@@ -62,6 +63,7 @@ defmodule Proca.Org do
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
+    |> Proca.Contact.Input.validate_email(:email_from)
     |> validate_change(:email_opt_in_template, fn f, tmpl_name ->
       case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do 
         {:ok, _ref} -> []
@@ -69,7 +71,27 @@ defmodule Proca.Org do
         :not_configured -> [{f, "templating not configured"}]
       end
     end)
+    |> cast_email_backend(org, attrs)
   end
+
+  def cast_email_backend(chset, org, %{email_backend: srv_name}) 
+    when srv_name in [:mailjet, :ses] do 
+    case Proca.Service.get_one_for_org(srv_name, org) do 
+      nil -> add_error(chset, :email_backend, "no such service")
+      %{id: id} -> chset 
+        |> put_change(:email_backend_id, id)
+        |> put_change(:template_backend_id, id)
+    end
+  end
+
+  def cast_email_backend(ch, _org, %{email_backend: srv_name}) 
+    when is_atom(srv_name) do 
+      add_error(ch, :email_backend, "service does not support email")
+  end
+
+  def cast_email_backend(ch, _org, _a), do: ch 
+
+
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
   def all(q, [{:id, id} | kw]), do: where(q, [o], o.id == ^id) |> all(kw) 
