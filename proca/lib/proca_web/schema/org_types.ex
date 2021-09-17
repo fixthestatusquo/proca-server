@@ -293,25 +293,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :status, non_null(:status)
   end
 
-  enum :service_name do 
-    value :ses 
-    value :sqs 
-    value :mailjet
-    value :wordpress
-    value :stripe
-  end 
 
   input_object :select_service do
     field :name, :service_name
   end
 
-  object :service do 
-    field :id, non_null(:integer)
-    field :name, non_null(:service_name)
-    field :host, :string
-    field :user, :string
-    field :path, :string
-  end
 
   object :processing do 
     field :email_from, :string
