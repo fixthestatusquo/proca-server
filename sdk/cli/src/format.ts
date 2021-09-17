@@ -212,7 +212,7 @@ class Csv extends Terminal {
     let [input, opts] : Parameters<typeof csvStringify> = [[], {}]
 
     const pii = 'pii' in a.contact ? 
-      (a.contact as ActionWithPII).contact.pii : undefined;
+      (a as ActionWithPII).contact.pii : undefined;
 
     if (this.rowCount == 0) {
       opts.columns = [
