@@ -1,6 +1,6 @@
 {
   "name": "@proca/server",
-  "version": "3.0.0-alpha.14",
+  "version": "3.0.0-alpha.15",
   "description": "Proca server",
   "repository": "git@github.com:fixthestatusquo/proca-backend.git",
   "author": "Marcin Koziej <marcin@fixthestatusquo.org>",
