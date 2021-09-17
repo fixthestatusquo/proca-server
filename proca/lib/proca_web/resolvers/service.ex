@@ -1,6 +1,21 @@
 defmodule ProcaWeb.Resolvers.Service do
   alias Proca.ActionPage
   alias Proca.Service
+  alias ProcaWeb.Helper
+  import Proca.Repo
+
+  def upsert_service(_p, attrs = %{name: name}, %{context: %{org: org}}) do 
+    result = case Service.get_one_for_org(name, org) do 
+      nil -> Service.build_for_org(attrs, org, name)
+      srv -> Service.changeset(srv, attrs)
+    end
+    |> insert_or_update()
+
+    case result do 
+      {:ok, service} -> {:ok, service}
+      {:error, error} -> {:error, Helper.format_errors(error)}
+    end
+  end
 
   def add_stripe_payment_intent(
         _parent,

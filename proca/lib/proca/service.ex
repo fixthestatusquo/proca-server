@@ -18,14 +18,20 @@ defmodule Proca.Service do
     timestamps()
   end
 
+  def changeset(service, attrs) do
+    service
+    |> cast(attrs, [:host, :user, :password, :path])
+  end
+
   def build_for_org(attrs, %Org{id: org_id}, service) do
     %Service{}
-    |> cast(attrs, [:host, :user, :password, :path])
+    |> changeset(attrs)
     |> put_change(:name, service)
     |> put_change(:org_id, org_id)
   end
 
   # XXX potential problem - org.services might not be sorted from latest updated
+  # XXX inconsistent arg order 
   def get_one_for_org(name, %Org{services: lst}) when is_list(lst) do
     case Enum.filter(lst, fn srv -> srv.name == name end) do
       [s | _] -> s
