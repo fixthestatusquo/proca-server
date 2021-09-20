@@ -17,54 +17,67 @@ type Cache = {
 const CACHE : Cache = {form: {}}
 
 export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : CliConfig) {
-  const email : string = action.contact.pii?.email || action.contact.email
-  const optIn : boolean = action.privacy.communication
-  const campaignTitle : string = action.campaign.title
+  try {
+    const email: string = action.contact.pii?.email || action.contact.email
+    const optIn: boolean = action.privacy.communication
+    const campaignTitle: string = action.campaign.title
 
-  // check inputs
-  if (!email) throw new Error("Action with no email")
-  if (!campaignTitle) throw new Error("Action with missing campaign title")
-  if (!process.env.ACTIONNETWORK_APIKEY) throw new Error("ACTIONNETWORK_APIKEY is unset")
+    // check inputs
+    if (!email) throw new Error("Action with no email")
+    if (!campaignTitle) throw new Error("Action with missing campaign title")
+    if (!process.env.ACTIONNETWORK_APIKEY) throw new Error("ACTIONNETWORK_APIKEY is unset")
 
-  const c = client(process.env.ACTIONNETWORK_APIKEY)
+    const c = client(process.env.ACTIONNETWORK_APIKEY)
 
-  // fetch form for the campaign
-  let form = CACHE.form[campaignTitle]
-  if (!form) {
-    form = await getForm(c, {title: campaignTitle});
-    if (!form) throw new Error("Cannot find form for campaign tiled: " + campaignTitle)
-    CACHE.form[campaignTitle] = form
-  }
+    // fetch form for the campaign
+    let form = CACHE.form[campaignTitle]
+    if (!form) {
+      form = await getForm(c, { title: campaignTitle });
+      if (!form) throw new Error("Cannot find form for campaign tiled: " + campaignTitle)
+      CACHE.form[campaignTitle] = form
+    }
 
-  let newPersonData = actionToPerson(action)
-  let person = await getPerson(c, {email: email})
-  let updatePerson = false;
-  let personAttr;
+    let newPersonData = actionToPerson(action)
+    let person = await getPerson(c, { email: email })
+    let updatePerson = false;
+    let personUri;
 
-  if (person) { // person exists
-    personAttr = await person.get()
-    const personEmailIdx = personAttr.data.email_addresses.find((ea : any) => ea.address === email);
-    const personEmail = personAttr.data.email_addresses[personEmailIdx];
-    if (personEmail) { 
-      if (optIn && personEmail.status !== "subscribed") {
-        // set the email status to subscribed!
-        personAttr.data.email_addresses[personEmailIdx].status = "subscribed"
-        updatePerson = true
+    if (person) { // person exists
+      let personAttr = await person.get()
+      const personEmailIdx = personAttr.data.email_addresses.findIndex((ea: any) => ea.address === email);
+      const personEmail = personAttr.data.email_addresses[personEmailIdx]
+      if (personEmail) {
+        if (optIn && personEmail.status !== "subscribed") {
+          // set the email status to subscribed!
+          personAttr.data.email_addresses[personEmailIdx].status = "subscribed"
+          updatePerson = true
+        }
+      } else {
+        delete personAttr.data.email_addresses[personEmailIdx].status
+        console.error("Weird, person record does not have email we've fetched it by", personAttr.data.email_addresses)
       }
+
+      p(personAttr.data, "CURRENT DATA")
+      if (patchPerson(personAttr, newPersonData)) 
+        updatePerson = true;
+
+      if (updatePerson) {  // Do the update now if it is necessary
+        await person.put(personAttr);
+      }
+      personUri = personAttr.uri;
     } else {
-      console.error("Weird, person record does not have email we've fetched it by", personAttr.data.email_addresses)
+      const people = await createPerson(c, newPersonData)
+      personUri = people.links.get('self')?.href
     }
 
-    if (updatePerson)  {  // Do the update now if it is necessary
-      await person.put(personAttr);
+    const submission = await createSubmission(c, form, personUri);
+    return submission.uri
+  } catch (err) {
+    if (err.response) { 
+      console.error("Server responded:", await err.response.text())
+      throw err
     }
-  } else {
-    personAttr = await createPerson(c, {data: newPersonData})
   }
-
-  const submission = await createSubmission(c, form, personAttr);
-  p(submission.uri, "Created submission:")
-  return submission.uri
 }
 
 const p = (x : any, label = ">>>") => console.log(label, util.inspect(x, false, null, true))
@@ -104,7 +117,6 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
     u += '?filter=' + encodeURIComponent(fe);
   }
   
-  console.log('url', u)
   return u;
 }
 
@@ -174,6 +186,27 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
   return d;
  };
 
+// patch an existing contact record
+const patchPerson = (personAttr: State<any>, newPersonData: any) => {
+  if (personAttr.data.given_name !== newPersonData.given_name ||
+     personAttr.data.family_name !== newPersonData.family_name ||
+     personAttr.data.identifiers.indexOf(newPersonData.identifiers[0]) < 0 ||
+     personAttr.data.postal_addresses.findIndex((pa: any) =>
+      pa.country === newPersonData.postal_addresses[0].country &&
+      pa.postal_code === newPersonData.postal_addresses[0].postal_code) < 0 ||
+    personAttr.data.languages_spoken[0] !== newPersonData.languages_spoken[0]) {
+
+    personAttr.data.given_name = newPersonData.given_name
+    personAttr.data.family_name = newPersonData.family_name
+    personAttr.data.identifiers = newPersonData.identifiers
+    personAttr.data.postal_addresses = newPersonData.postal_addresses
+    personAttr.data.languages_spoken = newPersonData.languages_spoken
+    return true
+  } else {
+    return false
+  }
+}
+
 const putAction = async (client : Client, action: ActionMessage) => {
   const campaignTitle = action.campaign.title
 
@@ -200,7 +233,6 @@ const putAction = async (client : Client, action: ActionMessage) => {
       originating_system: "Proca.org",
       person: person
     };
-    p(data);
 
   const r = await submission.post({data})
   } catch (e) {
@@ -209,13 +241,13 @@ const putAction = async (client : Client, action: ActionMessage) => {
   }
 }
 
-const createSubmission = async(client : Client, form : Resource<any> | State<any>, person : Resource<any> | State<any>) => {
+const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string) => {
   const submissionUrl = form.uri + '/submissions'
 
   const submission = client.go(submissionUrl);
   const data = {
     "_links" : {
-      "osdi:person" : { "href" : person.uri }
+      "osdi:person" : { "href" : personUri }
     }
   }
   return await submission.post({data})
@@ -223,6 +255,8 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
 
 const createPerson =  async(client : Client , data : any) : Promise<State<any>> => {
   const people = client.go(uri("people"))
+  const payload = {data}
+  p(payload, "Create Person")
   return await people.post({data})
 };
 
