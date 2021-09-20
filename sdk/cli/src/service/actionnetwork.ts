@@ -339,4 +339,4 @@ export const toy = async (client : any) => {
   
 }
 
-toy(client("6c032f683a811d790c2d695ad9211059"))
+// toy(client(process.env.ACTIONNETWORK_APIKEY))
