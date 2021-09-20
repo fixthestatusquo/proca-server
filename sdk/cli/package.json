@@ -61,12 +61,14 @@
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.7",
     "@types/yargs": "^16.0.0",
-    "codegen-graphql-scalar-locations": "1.0.0-0"
+    "codegen-graphql-scalar-locations": "1.0.0-0",
+    "ts-node": "^10.2.1"
   },
   "resolutions": {
     "graphql": "15.5.0"
   },
   "peerDependencies": {
+    "ketting": "^7.2.0",
     "typescript": "^4.1.2"
   },
   "optionalDependencies": {
