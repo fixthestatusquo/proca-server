@@ -55,6 +55,10 @@ defmodule Proca.ActionPage do
       :name,
       ~r/^([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/
     )
+    |> validate_format(
+      :locale,
+      ~r/^[a-z]{2}(_[A-Z]{2})?$/
+    )
   end
 
   def changeset(attrs) do
