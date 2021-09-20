@@ -1,3 +1,14 @@
+```
+
+   ,,\\\\\\,,
+  ,\\\\\\\\\\\
+ ▲▲▲▲▲▲\\\\\\\\  FIX THE STATUS QUO 
+▲▲▲▲▲▲▲▲\\\\\\`  PROCA SERVER v3
+▼▼▼▼▼▼▼▼\\\\\`   
+ ▼▼▼▼▼▼\\\^``    https://proca.app
+
+```
+
 # Proca server & satelite packages
 
 ## About this repository
