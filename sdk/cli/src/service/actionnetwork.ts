@@ -37,7 +37,9 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
       CACHE.form[campaignTitle] = form
     }
 
+
     let newPersonData = actionToPerson(action)
+    customizePersonAttrs(newPersonData)
     let person = await getPerson(c, { email: email })
     let updatePerson = false;
     let personUri;
@@ -70,12 +72,27 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
       personUri = people.links.get('self')?.href
     }
 
-    const submission = await createSubmission(c, form, personUri);
+    const submission = await createSubmission(c, form, personUri, action);
     return submission.uri
   } catch (err) {
     if (err.response) { 
       console.error("Server responded:", await err.response.text())
       throw err
+    }
+  }
+}
+
+
+const customizePersonAttrs = (attrs : any) => {
+  switch (process.env.ACTIONNETWORK_CUSTOMIZE) {
+    case 'greensefa': {
+      const lang = attrs.languages_spoken[0]
+      if (lang) {
+        attrs.custom_fields ||= {}
+        attrs.custom_fields[`speaks_${lang}`] = "1"
+      }
+
+      break
     }
   }
 }
@@ -186,6 +203,8 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
   return d;
  };
 
+
+
 // patch an existing contact record
 const patchPerson = (personAttr: State<any>, newPersonData: any) => {
   if (personAttr.data.given_name !== newPersonData.given_name ||
@@ -241,14 +260,24 @@ const putAction = async (client : Client, action: ActionMessage) => {
   }
 }
 
-const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string) => {
+const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string, action : ActionMessage) => {
   const submissionUrl = form.uri + '/submissions'
 
   const submission = client.go(submissionUrl);
-  const data = {
+  const data : any = {
     "_links" : {
       "osdi:person" : { "href" : personUri }
     }
+  }
+  
+  if (action.tracking?.source) {
+    const rd : any = {
+      "source": action.tracking.source
+    }
+    if (action.tracking.source === "referrer") {
+      rd['website'] = action.tracking.campaign
+    }
+    data["action_network:referrer_data"] = rd
   }
   return await submission.post({data})
 };
@@ -256,7 +285,6 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
 const createPerson =  async(client : Client , data : any) : Promise<State<any>> => {
   const people = client.go(uri("people"))
   const payload = {data}
-  p(payload, "Create Person")
   return await people.post({data})
 };
 
@@ -283,94 +311,3 @@ const maybeNotFound = async <X>(promise : FollowPromiseOne<X>) : Promise<Resourc
   }
 }
 
-function getAll<T>(promiseList : Resource<T>[]) : Promise<State<T>[]> {
-  return Promise.all(promiseList.map(x => x.get()))
-}
-
-
-const testAction: ActionMessage = {
-  actionId: 13,
-  schema: "proca:action:1",
-  tracking: null,
-  stage: "deliver",
-  action: {
-    actionType: "register",
-    fields: {},
-    createdAt: "2021-09-20T10:00:00Z"
-  },
-  campaign: { title: "Another Form", name: "foo", externalId: null },
-  actionPage: { name: "test/en", locale: "en", thankYouTemplateRef: null},
-  actionPageId: 123,
-  contact: {
-    firstName: "", email: "", payload: "{}", ref: "THOM1239436860",
-    pii: {
-      firstName: "Tester",
-      lastName: "Marcin", 
-      email: "tester@gmail.com",
-      country: "DE", postcode: "12345"
-    },
-    nonce: null, signKey: null, publicKey: null,
-  },
-  privacy: {
-    communication: false, givenAt: "2021-09-20T10:00:00Z"
-  }
-}
-
-export const toy = async (client : any) => {
-  const pj = (x:any) => console.log(JSON.stringify(x, null, 2))
-
-  const form = await getForm(client, {title: "Another Form"})
-
-  p(form, "FORM")
-  p(form.uri, "FORM uri")
-/*
-  const darth  = await getPerson(client , {email: "darth@gmail.com"})
-
-  p(darth, "DARTH")
-
-  const darthData = await darth.get()
-  darthData.data.email_addresses[0].status = 'subscribed'
-  const z = await darth.put(darthData)
-
-  p(z, 'update result')
-*/
-  /*await create(client, personData());
-
-  const res = await get(client, {email_address: 'dump+1@cahoots.pl'})
-  const resData = await res.get();
-  pj(resData?.data)
-  */
-
-/*
-  pj(exists.data)
-  
-  try {
-  const ppl = await res.follow('osdi:people')
-  p(ppl)
-
-  const member = await ppl.get()
-  pj(member.data)
-
-  const toggle = (x :any) => {
-    if (x.status === "subscribed") {
-      x.status = "unsubscribed"
-    } else { 
-      x.status = "subscribed"
-    }
-  }
-
-  toggle(member.data.email_addresses[0])
-  const ures = await ppl.put(member)
-  p(ures)
-  } catch (e) {
-    console.error('not found' ,e)
-    console.log(e instanceof LinkNotFound);
-  }
-
-  // const p1 = await Promise.all(ppl.map((x:any) => x.get()))
-  //pj(p1.map((x:any) => x.data))
- */
-  
-}
-
-// toy(client(process.env.ACTIONNETWORK_APIKEY))
