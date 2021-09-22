@@ -39,6 +39,44 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 - NodeJS (>= 10)
 
+# Just trying out setup 
+
+**Required:**
+
+- docker
+- docker-compose 
+- proca-cli (install with: `npm i -g @proca/cli`)
+
+If you would just like to try out proca server, it's easiest with docker-compose:
+
+```
+$ cd proca/utils
+$ docker-compose up -d 
+# wait until the servers start 
+
+$ docker-compose logs proca 
+# note down the username and password for the user of primary "instance" organisation. 
+
+$ export API_URL=http://localhost:4000
+$ proca-cli setup 
+# in interactive session, choose "set up authentication" and then input: `instance`, `admin@proca.app` and password you noted down:
+
+Hello!
+
+- Using current working directory: /home/marcin/Projects/proca-server/proca/utils
+- There is not .env file - I will create it after asking You some questions
+
+? What would you like to do? Set up authentication (no org set, user is not set up, password is not set)
+? What is the short name of your org? instance
+? What is your username (email)? admin@proca.app
+? password: [hidden]
+Thanks! Fetching campaign list to check the credentials
+? What would you like to do? Save current config to .env file and leave
+```
+
+Now you can use proca-cli (in the directory where `.env` file was created) to talk to the server API. You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
+
+
 # Development setup
 
 The script utils/configure-development-environment.sh will setup PostgreSQL, the Erlang / Elixir / Pheonix server, the RabbitMQ server and runs npm install in the assets directory.
