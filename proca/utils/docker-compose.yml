@@ -54,6 +54,8 @@ services:
       RABBITMQ_DEFAULT_VHOST: proca
     volumes:
       - rabbitmq:/var/lib/rabbitmq
+    ports: 
+      - "15672:15672"
 
   web:
    restart: unless-stopped
