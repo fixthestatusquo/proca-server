@@ -70,7 +70,7 @@ defmodule ProcaWeb.Resolvers.User do
     do 
       case Staffer.build_for_user(user, org.id, Role.permissions(role)) |> insert() do 
         {:ok, _} -> {:ok, %{status: :success}}
-        {:error, e} -> {:error, format_errors(e)}
+        {:error, _} = e -> e
       end
 
     else 

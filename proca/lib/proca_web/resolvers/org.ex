@@ -291,7 +291,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
     case joining do 
       {:ok, _} -> {:ok, %{status: :success, org: org}}
-      {:error, chg} -> {:error, Helper.format_errors(chg)}
+      {:error, _} = e -> e
     end 
 
     else
