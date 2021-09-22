@@ -75,7 +75,11 @@ Thanks! Fetching campaign list to check the credentials
 ? What would you like to do? Save current config to .env file and leave
 ```
 
-Now you can use proca-cli (in the directory where `.env` file was created) to talk to the server API. You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
+Now you can:
+
+- Use proca-cli (in the directory where `.env` file was created) to talk to the server API. 
+- You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
+- You can see the processing in action using [RabbitMQ management console](http://localhost:15672/) - login with user name _proca_, password _proca_.
 
 
 # Development setup
