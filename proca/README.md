@@ -59,7 +59,8 @@ $ docker-compose logs proca
 
 $ export API_URL=http://localhost:4000
 $ proca-cli setup 
-# in interactive session, choose "set up authentication" and then input: `instance`, `admin@proca.app` and password you noted down:
+# in interactive session, choose "set up authentication" and then input
+# "instance", "admin@proca.app" and password you noted down:
 
 Hello!
 
