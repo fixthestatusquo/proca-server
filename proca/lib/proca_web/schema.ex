@@ -42,4 +42,13 @@ defmodule ProcaWeb.Schema do
   subscription do
     import_fields(:updates)
   end
+
+  def middleware(middleware, _field, %{identifier: type}) 
+    when type in [:query, :mutation] do
+    middleware ++ [ProcaWeb.Resolvers.NormalizeError]
+  end
+
+  def middleware(middleware, _field, _object) do
+    middleware
+  end
 end

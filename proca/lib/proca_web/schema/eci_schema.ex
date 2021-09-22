@@ -62,4 +62,14 @@ defmodule ProcaWeb.Schema.EciSchema do
       if ReportError.enabled?, do: middleware ReportError
     end
   end
+
+  def middleware(middleware, _field, %{identifier: type}) 
+    when type in [:query, :mutation] do
+    middleware ++ [ProcaWeb.Resolvers.NormalizeError]
+  end
+
+  def middleware(middleware, _field, _object) do
+    middleware
+  end
+
 end
