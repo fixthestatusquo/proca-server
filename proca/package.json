@@ -13,6 +13,7 @@
     "postinstall": "mix compile",
     "prepublish": "yarn gen.schema",
     "prepare": "mix compile && docker build -t $(git describe --tags) .",
-    "test": "mix test"
+    "test": "mix test",
+    "docker-build": "docker build -t ftsq/proca-backend:latest . && echo 'Image built, now You can: cd utils; docker-compose up'"
   }
 }
