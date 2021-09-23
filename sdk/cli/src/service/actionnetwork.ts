@@ -16,7 +16,7 @@ type Cache = {
 
 const CACHE : Cache = {form: {}}
 
-export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : CliConfig) {
+export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig) {
   try {
     const email: string = action.contact.pii?.email || action.contact.email
     const optIn: boolean = action.privacy.communication
@@ -26,15 +26,17 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
     if (!email) throw new Error("Action with no email")
     if (!campaignTitle) throw new Error("Action with missing campaign title")
     if (!process.env.ACTIONNETWORK_APIKEY) throw new Error("ACTIONNETWORK_APIKEY is unset")
+    const formTitle = campaignTitle + " " + action.actionPage.locale.split("_")[0].toUpperCase()
+    console.log('Action for form ' + formTitle)
 
     const c = client(process.env.ACTIONNETWORK_APIKEY)
 
     // fetch form for the campaign
-    let form = CACHE.form[campaignTitle]
+    let form = CACHE.form[formTitle]
     if (!form) {
-      form = await getForm(c, { title: campaignTitle });
-      if (!form) throw new Error("Cannot find form for campaign tiled: " + campaignTitle)
-      CACHE.form[campaignTitle] = form
+      form = await getForm(c, { title: formTitle });
+      if (!form) throw new Error("Cannot find form for campaign titled: " + formTitle)
+      CACHE.form[formTitle] = form
     }
 
 
@@ -49,7 +51,7 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
       const personEmailIdx = personAttr.data.email_addresses.findIndex((ea: any) => ea.address === email);
       const personEmail = personAttr.data.email_addresses[personEmailIdx]
       if (personEmail) {
-        if (optIn && personEmail.status !== "subscribed") {
+        if (optIn && personEmail.status === "unsubscribed") {
           // set the email status to subscribed!
           personAttr.data.email_addresses[personEmailIdx].status = "subscribed"
           updatePerson = true
@@ -75,10 +77,14 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
     const submission = await createSubmission(c, form, personUri, action);
     return submission.uri
   } catch (err) {
-    if (err.response) { 
-      console.error("Server responded:", await err.response.text())
-      throw err
+    if (serviceOpts.sentry) {
+      const Sentry = require("@sentry/node")
+      Sentry.captureException(err)
     }
+
+    if (err.response) console.error("Server responded:", await err.response.text())
+
+    throw err
   }
 }
 
