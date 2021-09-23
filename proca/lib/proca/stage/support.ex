@@ -105,7 +105,7 @@ defmodule Proca.Stage.Support do
     }
   end
 
-  def action_data(action, stage \\ :deliver) do
+  def action_data(action, stage \\ :deliver, org_id \\ nil) do
     action =
       Repo.preload(
         action,
@@ -121,8 +121,9 @@ defmodule Proca.Stage.Support do
 
     # XXX we should be explicit about Contact org_id recipient, because for unencrypted contacts we do not have
     # the public_key!
+    org_id = org_id || action.action_page.org_id
     contact =
-      Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
+      Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
 
     privacy =
       if not is_nil(contact) and action.with_consent do
