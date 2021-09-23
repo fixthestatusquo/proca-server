@@ -24,10 +24,7 @@ create_keys = fn org ->
 create_admin = fn org, username ->
   user = Proca.Users.User.create!(username) || Proca.Repo.get_by( Proca.Users.User, email: username)
 
-  Proca.Staffer.build_for_user(user, org.id, [])
-  |> Ecto.Changeset.apply_changes()
-  |> Proca.Staffer.Role.change(:admin)
-  |> Proca.Repo.insert!()
+  user |> Proca.Users.User.update([:admin]) |> update!
 
   IO.puts "#####"
   IO.puts "#####   Created Admin user #{username}  #####"
