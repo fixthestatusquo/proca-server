@@ -32,10 +32,10 @@ defmodule Proca.Staffer.Permission do
     launch_action_page: 1 <<< 19  # XXX this is unused but maybe could be usefull for moderation
   ]
 
-  def can?(%Staffer{perms: perms}, permission) when is_atom(permission) do
+  def can?(%Staffer{perms: perms, user: %{perms: user_perms}}, permission) when is_atom(permission) do
     case @bits[permission] do
       bit when is_nil(bit) -> raise ArgumentError, message: "No such permission #{permission}"
-      bit -> (perms &&& bit) > 0
+      bit -> ((perms ||| user_perms) &&& bit) > 0
     end
   end
 
@@ -71,6 +71,14 @@ defmodule Proca.Staffer.Permission do
 
   def remove(perms, permission) when is_integer(perms) and is_integer(permission) do
     perms &&& bnot(permission)
+  end
+
+  def staffer(perms) when is_integer(perms) do 
+    perms &&& 0xFFF0
+  end
+
+  def user(perms) when is_integer(perms) do 
+    perms &&& 0xF
   end
 
   def to_list(perms) when is_integer(perms) do

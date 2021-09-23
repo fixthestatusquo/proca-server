@@ -16,18 +16,8 @@ defmodule Proca.CreateAdminAccount do
   end
 
   defp create(email) do
-    org = hd Proca.Org.list()
-    create(email, org.id)
-  end
-
-  defp create(email, org_id) do
-    # if is_integer(org) do
-    #   IO.puts("Looking up org #{org}")
-    #   # org = Proca.Repo.get_by(Proca.Org, id: org)
-    org = Proca.Org.get_by_id(org_id)
-    # else
-    #   IO.puts("org #{org} is not an int")
-    # end
+  defp create(email) do
+    org = Proca.Org.one(name: Org.instance_org_name)
 
     user = Proca.Repo.get_by(Proca.Users.User, email: email)
     user = if user do
@@ -39,7 +29,17 @@ defmodule Proca.CreateAdminAccount do
 
     case user do
       nil -> IO.puts("I couldn't create or find a user with email \"#{email}\". Is it really an email?")
-      %Proca.Users.User{} -> _create_admin(user, org)
+      %Proca.Users.User{} -> 
+        Proca.Users.User.update(user, [:admin])
+
+        IO.puts("""
+
+        Welcome to #{org.title}
+
+        Login: #{user.email}
+        Password: #{user.password || "** Existing user **"}
+
+        """)
     end
   end
 
@@ -68,16 +68,6 @@ defmodule Proca.CreateAdminAccount do
     |> Proca.Staffer.Role.change(:admin)
     |> Proca.Repo.insert!()
 
-    IO.puts("""
-
-    Welcome to #{org.title}
-
-    URL: ????
-
-    Login: #{user.email}
-    Password: #{user.password || "** Existing user **"}
-
-    """)
   end
 
   defp help() do

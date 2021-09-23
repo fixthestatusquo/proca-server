@@ -5,9 +5,6 @@ defmodule Proca.Staffer.Role do
   alias Ecto.Changeset
 
   @moduledoc """
-  What roles do we need right now?
-  - Instance admin 👾
-
   For the organisation (they should be exclusive):
   - Campaigner (a normal org member, can add campaigns and action_pages) 🤹 (person juggling)
   - Mechanic (settings, can add people to the org, use api, etc) [woman mechanic 👩‍🔧]
@@ -19,20 +16,6 @@ defmodule Proca.Staffer.Role do
 
   # Must be ordered from most to least capable!
   @roles [
-    admin: [
-      :instance_owner,
-      :join_orgs,
-      :manage_users,
-      :manage_orgs,
-      # same as owner
-      :org_owner,
-      :export_contacts,
-      :change_org_users,
-      :change_org_settings,
-      :manage_campaigns,
-      :manage_action_pages
-
-    ],
     owner: [
       :org_owner,
       :export_contacts,
