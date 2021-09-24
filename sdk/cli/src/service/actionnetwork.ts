@@ -19,6 +19,10 @@ const CACHE : Cache = {form: {}}
 export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig) {
   try {
     const email: string = action.contact.pii?.email || action.contact.email
+    if (action.privacy === null) {
+      console.log("Action without contact", action.action.actionType)
+      return
+    }
     const optIn: boolean = action.privacy.communication
     const campaignTitle: string = action.campaign.title
 
