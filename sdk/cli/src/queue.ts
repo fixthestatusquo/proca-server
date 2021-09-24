@@ -57,11 +57,11 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
         .then((v : any) => {
           ch.ack(msg)
         })
-        .catch((e : Error) => {
-          ch.nack(msg)
-          ch.cancel(consumerTag)
-          ch.close()
-          conn.close()
+        .catch(async (e : Error) => {
+          await ch.nack(msg, false, false)
+          await ch.cancel(consumerTag)
+          await ch.close()
+          await conn.close()
           console.error('failure to syncAction:', e)
           fail(e)
         })
