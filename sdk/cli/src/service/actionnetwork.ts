@@ -66,6 +66,7 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
         updatePerson = true;
 
       if (updatePerson) {  // Do the update now if it is necessary
+        p(newPersonData, "Updating with these params")
         await person.put(personAttr);
       }
       personUri = personAttr.uri;
@@ -187,11 +188,19 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
     status: action.privacy.communication ? "subscribed" : "unsubscribed"
   });
 
-  const dAddress = () => ({
-    primary: true,
-    postal_code: pii.postcode,
-    country: pii.country 
-  });
+  const dAddress = () => {
+    const x : any = {
+      primary: true,
+      country: pii.country 
+    }
+
+    if (pii.postode) {
+      x['postal_code'] = pii.postcode
+    }
+    
+    return x
+  }
+
 
   const d : any = {
     given_name: pii.firstName,
@@ -200,12 +209,15 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
       "proca:" + action.contact.ref
     ],
     languages_spoken: [action.actionPage.locale.split("_")[0]],
-    email_addresses: [dEmail(pii.email)],
-    postal_addresses: [dAddress()]
+    email_addresses: [dEmail(pii.email)]
   }
 
   if (pii.phone) {
     d['phone_numbers'] = [dPhone(pii.phone)]
+  }
+
+  if (pii.country) {
+    d['postal_addresses'] = [dAddress()]
   }
 
   return d;
@@ -217,15 +229,15 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
 const patchPerson = (personAttr: State<any>, newPersonData: any) => {
   if (personAttr.data.given_name !== newPersonData.given_name ||
      personAttr.data.family_name !== newPersonData.family_name ||
-     personAttr.data.identifiers.indexOf(newPersonData.identifiers[0]) < 0 ||
-     personAttr.data.postal_addresses.findIndex((pa: any) =>
+     // personAttr.data.identifiers.indexOf(newPersonData.identifiers[0]) < 0 ||
+     (newPersonData.postal_addresses && personAttr.data.postal_addresses.findIndex((pa: any) =>
       pa.country === newPersonData.postal_addresses[0].country &&
-      pa.postal_code === newPersonData.postal_addresses[0].postal_code) < 0 ||
+      pa.postal_code === newPersonData.postal_addresses[0].postal_code) < 0) ||
     personAttr.data.languages_spoken[0] !== newPersonData.languages_spoken[0]) {
 
     personAttr.data.given_name = newPersonData.given_name
     personAttr.data.family_name = newPersonData.family_name
-    personAttr.data.identifiers = newPersonData.identifiers
+    // personAttr.data.identifiers = newPersonData.identifiers - i can't add a new identifier with PUT people/
     personAttr.data.postal_addresses = newPersonData.postal_addresses
     personAttr.data.languages_spoken = newPersonData.languages_spoken
     return true
@@ -275,12 +287,13 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
   const data : any = {
     "_links" : {
       "osdi:person" : { "href" : personUri }
-    }
+    },
+    triggers: { autoresponse: {enabled: true } }
   }
   
   if (action.tracking?.source) {
     const rd : any = {
-      "source": action.tracking.source
+      "source": action.tracking.source === "a/n" ? "unknown" : action.tracking.source
     }
     if (action.tracking.source === "referrer") {
       rd['website'] = action.tracking.campaign
