@@ -61,7 +61,7 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
         console.error("Weird, person record does not have email we've fetched it by", personAttr.data.email_addresses)
       }
 
-      p(personAttr.data, "CURRENT DATA")
+      p(personAttr.data, "Existing person data")
       if (patchPerson(personAttr, newPersonData)) 
         updatePerson = true;
 
@@ -69,9 +69,11 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
         await person.put(personAttr);
       }
       personUri = personAttr.uri;
+      p(personUri, updatePerson ? "Updated person" : "Person exists")
     } else {
       const people = await createPerson(c, newPersonData)
       personUri = people.links.get('self')?.href
+      p(personUri, "Created person")
     }
 
     const submission = await createSubmission(c, form, personUri, action);
@@ -285,11 +287,13 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
     }
     data["action_network:referrer_data"] = rd
   }
+  p(data, "submission.post to " + submission.uri)
   return await submission.post({data})
 };
 
 const createPerson =  async(client : Client , data : any) : Promise<State<any>> => {
   const people = client.go(uri("people"))
+  p(data, "create person")
   const payload = {data}
   return await people.post({data})
 };
