@@ -44,7 +44,7 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
   const ch = await conn.createChannel()
   const qn = opts.queueName || queueName('deliver', config)
   const service = getService(opts)
-  let consumerTag :string = null
+  let tag = { value:  null as string }
   console.error(`⏳ waiting for actions from ${qn}`)
 
   return new Promise(async (_, fail) => {
@@ -59,14 +59,18 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
         })
         .catch(async (e : Error) => {
           await ch.nack(msg, false, false)
-          await ch.cancel(consumerTag)
-          await ch.close()
-          await conn.close()
+
+          if (tag.value) {
+            const ct = tag.value
+            tag.value = null
+            await ch.cancel(ct)
+            await ch.close()
+            await conn.close()
+          }
           console.error('failure to syncAction:', e)
-          fail(e)
         })
-    })
-    consumerTag = ret.consumerTag
+    })    
+    tag.value = ret.consumerTag
   })
 }
 
