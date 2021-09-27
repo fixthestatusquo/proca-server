@@ -3,7 +3,7 @@ defmodule Proca.Server.Processing do
   alias Proca.Repo
   alias Proca.{Action, ActionPage, Supporter, Field}
   alias Proca.Pipes.Connection
-  import Proca.Stage.Support, only: [action_data: 1, action_data: 2]
+  import Proca.Stage.Support, only: [action_data: 1, action_data: 2, action_data: 3]
   import Ecto.Changeset
 
   @moduledoc """
@@ -128,11 +128,11 @@ defmodule Proca.Server.Processing do
 
   def transition(
         action = %{
-          processing_status: :new,
+          processing_status: action_status,
           supporter: %{processing_status: :accepted}
         },
         %ActionPage{live: live}
-      ) do
+      ) when action_status in [:new, :accepted] do
     # do the moderation (via email?) XXX need the thank_you handler
     # go strainght to delivered
     {
@@ -207,12 +207,15 @@ defmodule Proca.Server.Processing do
   @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
   def emit(action, :action, :deliver) when not is_nil(action) do
 
-    routing = routing_for(action)
-    exchange = exchange_for(action.action_page.org, :action, :deliver)
+    publish_for = fn %Proca.Contact{org_id: org_id} -> 
+      routing = routing_for(action)
+      exchange = exchange_for(%Proca.Org{id: org_id}, :action, :deliver)
+      data = action_data(action, :deliver, org_id)
+      Connection.publish(exchange, routing, data)
+    end
 
-    data = action_data(action)
 
-    with :ok <- Connection.publish(exchange, routing, data),
+    with true <- Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)),
          :ok <- clear_transient(action) do
       :ok
     else

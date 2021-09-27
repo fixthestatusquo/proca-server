@@ -44,7 +44,7 @@ defmodule ProcaWeb.Resolvers.Action do
   # only refer header given, we provide n/a utm values to better look in stats
   defp get_tracking(%{}, referer) when is_bitstring(referer) do 
     get_tracking(%{tracking: %{
-      source: "n/a", medium: "n/a", campaign: "n/a"
+      source: "unknown", medium: "unknown", campaign: "unknown"
     }}, referer)
   end
 

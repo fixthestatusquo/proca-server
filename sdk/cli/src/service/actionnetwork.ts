@@ -16,9 +16,13 @@ type Cache = {
 
 const CACHE : Cache = {form: {}}
 
-export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : CliConfig) {
+export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig) {
   try {
     const email: string = action.contact.pii?.email || action.contact.email
+    if (action.privacy === null) {
+      console.log("Action without contact", action.action.actionType)
+      return
+    }
     const optIn: boolean = action.privacy.communication
     const campaignTitle: string = action.campaign.title
 
@@ -26,15 +30,17 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
     if (!email) throw new Error("Action with no email")
     if (!campaignTitle) throw new Error("Action with missing campaign title")
     if (!process.env.ACTIONNETWORK_APIKEY) throw new Error("ACTIONNETWORK_APIKEY is unset")
+    const formTitle = campaignTitle + " " + action.actionPage.locale.split("_")[0].toUpperCase()
+    console.log('Action for form ' + formTitle)
 
     const c = client(process.env.ACTIONNETWORK_APIKEY)
 
     // fetch form for the campaign
-    let form = CACHE.form[campaignTitle]
+    let form = CACHE.form[formTitle]
     if (!form) {
-      form = await getForm(c, { title: campaignTitle });
-      if (!form) throw new Error("Cannot find form for campaign tiled: " + campaignTitle)
-      CACHE.form[campaignTitle] = form
+      form = await getForm(c, { title: formTitle });
+      if (!form) throw new Error("Cannot find form for campaign titled: " + formTitle)
+      CACHE.form[formTitle] = form
     }
 
 
@@ -49,7 +55,7 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
       const personEmailIdx = personAttr.data.email_addresses.findIndex((ea: any) => ea.address === email);
       const personEmail = personAttr.data.email_addresses[personEmailIdx]
       if (personEmail) {
-        if (optIn && personEmail.status !== "subscribed") {
+        if (optIn && personEmail.status === "unsubscribed") {
           // set the email status to subscribed!
           personAttr.data.email_addresses[personEmailIdx].status = "subscribed"
           updatePerson = true
@@ -59,26 +65,33 @@ export async function syncAction(action : ActionMessage, _1 : ServiceOpts, _2 : 
         console.error("Weird, person record does not have email we've fetched it by", personAttr.data.email_addresses)
       }
 
-      p(personAttr.data, "CURRENT DATA")
+      p(personAttr.data, "Existing person data")
       if (patchPerson(personAttr, newPersonData)) 
         updatePerson = true;
 
       if (updatePerson) {  // Do the update now if it is necessary
+        p(newPersonData, "Updating with these params")
         await person.put(personAttr);
       }
       personUri = personAttr.uri;
+      p(personUri, updatePerson ? "Updated person" : "Person exists")
     } else {
       const people = await createPerson(c, newPersonData)
       personUri = people.links.get('self')?.href
+      p(personUri, "Created person")
     }
 
     const submission = await createSubmission(c, form, personUri, action);
     return submission.uri
   } catch (err) {
-    if (err.response) { 
-      console.error("Server responded:", await err.response.text())
-      throw err
+    if (serviceOpts.sentry) {
+      const Sentry = require("@sentry/node")
+      Sentry.captureException(err)
     }
+
+    if (err.response) console.error("Server responded:", await err.response.text())
+
+    throw err
   }
 }
 
@@ -179,11 +192,19 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
     status: action.privacy.communication ? "subscribed" : "unsubscribed"
   });
 
-  const dAddress = () => ({
-    primary: true,
-    postal_code: pii.postcode,
-    country: pii.country 
-  });
+  const dAddress = () => {
+    const x : any = {
+      primary: true,
+      country: pii.country 
+    }
+
+    if (pii.postode) {
+      x['postal_code'] = pii.postcode
+    }
+    
+    return x
+  }
+
 
   const d : any = {
     given_name: pii.firstName,
@@ -192,12 +213,15 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
       "proca:" + action.contact.ref
     ],
     languages_spoken: [action.actionPage.locale.split("_")[0]],
-    email_addresses: [dEmail(pii.email)],
-    postal_addresses: [dAddress()]
+    email_addresses: [dEmail(pii.email)]
   }
 
   if (pii.phone) {
     d['phone_numbers'] = [dPhone(pii.phone)]
+  }
+
+  if (pii.country) {
+    d['postal_addresses'] = [dAddress()]
   }
 
   return d;
@@ -209,15 +233,15 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
 const patchPerson = (personAttr: State<any>, newPersonData: any) => {
   if (personAttr.data.given_name !== newPersonData.given_name ||
      personAttr.data.family_name !== newPersonData.family_name ||
-     personAttr.data.identifiers.indexOf(newPersonData.identifiers[0]) < 0 ||
-     personAttr.data.postal_addresses.findIndex((pa: any) =>
+     // personAttr.data.identifiers.indexOf(newPersonData.identifiers[0]) < 0 ||
+     (newPersonData.postal_addresses && personAttr.data.postal_addresses.findIndex((pa: any) =>
       pa.country === newPersonData.postal_addresses[0].country &&
-      pa.postal_code === newPersonData.postal_addresses[0].postal_code) < 0 ||
+      pa.postal_code === newPersonData.postal_addresses[0].postal_code) < 0) ||
     personAttr.data.languages_spoken[0] !== newPersonData.languages_spoken[0]) {
 
     personAttr.data.given_name = newPersonData.given_name
     personAttr.data.family_name = newPersonData.family_name
-    personAttr.data.identifiers = newPersonData.identifiers
+    // personAttr.data.identifiers = newPersonData.identifiers - i can't add a new identifier with PUT people/
     personAttr.data.postal_addresses = newPersonData.postal_addresses
     personAttr.data.languages_spoken = newPersonData.languages_spoken
     return true
@@ -267,23 +291,26 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
   const data : any = {
     "_links" : {
       "osdi:person" : { "href" : personUri }
-    }
+    },
+    triggers: { autoresponse: {enabled: true } }
   }
   
   if (action.tracking?.source) {
     const rd : any = {
-      "source": action.tracking.source
+      "source": action.tracking.source === "a/n" ? "unknown" : action.tracking.source
     }
     if (action.tracking.source === "referrer") {
       rd['website'] = action.tracking.campaign
     }
     data["action_network:referrer_data"] = rd
   }
+  p(data, "submission.post to " + submission.uri)
   return await submission.post({data})
 };
 
 const createPerson =  async(client : Client , data : any) : Promise<State<any>> => {
   const people = client.go(uri("people"))
+  p(data, "create person")
   const payload = {data}
   return await people.post({data})
 };
