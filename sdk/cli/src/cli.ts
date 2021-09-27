@@ -23,6 +23,7 @@ export interface CliOpts {
   queue?: string,
   keys?: string,
   debug?: boolean,
+  sentry?: boolean,
   json?: boolean,
   csv?: boolean,
   indent?: number,
@@ -80,6 +81,21 @@ export default function cli() {
         org: opts.org
       })
 
+      if (opts.sentry) {
+        if (process.env.SENTRY_DSN) {
+          try {
+            const Sentry = require("@sentry/node");
+            Sentry.init({
+              dsn: process.env.SENTRY_DSN
+            })
+          } catch {
+            opts.sentry = false
+          }
+        } else {
+          opts.sentry = false
+        }
+      }
+
 
       cliMethod(opts, config).catch((error) => {
         if (process.env['DEBUG']) throw error;
@@ -136,6 +152,12 @@ export default function cli() {
       type: 'boolean',
       default: false,
       describe: 'Enable troubleshooting information'
+    })
+    .option('sentry', {
+      alias: 'S',
+      type: 'boolean',
+      default: false,
+      describe: 'Report to sentry (set SENTRY_DSN)'
     })
     .option('org', override('o', 'org name', config.org ))
     .option('user', override('u', 'user name', config.username))

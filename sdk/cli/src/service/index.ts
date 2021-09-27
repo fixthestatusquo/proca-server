@@ -10,7 +10,8 @@ export interface ServiceOpts {
   service_url?: string,
   queueName?: string,
   backoff?: boolean,
-  filePath?: string
+  filePath?: string,
+  sentry?: boolean
 }
 
 export function getService(argv : ServiceOpts) {
