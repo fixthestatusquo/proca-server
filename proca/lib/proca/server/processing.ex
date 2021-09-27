@@ -128,11 +128,11 @@ defmodule Proca.Server.Processing do
 
   def transition(
         action = %{
-          processing_status: :new,
+          processing_status: action_status,
           supporter: %{processing_status: :accepted}
         },
         %ActionPage{live: live}
-      ) do
+      ) when action_status in [:new, :accepted] do
     # do the moderation (via email?) XXX need the thank_you handler
     # go strainght to delivered
     {
