@@ -8,7 +8,7 @@ defmodule Proca.Confirm.AddPartner do
   import Proca.Changeset 
   import Proca.Repo
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
-  import Proca.Staffer.Permission, only: [can?: 2]
+  import Proca.Permission, only: [can?: 2]
 
   @doc """
   # Inviting to a campaign (by email)

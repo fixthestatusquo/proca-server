@@ -8,14 +8,13 @@ defmodule Proca.Users.User do
   alias Proca.Users.StrongPassword
   alias Proca.{Repo, Users.User}
   import Ecto.Changeset, only: [change: 2]
-  import Ecto.Query, only: [where: 3]
+  import Ecto.Query, only: [from: 2, join: 4, where: 3, preload: 3]
 
   schema "users" do
     pow_user_fields()
 
     has_many :staffers, Proca.Staffer
-    field :perms, :integer
-
+    field :perms, :integer, default: 0
 
     timestamps()
   end
@@ -63,19 +62,39 @@ defmodule Proca.Users.User do
     end
 
   def update(user, [:admin | kw]) do 
-    update(user, [{:perms, [:instance_owner, :join_orgs, :manage_users, :manage_orgs]} | kw])
+    update(user, [{:perms, [
+      :instance_owner, 
+      :join_orgs, 
+      :manage_users, 
+      :manage_orgs]} | kw])
   end
 
   def update(user, [{:perms, permissions} | kw]) do 
-    change(user, perms: Proca.Staffer.Permission.add(0, permissions))
+    change(user, perms: Proca.Permission.add(0, permissions))
     |> update(kw)
-
   end
-
-  def update(user_change, []), do: Repo.update(user_change)
 
   def all(q, [{:email, email} | kw]) do 
     q |> where([u], u.email == ^email) |> all(kw)
   end
 
+  def all(q, [{:email_like, email} | kw]) do 
+    q |> where([u], like(u.email, ^email)) |> all(kw)
+  end
+
+  def all(q, [{:id, id} | kw]) do 
+    q |> where([u], u.id == ^id) |> all(kw)
+  end
+
+  def all(q, [{:org_name, org_name} | kw]) do 
+    q 
+    |> join(:inner, [u], s in assoc(u, :staffers))
+    |> join(:inner, [u, s], o in assoc(s, :org))
+    |> where([u, s, o], o.name == ^org_name)
+    |> all(kw)
+  end
+
+  def all(q, [:preload | kw]) do 
+    q |> preload([u], [staffers: :org]) |> all(kw)
+  end
 end

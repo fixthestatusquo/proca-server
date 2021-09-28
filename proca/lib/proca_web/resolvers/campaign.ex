@@ -5,7 +5,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   import Ecto.Query
   import Proca.Repo
   alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm}
-  import Proca.Staffer.Permission
+  import Proca.Permission
   alias ProcaWeb.Helper
 
   def list(_, %{id: id}, _) do
