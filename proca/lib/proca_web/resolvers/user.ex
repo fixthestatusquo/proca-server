@@ -45,8 +45,12 @@ defmodule ProcaWeb.Resolvers.User do
     Role.permissions(role) -- Permission.to_list(perms) == []
   end
 
-  defp can_remove_self?(staffer) do 
-    Permission.can? staffer, :join_orgs
+  defp can_assign_role?(%User{} = user) do 
+    Permission.can?(user, :manage_users)
+  end
+
+  defp can_remove_self?(user_or_staffer) do 
+    Permission.can? user_or_staffer, :join_orgs
   end
 
 
@@ -63,12 +67,12 @@ defmodule ProcaWeb.Resolvers.User do
   @doc """
   User authorized to change_org_settings
   """
-  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{staffer: manager, org: org}}) do 
+  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
     with  {user, staffer} when not is_nil(user) and is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(manager, role)
+          true <- can_assign_role?(Map.get(context, :staffer, context.user), role)
     do 
-      case Staffer.build_for_user(user, org.id, Role.permissions(role)) |> insert() do 
+      case Staffer.create(user: user, org: org, role: role) do 
         {:ok, _} -> {:ok, %{status: :success}}
         {:error, _} = e -> e
       end
@@ -81,10 +85,10 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{staffer: manager, org: org}}) do 
+  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(manager, role)
+          true <- can_assign_role?(Map.get(context, :staffer, context.user), role)
     do
       case Role.change(staffer, role) |> update() do 
         {:ok, _} -> {:ok, %{status: :success}}
@@ -98,9 +102,9 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def delete_org_user(_,  %{email: email}, %{context: %{staffer: manager, org: org}}) do 
+  def delete_org_user(_,  %{email: email}, %{context: %{user: actor, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
-      true <- staffer.id != manager.id or can_remove_self?(manager)
+      true <- staffer.user_id != user.id or can_remove_self?(actor)
     do
       case delete(staffer) do
         {:ok, _} -> {:ok, %{status: :success}}

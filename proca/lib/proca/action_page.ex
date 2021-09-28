@@ -118,9 +118,9 @@ defmodule Proca.ActionPage do
   end
 
 
-  def create(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> create(kw)
-  def create(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> create(kw)
-  def create(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :locale])) |> create(kw)
+  def update(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> update(kw)
+  def update(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> update(kw)
+  def update(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :locale])) |> update(kw)
 
   def find(id) when is_integer(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]

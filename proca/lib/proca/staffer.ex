@@ -37,15 +37,18 @@ defmodule Proca.Staffer do
     |> change(org_id: org_id, user_id: id, perms: Proca.Permission.add(0, perms))
   end
 
-  def create(st, [{assoc, record} | kw]) when assoc in [:user, :org] do 
+  def update(st, [{assoc, record} | kw]) when assoc in [:user, :org] do 
     put_assoc(st, assoc, record)
-    |> create(kw)
+    |> update(kw)
   end
 
-  def create(st, [{:role, role} | kw]), do: create(st, [{:perms, Staffer.Role.permissions(role)} | kw])
-  def create(st, [{:perms, perms} | kw]) do 
+  def update(st, [{:role, role} | kw]) do 
+    update(st, [{:perms, Staffer.Role.permissions(role)} | kw])
+  end
+
+  def update(st, [{:perms, perms} | kw]) do 
     change(st, perms: Proca.Permission.add(0, perms))
-    |> create(kw)
+    |> update(kw)
   end
 
   def all(q, [:preload | kw]), do: preload(q, [:user, :org]) |> all(kw)
