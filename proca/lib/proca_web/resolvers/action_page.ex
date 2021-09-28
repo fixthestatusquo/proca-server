@@ -120,7 +120,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         # lead org
         case ActionPage.go_live(ap) do
           {:ok, _} -> {:ok, %{status: :success}}
-          {:error, ch} -> {:error, Helper.format_errors(ch)}
+          {:error, ch} = e -> e
         end
       else
         # partner org

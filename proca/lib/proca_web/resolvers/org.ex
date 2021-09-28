@@ -283,7 +283,7 @@ defmodule ProcaWeb.Resolvers.Org do
     joining = 
     case Staffer.one(user: user, org: org) do 
       nil -> Staffer.create(user: user, org: org, perms: [:org_owner])
-      st = %Staffer{} -> Staffer.change(st, [role: :owner])
+      st = %Staffer{} -> Staffer.update(st, [role: :owner])
     end
 
     case joining do 
