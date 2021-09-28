@@ -28,6 +28,11 @@ defmodule Proca.Schema do
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:preload, assocs} | kw]), do: preload(query, [a], ^assocs) |> all(kw)
+
+      def create(kw) when is_list(kw), do: create(Ecto.Changeset.change(struct!(unquote(schema_mod))), kw)
+      def create(chset = %Ecto.Changeset{}, []), do: Repo.insert(chset)
+
+      def update(chset = %Ecto.Changeset{}, []), do: Repo.update(chset)
     end
   end
 end

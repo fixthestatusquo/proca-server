@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   """
   import Ecto.Query
 
-  import Proca.Staffer.Permission
+  import Proca.Permission
 
   alias Proca.{Supporter, Action, Contact, Org, Staffer, PublicKey}
   alias Proca.Repo

@@ -13,20 +13,20 @@ defmodule ProcaWeb.Resolvers.User do
 
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
-  alias Proca.Staffer.{Permission, Role}
+  alias Proca.Staffer.Role
+  alias Proca.Permission
   alias Proca.Users.User
 
   import Logger
 
   def staffer_role(staffer), do: Role.findrole(staffer) || "custom"
 
-  def user_roles(user) do 
+  def user_roles(user, _, _) do 
     user = preload(user, [staffers: :org])
 
-    %{
-      id: user.id,
-      email: user.email,
-      roles: Enum.map(user.staffers, fn stf ->
+    {
+      :ok,
+      Enum.map(user.staffers, fn stf ->
         %{
           role: staffer_role(stf),
           org: stf.org
@@ -38,7 +38,7 @@ defmodule ProcaWeb.Resolvers.User do
 
   def current_user(_, _, %{context: %{user: user}}) do
 
-    {:ok, user_roles(user)}
+    {:ok, user}
   end
 
   defp can_assign_role?(%Staffer{perms: perms}, role) do 
@@ -116,7 +116,6 @@ defmodule ProcaWeb.Resolvers.User do
   def list_org_users(org, _, _) do 
     lst = from(s in Staffer, where: s.org_id == ^org.id, preload: [:user])
     |> all()
-    |> IO.inspect()
     |> Enum.map(fn st -> 
       %{
         email: st.user.email,
@@ -127,6 +126,18 @@ defmodule ProcaWeb.Resolvers.User do
       }
       end)
     {:ok, lst}
+  end
+
+  def list_users(_, params, _) do 
+    criteria = params
+    |> Map.get(:select, [])
+    |> Enum.map(fn 
+      {:id, id} -> {:id, id}
+      {:email, e} -> {:email_like, e}
+      {:org_name, on} -> {:org_name, on}
+    end)
+
+    { :ok, User.all(criteria) }
   end
 
 end

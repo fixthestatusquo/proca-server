@@ -2,18 +2,34 @@ defmodule ProcaWeb.Schema.UserTypes do
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers.Authorized
   alias ProcaWeb.Resolvers
+  import Proca.Permission, only: [can?: 2]
 
   object :user_queries do
     field :current_user, non_null(:user) do
       middleware Authorized
       resolve(&Resolvers.User.current_user/3)
     end
+
+    field :users, non_null(list_of(non_null(:user))) do 
+      middleware Authorized, can?: [:manage_users]
+
+      arg :select, :select_user
+      resolve(&Resolvers.User.list_users/3)
+
+    end
   end
 
   object :user do
     field :id, non_null(:integer)
     field :email, non_null(:string)
-    field :roles, non_null(list_of(non_null(:user_role)))
+
+    field :is_admin, non_null(:boolean) do 
+      resolve(fn u, _, _ -> can?(u, :instance_admin) end)
+    end
+
+    field :roles, non_null(list_of(non_null(:user_role))) do 
+      resolve(&Resolvers.User.user_roles/3)
+    end
   end
 
   object :user_role do
@@ -68,5 +84,16 @@ defmodule ProcaWeb.Schema.UserTypes do
 
   object :update_user_result do
     field :id, non_null(:integer)
+  end
+
+  @desc "Criteria to filter users"
+  input_object :select_user do 
+    field :id, :integer
+
+    @desc "Use % as wildcard"
+    field :email, :string 
+
+    @desc "Exact org name"
+    field :org_name, :string
   end
 end

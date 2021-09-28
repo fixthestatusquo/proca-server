@@ -24,8 +24,8 @@ defmodule Proca.StoryFactory do
     }
   end
 
-  @api_perms Proca.Staffer.Permission.add(0, [:use_api, :manage_campaigns, :manage_action_pages])
-  @owner_perms Proca.Staffer.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
+  @api_perms Proca.Permission.add(0, [:use_api, :manage_campaigns, :manage_action_pages])
+  @owner_perms Proca.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
 
   @red_website "red.org"
   @yellow_website "yellow.org"

@@ -14,7 +14,7 @@ defmodule Proca.Confirm.LaunchPage do
   import Ecto.Query, only: [from: 2]
 
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
-  import Proca.Staffer.Permission, only: [can?: 2]
+  import Proca.Permission, only: [can?: 2]
 
   @spec create(ActionPage, Staffer, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
   def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, st = %Staffer{}, message \\ nil) do
