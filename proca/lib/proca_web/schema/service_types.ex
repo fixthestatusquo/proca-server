@@ -17,7 +17,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg :id, :integer
       arg :input, non_null(:service_input)
 
-      resolve(&Resolvers.Services.upsert_service/3)
+      resolve(&Resolvers.Service.upsert_service/3)
     end
 
     field :add_stripe_payment_intent, type: non_null(:json) do 
