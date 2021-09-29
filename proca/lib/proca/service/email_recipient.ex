@@ -48,7 +48,7 @@ defmodule Proca.Service.EmailRecipient do
         "confirm_message" => message || "",
         "confirm_subject_id" => subj_id,
         "confirm_object_id" => obj_id || "",
-        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.user.email, else: ""),
+        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.email, else: ""),
 
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)

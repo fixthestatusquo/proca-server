@@ -7,6 +7,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Plug.Conn
   alias Pow.{Plug, Plug.Session}
   alias Proca.Repo
+  alias Proca.Auth
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
 
@@ -125,7 +126,10 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   defp add_to_context(conn) do
     case conn.assigns.user do
       %User{} = u ->
-        Absinthe.Plug.assign_context(conn, %{user: u})
+        Absinthe.Plug.assign_context(conn, %{
+          user: u, # XXX for backward compatibility
+          auth: %Auth{user: u}
+        })
 
       nil ->
         conn

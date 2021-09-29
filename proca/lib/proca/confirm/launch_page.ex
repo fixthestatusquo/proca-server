@@ -6,18 +6,18 @@ defmodule Proca.Confirm.LaunchPage do
   1. Campaign lead
   2. Campaign manager (we have a persmission for this) (we have launch_action_page permission)
   """
-  alias Proca.Confirm
   @behaviour Confirm.Operation
 
-  alias Proca.{Campaign, ActionPage, Staffer, Org}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
+  alias Proca.Confirm
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
 
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
-  @spec create(ActionPage, Staffer, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, st = %Staffer{}, message \\ nil) do
+  @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
+  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{staffer: st}, message \\ nil) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,

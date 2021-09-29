@@ -3,7 +3,7 @@ defmodule Proca.Confirm.AddPartner do
   Invite an org to join a campaign, by creating an action page based off action page subject_id
 
   """
-  alias Proca.{Action, ActionPage, Confirm, Staffer}
+  alias Proca.{Action, ActionPage, Confirm, Staffer, Auth}
   @behaviour Confirm.Operation
   import Proca.Changeset 
   import Proca.Repo
@@ -48,7 +48,7 @@ defmodule Proca.Confirm.AddPartner do
   end
 
   @impl true
-  def run(%Confirm{operation: :add_partner, subject_id: ap_id}, :confirm, st) do
+  def run(%Confirm{operation: :add_partner, subject_id: ap_id}, :confirm, %Auth{staffer: st}) do
     org = Ecto.assoc(st, :org) |> one()
     with page = %ActionPage{} <- get(ActionPage, ap_id), 
          true <- can?(st, [:manage_action_pages])
@@ -62,7 +62,7 @@ defmodule Proca.Confirm.AddPartner do
   end
 
   @impl true
-  def run(%Confirm{operation: add_partner}, :reject, _), do: :ok
+  def run(%Confirm{operation: :add_partner}, :reject, _), do: :ok
 
   @impl true
   def email_template(%Confirm{operation: :add_partner}), do: "add_partner"

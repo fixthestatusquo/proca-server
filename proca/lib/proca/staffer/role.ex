@@ -1,6 +1,7 @@
 defmodule Proca.Staffer.Role do
   alias Proca.Permission
   alias Proca.Staffer
+  alias Proca.Users.User
   use Bitwise
   alias Ecto.Changeset
 
@@ -71,5 +72,16 @@ defmodule Proca.Staffer.Role do
       nil -> {:error, :not_found}
       user -> add_user_as(user, org, role)
     end
+  end
+
+  @doc """
+  Check if current user or staffer has big enough permission to assign a role
+  """
+  def can_assign_role?(%Staffer{perms: perms}, role) do 
+    Role.permissions(role) -- Permission.to_list(perms) == []
+  end
+
+  def can_assign_role?(%User{} = user) do 
+    Permission.can?(user, :manage_users)
   end
 end

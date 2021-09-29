@@ -13,10 +13,13 @@ defmodule ProcaWeb.Controller.AuthHelper do
         end
     end
 
+    XXX Update this module using newer Phoenix Auth primitives
+
   """
 
   alias Proca.Users.User
   alias Proca.Staffer
+  alias Proca.Auth
   alias Pow.Store.CredentialsCache
 
   require Logger
