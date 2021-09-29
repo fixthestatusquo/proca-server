@@ -4,7 +4,7 @@ defmodule Proca.Confirm do
 
   OPERATION
   SUBJECT_ID - requester id 
-  OBJECT_ID
+  OBJECT_ID - on what the opration is performed
   CODE
 
   # Asking to join a campaign:
@@ -37,7 +37,8 @@ defmodule Proca.Confirm do
   import Ecto.Query
   import Proca.Repo
   alias Proca.Confirm
-  alias Proca.{ActionPage,Campaign,Org,Action,Staffer}
+  alias Proca.{ActionPage, Campaign, Org, Action, Staffer, Auth}
+  alias Proca.Users.User
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
   schema "confirms" do
@@ -48,7 +49,7 @@ defmodule Proca.Confirm do
     field :code, :string
     field :charges, :integer, default: 1
     field :message, :string
-    belongs_to :creator, Staffer
+    belongs_to :creator, User
 
     timestamps()
   end
@@ -58,8 +59,7 @@ defmodule Proca.Confirm do
   def changeset(confirm, attrs) do
     confirm
     |> cast(attrs, [:operation, :subject_id, :object_id, :email, :message, :charges])
-    |> put_assoc(:creator, Map.get(attrs, :staffer, nil))
-
+    |> put_assoc(:creator, Map.get(attrs, :user, nil))
     |> add_code()
     |> validate_required([:operation, :subject_id, :charges, :code])
   end
@@ -110,18 +110,18 @@ defmodule Proca.Confirm do
     |> one()
   end
 
-  def reject(confirm = %Confirm{}, staffer \\ nil) do
+  def reject(confirm = %Confirm{}, auth \\ nil) do
     confirm 
     |> change(charges: 0) 
     |> update!
-    |> Confirm.Operation.run(:reject, staffer)
+    |> Confirm.Operation.run(:reject, auth)
   end
 
-  def confirm(confirm = %Confirm{}, staffer \\ nil) do 
+  def confirm(confirm = %Confirm{}, auth \\ nil) do 
     if confirm.charges <= 0 do 
       {:error, "expired"}
     else
-      case Confirm.Operation.run(confirm, :confirm, staffer) do 
+      case Confirm.Operation.run(confirm, :confirm, auth) do 
         {:error, e} -> {:error, e}
         ok -> 
           confirm 

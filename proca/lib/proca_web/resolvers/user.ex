@@ -41,13 +41,6 @@ defmodule ProcaWeb.Resolvers.User do
     {:ok, user}
   end
 
-  defp can_assign_role?(%Staffer{perms: perms}, role) do 
-    Role.permissions(role) -- Permission.to_list(perms) == []
-  end
-
-  defp can_assign_role?(%User{} = user) do 
-    Permission.can?(user, :manage_users)
-  end
 
   defp can_remove_self?(user_or_staffer) do 
     Permission.can? user_or_staffer, :join_orgs
@@ -70,7 +63,7 @@ defmodule ProcaWeb.Resolvers.User do
   def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
     with  {user, staffer} when not is_nil(user) and is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(Map.get(context, :staffer, context.user), role)
+          true <- Role.can_assign_role?(Map.get(context, :staffer, context.user), role)
     do 
       case Staffer.create(user: user, org: org, role: role) do 
         {:ok, _} -> {:ok, %{status: :success}}
@@ -88,7 +81,7 @@ defmodule ProcaWeb.Resolvers.User do
   def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(Map.get(context, :staffer, context.user), role)
+          true <- Role.can_assign_role?(Map.get(context, :staffer, context.user), role)
     do
       case Role.change(staffer, role) |> update() do 
         {:ok, _} -> {:ok, %{status: :success}}

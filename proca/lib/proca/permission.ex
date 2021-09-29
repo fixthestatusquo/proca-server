@@ -2,6 +2,7 @@ defmodule Proca.Permission do
   use Bitwise
   alias Proca.Staffer
   alias Proca.Users.User
+  alias Proca.Auth
 
   @moduledoc """
   Permission bits used in proca.
@@ -38,11 +39,18 @@ defmodule Proca.Permission do
 
   @admin_bits 0x0F 
 
-  @spec can?(User | Staffer | nil, [atom] | atom | number) :: boolean
+  @spec can?(Auth | User | Staffer | nil, [atom] | atom | number) :: boolean
+
+  # Auth context: pass to legacy methods
+  def can?(auth = %Auth{user: user, staffer: nil}, permission), do: can?(user, permission)
+  def can?(auth = %Auth{user: user, staffer: staffer}, permission), do: can?(%{staffer | user: user}, permission)
+
+  # staffer with user set: check both org and user params
   def can?(%Staffer{perms: org_perms, user: %User{perms: user_perms}}, permission) when is_number(permission) do
     ((org_perms ||| user_perms) &&& permission) > 0
   end
 
+  # only staffer given! check it, but raise error if user perms are checked
   def can?(%Staffer{perms: org_perms}, permission) when is_number(permission) do
     if (@admin_bits &&& permission) == 0 do 
       (org_perms &&& permission) > 0
@@ -51,10 +59,12 @@ defmodule Proca.Permission do
     end
   end
 
+  # just user
   def can?(%User{perms: user_perms}, permission) when is_number(permission) do 
     (user_perms &&& permission) > 0
   end
 
+  # atomic permission - retrieve bit value
   def can?(user_or_staffer, permission) when is_atom(permission) do 
     case @bits[permission] do
       bit when is_nil(bit) -> raise ArgumentError, message: "No such permission #{permission}"
@@ -62,10 +72,12 @@ defmodule Proca.Permission do
     end
   end
 
+  # permission list - check all
   def can?(user_or_staffer, permission) when is_list(permission) do
     Enum.all?(permission, &can?(user_or_staffer, &1))
   end
 
+  # false on nil value
   def can?(user_or_staffer, _perms) when is_nil(user_or_staffer) do
     false
   end

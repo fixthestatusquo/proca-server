@@ -1,6 +1,7 @@
 defmodule ProcaWeb.AuthorizedTest do
   use Proca.DataCase
   alias ProcaWeb.Error
+  alias Proca.Auth
   import Proca.StoryFactory, only: [red_story: 0]
 
   alias ProcaWeb.Resolvers.Authorized
@@ -9,7 +10,7 @@ defmodule ProcaWeb.AuthorizedTest do
     s = red_story()
 
     r1 = %Absinthe.Resolution{}
-    r2 = %{r1 | context: %{user: s.red_bot.user}}
+    r2 = %{r1 | context: %{user: s.red_bot.user, auth: %Auth{user: s.red_bot.user}}}
     r3_id = %{r2 | arguments: %{id: s.red_org.id}}
     r3_name = %{r2 | arguments: %{name: s.red_org.name}}
     r3_org_name = %{r2 | arguments: %{org_name: s.red_org.name}}

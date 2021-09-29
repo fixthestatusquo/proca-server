@@ -10,13 +10,13 @@ defmodule ProcaWeb.Resolvers.Authorized do
   @behaviour Absinthe.Middleware
 
   alias Proca.Repo
-  alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer, Permission}
+  alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer, Permission, Auth}
   import Ecto.Query
   import ProcaWeb.Helper, only: [msg_ext: 3, cant_msg: 1, msg_ext: 2]
 
   def call(resolution, opts) do
     case resolution.context do
-      %{user: user = %User{}} ->
+      %{auth: %Auth{user: user = %User{}}} ->
         resolution
         |> verify_access(user, Keyword.get(opts, :access, :auth_only))
         |> verify_perms(Keyword.get(opts, :can?, nil))
@@ -41,6 +41,8 @@ defmodule ProcaWeb.Resolvers.Authorized do
     end
 
     by_fields = Keyword.get(opts, :by, [:id, :name])
+
+    ## XXX change to get authorization context
     case get_staffer_for_resource(user, resource_type, args, by_fields) do
       nil ->
         resolution
@@ -49,13 +51,14 @@ defmodule ProcaWeb.Resolvers.Authorized do
         )
 
       {staffer, resource} ->
-          %{
-            resolution
-            | context:
-                resolution.context
-                |> Map.put(:staffer, %{staffer | user: user})
-                |> Map.put(resource_type, resource)
-          }
+        %{
+          resolution
+          | context:
+              resolution.context
+              |> Map.put(:staffer, %{staffer | user: user})                     # XXX remove after context.auth is used everywhere
+              |> Map.put(:auth, %{resolution.context.auth | staffer: staffer})
+              |> Map.put(resource_type, resource)
+        }
     end
   end
 
