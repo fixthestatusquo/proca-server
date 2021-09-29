@@ -6,10 +6,10 @@ defmodule Proca.Confirm.LaunchPage do
   1. Campaign lead
   2. Campaign manager (we have a persmission for this) (we have launch_action_page permission)
   """
+  alias Proca.Confirm
   @behaviour Confirm.Operation
 
   alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
-  alias Proca.Confirm
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
 

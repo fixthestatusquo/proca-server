@@ -6,6 +6,7 @@ defmodule Proca.Confirm.JoinCampaign do
   v2. A successful confirm creates a partnership.
   """
   alias Proca.Confirm
+  @behaviour Confirm.Operation
   alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
   alias Proca.Repo
   import Ecto.Query
