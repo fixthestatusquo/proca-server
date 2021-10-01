@@ -140,25 +140,11 @@ defmodule Proca.Server.Stats do
       |> where([a, s], s.processing_status in [:accepted, :delivered] and a.processing_status in [:accepted, :delivered])
       |> distinct([a, s], [a.campaign_id, s.fingerprint])
 
-    first_supporter_query
-    |> Repo.all() 
-
-#     all_supporters_query = 
-#       first_supporter_query
-#       |> subquery()
-#       |> group_by([s], [s.campaign_id])
-#       |> select([s], [s.campaign_id, count(s.fingerprint)]) # group by org?
-# 
-#     supporters =
-#       all_supporters_query
-#       |> Repo.all()
-#       |> Enum.reduce(%{}, fn [c_id, sup_ct], acc -> Map.put(acc, c_id, {sup_ct, [], %{}}) end)
-# 
     org_supporters_query = 
       first_supporter_query
       |> subquery()
       |> join(:inner, [a], s in Supporter, on: s.id == a.supporter_id)
-      |> join(:inner, [a, s], p in Contact, on: p.supporter_id == s.id)
+      |> join(:inner, [a, s], p in ActionPage, on: a.action_page_id == p.id)
       |> group_by([a, s, p], [a.campaign_id, p.org_id])
       |> select([a, s, p], {a.campaign_id, p.org_id, count(s.fingerprint)})
 
