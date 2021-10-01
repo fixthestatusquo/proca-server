@@ -12,31 +12,6 @@
   </a>
 
 
-  <!-- Sign in and out -->
-  <%= if is_nil(@user) do %>
-  <li class="nav-item">
-    <%= link to: Routes.pow_session_path(@conn, :new), class: "nav-link" do %>
-      <i class="fas fa-fw fa-sign-in-alt"></i>
-      <span>Sign in</span>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link to: Routes.pow_registration_path(@conn, :new), class: "nav-link" do %>
-      <i class="fas fa-fw fa-user-plus"></i>
-      <span>Register</span>
-    <% end %>
-  </li>
-
-  <% else %>
-  <li class="nav-item">
-    <%= link to: Routes.pow_session_path(@conn, :delete), method: "delete", class: "nav-link" do %>
-      <i class="fas fa-fw fa-sign-out-alt"></i>
-      <span>Sign out</span>
-    <% end %>
-  </li>
-  <% end %>
-
   <!-- Sidebar Toggler (Sidebar) -->
   <div class="text-center d-none d-md-inline">
     <button class="rounded-circle border-0" id="sidebarToggle"></button>

@@ -43,6 +43,9 @@ defmodule Proca.MixProject do
       {:phoenix, "~> 1.5.0"},
       {:phoenix_pubsub, "~> 2.0"}, # See below
       {:phoenix_ecto, "~> 4.0"},
+      {:phx_gen_auth, "~> 0.7.0"},
+      {:bcrypt_elixir, "~> 2.0"},
+      {:pbkdf2_elixir, "~> 1.4"},
       {:ecto_sql, "~> 3.1"},
       {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},

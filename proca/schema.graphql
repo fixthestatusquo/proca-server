@@ -137,9 +137,15 @@ type Consent {
 "Tracking codes"
 input TrackingInput {
   source: String!
+
   medium: String!
+
   campaign: String!
+
   content: String
+
+  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
+  location: String
 }
 
 "Count of actions for particular action type"
@@ -159,6 +165,17 @@ input ConfirmInput {
 
 type ChangeUserStatus {
   status: Status!
+}
+
+"Criteria to filter users"
+input SelectUser {
+  id: Int
+
+  "Use % as wildcard"
+  email: String
+
+  "Exact org name"
+  orgName: String
 }
 
 enum ContactSchema {
@@ -343,6 +360,14 @@ type PublicActionsResult {
 
 type ActivateKeyResult {
   status: Status!
+}
+
+input ServiceInput {
+  name: ServiceName!
+  host: String
+  user: String
+  password: String
+  path: String
 }
 
 "Campaign statistics"
@@ -531,7 +556,17 @@ type RootMutationType {
     name: String!
 
     input: OrgInput!
-  ): Org!
+  ): PrivateOrg!
+
+  "Update org processing settings"
+  updateOrgProcessing(
+    "Set email backend to"
+    name: String!
+
+    emailBackend: ServiceName
+
+    emailFrom: String
+  ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
 
@@ -556,6 +591,8 @@ type RootMutationType {
     "Key id"
     id: Int!
   ): ActivateKeyResult!
+
+  upsertService(orgName: String!, id: Int, input: ServiceInput!): Service!
 
   addStripePaymentIntent(actionPageId: Int!, input: StripePaymentIntentInput!, contactRef: ID): Json!
 
@@ -639,6 +676,8 @@ type RootQueryType {
 
   currentUser: User!
 
+  users(select: SelectUser): [User!]!
+
   "Organization api (authenticated)"
   org(
     "Name of organisation"
@@ -666,6 +705,11 @@ type PublicOrg implements Org {
 
   "config"
   config: Json!
+}
+
+type Processing {
+  emailFrom: String
+  emailBackend: ServiceName
 }
 
 type PublicActionPage implements ActionPage {
@@ -823,6 +867,9 @@ type PersonalData {
 
   "Email opt in template name"
   emailOptInTemplate: String
+
+  "High data security enabled"
+  highSecurity: Boolean!
 }
 
 enum DonationSchema {
@@ -913,6 +960,8 @@ type PrivateOrg implements Org {
 
   users: [OrgUser]!
 
+  processing: Processing!
+
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
 
@@ -923,7 +972,7 @@ type PrivateOrg implements Org {
   actionPage(id: Int, name: String): ActionPage!
 
   "Get campaign this org is leader or partner of by id"
-  campaign(id: Int): Campaign!
+  campaign(id: Int!): Campaign!
 }
 
 enum ServiceName {
@@ -1060,5 +1109,6 @@ enum Status {
 type User {
   id: Int!
   email: String!
+  isAdmin: Boolean!
   roles: [UserRole!]!
 }
