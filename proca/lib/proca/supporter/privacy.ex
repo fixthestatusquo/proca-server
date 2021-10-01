@@ -67,41 +67,36 @@ defmodule Proca.Supporter.Privacy do
     # lead org delivers, if widget org doesn't, or if it overrides it
     lead_delivery = not widget_delivery or action_page.campaign.force_delivery
 
+    is_lead = action_page.campaign.org_id != action_page.org_id 
+
     widget_communication = privacy.opt_in
     lead_communication = privacy.lead_opt_in
 
-    widget_org =
-      case widget_delivery or widget_communication do
-        true ->
-          [
-            %Consent{
-              org: action_page.org,
-              communication_consent: widget_communication,
-              communication_scopes: @default_communication_scopes,
-              delivery_consent: widget_delivery
-            }
-          ]
+    widget_org = cond do 
+      widget_delivery or widget_communication ->
+        [
+          %Consent{
+            org: action_page.org,
+            communication_consent: widget_communication,
+            communication_scopes: @default_communication_scopes,
+            delivery_consent: widget_delivery
+          }
+        ]
+      true -> []
+    end
 
-        false ->
-          []
-      end
-
-    lead_org =
-      case action_page.campaign.org_id != action_page.org_id and
-             (lead_delivery or lead_communication) do
-        true ->
-          [
-            %Consent{
-              org: action_page.campaign.org,
-              communication_consent: lead_communication,
-              communication_scopes: @default_communication_scopes,
-              delivery_consent: lead_delivery
-            }
-          ]
-
-        false ->
-          []
-      end
+    lead_org = cond do 
+      is_lead and (lead_delivery or lead_communication) and action_page.live ->
+        [
+          %Consent{
+            org: action_page.campaign.org,
+            communication_consent: lead_communication,
+            communication_scopes: @default_communication_scopes,
+            delivery_consent: lead_delivery
+          }
+        ]
+      true -> []
+    end
 
     widget_org ++ lead_org
   end
