@@ -5,6 +5,8 @@ defmodule Proca.UsersTest do
   import Proca.UsersFixtures
   alias Proca.Users.{User, UserToken}
 
+  use Proca.TestEmailBackend
+
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
       refute Users.get_user_by_email("unknown@example.com")
@@ -62,7 +64,7 @@ defmodule Proca.UsersTest do
 
       assert %{
                email: ["must have the @ sign and no spaces"],
-               password: ["should be at least 12 character(s)"]
+               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"]
              } = errors_on(changeset)
     end
 
@@ -180,7 +182,7 @@ defmodule Proca.UsersTest do
 
     test "sends token through notification", %{user: user} do
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_update_email_instructions(user, "current@example.com", url)
         end)
 
@@ -198,7 +200,7 @@ defmodule Proca.UsersTest do
       email = unique_user_email()
 
       token =
-        extract_user_token(fn url ->
+        extract_user_token(email, fn url ->
           Users.deliver_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
@@ -244,11 +246,11 @@ defmodule Proca.UsersTest do
     test "allows fields to be set" do
       changeset =
         Users.change_user_password(%User{}, %{
-          "password" => "new valid password"
+          "password" => "New val1d password!"
         })
 
       assert changeset.valid?
-      assert get_change(changeset, :password) == "new valid password"
+      assert get_change(changeset, :password) == "New val1d password!"
       assert is_nil(get_change(changeset, :hashed_password))
     end
   end
@@ -266,7 +268,7 @@ defmodule Proca.UsersTest do
         })
 
       assert %{
-               password: ["should be at least 12 character(s)"],
+               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
     end
@@ -290,11 +292,11 @@ defmodule Proca.UsersTest do
     test "updates the password", %{user: user} do
       {:ok, user} =
         Users.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          password: "New val1d password!"
         })
 
       assert is_nil(user.password)
-      assert Users.get_user_by_email_and_password(user.email, "new valid password")
+      assert Users.get_user_by_email_and_password(user.email, "New val1d password!")
     end
 
     test "deletes all tokens for the given user", %{user: user} do
@@ -302,7 +304,7 @@ defmodule Proca.UsersTest do
 
       {:ok, _} =
         Users.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          password: "New val1d password!"
         })
 
       refute Repo.get_by(UserToken, user_id: user.id)
@@ -368,7 +370,7 @@ defmodule Proca.UsersTest do
 
     test "sends token through notification", %{user: user} do
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_user_confirmation_instructions(user, url)
         end)
 
@@ -385,7 +387,7 @@ defmodule Proca.UsersTest do
       user = user_fixture()
 
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_user_confirmation_instructions(user, url)
         end)
 
@@ -421,7 +423,7 @@ defmodule Proca.UsersTest do
 
     test "sends token through notification", %{user: user} do
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_user_reset_password_instructions(user, url)
         end)
 
@@ -438,7 +440,7 @@ defmodule Proca.UsersTest do
       user = user_fixture()
 
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_user_reset_password_instructions(user, url)
         end)
 
@@ -475,7 +477,7 @@ defmodule Proca.UsersTest do
         })
 
       assert %{
-               password: ["should be at least 12 character(s)"],
+               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
     end
@@ -487,14 +489,14 @@ defmodule Proca.UsersTest do
     end
 
     test "updates the password", %{user: user} do
-      {:ok, updated_user} = Users.reset_user_password(user, %{password: "new valid password"})
+      {:ok, updated_user} = Users.reset_user_password(user, %{password: "New val1d password!"})
       assert is_nil(updated_user.password)
-      assert Users.get_user_by_email_and_password(user.email, "new valid password")
+      assert Users.get_user_by_email_and_password(user.email, "New val1d password!")
     end
 
     test "deletes all tokens for the given user", %{user: user} do
       _ = Users.generate_user_session_token(user)
-      {:ok, _} = Users.reset_user_password(user, %{password: "new valid password"})
+      {:ok, _} = Users.reset_user_password(user, %{password: "New val1d password!"})
       refute Repo.get_by(UserToken, user_id: user.id)
     end
   end

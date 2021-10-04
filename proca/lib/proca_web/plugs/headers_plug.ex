@@ -1,11 +1,10 @@
 defmodule ProcaWeb.Plugs.HeadersPlug do
   @moduledoc """
-  A plug that reads JWT from Authorization header and authenticates the user
+  A plug that passes headers from request to Absinthe context (into `:headers` map).
   """
   @behaviour Plug
 
   alias Plug.Conn
-  alias Pow.Plug
   import ProcaWeb.Plugs.Helper
 
   def init(headers) when is_list(headers), do: headers

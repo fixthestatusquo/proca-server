@@ -5,7 +5,7 @@ defmodule ProcaWeb.Resolvers.User do
   # import Ecto.Query
   import Ecto.Query, only: [from: 2]
   import Ecto.Changeset
-  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, cant_msg: 1, format_result: 1]
+  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, format_result: 1]
 
   alias Proca.{ActionPage, Campaign, Action}
   alias Proca.{Org, Staffer, PublicKey}
@@ -48,7 +48,7 @@ defmodule ProcaWeb.Resolvers.User do
 
 
   defp existing(email, org) do 
-    user = User.get(email: email)
+    user = User.one(email: email)
     if is_nil(user) do 
       {nil, nil}
     else
@@ -60,10 +60,10 @@ defmodule ProcaWeb.Resolvers.User do
   @doc """
   User authorized to change_org_settings
   """
-  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
+  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- Role.can_assign_role?(Map.get(context, :staffer, context.user), role)
+          true <- Role.can_assign_role?(auth, role)
     do 
       case Staffer.create(user: user, org: org, role: role) do 
         {:ok, _} -> {:ok, %{status: :success}}
@@ -78,10 +78,26 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: context = %{org: org}}) do 
-    with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
+  def invite_org_user(_, params = %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
+    with role when role != nil <- Role.from_string(role_str),
+         true <- Role.can_assign_role?(auth, role) do 
+
+      confirm = Proca.Confirm.AddStaffer.create(email, role, auth, params[:message])
+      case Proca.Confirm.notify_by_email(confirm) do 
+        :ok -> {:ok, confirm}
+        {:error, :no_template} -> {:error, msg_ext("Email template not available", "no_template")}
+      end
+    else
+      false -> {:error, msg_ext("User must have higher role", "permission_denied")}
+      nil -> {:error, msg_ext("No such role", "not_found")}
+    end
+  end
+
+
+  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
+    with  {user, staffer} when not is_nil(user) and not is_nil(staffer) <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- Role.can_assign_role?(Map.get(context, :staffer, context.user), role)
+          true <- Role.can_assign_role?(auth, role)
     do
       case Role.change(staffer, role) |> update() do 
         {:ok, _} -> {:ok, %{status: :success}}

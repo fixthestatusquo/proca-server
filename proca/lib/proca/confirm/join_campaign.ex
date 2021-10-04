@@ -51,6 +51,7 @@ defmodule Proca.Confirm.JoinCampaign do
 
   def run(%Confirm{operation: :join_campaign}, :reject, _auth), do: :ok     
 
+  def email_fields(%Confirm{}), do: %{}
 
 
 

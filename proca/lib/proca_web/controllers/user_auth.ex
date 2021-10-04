@@ -9,7 +9,7 @@ defmodule ProcaWeb.UserAuth do
   # If you want bump or reduce this value, also change
   # the token expiry itself in UserToken.
   @max_age 60 * 60 * 24 * 60
-  @remember_me_cookie "_proca_user"
+  @remember_me_cookie "_proca_user_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
   @doc """
@@ -26,14 +26,14 @@ defmodule ProcaWeb.UserAuth do
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Users.generate_user_session_token(user)
-    user_return_to = get_session(conn, :return_to)
+    user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    # |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect(external: user_return_to || home_url(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -81,7 +81,7 @@ defmodule ProcaWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: "/")
+    |> redirect(external: "/")
   end
 
   @doc """
@@ -91,7 +91,11 @@ defmodule ProcaWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Users.get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
+    assign(conn, :user, user)
+  end
+
+  def assign_current_user(conn, user) do 
+    assign(conn, :user, user)
   end
 
   defp ensure_user_token(conn) do
@@ -112,11 +116,21 @@ defmodule ProcaWeb.UserAuth do
   Used for routes that require the user to not be authenticated.
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns[:user] do
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> redirect(external: home_url(conn))
       |> halt()
     else
+      conn
+    end
+  end
+
+  def redirect_if_sso(conn, _opts) do 
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
+      conn
+      |> redirect(external: config(:sso, :home_url))
+      |> halt()
+    else 
       conn
     end
   end
@@ -128,13 +142,13 @@ defmodule ProcaWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns[:user] do
       conn
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: Routes.user_session_path(conn, :new))
+      |> redirect(external: sign_in_url(conn))
       |> halt()
     end
   end
@@ -146,4 +160,24 @@ defmodule ProcaWeb.UserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: "/"
+
+  defp home_url(conn) do 
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
+      config(:sso, :home_url) 
+    else
+      "/"
+    end
+  end
+
+  def sign_in_url(conn) do 
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
+      config(:sso, :home_url)
+    else
+      Routes.user_session_path(conn, :new)
+    end
+  end
+
+  def auth_enabled?(:local), do: (Application.get_env(:proca, __MODULE__) |> get_in([:local, :enabled]))
+  def auth_enabled?(:sso), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, :enabled]))
+  defp config(:sso, k), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, k]))
 end

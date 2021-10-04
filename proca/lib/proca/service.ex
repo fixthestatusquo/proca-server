@@ -3,8 +3,9 @@ defmodule Proca.Service do
   Service belong to Org and are hostnames, paths and credentials to external services that you can configure.
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4, order_by: 3, limit: 2]
   alias Proca.{Repo, Service, Org}
 
   schema "services" do
@@ -20,7 +21,7 @@ defmodule Proca.Service do
 
   def changeset(service, attrs) do
     service
-    |> cast(attrs, [:host, :user, :password, :path])
+    |> cast(attrs, [:name, :host, :user, :password, :path])
   end
 
   def build_for_org(attrs, %Org{id: org_id}, service) do
@@ -28,6 +29,12 @@ defmodule Proca.Service do
     |> changeset(attrs)
     |> put_change(:name, service)
     |> put_change(:org_id, org_id)
+  end
+
+  def update(srv, [{:org, org} | kw]) do 
+    srv
+    |> put_assoc(:org, org)
+    |> update(kw)
   end
 
   # XXX potential problem - org.services might not be sorted from latest updated

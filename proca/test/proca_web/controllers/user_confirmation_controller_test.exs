@@ -9,11 +9,13 @@ defmodule ProcaWeb.UserConfirmationControllerTest do
     %{user: user_fixture()}
   end
 
+  use Proca.TestEmailBackend
+
   describe "GET /users/confirm" do
     test "renders the confirmation page", %{conn: conn} do
       conn = get(conn, Routes.user_confirmation_path(conn, :new))
       response = html_response(conn, 200)
-      assert response =~ "<h1>Resend confirmation instructions</h1>"
+      assert response =~ "Resend confirmation instructions</h1>"
     end
   end
 
@@ -58,7 +60,7 @@ defmodule ProcaWeb.UserConfirmationControllerTest do
   describe "GET /users/confirm/:token" do
     test "confirms the given token once", %{conn: conn, user: user} do
       token =
-        extract_user_token(fn url ->
+        extract_user_token(user.email, fn url ->
           Users.deliver_user_confirmation_instructions(user, url)
         end)
 

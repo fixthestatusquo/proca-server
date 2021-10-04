@@ -5,7 +5,7 @@ defmodule ProcaWeb.UserAuthTest do
   alias ProcaWeb.UserAuth
   import Proca.UsersFixtures
 
-  @remember_me_cookie "_proca_web_user_remember_me"
+  @remember_me_cookie "_proca_user_remember_me"
 
   setup %{conn: conn} do
     conn =
@@ -18,9 +18,10 @@ defmodule ProcaWeb.UserAuthTest do
 
   describe "log_in_user/3" do
     test "stores the user token in the session", %{conn: conn, user: user} do
-      conn = UserAuth.log_in_user(conn, user)
+      conn = ProcaWeb.UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
-      assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
+      # LiveView
+      #assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
       assert redirected_to(conn) == "/"
       assert Users.get_user_by_session_token(token)
     end
@@ -89,7 +90,7 @@ defmodule ProcaWeb.UserAuthTest do
     test "authenticates user from session", %{conn: conn, user: user} do
       user_token = Users.generate_user_session_token(user)
       conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_user([])
-      assert conn.assigns.current_user.id == user.id
+      assert conn.assigns.user.id == user.id
     end
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
@@ -105,20 +106,20 @@ defmodule ProcaWeb.UserAuthTest do
         |> UserAuth.fetch_current_user([])
 
       assert get_session(conn, :user_token) == user_token
-      assert conn.assigns.current_user.id == user.id
+      assert conn.assigns.user.id == user.id
     end
 
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
       _ = Users.generate_user_session_token(user)
       conn = UserAuth.fetch_current_user(conn, [])
       refute get_session(conn, :user_token)
-      refute conn.assigns.current_user
+      refute conn.assigns.user
     end
   end
 
   describe "redirect_if_user_is_authenticated/2" do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
+      conn = conn |> assign(:user, user) |> UserAuth.redirect_if_user_is_authenticated([])
       assert conn.halted
       assert redirected_to(conn) == "/"
     end
@@ -165,7 +166,7 @@ defmodule ProcaWeb.UserAuthTest do
     end
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
+      conn = conn |> assign(:user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
       refute conn.status
     end

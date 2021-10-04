@@ -7,9 +7,7 @@ defmodule ProcaWeb.PageController do
   alias ProcaWeb.Controller.AuthHelper
   import Ecto.Query
 
-  def index(conn, params) do
-    conn = signin(conn, params["org_name"])
-
+  def index(conn, _params) do
     user_orgs =
       if conn.assigns[:user] do
         from(st in Staffer, where: st.user_id == ^conn.assigns.user.id, select: st.org_id)
@@ -22,18 +20,5 @@ defmodule ProcaWeb.PageController do
       staffer: conn.assigns[:staffer],
       user_orgs: user_orgs
   })
-  end
-
-
-  defp signin(conn, org_name) do
-    pow_config = Application.get_env(:proca, :pow)
-
-    with {user, staffer} <- AuthHelper.current_user(conn, get_session(conn), pow_config, org_name) do
-      conn
-      |> assign(:user, user)
-      |> assign(:staffer, staffer)
-    else
-      _ -> conn
-    end
   end
 end

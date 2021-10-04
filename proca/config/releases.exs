@@ -22,6 +22,16 @@ config :proca, Proca.Pipes,
     keyfile: System.get_env("AMQP_KEYFILE")
   ]
 
+sso_home_url = System.get_env("SSO_HOME_URL")
+local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
+
+config :proca, ProcaWeb.UserAuth,
+  local: [enabled: local_auth_enable],
+  sso: [
+      enabled: not is_nil(sso_home_url), 
+      home_url: sso_home_url
+    ]
+
 config :proca, Proca.Server.Jwks,
   url: System.get_env("JWKS_URL")
 

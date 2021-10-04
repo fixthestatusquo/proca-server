@@ -3,7 +3,6 @@ defmodule ProcaWeb.UserSettingsController do
   plug :put_layout, "entry.html"
 
   alias Proca.Users
-  alias ProcaWeb.UserAuth
 
   plug :assign_email_and_password_changesets
 
@@ -13,7 +12,7 @@ defmodule ProcaWeb.UserSettingsController do
 
   def update(conn, %{"action" => "update_email"} = params) do
     %{"current_password" => password, "user" => user_params} = params
-    user = conn.assigns.current_user
+    user = conn.assigns.user
 
     case Users.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
@@ -37,14 +36,14 @@ defmodule ProcaWeb.UserSettingsController do
 
   def update(conn, %{"action" => "update_password"} = params) do
     %{"current_password" => password, "user" => user_params} = params
-    user = conn.assigns.current_user
+    user = conn.assigns.user
 
     case Users.update_user_password(user, password, user_params) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "Password updated successfully.")
         |> put_session(:user_return_to, Routes.user_settings_path(conn, :edit))
-        |> UserAuth.log_in_user(user)
+        |> log_in_user(user)
 
       {:error, changeset} ->
         render(conn, "edit.html", password_changeset: changeset)
@@ -52,7 +51,7 @@ defmodule ProcaWeb.UserSettingsController do
   end
 
   def confirm_email(conn, %{"token" => token}) do
-    case Users.update_user_email(conn.assigns.current_user, token) do
+    case Users.update_user_email(conn.assigns.user, token) do
       :ok ->
         conn
         |> put_flash(:info, "Email changed successfully.")
@@ -66,7 +65,7 @@ defmodule ProcaWeb.UserSettingsController do
   end
 
   defp assign_email_and_password_changesets(conn, _opts) do
-    user = conn.assigns.current_user
+    user = conn.assigns.user
 
     conn
     |> assign(:email_changeset, Users.change_user_email(user))

@@ -3,7 +3,7 @@ defmodule Proca.Server.Processing do
   alias Proca.Repo
   alias Proca.{Action, ActionPage, Supporter, Field}
   alias Proca.Pipes.Connection
-  import Proca.Stage.Support, only: [action_data: 1, action_data: 2, action_data: 3]
+  import Proca.Stage.Support, only: [action_data: 2, action_data: 3]
   import Ecto.Changeset
 
   @moduledoc """
