@@ -1,5 +1,6 @@
 defmodule ProcaWeb.UserSessionController do
   use ProcaWeb, :controller
+  plug :put_layout, "entry.html"
 
   alias Proca.Users
   alias ProcaWeb.UserAuth

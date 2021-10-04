@@ -13,18 +13,14 @@
   </head>
 
 
-  <body id="page-top">
-    <nav role="navigation">
-      <%= render "_user_menu.html", assigns %>
-    </nav>
+  <body>
+    <%= render "_user_menu.html", assigns %>
 
-    <!-- Page Wrapper -->
-    <div id="wrapper">
-      <div id="content-wrapper" class="d-flex flex-column">
-        <%= @inner_content %>
-      </div>
-    </div>
-    <!-- End Page Wrapper -->
+    <div class="w-screen block">
+      <%= @inner_content %>
+    </div> 
+
+    <%= render "_stars.html", assigns %>
 
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>

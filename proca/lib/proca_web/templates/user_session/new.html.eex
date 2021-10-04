@@ -1,4 +1,4 @@
-<h1>Log in</h1>
+<h1 class="text-2xl leading-relaxed mb-2">Log in</h1>
 
 <%= form_for @conn, Routes.user_session_path(@conn, :create), [as: :user], fn f -> %>
   <%= if @error_message do %>
@@ -7,17 +7,27 @@
     </div>
   <% end %>
 
-  <%= label f, :email %>
-  <%= email_input f, :email, required: true %>
+  <div class="input-wrap">
+    <span>
+      <i class="fas fa-user"></i>
+    </span>
+    <%= email_input f, :email, required: true, placeholder: "Email" %>
+  </div>
 
-  <%= label f, :password %>
-  <%= password_input f, :password, required: true %>
+  <div class="input-wrap">
+    <span>
+      <i class="fas fa-lock"></i>
+    </span>
+    <%= password_input f, :password, required: true, placeholder: "Password" %>
+  </div>
 
-  <%= label f, :remember_me, "Keep me logged in for 60 days" %>
-  <%= checkbox f, :remember_me %>
+  <div class="">
+    <%= label f, :remember_me, "Keep me logged in for 60 days" %>
+    <%= checkbox f, :remember_me %>
+  </div>
 
   <div>
-    <%= submit "Log in" %>
+    <%= submit "Log in", class: "btn bg-secondary my-2" %>
   </div>
 <% end %>
 
