@@ -1,5 +1,7 @@
 defmodule ProcaWeb.LayoutView do
   use ProcaWeb, :view
+  alias ProcaWeb.UserAuth
+
 
   def gravatar_url(nil) do 
     "//gravatar.com/avatar/default"

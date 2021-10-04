@@ -3,7 +3,6 @@ defmodule ProcaWeb.UserSessionController do
   plug :put_layout, "entry.html"
 
   alias Proca.Users
-  alias ProcaWeb.UserAuth
 
   def new(conn, _params) do
     render(conn, "new.html", error_message: nil)
@@ -22,6 +21,6 @@ defmodule ProcaWeb.UserSessionController do
   def delete(conn, _params) do
     conn
     |> put_flash(:info, "Logged out successfully.")
-    |> UserAuth.log_out_user()
+    |> log_out_user()
   end
 end

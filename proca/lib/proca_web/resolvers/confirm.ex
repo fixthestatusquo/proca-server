@@ -28,6 +28,20 @@ defmodule ProcaWeb.Resolvers.Confirm do
     end
   end
 
+  def user_confirm(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
+      case get(cnf) do 
+        nil -> {:error, [%{message: "code invalid"}]}
+      confirm -> Proca.Confirm.confirm(confirm, auth) |> retval()
+    end
+  end
+
+  def user_reject(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
+      case get(cnf) do 
+        nil -> {:error, [%{message: "code invalid"}]}
+      confirm -> Proca.Confirm.reject(confirm, auth) |> retval()
+    end
+  end
+
   defp retval(result) do 
     case result do 
       :ok ->  {:ok, %{status: :success}}

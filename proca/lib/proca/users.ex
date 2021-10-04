@@ -22,7 +22,7 @@ defmodule Proca.Users do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    User.one(email: email)
   end
 
   @doc """
@@ -39,7 +39,7 @@ defmodule Proca.Users do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = User.one(email: email)
     if User.valid_password?(user, password), do: user
   end
 
@@ -57,7 +57,7 @@ defmodule Proca.Users do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id)
+  def get_user!(id), do: User.one!(id: id)
 
   ## User registration
 
@@ -77,6 +77,17 @@ defmodule Proca.Users do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
+  end
+
+  def register_user_from_sso!(attrs) do 
+    new_user = %User{}
+    |> User.registration_from_sso_changeset(attrs)
+    |> Repo.insert()
+
+    case new_user do
+      {:ok, user} -> user
+      {:error, %{errors: [%{message: msg} | _]}} -> raise ArgumentError, msg 
+    end
   end
 
   @doc """

@@ -2,6 +2,9 @@ defmodule Proca.Users.User do
   use Ecto.Schema
   import Ecto.Changeset
   use Proca.Schema, module: __MODULE__
+  alias Proca.Users.StrongPassword
+  alias Proca.Users.User
+
   import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4]
 
   @derive {Inspect, except: [:password]}
@@ -38,6 +41,14 @@ defmodule Proca.Users.User do
   def registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password])
+    |> validate_email()
+    |> validate_password(opts)
+  end
+  
+  def registration_from_sso_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email])
+    |> change(password: StrongPassword.generate())
     |> validate_email()
     |> validate_password(opts)
   end
@@ -189,6 +200,11 @@ defmodule Proca.Users.User do
       :join_orgs, 
       :manage_users, 
       :manage_orgs]} | kw])
+  end
+
+  def update(user, [:generate_password | kw]) do 
+    change(user, password: StrongPassword.generate())
+    |> update(kw)
   end
 
   def update(user, [{:perms, permissions} | kw]) do 

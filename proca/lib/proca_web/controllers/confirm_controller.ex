@@ -115,7 +115,7 @@ defmodule ProcaWeb.ConfirmController do
   end
 
   defp get_auth(conn, org_name) do 
-    case Pow.Plug.current_user(conn) do 
+    case conn.assigns.user do 
       nil -> nil 
       user = %Proca.Users.User{} -> %Auth{
         user: user,

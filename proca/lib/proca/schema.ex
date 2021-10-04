@@ -23,14 +23,17 @@ defmodule Proca.Schema do
       alias Proca.Repo
 
       def one(kw) when is_list(kw), do: all(kw ++ [one: true])
+      def one!(kw) when is_list(kw), do: all(kw ++ [one!: true])
 
       def all(kw) when is_list(kw), do: all(from(a in unquote(schema_mod)), kw)
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
+      def all(query, [{:one!, true}]), do: Repo.one!(query)
       def all(query, [{:preload, assocs} | kw]), do: preload(query, [a], ^assocs) |> all(kw)
 
       def create(kw) when is_list(kw), do: update(Ecto.Changeset.change(struct!(unquote(schema_mod))), kw)
       def create(chset = %Ecto.Changeset{}, []), do: update(chset, [])
+      def create(chset = %Ecto.Changeset{}, kw) when is_list(kw), do: update(chset, kw)
 
       def update(chset = %Ecto.Changeset{}, []), do: Repo.insert_or_update(chset)
     end

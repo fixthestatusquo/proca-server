@@ -94,6 +94,7 @@ defmodule Proca.Org do
 
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
+  def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
   def all(q, [{:id, id} | kw]), do: where(q, [o], o.id == ^id) |> all(kw) 
 
   def all(q, [:active_public_keys | kw]) do 
@@ -156,10 +157,13 @@ defmodule Proca.Org do
     Proca.Repo.one from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1)
   end
 
-  def put_service(%Org{} = org, %Proca.Service{name: name} = service) 
+
+  def put_service(%Org{} = org, service), do: put_service(change(org), service)
+
+  def put_service(%Ecto.Changeset{} = ch, %Proca.Service{name: name} = service)
     when name in [:mailjet, :testmail]
     do
-    change(org)
+    ch
     |> put_assoc(:email_backend, service)
     |> put_assoc(:template_backend, service)
   end

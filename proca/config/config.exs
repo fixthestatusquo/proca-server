@@ -24,6 +24,16 @@ config :proca, ProcaWeb.Endpoint,
 config :cors_plug,
   origin: &ProcaWeb.Router.allow_origin/0
 
+config :proca, ProcaWeb.UserAuth,
+  local: [enabled: true],
+  sso: [
+    enabled: false, 
+    home_url: "https://account.fixthestatusquo.org",
+    #login_url: ,
+    #register_url: "",
+    ]
+
+
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
@@ -52,12 +62,6 @@ config :lager, handlers: []
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
-
-config :proca, :pow,
-  user: Proca.Users.User,
-  repo: Proca.Repo,
-  web_module: ProcaWeb,
-  current_user_assigns_key: :user
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,

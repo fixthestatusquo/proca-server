@@ -17,14 +17,14 @@ defmodule Proca.Confirm.LaunchPage do
   import Proca.Permission, only: [can?: 2]
 
   @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{staffer: st}, message \\ nil) do
+  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
       subject_id: campaign_id,
       object_id: ap_id,
       message: message,
-      staffer: st
+      creator: user
     }
     |> Confirm.create()
   end

@@ -24,7 +24,10 @@ defmodule ProcaWeb do
       import Plug.Conn
       import ProcaWeb.Gettext
       alias ProcaWeb.Router.Helpers, as: Routes
-      import Phoenix.LiveView.Controller
+
+      alias ProcaWeb.UserAuth # XXX remove
+      import ProcaWeb.UserAuth
+      # import Phoenix.LiveView.Controller
     end
   end
 
@@ -43,7 +46,7 @@ defmodule ProcaWeb do
       import ProcaWeb.ErrorHelpers
       import ProcaWeb.Gettext
       alias ProcaWeb.Router.Helpers, as: Routes
-      import Phoenix.LiveView.Helpers
+      # import Phoenix.LiveView.Helpers
     end
   end
 
@@ -59,7 +62,7 @@ defmodule ProcaWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
-      import Phoenix.LiveView.Router
+      # import Phoenix.LiveView.Router
     end
   end
 

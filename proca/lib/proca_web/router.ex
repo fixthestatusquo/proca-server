@@ -5,8 +5,7 @@ defmodule ProcaWeb.Router do
   use ProcaWeb, :router
 
   import ProcaWeb.UserAuth
-  import Phoenix.LiveView.Router
-  use Pow.Phoenix.Router
+  # import Phoenix.LiveView.Router
   use Plug.ErrorHandler
 
   def allow_origin, do: Application.get_env( :proca, ProcaWeb.Endpoint)[:allow_origin]
@@ -14,7 +13,8 @@ defmodule ProcaWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_live_flash
+    # plug :fetch_live_flash # This is for LiveView
+    plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
@@ -22,6 +22,10 @@ defmodule ProcaWeb.Router do
   end
 
   pipeline :api do
+    # Support current logged in user
+    plug :fetch_session
+    plug :fetch_current_user
+
     plug :accepts, ["json"]
     plug CORSPlug
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
@@ -29,20 +33,20 @@ defmodule ProcaWeb.Router do
     plug ProcaWeb.Plugs.JwtAuthPlug
   end
 
+  # unused currently, might be useful for /console
   pipeline :auth do
     plug ProcaWeb.Plugs.JwtAuthPlug, query_param: "jwt", enable_session: true
-    plug Pow.Plug.RequireAuthenticated, error_handler: Pow.Phoenix.PlugErrorHandler
+    :require_authenticated_user
   end
 
   scope "/" do
     pipe_through :browser
 
     get "/", ProcaWeb.PageController, :index
-    pow_routes()
   end
 
   scope "/link" do 
-    pipe_through :api
+    pipe_through [:api]
 
     get "/s/:action_id/:verb/:ref", ProcaWeb.ConfirmController, :supporter
     get "/:verb/:code", ProcaWeb.ConfirmController, :confirm

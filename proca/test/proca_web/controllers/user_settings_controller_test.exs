@@ -1,6 +1,7 @@
 defmodule ProcaWeb.UserSettingsControllerTest do
   use ProcaWeb.ConnCase, async: true
 
+  use Proca.TestEmailBackend
   alias Proca.Users
   import Proca.UsersFixtures
 
@@ -10,7 +11,7 @@ defmodule ProcaWeb.UserSettingsControllerTest do
     test "renders settings page", %{conn: conn} do
       conn = get(conn, Routes.user_settings_path(conn, :edit))
       response = html_response(conn, 200)
-      assert response =~ "<h1>Settings</h1>"
+      assert response =~ ">Settings</h1>"
     end
 
     test "redirects if user is not logged in" do
@@ -27,15 +28,15 @@ defmodule ProcaWeb.UserSettingsControllerTest do
           "action" => "update_password",
           "current_password" => valid_user_password(),
           "user" => %{
-            "password" => "new valid password",
-            "password_confirmation" => "new valid password"
+            "password" => "New valid password!11",
+            "password_confirmation" => "New valid password!11"
           }
         })
 
       assert redirected_to(new_password_conn) == Routes.user_settings_path(conn, :edit)
       assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
       assert get_flash(new_password_conn, :info) =~ "Password updated successfully"
-      assert Users.get_user_by_email_and_password(user.email, "new valid password")
+      assert Users.get_user_by_email_and_password(user.email, "New valid password!11")
     end
 
     test "does not update password on invalid data", %{conn: conn} do
@@ -50,7 +51,7 @@ defmodule ProcaWeb.UserSettingsControllerTest do
         })
 
       response = html_response(old_password_conn, 200)
-      assert response =~ "<h1>Settings</h1>"
+      assert response =~ "Settings</h1>"
       assert response =~ "should be at least 12 character(s)"
       assert response =~ "does not match password"
       assert response =~ "is not valid"
@@ -83,7 +84,7 @@ defmodule ProcaWeb.UserSettingsControllerTest do
         })
 
       response = html_response(conn, 200)
-      assert response =~ "<h1>Settings</h1>"
+      assert response =~ "Settings</h1>"
       assert response =~ "must have the @ sign and no spaces"
       assert response =~ "is not valid"
     end
@@ -94,7 +95,7 @@ defmodule ProcaWeb.UserSettingsControllerTest do
       email = unique_user_email()
 
       token =
-        extract_user_token(fn url ->
+        extract_user_token(email, fn url ->
           Users.deliver_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 

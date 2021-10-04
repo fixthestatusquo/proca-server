@@ -6,7 +6,12 @@ defmodule Proca.Service.Mailjet do
   - Use transactional templates (not campaign)
   - Test thoroughly with their preview - MJ provides no debugging otherwise (just HTTP500 on send)
   - Fields can have underscores
-  - use {{var:foo_bar}} or {{var:foo_bar:"Default"}}
+  - Use {{var:foo_bar:"default"}} even with an empty default!
+  - You cannot use default in some places: for example in attributes (href value).
+  - You can conditionally show a block: use foo:"" in the field - but you need to use “greater then” + start of the string - no way to input “not empty” condition
+  - The links prohibit use of default "" - so you must provide or hide it.
+  - Use {% if var:dupa:"" %} and {% endif %} for conditional block
+
   """
 
   @behaviour Proca.Service.EmailBackend

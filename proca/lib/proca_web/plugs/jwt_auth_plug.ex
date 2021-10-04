@@ -5,20 +5,18 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   @behaviour Plug
 
   alias Plug.Conn
-  alias Pow.{Plug, Plug.Session}
-  alias Proca.Repo
   alias Proca.Auth
+  alias ProcaWeb.UserAuth
+  alias Proca.Users
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
-
-  @pow_config [otp_app: :proca]
 
   def init(opts), do: opts
 
   def call(conn, opts) do
     conn
     |> jwt_auth(opts[:query_param])
-    |> add_to_context
+    |> add_to_context()
     |> add_to_session(opts[:enable_session])
   end
 
@@ -100,9 +98,11 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
           } 
         }
       } ->
-        case User.get(email: email) do
-          nil -> Plug.assign_current_user(conn, User.create!(email), User.pow_config())
-          user -> Plug.assign_current_user(conn, user, User.pow_config())
+        case Users.get_user_by_email(email) do
+          nil -> 
+            UserAuth.assign_current_user(conn, Users.register_user_from_sso!(%{email: email}))
+          user ->
+            UserAuth.assign_current_user(conn, user)
         end
 
       _ ->
@@ -124,7 +124,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   end
 
   defp add_to_context(conn) do
-    case conn.assigns.user do
+    case conn.assigns[:user] do
       %User{} = u ->
         Absinthe.Plug.assign_context(conn, %{
           user: u, # XXX for backward compatibility
@@ -141,9 +141,9 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   defp add_to_session(conn, false), do: conn
 
   defp add_to_session(conn, true) do
-    case conn.assigns.user do
-      user = %User{} -> conn |> Session.create(user, @pow_config) |> elem(0)
-      _ -> conn
+    case conn.assigns[:user] do
+      user = %User{} -> UserAuth.log_in_user(conn, user)
+      nil -> conn
     end
   end
 

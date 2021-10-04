@@ -1,7 +1,7 @@
 defmodule Proca.Confirm.Operation do 
   alias Proca.Confirm
   alias Proca.Auth
-  alias Proca.{ActionPage, Campaign, Org}
+  alias Proca.{ActionPage, Campaign}
 
   def run(%Confirm{operation: op} = cnf, verb, sup) do 
     apply(mod(op), :run, [cnf, verb, sup])

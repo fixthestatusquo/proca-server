@@ -7,10 +7,13 @@ defmodule Proca.Factory do
 
   def org_factory do
     org_name = sequence("org")
+    email_service = build(:email_backend)
     %Proca.Org{
       name: org_name,
       title: "Org with name #{org_name}",
-      services: [build(:email_backend)]
+      services: [email_service],
+      email_backend_id: email_service.id,
+      template_backend_id: email_service.id
     }
   end
 
@@ -19,7 +22,7 @@ defmodule Proca.Factory do
       name: :testmail,
       host: "email.host.com",
       user: "user",
-      password: "password1234"
+      password: "Shebang123#!"
     }
   end
 
@@ -65,9 +68,11 @@ defmodule Proca.Factory do
     email = sequence("email", &"member-#{&1}@example.org")
     %Proca.Users.User{
       email: email,
-      password_hash: email |>  Pow.Ecto.Schema.Password.pbkdf2_hash(iterations: 1)
+      hashed_password: Bcrypt.hash_pwd_salt(password_from_email(email))
     }
   end
+
+  def password_from_email(email), do: email <> "A1%"
 
   def staffer_factory do
     %Proca.Staffer{

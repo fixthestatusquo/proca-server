@@ -24,7 +24,7 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :email, non_null(:string)
 
     field :is_admin, non_null(:boolean) do 
-      resolve(fn u, _, _ -> can?(u, :instance_admin) end)
+      resolve(fn u, _, _ -> {:ok, can?(u, :instance_owner)} end)
     end
 
     field :roles, non_null(list_of(non_null(:user_role))) do 
@@ -46,11 +46,23 @@ defmodule ProcaWeb.Schema.UserTypes do
   end
 
   object :user_mutations do
+    @desc "Add user to org by email"
     field :add_org_user, type: non_null(:change_user_status) do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :input, non_null(:user_input)
       resolve(&Resolvers.User.add_org_user/3)
+    end
+
+    @desc "Invite an user to org by email (can be not yet user!)"
+    field :invite_org_user, type: non_null(:confirm) do
+      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
+      arg :org_name, non_null(:string)
+      arg :input, non_null(:user_input)
+
+      @desc "Optional message for invited user"
+      arg :message, :string
+      resolve(&Resolvers.User.invite_org_user/3)
     end
 
     field :update_org_user, type: non_null(:change_user_status) do

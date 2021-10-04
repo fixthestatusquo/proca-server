@@ -36,8 +36,7 @@ defmodule Proca.Confirm do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Repo
-  alias Proca.Confirm
-  alias Proca.{ActionPage, Campaign, Org, Action, Staffer, Auth}
+  alias Proca.{Confirm, Org}
   alias Proca.Users.User
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
@@ -59,7 +58,7 @@ defmodule Proca.Confirm do
   def changeset(confirm, attrs) do
     confirm
     |> cast(attrs, [:operation, :subject_id, :object_id, :email, :message, :charges])
-    |> put_assoc(:creator, Map.get(attrs, :user, nil))
+    |> put_assoc(:creator, Map.get(attrs, :creator, nil))
     |> add_code()
     |> validate_required([:operation, :subject_id, :charges, :code])
   end
@@ -96,7 +95,7 @@ defmodule Proca.Confirm do
   end
 
   def by_open_code(code) when is_bitstring(code) do
-    from(c in Confirm, where: c.code == ^code and is_nil(c.object_id), limit: 1)
+    from(c in Confirm, where: c.code == ^code and is_nil(c.object_id) and is_nil(c.email), limit: 1)
     |> one()
   end
 
@@ -149,8 +148,7 @@ defmodule Proca.Confirm do
 
     operation = Confirm.Operation.mod(cnf)
 
-    instance = Org.get_by_name(Org.instance_org_name, 
-      [:email_backend, :template_backend])
+    instance = Org.one([preload: [:email_backend, :template_backend]] ++ [:instance])
 
     recipients = emails 
     |> Enum.map(fn email -> 
@@ -169,7 +167,7 @@ defmodule Proca.Confirm do
 
         EmailBackend.deliver(recipients, instance, template)
       else 
-        :not_found -> {:error, :no_tempalte}
+        :not_found -> {:error, :no_template}
         :not_configured -> {:error, :no_template}
     end
   end
