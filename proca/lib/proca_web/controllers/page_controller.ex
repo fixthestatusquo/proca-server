@@ -1,6 +1,7 @@
 # XXX rename to HomeController or something
 defmodule ProcaWeb.PageController do
   use ProcaWeb, :controller
+
   alias Proca.Staffer
   alias Proca.Repo
   alias ProcaWeb.Controller.AuthHelper
@@ -20,8 +21,9 @@ defmodule ProcaWeb.PageController do
     render(conn, "index.html", %{
       staffer: conn.assigns[:staffer],
       user_orgs: user_orgs
-    })
+  })
   end
+
 
   defp signin(conn, org_name) do
     pow_config = Application.get_env(:proca, :pow)

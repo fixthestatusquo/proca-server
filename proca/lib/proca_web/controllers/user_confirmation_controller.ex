@@ -1,6 +1,8 @@
 defmodule ProcaWeb.UserConfirmationController do
   use ProcaWeb, :controller
 
+  plug :put_layout, "entry.html"
+
   alias Proca.Users
 
   def new(conn, _params) do

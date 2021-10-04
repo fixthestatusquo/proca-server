@@ -1,0 +1,9 @@
+<div class="container lg:mt-5 m-auto h-full flex flex-col justify-itemx-center">
+  <!-- gray window -->
+  <article class="lg:m-7 p-2  lg:m-auto lg:w-1/3 bg-purple-50 bg-opacity-85 lg:rounded-xl">
+    <div class="container flex flex-col items-center p-4">
+      <%= @inner_content %>
+    </div>
+  </article>
+</div>
+
