@@ -42,21 +42,21 @@ defmodule Proca.Contact.Input.Contact do
   end
 
   @doc "Given params with name or split name, recompute others"
-  def normalize_names_attr(attr = %{first_name: _, name: _}) do
+  def normalize_names(attr = %{first_name: _, name: _}) do
     attr
   end
 
-  def normalize_names_attr(attr = %{first_name: fst, last_name: lst}) do
+  def normalize_names(attr = %{first_name: fst, last_name: lst}) do
     attr
     |> Map.put(:name, String.trim("#{fst} #{lst}"))
   end
 
-  def normalize_names_attr(attr = %{first_name: fst}) do
+  def normalize_names(attr = %{first_name: fst}) do
     attr
     |> Map.put(:name, String.trim(fst))
   end
 
-  def normalize_names_attr(attr = %{name: n}) do
+  def normalize_names(attr = %{name: n}) do
     [first | rest] = String.split(n, " ")
 
     attr
@@ -64,7 +64,14 @@ defmodule Proca.Contact.Input.Contact do
     |> Map.put(:last_name, rest |> Enum.join(" "))
   end
 
-  def normalize_names_attr(attr) do
+  def normalize_names(attr) do
     attr
   end
+
+  def normalize_email(attr = %{email: email}) do 
+    attr 
+    |> Map.put(:email, String.trim(String.downcase(email)))
+  end 
+  
+  def normalize_email(attr), do: attr
 end
