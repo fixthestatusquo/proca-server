@@ -9,6 +9,7 @@ export interface ServiceOpts {
   service?: string,
   service_url?: string,
   queueName?: string,
+  queuePrefetch?: number,
   backoff?: boolean,
   filePath?: string,
   sentry?: boolean

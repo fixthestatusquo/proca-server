@@ -4,6 +4,7 @@ import { Client, LinkNotFound, State, Resource, FollowPromiseOne} from "ketting"
 import {ActionMessage} from "../queueMessage"
 import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
+import amqplib from 'amqplib';
 
 import util from 'util'
 
@@ -16,9 +17,9 @@ type Cache = {
 
 const CACHE : Cache = {form: {}}
 
-export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig) {
+export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig, msg : amqplib.Message) {
   try {
-    const email: string = action.contact.pii?.email || action.contact.email
+    let email: string = action.contact.pii?.email || action.contact.email
     if (action.privacy === null) {
       console.log("Action without contact", action.action.actionType)
       return
@@ -28,6 +29,7 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
 
     // check inputs
     if (!email) throw new Error("Action with no email")
+    email = email.toLowerCase()
     if (!campaignTitle) throw new Error("Action with missing campaign title")
     if (!process.env.ACTIONNETWORK_APIKEY) throw new Error("ACTIONNETWORK_APIKEY is unset")
     const formTitle = campaignTitle + " " + action.actionPage.locale.split("_")[0].toUpperCase()
@@ -52,16 +54,15 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
 
     if (person) { // person exists
       let personAttr = await person.get()
-      const personEmailIdx = personAttr.data.email_addresses.findIndex((ea: any) => ea.address === email);
-      const personEmail = personAttr.data.email_addresses[personEmailIdx]
-      if (personEmail) {
+      const personEmailIdx = personAttr.data.email_addresses.findIndex((ea: any) => ea.address.toLowerCase() === email)
+      if (personEmailIdx >= 0) {
+        const personEmail = personAttr.data.email_addresses[personEmailIdx]
         if (optIn && personEmail.status === "unsubscribed") {
           // set the email status to subscribed!
           personAttr.data.email_addresses[personEmailIdx].status = "subscribed"
           updatePerson = true
         }
       } else {
-        delete personAttr.data.email_addresses[personEmailIdx].status
         console.error("Weird, person record does not have email we've fetched it by", personAttr.data.email_addresses)
       }
 
@@ -81,7 +82,7 @@ export async function syncAction(action : ActionMessage, serviceOpts : ServiceOp
       p(personUri, "Created person")
     }
 
-    const submission = await createSubmission(c, form, personUri, action);
+    const submission = await createSubmission(c, form, personUri, action, !msg.fields.redelivered);
     return submission.uri
   } catch (err) {
     if (serviceOpts.sentry) {
@@ -284,7 +285,7 @@ const putAction = async (client : Client, action: ActionMessage) => {
   }
 }
 
-const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string, action : ActionMessage) => {
+const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string, action : ActionMessage, autoresponse = true) => {
   const submissionUrl = form.uri + '/submissions'
 
   const submission = client.go(submissionUrl);
@@ -292,7 +293,7 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
     "_links" : {
       "osdi:person" : { "href" : personUri }
     },
-    triggers: { autoresponse: {enabled: true } }
+    triggers: { autoresponse: {enabled: autoresponse } }
   }
   
   if (action.tracking?.source) {
@@ -304,7 +305,7 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
     }
     data["action_network:referrer_data"] = rd
   }
-  p(data, "submission.post to " + submission.uri)
+  p(data, "submission.post to " + submission.uri + ", trigger email: " + autoresponse)
   return await submission.post({data})
 };
 
