@@ -26,7 +26,8 @@ defmodule Proca.Contact.BasicData do
   def from_input(params) do
     ch =
       params
-      |> Input.Contact.normalize_names_attr()
+      |> Input.Contact.normalize_names()
+      |> Input.Contact.normalize_email()
       |> Input.Contact.changeset()
       |> validate_required([:name, :first_name, :email])
 
