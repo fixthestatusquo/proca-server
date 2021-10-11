@@ -137,7 +137,7 @@ defmodule Proca.Server.Stats do
 
     first_supporter_query = 
       from(a in Action, join: s in Supporter,  on: a.supporter_id == s.id, order_by: a.inserted_at)
-      |> where([a, s], s.processing_status in [:accepted, :delivered] and a.processing_status in [:accepted, :delivered])
+      |> where([a, s], s.processing_status in [:accepted] and a.processing_status in [:accepted, :delivered])
       |> distinct([a, s], [a.campaign_id, s.fingerprint])
 
     org_supporters_query = 

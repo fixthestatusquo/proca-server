@@ -45,6 +45,7 @@ export interface CliOpts {
   fields?: string,
   // ServiceOpts
   queueName?: string,
+  queuePrefetch?: number,
   service?: string,
   service_url?: string,
   backoff?: boolean,
@@ -401,6 +402,11 @@ export default function cli() {
         alias: 'Q',
         type: 'string',
         description: 'Exact queue name to use instead of standard ones'
+      },
+      queuePrefetch: {
+        alias: 'N',
+        type: 'number',
+        description: 'Queue prefetch count'
       },
       decrypt: {
         alias: 'd',
