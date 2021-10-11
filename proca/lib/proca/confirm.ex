@@ -142,7 +142,7 @@ defmodule Proca.Confirm do
   Uses dynamic dispatch to get template name and personalisation fields from each Confirm operation module.
   Will send the email from instance org backend.
   """
-  def notify_by_email(cnf = %Confirm{email: email}), do: notify_by_email(cnf, [email])
+  def notify_by_email(cnf = %Confirm{email: email}) when is_bitstring(email), do: notify_by_email(cnf, [email])
   def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do 
     alias Proca.Service.EmailTemplateDirectory
 

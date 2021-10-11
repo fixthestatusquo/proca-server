@@ -3,6 +3,7 @@ defmodule Proca.Service.EmailRecipient do
   Represents an email recipient, for email templates that can be persnonalized.
   """
   alias Proca.Service.EmailRecipient
+  import Proca.Repo, only: [preload: 2]
 
   defstruct first_name: "", email: "", ref: "", fields: %{}
 
@@ -41,6 +42,8 @@ defmodule Proca.Service.EmailRecipient do
     rcpt = %EmailRecipient{fields: fields}, 
     cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
     ) do 
+
+      cnf = preload(cnf, [:creator])
 
       cflds = %{
         "confirm_code" => confirm_code, 
