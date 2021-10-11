@@ -4,7 +4,7 @@ defmodule Proca.Stage.MessageV2 do
   alias Proca.Repo
   alias Proca.{Contact, Supporter, PublicKey, Action}
 
-  def action_data(action, stage \\ :deliver) do
+  def action_data(action, stage \\ :deliver, org_id) do
     action =
       Repo.preload(
         action,
@@ -18,7 +18,7 @@ defmodule Proca.Stage.MessageV2 do
       )
 
     contact =
-      Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
+      Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
 
     %{
       "actionId" => action.id,

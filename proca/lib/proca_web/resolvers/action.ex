@@ -15,17 +15,20 @@ defmodule ProcaWeb.Resolvers.Action do
   alias ProcaWeb.Helper
 
   defp get_action_page(%{action_page_id: id}) do
-    case ActionPage.find(id) do
+    case ActionPage.one(id: id, preload: [:org, [campaign: :org]]) do
       nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
-      action_page -> {:ok, action_page |> Repo.preload([:org, [campaign: :org]])}
+      action_page -> {:ok, action_page}
     end
   end
 
-  defp add_tracking_location(tr, nil), do: tr 
-  defp add_tracking_location(tr, referer) when is_bitstring(referer) do 
-    [location|_] = String.split(referer, "?")
-    Map.put(tr, :location, location)
+  defp add_tracking_location(tr, referer) do
+    location = Map.get(tr, :location, nil)
+    case Source.get_tracking_location(location, referer) do 
+      nil -> Map.delete(tr, :location)
+      url -> Map.put(tr, :location, url)
+    end
   end
+
 
   # utms given and referer header
   defp get_tracking(%{tracking: tr}, referer) do
@@ -41,7 +44,7 @@ defmodule ProcaWeb.Resolvers.Action do
   # only refer header given, we provide n/a utm values to better look in stats
   defp get_tracking(%{}, referer) when is_bitstring(referer) do 
     get_tracking(%{tracking: %{
-      source: "n/a", medium: "n/a", campaign: "n/a"
+      source: "unknown", medium: "unknown", campaign: "unknown"
     }}, referer)
   end
 

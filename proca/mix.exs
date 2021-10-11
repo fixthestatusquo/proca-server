@@ -43,6 +43,9 @@ defmodule Proca.MixProject do
       {:phoenix, "~> 1.5.0"},
       {:phoenix_pubsub, "~> 2.0"}, # See below
       {:phoenix_ecto, "~> 4.0"},
+      {:phx_gen_auth, "~> 0.7.0"},
+      {:bcrypt_elixir, "~> 2.0"},
+      {:pbkdf2_elixir, "~> 1.4"},
       {:ecto_sql, "~> 3.1"},
       {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},
@@ -76,7 +79,6 @@ defmodule Proca.MixProject do
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
       {:phoenix_live_view, "~> 0.13.0"},
-      {:pow, "~> 1.0.24"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this

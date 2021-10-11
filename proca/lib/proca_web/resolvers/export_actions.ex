@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   """
   import Ecto.Query
 
-  import Proca.Staffer.Permission
+  import Proca.Permission
 
   alias Proca.{Supporter, Action, Contact, Org, Staffer, PublicKey}
   alias Proca.Repo
@@ -98,8 +98,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       contact: format_contact(action.supporter, contact),
       privacy: format_privacy(contact),
       trackng: action.source,
-      campaign: Map.take(action.campaign, [:name, :external_id]),
-      action_page: Map.take(action.action_page, [:id, :name, :locale])
+      campaign: action.campaign,
+      action_page: action.action_page
     }
     |> put_action_donation(action.donation)
   end

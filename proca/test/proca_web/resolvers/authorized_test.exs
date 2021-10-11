@@ -1,5 +1,7 @@
 defmodule ProcaWeb.AuthorizedTest do
   use Proca.DataCase
+  alias ProcaWeb.Error
+  alias Proca.Auth
   import Proca.StoryFactory, only: [red_story: 0]
 
   alias ProcaWeb.Resolvers.Authorized
@@ -8,7 +10,7 @@ defmodule ProcaWeb.AuthorizedTest do
     s = red_story()
 
     r1 = %Absinthe.Resolution{}
-    r2 = %{r1 | context: %{user: s.red_bot.user}}
+    r2 = %{r1 | context: %{user: s.red_bot.user, auth: %Auth{user: s.red_bot.user}}}
     r3_id = %{r2 | arguments: %{id: s.red_org.id}}
     r3_name = %{r2 | arguments: %{name: s.red_org.name}}
     r3_org_name = %{r2 | arguments: %{org_name: s.red_org.name}}
@@ -25,7 +27,7 @@ defmodule ProcaWeb.AuthorizedTest do
 
   test "Fail when no user in context", %{resolution: r} do
     r = Authorized.call(r, [])
-    assert [%{extensions: %{code: "unauthorized"}}] = r.errors
+    assert [%Error{code: "unauthorized"}] = r.errors
   end
 
   test "Return resolution where user in context", %{user_resolution: r} do
@@ -35,7 +37,7 @@ defmodule ProcaWeb.AuthorizedTest do
 
   test "Staffer search by org but no arguments", %{user_resolution: r} do
     r2 = Authorized.call(r, access: [:org])
-    assert [%{extensions: %{code: "permission_denied"}}] = r2.errors
+    assert [%Error{code: "permission_denied"}] = r2.errors
   end
 
   test "Staffer search by org with id argument", %{
@@ -65,7 +67,7 @@ defmodule ProcaWeb.AuthorizedTest do
     assert r3.context.org.id == org.id
 
     r4 = Authorized.call(r, access: [:org], can?: [:launch_action_page])
-    assert [%{extensions: %{code: "permission_denied"}}] = r4.errors
+    assert [%Error{code: "permission_denied"}] = r4.errors
   end
 
   test "Staffer search by org with org_name argument", %{org_org_name_resolution: r, red_org: org} do

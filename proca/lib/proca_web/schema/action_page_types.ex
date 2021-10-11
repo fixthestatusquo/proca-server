@@ -33,8 +33,12 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     field :thank_you_template_ref, :string
     @desc "Is live?"
     field :live, non_null(:boolean)
-    @desc "List of steps in journey"
-    field :journey, non_null(list_of(non_null(:string)))
+    @desc "List of steps in journey (DEPRECATED: moved under config)"
+    field :journey, non_null(list_of(non_null(:string))) do
+      resolve(fn page, _par, _ctx ->
+        {:ok, Map.get(page.config, "journey", ["Petition", "Share"])}
+      end)
+    end
     @desc "Config JSON of this action page"
     field :config, non_null(:json)
     @desc "Campaign this action page belongs to."
@@ -69,7 +73,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do 
       resolve fn page, _, _ -> 
-        {:ok, Proca.ActionPage.Status.get_last_location(page.id)}
+        {:ok, Proca.ActionPage.location(page)}
       end
     end
 
@@ -118,7 +122,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     @desc """
     Adds a new Action Page based on another Action Page. Intended to be used to
-    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+    create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
     """
     field :copy_action_page, type: non_null(:action_page) do
       middleware Authorized,
@@ -139,7 +143,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     @desc """
     Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-    create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+    create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
     """
     field :copy_campaign_action_page, type: non_null(:action_page) do
       middleware Authorized,
@@ -215,10 +219,10 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     """
     field :extra_supporters, :integer
 
-    @desc """
-    List of steps in the journey
-    """
-    field :journey, list_of(non_null(:string))
+    # @desc """
+    # List of steps in the journey (DEPRECATED: moved to config)
+    # """
+    # field :journey, list_of(non_null(:string))
 
 @desc """
     JSON string containing Action Page config

@@ -137,9 +137,15 @@ type Consent {
 "Tracking codes"
 input TrackingInput {
   source: String!
+
   medium: String!
+
   campaign: String!
+
   content: String
+
+  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
+  location: String
 }
 
 "Count of actions for particular action type"
@@ -159,6 +165,17 @@ input ConfirmInput {
 
 type ChangeUserStatus {
   status: Status!
+}
+
+"Criteria to filter users"
+input SelectUser {
+  id: Int
+
+  "Use % as wildcard"
+  email: String
+
+  "Exact org name"
+  orgName: String
 }
 
 enum ContactSchema {
@@ -230,7 +247,7 @@ interface ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -258,7 +275,7 @@ type PrivateActionPage implements ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -345,6 +362,14 @@ type ActivateKeyResult {
   status: Status!
 }
 
+input ServiceInput {
+  name: ServiceName!
+  host: String
+  user: String
+  password: String
+  path: String
+}
+
 "Campaign statistics"
 type CampaignStats {
   "Unique action tagers count"
@@ -418,7 +443,7 @@ type RootMutationType {
 
   """
   Adds a new Action Page based on another Action Page. Intended to be used to
-  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
   """
   copyActionPage(
     "Org owner of new Action Page"
@@ -433,7 +458,7 @@ type RootMutationType {
 
   """
   Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
   """
   copyCampaignActionPage(
     "Org owner of new Action Page"
@@ -531,7 +556,17 @@ type RootMutationType {
     name: String!
 
     input: OrgInput!
-  ): Org!
+  ): PrivateOrg!
+
+  "Update org processing settings"
+  updateOrgProcessing(
+    "Set email backend to"
+    name: String!
+
+    emailBackend: ServiceName
+
+    emailFrom: String
+  ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
 
@@ -556,6 +591,8 @@ type RootMutationType {
     "Key id"
     id: Int!
   ): ActivateKeyResult!
+
+  upsertService(orgName: String!, id: Int, input: ServiceInput!): Service!
 
   addStripePaymentIntent(actionPageId: Int!, input: StripePaymentIntentInput!, contactRef: ID): Json!
 
@@ -639,6 +676,8 @@ type RootQueryType {
 
   currentUser: User!
 
+  users(select: SelectUser): [User!]!
+
   "Organization api (authenticated)"
   org(
     "Name of organisation"
@@ -668,6 +707,11 @@ type PublicOrg implements Org {
   config: Json!
 }
 
+type Processing {
+  emailFrom: String
+  emailBackend: ServiceName
+}
+
 type PublicActionPage implements ActionPage {
   id: Int!
 
@@ -683,7 +727,7 @@ type PublicActionPage implements ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -792,9 +836,6 @@ input ActionPageInput {
   "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
   extraSupporters: Int
 
-  "List of steps in the journey"
-  journey: [String!]
-
   "JSON string containing Action Page config"
   config: Json
 }
@@ -826,6 +867,9 @@ type PersonalData {
 
   "Email opt in template name"
   emailOptInTemplate: String
+
+  "High data security enabled"
+  highSecurity: Boolean!
 }
 
 enum DonationSchema {
@@ -916,6 +960,8 @@ type PrivateOrg implements Org {
 
   users: [OrgUser]!
 
+  processing: Processing!
+
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
 
@@ -926,7 +972,7 @@ type PrivateOrg implements Org {
   actionPage(id: Int, name: String): ActionPage!
 
   "Get campaign this org is leader or partner of by id"
-  campaign(id: Int): Campaign!
+  campaign(id: Int!): Campaign!
 }
 
 enum ServiceName {
@@ -1063,5 +1109,6 @@ enum Status {
 type User {
   id: Int!
   email: String!
+  isAdmin: Boolean!
   roles: [UserRole!]!
 }

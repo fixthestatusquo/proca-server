@@ -18,10 +18,21 @@ config :proca, ProcaWeb.Endpoint,
   pubsub_server: Proca.PubSub,
   live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"],
   allow_origin: "*",
-  router: if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router
+  router: (if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router),
+  captcha_service: "hcaptcha"
 
 config :cors_plug,
   origin: &ProcaWeb.Router.allow_origin/0
+
+config :proca, ProcaWeb.UserAuth,
+  local: [enabled: true],
+  sso: [
+    enabled: false, 
+    home_url: "https://account.fixthestatusquo.org",
+    #login_url: ,
+    #register_url: "",
+    ]
+
 
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,
@@ -52,12 +63,6 @@ config :lager, handlers: []
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :proca, :pow,
-  user: Proca.Users.User,
-  repo: Proca.Repo,
-  web_module: ProcaWeb,
-  current_user_assigns_key: :user
-
 config :ex_aws, :hackney_opts,
   follow_redirect: true,
   recv_timeout: 10_000
@@ -71,6 +76,9 @@ config :sentry,
   enable_source_code_context: true,
   root_source_code_paths: [File.cwd!()],
   capture_log_messages: true
+
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: false
 
 config :logger,
   level: :info

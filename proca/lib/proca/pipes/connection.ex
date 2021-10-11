@@ -3,7 +3,7 @@ defmodule Proca.Pipes.Connection do
   use GenServer
   alias AMQP.Channel
   alias AMQP.Connection
-  import AMQP.Basic
+  alias AMQP.Basic
 
   @connection_down_reconnect 5
   @econnrefused_reconnect 60 * 5
@@ -155,7 +155,6 @@ defmodule Proca.Pipes.Connection do
 
       {:ok, conn} ->
         {:ok, chan} = Channel.open(conn)
-        return chan, __MODULE__
 
         try do
           apply(f, [chan])
@@ -174,14 +173,15 @@ defmodule Proca.Pipes.Connection do
 
     r = with_chan(fn chan ->
       case JSON.encode(data) do
-        {:ok, payload} -> publish(chan, exchange, routing_key, payload, options)
+        {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
         _e -> :error
       end
     end)
 
     case r do 
+      :ok -> :ok
       {:error, _reason} -> :error
-      x -> x
+      :error -> :error
     end
   end
 end

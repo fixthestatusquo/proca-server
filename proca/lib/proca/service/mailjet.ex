@@ -6,7 +6,12 @@ defmodule Proca.Service.Mailjet do
   - Use transactional templates (not campaign)
   - Test thoroughly with their preview - MJ provides no debugging otherwise (just HTTP500 on send)
   - Fields can have underscores
-  - use {{var:foo_bar}} or {{var:foo_bar:"Default"}}
+  - Use {{var:foo_bar:"default"}} even with an empty default!
+  - You cannot use default in some places: for example in attributes (href value).
+  - You can conditionally show a block: use foo:"" in the field - but you need to use “greater then” + start of the string - no way to input “not empty” condition
+  - The links prohibit use of default "" - so you must provide or hide it.
+  - Use {% if var:dupa:"" %} and {% endif %} for conditional block
+
   """
 
   @behaviour Proca.Service.EmailBackend
@@ -14,6 +19,7 @@ defmodule Proca.Service.Mailjet do
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailBackend}
   alias Bamboo.{MailjetAdapter, MailjetHelper, Email}
+  import Logger
 
   @api_url "https://api.mailjet.com/v3"
   @template_path "/REST/template"
@@ -26,9 +32,12 @@ defmodule Proca.Service.Mailjet do
   @impl true
   def list_templates(%Org{template_backend: %Service{} = srv}) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}", auth: :basic) do
-      {:ok, 200, %{"Data" => templates}} -> templates |> Enum.map(&template_from_json/1)
+      {:ok, 200, %{"Data" => templates}} -> {:ok, templates |> Enum.map(&template_from_json/1)}
+      {:ok, 401} -> {:error, "not authenticated"}
       {:error, err} -> {:error, err}
-      _x -> {:error, "unexpected return from mailjet list templates"}
+      x -> 
+        error("Mailjet List Template API unexpected result: #{inspect(x)}")
+        {:error, "unexpected return from mailjet list templates"}
     end
   end
 
@@ -69,8 +78,6 @@ defmodule Proca.Service.Mailjet do
     |> MailjetHelper.template(ref)
     |> MailjetHelper.template_language(true)
   end
-
-
 
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
     when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 

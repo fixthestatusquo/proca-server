@@ -91,11 +91,11 @@ defmodule Proca.Stage.MessageV1 do
     }
   end
 
-  def contact_privacy(%Action{}, nil) do 
+  def contact_privacy(%Action{}, _) do 
     nil
   end
 
-  def action_data(action, stage \\ :deliver) do
+  def action_data(action, stage \\ :deliver, org_id) do
     action =
       Repo.preload(
         action,
@@ -109,9 +109,7 @@ defmodule Proca.Stage.MessageV1 do
       )
 
     contact =
-      Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end    )
-
-    
+      Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
 
     %{
       "actionId" => action.id,

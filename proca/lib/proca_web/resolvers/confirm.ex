@@ -14,17 +14,31 @@ defmodule ProcaWeb.Resolvers.Confirm do
     Proca.Confirm.by_open_code(code)
   end
 
-  def org_confirm(_, %{confirm: cnf}, %{context: %{staffer: st}}) do 
+  def org_confirm(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
     case get(cnf) do 
       nil -> {:error, [%{message: "code invalid"}]}
-      confirm -> Proca.Confirm.confirm(confirm, st) |> retval()
+      confirm -> Proca.Confirm.confirm(confirm, auth) |> retval()
     end
   end
 
-  def org_reject(_, %{confirm: cnf}, %{context: %{staffer: st}}) do 
+  def org_reject(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
     case get(cnf) do 
       nil -> {:error, [%{message: "code invalid"}]}
-      confirm -> Proca.Confirm.reject(confirm, st) |> retval()
+      confirm -> Proca.Confirm.reject(confirm, auth) |> retval()
+    end
+  end
+
+  def user_confirm(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
+      case get(cnf) do 
+        nil -> {:error, [%{message: "code invalid"}]}
+      confirm -> Proca.Confirm.confirm(confirm, auth) |> retval()
+    end
+  end
+
+  def user_reject(_, %{confirm: cnf}, %{context: %{auth: auth}}) do 
+      case get(cnf) do 
+        nil -> {:error, [%{message: "code invalid"}]}
+      confirm -> Proca.Confirm.reject(confirm, auth) |> retval()
     end
   end
 

@@ -8,6 +8,18 @@ defmodule ProcaWeb.Schema.ServiceTypes do
   alias ProcaWeb.Resolvers.Authorized
 
   object :service_mutations do 
+    field :upsert_service, type: non_null(:service) do 
+      middleware Authorized,
+        access: [:org, by: [name: :org_name]],
+        can?: [:change_org_services]
+
+      arg :org_name, non_null(:string)
+      arg :id, :integer
+      arg :input, non_null(:service_input)
+
+      resolve(&Resolvers.Service.upsert_service/3)
+    end
+
     field :add_stripe_payment_intent, type: non_null(:json) do 
       arg :action_page_id, non_null(:integer)
       arg :input, non_null(:stripe_payment_intent_input)
@@ -57,6 +69,30 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     field :currency, non_null(:string)
     field :frequency_unit, non_null(:donation_frequency_unit)
     # field :payment_method_types, list_of(non_null(:string))
+  end
+
+  enum :service_name do 
+    value :ses 
+    value :sqs 
+    value :mailjet
+    value :wordpress
+    value :stripe
+  end 
+
+  object :service do 
+    field :id, non_null(:integer)
+    field :name, non_null(:service_name)
+    field :host, :string
+    field :user, :string
+    field :path, :string
+  end
+
+  input_object :service_input do 
+    field :name, non_null(:service_name)
+    field :host, :string
+    field :user, :string
+    field :password, :string
+    field :path, :string
   end
 end 
 

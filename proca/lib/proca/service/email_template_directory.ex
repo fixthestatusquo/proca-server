@@ -25,16 +25,20 @@ defmodule Proca.Service.EmailTemplateDirectory do
     :ets.select_delete(table_name(), spec)
   end
 
-  def load_templates(%Org{template_backend: tb} = org) do 
-    templates = EmailBackend.list_templates(Repo.preload(org, [:template_backend]))
+  def load_templates(org) do 
+    org = Repo.preload(org, [:template_backend])
+    %Org{template_backend: tb} = org
+    with {:ok, templates} <- EmailBackend.list_templates(org) do 
+      delete_templates(org)
 
-    delete_templates(org)
+      for t <- templates do 
+        :ets.insert(table_name(), record(tb, t))
+      end
 
-    for t <- templates do 
-      :ets.insert(table_name(), record(tb, t))
+      {:ok, length(templates)}
+    else 
+      r = {:error, _reason} -> r
     end
-
-    {:ok, length(templates)}
   end
 
 
@@ -46,7 +50,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
 
   @impl true 
   def handle_call({:load_templates, org}, _from, st) do 
-    {:reply, st, load_templates(org)}
+    {:reply, load_templates(org), st}
   end
 
   def load_templates_async(org), do: GenServer.cast(__MODULE__, {:load_templates, org})

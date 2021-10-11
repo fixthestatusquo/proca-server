@@ -3,7 +3,16 @@ defmodule Proca.ActionPage.Status do
   Server which tracks and monitors active pages.
 
   Stored maps:
-  - last_seen: id -> last action time and source location
+  - last_seen_at: action page id -> last action inserted_at date time
+  - last_seen_location: action page id -> last action location (if provided in http referer)
+
+  The maps are loaded from DB on start and then are updated in-memory on action creation.
+  Action Pages inactive for more then 1 year are ignored.
+
+  API:
+  - Proca.ActionPage.Status.get_last_at(id) - returns NativeDateTime of last activity or nil if recently not active
+  - Proca.ActionPage.Status.get_last_location(id) - returns last location or nil if not known
+
 
   """
   use GenServer

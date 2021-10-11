@@ -5,7 +5,7 @@ defmodule ProcaWeb.Resolvers.User do
   # import Ecto.Query
   import Ecto.Query, only: [from: 2]
   import Ecto.Changeset
-  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, cant_msg: 1, format_result: 1]
+  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, format_result: 1]
 
   alias Proca.{ActionPage, Campaign, Action}
   alias Proca.{Org, Staffer, PublicKey}
@@ -13,20 +13,20 @@ defmodule ProcaWeb.Resolvers.User do
 
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
-  alias Proca.Staffer.{Permission, Role}
+  alias Proca.Staffer.Role
+  alias Proca.Permission
   alias Proca.Users.User
 
   import Logger
 
   def staffer_role(staffer), do: Role.findrole(staffer) || "custom"
 
-  def user_roles(user) do 
+  def user_roles(user, _, _) do 
     user = preload(user, [staffers: :org])
 
-    %{
-      id: user.id,
-      email: user.email,
-      roles: Enum.map(user.staffers, fn stf ->
+    {
+      :ok,
+      Enum.map(user.staffers, fn stf ->
         %{
           role: staffer_role(stf),
           org: stf.org
@@ -38,20 +38,17 @@ defmodule ProcaWeb.Resolvers.User do
 
   def current_user(_, _, %{context: %{user: user}}) do
 
-    {:ok, user_roles(user)}
+    {:ok, user}
   end
 
-  defp can_assign_role?(%Staffer{perms: perms}, role) do 
-    Role.permissions(role) -- Permission.to_list(perms) == []
-  end
 
-  defp can_remove_self?(staffer) do 
-    Permission.can? staffer, :join_orgs
+  defp can_remove_self?(user_or_staffer) do 
+    Permission.can? user_or_staffer, :join_orgs
   end
 
 
   defp existing(email, org) do 
-    user = get_by(User, email: email)
+    user = User.one(email: email)
     if is_nil(user) do 
       {nil, nil}
     else
@@ -63,14 +60,14 @@ defmodule ProcaWeb.Resolvers.User do
   @doc """
   User authorized to change_org_settings
   """
-  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{staffer: manager, org: org}}) do 
+  def add_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and is_nil(staffer)  <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(manager, role)
+          true <- Role.can_assign_role?(auth, role)
     do 
-      case Staffer.build_for_user(user, org.id, Role.permissions(role)) |> insert() do 
+      case Staffer.create(user: user, org: org, role: role) do 
         {:ok, _} -> {:ok, %{status: :success}}
-        {:error, e} -> {:error, format_errors(e)}
+        {:error, _} = e -> e
       end
 
     else 
@@ -81,10 +78,26 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{staffer: manager, org: org}}) do 
-    with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
+  def invite_org_user(_, params = %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
+    with role when role != nil <- Role.from_string(role_str),
+         true <- Role.can_assign_role?(auth, role) do 
+
+      confirm = Proca.Confirm.AddStaffer.create(email, role, auth, params[:message])
+      case Proca.Confirm.notify_by_email(confirm) do 
+        :ok -> {:ok, confirm}
+        {:error, :no_template} -> {:error, msg_ext("Email template not available", "no_template")}
+      end
+    else
+      false -> {:error, msg_ext("User must have higher role", "permission_denied")}
+      nil -> {:error, msg_ext("No such role", "not_found")}
+    end
+  end
+
+
+  def update_org_user(_, %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
+    with  {user, staffer} when not is_nil(user) and not is_nil(staffer) <- existing(email, org),
           role when role != nil <- Role.from_string(role_str),
-          true <- can_assign_role?(manager, role)
+          true <- Role.can_assign_role?(auth, role)
     do
       case Role.change(staffer, role) |> update() do 
         {:ok, _} -> {:ok, %{status: :success}}
@@ -98,9 +111,9 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def delete_org_user(_,  %{email: email}, %{context: %{staffer: manager, org: org}}) do 
+  def delete_org_user(_,  %{email: email}, %{context: %{user: actor, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
-      true <- staffer.id != manager.id or can_remove_self?(manager)
+      true <- staffer.user_id != user.id or can_remove_self?(actor)
     do
       case delete(staffer) do
         {:ok, _} -> {:ok, %{status: :success}}
@@ -116,7 +129,6 @@ defmodule ProcaWeb.Resolvers.User do
   def list_org_users(org, _, _) do 
     lst = from(s in Staffer, where: s.org_id == ^org.id, preload: [:user])
     |> all()
-    |> IO.inspect()
     |> Enum.map(fn st -> 
       %{
         email: st.user.email,
@@ -127,6 +139,18 @@ defmodule ProcaWeb.Resolvers.User do
       }
       end)
     {:ok, lst}
+  end
+
+  def list_users(_, params, _) do 
+    criteria = params
+    |> Map.get(:select, [])
+    |> Enum.map(fn 
+      {:id, id} -> {:id, id}
+      {:email, e} -> {:email_like, e}
+      {:org_name, on} -> {:org_name, on}
+    end)
+
+    { :ok, User.all(criteria) }
   end
 
 end

@@ -250,6 +250,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :medium, non_null(:string)
     field :campaign, non_null(:string)
     field :content, :string
+    @desc "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
+    field :location, :string
   end
 
   object :contact_reference do

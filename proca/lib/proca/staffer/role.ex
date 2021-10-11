@@ -1,13 +1,10 @@
 defmodule Proca.Staffer.Role do
-  alias Proca.Staffer.Permission
-  alias Proca.Staffer
+  alias Proca.{Permission, Role, Staffer, Auth}
+  alias Proca.Users.User
   use Bitwise
   alias Ecto.Changeset
 
   @moduledoc """
-  What roles do we need right now?
-  - Instance admin 👾
-
   For the organisation (they should be exclusive):
   - Campaigner (a normal org member, can add campaigns and action_pages) 🤹 (person juggling)
   - Mechanic (settings, can add people to the org, use api, etc) [woman mechanic 👩‍🔧]
@@ -19,20 +16,6 @@ defmodule Proca.Staffer.Role do
 
   # Must be ordered from most to least capable!
   @roles [
-    admin: [
-      :instance_owner,
-      :join_orgs,
-      :manage_users,
-      :manage_orgs,
-      # same as owner
-      :org_owner,
-      :export_contacts,
-      :change_org_users,
-      :change_org_settings,
-      :manage_campaigns,
-      :manage_action_pages
-
-    ],
     owner: [
       :org_owner,
       :export_contacts,
@@ -77,16 +60,27 @@ defmodule Proca.Staffer.Role do
 
   def add_user_as(%Proca.Users.User{} = user, %Proca.Org{} = org, role) do 
     case Staffer.for_user_in_org(user, org.id) do 
-      nil -> Staffer.build_for_user(user, org.id, Proca.Staffer.Permission.add(0, permissions(role)))
+      nil -> Staffer.build_for_user(user, org.id, Proca.Permission.add(0, permissions(role)))
       st -> change(st, role)
     end
   end
 
   def add_user_as(email, org,  role) when is_bitstring(email) do 
-    user = Proca.Repo.get_by Proca.Users.User, email: email
+    user = Proca.Users.User.one(email: email)
     case user do 
       nil -> {:error, :not_found}
       user -> add_user_as(user, org, role)
     end
+  end
+
+  @doc """
+  Check if current user or staffer has big enough permission to assign a role
+  """
+  def can_assign_role?(%Auth{staffer: %Staffer{perms: perms}}, role) do 
+    permissions(role) -- Permission.to_list(perms) == []
+  end
+
+  def can_assign_role?(%Auth{user: user = %User{}}) do 
+    Permission.can?(user, :manage_users)
   end
 end

@@ -17,9 +17,9 @@ defmodule ProcaWeb.Schema do
   import_types(ProcaWeb.Schema.ActionPageTypes)
   import_types(ProcaWeb.Schema.ActionTypes)
   import_types(ProcaWeb.Schema.UserTypes)
+  import_types(ProcaWeb.Schema.ServiceTypes)
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
-  import_types(ProcaWeb.Schema.ServiceTypes)
 
   query do
     import_fields(:campaign_queries)
@@ -41,5 +41,14 @@ defmodule ProcaWeb.Schema do
 
   subscription do
     import_fields(:updates)
+  end
+
+  def middleware(middleware, _field, %{identifier: type}) 
+    when type in [:query, :mutation] do
+    middleware ++ [ProcaWeb.Resolvers.NormalizeError]
+  end
+
+  def middleware(middleware, _field, _object) do
+    middleware
   end
 end

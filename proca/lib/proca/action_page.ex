@@ -5,9 +5,10 @@ defmodule Proca.ActionPage do
   Action Page accepts data in many formats (See Contact.Data) and produces Contact and Supporter records.
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
 
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3]
 
   alias Proca.Repo
   alias Proca.{ActionPage, Campaign, Org}
@@ -16,7 +17,6 @@ defmodule Proca.ActionPage do
     field :locale, :string
     field :name, :string
     field :delivery, :boolean, default: true
-    field :journey, {:array, :string}, default: ["Petition", "Share"]
     field :config, :map, default: %{}
     field :live, :boolean, default: false
 
@@ -26,6 +26,7 @@ defmodule Proca.ActionPage do
     field :extra_supporters, :integer, default: 0
 
     field :thank_you_template_ref, :string
+    # XXX add :thank_you_template and calculate the ref via TemplateDictionary
 
     timestamps()
   end
@@ -46,7 +47,6 @@ defmodule Proca.ActionPage do
       :extra_supporters,
       :delivery,
       :thank_you_template_ref,
-      :journey,
       :config
     ])
     |> validate_required([:name, :locale, :extra_supporters])
@@ -54,6 +54,10 @@ defmodule Proca.ActionPage do
     |> validate_format(
       :name,
       ~r/^([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/
+    )
+    |> validate_format(
+      :locale,
+      ~r/^[a-z]{2}(_[A-Z]{2})?$/
     )
   end
 
@@ -114,11 +118,9 @@ defmodule Proca.ActionPage do
   end
 
 
-  def create(kwlist) when is_list(kwlist), do: create(%ActionPage{}, kwlist)
-  def create(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> create(kw)
-  def create(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> create(kw)
-  def create(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :journey, :locale])) |> create(kw)
-  def create(ap, []), do: Repo.insert(ap)
+  def update(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> update(kw)
+  def update(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> update(kw)
+  def update(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :locale])) |> update(kw)
 
   def find(id) when is_integer(id) do
     Repo.one from a in ActionPage, where: a.id == ^id, preload: [:campaign, :org]
@@ -127,6 +129,10 @@ defmodule Proca.ActionPage do
   def find(name) when is_bitstring(name) do
     Repo.one from a in ActionPage, where: a.name == ^name, preload: [:campaign, :org]
   end
+
+  def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
+  def all(q, [{:id, id} | kw]), do: where(q, [a], a.id == ^id) |> all(kw)
+
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do
@@ -139,8 +145,8 @@ defmodule Proca.ActionPage do
 
   def kept_personalization_fields(
         %ActionPage{
-          campaign: campaign,
-          org: org
+          campaign: _campaign,
+          org: _org
         }
       ) do
     [:email, :first_name]
@@ -151,9 +157,16 @@ defmodule Proca.ActionPage do
     apply(schema, :from_input, [params])
   end
 
+  @doc """
+  Get the name part before /
+  """
   def name_domain(name) when is_bitstring(name) do 
     [d|_] = String.split(name, "/")
     d
+  end
+
+  def location(%ActionPage{id: id}) do 
+    Proca.ActionPage.Status.get_last_location(id) 
   end
 
   def name_path(name) when is_bitstring(name) do 
