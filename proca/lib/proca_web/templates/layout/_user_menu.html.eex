@@ -27,7 +27,7 @@
         <%= if UserAuth.auth_enabled?(:sso) do %>
         <% btn_class="btn bg-logo-gray" %>
         <%= if is_nil @user do %>
-        <%= link "Single Sign On", to: UserAuth.sign_in_url(@conn), class: btn_class %>
+        <%= link "Single Sign On", to: UserAuth.sso_url(@conn), class: btn_class %>
         <% end %>
         <% end %>
         

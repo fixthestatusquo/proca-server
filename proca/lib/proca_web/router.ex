@@ -42,7 +42,7 @@ defmodule ProcaWeb.Router do
   scope "/" do
     pipe_through :browser
 
-    get "/", ProcaWeb.PageController, :index
+    get "/", ProcaWeb.HomepageController, :index
   end
 
   scope "/link" do 

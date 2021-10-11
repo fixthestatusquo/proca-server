@@ -177,6 +177,14 @@ defmodule ProcaWeb.UserAuth do
     end
   end
 
+  def sso_url(_conn) do 
+    if auth_enabled?(:sso) and config(:sso, :home_url) do 
+      config(:sso, :home_url)
+    else 
+      nil
+    end
+  end
+
   def auth_enabled?(:local), do: (Application.get_env(:proca, __MODULE__) |> get_in([:local, :enabled]))
   def auth_enabled?(:sso), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, :enabled]))
   defp config(:sso, k), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, k]))
