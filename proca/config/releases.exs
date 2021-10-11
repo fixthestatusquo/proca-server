@@ -82,6 +82,7 @@ config :proca, Proca.Service.Procaptcha,
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "60000"),
+  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL") || "30000"),
   require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
 
 config :proca, Proca.Supporter,

@@ -11,8 +11,12 @@ defmodule Proca.Service.EmailRecipient do
     rcpt = %EmailRecipient{
       first_name: get_in(action_data, ["contact", "firstName"]),
       email: get_in(action_data, ["contact", "email"]),
-      ref: get_in(action_data, ["contact", "ref"])
+      ref: case action_data do 
+        %{"schema" => "proca:action:1"} -> get_in(action_data, ["contact", "ref"])
+        %{"schema" => "proca:action:2"} -> get_in(action_data, ["contact", "contactRef"])
+      end
     }
+
 
     fields = get_in(action_data, ["action", "fields"])
 
