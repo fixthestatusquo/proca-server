@@ -13,7 +13,7 @@ defmodule Proca.Stage.Support do
   # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
   # the AP.delivery flag
 
-  def bulk_actions_data(action_ids, stage \\ :deliver, version \\ 2) do
+  def bulk_actions_data(action_ids, stage \\ :deliver, org_id \\ nil) do
     from(a in Action,
       where: a.id in ^action_ids,
       preload: [
@@ -24,7 +24,7 @@ defmodule Proca.Stage.Support do
       ]
     )
     |> Repo.all()
-    |> Enum.map(fn a -> action_data(a, stage, version) end)
+    |> Enum.map(fn a -> action_data(a, stage, org_id) end)
   end
 
   def action_data(action, stage \\ :deliver, org_id \\ nil) do 

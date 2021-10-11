@@ -10,7 +10,7 @@ defmodule Proca.Stage.ProcessOld do
   import Logger
   use GenServer
 
-  @interval 30 * 1000
+  # @interval 30 * 1000
   @batch_interval 1000
   
   @time_margin "1 minute"
@@ -18,22 +18,24 @@ defmodule Proca.Stage.ProcessOld do
 
 
   @impl true 
-  def init([]) do 
-    process_in @interval
-    {:ok, []}
+  def init(interval) when is_integer(interval) do 
+    if interval > 0 do 
+      process_in interval
+    end
+    {:ok, %{interval: interval}}
   end
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(interval) do
+    GenServer.start_link(__MODULE__, interval, name: __MODULE__)
   end
 
   @impl true 
   def handle_info(:process, st) do 
     if Proca.Pipes.Connection.is_connected?() do 
       processed_no = process_batch()
-      process_in if processed_no == 0, do: @interval, else: @batch_interval
+      process_in if processed_no == 0, do: st[:interval], else: @batch_interval
     else
-      process_in @interval
+      process_in st[:interval]
     end
 
     {:noreply, st}

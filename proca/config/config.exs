@@ -43,6 +43,7 @@ config :proca, ProcaWeb.UserAuth,
 config :proca, Proca,
   org_name: "test",
   stats_sync_interval: 0,  # XXX move to Proca.Server.Stats
+  process_old_interval: 0,  # XXX move to Proca.Server.Stats
   require_verified_email: false
 
 # FPR seed only for development
