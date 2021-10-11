@@ -26,7 +26,7 @@ defmodule Proca.Service.EmailBackend do
 
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
-  @callback list_templates(org :: %Org{}) :: [%EmailTemplate{}]
+  @callback list_templates(org :: %Org{}) :: {:ok, [%EmailTemplate{}]} | {:error, reason :: String.t()}
   @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) ::
               :ok | {:error, reason :: String.t()}
   @callback get_template(org :: %Org{}, ref :: String.t()) ::
@@ -53,6 +53,10 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:list_templates, [org])
   end
 
+  @doc """
+  Delivers an email using EmailTemplate to a list of EmailRecipients. Uses Org's email service.
+  Can throw EmailBackend.NotDelivered which wraps service error.
+  """
   @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
@@ -68,22 +72,26 @@ defmodule Proca.Service.EmailBackend do
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])
     apply(backend, :deliver, [e, org])
+
+    :ok
   end
 
+  # Org uses own email backend
   defp from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
     {org.title, org.email_from}
   end
 
+  # org uses someone elses email backend
   defp from(org = %Org{email_backend: %Service{org: via_org}}) do
     via_from(org, via_org)
   end
 
   defp via_from(%{title: org_title, email_from: email_from}, %{email_from: via_email_from})
   when not is_nil(email_from) and not is_nil(via_email_from) do
-    [user, _domain] = Regex.split(~r/@/, email_from)
+    [_user, domain] = Regex.split(~r/@/, email_from)
     [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
 
-    {org_title, "#{via_user}+#{user}@#{via_domain}"}
+    {org_title, "#{via_user}+#{domain}@#{via_domain}"}
   end
 
   defp via_from(_o1, _o2) do

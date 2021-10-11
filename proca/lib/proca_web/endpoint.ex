@@ -17,7 +17,7 @@ defmodule ProcaWeb.Endpoint do
     websocket: true,
     longpoll: false
 
-  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
+  # socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -46,13 +46,12 @@ defmodule ProcaWeb.Endpoint do
     json_decoder: Phoenix.json_library()
 
   plug Sentry.PlugContext, 
-    body_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_params/1, 
+    body_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_params/1,
     header_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_headers/1
 
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug Pow.Plug.Session, otp_app: :proca
   plug CORSPlug
   plug Application.get_env(:proca, ProcaWeb.Endpoint)[:router]
 end

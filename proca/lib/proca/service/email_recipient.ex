@@ -3,6 +3,7 @@ defmodule Proca.Service.EmailRecipient do
   Represents an email recipient, for email templates that can be persnonalized.
   """
   alias Proca.Service.EmailRecipient
+  import Proca.Repo, only: [preload: 2]
 
   defstruct first_name: "", email: "", ref: "", fields: %{}
 
@@ -42,13 +43,15 @@ defmodule Proca.Service.EmailRecipient do
     cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
     ) do 
 
+      cnf = preload(cnf, [:creator])
+
       cflds = %{
         "confirm_code" => confirm_code, 
         "confirm_email" => email || "",
         "confirm_message" => message || "",
         "confirm_subject_id" => subj_id,
         "confirm_object_id" => obj_id || "",
-        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.user.email, else: ""),
+        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.email, else: ""),
 
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)
@@ -56,7 +59,18 @@ defmodule Proca.Service.EmailRecipient do
 
       %{rcpt | fields: Map.merge(fields, cflds)}
   end
+
+  def put_fields(rcpt = %EmailRecipient{fields: fields}, fields2) when is_map(fields2) do 
+    %{rcpt | fields: Map.merge(fields, fields2)}
+  end
+
+  def put_fields(rcpt, []), do: rcpt
+  def put_fields(rcpt = %EmailRecipient{fields: fields}, [{key, val} | rest]) do
+    %{rcpt | fields: Map.put(fields, Atom.to_string(key), val)}
+    |> put_fields(rest)
+  end
 end
+
 
 defimpl Bamboo.Formatter, for: Proca.Service.EmailRecipient do
   def format_email_address(recipient, _opts) do

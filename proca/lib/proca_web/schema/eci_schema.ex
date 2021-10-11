@@ -13,6 +13,7 @@ defmodule ProcaWeb.Schema.EciSchema do
   import_types(ProcaWeb.Schema.CampaignTypes)
   import_types(ProcaWeb.Schema.ActionPageTypes)
   import_types(ProcaWeb.Schema.ActionTypes)
+  import_types(ProcaWeb.Schema.ServiceTypes)
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.UserTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
@@ -61,4 +62,14 @@ defmodule ProcaWeb.Schema.EciSchema do
       if ReportError.enabled?, do: middleware ReportError
     end
   end
+
+  def middleware(middleware, _field, %{identifier: type}) 
+    when type in [:query, :mutation] do
+    middleware ++ [ProcaWeb.Resolvers.NormalizeError]
+  end
+
+  def middleware(middleware, _field, _object) do
+    middleware
+  end
+
 end

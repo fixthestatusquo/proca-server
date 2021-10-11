@@ -28,35 +28,59 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 # Prerequisites
 
-## PostgreSQL >= 10
+- PostgreSQL >= 10
+- Elixir >= 1.10
+  [Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
 
-## Elixir >= 1.10
+  You'll need the following packages:
+    `erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir`
 
-[Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
+- RabbitMQ (3.x, tested on 3.8)
 
-You'll need the following packages:
+- NodeJS (>= 10)
 
-    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
+# Just trying out setup 
 
-## RabbitMQ
+**Required:**
 
-## NodeJS (14.*.*)
+- docker
+- docker-compose 
+- proca-cli (install with: `npm i -g @proca/cli`)
 
-# Prerequisites
+If you would just like to try out proca server, it's easiest with docker-compose:
 
-## PostgreSQL >= 10
+```
+$ cd proca/utils
+$ docker-compose up -d 
+# wait until the servers start 
 
-## Elixir >= 1.10
+$ docker-compose logs proca 
+# note down the username and password for the user of primary "instance" organisation. 
 
-[Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
+$ export API_URL=http://localhost:4000
+$ proca-cli setup 
+# in interactive session, choose "set up authentication" and then input
+# "instance", "admin@proca.app" and password you noted down:
 
-You'll need the following packages:
+Hello!
 
-    erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir
+- Using current working directory: /home/marcin/Projects/proca-server/proca/utils
+- There is not .env file - I will create it after asking You some questions
 
-## RabbitMQ (3.x, tested on 3.8)
+? What would you like to do? Set up authentication (no org set, user is not set up, password is not set)
+? What is the short name of your org? instance
+? What is your username (email)? admin@proca.app
+? password: [hidden]
+Thanks! Fetching campaign list to check the credentials
+? What would you like to do? Save current config to .env file and leave
+```
 
-## NodeJS (>= 10?) / npm >= 7?
+Now you can:
+
+- Use proca-cli (in the directory where `.env` file was created) to talk to the server API. 
+- You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
+- You can see the processing in action using [RabbitMQ management console](http://localhost:15672/) - login with user name _proca_, password _proca_.
+
 
 # Development setup
 

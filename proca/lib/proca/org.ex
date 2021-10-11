@@ -5,9 +5,11 @@ defmodule Proca.Org do
   Org can have one or more `PublicKey`'s. Only one of them is active at a particular time. Others are expired.
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query
   alias Proca.Org
+  alias Proca.Service.EmailTemplateDirectory
 
   schema "orgs" do
     field :name, :string
@@ -19,7 +21,7 @@ defmodule Proca.Org do
     has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
 
     field :contact_schema, ContactSchema, default: :basic
-    field :action_schema_version, :integer, default: 2
+    field :action_schema_version, :integer, default: 1
 
     # avoid storing transient data in clear
     # XXX rename to a more adequate :strict_privacy
@@ -51,10 +53,58 @@ defmodule Proca.Org do
   @doc false
   def changeset(org, attrs) do
     org
-    |> cast(attrs, [:name, :title, :contact_schema, :email_opt_in, :email_opt_in_template, :config])
+    |> cast(attrs, [
+      :name, :title, 
+      :contact_schema, 
+      :email_from,
+      :email_opt_in, :email_opt_in_template, 
+      :config, 
+      :high_security
+    ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
+    |> Proca.Contact.Input.validate_email(:email_from)
+    |> validate_change(:email_opt_in_template, fn f, tmpl_name ->
+      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do 
+        {:ok, _ref} -> []
+        :not_found -> [{f, "template not found"}]
+        :not_configured -> [{f, "templating not configured"}]
+      end
+    end)
+    |> cast_email_backend(org, attrs)
+  end
+
+  def cast_email_backend(chset, org, %{email_backend: srv_name}) 
+    when srv_name in [:mailjet, :ses] do 
+    case Proca.Service.get_one_for_org(srv_name, org) do 
+      nil -> add_error(chset, :email_backend, "no such service")
+      %{id: id} -> chset 
+        |> put_change(:email_backend_id, id)
+        |> put_change(:template_backend_id, id)
+    end
+  end
+
+  def cast_email_backend(ch, _org, %{email_backend: srv_name}) 
+    when is_atom(srv_name) do 
+      add_error(ch, :email_backend, "service does not support email")
+  end
+
+  def cast_email_backend(ch, _org, _a), do: ch 
+
+
+
+  def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
+  def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
+  def all(q, [{:id, id} | kw]), do: where(q, [o], o.id == ^id) |> all(kw) 
+
+  def all(q, [:active_public_keys | kw]) do 
+    q
+    |> join(:left, [o], k in assoc(o, :public_keys), 
+      on: k.active)
+    |> order_by([o, k], asc: k.inserted_at)
+    |> preload([o, k], [public_keys: k])
+    |> all(kw)
   end
 
   def get_by_name(name, preload \\ []) do
@@ -93,7 +143,7 @@ defmodule Proca.Org do
   end
 
   def list(preloads \\ []) do
-    Proca.Repo.all(from o in Proca.Org, preload: ^preloads)
+    all([preload: preloads])
   end
 
   @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
@@ -105,14 +155,16 @@ defmodule Proca.Org do
 
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
-    org = Proca.Repo.preload(org, [:active_public_keys])
-    List.first(org.public_keys)
+    Proca.Repo.one from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1)
   end
 
-  def put_service(%Org{} = org, %Proca.Service{name: name} = service) 
+
+  def put_service(%Org{} = org, service), do: put_service(change(org), service)
+
+  def put_service(%Ecto.Changeset{} = ch, %Proca.Service{name: name} = service)
     when name in [:mailjet, :testmail]
     do
-    change(org)
+    ch
     |> put_assoc(:email_backend, service)
     |> put_assoc(:template_backend, service)
   end

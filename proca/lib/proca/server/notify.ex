@@ -54,10 +54,9 @@ defmodule Proca.Server.Notify do
     Repo.preload(org, [staffers: :user]).staffers
     |> Enum.map(fn %{user: user} -> user.email end)
 
-    cnf = Repo.preload(cnf, [creator: :user])
+    cnf = Repo.preload(cnf, [:creator])
 
     Proca.Confirm.notify_by_email(cnf, recipients)
-    |> IO.inspect(label: "email notif")
   end
 
   ##### SIDE EFFECTS
@@ -73,7 +72,9 @@ defmodule Proca.Server.Notify do
       :system_sqs_deliver,
       :custom_supporter_confirm,
       :custom_action_confirm,
-      :custom_action_deliver
+      :custom_action_deliver,
+      :email_opt_in,
+      :email_opt_in_template
     ], fn prop -> Map.has_key?(changes, prop) end)
 
     if relevant_changes do

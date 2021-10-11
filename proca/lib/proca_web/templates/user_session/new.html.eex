@@ -1,0 +1,37 @@
+<h1 class="text-2xl leading-relaxed mb-2">Log in</h1>
+
+<%= form_for @conn, Routes.user_session_path(@conn, :create), [as: :user], fn f -> %>
+  <%= if @error_message do %>
+    <div class="alert alert-danger">
+      <p><%= @error_message %></p>
+    </div>
+  <% end %>
+
+  <div class="input-wrap">
+    <span>
+      <i class="fas fa-user"></i>
+    </span>
+    <%= email_input f, :email, required: true, placeholder: "Email" %>
+  </div>
+
+  <div class="input-wrap">
+    <span>
+      <i class="fas fa-lock"></i>
+    </span>
+    <%= password_input f, :password, required: true, placeholder: "Password" %>
+  </div>
+
+  <div class="">
+    <%= label f, :remember_me, "Keep me logged in for 60 days" %>
+    <%= checkbox f, :remember_me %>
+  </div>
+
+  <div>
+    <%= submit "Log in", class: "btn bg-secondary my-2" %>
+  </div>
+<% end %>
+
+<p>
+  <%= link "Register", to: Routes.user_registration_path(@conn, :new) %> |
+  <%= link "Forgot your password?", to: Routes.user_reset_password_path(@conn, :new) %>
+</p>

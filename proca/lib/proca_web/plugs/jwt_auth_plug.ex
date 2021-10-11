@@ -5,20 +5,18 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   @behaviour Plug
 
   alias Plug.Conn
-  alias Pow.{Plug, Plug.Session}
-  alias Proca.Users.User
-  alias Proca.Repo
+  alias Proca.Auth
+  alias ProcaWeb.UserAuth
+  alias Proca.Users
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
-
-  @pow_config [otp_app: :proca]
 
   def init(opts), do: opts
 
   def call(conn, opts) do
     conn
     |> jwt_auth(opts[:query_param])
-    |> add_to_context
+    |> add_to_context()
     |> add_to_session(opts[:enable_session])
   end
 
@@ -28,6 +26,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   def jwt_auth(conn, param) do
     with token when not is_nil(token) <- get_token(conn, param),
          {true, jwt, _sig} <- Proca.Server.Jwks.verify(token),
+         true <- check_has_session(jwt),
          :ok <- check_email_verified(jwt)
      do
       conn
@@ -39,27 +38,44 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       :unverified -> 
         error_halt(conn, 401, "unauthorized", "Email not verified")
 
+      # token with no identity traits
+      false -> 
+        error_halt(conn, 401, "unauthorized", "JWT token has invalid data")
+
       # no token
       nil ->
         conn
     end
   end
 
+  def check_has_session(%JOSE.JWT{
+    fields: %{
+      "session" => %{
+        "identity" => %{
+          "traits" => %{"email" => _email},
+          "verifiable_addresses" => _emails
+        }
+      }
+    }
+  }), do: true 
+
+  def check_has_session(_), do: false
+
   def check_email_verified(jwt) do 
     if need_verified_email?() do
-      %JOSE.JWT{
-        fields: %{
-          "session" => %{
-            "identity" => %{
-              "traits" => %{"email" => email},
-              "verifiable_addresses" => emails
+      current = case jwt do 
+        %JOSE.JWT{
+          fields: %{
+            "session" => %{
+              "identity" => %{
+                "traits" => %{"email" => email},
+                "verifiable_addresses" => emails
+              }
             }
           }
-        }
-      } = jwt
-
-      current = Enum.find(emails, 
-        fn %{"value" => v} -> v == email end) 
+        } ->  Enum.find(emails, fn %{"value" => v} -> v == email end) 
+        _ -> %{}
+      end
 
       if current["verified"] do 
         :ok 
@@ -82,9 +98,11 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
           } 
         }
       } ->
-        case Repo.get_by(User, email: email) do
-          nil -> Plug.assign_current_user(conn, User.create(email), User.pow_config())
-          user -> Plug.assign_current_user(conn, user, User.pow_config())
+        case Users.get_user_by_email(email) do
+          nil -> 
+            UserAuth.assign_current_user(conn, Users.register_user_from_sso!(%{email: email}))
+          user ->
+            UserAuth.assign_current_user(conn, user)
         end
 
       _ ->
@@ -106,9 +124,12 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   end
 
   defp add_to_context(conn) do
-    case conn.assigns.user do
+    case conn.assigns[:user] do
       %User{} = u ->
-        Absinthe.Plug.assign_context(conn, %{user: u})
+        Absinthe.Plug.assign_context(conn, %{
+          user: u, # XXX for backward compatibility
+          auth: %Auth{user: u}
+        })
 
       nil ->
         conn
@@ -120,9 +141,9 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   defp add_to_session(conn, false), do: conn
 
   defp add_to_session(conn, true) do
-    case conn.assigns.user do
-      user = %User{} -> conn |> Session.create(user, @pow_config) |> elem(0)
-      _ -> conn
+    case conn.assigns[:user] do
+      user = %User{} -> UserAuth.log_in_user(conn, user)
+      nil -> conn
     end
   end
 

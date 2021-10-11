@@ -22,7 +22,7 @@ defmodule Proca.Confirm.LaunchPageTest do
   end
 
   test "email variables contain twitter meta", %{
-    yellow_org: yellow_org, yellow_owner: yellow_owner, red_ap: red_ap
+    yellow_org: yellow_org, yellow_user: yellow_user, yellow_owner: yellow_owner, red_ap: red_ap
   } do 
     change(yellow_org, config: %{
       "twitter" => %{
@@ -43,7 +43,8 @@ defmodule Proca.Confirm.LaunchPageTest do
     
     {:ok, new_page} = Proca.ActionPage.create_copy_in(yellow_org, red_ap, %{name: red_ap.name <> "/partner"})
     assert yellow_owner.id != nil
-    cnf = Confirm.LaunchPage.create(new_page, yellow_owner, "Request message")
+    auth = %Proca.Auth{user: yellow_user, staffer: yellow_owner}
+    cnf = Confirm.LaunchPage.create(new_page, auth, "Request message")
 
     assert cnf.message == "Request message"
     assert cnf.creator_id != nil

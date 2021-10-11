@@ -73,7 +73,7 @@ export type ActionPage = {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -101,8 +101,6 @@ export type ActionPageInput = {
   thankYouTemplateRef?: Maybe<Scalars['String']>;
   /** Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. */
   extraSupporters?: Maybe<Scalars['Int']>;
-  /** List of steps in the journey */
-  journey?: Maybe<Array<Scalars['String']>>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -492,7 +490,7 @@ export type PrivateActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -613,7 +611,7 @@ export type PublicActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -682,14 +680,15 @@ export type RootMutationType = {
   updateActionPage: ActionPage;
   /**
    * Adds a new Action Page based on another Action Page. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyActionPage: ActionPage;
   /**
    * Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyCampaignActionPage: ActionPage;
+  addActionPage: ActionPage;
   launchActionPage: LaunchActionPageResult;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
@@ -746,6 +745,14 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
   orgName: Scalars['String'];
   name: Scalars['String'];
   fromCampaignName: Scalars['String'];
+};
+
+
+export type RootMutationTypeAddActionPageArgs = {
+  orgName: Scalars['String'];
+  name: Scalars['String'];
+  locale: Scalars['String'];
+  campaignName: Scalars['String'];
 };
 
 
@@ -1017,7 +1024,7 @@ export const CampaignFields = {"kind":"Document","definitions":[{"kind":"Fragmen
 export const CampaignPrivateFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"forceDelivery"}}]}}]} as unknown as DocumentNode<CampaignPrivateFields, unknown>;
 export const CampaignAllStats = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignAllStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"supporterCount"}},{"kind":"Field","name":{"kind":"Name","value":"supporterCountByOrg"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionType"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<CampaignAllStats, unknown>;
 export const OrgIds = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<OrgIds, unknown>;
-export const ActionPageFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"journey"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]} as unknown as DocumentNode<ActionPageFields, unknown>;
+export const ActionPageFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]} as unknown as DocumentNode<ActionPageFields, unknown>;
 export const CampaignPartnerships = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPartnerships"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"partnerships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"launchRequests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"objectId"}}]}}]}}]}},...OrgIds.definitions,...ActionPageFields.definitions]} as unknown as DocumentNode<CampaignPartnerships, unknown>;
 export const CampaignOverview = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CampaignOverview"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPrivateFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignAllStats"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPartnerships"}}]}},...CampaignFields.definitions,...CampaignPrivateFields.definitions,...CampaignAllStats.definitions,...OrgIds.definitions,...CampaignPartnerships.definitions]} as unknown as DocumentNode<CampaignOverview, unknown>;
 export const CampaignIds = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]} as unknown as DocumentNode<CampaignIds, unknown>;
@@ -1928,12 +1935,12 @@ export type ActionPageIds = ActionPageIds_PrivateActionPage_ | ActionPageIds_Pub
 
 type ActionPageFields_PrivateActionPage_ = (
   { __typename: 'PrivateActionPage' }
-  & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>
+  & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplateRef'>
 );
 
 type ActionPageFields_PublicActionPage_ = (
   { __typename: 'PublicActionPage' }
-  & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'journey' | 'thankYouTemplateRef'>
+  & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplateRef'>
 );
 
 export type ActionPageFields = ActionPageFields_PrivateActionPage_ | ActionPageFields_PublicActionPage_;
@@ -2213,6 +2220,10 @@ export const scalarLocations : ScalarLocations = {
       "PublicActionPage"
     ],
     "copyCampaignActionPage": [
+      "PrivateActionPage",
+      "PublicActionPage"
+    ],
+    "addActionPage": [
       "PrivateActionPage",
       "PublicActionPage"
     ],

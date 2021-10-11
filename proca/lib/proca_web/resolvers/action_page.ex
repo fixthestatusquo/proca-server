@@ -6,7 +6,6 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   alias Proca.{ActionPage, Campaign, Org}
   alias Proca.Repo
   alias ProcaWeb.Helper
-  import Ecto.Changeset
 
 
   defp by_id(query, id) do
@@ -112,7 +111,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def launch_page(_, %{name: name} = params, %{context: %{staffer: st}}) do 
+  def launch_page(_, %{name: name} = params, %{context: %{auth: auth, staffer: st}}) do 
     with ap = %ActionPage{} <- ActionPage.find(name),
         org <- Org.get_by_id(ap.campaign.org_id)
     do 
@@ -120,11 +119,11 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         # lead org
         case ActionPage.go_live(ap) do
           {:ok, _} -> {:ok, %{status: :success}}
-          {:error, ch} -> {:error, Helper.format_errors(ch)}
+          {:error, _ch} = e -> e
         end
       else
         # partner org
-        cnf = Proca.Confirm.LaunchPage.create(ap, st, Map.get(params, :message))
+        cnf = Proca.Confirm.LaunchPage.create(ap, auth, Map.get(params, :message))
         Proca.Server.Notify.org_confirm_created(cnf, org)
 
         {:ok, %{status: :confirming}}

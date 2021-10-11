@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Query
   import Ecto.Changeset
 
-  alias Proca.{ActionPage, Campaign, Action}
+  alias Proca.{ActionPage, Campaign, Action, Permission}
   alias Proca.{Org, Staffer, PublicKey, Service}
   alias ProcaWeb.Helper
   alias Ecto.Multi
@@ -82,13 +82,38 @@ defmodule ProcaWeb.Resolvers.Org do
   def org_personal_data(org, _args, _ctx) do
     {
       :ok,
-      %{
-        contact_schema: org.contact_schema,
-        email_opt_in: org.email_opt_in,
-        email_opt_in_template: org.email_opt_in_template
-      }
+      Map.take(org, [
+        :contact_schema, 
+        :email_opt_in, :email_opt_in_template, 
+        :high_security
+      ])
     }
   end
+
+  def org_processing(org, _args, _ctx) do 
+    service = case Repo.preload(org, [:email_backend]) do
+      %{email_backend: srv} when not is_nil(srv) -> srv.name
+      _ -> nil 
+    end
+
+    {:ok, %{
+      email_from: org.email_from,
+      email_backend: service
+      }}
+  end
+
+  def update_org_processing(_, args, %{context: %{org: org}}) do 
+    chset = Org.changeset(org, args)
+    case Repo.update(chset) do 
+      {:ok, org} -> 
+        Proca.Server.Notify.org_updated(org, chset)
+        {:ok, org}
+      {:error, errors} -> {:error, Helper.format_errors(errors) }
+    end
+  end
+
+
+
 
   def add_org(_, %{input: params}, %{context: %{user: user}}) do
     perms = Staffer.Role.permissions(:owner)
@@ -252,21 +277,18 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def join_org(_, %{name: org_name}, %{context: %{user: user}}) do 
-    with {:admin, 
-          admin = %Staffer{perms: admin_perms}} <- {:admin, 
-            Staffer.for_user_in_org(user, Org.instance_org_name)},
-         true <- Staffer.Permission.can?(admin, :join_orgs),
-         {:org, org = %Org{id: org_id}} <- {:org, Org.get_by_name(org_name)}  do 
+    with true <- Permission.can?(user, :join_orgs),
+         {:org, org} <- {:org, Org.one(name: org_name)}  do 
 
     joining = 
-    case Staffer.for_user_in_org(user, org_id) do 
-      nil -> Staffer.build_for_user(user, org_id, admin_perms) |> Repo.insert()
-      st = %Staffer{} -> change(st, perms: admin_perms) |> Repo.update()
+    case Staffer.one(user: user, org: org) do 
+      nil -> Staffer.create(user: user, org: org, perms: [:org_owner])
+      st = %Staffer{} -> Staffer.update(st, [role: :owner])
     end
 
     case joining do 
       {:ok, _} -> {:ok, %{status: :success, org: org}}
-      {:error, chg} -> {:error, Helper.format_errors(chg)}
+      {:error, _} = e -> e
     end 
 
     else
