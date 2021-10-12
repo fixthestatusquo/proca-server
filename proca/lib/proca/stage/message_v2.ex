@@ -94,7 +94,7 @@ defmodule Proca.Stage.MessageV2 do
     }
   end
 
-  def contact_privacy(action = %Action{with_consent: true}, contact = %Contact{}) do 
+  def contact_privacy(%Action{with_consent: true}, contact = %Contact{}) do 
     %{
       "optIn" => contact.communication_consent,
       "givenAt" =>
