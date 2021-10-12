@@ -5,29 +5,55 @@ defmodule Proca.Pipes.Topology do
   Each Org has its own Topology server and set of exchanges/queues. Processing
   load and problems are isolated for each org.
 
+  This Topology service will reconfigure the excahnges and queues when notified by Proca.Server.Notify `org_updated`, `org_created` and `org_deleted`. These notifications are sent by the API layer when respective event occurs. They are not sent by operations on Proca.Org directly.
+
   (previously responsibility of Proca.Server.Plumbing)
 
-  [action/supporter] RK: campaign.action_type
+  ### Properties: 
 
-  x org.N.confirm.supporter    #> =wrk.N.email.optin=
-                               #> =cus.N.confirm.supporter
+  - 3 exchanges reflect 3 stages of processing (supporter confirms their data, moderator confirms the action, action is delivered)
+  - Each exchange has build in worker queues attached, *if workers are enabled*. Worker queues are read by Proca workers.
+  - Each exchange has custom queue attached, *if enabled on Org*. Custom queues are meant to be read by external client.
+  - Worker and custom queues have a Dead Letter Exchange attached (DLX), so unprocessed messages are temporarily stored there, so they do not clog the processing. They come back after 30 seconds. [Improvement: change this timeout when the retry queue gets bigger]
+  - When data is shared with your org by other org, you only receive action onto deliver exchange.
+  - Routing key is: `${campaign}.${action_type}`, eg. `no_to_gmo.share`
+  - The action format is v1 or v2, depending on `org.action_schema_version`. Defaults to 2 for new Orgs.
 
-  x org.N.confirm.action       #> =wrk.N.email.confirm
-                               #> =cus.N.confirm.action [2]
+  ```
+  Action Routing Key: campaign.action_type
 
-  x org.N.deliver   [1]   *.mtt > =wrk.N.email.mtt=
+  EXCHANGE                 MATCH  QUEUE
+
+  x org.N.confirm.supporter  #  > =wrk.N.email.supporter
+                             #  > =cus.N.confirm.supporter
+
+  x org.N.confirm.action     #  > =wrk.N.email.confirm [*]
+                             #  > =cus.N.confirm.action
+
+  x org.N.deliver         *.mtt > =wrk.N.email.mtt [*]
+                          #     > =wrk.N.email.supporter
                           #     > =wrk.N.sqs              -> proca-gw
-                                > =wrk.N.http             -> proca-gw
+                                > =wrk.N.http  [*]        -> proca-gw
                                 > =cus.N.deliver
 
                                     DLX:x org.N.fail fanout> org.N.fail
-                                    DLX:x org.N.retry direct:$qn-> =$qn=
+                                    DLX:x org.N.retry direct:$qn-> =$qn
 
+  [*] - not yet implemented
+  ```
 
-  Caveats:
+  ### Enabled Queues.
 
-  1 - from here a cross-link if it's a partner org? But delivery based on consents, no queue. Also the delivery in such case is just for CRM right ?
-  2 - need implemnetation of Confirms - with special confirm code (cc)
+  - Custom queues are enabled by flags on Org (boolean columns):
+    - `custom_supporter_confirm` enables `cus.N.supporter.confirm`
+    - `custom_action_confirm` enables `cus.N.action.confirm`
+    - `custom_action_deliver` enables `cus.N.deliver`
+
+  - Worker queues, are enabled by flags on Org (boolean columns):
+    - `system_sqs_deliver` sends to SQS (SQS service must be configured)
+    - `email.supporter` sends double-opt-in email when: `email_opt_in` is TRUE, and `email_opt_in_template` is set on Org. Org must have email/template backends set.
+    - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_tempalte_ref refers to template identifier in the backend.
+
 
   """
   use GenServer
