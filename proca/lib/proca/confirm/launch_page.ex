@@ -44,7 +44,7 @@ defmodule Proca.Confirm.LaunchPage do
           object_id: ap_id
         },
         :confirm,
-        st
+        %Auth{staffer: st}
       ) do
     with camp when not is_nil(camp) <- get(Campaign, campaign_id),
          ap when not is_nil(ap) <- ActionPage.find(ap_id),
@@ -58,7 +58,7 @@ defmodule Proca.Confirm.LaunchPage do
 
   # XXX remove the AP? Rude but makes sense
   @impl true
-  def run(%Confirm{operation: :launch_page}, :reject, _st), do: :ok
+  def run(%Confirm{operation: :launch_page}, :reject, _auth), do: :ok
 
   @impl true
   def email_template(%Confirm{operation: :launch_page}), do: "launch_page"
