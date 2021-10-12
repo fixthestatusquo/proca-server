@@ -120,7 +120,7 @@ defmodule Proca.Factory do
 
     Proca.Supporter.new_supporter(data, action_page)
     |> Proca.Supporter.add_contacts(contact, action_page, %Proca.Supporter.Privacy{opt_in: true})
-    |> Ecto.Changeset.apply_changes
+    |> Ecto.Changeset.apply_changes()
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
@@ -155,10 +155,21 @@ defmodule Proca.Factory do
       action_type: "register",
       action_page: s.action_page,
       campaign: s.action_page.campaign,
-      supporter: s
+      supporter: s,
+      with_consent: true
     }
     |> merge_attributes(attrs) 
     |> evaluate_lazy_attributes()
+  end
 
+  def source_factory(attrs) do 
+    %Proca.Source{
+      source: "unknown",
+      medium: "unknown",
+      campaign: "unknown",
+      location: "https://proca.app",
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 end
