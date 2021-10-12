@@ -24,24 +24,31 @@ defmodule ProcaWeb.ConnCase do
       import Phoenix.ConnTest
       alias ProcaWeb.Router.Helpers, as: Routes
       alias ProcaWeb.UserAuth
+      alias Proca.Users.User
 
       # The default endpoint for testing
       @endpoint ProcaWeb.Endpoint
 
-      def auth_api_post(conn, query, user, password) do
+      def auth_api_post(conn, query, %User{email: email}) do
+        auth_api_post(conn, query, email, 
+          Proca.Factory.password_from_email(email))
+      end
+
+      def auth_api_post(conn, query, email, password) 
+        when is_bitstring(email) and is_bitstring(password) do
         conn
-        |> put_req_header("authorization", "Basic " <> Base.encode64(user <> ":" <> password))
+        |> put_req_header("authorization", "Basic " <> Base.encode64(email <> ":" <> password))
+        |> api_post(query)
+      end
+
+      def api_post(conn, query) when is_bitstring(query) do
+        conn
         |> post("/api", %{query: query})
       end
 
-
-      def auth_api_post(conn, query, user) do
-        auth_api_post(conn, query, user, Proca.Factory.password_from_email(user))
-      end
-
-      def api_post(conn, query) do
+      def api_post(conn, query) when is_map(query) do
         conn
-        |> post("/api", %{query: query})
+        |> post("/api", query)
       end
 
       def is_success(res) do
@@ -95,5 +102,7 @@ defmodule ProcaWeb.ConnCase do
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+
 
 end
