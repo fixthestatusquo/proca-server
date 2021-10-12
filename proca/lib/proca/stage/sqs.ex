@@ -45,7 +45,7 @@ defmodule Proca.Stage.SQS do
         |> Message.put_batcher(:sqs)
 
       {:error, reason} ->
-        Message.failed(message, reason)
+        Message.failed(message, inspect(reason))
     end
   end
 
