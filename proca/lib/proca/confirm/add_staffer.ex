@@ -32,7 +32,7 @@ defmodule Proca.Confirm.AddStaffer do
 
       {:ok, org}
     else 
-      {org, nil} -> {:error, :org_not_found}
+      {:org, nil} -> {:error, :org_not_found}
       {:exists?, _s} -> {:error, :staffer_exists}
       {:error, chset} -> {:error, chset}
       

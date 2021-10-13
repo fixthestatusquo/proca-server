@@ -43,11 +43,10 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       resolve &Resolvers.Confirm.org_reject/3
     end
 
-    # XXX 
     field :accept_user_confirm, type: non_null(:confirm_result) do 
       middleware Authorized
       arg :confirm, non_null(:confirm_input)
-      resolve &Resolvers.Confirm.user_reject/3
+      resolve &Resolvers.Confirm.user_confirm/3
     end
 
     field :reject_user_confirm, type: non_null(:confirm_result) do 

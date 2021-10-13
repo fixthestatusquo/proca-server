@@ -92,6 +92,7 @@ defmodule Proca.TestEmailBackend do
       %EmailTemplate{ref: "ref:thankyouemail", name: "thank_you", subject: "Thank you email", html: "Thank you body"},
       %EmailTemplate{ref: "ref:addpartner", name: "add_partner", subject: "You are invited to join a campaign", html: "Invite body"},
       %EmailTemplate{ref: "ref:launchpage", name: "launch_page", subject: "Partner request", html: "Can I join campaign?"},
+      %EmailTemplate{ref: "ref:addstaffer", name: "add_staffer", subject: "Invitation to org", html: "Welcome to our team"},
       %EmailTemplate{ref: "ref:user_confirm_email", name: "user_confirm_email", subject: "Confirm your email", html: "Click here"},
       %EmailTemplate{ref: "ref:user_reset_password", name: "user_reset_password", subject: "Reset password", html: "Click here"},
       %EmailTemplate{ref: "ref:user_change_email", name: "user_change_email", subject: "Confirm change of email", html: "Click here"}

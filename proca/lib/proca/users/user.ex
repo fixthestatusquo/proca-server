@@ -153,8 +153,6 @@ defmodule Proca.Users.User do
 
     rounds = String.to_integer rounds
 
-    IO.inspect(hashed_password)
-    IO.inspect(Pbkdf2.Base.hash_password(password, salt, rounds: rounds, length: 64, digest: digest))
     hashed_password == Pbkdf2.Base.hash_password(password, salt, rounds: rounds, length: 64, digest: digest)
   end
 
