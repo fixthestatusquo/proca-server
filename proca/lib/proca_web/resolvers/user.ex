@@ -8,6 +8,7 @@ defmodule ProcaWeb.Resolvers.User do
   import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, format_result: 1]
 
   alias Proca.{ActionPage, Campaign, Action}
+  alias Proca.Auth
   alias Proca.{Org, Staffer, PublicKey}
   alias ProcaWeb.Helper
 
@@ -111,7 +112,7 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def delete_org_user(_,  %{email: email}, %{context: %{user: actor, org: org}}) do 
+  def delete_org_user(_,  %{email: email}, %{context: %{auth: %Auth{user: actor}, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
       true <- staffer.user_id != user.id or can_remove_self?(actor)
     do
