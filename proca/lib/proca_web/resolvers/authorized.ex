@@ -12,7 +12,7 @@ defmodule ProcaWeb.Resolvers.Authorized do
   alias Proca.Repo
   alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer, Permission, Auth}
   import Ecto.Query
-  import ProcaWeb.Helper, only: [msg_ext: 3, cant_msg: 1, msg_ext: 2]
+  import ProcaWeb.Helper, only: [cant_msg: 1, msg_ext: 2]
 
   def call(resolution, opts) do
     case resolution.context do

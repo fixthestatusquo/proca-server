@@ -7,8 +7,9 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
 
   alias Proca.{ActionPage, Campaign, Action, Permission}
-  alias Proca.{Org, Staffer, PublicKey, Service}
+  alias Proca.{Org, Staffer, PublicKey, Service, Auth}
   alias ProcaWeb.Helper
+  alias ProcaWeb.Resolvers.ChangeAuth
   alias Ecto.Multi
   alias Proca.Server.Notify
 
@@ -112,23 +113,23 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-
-
-
-  def add_org(_, %{input: params}, %{context: %{user: user}}) do
+  def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
     perms = Staffer.Role.permissions(:owner)
 
     op = Multi.new()
     |> Multi.insert(:org, Org.changeset(%Org{}, params))
-    |> Multi.insert(:staffer, fn %{org: org} ->
-      Staffer.build_for_user(user, org.id, perms)
+    |> Multi.run(:staffer, fn _repo, %{org: org} ->
+      Staffer.create(user: user, org: org, perms: perms)
     end)
 
     case Repo.transaction(op) do
-      {:ok, %{org: org}} ->
+      {:ok, %{org: org, staffer: staffer}} ->
         Proca.Server.Notify.org_created(org)
-        {:ok, org}
-      {:error, _fail_op, fail_val, _ch} -> {:error, Helper.format_errors(fail_val)}
+
+        %Auth{user: user, staffer: staffer}
+        |> ChangeAuth.return({:ok, org})
+
+      {:error, _fail_op, fail_val, _ch} -> {:error, fail_val}
     end
   end
 
@@ -276,7 +277,7 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def join_org(_, %{name: org_name}, %{context: %{user: user}}) do 
+  def join_org(_, %{name: org_name}, %{context: %{auth: %Auth{user: user}}}) do 
     with true <- Permission.can?(user, :join_orgs),
          {:org, org} <- {:org, Org.one(name: org_name)}  do 
 
@@ -287,7 +288,9 @@ defmodule ProcaWeb.Resolvers.Org do
     end
 
     case joining do 
-      {:ok, _} -> {:ok, %{status: :success, org: org}}
+      {:ok, _} -> 
+        %Auth{user: user, staffer: joining} 
+        |> ChangeAuth.return({:ok, %{status: :success, org: org}})
       {:error, _} = e -> e
     end 
 
