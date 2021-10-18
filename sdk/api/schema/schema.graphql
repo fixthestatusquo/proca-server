@@ -230,7 +230,7 @@ interface ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -258,7 +258,7 @@ type PrivateActionPage implements ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -418,7 +418,7 @@ type RootMutationType {
 
   """
   Adds a new Action Page based on another Action Page. Intended to be used to
-  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
   """
   copyActionPage(
     "Org owner of new Action Page"
@@ -433,7 +433,7 @@ type RootMutationType {
 
   """
   Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-  create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+  create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
   """
   copyCampaignActionPage(
     "Org owner of new Action Page"
@@ -442,8 +442,22 @@ type RootMutationType {
     "New Action Page name"
     name: String!
 
-    "Name of Action Page this one is cloned from"
+    "Name of Campaign from which the page is copied"
     fromCampaignName: String!
+  ): ActionPage!
+
+  addActionPage(
+    "Org owner of new Action Page"
+    orgName: String!
+
+    "New Action Page name"
+    name: String!
+
+    "Action Page locale"
+    locale: String!
+
+    "Name of campaign where page is created"
+    campaignName: String!
   ): ActionPage!
 
   launchActionPage(
@@ -669,7 +683,7 @@ type PublicActionPage implements ActionPage {
   "Is live?"
   live: Boolean!
 
-  "List of steps in journey"
+  "List of steps in journey (DEPRECATED: moved under config)"
   journey: [String!]!
 
   "Config JSON of this action page"
@@ -777,9 +791,6 @@ input ActionPageInput {
 
   "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
   extraSupporters: Int
-
-  "List of steps in the journey"
-  journey: [String!]
 
   "JSON string containing Action Page config"
   config: Json

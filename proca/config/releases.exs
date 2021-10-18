@@ -54,10 +54,14 @@ config :proca, ProcaWeb.Endpoint,
   ],
   check_origin: ["//" <> System.get_env("DOMAIN")], # for WebSocket security
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
-  secret_key_base: secret_key_base
+  secret_key_base: secret_key_base,
+  captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
 
 config :sentry,
   dsn: System.get_env("SENTRY_DSN") || nil
+
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: System.get_env("REPORT_USER_ERRORS") == "true" || false
 
 config :proca, ProcaWeb.Resolvers.Captcha,
   hcaptcha_key: System.get_env("HCAPTCHA_KEY")

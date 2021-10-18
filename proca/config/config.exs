@@ -18,7 +18,8 @@ config :proca, ProcaWeb.Endpoint,
   pubsub_server: Proca.PubSub,
   live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"],
   allow_origin: "*",
-  router: if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router
+  router: (if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router),
+  captcha_service: "hcaptcha"
 
 config :cors_plug,
   origin: &ProcaWeb.Router.allow_origin/0
@@ -71,6 +72,9 @@ config :sentry,
   enable_source_code_context: true,
   root_source_code_paths: [File.cwd!()],
   capture_log_messages: true
+
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: false
 
 config :logger,
   level: :info

@@ -21,11 +21,15 @@ defmodule Proca.Users.User do
     @pow_config
   end
 
-  def create(email) do
+  def get([email: email]) do 
+    Pow.Operations.get_by([email: email], @pow_config)
+  end
+
+  def create!(email) do
     params = params_for(email)
     case Pow.Operations.create(params, @pow_config) do
       {:ok, user} -> %{user|password: params.password}
-      _ -> nil
+      {:error, _chset} -> raise "Cannot create user"
     end
   end
 
@@ -40,7 +44,7 @@ defmodule Proca.Users.User do
   end
 
   def reset_password(email) do
-    with u = %User{} <- Repo.get_by(User, %{email: email}),
+    with u = %User{} <- get(email: email),
          new_pass <- StrongPassword.generate(),
          {:ok, u2} <- Pow.Ecto.Schema.Changeset.new_password_changeset(u, %{password:  new_pass}, @pow_config) |> Repo.update()
       do

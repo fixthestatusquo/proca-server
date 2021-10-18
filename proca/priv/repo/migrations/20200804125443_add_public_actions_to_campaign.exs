@@ -3,7 +3,7 @@ defmodule Proca.Repo.Migrations.AddPublicActionsToCampaign do
 
   def change do
     alter table(:campaigns) do
-      add :public_actions, {:array, :string}, null: :false, default: []
+      add :public_actions, {:array, :string}, null: false, default: []
     end
   end
 end

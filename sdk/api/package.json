@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "3.0.0-alpha.11",
+  "version": "3.0.0-alpha.14",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,5 +51,5 @@
   "peerDependencies": {
     "typescript": "^4.1.2"
   },
-  "gitHead": "06372a9d582c5da0d7c396a31ec120f27cb1d1b4"
+  "gitHead": "645f1b773bface51d08aa223c29e8d146f856a3a"
 }

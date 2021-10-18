@@ -70,7 +70,7 @@ export type ActionPage = {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -98,8 +98,6 @@ export type ActionPageInput = {
   thankYouTemplateRef?: Maybe<Scalars['String']>;
   /** Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. */
   extraSupporters?: Maybe<Scalars['Int']>;
-  /** List of steps in the journey */
-  journey?: Maybe<Array<Scalars['String']>>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -466,7 +464,7 @@ export type PrivateActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -584,7 +582,7 @@ export type PublicActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey */
+  /** List of steps in journey (DEPRECATED: moved under config) */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -649,14 +647,15 @@ export type RootMutationType = {
   updateActionPage: ActionPage;
   /**
    * Adds a new Action Page based on another Action Page. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyActionPage: ActionPage;
   /**
    * Adds a new Action Page based on latest Action Page from campaign. Intended to be used to
-   * create a partner action page based off lead's one. Copies: campaign, locale, journey, config, delivery flag
+   * create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
    */
   copyCampaignActionPage: ActionPage;
+  addActionPage: ActionPage;
   launchActionPage: LaunchActionPageResult;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
@@ -713,6 +712,14 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
   orgName: Scalars['String'];
   name: Scalars['String'];
   fromCampaignName: Scalars['String'];
+};
+
+
+export type RootMutationTypeAddActionPageArgs = {
+  orgName: Scalars['String'];
+  name: Scalars['String'];
+  locale: Scalars['String'];
+  campaignName: Scalars['String'];
 };
 
 

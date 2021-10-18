@@ -39,7 +39,7 @@ defmodule Proca.Repo.Migrations.MakeSourcesContentNonNull do
 
     # Do not let content be null
     alter table(:sources) do
-      modify :content, :string, null: :false
+      modify :content, :string, null: false
     end
   end
 end

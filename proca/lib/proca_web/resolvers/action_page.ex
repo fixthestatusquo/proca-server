@@ -99,6 +99,19 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
+  def add_action_page(_, %{name: name, campaign_name: cn, locale: locale}, %{context: %{org: org}}) do 
+    with campaign when campaign != nil <- Campaign.get(name: cn),
+      {:ok, new_ap} <- ActionPage.create(params: %{
+        name: name, locale: locale}, campaign: campaign, org: org) do
+
+      Proca.Server.Notify.action_page_added(new_ap)
+      {:ok, new_ap}
+    else
+      nil -> {:error, "Campaign named #{cn} not found"}
+      {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
+    end
+  end
+
   def launch_page(_, %{name: name} = params, %{context: %{staffer: st}}) do 
     with ap = %ActionPage{} <- ActionPage.find(name),
         org <- Org.get_by_id(ap.campaign.org_id)

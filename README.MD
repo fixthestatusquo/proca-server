@@ -1,9 +1,22 @@
-# Proca server & sattelite packages
+```
+
+   ,,\\\\\\,,
+  ,\\\\\\\\\\\
+ ▲▲▲▲▲▲\\\\\\\\  FIX THE STATUS QUO 
+▲▲▲▲▲▲▲▲\\\\\\`  PROCA SERVER v3
+▼▼▼▼▼▼▼▼\\\\\`   
+ ▼▼▼▼▼▼\\\^``    https://proca.app
+
+```
+
+# Proca server & satelite packages
 
 ## About this repository
 
-- Monorepo for Proca server, SDK libraries in Typescript and Javascript, and common microservices
-- Managed by Lerna, JS monorepo manager
+the vast majority of this repo is the [elixir server](./proca). However, we have put as well some client api code that often needs to stay in sync with the server.
+
+- Monorepo for [Proca server](https://docs.proca.app)
+- SDK libraries in Typescript and Javascript, and common microservices (Managed by Lerna, JS monorepo manager)
 
 - Included packages:
   - proca - the core proca api server and processing engine
@@ -24,7 +37,7 @@ Make sure the dir name of repo is the same as one you want to be created under `
 
 1. Proca server is an Elixir project and tasks for it are run using `mix` tool. It contains `package.json` so lerna will treat it as a project; however, it is set to private and will not be published to npm repositories.
 
-2. You need to use Yarn and not NPM, as this is our choice and Yarn devs did not bother to implement lifecycle events in the same way as NPM `¯\_(ツ)_/¯`.
+2. You need to use Yarn and not NPM, as this is our choice and Yarn devs did not bother to implement lifecycle events in the same way as NPM `¯\_(ツ)_/¯`. We are using yarn.
 
 ## Available top level commands
 
