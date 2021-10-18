@@ -23,6 +23,7 @@ export interface CliOpts {
   queue?: string,
   keys?: string,
   debug?: boolean,
+  sentry?: boolean,
   json?: boolean,
   csv?: boolean,
   indent?: number,
@@ -44,6 +45,7 @@ export interface CliOpts {
   fields?: string,
   // ServiceOpts
   queueName?: string,
+  queuePrefetch?: number,
   service?: string,
   service_url?: string,
   backoff?: boolean,
@@ -79,6 +81,21 @@ export default function cli() {
         password: opts.password,
         org: opts.org
       })
+
+      if (opts.sentry) {
+        if (process.env.SENTRY_DSN) {
+          try {
+            const Sentry = require("@sentry/node");
+            Sentry.init({
+              dsn: process.env.SENTRY_DSN
+            })
+          } catch {
+            opts.sentry = false
+          }
+        } else {
+          opts.sentry = false
+        }
+      }
 
 
       cliMethod(opts, config).catch((error) => {
@@ -136,6 +153,12 @@ export default function cli() {
       type: 'boolean',
       default: false,
       describe: 'Enable troubleshooting information'
+    })
+    .option('sentry', {
+      alias: 'S',
+      type: 'boolean',
+      default: false,
+      describe: 'Report to sentry (set SENTRY_DSN)'
     })
     .option('org', override('o', 'org name', config.org ))
     .option('user', override('u', 'user name', config.username))
@@ -379,6 +402,11 @@ export default function cli() {
         alias: 'Q',
         type: 'string',
         description: 'Exact queue name to use instead of standard ones'
+      },
+      queuePrefetch: {
+        alias: 'N',
+        type: 'number',
+        description: 'Queue prefetch count'
       },
       decrypt: {
         alias: 'd',

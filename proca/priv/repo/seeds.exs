@@ -22,7 +22,7 @@ create_keys = fn org ->
   end
 
 create_admin = fn org, username ->
-  user = Proca.Users.User.create(username) || Proca.Repo.get_by( Proca.Users.User, email: username)
+  user = Proca.Users.User.create!(username) || Proca.Repo.get_by( Proca.Users.User, email: username)
 
   Proca.Staffer.build_for_user(user, org.id, [])
   |> Ecto.Changeset.apply_changes()

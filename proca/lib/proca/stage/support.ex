@@ -105,7 +105,7 @@ defmodule Proca.Stage.Support do
     }
   end
 
-  def action_data(action, stage \\ :deliver) do
+  def action_data(action, stage \\ :deliver, org_id \\ nil) do
     action =
       Repo.preload(
         action,
@@ -121,8 +121,9 @@ defmodule Proca.Stage.Support do
 
     # XXX we should be explicit about Contact org_id recipient, because for unencrypted contacts we do not have
     # the public_key!
+    org_id = org_id || action.action_page.org_id
     contact =
-      Enum.find(action.supporter.contacts, fn c -> c.org_id == action.action_page.org_id end)
+      Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
 
     privacy =
       if not is_nil(contact) and action.with_consent do
@@ -190,7 +191,11 @@ defmodule Proca.Stage.Support do
   def supporter_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}, op) do 
     ref = Supporter.base_encode(fpr)
 
-    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, ref, link_verb(op))
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, link_verb(op), ref)
+  end
+
+  def supporter_link(action_id, contact_ref, op) when is_integer(action_id) and is_bitstring(contact_ref) do 
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, link_verb(op), contact_ref)
   end
 
   def confirm_link(%Confirm{code: code, email: email}, op) when is_bitstring(code) and is_bitstring(email) do 

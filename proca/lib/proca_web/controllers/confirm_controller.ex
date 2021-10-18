@@ -9,7 +9,7 @@ defmodule ProcaWeb.ConfirmController do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Repo
-  alias Proca.{Supporter, Action, Confirm, Staffer}
+  alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage}
   alias Proca.Server.Processing
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
@@ -28,11 +28,19 @@ defmodule ProcaWeb.ConfirmController do
          :ok <- handle_supporter(action, args.verb)
     do
       conn
-      |> redirect(to: Map.get(args, :redir, "/"))
+      |> redirect(external: handle_supporter_redirect(action, args))
       |> halt()
     else 
       {:error, status, msg} -> 
         conn |> resp(status, error_msg(msg)) |> halt()
+    end
+  end
+
+  def handle_supporter_redirect(_action, %{redir: url}) when not is_nil(url), do: url
+  def handle_supporter_redirect(action, %{verb: verb}) do 
+    case ActionPage.Status.get_last_location(action.action_page_id)  do
+      nil -> "/"
+      url -> "#{url}?proca_confirm=#{verb}"
     end
   end
 

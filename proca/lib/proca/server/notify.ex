@@ -57,7 +57,6 @@ defmodule Proca.Server.Notify do
     cnf = Repo.preload(cnf, [creator: :user])
 
     Proca.Confirm.notify_by_email(cnf, recipients)
-    |> IO.inspect(label: "email notif")
   end
 
   ##### SIDE EFFECTS
@@ -73,7 +72,9 @@ defmodule Proca.Server.Notify do
       :system_sqs_deliver,
       :custom_supporter_confirm,
       :custom_action_confirm,
-      :custom_action_deliver
+      :custom_action_deliver,
+      :email_opt_in,
+      :email_opt_in_template
     ], fn prop -> Map.has_key?(changes, prop) end)
 
     if relevant_changes do

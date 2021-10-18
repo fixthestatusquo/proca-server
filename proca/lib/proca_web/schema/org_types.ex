@@ -32,6 +32,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     resolve_type fn 
       %{id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_org
+      # XXX maybe add created_by user_id so they could be matched here? that would mean they are forever owners?
+      # the access check here should be dynamic to work in add_org scenario, but it also must be fast
       _, _ -> :public_org
     end
   end
@@ -61,9 +63,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.get_key/3)
     end
 
-    # TODO:
-    # field :public_keys, non_null(list_of(non_null(:string)))
-    # field :users, non_null(list_of(:org_user))
     field :services, non_null(list_of(:service)) do 
       arg :select, :select_service
       resolve(&Resolvers.Org.list_services/3)
@@ -73,10 +72,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.User.list_org_users/3)
     end
 
-    # field :personal_data, :personal_data
-    #  field :contact_schema, :string
-    #  field :email_opt_in, :boolean
-    #  field :email_opt_in_template, :string
+    field :processing, non_null(:processing) do 
+      resolve(&Resolvers.Org.org_processing/3)
+    end
+
 
     # field :processing, :processing
     #  field :email_from, :string
@@ -110,7 +109,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
-      arg(:id, :integer)
+      arg(:id, non_null(:integer))
       resolve(&Resolvers.Org.campaign_by_id/3)
     end
   end
@@ -153,7 +152,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.delete_org/3)
     end
 
-    field :update_org, type: non_null(:org) do
+    field :update_org, type: non_null(:private_org) do
       middleware Authorized,
         access: [:org, by: [:name]],
         can?: [:change_org_settings]
@@ -163,6 +162,21 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:input, non_null(:org_input))
 
       resolve(&Resolvers.Org.update_org/3)
+    end
+
+    @desc "Update org processing settings"
+    field :update_org_processing, type: non_null(:private_org) do 
+      middleware Authorized,
+        access: [:org, by: [:name]],
+        can?: [:change_org_settings]
+
+      @desc "Set email backend to"
+
+      arg(:name, non_null(:string))
+      arg(:email_backend, :service_name)
+      arg(:email_from, :string)
+
+      resolve(&Resolvers.Org.update_org_processing/3)
     end
 
     field :join_org, type: non_null(:join_org_result) do
@@ -221,6 +235,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Email opt in template name"
     field :email_opt_in_template, :string
+
+    @desc "High data security enabled"
+    field :high_security, non_null(:boolean)
   end
 
   @desc "Encryption or sign key with integer id (database)"
@@ -276,23 +293,14 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :status, non_null(:status)
   end
 
-  enum :service_name do 
-    value :ses 
-    value :sqs 
-    value :mailjet
-    value :wordpress
-    value :stripe
-  end 
 
   input_object :select_service do
     field :name, :service_name
   end
 
-  object :service do 
-    field :id, non_null(:integer)
-    field :name, non_null(:service_name)
-    field :host, :string
-    field :user, :string
-    field :path, :string
+
+  object :processing do 
+    field :email_from, :string
+    field :email_backend, :service_name
   end
 end
