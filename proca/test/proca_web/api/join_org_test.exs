@@ -28,7 +28,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
       assert res = %{errors: [%{
         extensions: %{code: "permission_denied"}
@@ -51,7 +51,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [], data: %{"joinOrg" => %{"status"=>"SUCCESS"}}}
@@ -73,7 +73,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [%{
@@ -102,7 +102,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [], data: %{

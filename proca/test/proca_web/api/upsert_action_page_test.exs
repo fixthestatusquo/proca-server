@@ -22,7 +22,7 @@ defmodule ProcaWeb.Api.UpsertActionPage do
 
       res =
         conn
-        |> auth_api_post(query, user.email)
+        |> auth_api_post(query, user)
         |> json_response(200)
 
       assert %{"errors" => [%{"message" => "User is not a member of team responsible for resource"}]} = res
@@ -51,7 +51,7 @@ defmodule ProcaWeb.Api.UpsertActionPage do
 
       res =
         conn
-        |> auth_api_post(query, user.email)
+        |> auth_api_post(query, user)
         |> json_response(200)
 
       assert res["errors"] == nil
