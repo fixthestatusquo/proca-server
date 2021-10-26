@@ -61,7 +61,7 @@ jobs:
         restore-keys: ${{ runner.os }}-mix-
 
     - name: Setup RabbitMQ
-      run: ./utils/configure-rabbitmq -D 
+      run: ./utils/configure-rabbitmq-develop.sh -D 
       working-directory: proca
 
     - name: Install dependencies
