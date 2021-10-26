@@ -43,13 +43,6 @@ secret_key_base =
   You can generate one by calling: mix phx.gen.secret
   """
 
-live_view_signing_salt =
-  System.get_env("SIGNING_SALT") ||
-  raise """
-  environment variable SIGNING_SALT is missing.
-  You can generate one by calling: mix phx.gen.secret
-  """
-
 bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
 |> String.split(".")
 |> Enum.map(&String.to_integer/1)
