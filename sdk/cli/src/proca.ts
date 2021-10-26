@@ -37,6 +37,8 @@ export type Action = {
   createdAt: Scalars['NaiveDateTime'];
   actionType: Scalars['String'];
   contact: Contact;
+  customFields: Scalars['Json'];
+  /** Deprecated, use customFields */
   fields: Array<CustomField>;
   tracking: Maybe<Tracking>;
   campaign: Campaign;
@@ -50,6 +52,7 @@ export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['NaiveDateTime'];
+  customFields: Scalars['Json'];
   fields: Array<CustomField>;
 };
 
@@ -57,7 +60,9 @@ export type ActionCustomFields = {
 export type ActionInput = {
   /** Action Type */
   actionType: Scalars['String'];
-  /** Other fields that accompany the signature */
+  /** Custom fields added to action */
+  customFields?: Maybe<Scalars['Json']>;
+  /** Deprecated format: Other fields added to action */
   fields?: Maybe<Array<CustomFieldInput>>;
   /** Donation payload */
   donation?: Maybe<DonationActionInput>;
@@ -319,6 +324,7 @@ export type CustomField = {
 export type CustomFieldInput = {
   key: Scalars['String'];
   value: Scalars['String'];
+  /** Unused. To mark action_type/key as transient, use campaign.transient_actions list */
   transient?: Maybe<Scalars['Boolean']>;
 };
 
@@ -477,6 +483,8 @@ export type PersonalData = {
   emailOptIn: Scalars['Boolean'];
   /** Email opt in template name */
   emailOptInTemplate: Maybe<Scalars['String']>;
+  /** High data security enabled */
+  highSecurity: Scalars['Boolean'];
 };
 
 export type PrivateActionPage = ActionPage & {
@@ -554,6 +562,7 @@ export type PrivateOrg = Org & {
   key: Key;
   services: Array<Maybe<Service>>;
   users: Array<Maybe<OrgUser>>;
+  processing: Processing;
   /** List campaigns this org is leader or partner of */
   campaigns: Array<Campaign>;
   /** List action pages this org has */
@@ -597,7 +606,13 @@ export type PrivateOrgActionPageArgs = {
 
 
 export type PrivateOrgCampaignArgs = {
-  id?: Maybe<Scalars['Int']>;
+  id: Scalars['Int'];
+};
+
+export type Processing = {
+  __typename?: 'Processing';
+  emailFrom: Maybe<Scalars['String']>;
+  emailBackend: Maybe<ServiceName>;
 };
 
 export type PublicActionPage = ActionPage & {
@@ -696,17 +711,23 @@ export type RootMutationType = {
   addActionContact: ContactReference;
   /** Link actions with refs to contact with contact reference */
   linkActions: ContactReference;
+  /** Add user to org by email */
   addOrgUser: ChangeUserStatus;
+  /** Invite an user to org by email (can be not yet user!) */
+  inviteOrgUser: Confirm;
   updateOrgUser: ChangeUserStatus;
   deleteOrgUser: Maybe<DeleteUserResult>;
   addOrg: Org;
   deleteOrg: Scalars['Boolean'];
-  updateOrg: Org;
+  updateOrg: PrivateOrg;
+  /** Update org processing settings */
+  updateOrgProcessing: PrivateOrg;
   joinOrg: JoinOrgResult;
   generateKey: KeyWithPrivate;
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  upsertService: Service;
   addStripePaymentIntent: Scalars['Json'];
   addStripeSubscription: Scalars['Json'];
   /**
@@ -719,6 +740,8 @@ export type RootMutationType = {
   acceptOrgConfirm: ConfirmResult;
   /** Reject a confirm on behalf of organisation. */
   rejectOrgConfirm: ConfirmResult;
+  acceptUserConfirm: ConfirmResult;
+  rejectUserConfirm: ConfirmResult;
 };
 
 
@@ -793,6 +816,13 @@ export type RootMutationTypeAddOrgUserArgs = {
 };
 
 
+export type RootMutationTypeInviteOrgUserArgs = {
+  orgName: Scalars['String'];
+  input: UserInput;
+  message?: Maybe<Scalars['String']>;
+};
+
+
 export type RootMutationTypeUpdateOrgUserArgs = {
   orgName: Scalars['String'];
   input: UserInput;
@@ -821,6 +851,13 @@ export type RootMutationTypeUpdateOrgArgs = {
 };
 
 
+export type RootMutationTypeUpdateOrgProcessingArgs = {
+  name: Scalars['String'];
+  emailBackend?: Maybe<ServiceName>;
+  emailFrom?: Maybe<Scalars['String']>;
+};
+
+
 export type RootMutationTypeJoinOrgArgs = {
   name: Scalars['String'];
 };
@@ -841,6 +878,13 @@ export type RootMutationTypeAddKeyArgs = {
 export type RootMutationTypeActivateKeyArgs = {
   orgName: Scalars['String'];
   id: Scalars['Int'];
+};
+
+
+export type RootMutationTypeUpsertServiceArgs = {
+  orgName: Scalars['String'];
+  id?: Maybe<Scalars['Int']>;
+  input: ServiceInput;
 };
 
 
@@ -878,6 +922,16 @@ export type RootMutationTypeRejectOrgConfirmArgs = {
   confirm: ConfirmInput;
 };
 
+
+export type RootMutationTypeAcceptUserConfirmArgs = {
+  confirm: ConfirmInput;
+};
+
+
+export type RootMutationTypeRejectUserConfirmArgs = {
+  confirm: ConfirmInput;
+};
+
 export type RootQueryType = {
   __typename?: 'RootQueryType';
   /** Get a list of campains */
@@ -886,6 +940,7 @@ export type RootQueryType = {
   actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
   currentUser: User;
+  users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
 };
@@ -912,6 +967,11 @@ export type RootQueryTypeExportActionsArgs = {
   after?: Maybe<Scalars['DateTime']>;
   limit?: Maybe<Scalars['Int']>;
   onlyOptIn?: Maybe<Scalars['Boolean']>;
+};
+
+
+export type RootQueryTypeUsersArgs = {
+  select?: Maybe<SelectUser>;
 };
 
 
@@ -947,6 +1007,15 @@ export type SelectService = {
   name?: Maybe<ServiceName>;
 };
 
+/** Criteria to filter users */
+export type SelectUser = {
+  id?: Maybe<Scalars['Int']>;
+  /** Use % as wildcard */
+  email?: Maybe<Scalars['String']>;
+  /** Exact org name */
+  orgName?: Maybe<Scalars['String']>;
+};
+
 export type Service = {
   __typename?: 'Service';
   id: Scalars['Int'];
@@ -954,6 +1023,14 @@ export type Service = {
   host: Maybe<Scalars['String']>;
   user: Maybe<Scalars['String']>;
   path: Maybe<Scalars['String']>;
+};
+
+export type ServiceInput = {
+  name: ServiceName;
+  host?: Maybe<Scalars['String']>;
+  user?: Maybe<Scalars['String']>;
+  password?: Maybe<Scalars['String']>;
+  path?: Maybe<Scalars['String']>;
 };
 
 export enum ServiceName {
@@ -1000,12 +1077,15 @@ export type TrackingInput = {
   medium: Scalars['String'];
   campaign: Scalars['String'];
   content?: Maybe<Scalars['String']>;
+  /** Action page location. Url from which action is added. Must contain schema, domain, (port), pathname */
+  location?: Maybe<Scalars['String']>;
 };
 
 export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
+  isAdmin: Scalars['Boolean'];
   roles: Array<UserRole>;
 };
 
@@ -1634,9 +1714,6 @@ export type UpdateOrg = (
     { __typename?: 'PrivateOrg' }
     & OrgFields_PrivateOrg_
     & OrgPrivateFields
-  ) | (
-    { __typename?: 'PublicOrg' }
-    & OrgFields_PublicOrg_
   ) }
 );
 
@@ -2030,6 +2107,7 @@ export type ScalarLocations = {
 export const scalarLocations : ScalarLocations = {
   "inputObjectFieldTypes": {
     "ActionInput": {
+      "customFields": "Json",
       "fields": "CustomFieldInput",
       "donation": "DonationActionInput"
     },
@@ -2054,6 +2132,7 @@ export const scalarLocations : ScalarLocations = {
   "outputObjectFieldTypes": {
     "Action": {
       "contact": "Contact",
+      "customFields": "Json",
       "fields": "CustomField",
       "tracking": "Tracking",
       "campaign": [
@@ -2068,6 +2147,7 @@ export const scalarLocations : ScalarLocations = {
       "donation": "Donation"
     },
     "ActionCustomFields": {
+      "customFields": "Json",
       "fields": "CustomField"
     },
     "CampaignStats": {
@@ -2147,6 +2227,7 @@ export const scalarLocations : ScalarLocations = {
       "key": "Key",
       "services": "Service",
       "users": "OrgUser",
+      "processing": "Processing",
       "campaigns": [
         "PrivateCampaign",
         "PublicCampaign"
@@ -2232,25 +2313,27 @@ export const scalarLocations : ScalarLocations = {
     "addActionContact": "ContactReference",
     "linkActions": "ContactReference",
     "addOrgUser": "ChangeUserStatus",
+    "inviteOrgUser": "Confirm",
     "updateOrgUser": "ChangeUserStatus",
     "deleteOrgUser": "DeleteUserResult",
     "addOrg": [
       "PrivateOrg",
       "PublicOrg"
     ],
-    "updateOrg": [
-      "PrivateOrg",
-      "PublicOrg"
-    ],
+    "updateOrg": "PrivateOrg",
+    "updateOrgProcessing": "PrivateOrg",
     "joinOrg": "JoinOrgResult",
     "generateKey": "KeyWithPrivate",
     "addKey": "Key",
     "activateKey": "ActivateKeyResult",
+    "upsertService": "Service",
     "addStripePaymentIntent": "Json",
     "addStripeSubscription": "Json",
     "addStripeObject": "Json",
     "acceptOrgConfirm": "ConfirmResult",
     "rejectOrgConfirm": "ConfirmResult",
+    "acceptUserConfirm": "ConfirmResult",
+    "rejectUserConfirm": "ConfirmResult",
     "campaigns": [
       "PrivateCampaign",
       "PublicCampaign"
@@ -2261,6 +2344,7 @@ export const scalarLocations : ScalarLocations = {
     ],
     "exportActions": "Action",
     "currentUser": "User",
+    "users": "User",
     "org": "PrivateOrg"
   },
   "scalars": [
