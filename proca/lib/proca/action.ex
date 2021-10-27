@@ -10,7 +10,7 @@ defmodule Proca.Action do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Proca.{Action, Supporter, Field}
+  alias Proca.{Action, Supporter}
   alias Proca.Repo
 
   schema "actions" do
@@ -58,6 +58,7 @@ defmodule Proca.Action do
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
+    |> check_constraint(:fields, name: :max_fields_size)
   end
 
   @doc """
@@ -79,7 +80,7 @@ defmodule Proca.Action do
       if valid do 
         []
       else
-        [{f, "Custom fields must be a map of string to to values of strings or numbers, or lists of them"}]
+        [{f, "Custom fields must be a map of string to values of strings or numbers, or lists of them"}]
       end
     end)
   end
