@@ -36,10 +36,10 @@ defmodule Proca.UsersFixtures do
     
     case mailbox(email) do
       [%{
-        private: %{
+        provider_options: %{
           fields: fields
         }
-      }] -> fields[email][:confirm_link]
+      }] -> fields[:confirm_link]
       nil -> ""
     end
   end

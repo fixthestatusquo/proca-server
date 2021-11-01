@@ -64,9 +64,6 @@ defmodule Proca.MixProject do
       {:kcl, "~> 1.3.0"},
       {:amqp, "~> 2.0"},
       {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"}, # until support for amqp 2.0 is released
-      {:bamboo, "~> 1.5.0"},
-      # {:bamboo_mailjet, "~> 0.1.0"},
-      {:bamboo_mailjet, github: "fixthestatusquo/bamboo_mailjet", branch: "feat/formatter_recipients"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
@@ -87,7 +84,8 @@ defmodule Proca.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:swoosh, "~> 1.5"}
     ]
   end
 
