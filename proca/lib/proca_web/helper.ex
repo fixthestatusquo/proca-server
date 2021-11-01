@@ -128,4 +128,11 @@ defmodule ProcaWeb.Helper do
     |> Plug.Conn.put_resp_header("WWW-Authenticate", "Basic realm=\"Proca\"")
     |> Plug.Conn.resp(401, msg)
   end
-end
+
+  def rename_key(map, k1, k2) do
+    case Map.pop(map, k1) do
+      {nil, m} -> m
+      {v, m} -> Map.put(m, k2, v)
+    end
+   end
+ end

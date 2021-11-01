@@ -593,6 +593,14 @@ type RootMutationType {
     emailBackend: ServiceName
 
     emailFrom: String
+
+    customSupporterConfirm: Boolean
+
+    customActionConfirm: Boolean
+
+    customActionDeliver: Boolean
+
+    sqsDeliver: Boolean
   ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
@@ -741,6 +749,10 @@ type PublicOrg implements Org {
 type Processing {
   emailFrom: String
   emailBackend: ServiceName
+  customSupporterConfirm: Boolean!
+  customActionConfirm: Boolean!
+  customActionDeliver: Boolean!
+  sqsDeliver: Boolean!
 }
 
 type PublicActionPage implements ActionPage {

@@ -1,7 +1,7 @@
 // Only import Types here
 // Import code below using require( ) because ketting is just a peer/plug-in dependency
 import { Client, LinkNotFound, State, Resource, FollowPromiseOne} from "ketting"
-import {ActionMessage} from "../queueMessage"
+import {ActionMessageV2} from "../queueMessage"
 import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
 import amqplib from 'amqplib';
@@ -17,14 +17,14 @@ type Cache = {
 
 const CACHE : Cache = {form: {}}
 
-export async function syncAction(action : ActionMessage, serviceOpts : ServiceOpts, _config : CliConfig, msg : amqplib.Message) {
+export async function syncAction(action : ActionMessageV2, serviceOpts : ServiceOpts, _config : CliConfig, msg : amqplib.Message) {
   try {
     let email: string = action.contact.pii?.email || action.contact.email
     if (action.privacy === null) {
       console.log("Action without contact", action.action.actionType)
       return
     }
-    const optIn: boolean = action.privacy.communication
+    const optIn: boolean = action.privacy.optIn
     const campaignTitle: string = action.campaign.title
 
     // check inputs
@@ -174,7 +174,7 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
 
  */
 
- const actionToPerson = (action : ActionMessage) : any => {
+ const actionToPerson = (action : ActionMessageV2) : any => {
    if (Object.keys(action.contact.pii).length === 0) 
     return undefined;
 
@@ -183,14 +183,14 @@ function uri (path: string, filter  : Record<string,string> = {}) : string {
   const dEmail = (email : string) => ({
     primary: true, 
     address: email, 
-    status: action.privacy.communication ? "subscribed" : "unsubscribed"
+    status: action.privacy.optIn ? "subscribed" : "unsubscribed"
   });
 
   const dPhone = (num : string) => ({
     primary: true, 
     number: num,
     number_type: "mobile",
-    status: action.privacy.communication ? "subscribed" : "unsubscribed"
+    status: action.privacy.optIn ? "subscribed" : "unsubscribed"
   });
 
   const dAddress = () => {
@@ -251,7 +251,7 @@ const patchPerson = (personAttr: State<any>, newPersonData: any) => {
   }
 }
 
-const putAction = async (client : Client, action: ActionMessage) => {
+const putAction = async (client : Client, action: ActionMessageV2) => {
   const campaignTitle = action.campaign.title
 
   const forms = client.go(uri("forms", {"title": campaignTitle}))
@@ -285,7 +285,11 @@ const putAction = async (client : Client, action: ActionMessage) => {
   }
 }
 
-const createSubmission = async(client : Client, form : Resource<any> | State<any>, personUri : string, action : ActionMessage, autoresponse = true) => {
+const createSubmission = async(client : Client,
+                               form : Resource<any> | State<any>,
+                               personUri : string,
+                               action : ActionMessageV2,
+                               autoresponse = true) => {
   const submissionUrl = form.uri + '/submissions'
 
   const submission = client.go(submissionUrl);
@@ -312,7 +316,6 @@ const createSubmission = async(client : Client, form : Resource<any> | State<any
 const createPerson =  async(client : Client , data : any) : Promise<State<any>> => {
   const people = client.go(uri("people"))
   p(data, "create person")
-  const payload = {data}
   return await people.post({data})
 };
 

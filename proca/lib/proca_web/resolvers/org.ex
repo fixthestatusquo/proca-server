@@ -99,11 +99,18 @@ defmodule ProcaWeb.Resolvers.Org do
 
     {:ok, %{
       email_from: org.email_from,
-      email_backend: service
+      email_backend: service,
+      custom_supporter_confirm: org.custom_supporter_confirm,
+      custom_action_confirm: org.custom_action_confirm,
+      custom_action_deliver: org.custom_action_deliver,
+      sqs_deliver: org.system_sqs_deliver
       }}
   end
 
-  def update_org_processing(_, args, %{context: %{org: org}}) do 
+  def update_org_processing(_, args, %{context: %{org: org}}) do
+    args = args
+    |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)
+
     chset = Org.changeset(org, args)
     case Repo.update(chset) do 
       {:ok, org} -> 

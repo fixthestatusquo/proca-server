@@ -584,6 +584,10 @@ export type PrivateOrgCampaignArgs = {
 export type Processing = {
   emailFrom: Maybe<Scalars['String']>;
   emailBackend: Maybe<ServiceName>;
+  customSupporterConfirm: Scalars['Boolean'];
+  customActionConfirm: Scalars['Boolean'];
+  customActionDeliver: Scalars['Boolean'];
+  sqsDeliver: Scalars['Boolean'];
 };
 
 export type PublicActionPage = ActionPage & {
@@ -821,6 +825,10 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   name: Scalars['String'];
   emailBackend?: Maybe<ServiceName>;
   emailFrom?: Maybe<Scalars['String']>;
+  customSupporterConfirm?: Maybe<Scalars['Boolean']>;
+  customActionConfirm?: Maybe<Scalars['Boolean']>;
+  customActionDeliver?: Maybe<Scalars['Boolean']>;
+  sqsDeliver?: Maybe<Scalars['Boolean']>;
 };
 
 

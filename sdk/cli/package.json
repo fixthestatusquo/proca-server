@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "@proca/api": "^3.0.0-alpha.14",
+    "@proca/crypto": "^3.0.0-alpha.16",
     "@types/node-mailjet": "^3.3.4",
     "amqplib": "^0.7.0",
     "backoff": "^2.5.0",

@@ -4,7 +4,6 @@ query PubListCampaign($name: String!) {
   }
 }
 
-
 query ExportCampaignActions(
   $org: String!
   $campaignId: Int
@@ -14,6 +13,14 @@ query ExportCampaignActions(
   $limit: Int
   $onlyOptIn: Boolean
 ) {
+  org(name: $org) {
+    campaigns {
+      ...campaignIds
+    }
+    actionPages {
+      id name locale thankYouTemplateRef
+    }
+  }
   exportActions(
     orgName: $org
     campaignId: $campaignId
@@ -37,6 +44,15 @@ query ExportOrgActions(
   $limit: Int
   $onlyOptIn: Boolean
 ) {
+  org(name: $org) {
+    campaigns {
+      ...campaignIds
+    }
+    actionPages {
+      id name locale thankYouTemplateRef
+    }
+  }
+
   exportActions(
     orgName: $org
     start: $start
