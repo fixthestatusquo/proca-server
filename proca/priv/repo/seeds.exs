@@ -49,5 +49,5 @@ else
 
     [] -> create_keys.(instance_org)
   end
-  create_admin.(org, System.get_env("ADMIN_EMAIL"))
+  create_admin.(instance_org, System.get_env("ADMIN_EMAIL"))
 end
