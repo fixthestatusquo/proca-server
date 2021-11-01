@@ -74,10 +74,3 @@ defmodule Proca.Service.EmailRecipient do
     |> put_fields(rest)
   end
 end
-
-
-defimpl Bamboo.Formatter, for: Proca.Service.EmailRecipient do
-  def format_email_address(recipient, _opts) do
-    {recipient.first_name, recipient.email}
-  end
-end

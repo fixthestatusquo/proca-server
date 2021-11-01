@@ -31,7 +31,7 @@ defmodule Proca.Confirm.InviteTest do
     assert :ok == Confirm.notify_by_email(cnf)
     
     [sent_mail] = TestEmailBackend.mailbox(red_staff.user.email)
-    fields = sent_mail.private.fields[red_staff.user.email]
+    fields = sent_mail.provider_options.fields
     assert fields["confirm_code"] == cnf.code
 
 
