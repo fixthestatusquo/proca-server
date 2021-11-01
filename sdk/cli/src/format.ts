@@ -1,7 +1,8 @@
 import csvStringify from 'csv-stringify/lib/sync'
 import * as admin from './proca'
-import {ActionWithPII, KeyStore} from './crypto'
+import {KeyStore} from '@proca/crypto'
 import {WidgetConfig} from './config'
+import {ActionMessageV2} from './queueMessage'
 
 
 export interface FormatOpts {
@@ -138,9 +139,8 @@ class Terminal {
     return ap
   }
 
-  action(a : admin.ActionExport & {campaign?: admin.CampaignIds}) : string {
-    const c = a.campaign !== undefined ? a.campaign.name : ''
-    const t = `${a.actionId} ${a.createdAt}: [${c}] ${a.actionType} ${a.contact.contactRef}`
+  action(a : ActionMessageV2) : string {
+    const t = `${a.actionId} ${a.action.createdAt}: [${a.campaign.name}] ${a.action.actionType} ${a.contact.contactRef}`
     return t
   }
 
@@ -181,7 +181,7 @@ class Json extends Terminal {
     return JSON.stringify(config, null, this.indent)
   }
 
-  action(a : admin.ActionExport & {campaign?: admin.CampaignIds}) {
+  action(a : ActionMessageV2) {
     return JSON.stringify(a, null, this.indent)
   }
 
@@ -201,18 +201,11 @@ class Csv extends Terminal {
     this.fields = argv.fields.split(',')
   }
 
-  getField(a : admin.ActionExport, f : string) {
-    const kv = a.fields.find(({key}) => key == f)
-    if (kv !== undefined)
-      return kv.value
-    return ''
-  }
 
-  action(a : admin.ActionExport & { campaign?: admin.CampaignIds, actionPage: admin.ActionPageIds}) {
+  action(a : ActionMessageV2) {
     let [input, opts] : Parameters<typeof csvStringify> = [[], {}]
 
-    const pii = 'pii' in a.contact ? 
-      (a as ActionWithPII).contact.pii : undefined;
+    const pii = a.contact;
 
     if (this.rowCount == 0) {
       opts.columns = [
@@ -236,20 +229,20 @@ class Csv extends Terminal {
     this.rowCount += 1
 
     input = [[
-      a.campaign !== undefined ? a.campaign.name : this.campaignName,
+      a.campaign.name,
       a.actionPage.name,
-      a.actionType,
+      a.action.actionType,
       pii?.firstName || '',
       pii?.lastName || '',
       pii?.email || '',
       pii?.phone || '',
       pii?.postcode || '',
       pii?.country || '',
-      a.createdAt,
+      a.action.createdAt,
       a.actionId,
       a.privacy.optIn
     ].concat(
-      this.fields.map((f) => this.getField(a, f))
+      this.fields.map((f) => a.action.customFields[f])
     )]
 
     return csvStringify(input, opts).slice(0, -1) // chomp newline

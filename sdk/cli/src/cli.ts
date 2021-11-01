@@ -53,6 +53,11 @@ export interface CliOpts {
   filePath?: string
 }
 
+export type DecryptOpts = {
+  decrypt?: boolean,
+  ignore?: boolean
+}
+
 export default function cli() {
   const config : CliConfig = loadConfig()
 

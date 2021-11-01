@@ -59,7 +59,12 @@ defmodule Proca.Org do
       :email_from,
       :email_opt_in, :email_opt_in_template, 
       :config, 
-      :high_security
+      :high_security,
+
+      :custom_supporter_confirm,
+      :custom_action_confirm,
+      :custom_action_deliver,
+      :system_sqs_deliver
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)

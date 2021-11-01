@@ -1,14 +1,11 @@
 import amqplib from 'amqplib'
-import fs from 'fs'
 import LineByLine from 'line-by-line'
-import {decrypt,EncryptedContact } from './crypto'
-import {getContact, DecryptOpts} from './decrypt'
-import {decryptAction} from './export'
 import {CliConfig} from './config'
-import {CliOpts } from './cli'
-import {ActionMessage, ProcessStage} from './queueMessage'
+import {CliOpts, DecryptOpts } from './cli'
+import {ActionMessage, ProcessStage, decryptActionMessage} from './queueMessage'
 import {getService, ServiceOpts} from './service'
-export {ActionMessage, ProcessStage} from './queueMessage'
+export {ActionMessage, ActionMessageV2, ProcessStage} from './queueMessage'
+import {actionMessageV1to2} from './queueMessage'
 
 
 export function connect(config : CliConfig) {
@@ -19,10 +16,7 @@ export function connect(config : CliConfig) {
 }
 
 function queueName(type : ProcessStage, argv:CliOpts) {
-  if (type == 'deliver' || type == 'confirm') {
-    return `custom.${argv.org}.${type}`
-  }
-  throw Error("queue type must by either deliver or configm")
+  throw Error("queue type must by either deliver or config")
 }
 
 export async function testQueue(opts : ServiceOpts, config : CliConfig) {
@@ -72,7 +66,11 @@ export async function syncQueue(opts : ServiceOpts & DecryptOpts, config:CliConf
       await ch.prefetch(opts.queuePrefetch)
     }
     const ret = await ch.consume(qn, (msg : amqplib.Message) => {
-      let action = JSON.parse(msg.content.toString())
+      let action : ActionMessage = JSON.parse(msg.content.toString())
+
+      if (action.schema === "proca:action:1") {
+        action = actionMessageV1to2(action)
+      }
 
       decryptActionMessage(action, opts, config)
       
@@ -108,9 +106,14 @@ export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConf
   const lines = new LineByLine(opts.filePath)
 
   lines.on('line', async (l) => {
-    let action = JSON.parse(l)
+    let action : ActionMessage = JSON.parse(l)
+
+      if (action.schema === "proca:action:1") {
+        action = actionMessageV1to2(action)
+      }
     
     decryptActionMessage(action, opts, config)
+
     lines.pause()
     await service.syncAction(action, opts, config)
     lines.resume()
@@ -119,21 +122,3 @@ export async function syncFile(opts : ServiceOpts & DecryptOpts, config: CliConf
 
 
 
-
-export function decryptActionMessage(action : ActionMessage, argv : DecryptOpts, config : CliConfig) {
-  const contact : EncryptedContact = {
-    signKey: { public: action.contact.signKey},
-    publicKey: { public: action.contact.publicKey},
-    nonce: action.contact.nonce,
-    payload: action.contact.payload,
-    contactRef: action.contact.ref
-  }
-
-  const pii = getContact(contact, argv, config)
-  action.contact.pii = pii
-  if (!action.contact.firstName && action.contact.pii.firstName)
-    action.contact.firstName = action.contact.pii.firstName
-  if (!action.contact.email && action.contact.pii.email)
-    action.contact.email = action.contact.pii.email
-  return action
-}

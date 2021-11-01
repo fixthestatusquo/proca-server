@@ -10,6 +10,11 @@ export type KeyPair = {
   private?: string
 }
 
+export type PublicKey = {
+  id: number,
+  public: string
+}
+
 export type KeyStore = {
   filename: string | null,
   readFromFile: boolean,

@@ -1,17 +1,10 @@
 import client from './client'
-import {request, types} from '@proca/api'
+import {request} from '@proca/api'
 import * as admin from './proca'
-import {
-  ActionWithEncryptedContact, 
-  ActionWithPII,
-  readMixedFormat,
-  KeyStore
-  } from './crypto'
-import {ActionMessage, actionToActionMessage} from './queueMessage'
+import {ActionMessageV2, actionToActionMessage, decryptActionMessage} from './queueMessage'
 import {getFormatter, FormatOpts} from './format'
-import {getContact, DecryptOpts} from './decrypt'
+import {DecryptOpts} from './cli'
 import {CliConfig} from './config'
-import {PartialBy} from './util'
 import {getService, ServiceOpts} from './service'
 import LineByLine from 'line-by-line'
 import debug from 'debug';
@@ -43,6 +36,9 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
 
   const query = argv.campaign !== undefined ? admin.ExportCampaignActionsDocument : admin.ExportOrgActionsDocument
 
+  let campaigns : Record<string, admin.CampaignIds>;
+  let actionPages : Record<number, Pick<admin.ActionPage,  'id' | 'name' | 'locale' | 'thankYouTemplateRef'>>;
+
   for (;;) {
     const {data, error} = await request(c, query, vars)
 
@@ -57,35 +53,50 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
       break
     }
 
+    if (!campaigns) {
+      campaigns = {};
+      for (const c of data.org.campaigns) {
+        campaigns[c.name] = c
+        delete c.__typename
+      }
+    }
+    if (!actionPages) {
+      actionPages = {};
+      for (const ap of data.org.actionPages) {
+        actionPages[ap.id] = ap
+      }
+    }
+
     for (const action of data.exportActions) {
       vars.start = action.actionId + 1
 
-      // inplace
-      decryptAction(action as ActionWithEncryptedContact, argv, config)
-
-      console.log(fmt.action(action))
+      const campName = argv.campaign || (action as admin.ExportOrgActions['exportActions'][0]).campaign?.name
+      console.log('-> ', action.actionPage.id)
+      console.log('key', action.contact.publicKey)
+      const actionMsg = actionToActionMessage(action,
+                                              actionPages[action.actionPage.id] || {...action.actionPage, thankYouTemplateRef: null},
+                                              campaigns[campName])
+      if (actionMsg.schema === "proca:action:2") {
+        decryptActionMessage(actionMsg, argv, config)
+        console.log(fmt.action(actionMsg))
+      }
     }
   }
 }
 
 
-export function decryptAction(action : ActionWithEncryptedContact, argv : DecryptOpts, config : CliConfig) {
-  const pii = getContact(action.contact, argv, config)
-  const action2 = action as ActionWithPII
-  action2.contact.pii = pii
-}
 
 export async function syncExportFile(opts : ServiceOpts & DecryptOpts, config: CliConfig) {
   const service = getService(opts)
   const lines = new LineByLine(opts.filePath)
 
   lines.on('line', async (l) => {
-    let action : admin.Action = JSON.parse(l)
+    let action : ActionMessageV2 = JSON.parse(l)
     log(`sync actionId: ${action.actionId}`)
     
-    decryptAction(action, opts, config)
+    decryptActionMessage(action, opts, config)
     lines.pause()
-    await service.syncAction(actionToActionMessage(action), opts, config)
+    await service.syncAction(action, opts, config)
     lines.resume()
   })
 }
