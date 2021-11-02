@@ -10,7 +10,7 @@ defmodule Proca.Service.Mailjet do
   - You cannot use default in some places: for example in attributes (href value).
   - You can conditionally show a block: use foo:"" in the field - but you need to use “greater then” + start of the string - no way to input “not empty” condition
   - The links prohibit use of default "" - so you must provide or hide it.
-  - Use {% if var:dupa:"" %} and {% endif %} for conditional block
+  - Use {% if var:givenname:"" %} and {% endif %} for conditional block
 
   """
 
