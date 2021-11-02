@@ -1,5 +1,6 @@
 defmodule ProcaWeb.UserRegistrationControllerTest do
   use ProcaWeb.ConnCase, async: true
+  use Proca.TestEmailBackend
   alias ProcaWeb.UserAuth
 
   import Proca.UsersFixtures
