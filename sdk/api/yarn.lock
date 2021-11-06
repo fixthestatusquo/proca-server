@@ -914,9 +914,9 @@
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
 "@types/phoenix@^1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@types/phoenix/-/phoenix-1.5.1.tgz#1cee8eda69ca5b2eff48f0fe1833d9716a17fec2"
-  integrity sha512-VPVQAOffPXztCAoLKTjSM+NqhD1gWow3XHF01gdLPeIWEQakoFjg5uGokq8BnX7KM00PWN1XnX5d4FMSxlVv3w==
+  version "1.5.3"
+  resolved "https://registry.yarnpkg.com/@types/phoenix/-/phoenix-1.5.3.tgz#80706952320b3bf49b5f138504dbfd0f7875650e"
+  integrity sha512-7fasDSyLIU0GAeVqaFNY3qQU4Ki5ZUUqF8L01EeFHbY3Qazo1pGZFjMkxMd1vZCS66tEBArC7zi7WKo6ZpOCNw==
 
 "@types/websocket@1.0.2":
   version "1.0.2"
