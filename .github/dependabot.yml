@@ -9,6 +9,17 @@ updates:
     directory: "/proca" # Location of package manifests
     schedule:
       interval: "weekly"
+      day: monday
+  - package-ecosystem: npm
+    directory: "/proca"
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: friday
   - package-ecosystem: npm
     directory: "/sdk/api"
     schedule:
