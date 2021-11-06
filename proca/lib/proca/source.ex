@@ -72,6 +72,8 @@ defmodule Proca.Source do
           strip_url loc_uri
         else
           Sentry.capture_message("Tracking location '#{location}' does not start with '#{referer}'", result: :none)
+          # the location provided is outside of the referer scope. Use referer
+          strip_url ref_uri
         end
       else 
         strip_url ref_uri
