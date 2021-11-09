@@ -9,7 +9,7 @@ defmodule ProcaWeb.ConfirmController do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Repo
-  alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage}
+  alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage, Auth}
   alias Proca.Server.Processing
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
@@ -103,7 +103,7 @@ defmodule ProcaWeb.ConfirmController do
   def confirm(conn, params) do 
     with {:ok, args} <- confirm_parse_params(params),
          confirm = %Confirm{} <- get_confirm(args),
-         :ok <- handle_confirm(confirm, args.verb, get_staffer(conn, Map.get(params, "org", nil))) do
+         :ok <- handle_confirm(confirm, args.verb, get_auth(conn, Map.get(params, "org", nil))) do
       conn
       |> redirect(to: Map.get(args, :redir, "/"))
       |> halt()
@@ -114,16 +114,18 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp get_staffer(conn, org_name) do 
-    case Pow.Plug.current_user(conn) do 
+  defp get_auth(conn, org_name) do 
+    case conn.assigns.user do 
       nil -> nil 
-      user = %Proca.Users.User{} -> 
-        if is_nil(org_name), do: Staffer.for_user(user), else: Staffer.for_user_in_org(user, org_name)
+      user = %Proca.Users.User{} -> %Auth{
+        user: user,
+        staffer: (if is_nil(org_name), do: Staffer.for_user(user), else: Staffer.for_user_in_org(user, org_name))
+      }
     end
   end
 
-  defp handle_confirm(confirm, "accept", staffer) do 
-    case Confirm.confirm(confirm, staffer) do 
+  defp handle_confirm(confirm, "accept", auth) do 
+    case Confirm.confirm(confirm, auth) do 
       :ok -> :ok
       {:ok, _} -> :ok
       {:error, "unauthorized"} -> {:error, 401, "unauthorized"}
@@ -132,8 +134,8 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp handle_confirm(confirm, "reject", staffer) do 
-    case Confirm.reject(confirm, staffer) do
+  defp handle_confirm(confirm, "reject", auth) do 
+    case Confirm.reject(confirm, auth) do
       :ok -> :ok
       {:ok, _} -> :ok
       {:error, "unauthorized"} -> {:error, 401, "Unauthorized"}

@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.Service do
   alias ProcaWeb.Helper
   import Proca.Repo
 
-  def upsert_service(_p, attrs = %{name: name}, %{context: %{org: org}}) do 
+  def upsert_service(_p, %{input: attrs = %{name: name}}, %{context: %{org: org}}) do
     result = case Service.get_one_for_org(name, org) do 
       nil -> Service.build_for_org(attrs, org, name)
       srv -> Service.changeset(srv, attrs)

@@ -30,7 +30,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       arg :name, non_null(:string)
       arg :confirm, non_null(:confirm_input)
 
-      resolve &ProcaWeb.Resolvers.Confirm.org_confirm/3
+      resolve &Resolvers.Confirm.org_confirm/3
     end
 
     @desc "Reject a confirm on behalf of organisation."
@@ -40,7 +40,19 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       arg :name, non_null(:string)
       arg :confirm, non_null(:confirm_input)
 
-      resolve &ProcaWeb.Resolvers.Confirm.org_reject/3
+      resolve &Resolvers.Confirm.org_reject/3
+    end
+
+    field :accept_user_confirm, type: non_null(:confirm_result) do 
+      middleware Authorized
+      arg :confirm, non_null(:confirm_input)
+      resolve &Resolvers.Confirm.user_confirm/3
+    end
+
+    field :reject_user_confirm, type: non_null(:confirm_result) do 
+      middleware Authorized
+      arg :confirm, non_null(:confirm_input)
+      resolve &Resolvers.Confirm.user_reject/3
     end
   end
 

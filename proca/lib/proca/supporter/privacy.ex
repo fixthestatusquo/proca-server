@@ -48,7 +48,7 @@ defmodule Proca.Supporter.Privacy do
   """
 
   alias Proca.Supporter.{Privacy, Consent}
-  alias Proca.{ActionPage, Org}
+  alias Proca.{ActionPage, Org, Campaign, Action}
 
   defstruct opt_in: false,
             lead_opt_in: false
@@ -110,11 +110,18 @@ defmodule Proca.Supporter.Privacy do
   end
 
   @doc "Which supporter fields are cleared after processing"
-  def transient_fields(%ActionPage{org: %Org{high_security: true}}) do
+  def transient_supporter_fields(%ActionPage{org: %Org{high_security: true}}) do
     [:email, :first_name]
   end
 
-  def transient_fields(_) do
+  def transient_supporter_fields(_) do
     [:email] 
+  end
+
+  def transient_action_fields(%Action{action_type: action_type}, %ActionPage{campaign: %Campaign{transient_actions: afs}}) do 
+    x = action_type <> ":"
+    afs 
+    |> Enum.filter(fn af -> String.starts_with?(af, x) end)
+    |> Enum.map(fn af -> af |> String.split(":") |> Enum.at(1) end)
   end
 end

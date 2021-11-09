@@ -1,10 +1,43 @@
 defmodule Proca.TestEmailBackend do 
-  @behaviour Proca.Service.EmailBackend
+  @moduledoc """
+  A fake in memory email backend.
 
-  alias Proca.Service.{EmailTemplate, EmailBackend}
-  alias Bamboo.Email
+  Collects emails in a map:
+  - map( recipient_email_string -> [Email] )
+
+  Usage: 
+  ```
+  use Proca.TestEmailBackend
+  ```
+  """
+
+  # Test part
+  use ExUnit.CaseTemplate
+  def test_email_backend(context) do 
+    io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
+    backend = Proca.Factory.insert(:email_backend, org: io)
+    
+    _io = Ecto.Changeset.change(io)
+    |> Ecto.Changeset.put_assoc(:services, [backend])
+    |> Proca.Org.put_service(backend)
+    |> Proca.Repo.update!
+
+    context 
+    |> Map.put(:email_backend, Proca.TestEmailBackend.start_link([]))
+  end
+
+  using do 
+    quote do 
+      import Proca.TestEmailBackend, only: [
+        test_email_backend: 1, 
+        mailbox: 1
+      ]
+      setup :test_email_backend
+    end
+  end
+
+  # Server part
   use GenServer
-
   @impl true 
   def init(opts) do
     {:ok, %{opts: opts, mbox: %{}}}
@@ -33,7 +66,8 @@ defmodule Proca.TestEmailBackend do
 
   @impl true 
   def handle_call({:mailbox, address}, _from, s = %{mbox: mbox}) do
-    {:reply,  Map.get(mbox, address, nil), s}
+    m = Map.get(mbox, address, nil)
+    {:reply, m, s}
   end
 
   # GenServer client
@@ -43,7 +77,10 @@ defmodule Proca.TestEmailBackend do
 
   def mailbox(address), do: GenServer.call(__MODULE__, {:mailbox, address})
 
-
+  # Email Backend part
+  @behaviour Proca.Service.EmailBackend
+  alias Proca.Service.{EmailTemplate}
+  alias Bamboo.Email
   @impl true
   def supports_templates?(_org) do
     true
@@ -54,7 +91,11 @@ defmodule Proca.TestEmailBackend do
     t = [
       %EmailTemplate{ref: "ref:thankyouemail", name: "thank_you", subject: "Thank you email", html: "Thank you body"},
       %EmailTemplate{ref: "ref:addpartner", name: "add_partner", subject: "You are invited to join a campaign", html: "Invite body"},
-      %EmailTemplate{ref: "ref:launchpage", name: "launch_page", subject: "Partner request", html: "Can I join campaign?"}
+      %EmailTemplate{ref: "ref:launchpage", name: "launch_page", subject: "Partner request", html: "Can I join campaign?"},
+      %EmailTemplate{ref: "ref:addstaffer", name: "add_staffer", subject: "Invitation to org", html: "Welcome to our team"},
+      %EmailTemplate{ref: "ref:user_confirm_email", name: "user_confirm_email", subject: "Confirm your email", html: "Click here"},
+      %EmailTemplate{ref: "ref:user_reset_password", name: "user_reset_password", subject: "Reset password", html: "Click here"},
+      %EmailTemplate{ref: "ref:user_change_email", name: "user_change_email", subject: "Confirm change of email", html: "Click here"}
     ]
     {:ok, t}
   end

@@ -8,7 +8,7 @@ defmodule ProcaWeb.ExportActionResolverTest do
 
   doctest ProcaWeb.Resolvers.ExportActions
 
-  @export_via_api_perms Proca.Staffer.Permission.add(0, [:use_api, :export_contacts])
+  @export_via_api_perms Proca.Permission.add(0, [:use_api, :export_contacts])
 
   setup do
     %{org: org, pages: [ap]} = blue_story()

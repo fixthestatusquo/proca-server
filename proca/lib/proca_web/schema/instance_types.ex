@@ -1,6 +1,5 @@
 defmodule ProcaWeb.Schema.InstanceTypes do
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.Authorized
 
   object :instance_queries do

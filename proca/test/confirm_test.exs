@@ -52,7 +52,7 @@ defmodule ConfirmTest do
         } 
       """
 
-      res = conn |> auth_api_post(query, red_bot.user.email)
+      res = conn |> auth_api_post(query, red_bot.user)
       data = Jason.decode!(res.resp_body)
 
       assert data["data"]["acceptOrgConfirm"]["actionPage"]["name"] == "#{red_org.name}/sign"

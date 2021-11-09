@@ -9,22 +9,22 @@ defmodule Proca.Confirm.LaunchPage do
   alias Proca.Confirm
   @behaviour Confirm.Operation
 
-  alias Proca.{Campaign, ActionPage, Staffer, Org}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
 
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
-  import Proca.Staffer.Permission, only: [can?: 2]
+  import Proca.Permission, only: [can?: 2]
 
-  @spec create(ActionPage, Staffer, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, st = %Staffer{}, message \\ nil) do
+  @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
+  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
       subject_id: campaign_id,
       object_id: ap_id,
       message: message,
-      staffer: st
+      creator: user
     }
     |> Confirm.create()
   end
@@ -44,7 +44,7 @@ defmodule Proca.Confirm.LaunchPage do
           object_id: ap_id
         },
         :confirm,
-        st
+        %Auth{staffer: st}
       ) do
     with camp when not is_nil(camp) <- get(Campaign, campaign_id),
          ap when not is_nil(ap) <- ActionPage.find(ap_id),
@@ -58,7 +58,7 @@ defmodule Proca.Confirm.LaunchPage do
 
   # XXX remove the AP? Rude but makes sense
   @impl true
-  def run(%Confirm{operation: :launch_page}, :reject, _st), do: :ok
+  def run(%Confirm{operation: :launch_page}, :reject, _auth), do: :ok
 
   @impl true
   def email_template(%Confirm{operation: :launch_page}), do: "launch_page"

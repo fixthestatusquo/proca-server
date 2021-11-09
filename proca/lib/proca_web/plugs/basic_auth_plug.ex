@@ -5,8 +5,10 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   @behaviour Plug
 
   alias Plug.Conn
-  alias Pow.Plug
+  alias Proca.Auth
+  alias Proca.Users
   alias Proca.Users.User
+  alias ProcaWeb.UserAuth
   import ProcaWeb.Plugs.Helper
 
   def init(opts), do: opts
@@ -31,11 +33,12 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
 
   defp try_authorize(token, conn) do
     with {:ok, dec_tok} <- Base.decode64(token),
-         [email, pass] <- String.split(dec_tok, ":", parts: 2),
-         {:ok, conn} <- Plug.authenticate_user(conn, %{"email" => email, "password" => pass}) do
+         [email, pass] when email != "" and pass != "" <- String.split(dec_tok, ":", parts: 2),
+         user = %User{} <- Users.get_user_by_email_and_password(email, pass) do
       conn
+      |> UserAuth.assign_current_user(user)
     else
-      {:error, conn = %Conn{}} ->
+      nil ->
         conn
         |> error_halt(
           401,
@@ -50,9 +53,12 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
   end
 
   defp add_to_context(conn) do
-    case conn.assigns.user do
+    case conn.assigns[:user] do
       %User{} = u ->
-        Absinthe.Plug.assign_context(conn, %{user: u})
+        Absinthe.Plug.assign_context(conn, %{
+          user: u, # XXX for backward compatibility
+          auth: %Auth{user: u}
+        })
 
       nil ->
         conn

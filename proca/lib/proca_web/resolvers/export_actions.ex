@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   """
   import Ecto.Query
 
-  import Proca.Staffer.Permission
+  import Proca.Permission
 
   alias Proca.{Supporter, Action, Contact, Org, Staffer, PublicKey}
   alias Proca.Repo
@@ -93,9 +93,9 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     %{
       action_id: action.id,
       action_type: action.action_type,
+      custom_fields: action.fields,
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
-      fields: Enum.map(action.fields, &Map.take(&1, [:key, :value])),
       privacy: format_privacy(contact),
       trackng: action.source,
       campaign: action.campaign,
@@ -130,7 +130,6 @@ defmodule ProcaWeb.Resolvers.ExportActions do
           :action_page,
           :campaign,
           :source,
-          :fields,
           :donation
         ]
       )

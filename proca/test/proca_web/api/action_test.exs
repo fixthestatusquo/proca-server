@@ -45,10 +45,10 @@ defmodule ProcaWeb.Api.ActionTest do
 
     [action] =
       Repo.all(
-        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:fields, :supporter])
+        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter])
       )
 
-    assert action.fields == []
+    assert action.fields == %{}
     assert action.processing_status == :new
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id
@@ -67,10 +67,10 @@ defmodule ProcaWeb.Api.ActionTest do
 
     [action] =
       Repo.all(
-        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:fields, :supporter])
+        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter])
       )
 
-    assert length(action.fields) == 2
+    assert map_size(action.fields) == 2
     assert action.processing_status == :new
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id

@@ -1,0 +1,46 @@
+<nav class="bg-gradient-to-r from-primary to-secondary relative z-10">
+  <!-- big bar -->
+  <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+    <!-- make left and right side, and height -->
+    <div class="relative flex items-center justify-between h-16 z-10">
+      <div class="flex-1 flex items-center justify-start">
+        <!-- logo -->
+        <div class="h-10 w-10 rounded-full border-2 border-gray-300 mr-10">
+          <a href="/">
+          <img class="h-full w-full mx-auto"
+            src="<%= Routes.static_path(@conn, "/images/proca-logo.png") %>" 
+            alt="Proca logo" />
+          </a>
+        </div>
+        <div class="flex space-x-4">
+        <%= if UserAuth.auth_enabled?(:local) do %>
+        <% btn_class="btn bg-logo-gray" %>
+        <%= if @user do %>
+        <%= link "Settings", to: Routes.user_settings_path(@conn, :edit), class: btn_class %>
+        <%= link "Log out", to: Routes.user_session_path(@conn, :delete), method: :delete, class: btn_class %>
+        <% else %>
+        <%= link "Register", to: Routes.user_registration_path(@conn, :new), class: btn_class %>
+        <%= link "Log in", to: Routes.user_session_path(@conn, :new), class: btn_class %>
+        <% end %>
+        <% end %>
+
+        <%= if UserAuth.auth_enabled?(:sso) do %>
+        <% btn_class="btn bg-logo-gray" %>
+        <%= if is_nil @user do %>
+        <%= link "Single Sign On", to: UserAuth.sso_url(@conn), class: btn_class %>
+        <% end %>
+        <% end %>
+        
+        </div>
+
+      </div>      
+      <div class="absolute inset-y-0 right-0 flex items-center pr-2">
+      <%= if @user do %>
+        <img class="h-10 w-10 rounded-full border-2 border-gray-300 " src="<%= gravatar_url(@user) %>" alt="">
+      <% end %>
+      </div>
+    </div>
+  </div>
+
+</nav>
+

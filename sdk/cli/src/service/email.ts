@@ -1,10 +1,10 @@
 
 import mailjet from "node-mailjet"
-import {ActionMessage} from '../queueMessage'
+import {ActionMessageV2} from '../queueMessage'
 import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
 
-export async function syncAction(action : ActionMessage, _1: ServiceOpts, _2 : CliConfig) {
+export async function syncAction(action : ActionMessageV2, _1: ServiceOpts, _2 : CliConfig) {
   const conn = connect()
 
   const tmplId = process.env['MAILJET_TEMPLATE'] || action.actionPage.thankYouTemplateRef
@@ -34,7 +34,7 @@ export function connect() {
   return conn
 }
 
-export function varsFromAction(action : ActionMessage) {
+export function varsFromAction(action : ActionMessageV2) {
   let vars = {
     first_name: action.contact ? action.contact.firstName : null,
     email: action.contact ? action.contact.email : null,
@@ -53,7 +53,7 @@ export function varsFromAction(action : ActionMessage) {
     })
   }
 
-  vars = Object.assign(vars, action.action.fields)
+  vars = Object.assign(vars, action.action.customFields)
 
   return vars
 }

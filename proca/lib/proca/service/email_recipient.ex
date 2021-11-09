@@ -3,6 +3,7 @@ defmodule Proca.Service.EmailRecipient do
   Represents an email recipient, for email templates that can be persnonalized.
   """
   alias Proca.Service.EmailRecipient
+  import Proca.Repo, only: [preload: 2]
 
   defstruct first_name: "", email: "", ref: "", fields: %{}
 
@@ -10,8 +11,12 @@ defmodule Proca.Service.EmailRecipient do
     rcpt = %EmailRecipient{
       first_name: get_in(action_data, ["contact", "firstName"]),
       email: get_in(action_data, ["contact", "email"]),
-      ref: get_in(action_data, ["contact", "ref"])
+      ref: case action_data do 
+        %{"schema" => "proca:action:1"} -> get_in(action_data, ["contact", "ref"])
+        %{"schema" => "proca:action:2"} -> get_in(action_data, ["contact", "contactRef"])
+      end
     }
+
 
     fields = get_in(action_data, ["action", "fields"])
 
@@ -42,13 +47,15 @@ defmodule Proca.Service.EmailRecipient do
     cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
     ) do 
 
+      cnf = preload(cnf, [:creator])
+
       cflds = %{
         "confirm_code" => confirm_code, 
         "confirm_email" => email || "",
         "confirm_message" => message || "",
         "confirm_subject_id" => subj_id,
         "confirm_object_id" => obj_id || "",
-        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.user.email, else: ""),
+        "confirm_creator_email" => (if cnf.creator != nil, do: cnf.creator.email, else: ""),
 
         "confirm_link" => Proca.Stage.Support.confirm_link(cnf, :confirm),
         "reject_link" => Proca.Stage.Support.confirm_link(cnf, :reject)

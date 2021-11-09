@@ -112,11 +112,11 @@ defmodule Proca.PublicKey do
     [:public, :private]
     |> Enum.reduce(ch, fn f, ch ->
       case get_change(ch, f) do
+        nil -> ch
         encoded -> case base_decode(encoded) do
                      {:ok, decoded} -> change(ch, %{f => decoded})
                      :error -> add_error(ch, f, "must be Base64url encoded")
                    end
-        nil -> ch
       end
 
     end)

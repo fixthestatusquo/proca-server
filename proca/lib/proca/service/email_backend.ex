@@ -53,6 +53,10 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:list_templates, [org])
   end
 
+  @doc """
+  Delivers an email using EmailTemplate to a list of EmailRecipients. Uses Org's email service.
+  Can throw EmailBackend.NotDelivered which wraps service error.
+  """
   @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
@@ -68,6 +72,8 @@ defmodule Proca.Service.EmailBackend do
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])
     apply(backend, :deliver, [e, org])
+
+    :ok
   end
 
   # Org uses own email backend

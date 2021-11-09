@@ -176,6 +176,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:email_backend, :service_name)
       arg(:email_from, :string)
 
+      arg(:custom_supporter_confirm, :boolean)
+      arg(:custom_action_confirm, :boolean)
+      arg(:custom_action_deliver, :boolean)
+      arg(:sqs_deliver, :boolean)
+
       resolve(&Resolvers.Org.update_org_processing/3)
     end
 
@@ -302,5 +307,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
   object :processing do 
     field :email_from, :string
     field :email_backend, :service_name
+
+    field :custom_supporter_confirm, non_null(:boolean)
+    field :custom_action_confirm, non_null(:boolean)
+    field :custom_action_deliver, non_null(:boolean)
+    field :sqs_deliver, non_null(:boolean)
   end
 end

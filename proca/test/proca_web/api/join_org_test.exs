@@ -4,13 +4,16 @@ defmodule ProcaWeb.Api.JoinOrg do
   alias Proca.Factory
   import Ecto.Changeset
   alias Proca.{Repo,Staffer,Org}
+  alias Proca.Users.User
 
-  describe "Admin in red, wants to access api of yellow" do 
+  describe "Red org user is Admin, wants to access api of yellow" do 
     setup do 
       story = red_story()
-      {:ok, red_bot} = Staffer.Role.change(story.red_bot, :admin) |> Repo.update()
+      %{red_bot: red_bot} = story
 
-      Map.put(story, :red_bot, red_bot)
+      {:ok, red_user} = Proca.Users.User.update(red_bot.user, [:admin]) 
+
+      %{story | red_bot: %{red_bot | user: red_user}}
     end
 
     test "Red bot cannot join yellow org (not instance org)", %{
@@ -25,7 +28,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
       assert res = %{errors: [%{
         extensions: %{code: "permission_denied"}
@@ -36,9 +39,8 @@ defmodule ProcaWeb.Api.JoinOrg do
     test "Red bot in hq can join yellow org", %{
       conn: conn, red_bot: %{user: red_user}
         } do 
-      hq = Repo.get_by Org, name: "hq"
-      adst = Staffer.build_for_user(red_user, hq.id, Staffer.Role.permissions(:admin))
-      |> Repo.insert!
+      hq = Repo.get_by Org, name: Org.instance_org_name()
+      {:ok, adst} = Staffer.create(org: hq, user: red_user)
 
       query = """
         mutation Join {
@@ -49,20 +51,18 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [], data: %{"joinOrg" => %{"status"=>"SUCCESS"}}}
     end
 
-    test "Red bod in hq but no join_orgs cannot join", %{
+    test "Red bot with istance admin rights but no join_orgs cannot join", %{
       conn: conn, red_bot: %{user: red_user}
         } do 
-      hq = Repo.get_by Org, name: "hq"
-      adst = Staffer.build_for_user(red_user, hq.id, 
-        Staffer.Role.permissions(:admin) |> List.delete(:join_orgs)
-        )
-      |> Repo.insert!
+      hq = Repo.get_by Org, name: Org.instance_org_name()
+      {:ok, red_user} = User.update(red_user, perms: [:instance_owner])
+      {:ok, adst} = Staffer.create(user: red_user, org: hq)
 
       query = """
         mutation Join {
@@ -73,7 +73,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [%{
@@ -85,9 +85,6 @@ defmodule ProcaWeb.Api.JoinOrg do
     test "Red bot can join yellow org and update page", %{
       conn: conn, red_bot: %{user: red_user}, yellow_ap: yellow_ap
         } do 
-      hq = Repo.get_by Org, name: "hq"
-      adst = Staffer.build_for_user(red_user, hq.id, Staffer.Role.permissions(:admin))
-      |> Repo.insert!
 
       query = """
         mutation JoinAndUpdate {
@@ -105,7 +102,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       """
       res =
         conn
-        |> auth_api_post(query, red_user.email, red_user.email)
+        |> auth_api_post(query, red_user)
         |> json_response(200)
 
       assert res = %{errors: [], data: %{
@@ -113,7 +110,5 @@ defmodule ProcaWeb.Api.JoinOrg do
         "updateActionPage" => %{"locale" => "fr"}
         }}
     end
-
   end
-
 end 

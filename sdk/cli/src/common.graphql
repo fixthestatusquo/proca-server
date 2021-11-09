@@ -127,7 +127,7 @@ fragment actionExport on Action {
   contact {
     ...contactExport
   }
-  fields { key value }
+  customFields
   tracking {
     source
     medium

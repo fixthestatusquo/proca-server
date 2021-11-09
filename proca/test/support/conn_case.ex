@@ -23,24 +23,32 @@ defmodule ProcaWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       alias ProcaWeb.Router.Helpers, as: Routes
+      alias ProcaWeb.UserAuth
+      alias Proca.Users.User
 
       # The default endpoint for testing
       @endpoint ProcaWeb.Endpoint
 
-      def auth_api_post(conn, query, user, password) do
+      def auth_api_post(conn, query, %User{email: email}) do
+        auth_api_post(conn, query, email, 
+          Proca.Factory.password_from_email(email))
+      end
+
+      def auth_api_post(conn, query, email, password) 
+        when is_bitstring(email) and is_bitstring(password) do
         conn
-        |> put_req_header("authorization", "Basic " <> Base.encode64(user <> ":" <> password))
+        |> put_req_header("authorization", "Basic " <> Base.encode64(email <> ":" <> password))
+        |> api_post(query)
+      end
+
+      def api_post(conn, query) when is_bitstring(query) do
+        conn
         |> post("/api", %{query: query})
       end
 
-
-      def auth_api_post(conn, query, user) do
-        auth_api_post(conn, query, user, user)
-      end
-
-      def api_post(conn, query) do
+      def api_post(conn, query) when is_map(query) do
         conn
-        |> post("/api", %{query: query})
+        |> post("/api", query)
       end
 
       def is_success(res) do
@@ -56,6 +64,32 @@ defmodule ProcaWeb.ConnCase do
         end)
         res
       end
+
+      @doc """
+      Setup helper that registers and logs in users.
+
+      setup :register_and_log_in_user
+
+      It stores an updated connection and a registered user in the
+      test context.
+      """
+      def register_and_log_in_user(%{conn: conn}) do
+        user = Proca.UsersFixtures.user_fixture()
+        %{conn: log_in_user(conn, user), user: user}
+      end
+
+      @doc """
+      Logs the given `user` into the `conn`.
+
+      It returns an updated `conn`.
+      """
+      def log_in_user(conn, user) do
+        token = Proca.Users.generate_user_session_token(user)
+
+        conn
+        |> Phoenix.ConnTest.init_test_session(%{})
+        |> Plug.Conn.put_session(:user_token, token)
+      end
     end
   end
 
@@ -68,4 +102,7 @@ defmodule ProcaWeb.ConnCase do
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+
+
 end

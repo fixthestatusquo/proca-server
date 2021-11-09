@@ -24,8 +24,8 @@ defmodule Proca.StoryFactory do
     }
   end
 
-  @api_perms Proca.Staffer.Permission.add(0, [:use_api, :manage_campaigns, :manage_action_pages])
-  @owner_perms Proca.Staffer.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
+  @api_perms Proca.Permission.add(0, [:manage_campaigns, :manage_action_pages])
+  @owner_perms Proca.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
 
   @red_website "red.org"
   @yellow_website "yellow.org"
@@ -50,6 +50,7 @@ defmodule Proca.StoryFactory do
       red_campaign: red_camp, yellow_campaign: yellow_camp,
       red_ap: red_ap,         yellow_ap: yellow_ap,
       orange_aps: [orange_ap1, orange_ap2],
+      red_user: red_bot.user, yellow_user: yellow_owner.user,
       red_bot: red_bot,       yellow_owner: yellow_owner,
     }
 

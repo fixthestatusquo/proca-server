@@ -21,6 +21,7 @@ defmodule Proca.Org do
     has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
 
     field :contact_schema, ContactSchema, default: :basic
+    field :action_schema_version, :integer, default: 2
 
     # avoid storing transient data in clear
     # XXX rename to a more adequate :strict_privacy
@@ -58,7 +59,12 @@ defmodule Proca.Org do
       :email_from,
       :email_opt_in, :email_opt_in_template, 
       :config, 
-      :high_security
+      :high_security,
+
+      :custom_supporter_confirm,
+      :custom_action_confirm,
+      :custom_action_deliver,
+      :system_sqs_deliver
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
@@ -94,6 +100,7 @@ defmodule Proca.Org do
 
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
+  def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
   def all(q, [{:id, id} | kw]), do: where(q, [o], o.id == ^id) |> all(kw) 
 
   def all(q, [:active_public_keys | kw]) do 
@@ -156,10 +163,13 @@ defmodule Proca.Org do
     Proca.Repo.one from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1)
   end
 
-  def put_service(%Org{} = org, %Proca.Service{name: name} = service) 
+
+  def put_service(%Org{} = org, service), do: put_service(change(org), service)
+
+  def put_service(%Ecto.Changeset{} = ch, %Proca.Service{name: name} = service)
     when name in [:mailjet, :testmail]
     do
-    change(org)
+    ch
     |> put_assoc(:email_backend, service)
     |> put_assoc(:template_backend, service)
   end
