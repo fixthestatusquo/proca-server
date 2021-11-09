@@ -68,5 +68,5 @@ defmodule Proca.Confirm.AddPartner do
   def email_template(%Confirm{operation: :add_partner}), do: "add_partner"
 
   @impl true 
-  def email_fields(_), do: %{}
+  def notify_fields(_), do: %{}
 end

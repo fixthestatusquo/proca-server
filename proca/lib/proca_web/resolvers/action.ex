@@ -34,7 +34,7 @@ defmodule ProcaWeb.Resolvers.Action do
   defp get_tracking(%{tracking: tr}, referer) do
     case tr 
       |> add_tracking_location(referer)
-      |> Source.get_or_create_by() 
+      |> Source.get_or_create_by()
     do
       {:ok, src} -> {:ok, src}
       _ -> {:ok, nil}

@@ -103,7 +103,9 @@ defmodule ProcaWeb.Resolvers.Org do
       custom_supporter_confirm: org.custom_supporter_confirm,
       custom_action_confirm: org.custom_action_confirm,
       custom_action_deliver: org.custom_action_deliver,
-      sqs_deliver: org.system_sqs_deliver
+      sqs_deliver: org.system_sqs_deliver,
+      event_processing: org.event_processing,
+      confirm_processing: org.confirm_processing
       }}
   end
 

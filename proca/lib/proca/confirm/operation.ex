@@ -18,6 +18,6 @@ defmodule Proca.Confirm.Operation do
     :ok | {:ok, %ActionPage{}} | {:ok, %Campaign{}}, {:ok, %Org{}} | {:error, any()}
 
   @callback email_template(%Confirm{}) :: String.t()
-  @callback email_fields(%Confirm{}) :: map()
+  @callback notify_fields(%Confirm{}) :: map()
 
 end 

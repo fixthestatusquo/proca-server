@@ -1,6 +1,6 @@
 defmodule Proca.Confirm do
   @moduledoc """
-  Confirm represents an action deferred in time.
+  Confirm represents a confirmable action deferred in time.
 
   OPERATION
   SUBJECT_ID - requester id 
@@ -136,6 +136,24 @@ defmodule Proca.Confirm do
     String.split(email, "@") |> List.first
   end
 
+  def notify_fields(
+    cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
+  ) do
+
+    operation = Confirm.Operation.mod(cnf)
+    cnf = Proca.Repo.preload(cnf, [:creator])
+
+    %{
+      email: email || "",
+      message: message || "",
+      subject_id: subj_id,
+      object_id: obj_id || "",
+      creator_email: (if cnf.creator != nil, do: cnf.creator.email, else: ""),
+      accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
+      reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
+    } |> Map.merge(operation.notify_fields(cnf))
+  end
+
 
   @doc """
   Send a confirm operation specific email notification to list of emails or to confirm email.
@@ -155,9 +173,8 @@ defmodule Proca.Confirm do
       %EmailRecipient{
         first_name: notify_first_name(email),
         email: email,
-        fields: operation.email_fields(cnf)
+        fields: operation.notify_fields(cnf)
       }
-      |> EmailRecipient.put_confirm(cnf)
     end)
 
     with {:ok, template_ref} <- EmailTemplateDirectory.ref_by_name_reload(
