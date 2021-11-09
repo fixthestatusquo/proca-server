@@ -39,6 +39,11 @@ defmodule Proca.Pipes.Topology do
                                     DLX:x org.N.fail fanout> org.N.fail
                                     DLX:x org.N.retry direct:$qn-> =$qn
 
+  Event Routing Key: event_type.sub_type
+
+  x org.N.event      # > =wrk.N.event.webhook
+                     # > =cus.N.event
+
   [*] - not yet implemented
   ```
 
@@ -101,6 +106,7 @@ defmodule Proca.Pipes.Topology do
     :ok = Exchange.declare(chan, xn(o, "deliver"), :topic, durable: true)
     :ok = Exchange.declare(chan, xn(o, "fail"), :fanout, durable: true)
     :ok = Exchange.declare(chan, xn(o, "retry"), :direct, durable: true)
+    :ok = Exchange.declare(chan, xn(o, "event"), :fanout, durable: true) # TODO -> topic or direct?
   end
 
   def declare_retry_circuit(chan, o = %Org{}) do

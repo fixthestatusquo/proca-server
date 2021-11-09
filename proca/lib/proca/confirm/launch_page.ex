@@ -64,27 +64,33 @@ defmodule Proca.Confirm.LaunchPage do
   def email_template(%Confirm{operation: :launch_page}), do: "launch_page"
 
   @impl true
-  def email_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
+  def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
     %Campaign{name: campaign_name, title: campaign_title} = get(Campaign, campaign_id)
     %ActionPage{org: %{name: org_name, title: org_title} = org} = ActionPage.find(ap_id)
 
     %{
-      "campaign_name" => campaign_name,
-      "campaign_title" => campaign_title,
-      "org_name" => org_name,
-      "org_title" => org_title
+      campaign: %{
+        name: campaign_name,
+        title: campaign_title
+      },
+      org: %{
+        name: org_name,
+        title: org_title
+      } |> Map.merge(email_org_config_fields(org))
     }
-    |> Map.merge(email_org_config_fields(org))
+
   end
 
   def email_org_config_fields(%Org{config: config}) do
     data = %{
-      "org_twitter_name" => get_in(config, ["twitter", "name"]),
-      "org_twitter_screen_name" => get_in(config, ["twitter", "screen_name"]),
-      "org_twitter_picture" => get_in(config, ["twitter", "picture"]),
-      "org_twitter_description" => get_in(config, ["twitter", "description"]),
-      "org_twitter_url" => get_in(config, ["twitter", "url"]),
-      "org_twitter_followers_count" => get_in(config, ["twitter", "followers_count"])
+      twitter: %{
+        name: get_in(config, ["twitter", "name"]),
+        screen_name: get_in(config, ["twitter", "screen_name"]),
+        picture: get_in(config, ["twitter", "picture"]),
+        description: get_in(config, ["twitter", "description"]),
+        url: get_in(config, ["twitter", "url"]),
+        followers_count: get_in(config, ["twitter", "followers_count"])
+      }
     }
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)

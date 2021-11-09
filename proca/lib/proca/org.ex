@@ -45,6 +45,9 @@ defmodule Proca.Org do
     field :custom_action_deliver, :boolean
     field :system_sqs_deliver, :boolean
 
+    field :event_processing, :boolean # for system events from Proca.Server.Notify
+    field :confirm_processing, :boolean # confirmable operations
+
     field :config, :map
 
     timestamps()
@@ -64,7 +67,10 @@ defmodule Proca.Org do
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
-      :system_sqs_deliver
+      :system_sqs_deliver,
+
+      :event_processing,
+      :confirm_processing
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)

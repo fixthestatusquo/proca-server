@@ -194,6 +194,7 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
+  ## XXX use this ?
   defp add_action_confirm(rcpt = %EmailRecipient{}, action_id) do 
     confirm = Proca.Confirm.ConfirmAction.create(%Action{id: action_id})
     EmailRecipient.put_confirm(rcpt, confirm)
