@@ -17,6 +17,7 @@ defmodule ProcaWeb.Schema.EciSchema do
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.UserTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
+  import_types(ProcaWeb.Schema.TargetTypes)
 
   # use Absinthe.Schema.Notation
 

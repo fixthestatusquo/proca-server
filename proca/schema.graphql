@@ -30,6 +30,8 @@ interface Campaign {
 
   org: Org!
 
+  targets: [Target]
+
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -64,6 +66,8 @@ type PublicCampaign implements Campaign {
 
   org: Org!
 
+  targets: [Target]
+
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -72,6 +76,10 @@ type PublicCampaign implements Campaign {
     "Limit the number of returned actions, default is 10, max is 100)"
     limit: Int!
   ): PublicActionsResult!
+}
+
+input TargetEmail {
+  email: String!
 }
 
 "Tracking codes"
@@ -663,6 +671,8 @@ type RootMutationType {
   acceptUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
+
+  upsertTargets(targets: [TargetInput]!): [Target]!
 }
 
 type RootQueryType {
@@ -722,6 +732,8 @@ type RootQueryType {
     "Name of organisation"
     name: String!
   ): PrivateOrg!
+
+  targets(campaignId: Int!): [Target]!
 }
 
 interface Org {
@@ -947,6 +959,8 @@ type PrivateCampaign implements Campaign {
 
   org: Org!
 
+  targets: [Target]
+
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -1034,6 +1048,13 @@ type ContactReference {
   firstName: String
 }
 
+type Target {
+  id: String!
+  name: String!
+  area: String
+  fields: Json
+}
+
 input StripePaymentIntentInput {
   amount: Int!
   currency: String!
@@ -1102,6 +1123,15 @@ input OrgInput {
 type CustomField {
   key: String!
   value: String!
+}
+
+input TargetInput {
+  name: String!
+  area: String
+  campaignId: Int!
+  externalId: String!
+  fields: Json
+  emails: [TargetEmail]
 }
 
 input UserInput {
