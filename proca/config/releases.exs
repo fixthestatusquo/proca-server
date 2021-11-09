@@ -22,6 +22,16 @@ config :proca, Proca.Pipes,
     keyfile: System.get_env("AMQP_KEYFILE")
   ]
 
+sso_home_url = System.get_env("SSO_HOME_URL")
+local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
+
+config :proca, ProcaWeb.UserAuth,
+  local: [enabled: local_auth_enable],
+  sso: [
+      enabled: not is_nil(sso_home_url), 
+      home_url: sso_home_url
+    ]
+
 config :proca, Proca.Server.Jwks,
   url: System.get_env("JWKS_URL")
 
@@ -30,13 +40,6 @@ secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
   raise """
   environment variable SECRET_KEY_BASE is missing.
-  You can generate one by calling: mix phx.gen.secret
-  """
-
-live_view_signing_salt =
-  System.get_env("SIGNING_SALT") ||
-  raise """
-  environment variable SIGNING_SALT is missing.
   You can generate one by calling: mix phx.gen.secret
   """
 
@@ -72,6 +75,7 @@ config :proca, Proca.Service.Procaptcha,
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "60000"),
+  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL") || "30000"),
   require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
 
 config :proca, Proca.Supporter,

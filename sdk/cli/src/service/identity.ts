@@ -1,6 +1,6 @@
 import bent from 'bent'
 import debug from 'debug'
-import {ActionMessage} from '../queueMessage'
+import {ActionMessageV2} from '../queueMessage'
 import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
 import {removeBlank} from '../util'
@@ -17,7 +17,7 @@ type Consent = {
   locale?: string
 }
 
-export async function syncAction(action : ActionMessage, argv : ServiceOpts, config : CliConfig) {
+export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, config : CliConfig) {
   const url = argv.service_url || config.identity_url 
   const api_token = config.identity_api_token 
   const comm_consent = config.identity_consent
@@ -73,7 +73,7 @@ type DataApiSource = {
  * - action_technical_type
  * - language
  */
-export function toDataApi(action : ActionMessage,
+export function toDataApi(action : ActionMessageV2,
                           consent_map : ConsentConfig,
                           action_fields : string[],
                           contact_fields : string[]) {
@@ -110,13 +110,13 @@ export function toDataApi(action : ActionMessage,
 
   custom_fields.push({name: "contactRef", value: action.contact.ref});
 
-  for (const [key,value] of Object.entries(action.action.fields)) {
+  for (const [key,value] of Object.entries(action.action.customFields)) {
     if ((action_fields || []).includes(key.toLowerCase())) {
-      metadata[key] = value
+      metadata[key] = `${value}`
     }
 
     if ((contact_fields || []).includes(key.toLowerCase())) {
-      custom_fields.push({name: key, value: value})
+      custom_fields.push({name: key, value: `${value}`})
     }
   }
 
@@ -138,7 +138,7 @@ export function toDataApi(action : ActionMessage,
   return ah
 }
 
-export function toConsent(action : ActionMessage, consent_id : string, consent : Consent) {
+export function toConsent(action : ActionMessageV2, consent_id : string, consent : Consent) {
   const {level, locale} = consent
   // Skip if this is not this locale
   if (locale && locale.toLowerCase() != action.actionPage.locale.toLowerCase())
@@ -154,7 +154,7 @@ export function toConsent(action : ActionMessage, consent_id : string, consent :
   // Handle opt in to communication
   if (level == 'communication') {
     if (action.privacy) {
-      if (action.privacy.communication) {
+      if (action.privacy.optIn) {
         return {
           public_id: consent_id,
           consent_level: 'explicit_opt_in'

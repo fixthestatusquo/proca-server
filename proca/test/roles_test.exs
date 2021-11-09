@@ -3,7 +3,7 @@ defmodule RolesTest do
   doctest Proca.Staffer.Role
   alias Proca.{Staffer}
   alias Proca.Staffer.Role
-  import Proca.Staffer.Permission, only: [can?: 2, add: 2]
+  import Proca.Permission, only: [can?: 2, add: 2]
   alias Ecto.Changeset
 
   test "can change roles" do

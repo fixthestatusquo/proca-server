@@ -100,12 +100,7 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) do
-    ap =
-      from(ap in ActionPage,
-        where: ap.id == ^ap_id,
-        preload: [org: [[email_backend: :org], :template_backend]]
-      )
-      |> Repo.one()
+    ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
 
     recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
 
@@ -133,7 +128,7 @@ defmodule Proca.Stage.EmailSupporter do
 
     recipients = Enum.map(messages, fn m -> 
       EmailRecipient.from_action_data(m.data) 
-      |> add_supporter_confirm(m)
+      |> add_supporter_confirm(m.data)
     end)
 
     tmpl_name = org.email_opt_in_template || org.template_backend.org.email_opt_in_template
@@ -204,7 +199,7 @@ defmodule Proca.Stage.EmailSupporter do
     EmailRecipient.put_confirm(rcpt, confirm)
   end
 
-  defp add_supporter_confirm(rcpt = %EmailRecipient{}, %Message{data: data}) do 
+  defp add_supporter_confirm(rcpt = %EmailRecipient{}, data) do 
     action_id = data["actionId"]
     ref = data["contact"]["ref"]
     EmailRecipient.put_fields(rcpt, [

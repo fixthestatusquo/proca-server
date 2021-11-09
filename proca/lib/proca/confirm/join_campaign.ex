@@ -6,14 +6,15 @@ defmodule Proca.Confirm.JoinCampaign do
   v2. A successful confirm creates a partnership.
   """
   alias Proca.Confirm
-  alias Proca.{Campaign, ActionPage, Staffer, Org}
+  @behaviour Confirm.Operation
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
   alias Proca.Repo
   import Ecto.Query
 
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
-  import Proca.Staffer.Permission, only: [can?: 2]
+  import Proca.Permission, only: [can?: 2]
 
-  def create(%Campaign{id: campaign_id} = campaign, %Staffer{org_id: org_id}) do 
+  def create(%Campaign{id: campaign_id} = campaign, %Auth{staffer: %Staffer{org_id: org_id}}) do 
     # XXX test for campaign manager
     %{
       operation: :join_campaign,
@@ -30,7 +31,7 @@ defmodule Proca.Confirm.JoinCampaign do
     operation: :join_campaign,
     subject_id: org_id,
     object_id: campaign_id
-  }, :confirm, st) do
+  }, :confirm, %Auth{staffer: st}) do
 
     with org when not is_nil(org) <- Org.get_by_id(org_id),
          c  when not is_nil(c) <- Repo.get(Campaign, campaign_id),
@@ -48,8 +49,9 @@ defmodule Proca.Confirm.JoinCampaign do
     end
   end
 
-  def run(%Confirm{operation: :join_campaign}, :reject, _st), do: :ok     
+  def run(%Confirm{operation: :join_campaign}, :reject, _auth), do: :ok     
 
+  def email_fields(%Confirm{}), do: %{}
 
 
 

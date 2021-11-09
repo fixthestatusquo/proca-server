@@ -10,13 +10,13 @@ defmodule ProcaWeb.Resolvers.Authorized do
   @behaviour Absinthe.Middleware
 
   alias Proca.Repo
-  alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer}
+  alias Proca.{Org, Campaign, ActionPage, Users.User, Staffer, Permission, Auth}
   import Ecto.Query
-  import ProcaWeb.Helper, only: [msg_ext: 3, cant_msg: 1, msg_ext: 2]
+  import ProcaWeb.Helper, only: [cant_msg: 1, msg_ext: 2]
 
   def call(resolution, opts) do
     case resolution.context do
-      %{user: user = %User{}} ->
+      %{auth: %Auth{user: user = %User{}}} ->
         resolution
         |> verify_access(user, Keyword.get(opts, :access, :auth_only))
         |> verify_perms(Keyword.get(opts, :can?, nil))
@@ -41,6 +41,8 @@ defmodule ProcaWeb.Resolvers.Authorized do
     end
 
     by_fields = Keyword.get(opts, :by, [:id, :name])
+
+    ## XXX change to get authorization context
     case get_staffer_for_resource(user, resource_type, args, by_fields) do
       nil ->
         resolution
@@ -49,13 +51,14 @@ defmodule ProcaWeb.Resolvers.Authorized do
         )
 
       {staffer, resource} ->
-          %{
-            resolution
-            | context:
-                resolution.context
-                |> Map.put(:staffer, staffer)
-                |> Map.put(resource_type, resource)
-          }
+        %{
+          resolution
+          | context:
+              resolution.context
+              |> Map.put(:staffer, %{staffer | user: user})                     # XXX remove after context.auth is used everywhere
+              |> Map.put(:auth, %{resolution.context.auth | staffer: staffer})
+              |> Map.put(resource_type, resource)
+        }
     end
   end
 
@@ -63,14 +66,26 @@ defmodule ProcaWeb.Resolvers.Authorized do
     resolution
   end
 
+  # for case when previous check in this middleware returns an error - and resolved state: pass
   def verify_perms(resolution = %{state: :resolved}, _) do
     resolution
   end
 
   def verify_perms(resolution = %{context: %{staffer: staffer}}, perms) do
-    if Staffer.Permission.can?(staffer, perms) do
+    if Permission.can?(staffer, perms) do
       resolution
     else
+      resolution
+      |> Absinthe.Resolution.put_result(
+        {:error, cant_msg(perms)}
+      )
+    end
+  end
+
+  def verify_perms(resolution = %{context: %{user: user}}, perms) do 
+    if Permission.can?(user, perms) do 
+      resolution
+    else 
       resolution
       |> Absinthe.Resolution.put_result(
         {:error, cant_msg(perms)}
@@ -83,12 +98,6 @@ defmodule ProcaWeb.Resolvers.Authorized do
     |> Absinthe.Resolution.put_result({
         :error, msg_ext("No object accessed, thus no permission can be verified", "permission_denied")
       })
-  end
-
-  def get_staffer_for_resource(user, :instance_org, _args, _by_fields) do
-    query_for(user, :org)
-    |> get_by(:name, Application.get_env(:proca, Proca)[:org_name])
-    |> Repo.one()
   end
 
   def get_staffer_for_resource(user, resource_type, args, [{f, a} | by_fields]) do

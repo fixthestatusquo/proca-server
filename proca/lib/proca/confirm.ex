@@ -4,7 +4,7 @@ defmodule Proca.Confirm do
 
   OPERATION
   SUBJECT_ID - requester id 
-  OBJECT_ID
+  OBJECT_ID - on what the opration is performed
   CODE
 
   # Asking to join a campaign:
@@ -36,8 +36,8 @@ defmodule Proca.Confirm do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Repo
-  alias Proca.Confirm
-  alias Proca.{ActionPage,Campaign,Org,Action,Staffer}
+  alias Proca.{Confirm, Org}
+  alias Proca.Users.User
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
 
   schema "confirms" do
@@ -48,7 +48,7 @@ defmodule Proca.Confirm do
     field :code, :string
     field :charges, :integer, default: 1
     field :message, :string
-    belongs_to :creator, Staffer
+    belongs_to :creator, User
 
     timestamps()
   end
@@ -58,8 +58,7 @@ defmodule Proca.Confirm do
   def changeset(confirm, attrs) do
     confirm
     |> cast(attrs, [:operation, :subject_id, :object_id, :email, :message, :charges])
-    |> put_assoc(:creator, Map.get(attrs, :staffer, nil))
-
+    |> put_assoc(:creator, Map.get(attrs, :creator, nil))
     |> add_code()
     |> validate_required([:operation, :subject_id, :charges, :code])
   end
@@ -96,7 +95,7 @@ defmodule Proca.Confirm do
   end
 
   def by_open_code(code) when is_bitstring(code) do
-    from(c in Confirm, where: c.code == ^code and is_nil(c.object_id), limit: 1)
+    from(c in Confirm, where: c.code == ^code and is_nil(c.object_id) and is_nil(c.email), limit: 1)
     |> one()
   end
 
@@ -110,18 +109,18 @@ defmodule Proca.Confirm do
     |> one()
   end
 
-  def reject(confirm = %Confirm{}, staffer \\ nil) do
+  def reject(confirm = %Confirm{}, auth \\ nil) do
     confirm 
     |> change(charges: 0) 
     |> update!
-    |> Confirm.Operation.run(:reject, staffer)
+    |> Confirm.Operation.run(:reject, auth)
   end
 
-  def confirm(confirm = %Confirm{}, staffer \\ nil) do 
+  def confirm(confirm = %Confirm{}, auth \\ nil) do 
     if confirm.charges <= 0 do 
       {:error, "expired"}
     else
-      case Confirm.Operation.run(confirm, :confirm, staffer) do 
+      case Confirm.Operation.run(confirm, :confirm, auth) do 
         {:error, e} -> {:error, e}
         ok -> 
           confirm 
@@ -143,14 +142,13 @@ defmodule Proca.Confirm do
   Uses dynamic dispatch to get template name and personalisation fields from each Confirm operation module.
   Will send the email from instance org backend.
   """
-  def notify_by_email(cnf = %Confirm{email: email}), do: notify_by_email(cnf, [email])
+  def notify_by_email(cnf = %Confirm{email: email}) when is_bitstring(email), do: notify_by_email(cnf, [email])
   def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do 
     alias Proca.Service.EmailTemplateDirectory
 
     operation = Confirm.Operation.mod(cnf)
 
-    instance = Org.get_by_name(Org.instance_org_name, 
-      [:email_backend, :template_backend])
+    instance = Org.one([preload: [:email_backend, :template_backend]] ++ [:instance])
 
     recipients = emails 
     |> Enum.map(fn email -> 
@@ -169,7 +167,7 @@ defmodule Proca.Confirm do
 
         EmailBackend.deliver(recipients, instance, template)
       else 
-        :not_found -> {:error, :no_tempalte}
+        :not_found -> {:error, :no_template}
         :not_configured -> {:error, :no_template}
     end
   end

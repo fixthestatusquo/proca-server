@@ -37,6 +37,8 @@ export type Action = {
   createdAt: Scalars['NaiveDateTime'];
   actionType: Scalars['String'];
   contact: Contact;
+  customFields: Scalars['Json'];
+  /** Deprecated, use customFields */
   fields: Array<CustomField>;
   tracking: Maybe<Tracking>;
   campaign: Campaign;
@@ -50,6 +52,7 @@ export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['NaiveDateTime'];
+  customFields: Scalars['Json'];
   fields: Array<CustomField>;
 };
 
@@ -57,7 +60,9 @@ export type ActionCustomFields = {
 export type ActionInput = {
   /** Action Type */
   actionType: Scalars['String'];
-  /** Other fields that accompany the signature */
+  /** Custom fields added to action */
+  customFields?: Maybe<Scalars['Json']>;
+  /** Deprecated format: Other fields added to action */
   fields?: Maybe<Array<CustomFieldInput>>;
   /** Donation payload */
   donation?: Maybe<DonationActionInput>;
@@ -319,6 +324,7 @@ export type CustomField = {
 export type CustomFieldInput = {
   key: Scalars['String'];
   value: Scalars['String'];
+  /** Unused. To mark action_type/key as transient, use campaign.transient_actions list */
   transient?: Maybe<Scalars['Boolean']>;
 };
 
@@ -477,6 +483,8 @@ export type PersonalData = {
   emailOptIn: Scalars['Boolean'];
   /** Email opt in template name */
   emailOptInTemplate: Maybe<Scalars['String']>;
+  /** High data security enabled */
+  highSecurity: Scalars['Boolean'];
 };
 
 export type PrivateActionPage = ActionPage & {
@@ -554,6 +562,7 @@ export type PrivateOrg = Org & {
   key: Key;
   services: Array<Maybe<Service>>;
   users: Array<Maybe<OrgUser>>;
+  processing: Processing;
   /** List campaigns this org is leader or partner of */
   campaigns: Array<Campaign>;
   /** List action pages this org has */
@@ -597,7 +606,17 @@ export type PrivateOrgActionPageArgs = {
 
 
 export type PrivateOrgCampaignArgs = {
-  id?: Maybe<Scalars['Int']>;
+  id: Scalars['Int'];
+};
+
+export type Processing = {
+  __typename?: 'Processing';
+  emailFrom: Maybe<Scalars['String']>;
+  emailBackend: Maybe<ServiceName>;
+  customSupporterConfirm: Scalars['Boolean'];
+  customActionConfirm: Scalars['Boolean'];
+  customActionDeliver: Scalars['Boolean'];
+  sqsDeliver: Scalars['Boolean'];
 };
 
 export type PublicActionPage = ActionPage & {
@@ -696,17 +715,23 @@ export type RootMutationType = {
   addActionContact: ContactReference;
   /** Link actions with refs to contact with contact reference */
   linkActions: ContactReference;
+  /** Add user to org by email */
   addOrgUser: ChangeUserStatus;
+  /** Invite an user to org by email (can be not yet user!) */
+  inviteOrgUser: Confirm;
   updateOrgUser: ChangeUserStatus;
   deleteOrgUser: Maybe<DeleteUserResult>;
   addOrg: Org;
   deleteOrg: Scalars['Boolean'];
-  updateOrg: Org;
+  updateOrg: PrivateOrg;
+  /** Update org processing settings */
+  updateOrgProcessing: PrivateOrg;
   joinOrg: JoinOrgResult;
   generateKey: KeyWithPrivate;
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  upsertService: Service;
   addStripePaymentIntent: Scalars['Json'];
   addStripeSubscription: Scalars['Json'];
   /**
@@ -719,6 +744,8 @@ export type RootMutationType = {
   acceptOrgConfirm: ConfirmResult;
   /** Reject a confirm on behalf of organisation. */
   rejectOrgConfirm: ConfirmResult;
+  acceptUserConfirm: ConfirmResult;
+  rejectUserConfirm: ConfirmResult;
 };
 
 
@@ -793,6 +820,13 @@ export type RootMutationTypeAddOrgUserArgs = {
 };
 
 
+export type RootMutationTypeInviteOrgUserArgs = {
+  orgName: Scalars['String'];
+  input: UserInput;
+  message?: Maybe<Scalars['String']>;
+};
+
+
 export type RootMutationTypeUpdateOrgUserArgs = {
   orgName: Scalars['String'];
   input: UserInput;
@@ -821,6 +855,17 @@ export type RootMutationTypeUpdateOrgArgs = {
 };
 
 
+export type RootMutationTypeUpdateOrgProcessingArgs = {
+  name: Scalars['String'];
+  emailBackend?: Maybe<ServiceName>;
+  emailFrom?: Maybe<Scalars['String']>;
+  customSupporterConfirm?: Maybe<Scalars['Boolean']>;
+  customActionConfirm?: Maybe<Scalars['Boolean']>;
+  customActionDeliver?: Maybe<Scalars['Boolean']>;
+  sqsDeliver?: Maybe<Scalars['Boolean']>;
+};
+
+
 export type RootMutationTypeJoinOrgArgs = {
   name: Scalars['String'];
 };
@@ -841,6 +886,13 @@ export type RootMutationTypeAddKeyArgs = {
 export type RootMutationTypeActivateKeyArgs = {
   orgName: Scalars['String'];
   id: Scalars['Int'];
+};
+
+
+export type RootMutationTypeUpsertServiceArgs = {
+  orgName: Scalars['String'];
+  id?: Maybe<Scalars['Int']>;
+  input: ServiceInput;
 };
 
 
@@ -878,6 +930,16 @@ export type RootMutationTypeRejectOrgConfirmArgs = {
   confirm: ConfirmInput;
 };
 
+
+export type RootMutationTypeAcceptUserConfirmArgs = {
+  confirm: ConfirmInput;
+};
+
+
+export type RootMutationTypeRejectUserConfirmArgs = {
+  confirm: ConfirmInput;
+};
+
 export type RootQueryType = {
   __typename?: 'RootQueryType';
   /** Get a list of campains */
@@ -886,6 +948,7 @@ export type RootQueryType = {
   actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
   currentUser: User;
+  users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
 };
@@ -912,6 +975,11 @@ export type RootQueryTypeExportActionsArgs = {
   after?: Maybe<Scalars['DateTime']>;
   limit?: Maybe<Scalars['Int']>;
   onlyOptIn?: Maybe<Scalars['Boolean']>;
+};
+
+
+export type RootQueryTypeUsersArgs = {
+  select?: Maybe<SelectUser>;
 };
 
 
@@ -947,6 +1015,15 @@ export type SelectService = {
   name?: Maybe<ServiceName>;
 };
 
+/** Criteria to filter users */
+export type SelectUser = {
+  id?: Maybe<Scalars['Int']>;
+  /** Use % as wildcard */
+  email?: Maybe<Scalars['String']>;
+  /** Exact org name */
+  orgName?: Maybe<Scalars['String']>;
+};
+
 export type Service = {
   __typename?: 'Service';
   id: Scalars['Int'];
@@ -954,6 +1031,14 @@ export type Service = {
   host: Maybe<Scalars['String']>;
   user: Maybe<Scalars['String']>;
   path: Maybe<Scalars['String']>;
+};
+
+export type ServiceInput = {
+  name: ServiceName;
+  host?: Maybe<Scalars['String']>;
+  user?: Maybe<Scalars['String']>;
+  password?: Maybe<Scalars['String']>;
+  path?: Maybe<Scalars['String']>;
 };
 
 export enum ServiceName {
@@ -1000,12 +1085,15 @@ export type TrackingInput = {
   medium: Scalars['String'];
   campaign: Scalars['String'];
   content?: Maybe<Scalars['String']>;
+  /** Action page location. Url from which action is added. Must contain schema, domain, (port), pathname */
+  location?: Maybe<Scalars['String']>;
 };
 
 export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
+  isAdmin: Scalars['Boolean'];
   roles: Array<UserRole>;
 };
 
@@ -1037,7 +1125,7 @@ export const OrgPrivateFields = {"kind":"Document","definitions":[{"kind":"Fragm
 export const KeyFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"keyFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Key"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"expired"}},{"kind":"Field","name":{"kind":"Name","value":"expiredAt"}}]}}]} as unknown as DocumentNode<KeyFields, unknown>;
 export const ServiceFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"serviceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Service"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"host"}},{"kind":"Field","name":{"kind":"Name","value":"user"}},{"kind":"Field","name":{"kind":"Name","value":"path"}}]}}]} as unknown as DocumentNode<ServiceFields, unknown>;
 export const ContactExport = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"contactExport"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Contact"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactRef"}},{"kind":"Field","name":{"kind":"Name","value":"payload"}},{"kind":"Field","name":{"kind":"Name","value":"nonce"}},{"kind":"Field","name":{"kind":"Name","value":"publicKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}},{"kind":"Field","name":{"kind":"Name","value":"signKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}}]}}]} as unknown as DocumentNode<ContactExport, unknown>;
-export const ActionExport = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionExport"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Action"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionId"}},{"kind":"Field","name":{"kind":"Name","value":"actionType"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"contact"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"contactExport"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tracking"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"medium"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}},{"kind":"Field","name":{"kind":"Name","value":"privacy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"optIn"}},{"kind":"Field","name":{"kind":"Name","value":"givenAt"}}]}}]}},...ContactExport.definitions]} as unknown as DocumentNode<ActionExport, unknown>;
+export const ActionExport = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionExport"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Action"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionId"}},{"kind":"Field","name":{"kind":"Name","value":"actionType"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"contact"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"contactExport"}}]}},{"kind":"Field","name":{"kind":"Name","value":"customFields"}},{"kind":"Field","name":{"kind":"Name","value":"tracking"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"medium"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}},{"kind":"Field","name":{"kind":"Name","value":"privacy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"optIn"}},{"kind":"Field","name":{"kind":"Name","value":"givenAt"}}]}}]}},...ContactExport.definitions]} as unknown as DocumentNode<ActionExport, unknown>;
 export const GetCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaign"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPrivateFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignAllStats"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPartnerships"}}]}}]}}]}},...CampaignFields.definitions,...CampaignPrivateFields.definitions,...CampaignAllStats.definitions,...OrgIds.definitions,...CampaignPartnerships.definitions]} as unknown as DocumentNode<GetCampaign, GetCampaignVariables>;
 export const FindPublicCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"FindPublicCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}}]}}]}},...CampaignFields.definitions,...OrgIds.definitions]} as unknown as DocumentNode<FindPublicCampaign, FindPublicCampaignVariables>;
 export const ListCampaignsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListCampaigns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPrivateFields"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}}]}}]}}]}},...CampaignFields.definitions,...CampaignPrivateFields.definitions,...OrgIds.definitions]} as unknown as DocumentNode<ListCampaigns, ListCampaignsVariables>;
@@ -1047,8 +1135,8 @@ export const GetPublicActionPageDocument = {"kind":"Document","definitions":[{"k
 export const ListActionPagesByCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ListActionPagesByCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"select"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"campaignId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPagePrivateFields"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}}]}}]}}]}}]}},...ActionPageFields.definitions,...ActionPagePrivateFields.definitions,...CampaignFields.definitions]} as unknown as DocumentNode<ListActionPagesByCampaign, ListActionPagesByCampaignVariables>;
 export const UpdateActionPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"actionPage"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPageInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"actionPage"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateActionPage, UpdateActionPageVariables>;
 export const PubListCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PubListCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}}]}}]}},...CampaignFields.definitions]} as unknown as DocumentNode<PubListCampaign, PubListCampaignVariables>;
-export const ExportCampaignActionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportCampaignActions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"exportActions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"campaignId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}}},{"kind":"Argument","name":{"kind":"Name","value":"campaignName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}}},{"kind":"Argument","name":{"kind":"Name","value":"start"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"onlyOptIn"},"value":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionExport"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageIds"}}]}}]}}]}},...ActionExport.definitions,...ActionPageIds.definitions]} as unknown as DocumentNode<ExportCampaignActions, ExportCampaignActionsVariables>;
-export const ExportOrgActionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportOrgActions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"exportActions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"start"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"onlyOptIn"},"value":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionExport"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignExportIds"}}]}}]}}]}},...ActionExport.definitions,...ActionPageIds.definitions,...CampaignExportIds.definitions]} as unknown as DocumentNode<ExportOrgActions, ExportOrgActionsVariables>;
+export const ExportCampaignActionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportCampaignActions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"exportActions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"campaignId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignId"}}},{"kind":"Argument","name":{"kind":"Name","value":"campaignName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}}},{"kind":"Argument","name":{"kind":"Name","value":"start"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"onlyOptIn"},"value":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionExport"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageIds"}}]}}]}}]}},...CampaignIds.definitions,...ActionExport.definitions,...ActionPageIds.definitions]} as unknown as DocumentNode<ExportCampaignActions, ExportCampaignActionsVariables>;
+export const ExportOrgActionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportOrgActions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"after"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"campaigns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"exportActions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"start"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"after"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"onlyOptIn"},"value":{"kind":"Variable","name":{"kind":"Name","value":"onlyOptIn"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionExport"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignExportIds"}}]}}]}}]}},...CampaignIds.definitions,...ActionExport.definitions,...ActionPageIds.definitions,...CampaignExportIds.definitions]} as unknown as DocumentNode<ExportOrgActions, ExportOrgActionsVariables>;
 export const CopyActionPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CopyActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"fromName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toOrg"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"copyActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"fromName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"fromName"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toName"}}},{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toOrg"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPagePrivateFields"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}}]}}]}}]}},...ActionPageFields.definitions,...ActionPagePrivateFields.definitions,...CampaignFields.definitions]} as unknown as DocumentNode<CopyActionPage, CopyActionPageVariables>;
 export const CopyCampaignActionPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CopyCampaignActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"fromCampaign"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toOrg"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"copyCampaignActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"fromCampaignName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"fromCampaign"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toName"}}},{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toOrg"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPagePrivateFields"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignIds"}}]}}]}}]}},...ActionPageFields.definitions,...ActionPagePrivateFields.definitions,...CampaignIds.definitions]} as unknown as DocumentNode<CopyCampaignActionPage, CopyCampaignActionPageVariables>;
 export const JoinOrgDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"JoinOrg"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orgName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"joinOrg"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orgName"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<JoinOrg, JoinOrgVariables>;
@@ -1409,7 +1497,22 @@ export type ExportCampaignActionsVariables = Exact<{
 
 export type ExportCampaignActions = (
   { __typename?: 'RootQueryType' }
-  & { exportActions: Array<Maybe<(
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { campaigns: Array<(
+      { __typename?: 'PrivateCampaign' }
+      & CampaignIds_PrivateCampaign_
+    ) | (
+      { __typename?: 'PublicCampaign' }
+      & CampaignIds_PublicCampaign_
+    )>, actionPages: Array<(
+      { __typename?: 'PrivateActionPage' }
+      & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'thankYouTemplateRef'>
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'thankYouTemplateRef'>
+    )> }
+  ), exportActions: Array<Maybe<(
     { __typename?: 'Action' }
     & { actionPage: (
       { __typename?: 'PrivateActionPage' }
@@ -1433,7 +1536,22 @@ export type ExportOrgActionsVariables = Exact<{
 
 export type ExportOrgActions = (
   { __typename?: 'RootQueryType' }
-  & { exportActions: Array<Maybe<(
+  & { org: (
+    { __typename?: 'PrivateOrg' }
+    & { campaigns: Array<(
+      { __typename?: 'PrivateCampaign' }
+      & CampaignIds_PrivateCampaign_
+    ) | (
+      { __typename?: 'PublicCampaign' }
+      & CampaignIds_PublicCampaign_
+    )>, actionPages: Array<(
+      { __typename?: 'PrivateActionPage' }
+      & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'thankYouTemplateRef'>
+    ) | (
+      { __typename?: 'PublicActionPage' }
+      & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'thankYouTemplateRef'>
+    )> }
+  ), exportActions: Array<Maybe<(
     { __typename?: 'Action' }
     & { actionPage: (
       { __typename?: 'PrivateActionPage' }
@@ -1634,9 +1752,6 @@ export type UpdateOrg = (
     { __typename?: 'PrivateOrg' }
     & OrgFields_PrivateOrg_
     & OrgPrivateFields
-  ) | (
-    { __typename?: 'PublicOrg' }
-    & OrgFields_PublicOrg_
   ) }
 );
 
@@ -1995,14 +2110,11 @@ export type ContactExport = (
 
 export type ActionExport = (
   { __typename?: 'Action' }
-  & Pick<Action, 'actionId' | 'actionType' | 'createdAt'>
+  & Pick<Action, 'actionId' | 'actionType' | 'createdAt' | 'customFields'>
   & { contact: (
     { __typename?: 'Contact' }
     & ContactExport
-  ), fields: Array<(
-    { __typename?: 'CustomField' }
-    & Pick<CustomField, 'key' | 'value'>
-  )>, tracking: Maybe<(
+  ), tracking: Maybe<(
     { __typename?: 'Tracking' }
     & Pick<Tracking, 'source' | 'medium' | 'campaign' | 'content'>
   )>, privacy: (
@@ -2030,6 +2142,7 @@ export type ScalarLocations = {
 export const scalarLocations : ScalarLocations = {
   "inputObjectFieldTypes": {
     "ActionInput": {
+      "customFields": "Json",
       "fields": "CustomFieldInput",
       "donation": "DonationActionInput"
     },
@@ -2054,6 +2167,7 @@ export const scalarLocations : ScalarLocations = {
   "outputObjectFieldTypes": {
     "Action": {
       "contact": "Contact",
+      "customFields": "Json",
       "fields": "CustomField",
       "tracking": "Tracking",
       "campaign": [
@@ -2068,6 +2182,7 @@ export const scalarLocations : ScalarLocations = {
       "donation": "Donation"
     },
     "ActionCustomFields": {
+      "customFields": "Json",
       "fields": "CustomField"
     },
     "CampaignStats": {
@@ -2147,6 +2262,7 @@ export const scalarLocations : ScalarLocations = {
       "key": "Key",
       "services": "Service",
       "users": "OrgUser",
+      "processing": "Processing",
       "campaigns": [
         "PrivateCampaign",
         "PublicCampaign"
@@ -2232,25 +2348,27 @@ export const scalarLocations : ScalarLocations = {
     "addActionContact": "ContactReference",
     "linkActions": "ContactReference",
     "addOrgUser": "ChangeUserStatus",
+    "inviteOrgUser": "Confirm",
     "updateOrgUser": "ChangeUserStatus",
     "deleteOrgUser": "DeleteUserResult",
     "addOrg": [
       "PrivateOrg",
       "PublicOrg"
     ],
-    "updateOrg": [
-      "PrivateOrg",
-      "PublicOrg"
-    ],
+    "updateOrg": "PrivateOrg",
+    "updateOrgProcessing": "PrivateOrg",
     "joinOrg": "JoinOrgResult",
     "generateKey": "KeyWithPrivate",
     "addKey": "Key",
     "activateKey": "ActivateKeyResult",
+    "upsertService": "Service",
     "addStripePaymentIntent": "Json",
     "addStripeSubscription": "Json",
     "addStripeObject": "Json",
     "acceptOrgConfirm": "ConfirmResult",
     "rejectOrgConfirm": "ConfirmResult",
+    "acceptUserConfirm": "ConfirmResult",
+    "rejectUserConfirm": "ConfirmResult",
     "campaigns": [
       "PrivateCampaign",
       "PublicCampaign"
@@ -2261,6 +2379,7 @@ export const scalarLocations : ScalarLocations = {
     ],
     "exportActions": "Action",
     "currentUser": "User",
+    "users": "User",
     "org": "PrivateOrg"
   },
   "scalars": [

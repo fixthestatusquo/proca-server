@@ -194,7 +194,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :action_id, non_null(:integer)
     field :action_type, non_null(:string)
     field :inserted_at, non_null(:naive_datetime)
-    field :fields, non_null(list_of(non_null(:custom_field)))
+    field :custom_fields, non_null(:json)
+    field :fields, non_null(list_of(non_null(:custom_field))), deprecate: "use custom_fields" do 
+      resolve fn action, _p, _c -> 
+        {:ok, Proca.Field.map_to_list(action.custom_fields)}
+      end
+    end
   end
 
   @desc "Result of actions query"

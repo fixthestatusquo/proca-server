@@ -25,6 +25,7 @@ defmodule Proca.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import Proca.DataCase
+      alias Proca.TestEmailBackend
     end
   end
 

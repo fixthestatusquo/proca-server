@@ -45,7 +45,7 @@ defmodule Proca.Stage.SQS do
         |> Message.put_batcher(:sqs)
 
       {:error, reason} ->
-        Message.failed(message, reason)
+        Message.failed(message, inspect(reason))
     end
   end
 
@@ -75,6 +75,7 @@ defmodule Proca.Stage.SQS do
     [id: body["actionId"], message_body: payload, message_attributes: to_message_attributes(body)]
   end
 
+  # NOTE: these attributes are same in Schema V1 and V2
   def to_message_attributes(body) do
     [
       %{name: "Schema", data_type: :string, value: body["schema"]},

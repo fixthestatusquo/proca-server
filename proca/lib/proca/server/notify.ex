@@ -54,7 +54,7 @@ defmodule Proca.Server.Notify do
     Repo.preload(org, [staffers: :user]).staffers
     |> Enum.map(fn %{user: user} -> user.email end)
 
-    cnf = Repo.preload(cnf, [creator: :user])
+    cnf = Repo.preload(cnf, [:creator])
 
     Proca.Confirm.notify_by_email(cnf, recipients)
   end

@@ -10,7 +10,7 @@ defmodule Proca.Action do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Proca.{Action, Supporter, Field}
+  alias Proca.{Action, Supporter}
   alias Proca.Repo
 
   schema "actions" do
@@ -20,12 +20,13 @@ defmodule Proca.Action do
 
     field :action_type, :string
 
+    field :fields, :map, default: %{}
+
     belongs_to :campaign, Proca.Campaign
     belongs_to :action_page, Proca.ActionPage
     belongs_to :source, Proca.Source
 
     has_one :donation, Proca.Action.Donation
-    has_many :fields, Proca.Field
 
     field :processing_status, ProcessingStatus, default: :new
 
@@ -47,22 +48,41 @@ defmodule Proca.Action do
   @doc """
   Creates action for supporter. Supporter can be a struct, or reference (binary)
   """
-  def create_for_supporter(attrs, supporter, action_page) do
+  def build_for_supporter(attrs, supporter, action_page) do
     %Action{}
-    |> cast(attrs, [:action_type])
+    |> cast(attrs, [:action_type, :fields])
     |> validate_required([:action_type])
     |> validate_format(:action_type, ~r/^([\w\d_-]+$)/)
+    |> validate_flat_map(:fields)
     |> put_supporter_or_ref(supporter, action_page)
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
-    |> put_assoc(
-      :fields,
-      case attrs do
-        %{fields: fields} -> Field.changesets(fields)
-        _ -> []
-      end
-    )
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
+    |> check_constraint(:fields, name: :max_fields_size)
+  end
+
+  @doc """
+  Validate that change is a:
+  - map 
+  - keys are strings
+  - values are strings, numbers, or lists of strings and numbers
+  """
+  @spec validate_flat_map(Ecto.Changeset.t, atom()) :: Changeset.t
+  def validate_flat_map(changeset, fieldname) do 
+    Ecto.Changeset.validate_change(changeset, fieldname, fn (f, fields) -> 
+      valid = is_map(fields) and Enum.all?(
+      Enum.map(fields, fn {k, v} -> 
+        is_bitstring(k) 
+        and (is_bitstring(v) or is_number(v) or (is_list(v) 
+        and (Enum.all?(Enum.map(v, &is_bitstring/1)) 
+        or Enum.all?(Enum.map(v, &is_number/1)))))
+      end))
+      if valid do 
+        []
+      else
+        [{f, "Custom fields must be a map of string to values of strings or numbers, or lists of them"}]
+      end
+    end)
   end
 
   @doc """
@@ -88,6 +108,21 @@ defmodule Proca.Action do
       where: a.id == ^action_id and s.fingerprint == ^ref, 
       preload: [supporter: s])
     |> Repo.one()
+  end
+
+  def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do 
+    keys = Supporter.Privacy.transient_action_fields(action, page)
+
+    if keys == [] do 
+      :noop
+    else
+      fields2 = Map.drop(fields, keys)
+      if fields2 == fields do 
+        :noop
+      else
+        from(a in Action, where: a.id == ^id, update: [set: [fields: ^fields2]])
+      end
+    end
   end
 
   def confirm(action = %Action{}) do 

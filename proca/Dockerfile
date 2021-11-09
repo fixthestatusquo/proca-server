@@ -1,11 +1,11 @@
 # --- Builder --------------------------------------------
 
-FROM elixir:1.11 AS builder
+FROM elixir:1.12 AS builder
 
 ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -  && \
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -  && \
     apt-get install -y nodejs 
 
 RUN mix local.hex --force  && \

@@ -121,15 +121,11 @@ defmodule Proca.Supporter do
     end
   end
 
-  def transient_fields(supporter) do 
-    Supporter.Privacy.transient_fields(supporter.action_page)
-    |> Enum.map(fn f -> {f, nil} end)
-  end
-
-
 # XXX rename this to something like "clear_transient_fields"
-  def nullify_transient_fields(supporter) do
-    clear_fields = transient_fields(supporter)
+  def clear_transient_fields_query(supporter) do
+    clear_fields = Supporter.Privacy.transient_supporter_fields(supporter.action_page)
+    |> Enum.map(fn f -> {f, nil} end)
+
     from(s in Supporter,
       where: s.id == ^supporter.id,
       update: [set: ^clear_fields]

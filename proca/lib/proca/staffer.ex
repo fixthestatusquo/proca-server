@@ -4,10 +4,11 @@ defmodule Proca.Staffer do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
+  use Proca.Schema, module: __MODULE__
   alias Proca.Repo
   alias Proca.Users.User
   alias Proca.Staffer
+  import Ecto.Query, only: [from: 2, join: 4, where: 3, preload: 2, distinct: 2]
 
   schema "staffers" do
     field :perms, :integer
@@ -30,10 +31,30 @@ defmodule Proca.Staffer do
     change(staffer, perms: perms_changer.(staffer.perms))
   end
 
+  # deprecated
   def build_for_user(%User{id: id}, org_id, perms) when is_integer(org_id) do
     %Staffer{}
-    |> change(org_id: org_id, user_id: id, perms: Proca.Staffer.Permission.add(0, perms))
+    |> change(org_id: org_id, user_id: id, perms: Proca.Permission.add(0, perms))
   end
+
+  def update(st, [{assoc, record} | kw]) when assoc in [:user, :org] do 
+    put_assoc(st, assoc, record)
+    |> update(kw)
+  end
+
+  def update(st, [{:role, role} | kw]) do 
+    update(st, [{:perms, Staffer.Role.permissions(role)} | kw])
+  end
+
+  def update(st, [{:perms, perms} | kw]) do 
+    change(st, perms: Proca.Permission.add(0, perms))
+    |> update(kw)
+  end
+
+  def all(q, [:preload | kw]), do: preload(q, [:user, :org]) |> all(kw)
+
+  def all(q, [{:org, org} | kw]), do: where(q, [s], s.org_id == ^org.id)  |> all(kw)
+  def all(q, [{:user, user} | kw]), do: where(q, [s], s.user_id == ^user.id) |> all(kw)
 
   def for_user_in_org(%User{id: id}, org_name) when is_bitstring(org_name) do
     from(s in Staffer,
@@ -77,4 +98,5 @@ defmodule Proca.Staffer do
     |> distinct(true)
     |> Repo.all()
   end
+
 end

@@ -93,7 +93,15 @@ defmodule ProcaWeb.Resolvers.Action do
   def link_references(_supporter, %{}) do
   end
 
-  def add_action_contact(_, params = %{action: action, contact: contact, privacy: priv}, resolution = %{context: context}) do
+  # handle custom_fields as well as 
+  defp merge_old_fields_format(action_attrs) do 
+    {fields_attr, attrs} = Map.pop(action_attrs, :fields, %{})
+    attrs = Map.put(attrs, :fields, Map.merge(Proca.Field.list_to_map(fields_attr), Map.get(attrs, :custom_fields, %{})))
+    attrs
+  end
+
+  def add_action_contact(_, params = %{action: action_attrs, contact: contact, privacy: priv}, resolution = %{context: context}) do
+    action_attrs = merge_old_fields_format(action_attrs)
     case Multi.new()
          |> Multi.run(:action_page, fn _repo, _m ->
            get_action_page(params)
@@ -123,7 +131,7 @@ defmodule ProcaWeb.Resolvers.Action do
            |> repo.insert()
          end)
          |> Multi.run(:action, fn repo, %{supporter: supporter, action_page: action_page, source: source} ->
-           Action.create_for_supporter(action, supporter, action_page)
+           Action.build_for_supporter(action_attrs, supporter, action_page)
            |> put_assoc(:source, source)
            |> put_change(:with_consent, true)
            |> repo.insert()
@@ -148,6 +156,7 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs},  %{context: context}) do
+    action_attrs = merge_old_fields_format(action_attrs)
     case Multi.new()
          |> Multi.run(:action_page, fn _repo, _m ->
            get_action_page(params)
@@ -159,7 +168,7 @@ defmodule ProcaWeb.Resolvers.Action do
           get_tracking(params, get_in(context, [:headers, "referer"]))
          end)
          |> Multi.run(:action, fn repo, %{action_page: action_page, supporter: supporter, source: source} ->
-           Action.create_for_supporter(action_attrs, supporter, action_page)
+           Action.build_for_supporter(action_attrs, supporter, action_page)
            |> put_assoc(:source, source)
            |> repo.insert()
          end)

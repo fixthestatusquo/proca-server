@@ -166,8 +166,13 @@ defmodule ProcaWeb.Schema.ActionTypes do
   input_object :action_input do
     @desc "Action Type"
     field :action_type, non_null(:string)
-    @desc "Other fields that accompany the signature"
-    field :fields, list_of(non_null(:custom_field_input))
+
+    @desc "Custom fields added to action"
+    field :custom_fields, :json
+
+    @desc "Deprecated format: Other fields added to action"
+    field :fields, list_of(non_null(:custom_field_input)), deprecate: "use custom_fields"
+
 
     @desc "Donation payload"
     field :donation, :donation_action_input
@@ -178,7 +183,14 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :created_at, non_null(:naive_datetime)
     field :action_type, non_null(:string)
     field :contact, non_null(:contact)
-    field :fields, non_null(list_of(non_null(:custom_field)))
+    field :custom_fields, non_null(:json)
+
+    @desc "Deprecated, use customFields"
+    field :fields, non_null(list_of(non_null(:custom_field))), deprecate: "use custom_fields" do 
+      resolve(fn action, _p, _c -> 
+        {:ok, Proca.Field.map_to_list(action.custom_fields)}
+      end)
+    end
     field :tracking, :tracking
     field :campaign, non_null(:campaign)
     field :action_page, non_null(:action_page)
@@ -199,6 +211,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
   input_object :custom_field_input do
     field :key, non_null(:string)
     field :value, non_null(:string)
+
+    @desc "Unused. To mark action_type/key as transient, use campaign.transient_actions list"
     field :transient, :boolean
   end
 

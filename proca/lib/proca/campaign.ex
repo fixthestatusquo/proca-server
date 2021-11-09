@@ -14,6 +14,7 @@ defmodule Proca.Campaign do
     field :title, :string
     field :force_delivery, :boolean, default: false
     field :public_actions, {:array, :string}, default: []
+    field :transient_actions, {:array, :string}, default: []
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
 
@@ -98,5 +99,14 @@ defmodule Proca.Campaign do
       order_by: [desc: a.id],
       preload: [:org, action_pages: a])
     |> Repo.one()
+  end
+
+  def public_action_keys(%Campaign{public_actions: public_actions}, action_type) 
+    when is_bitstring(action_type) 
+    do 
+    public_keys = public_actions 
+    |> Enum.map(fn p -> String.split(p, ":") end)
+    |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
+    |> Enum.reject(&is_nil/1)
   end
 end

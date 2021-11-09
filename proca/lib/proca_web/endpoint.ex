@@ -17,7 +17,7 @@ defmodule ProcaWeb.Endpoint do
     websocket: true,
     longpoll: false
 
-  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
+  # socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -52,7 +52,6 @@ defmodule ProcaWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug Pow.Plug.Session, otp_app: :proca
   plug CORSPlug
   plug Application.get_env(:proca, ProcaWeb.Endpoint)[:router]
 end
