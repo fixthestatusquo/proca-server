@@ -9,10 +9,10 @@ defmodule Proca.Source do
   alias Proca.Source
 
   schema "sources" do
-    field :campaign, :string
+    field :campaign, :string, default: "unknown"
     field :content, :string, default: ""
-    field :medium, :string
-    field :source, :string
+    field :medium, :string, default: "unknown"
+    field :source, :string, default: "unknown"
     field :location, :string, default: ""
 
     timestamps()
@@ -22,10 +22,13 @@ defmodule Proca.Source do
   def changeset(source, attrs) do
     source
     |> cast(attrs, [:source, :medium, :campaign, :content, :location])
-    |> validate_required([:source, :medium, :campaign, :content, :location])
+    |> validate_required([:source, :medium, :campaign])
   end
 
   def build_from_attrs(attrs) do
+    attrs = attrs
+    |> default_location()
+
     %Source{}
     |> cast(attrs, [:source, :medium, :campaign, :content, :location])
     |> validate_required([:source, :medium, :campaign])
@@ -35,6 +38,9 @@ defmodule Proca.Source do
     |> trim(:content, 255)
     |> trim(:location, 255)
   end
+
+  def default_location(attrs = %{location: nil}), do: Map.put(attrs, :location, "")
+  def default_location(attrs), do: attrs
 
   def get_or_create_by(tracking_codes) do
     build_from_attrs(tracking_codes)

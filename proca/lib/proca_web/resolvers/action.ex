@@ -21,20 +21,16 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
-  defp add_tracking_location(tr, referer) do
-    location = Map.get(tr, :location, nil)
-    case Source.get_tracking_location(location, referer) do 
-      nil -> Map.delete(tr, :location)
-      url -> Map.put(tr, :location, url)
-    end
+  defp check_location_against_referer(tr, referer) do
+    location = Map.get(tr, :location)
+    Map.put(tr, :location, Source.get_tracking_location(location, referer))
   end
 
-
-  # utms given and referer header
+  # utms given and referer header maybe
   defp get_tracking(%{tracking: tr}, referer) do
     case tr 
-      |> add_tracking_location(referer)
-      |> Source.get_or_create_by()
+      |> check_location_against_referer(referer)
+      |> Source.get_or_create_by() 
     do
       {:ok, src} -> {:ok, src}
       _ -> {:ok, nil}
@@ -43,13 +39,11 @@ defmodule ProcaWeb.Resolvers.Action do
 
   # only refer header given, we provide n/a utm values to better look in stats
   defp get_tracking(%{}, referer) when is_bitstring(referer) do 
-    get_tracking(%{tracking: %{
-      source: "unknown", medium: "unknown", campaign: "unknown"
-    }}, referer)
+    get_tracking(%{tracking: %{}}, referer)
   end
 
   # no referer, programmatic api use
-  defp get_tracking(%{}, _referer) do
+  defp get_tracking(%{}, nil) do
     {:ok, nil}
   end
 
@@ -108,7 +102,7 @@ defmodule ProcaWeb.Resolvers.Action do
          end)
          |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
            Helper.validate(ActionPage.new_data(contact, action_page))
-         end)
+          end)
          |> Multi.run(:captcha, fn _repo, _ ->
            case ProcaWeb.Resolvers.Captcha.verify(resolution) do
              resolution = %{state: :resolved} ->
