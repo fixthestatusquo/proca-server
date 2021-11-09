@@ -130,7 +130,8 @@ defmodule Proca.MixProject do
         "README.md",
         "code_of_conduct.md"
       ] ++ Path.wildcard("guides/*.md"),
-      extra_section: "Guides"
+      extra_section: "Guides",
+      assets: "guides/assets"
     ]
       # Example from broadway:
       # groups_for_extras: [
