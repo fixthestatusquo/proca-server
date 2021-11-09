@@ -43,6 +43,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     field :org, non_null(:org)
 
+    field :targets, list_of(:target) do
+      resolve(&Resolvers.Campaign.targets/3)
+    end
+
     @desc "Fetch public actions"
     field :actions, non_null(:public_actions_result) do
       @desc "Return actions of this action type"
