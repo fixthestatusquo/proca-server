@@ -62,7 +62,7 @@ defmodule Proca.Stage.Webhook do
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
-      {:ok, event} -> Message.update_data(fn _ -> event end)
+      {:ok, event} -> Message.update_data(message, fn _ -> event end)
 
       # ignore garbled message
       {:error, reason} ->
@@ -76,7 +76,7 @@ defmodule Proca.Stage.Webhook do
 
     for msg <- messages do
       payload = Jason.encode!(msg.data)
-      case Webhook.send(webhook, payload) do
+      case Webhook.push(webhook, payload) do
         {:ok, _code} -> msg
         {:ok, _code, _ret} -> msg
         {:error, reason} -> Message.failed(msg, reason)
