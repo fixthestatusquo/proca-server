@@ -64,13 +64,15 @@ defmodule Proca.Service.EmailBackend do
 
     e = Email.from(%Email{}, from(org))
 
+    if is_nil(e.from), do: raise "Org #{org.name} (#{org.id}) failed to send email via #{name}: No from address."
+
     e = if elem(e.from, 1) != org.email_from do
       apply(backend, :put_reply_to, [e, org.email_from])
     else
       e
     end
 
-    recipients = Map.enum(recipients, &prepare_fields/1)
+    recipients = Enum.map(recipients, &prepare_fields/1)
 
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])
@@ -80,30 +82,39 @@ defmodule Proca.Service.EmailBackend do
   end
 
   # Org uses own email backend
-  defp from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
+  def from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
     {org.title, org.email_from}
   end
 
   # org uses someone elses email backend
-  defp from(org = %Org{email_backend: %Service{org: via_org}}) do
+  def from(org = %Org{email_backend: %Service{org: via_org = %Org{}}}) do
     via_from(org, via_org)
   end
 
-  defp via_from(%{title: org_title, email_from: email_from}, %{email_from: via_email_from})
-  when not is_nil(email_from) and not is_nil(via_email_from) do
+  def from(org = %Org{email_backend: %Service{org_id: via_org_id}})
+  when via_org_id != nil do
+    via_from(org, Org.one(id: via_org_id))
+  end
+
+  def via_from(
+    %{title: org_title, email_from: email_from},
+    %{email_from: via_email_from}
+  ) when email_from != nil and via_email_from != nil
+    do
+
     [_user, domain] = Regex.split(~r/@/, email_from)
     [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
 
     {org_title, "#{via_user}+#{domain}@#{via_domain}"}
   end
 
-  defp via_from(_o1, _o2) do
+  def via_from(_o1, _o2) do
     nil
   end
 
   # template renderers of Mailjet and friends are happier with a flat list of vars
   defp prepare_fields(%EmailRecipient{fields: fields} = rcpt) do
-    %{rcpt | fields: flatten_keys(fields)}
+    %{rcpt | fields: flatten_keys(fields, "")}
   end
 
   defmodule NotDelivered do

@@ -134,7 +134,7 @@ defmodule Proca.Service do
   defp json_request_opts(req, [{:auth, :basic} | rest], srv = %{user: u, password: p})
   when is_bitstring(u) and is_bitstring(p)
     do
-    auth = "#{u}:#{u}" |> Base.encode64()
+    auth = "#{u}:#{p}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
     |> json_request_opts(rest, srv)

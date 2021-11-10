@@ -148,6 +148,7 @@ defmodule Proca.Confirm do
       message: message || "",
       subject_id: subj_id,
       object_id: obj_id || "",
+      code: confirm_code,
       creator_email: (if cnf.creator != nil, do: cnf.creator.email, else: ""),
       accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
       reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
@@ -173,7 +174,7 @@ defmodule Proca.Confirm do
       %EmailRecipient{
         first_name: notify_first_name(email),
         email: email,
-        fields: operation.notify_fields(cnf)
+        fields: notify_fields(cnf)
       }
     end)
 
