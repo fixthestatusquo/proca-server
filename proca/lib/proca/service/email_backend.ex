@@ -23,6 +23,7 @@ defmodule Proca.Service.EmailBackend do
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailRecipient}
   alias Bamboo.Email
+  import Proca.Stage.Support, only: [flatten_keys: 1]
 
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
@@ -69,6 +70,8 @@ defmodule Proca.Service.EmailBackend do
       e
     end
 
+    recipients = Map.enum(recipients, &prepare_fields/1)
+
     e = apply(backend, :put_recipients, [e, recipients])
     e = apply(backend, :put_template, [e, email_template])
     apply(backend, :deliver, [e, org])
@@ -98,6 +101,11 @@ defmodule Proca.Service.EmailBackend do
     nil
   end
 
+  # template renderers of Mailjet and friends are happier with a flat list of vars
+  defp prepare_fields(%EmailRecipient{fields: fields} = rcpt) do
+    %{rcpt | fields: flatten_keys(fields)}
+  end
+
   defmodule NotDelivered do
     defexception [:message]
 
@@ -109,4 +117,4 @@ defmodule Proca.Service.EmailBackend do
       %NotDelivered{message: original_exception.message}
     end
   end
-end
+ end
