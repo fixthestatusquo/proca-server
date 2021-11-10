@@ -82,28 +82,33 @@ defmodule Proca.Stage.Support do
   Flattens the nested map keys so that there is only one nesting level of keys and values.
   The resulting keys are joined by underscore to form a snake-case key name.
   """
-  def flatten_keys(map) when is_map(map) do
+  def flatten_keys(map, nil_to \\ nil) when is_map(map) do
     map
-    |> Enum.map(&flatten_keys_entry/1)
+    |> Enum.map(fn x -> flatten_keys_entry(x, nil_to) end)
     |> List.flatten()
     |> Map.new()
   end
 
-  defp flatten_keys_entry(entry, path \\ [])
+  defp flatten_keys_entry(entry, nil_to, path \\ [])
 
-  defp flatten_keys_entry({k, map}, path) when is_map(map) do
+  defp flatten_keys_entry({k, map}, nil_to, path) when is_map(map) do
     map
-    |> Enum.map(fn entry -> flatten_keys_entry(entry, [k | path]) end)
+    |> Enum.map(fn entry -> flatten_keys_entry(entry, nil_to, [k | path]) end)
   end
 
-  defp flatten_keys_entry({k, other}, path) do
+  defp flatten_keys_entry({k, other}, nil_to, path) do
     full_key = [k | path]
     |> Enum.map(&ensure_string/1)
     |> Enum.reverse()
     |> Enum.join("_")
     |> ProperCase.camel_case()
 
-    {full_key, other}
+    value = case other do
+              nil -> to_nil
+              x -> x
+            end
+
+    {full_key, value}
   end
 
   def ensure_string(a) when is_atom(a), do: Atom.to_string(a)
