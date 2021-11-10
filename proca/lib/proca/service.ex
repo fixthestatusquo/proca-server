@@ -31,6 +31,10 @@ defmodule Proca.Service do
     |> put_change(:org_id, org_id)
   end
 
+  def all(q, [{:id, id} | kw]), do: where(q, [s], s.id == ^id) |> all(kw)
+  def all(q, [{:name, name} | kw]), do: where(q, [s], s.name == ^name) |> all(kw)
+  def all(q, [{:org, %Org{id: org_id}} | kw]), do: where(q, [s], s.org_id == ^org_id) |> all(kw)
+
   def update(srv, [{:org, org} | kw]) do 
     srv
     |> put_assoc(:org, org)
@@ -72,7 +76,15 @@ defmodule Proca.Service do
     )
   end
 
-  # Generic JSON request helpers
+  @doc """
+  Generic JSON request.
+
+  returns:
+
+  {:ok, 200, data} - when data is returned
+  {:ok, code} - for other ok code with no data
+  {:error, reason}
+  """
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
@@ -100,25 +112,41 @@ defmodule Proca.Service do
     end
   end
 
+  # defaults
   defp json_request_opts(req, opts, srv) when map_size(req) == 0 do
     req = %{
       method: :get,
       body: "",
       headers: [Accepts: "application/json", "Content-Type": "application/json"]
     }
-
-    json_request_opts(req, opts, srv)
+    |> json_request_opts(opts, srv)
   end
 
   defp json_request_opts(req, [], _srv) do
     req
   end
 
-  defp json_request_opts(req, [{:auth, :basic} | rest], srv) do
-    auth = "#{srv.user}:#{srv.password}" |> Base.encode64()
+  defp json_request_opts(req, [{:post, body} | rest], srv) do
+    %{req | method: :post, body: body}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :basic} | rest], srv = %{user: u, password: p})
+  when is_bitstring(u) and is_bitstring(p)
+    do
+    auth = "#{u}:#{u}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
     |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd}) when is_bitstring(pwd) do
+    %{req | headers: [Authorization: pwd]}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, nil} | rest], srv) do
+    json_request_opts(req, rest, srv)
   end
 
   defp json_request_opts(req, [{:form, form} | rest], srv) do 
@@ -129,4 +157,4 @@ defmodule Proca.Service do
       }
     |> json_request_opts(rest, srv)
   end
-end
+  end

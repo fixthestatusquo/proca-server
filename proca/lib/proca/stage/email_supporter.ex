@@ -43,10 +43,6 @@ defmodule Proca.Stage.EmailSupporter do
           batch_timeout: 10_000,
           concurrency: 1
         ]
-        # noop: [
-        #   batch_size: 1,
-        #   concurrency: 1
-        # ]
       ]
     )
   end
