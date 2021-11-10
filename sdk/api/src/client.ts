@@ -40,6 +40,11 @@ function hasSubscription(documentNode: DocumentNode): boolean {
   return documentNode.definitions.some(isSubscription)
 }
 
+function hasMutation(documentNode: DocumentNode): boolean {
+  return documentNode.definitions.some((def) =>
+    def.kind === "OperationDefinition" && def.operation === "mutation");
+}
+
 // structure of http/ws endpoints
 // Will use /api, /socket with no path given.
 // Otherwise will use the path for HTTP api, and /socket for WS.
@@ -118,7 +123,9 @@ export async function request<Q,R>(
   query: DocumentNode<Q,R>,
   variables: R,
   extensions?: Extensions) : Promise<OperationResult<Q, R>> {
-    const res = link.query(query, variables as undefined as object).toPromise();
+
+  const method = hasMutation(query) ? link.mutation : link.query;
+    const res = method(query, variables as undefined as object).toPromise();
     return res as undefined as Promise<OperationResult<Q,R>>;
 }
 
