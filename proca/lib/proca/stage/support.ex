@@ -104,7 +104,7 @@ defmodule Proca.Stage.Support do
     |> ProperCase.camel_case()
 
     value = case other do
-              nil -> to_nil
+              nil -> nil_to
               x -> x
             end
 
