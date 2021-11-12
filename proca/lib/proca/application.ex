@@ -16,6 +16,8 @@ defmodule Proca.Application do
       ProcaWeb.Endpoint,
       {Absinthe.Subscription, ProcaWeb.Endpoint},
 
+      {Proca.Server.Notify, []},
+
       {Proca.Server.Keys, Application.get_env(:proca, Proca)[:org_name]},
 
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},

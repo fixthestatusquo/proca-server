@@ -2,9 +2,61 @@ defmodule Proca.Server.Notify do
   @moduledoc """
   Server that decides what actions should be done after different events
   """
+  use GenServer
+
   alias Proca.Repo
   alias Proca.{Action, Supporter, Org, PublicKey, Confirm}
+  alias Proca.Stage.Event
   alias Proca.Pipes
+  import Logger
+
+  # INIT
+
+  @impl
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  end
+
+  @impl true
+  def init(_) do
+    {:ok, instance_state()}
+  end
+
+  def instance_state() do
+    instance = Org.one([:instance])
+    %{
+      instance_org_id: instance.id,
+      global_confirm_processing: instance.confirm_processing
+    }
+  end
+
+
+  def handle_cast(:instance_org_updated, st) do
+    {:noreply, instance_state()}
+  end
+
+  def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
+    Logger.info("confirm created #{inspect(st)}")
+
+    cond do
+      st.global_confirm_processing ->
+        send_confirm_as_event(cnf, st.instance_org_id)
+
+      org.confirm_processing ->
+        send_confirm_as_event(cnf, org.id)
+
+      true ->
+        send_confirm_by_email(cnf, org)
+    end
+
+    {:noreply, st}
+  end
+
+
+  def instance_org_updated do
+    GenServer.cast(__MODULE__, :instance_org_updated)
+  end
+
 
   @spec action_created(%Action{}, %Supporter{} | nil) :: :ok
   def action_created(action, supporter \\ nil) do
@@ -37,29 +89,41 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
+  # XXX add Campaign
+
   def org_created(org = %Org{}) do
     start_org_pipes(org)
   end
 
   def org_updated(org = %Org{}, changeset) do
     restart_org_pipes(org, changeset)
-  end
+    if org.name == Org.instance_org_name, do: instance_org_updated
+   end
 
   def org_deleted(org = %Org{}) do
     stop_org_pipes(org)
   end
 
   def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
-    recipients = 
+    GenServer.cast(__MODULE__, {:confirm_created, cnf, org})
+  end
+
+  ##### SIDE EFFECTS ######
+
+  def send_confirm_as_event(cnf, org_id) do
+      Event.emit(:confirm_created, cnf, org_id)
+  end
+
+  def send_confirm_by_email(cnf, org) do
+    recipients =
     Repo.preload(org, [staffers: :user]).staffers
     |> Enum.map(fn %{user: user} -> user.email end)
 
     cnf = Repo.preload(cnf, [:creator])
 
     Proca.Confirm.notify_by_email(cnf, recipients)
-  end
+   end
 
-  ##### SIDE EFFECTS
 
   def start_org_pipes(org = %Org{}) do
       Pipes.Supervisor.start_child(org)
@@ -81,7 +145,7 @@ defmodule Proca.Server.Notify do
       Pipes.Supervisor.terminate_child(org)
       Pipes.Supervisor.start_child(org)
     end
-  end
+    end
 
   def stop_org_pipes(org = %Org{}) do
     Pipes.Supervisor.terminate_child(org)
