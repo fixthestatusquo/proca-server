@@ -23,7 +23,7 @@ defmodule Proca.Service.EmailBackend do
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailRecipient}
   alias Bamboo.Email
-  import Proca.Stage.Support, only: [flatten_keys: 1]
+  import Proca.Stage.Support, only: [flatten_keys: 2]
 
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
