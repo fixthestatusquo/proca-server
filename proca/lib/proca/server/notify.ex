@@ -5,14 +5,13 @@ defmodule Proca.Server.Notify do
   use GenServer
 
   alias Proca.Repo
-  alias Proca.{Action, Supporter, Org, PublicKey, Confirm}
+  alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service}
   alias Proca.Stage.Event
   alias Proca.Pipes
   import Logger
 
   # INIT
 
-  @impl
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -31,12 +30,12 @@ defmodule Proca.Server.Notify do
   end
 
 
+  @impl true
   def handle_cast(:instance_org_updated, st) do
     {:noreply, instance_state()}
   end
 
   def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
-    Logger.info("confirm created #{inspect(st)}")
 
     cond do
       st.global_confirm_processing ->
@@ -97,7 +96,7 @@ defmodule Proca.Server.Notify do
 
   def org_updated(org = %Org{}, changeset) do
     restart_org_pipes(org, changeset)
-    if org.name == Org.instance_org_name, do: instance_org_updated
+    if org.name == Org.instance_org_name, do: instance_org_updated()
    end
 
   def org_deleted(org = %Org{}) do
@@ -107,6 +106,7 @@ defmodule Proca.Server.Notify do
   def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
     GenServer.cast(__MODULE__, {:confirm_created, cnf, org})
   end
+
 
   ##### SIDE EFFECTS ######
 
@@ -138,7 +138,10 @@ defmodule Proca.Server.Notify do
       :custom_action_confirm,
       :custom_action_deliver,
       :email_opt_in,
-      :email_opt_in_template
+      :email_opt_in_template,
+      :event_backend_id,
+      :event_processing,
+      :confirm_processing
     ], fn prop -> Map.has_key?(changes, prop) end)
 
     if relevant_changes do

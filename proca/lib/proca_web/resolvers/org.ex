@@ -91,20 +91,27 @@ defmodule ProcaWeb.Resolvers.Org do
     }
   end
 
-  def org_processing(org, _args, _ctx) do 
-    service = case Repo.preload(org, [:email_backend]) do
-      %{email_backend: srv} when not is_nil(srv) -> srv.name
-      _ -> nil 
-    end
+  def org_processing(org, _args, _ctx) do
+    org = Repo.preload(org, [:email_backend, :event_backend])
+    email_service = case org do
+                      %{email_backend: %{name: name}} -> name
+                      _ -> nil
+                    end
+
+    event_service = case org do
+                      %{event_service: %{name: name}} -> name
+                      _ -> nil
+                    end
 
     {:ok, %{
       email_from: org.email_from,
-      email_backend: service,
+      email_backend: email_service,
       custom_supporter_confirm: org.custom_supporter_confirm,
       custom_action_confirm: org.custom_action_confirm,
       custom_action_deliver: org.custom_action_deliver,
       sqs_deliver: org.system_sqs_deliver,
       event_processing: org.event_processing,
+      event_backend: event_service,
       confirm_processing: org.confirm_processing
       }}
   end

@@ -152,6 +152,13 @@ defmodule Proca.Pipes.Topology do
         bind: Stage.SQS.start_for?(o),
         route: "#"
       },
+
+      {
+        xn(o, "event"),
+        wqn(o, "webhook"),
+        bind: Stage.Webhook.start_for?(o),
+        route: "#"
+      }
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
   end
