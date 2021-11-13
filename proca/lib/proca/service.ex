@@ -120,7 +120,7 @@ defmodule Proca.Service do
 
   # defaults
   defp json_request_opts(req, opts, srv) when map_size(req) == 0 do
-    req = %{
+    %{
       method: :get,
       body: "",
       headers: [Accepts: "application/json", "Content-Type": "application/json"]

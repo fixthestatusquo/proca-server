@@ -36,7 +36,7 @@ defmodule Proca.Server.Notify do
   end
 
   def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
-
+    # XXX make possible to send the event to both instance and current org.
     cond do
       st.global_confirm_processing ->
         send_confirm_as_event(cnf, st.instance_org_id)
