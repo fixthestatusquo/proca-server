@@ -33,13 +33,13 @@ defmodule Proca.UsersFixtures do
   """
   def extract_user_token(email, token_sender_fun) do
     token_sender_fun.(fn x -> x end)
-    
+
     case mailbox(email) do
       [%{
         private: %{
           fields: fields
         }
-      }] -> fields[email][:confirm_link]
+      }] -> fields[email]["confirmLink"]
       nil -> ""
     end
   end
