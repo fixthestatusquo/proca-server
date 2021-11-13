@@ -18,21 +18,24 @@ defmodule Proca.Server.Notify do
 
   @impl true
   def init(_) do
-    {:ok, instance_state()}
+    get_state()
   end
 
-  def instance_state() do
-    instance = Org.one([:instance])
-    %{
-      instance_org_id: instance.id,
-      global_confirm_processing: instance.confirm_processing
-    }
-  end
+  def get_state() do
+    case Org.one([:instance]) do
+      nil -> :ignore
+      instance -> {:ok, %{
+                      instance_org_id: instance.id,
+                      global_confirm_processing: instance.confirm_processing
+                   }}
+    end
+   end
 
 
   @impl true
   def handle_cast(:instance_org_updated, st) do
-    {:noreply, instance_state()}
+    {:ok, state} = get_state()
+    {:noreply, state}
   end
 
   def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
