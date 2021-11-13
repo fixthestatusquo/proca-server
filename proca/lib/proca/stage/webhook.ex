@@ -18,8 +18,20 @@ defmodule Proca.Stage.Webhook do
   import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
 
 
+  @doc "Get selected webhook service"
+  def get_service(org = %{event_backend_id: id}) do
+     Service.one(org: org, id: id, name: :webhook)
+  end
+
+  def get_service(_), do: nil
+
   def start_for?(org = %{confirm_processing: true}) do
-    webhook = Service.one(org: org, name: :webhook)
+    webhook = get_service(org)
+    not is_nil webhook
+  end
+
+  def start_for?(org = %{event_processing: true}) do
+    webhook = get_service(org)
     not is_nil webhook
   end
 
@@ -30,7 +42,7 @@ defmodule Proca.Stage.Webhook do
     Broadway.start_link(__MODULE__,
       name: String.to_atom(Atom.to_string(__MODULE__) <> ".#{org_id}"),
       producer: [
-        module: Proca.Pipes.Topology.broadway_producer(org, "event"),
+        module: Proca.Pipes.Topology.broadway_producer(org, "webhook"),
         concurrency: 1
       ],
       processors: [
@@ -46,8 +58,7 @@ defmodule Proca.Stage.Webhook do
         ],
       ],
       context: %{
-        org: org,
-        service: Service.one(org: org, name: :webhook)
+        org: org
       }
     )
   end
@@ -72,16 +83,23 @@ defmodule Proca.Stage.Webhook do
 
   @impl true
   def handle_batch(:default, messages, _,
-    %{org: org, service: webhook}) do
+    %{org: org}) do
+
+    webhook = get_service(org)
 
     for msg <- messages do
       payload = Jason.encode!(msg.data)
       case Webhook.push(webhook, payload) do
-        {:ok, _code} -> msg
-        {:ok, _code, _ret} -> msg
-        {:error, reason} -> Message.failed(msg, reason)
+        {:ok, 200} -> msg
+        {:ok, 200, _ret} -> msg
+        {:ok, 404} ->
+          error("Webhook returned 404 Not found: #{webhook.host}")
+          Message.failed(msg, "Not found")
+        {:error, reason} ->
+          error "Webhook failed: #{inspect(reason)}: #{webhook.host}"
+          Message.failed(msg, reason)
       end
     end
   end
 
-end
+ end
