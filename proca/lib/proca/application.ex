@@ -34,7 +34,11 @@ defmodule Proca.Application do
     ]
 
     # Proca SErvers
-    children = children ++ if Mix.env() == :test, do: [], else: servers()
+    children = children ++ if Application.get_env(:proca, Proca)[:start_daemon_servers] do
+      daemon_servers()
+    else
+      []
+    end
 
 
 
@@ -57,7 +61,7 @@ defmodule Proca.Application do
     :ok
   end
 
-  defp servers() do
+  defp daemon_servers() do
     [
       # Async processing systems
       {Proca.Server.Processing, []},
