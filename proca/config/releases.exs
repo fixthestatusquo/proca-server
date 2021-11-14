@@ -49,7 +49,11 @@ bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
 |> List.to_tuple
 
 config :proca, ProcaWeb.Endpoint,
-  url: [host: System.get_env("DOMAIN")],
+  url: [
+    host: System.get_env("DOMAIN"),
+    schema: "https",
+    port: 443
+  ],
   http: [
     ip: bind_ip,
     port: String.to_integer(System.get_env("PORT") || "4000")
