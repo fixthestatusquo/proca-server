@@ -16,7 +16,8 @@ config :proca, Proca.Repo,
 config :proca, ProcaWeb.Endpoint,
   http: [port: 4002],
   server: false,
-  router: ProcaWeb.Router
+  router: ProcaWeb.Router,
+  start_daemon_servers: false
 
 # Print only warnings and errors during test
 # config :logger, level: :debug
