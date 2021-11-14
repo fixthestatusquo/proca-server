@@ -4,6 +4,8 @@ defmodule ProcaWeb.InviteUserToOrgTest do
   import Proca.Factory
   use Proca.TestEmailBackend
 
+  @moduletag start: [:notify]
+
   setup do 
     red_story()
   end
@@ -34,14 +36,15 @@ defmodule ProcaWeb.InviteUserToOrgTest do
     } = res
 
     ## Check the mailbox for invite
+    Proca.Server.Notify.sync()
 
     [invitation] = mailbox(invite_email) 
     assert %{
       private: %{
         fields: %{
           ^invite_email => %{
-            "confirm_code" => ^code,
-            "confirm_email" => ^invite_email
+            "code" => ^code,
+            "email" => ^invite_email
           }
         }
       }

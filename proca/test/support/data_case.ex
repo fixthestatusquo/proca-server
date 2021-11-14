@@ -36,6 +36,11 @@ defmodule Proca.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Proca.Repo, {:shared, self()})
     end
 
+    if tags[:start] do
+      if :notify in tags[:start], do: Proca.Server.Notify.start_link(Proca.Org.instance_org_name)
+      if :processing in tags[:start], do: Proca.Server.Processing.start_link([])
+    end
+
     :ok
   end
 
@@ -53,11 +58,5 @@ defmodule Proca.DataCase do
         opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
       end)
     end)
-  end
-
-  def create_org(name) do
-    case Proca.Org.changeset(%Proca.Org{}, %{name: name, title: name}) |> Proca.Repo.insert do
-      {:ok, org} -> org
-    end
   end
 end

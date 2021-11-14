@@ -18,7 +18,7 @@ defmodule Proca.Confirm.InviteTest do
     red_story()
     |> Map.put(:instance, io)
     |> Map.put(:email_backend, TestEmailBackend.start_link([]))
-    |> Map.put(:template_directory, Proca.Service.EmailTemplateDirectory.start_link([]))
+    |> Map.put(:notify_server, Proca.Server.Notify.start_link(Org.instance_org_name))
   end
 
   test "Invite red org to yellow campaign", %{red_bot: red_staff, yellow_ap: ap, yellow_org: yellow_org} do 
@@ -32,7 +32,7 @@ defmodule Proca.Confirm.InviteTest do
     
     [sent_mail] = TestEmailBackend.mailbox(red_staff.user.email)
     fields = sent_mail.private.fields[red_staff.user.email]
-    assert fields["confirm_code"] == cnf.code
+    assert fields["code"] == cnf.code
 
 
   end

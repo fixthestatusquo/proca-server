@@ -100,6 +100,11 @@ defmodule ProcaWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(Proca.Repo, {:shared, self()})
     end
 
+    if tags[:start] do
+      if :notify in tags[:start], do: Proca.Server.Notify.start_link(Proca.Org.instance_org_name)
+      if :processing in tags[:start], do: Proca.Server.Processing.start_link([])
+    end
+
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 

@@ -13,6 +13,7 @@ defmodule Proca.TestEmailBackend do
 
   # Test part
   use ExUnit.CaseTemplate
+
   def test_email_backend(context) do 
     io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
     backend = Proca.Factory.insert(:email_backend, org: io)
@@ -22,8 +23,9 @@ defmodule Proca.TestEmailBackend do
     |> Proca.Org.put_service(backend)
     |> Proca.Repo.update!
 
+    {:ok, email_backend_pid} = Proca.TestEmailBackend.start_link([])
     context 
-    |> Map.put(:email_backend, Proca.TestEmailBackend.start_link([]))
+    |> Map.put(:email_backend, email_backend_pid)
   end
 
   using do 

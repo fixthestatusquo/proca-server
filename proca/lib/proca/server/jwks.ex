@@ -14,7 +14,11 @@ defmodule Proca.Server.Jwks do
   end
 
   def init(keys_url) do
-    {:ok, {%{}, keys_url}, {:continue, :get_keys}}
+    if keys_url == nil do
+      :ignore
+    else
+      {:ok, {%{}, keys_url}, {:continue, :get_keys}}
+    end
   end
 
   def handle_continue(:get_keys, {%{}, url}) do
