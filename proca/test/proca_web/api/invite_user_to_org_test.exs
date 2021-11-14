@@ -35,10 +35,7 @@ defmodule ProcaWeb.InviteUserToOrgTest do
       }
     } = res
 
-    ## Check the mailbox for invite
-    Proca.Server.Notify.sync()
-
-    [invitation] = mailbox(invite_email) 
+    [invitation] = mailbox(invite_email)
     assert %{
       private: %{
         fields: %{

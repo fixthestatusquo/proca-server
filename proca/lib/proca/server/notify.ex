@@ -2,77 +2,44 @@ defmodule Proca.Server.Notify do
   @moduledoc """
   Server that decides what actions should be done after different events
   """
-  use GenServer
-
   alias Proca.Repo
   alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service}
   alias Proca.Stage.Event
   alias Proca.Pipes
   import Logger
 
-  # INIT
 
-  def start_link(instance_org_name) do
-    GenServer.start_link(__MODULE__, instance_org_name, name: __MODULE__)
-  end
-
-  @impl true
-  def init(instance_org_name) do
-    get_state(instance_org_name)
-  end
-
-  def get_state(instance_org_name) do
-    case Org.one([name: instance_org_name]) do
-      nil -> :ignore
-      instance -> {:ok, %{
-                      instance_org_name: instance_org_name,
-                      instance_org_id: instance.id,
-                      global_confirm_processing: instance.confirm_processing
-                   }}
+  @type global_confirm_processing?() :: {boolean, number}
+  defp global_confirm_processing?() do
+    instance = Proca.Server.Instance.org()
+    if instance != nil do
+      {instance.confirm_processing, instance.id}
+    else
+      {false, nil}
     end
   end
 
-  @impl true
-  def handle_cast(:instance_org_updated, st) do
-    {:ok, state} = get_state(st.instance_org_name)
-    {:noreply, state}
+  ####################
+  def instance_org_updated(org) do
+    Proca.Server.Instance.update(org)
   end
 
-  def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
-    # XXX make possible to send the event to both instance and current org.
-
-    cond do
-      st.global_confirm_processing ->
-        send_confirm_as_event(cnf, st.instance_org_id)
-
-      org.confirm_processing ->
-        send_confirm_as_event(cnf, org.id)
-
-      true ->
-        send_confirm_by_email(cnf, org)
-    end
-
-    {:noreply, st}
+  def org_created(org = %Org{}) do
+    start_org_pipes(org)
   end
 
-  @impl true
-  def handle_call(:sync, _from, state) do
-    {:reply, :ok, state}
+  def org_updated(org = %Org{}, changeset) do
+    restart_org_pipes(org, changeset)
+    if org.name == Org.instance_org_name, do: instance_org_updated(org)
+   end
+
+  def org_deleted(org = %Org{}) do
+    stop_org_pipes(org)
   end
 
-
-  @doc """
-  A noop sync method that lets you make sure all previous async messages were processed (used in testing)
-  """
-  def sync do
-    GenServer.call(__MODULE__, :sync)
+  def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
+    confirm_notify(cnf, org)
   end
-
-
-  def instance_org_updated do
-    GenServer.cast(__MODULE__, :instance_org_updated)
-  end
-
 
   @spec action_created(%Action{}, %Supporter{} | nil) :: :ok
   def action_created(action, supporter \\ nil) do
@@ -107,25 +74,20 @@ defmodule Proca.Server.Notify do
 
   # XXX add Campaign
 
-  def org_created(org = %Org{}) do
-    start_org_pipes(org)
-  end
-
-  def org_updated(org = %Org{}, changeset) do
-    restart_org_pipes(org, changeset)
-    if org.name == Org.instance_org_name, do: instance_org_updated()
-   end
-
-  def org_deleted(org = %Org{}) do
-    stop_org_pipes(org)
-  end
-
-  def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
-    GenServer.cast(__MODULE__, {:confirm_created, cnf, org})
-  end
 
 
   ##### SIDE EFFECTS ######
+
+  def confirm_notify(cnf, org) do
+    {global, instance_org_id} = global_confirm_processing?()
+
+    if not global and not org.confirm_processing do
+      send_confirm_by_email(cnf, org)
+    else
+      if global, do: send_confirm_as_event(cnf, instance_org_id)
+      if org.confirm_processing, do: send_confirm_as_event(cnf, org.id)
+    end
+  end
 
   def send_confirm_as_event(cnf, org_id) do
       Event.emit(:confirm_created, cnf, org_id)

@@ -42,7 +42,6 @@ defmodule Proca.Confirm.LaunchPageTest do
     assert cnf.creator_id != nil
 
     Proca.Server.Notify.org_confirm_created(cnf, yellow_org)
-    Proca.Server.Notify.sync()
 
     owner_mbox = Proca.TestEmailBackend.mailbox yellow_owner.user.email    
 
