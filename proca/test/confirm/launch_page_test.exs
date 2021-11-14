@@ -4,21 +4,13 @@ defmodule Proca.Confirm.LaunchPageTest do
   alias Proca.Factory
 
   alias Proca.{Confirm, Repo, Org}
-  alias Proca.TestEmailBackend
   import Ecto.Changeset
 
+  use Proca.TestEmailBackend
+  @moduletag start: [:notify]
+
   setup do 
-    io = Org.instance_org_name()
-    |> Org.get_by_name([:template_backend, :email_backend])
-
-    io = io
-    |> Org.put_service(Factory.insert(:email_backend, org: io))
-    |> Repo.update!
-
     red_story()
-    |> Map.put(:instance, io)
-    |> Map.put(:email_backend, TestEmailBackend.start_link([]))
-    |> Map.put(:template_directory, Proca.Service.EmailTemplateDirectory.start_link([]))
   end
 
   test "email variables contain twitter meta", %{
@@ -50,6 +42,7 @@ defmodule Proca.Confirm.LaunchPageTest do
     assert cnf.creator_id != nil
 
     Proca.Server.Notify.org_confirm_created(cnf, yellow_org)
+    Proca.Server.Notify.sync()
 
     owner_mbox = Proca.TestEmailBackend.mailbox yellow_owner.user.email    
 
@@ -57,10 +50,10 @@ defmodule Proca.Confirm.LaunchPageTest do
 
     pf = all_perso_fields[yellow_owner.user.email]
 
-    assert pf["confirm_creator_email"] == yellow_owner.user.email
-    assert pf["org_twitter_description"] == "A sample campaigning organisation in social media"
-    assert pf["org_twitter_picture"] == "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_400x400.jpg"
-    assert pf["org_twitter_followers_count"] == 100000
+    assert pf["creatorEmail"] == yellow_owner.user.email
+    assert pf["orgTwitterDescription"] == "A sample campaigning organisation in social media"
+    assert pf["orgTwitterPicture"] == "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_400x400.jpg"
+    assert pf["orgTwitterFollowersCount"] == 100000
 
 
   end

@@ -6,7 +6,7 @@ defmodule Proca.Application do
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
+    # Standard Phoenix processes
     children = [
       # Start the Ecto repository
       Proca.Repo,
@@ -16,39 +16,24 @@ defmodule Proca.Application do
       ProcaWeb.Endpoint,
       {Absinthe.Subscription, ProcaWeb.Endpoint},
 
-      {Proca.Server.Notify, []},
+      # Core servers (data providers and caches)
+      # Encryption
+      {Proca.Server.Keys, Proca.Org.instance_org_name},
 
-      {Proca.Server.Keys, Application.get_env(:proca, Proca)[:org_name]},
-
-      {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
-
+      # Email template directory
       {Proca.Service.EmailTemplateDirectory, []},
 
+      # Processing / queue management
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
-      {Proca.Pipes.Connection, Application.get_env(:proca, Proca.Pipes)[:url]},
+      {Proca.Pipes.Connection, Proca.Pipes.queue_url()},
 
-      {Proca.Server.Processing, []},
-      {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
-      {Proca.ActionPage.Status, []},
-
-
-      # Starts a worker by calling: Proca.Worker.start_link(arg)
-      # {Proca.Worker, arg},
     ]
 
-    children =
-      if enabled(:jwt) do
-        children ++
-          [
-            {
-              Proca.Server.Jwks,
-              Application.get_env(:proca, Proca.Server.Jwks)[:url]
-            }
-          ]
-      else
-        children
-      end
+    # Proca SErvers
+    children = children ++ if Mix.env() == :test, do: [], else: servers()
+
+
 
     # AMQP logging is very verbose so quiet it:
     :logger.add_primary_filter(
@@ -69,7 +54,18 @@ defmodule Proca.Application do
     :ok
   end
 
-  defp enabled(:jwt) do
-    not is_nil(Application.get_env(:proca, Proca.Server.Jwks)[:url])
+  defp servers() do
+    [
+      # Async processing systems
+      {Proca.Server.Notify, Proca.Org.instance_org_name},
+      {Proca.Server.Processing, []},
+
+      {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
+
+      {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
+      {Proca.ActionPage.Status, []},
+
+      {Proca.Server.Jwks, Application.get_env(:proca, Proca.Server.Jwks)[:url]}
+    ]
   end
 end

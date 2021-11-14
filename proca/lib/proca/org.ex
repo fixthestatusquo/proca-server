@@ -7,7 +7,6 @@ defmodule Proca.Org do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
-  import Ecto.Query, only: :macros
   import Ecto.Query, except: [update: 2]
   alias Proca.Org
   alias Proca.Service.EmailTemplateDirectory

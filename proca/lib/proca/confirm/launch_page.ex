@@ -16,6 +16,8 @@ defmodule Proca.Confirm.LaunchPage do
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
+  import Logger
+
   @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
   def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
     # XXX test for campaign manager
@@ -65,9 +67,9 @@ defmodule Proca.Confirm.LaunchPage do
 
   @impl true
   def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
-    %Campaign{name: campaign_name, title: campaign_title} = get(Campaign, campaign_id)
-    %ActionPage{org: %{name: org_name, title: org_title} = org} = ActionPage.find(ap_id)
-
+    with %Campaign{name: campaign_name, title: campaign_title} <- get(Campaign, campaign_id),
+         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.find(ap_id)
+    do
     %{
       campaign: %{
         name: campaign_name,
@@ -78,6 +80,11 @@ defmodule Proca.Confirm.LaunchPage do
         title: org_title
       } |> Map.merge(email_org_config_fields(org))
     }
+    else
+      nil ->
+        error("launch_page confirm: Cannot get campaign id #{campaign_id} or page id #{ap_id}")
+      %{}
+    end
 
   end
 

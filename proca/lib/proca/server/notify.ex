@@ -12,34 +12,35 @@ defmodule Proca.Server.Notify do
 
   # INIT
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(instance_org_name) do
+    GenServer.start_link(__MODULE__, instance_org_name, name: __MODULE__)
   end
 
   @impl true
-  def init(_) do
-    get_state()
+  def init(instance_org_name) do
+    get_state(instance_org_name)
   end
 
-  def get_state() do
-    case Org.one([:instance]) do
+  def get_state(instance_org_name) do
+    case Org.one([name: instance_org_name]) do
       nil -> :ignore
       instance -> {:ok, %{
+                      instance_org_name: instance_org_name,
                       instance_org_id: instance.id,
                       global_confirm_processing: instance.confirm_processing
                    }}
     end
-   end
-
+  end
 
   @impl true
   def handle_cast(:instance_org_updated, st) do
-    {:ok, state} = get_state()
+    {:ok, state} = get_state(st.instance_org_name)
     {:noreply, state}
   end
 
   def handle_cast({:confirm_created, %Confirm{} = cnf, %Org{} = org}, st) do
     # XXX make possible to send the event to both instance and current org.
+
     cond do
       st.global_confirm_processing ->
         send_confirm_as_event(cnf, st.instance_org_id)
@@ -52,6 +53,19 @@ defmodule Proca.Server.Notify do
     end
 
     {:noreply, st}
+  end
+
+  @impl true
+  def handle_call(:sync, _from, state) do
+    {:reply, :ok, state}
+  end
+
+
+  @doc """
+  A noop sync method that lets you make sure all previous async messages were processed (used in testing)
+  """
+  def sync do
+    GenServer.call(__MODULE__, :sync)
   end
 
 
@@ -122,8 +136,8 @@ defmodule Proca.Server.Notify do
     Repo.preload(org, [staffers: :user]).staffers
     |> Enum.map(fn %{user: user} -> user.email end)
 
-    cnf = Repo.preload(cnf, [:creator])
 
+    cnf = Repo.preload(cnf, [:creator])
     Proca.Confirm.notify_by_email(cnf, recipients)
    end
 
