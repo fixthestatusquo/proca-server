@@ -41,14 +41,14 @@ defmodule Proca.Org do
     field :email_opt_in_template, :string
 
     # confirming and delivery configuration
-    field :custom_supporter_confirm, :boolean
-    field :custom_action_confirm, :boolean
-    field :custom_action_deliver, :boolean
-    field :system_sqs_deliver, :boolean
+    field :custom_supporter_confirm, :boolean, default: false
+    field :custom_action_confirm, :boolean, default: false
+    field :custom_action_deliver, :boolean, default: false
+    field :system_sqs_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
-    field :event_processing, :boolean # for system events from Proca.Server.Notify
-    field :confirm_processing, :boolean # confirmable operations
+    field :event_processing, :boolean, default: false # for system events from Proca.Server.Notify
+    field :confirm_processing, :boolean, default: false # confirmable operations
 
 
     field :config, :map

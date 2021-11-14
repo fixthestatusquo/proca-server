@@ -226,8 +226,6 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
 
       yellow_email = yu.email
 
-      Proca.Server.Notify.sync()
-
       assert [request_email] = mailbox(yu.email)
       assert %Bamboo.Email{
         private: %{
