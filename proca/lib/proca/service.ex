@@ -102,15 +102,17 @@ defmodule Proca.Service do
   end
 
   defp json_request_read_body(hdrs, ref) do
-    case List.keyfind(hdrs, "Content-Type", 0) do
-      {_, "application/json"} ->
+    content_type = :hackney_headers.get_value("content-type", :hackney_headers.new(hdrs))
+
+    case content_type do
+      "application/json" <> _ ->
         with {:ok, body} <- :hackney.body(ref),
              {:ok, parsed} <- Jason.decode(body) do
           {:ok, 200, parsed}
         else
           x -> x
         end
-      _ ->
+      ct ->
         case :hackney.body(ref) do
           {:ok, raw} -> {:ok, 200, raw}
           x -> x

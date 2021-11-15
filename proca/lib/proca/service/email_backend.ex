@@ -1,12 +1,11 @@
 defmodule Proca.Service.EmailBackend do
   @moduledoc """
   EmailBackend behaviour specifies what we want to expect from an email backend.
-  We are using Bamboo for sending emails - it is very convenient because it has lots of adapters.
-  However, we also need to be able to work with templates and Bamboo does not have this.
+  We are using Swoosh for sending emails - it is very convenient because it has lots of adapters.
+  However, we also need to be able to work with templates and Swoosh does not have this.
 
   ## Recipients
-  Recipients of transaction emails are Supporters. 
-
+  Recipients of transaction emails are Supporters.
 
   1. We prefer to use a template system, for sending emails in batch.
   2. If this is not available, send them one by one
@@ -22,7 +21,7 @@ defmodule Proca.Service.EmailBackend do
 
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailRecipient}
-  alias Bamboo.Email
+  alias Swoosh.Email
   import Proca.Stage.Support, only: [flatten_keys: 2]
 
   # Template management
@@ -35,7 +34,7 @@ defmodule Proca.Service.EmailBackend do
 
   @type recipient :: %EmailRecipient{}
 
-  @callback put_recipients(email :: %Email{}, recipients :: [recipient]) :: %Email{}
+  @callback put_recipient(email :: %Email{}, recipients :: [recipient]) :: %Email{}
   @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
   @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t) :: %Email{}
   @callback deliver(%Email{}, %Org{}) :: any()
@@ -62,9 +61,20 @@ defmodule Proca.Service.EmailBackend do
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
 
-    e = Email.from(%Email{}, from(org))
+    emails = recipients
+    |> Enum.map(&prepare_fields/1)
+    |> Enum.map(&make_email(backend, &1, org, email_template))
 
-    if is_nil(e.from), do: raise "Org #{org.name} (#{org.id}) failed to send email via #{name}: No from address."
+    apply(backend, :deliver, [emails, org])
+  end
+
+  defp make_email(backend, recipient, org, template) do
+    email_from = from(org)
+    if elem(email_from, 1) == nil, do: raise "Org #{org.name} (#{org.id}) failed to send email via #{backend}: No from address."
+
+    e = Email.new()
+    |> Email.from(email_from)
+
 
     e = if elem(e.from, 1) != org.email_from do
       apply(backend, :put_reply_to, [e, org.email_from])
@@ -72,13 +82,10 @@ defmodule Proca.Service.EmailBackend do
       e
     end
 
-    recipients = Enum.map(recipients, &prepare_fields/1)
+    e = apply(backend, :put_recipient, [e, recipient])
+    e = apply(backend, :put_template, [e, template])
 
-    e = apply(backend, :put_recipients, [e, recipients])
-    e = apply(backend, :put_template, [e, email_template])
-    apply(backend, :deliver, [e, org])
-
-    :ok
+    e
   end
 
   # Org uses own email backend
@@ -118,7 +125,7 @@ defmodule Proca.Service.EmailBackend do
   end
 
   defmodule NotDelivered do
-    defexception [:message]
+    defexception [:message, :reason]
 
     def exception(msg) when is_bitstring(msg) do
       %NotDelivered{message: msg}

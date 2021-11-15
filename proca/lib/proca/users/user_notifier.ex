@@ -10,8 +10,10 @@ defmodule Proca.Users.UserNotifier do
       {:ok, ref} -> 
         t = %Service.EmailTemplate{ref: ref}
         r = %Service.EmailRecipient{first_name: "Proca User", email: email, fields: fields}
-        Service.EmailBackend.deliver([r], instance, t)
-      _ -> 
+        result = Service.EmailBackend.deliver([r], instance, t)
+        info("Email #{template_name} to #{email} delivery: #{inspect(result)}}")
+        result
+      _ ->
         # IO.inspect({instance, template_name}, label: "Failed to send user notification with tempalte")
         debug("User notification: #{template_name} for <#{email}>: #{inspect(fields)}")
     end

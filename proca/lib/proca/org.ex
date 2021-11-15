@@ -137,7 +137,7 @@ defmodule Proca.Org do
     |> all(kw)
   end
 
-  def update(org, [attrs | kw])
+  def update(org, [{:params, attrs} | kw])
   when is_map(attrs) do
     changeset(org, attrs)
     |> update(kw)
