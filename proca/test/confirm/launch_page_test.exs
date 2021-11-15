@@ -45,9 +45,9 @@ defmodule Proca.Confirm.LaunchPageTest do
 
     owner_mbox = Proca.TestEmailBackend.mailbox yellow_owner.user.email    
 
-    [%{private: %{fields: all_perso_fields}}] = owner_mbox
+    [%{provider_options: %{fields: all_perso_fields}}] = owner_mbox
 
-    pf = all_perso_fields[yellow_owner.user.email]
+    pf = all_perso_fields
 
     assert pf["creatorEmail"] == yellow_owner.user.email
     assert pf["orgTwitterDescription"] == "A sample campaigning organisation in social media"

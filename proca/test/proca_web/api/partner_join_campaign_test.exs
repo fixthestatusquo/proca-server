@@ -227,14 +227,12 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       yellow_email = yu.email
 
       assert [request_email] = mailbox(yu.email)
-      assert %Bamboo.Email{
-        private: %{
+      assert %Swoosh.Email{
+        provider_options: %{
           fields: %{
-            ^yellow_email => %{
-              "code" => confirm_code,
-              "objectId" => confirm_object_id,
-              "acceptLink" => confirm_link
-            }
+            "code" => confirm_code,
+            "objectId" => confirm_object_id,
+            "acceptLink" => confirm_link
           },
           template_ref: "ref:launchpage"
         }

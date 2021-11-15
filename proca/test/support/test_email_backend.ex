@@ -17,8 +17,8 @@ defmodule Proca.TestEmailBackend do
   def test_email_backend(context) do 
     io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
     backend = Proca.Factory.insert(:email_backend, org: io)
-    
-    _io = Ecto.Changeset.change(io)
+
+    Ecto.Changeset.change(io, email_from: "no-reply@" <> backend.host)
     |> Ecto.Changeset.put_assoc(:services, [backend])
     |> Proca.Org.put_service(backend)
     |> Proca.Repo.update!
@@ -58,8 +58,8 @@ defmodule Proca.TestEmailBackend do
   def handle_call(:opts, _from, st = %{opts: opts}), do: {:reply, st, opts}
 
   @impl true 
-  def handle_call({:send_to, address, email}, _from, st = %{mbox: mbox}) do 
-    address = case address do 
+  def handle_call({:send_to, address, email}, _from, st = %{mbox: mbox}) do
+    address = case address do
       {_name, email_part} -> email_part
       email_part when is_bitstring(email_part) -> email_part
     end
@@ -86,7 +86,7 @@ defmodule Proca.TestEmailBackend do
   # Email Backend part
   @behaviour Proca.Service.EmailBackend
   alias Proca.Service.{EmailTemplate}
-  alias Bamboo.Email
+  alias Swoosh.Email
   @impl true
   def supports_templates?(_org) do
     true
@@ -117,36 +117,29 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
-  def put_recipients(email, recipients) do
+  def put_recipient(email, recipient) do
     email
-    |> Email.to([])
-    |> Email.cc([])
-    |> Email.bcc(
-      Enum.map(
-        recipients,
-        fn %{first_name: name, email: eml} -> {name, eml} end
-      )
-    )
-    |> Email.put_private(:fields, Enum.map(recipients, fn r -> {r.email, r.fields} end) |> Map.new() )
+    |> Email.to({recipient.first_name, recipient.email})
+    |> Email.put_provider_option(:fields, recipient.fields)
   end
 
   @impl true
   def put_template(email, %EmailTemplate{ref: ref, subject: sub, html: body}) do
-    %{ email | subject: sub, html_body: body}
-    |> Map.update(:private, %{}, &Map.put(&1, :template_ref,ref))
+    %{email | subject: sub, html_body: body}
+    |> Map.update(:provider_options, %{}, &Map.put(&1, :template_ref,ref))
   end
 
   @impl true
   def put_reply_to(email, reply_to_email) do
     email
-    |> Email.put_header("Reply-To", reply_to_email)
+    |> Email.header("Reply-To", reply_to_email)
   end
 
   @impl true
-  def deliver(email, _org) do
-    for address <- email.bcc do 
-      send_to(address, email)
-    end
+  def deliver(emails, _org) do
+    emails
+    |> Enum.map(&send_to(Enum.at(&1.to, 0), &1))
+    :ok
   end
 end
 
