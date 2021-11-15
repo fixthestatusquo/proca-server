@@ -43,6 +43,14 @@ secret_key_base =
   You can generate one by calling: mix phx.gen.secret
   """
 
+signing_salt =
+  System.get_env("SIGNING_SALT") ||
+  raise """
+  environment variable SIGNING_SALT is missing.
+  You can generate one by calling: mix phx.gen.secret
+  """
+
+
 bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
 |> String.split(".")
 |> Enum.map(&String.to_integer/1)
@@ -62,6 +70,7 @@ config :proca, ProcaWeb.Endpoint,
   check_origin: ["//" <> System.get_env("DOMAIN")], # for WebSocket security
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base,
+  signing_salt: signing_salt,
   captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
 
 config :sentry,
