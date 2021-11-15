@@ -6,9 +6,9 @@ defmodule ProcaWeb.Resolvers.Target do
   import Ecto.Query
   alias Proca.Repo
 
-  def upsert_targets(_p, params = %{targets: targets}, _) do
+  def upsert_targets(_p, params = %{targets: targets, campaign_id: campaign_id}, _) do
     result = Multi.new
-    |> upsert(targets)
+    |> upsert(targets, campaign_id)
     |> Proca.Repo.transaction
 
     case result do
@@ -26,8 +26,9 @@ defmodule ProcaWeb.Resolvers.Target do
     {:ok, targets}
   end
 
-  defp upsert(multi, targets) do
+  defp upsert(multi, targets, campaign_id) do
     Enum.reduce(targets, multi, fn target, multi ->
+      target = Map.put(target, :campaign_id, campaign_id)
       Multi.insert(multi, {:target, target.external_id}, upsert_target(target), on_conflict: :replace_all, conflict_target: :external_id, returning: true)
     end)
   end
