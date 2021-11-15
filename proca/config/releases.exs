@@ -51,7 +51,7 @@ bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
 config :proca, ProcaWeb.Endpoint,
   url: [
     host: System.get_env("DOMAIN"),
-    schema: "https",
+    scheme: "https",
     port: 443
   ],
   http: [
