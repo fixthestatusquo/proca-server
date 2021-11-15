@@ -20,7 +20,6 @@ defmodule ProcaWeb.TargetsTest do
               email: "test@html.1234"
             }
           ],
-          campaign_id: red_campaign.id,
           external_id: "1234"
         },
         %{
@@ -33,10 +32,10 @@ defmodule ProcaWeb.TargetsTest do
               email: "test@html.12344"
             }
           ],
-          campaign_id: yellow_campaign.id,
           external_id: "1244"
         }
-      ]
+      ],
+      campaign_id: red_campaign.id
     }
     assert {:ok, targets} = ProcaWeb.Resolvers.Target.upsert_targets(nil, targets, nil)
 
