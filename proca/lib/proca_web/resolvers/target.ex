@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.Target do
   alias ProcaWeb.Helper
 
   import Ecto.Query
-  import Proca.Repo
+  alias Proca.Repo
 
   def upsert_targets(_p, params = %{targets: targets}, _) do
     result = Multi.new
@@ -20,7 +20,8 @@ defmodule ProcaWeb.Resolvers.Target do
   def list(_, %{campaign_id: campaign_id}, _) do
     targets = Target
     |> where(campaign_id: ^campaign_id)
-    |> Proca.Repo.all()
+    |> preload(:emails)
+    |> Repo.all()
 
     {:ok, targets}
   end
