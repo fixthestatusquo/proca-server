@@ -24,7 +24,11 @@ defmodule Proca.TestEmailBackend do
     |> Proca.Repo.update!
 
     {:ok, email_backend_pid} = Proca.TestEmailBackend.start_link([])
-    context 
+    on_exit :stop_email_backend, fn ->
+      Process.exit email_backend_pid, :kill
+    end
+
+    context
     |> Map.put(:email_backend, email_backend_pid)
   end
 
