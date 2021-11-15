@@ -668,7 +668,7 @@ type RootMutationType {
 
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
-  upsertTargets(targets: [TargetInput]!): [Target]!
+  upsertTargets(targets: [TargetInput]!, campaignId: Int!): [Target]!
 }
 
 type RootQueryType {
@@ -1129,7 +1129,6 @@ type CustomField {
 input TargetInput {
   name: String!
   area: String
-  campaignId: Int!
   externalId: String!
   fields: Json
   emails: [TargetEmailInput]!

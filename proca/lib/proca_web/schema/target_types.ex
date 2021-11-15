@@ -18,7 +18,6 @@ defmodule ProcaWeb.Schema.TargetTypes do
   input_object :target_input do
     field :name, non_null(:string)
     field :area, :string, default_value: ""
-    field :campaign_id, non_null(:integer)
     field :external_id, non_null(:string)
     field :fields, :json, default_value: %{}
     field :emails, non_null(list_of(:target_email_input))
@@ -35,6 +34,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
   object :target_mutations do
     field :upsert_targets, type: non_null(list_of(:target)) do
       arg :targets, non_null(list_of(:target_input))
+      arg :campaign_id, non_null(:integer)
 
       resolve(&Resolvers.Target.upsert_targets/3)
     end
