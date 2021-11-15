@@ -77,6 +77,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value :mailjet
     value :wordpress
     value :stripe
+    value :webhook
   end 
 
   object :service do 

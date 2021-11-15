@@ -33,5 +33,5 @@ defmodule Proca.Confirm.ConfirmAction do
   def email_template(_), do: "confirm_action"
 
   @impl true 
-  def email_fields(_), do: %{}
+  def notify_fields(_), do: %{}
 end

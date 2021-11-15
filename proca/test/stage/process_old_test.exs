@@ -4,9 +4,12 @@ defmodule Proca.Stage.ProcessOldTest do
   alias Proca.Factory 
   alias Proca.Stage.ProcessOld
   alias Proca.Repo
+  alias Proca.Pipes
 
   setup do 
     blue_story()
+    #|> Map.put(:pipes_supervisor, Pipes.Supervisor.start_link([]))
+    #|> Map.put(:pipes_connection, Pipes.Connection.start_link(Pipes.queue_url()))
   end
 
   test "process old action with new/new status", %{pages: [ap]} do 

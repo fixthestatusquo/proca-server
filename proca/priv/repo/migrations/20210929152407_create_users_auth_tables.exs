@@ -31,8 +31,8 @@ defmodule Proca.Repo.Migrations.CreateUsersAuthTables do
     create unique_index(:users_tokens, [:context, :token])
 
     execute """
-      INSERT INTO users (email, hashed_password, perms, confirmed_at, inserted_at, updated_at)
-      SELECT email, password_hash, perms, inserted_at, inserted_at, updated_at 
+      INSERT INTO users (id, email, hashed_password, perms, confirmed_at, inserted_at, updated_at)
+      SELECT id, email, password_hash, perms, inserted_at, inserted_at, updated_at
       FROM pow_users
     """, ""
 

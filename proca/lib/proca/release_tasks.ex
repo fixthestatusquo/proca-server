@@ -58,12 +58,11 @@ defmodule Proca.ReleaseTasks do
   end
 
   def make_admin(email) do
-    instance_org = Proca.Repo.get_by(Proca.Org, %{name: Application.get_env(:proca, Proca)[:org_name]})
-
     case Proca.Users.User.one(email: email) do
       u when not is_nil(u) ->
-        Proca.Staffer.build_for_user(u, instance_org.id, Proca.Staffer.Role.permissions(:admin))
-        |>Proca.Repo.insert()
+        p = [:instance_owner, :join_orgs, :manage_users, :manage_orgs]
+        Ecto.Changeset.change(u, perms: Proca.Permission.add(u.perms, p))
+        |> Proca.Repo.update!
         IO.puts("Added #{email} as admin")
       _ -> IO.puts("Can't find user #{email}")
     end

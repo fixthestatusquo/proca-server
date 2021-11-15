@@ -601,6 +601,10 @@ type RootMutationType {
     customActionDeliver: Boolean
 
     sqsDeliver: Boolean
+
+    eventProcessing: Boolean
+
+    confirmProcessing: Boolean
   ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
@@ -753,6 +757,8 @@ type Processing {
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
   sqsDeliver: Boolean!
+  eventProcessing: Boolean!
+  confirmProcessing: Boolean!
 }
 
 type PublicActionPage implements ActionPage {

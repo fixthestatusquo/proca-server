@@ -51,9 +51,10 @@ defmodule Proca.Confirm.JoinCampaign do
 
   def run(%Confirm{operation: :join_campaign}, :reject, _auth), do: :ok     
 
-  def email_fields(%Confirm{}), do: %{}
+  def notify_fields(%Confirm{}), do: %{}
 
 
+  def email_template(%Confirm{operation: :join_campaign}), do: "join_campaign"
 
 #    latest_page = from(a in ActinPage, 
 #      where: a.campaign_id == ^campaign_id and a.org_id ==, 
