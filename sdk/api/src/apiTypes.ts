@@ -588,6 +588,8 @@ export type Processing = {
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
   sqsDeliver: Scalars['Boolean'];
+  eventProcessing: Scalars['Boolean'];
+  confirmProcessing: Scalars['Boolean'];
 };
 
 export type PublicActionPage = ActionPage & {
@@ -829,6 +831,8 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
   sqsDeliver?: Maybe<Scalars['Boolean']>;
+  eventProcessing?: Maybe<Scalars['Boolean']>;
+  confirmProcessing?: Maybe<Scalars['Boolean']>;
 };
 
 

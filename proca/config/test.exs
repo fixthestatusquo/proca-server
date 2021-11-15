@@ -22,4 +22,6 @@ config :proca, ProcaWeb.Endpoint,
 # config :logger, level: :debug
 config :logger, level: :warn
 
-config :proca, Proca, org_name: "hq"
+config :proca, Proca,
+  org_name: "instance",
+  start_daemon_servers: false

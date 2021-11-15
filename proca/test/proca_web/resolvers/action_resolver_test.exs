@@ -37,8 +37,6 @@ defmodule ProcaWeb.ActionResolverTest do
     {:ok, created} =
       ProcaWeb.Resolvers.Action.add_action_contact(nil, params, %Absinthe.Resolution{})
 
-    Proca.Server.Processing.sync()
-
     assert %{contact_ref: ref, first_name: blx} = created
 
     assert blx == "Blixa"
@@ -89,7 +87,6 @@ defmodule ProcaWeb.ActionResolverTest do
     {:ok, created} =
       ProcaWeb.Resolvers.Action.add_action(nil, action_params, %Absinthe.Resolution{})
 
-    Proca.Server.Processing.sync()
 
     sup = Repo.get_by(Supporter, fingerprint: Supporter.base_decode(ref) |> elem(1))
     sup = Repo.preload(sup, [:actions, :contacts])
@@ -135,7 +132,6 @@ defmodule ProcaWeb.ActionResolverTest do
     {:ok, created} =
       ProcaWeb.Resolvers.Action.add_action_contact(nil, params, %Absinthe.Resolution{})
 
-    Proca.Server.Processing.sync()
 
     sup =
       Repo.get_by(Supporter, fingerprint: Supporter.base_decode(created.contact_ref) |> elem(1))

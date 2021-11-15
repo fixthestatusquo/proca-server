@@ -18,7 +18,8 @@ defmodule Proca.Service.Mailjet do
 
   alias Proca.{Org, Service}
   alias Proca.Service.{EmailTemplate, EmailBackend}
-  alias Bamboo.{MailjetAdapter, MailjetHelper, Email}
+  alias Swoosh.Adapters.Mailjet
+  alias Swoosh.Email
   import Logger
 
   @api_url "https://api.mailjet.com/v3"
@@ -43,7 +44,7 @@ defmodule Proca.Service.Mailjet do
 
   defp template_from_json(data) do
     %EmailTemplate{
-      ref: Integer.to_string(data["ID"]),
+      ref: data["ID"],
       name: data["Name"]
     }
   end
@@ -59,52 +60,48 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_recipients(email, recipients) do
+  def put_recipient(email, recipient) do
     email
-    |> Email.to([])
-    |> Email.cc([])
-    |> Email.bcc(
-      Enum.map(
-        recipients,
-        fn %{first_name: name, email: eml} -> {name, eml} end
-      )
-    )
-    |> MailjetHelper.put_recipient_vars(Enum.map(recipients, & &1.fields))
+    |> Email.to({recipient.first_name, recipient.email})
+    |> Email.put_provider_option(:variables, recipient.fields)
   end
 
   @impl true
-  def put_template(email, %EmailTemplate{ref: ref}) do
+  def put_template(email, %EmailTemplate{ref: ref}) when is_integer(ref) do
     email
-    |> MailjetHelper.template(ref)
-    |> MailjetHelper.template_language(true)
+    |> Email.put_provider_option(:template_id, ref)
   end
 
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
     when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
-    
-    %{email | subject: subject, html_body: html, text_body: text}
+
+    email
+    |> Email.subject(subject)
+    |> Email.html_body(html)
+    |> Email.text_body(text)
   end
 
   @impl true
   def put_reply_to(email, reply_to_email) do
     email
-    |> Email.put_header("Reply-To", reply_to_email)
+    |> Email.header("Reply-To", reply_to_email)
   end
 
   @impl true
-  def deliver(email, %Org{email_backend: srv}) do
-    try do
-      MailjetAdapter.deliver(email, config(srv))
-    rescue
-      e in MailjetAdapter.ApiError ->
-        reraise EmailBackend.NotDelivered.exception(e), __STACKTRACE__
+  def deliver(emails, %Org{email_backend: srv}) do
+    case Mailjet.deliver_many(emails, config(srv)) do
+      {:ok, _} -> :ok
+      {:error, {_code, %{"ErrorMessage" => msg}}} ->
+        raise EmailBackend.NotDelivered.exception(msg)
+      {:error, reason} ->
+        raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
     end
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{
       api_key: u,
-      api_private_key: p
+      secret: p
     }
   end
 end

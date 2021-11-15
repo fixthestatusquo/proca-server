@@ -7,12 +7,13 @@ defmodule Proca.Service do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4, order_by: 3, limit: 2]
   alias Proca.{Repo, Service, Org}
+  import Logger
 
   schema "services" do
     field :name, ExternalService
-    field :host, :string
-    field :user, :string
-    field :password, :string
+    field :host, :string, default: ""
+    field :user, :string, default: ""
+    field :password, :string, default: ""
     field :path, :string
     belongs_to :org, Proca.Org
 
@@ -30,6 +31,10 @@ defmodule Proca.Service do
     |> put_change(:name, service)
     |> put_change(:org_id, org_id)
   end
+
+  def all(q, [{:id, id} | kw]), do: where(q, [s], s.id == ^id) |> all(kw)
+  def all(q, [{:name, name} | kw]), do: where(q, [s], s.name == ^name) |> all(kw)
+  def all(q, [{:org, %Org{id: org_id}} | kw]), do: where(q, [s], s.org_id == ^org_id) |> all(kw)
 
   def update(srv, [{:org, org} | kw]) do 
     srv
@@ -72,53 +77,84 @@ defmodule Proca.Service do
     )
   end
 
-  # Generic JSON request helpers
+  @doc """
+  Generic JSON request.
+
+  returns:
+
+  {:ok, 200, data} - when data is returned
+  {:ok, code} - for other ok code with no data
+  {:error, reason}
+  """
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
     case :hackney.request(req.method, url, req.headers, req.body) do
-      {:ok, 200, _hdrs, ref} ->
-        case json_request_read_body(ref) do
-          {:ok, data} -> {:ok, 200, data}
-          x -> x
-        end
+      {:ok, 200, hdrs, ref} ->
+        json_request_read_body(hdrs, ref)
 
       {:ok, code, _hdrs, _ref} ->
         {:ok, code} 
 
       {:error, reason} ->
         {:error, reason}
+     end
+  end
+
+  defp json_request_read_body(hdrs, ref) do
+    content_type = :hackney_headers.get_value("content-type", :hackney_headers.new(hdrs))
+
+    case content_type do
+      "application/json" <> _ ->
+        with {:ok, body} <- :hackney.body(ref),
+             {:ok, parsed} <- Jason.decode(body) do
+          {:ok, 200, parsed}
+        else
+          x -> x
+        end
+      ct ->
+        case :hackney.body(ref) do
+          {:ok, raw} -> {:ok, 200, raw}
+          x -> x
+        end
     end
   end
 
-  defp json_request_read_body(ref) do
-    with {:ok, body} <- :hackney.body(ref),
-         {:ok, parsed} <- Jason.decode(body) do
-      {:ok, parsed}
-    else
-      x -> x
-    end
-  end
-
+  # defaults
   defp json_request_opts(req, opts, srv) when map_size(req) == 0 do
-    req = %{
+    %{
       method: :get,
       body: "",
       headers: [Accepts: "application/json", "Content-Type": "application/json"]
     }
-
-    json_request_opts(req, opts, srv)
+    |> json_request_opts(opts, srv)
   end
 
   defp json_request_opts(req, [], _srv) do
     req
   end
 
-  defp json_request_opts(req, [{:auth, :basic} | rest], srv) do
-    auth = "#{srv.user}:#{srv.password}" |> Base.encode64()
+  defp json_request_opts(req, [{:post, body} | rest], srv) do
+    %{req | method: :post, body: body}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :basic} | rest], srv = %{user: u, password: p})
+  when is_bitstring(u) and is_bitstring(p)
+    do
+    auth = "#{u}:#{p}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
     |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd}) when is_bitstring(pwd) do
+    %{req | headers: [Authorization: pwd]}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, nil} | rest], srv) do
+    json_request_opts(req, rest, srv)
   end
 
   defp json_request_opts(req, [{:form, form} | rest], srv) do 
@@ -129,4 +165,4 @@ defmodule Proca.Service do
       }
     |> json_request_opts(rest, srv)
   end
-end
+   end

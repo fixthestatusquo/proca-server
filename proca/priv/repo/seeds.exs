@@ -21,33 +21,38 @@ create_keys = fn org ->
   |> Proca.Repo.insert()
   end
 
-create_admin = fn _org, username ->
+create_admin = fn org, username ->
   user = Proca.Users.get_user_by_email(username) || 
     Proca.Users.register_user_from_sso!(%{email: username})
 
-  {:ok, user} = Proca.Users.User.update(Ecto.Changeset.change(user), [:admin])
+  {:ok, user} = Proca.Users.User.update(Ecto.Changeset.change(user), [:admin, :generate_password])
 
   IO.puts "#####"
   IO.puts "#####   Created Admin user #{username}  #####"
   IO.puts "#####   Password: #{user.password}"
   IO.puts "#####"
-  end
 
-if is_nil(instance_org) do
+  Proca.Org.update(org, [params: %{email_from: username}])
+end
+
+instance_org = if is_nil(instance_org) do
   IO.puts "Seeding DB with #{org_name} Org."
   {:ok, instance_org} = Proca.Repo.insert(%Proca.Org{name: org_name, title: org_name})
 
   create_keys.(instance_org)
 
-  case System.get_env("ADMIN_EMAIL") do 
-    nil -> nil
-    email -> create_admin.(instance_org, email)
-  end
+  instance_org
 else
   case Proca.Org.active_public_keys(instance_org.public_keys) do
     [%Proca.PublicKey{private: p} = pk | _] when not is_nil(p) -> {:ok, pk}
 
     [] -> create_keys.(instance_org)
   end
-  create_admin.(instance_org, System.get_env("ADMIN_EMAIL"))
+  instance_org
+end
+
+case System.get_env("ADMIN_EMAIL") do
+  nil -> nil
+  email ->
+    create_admin.(instance_org, email)
 end

@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.1.0",
-    "@urql/core": "^2.1.2",
+    "@urql/core": "^2.3.4",
     "js-base64": "^3.5.2",
     "phoenix": "^1.5.9",
     "ws": "^7.3.1"
@@ -51,5 +51,5 @@
   "peerDependencies": {
     "typescript": "^4.1.2"
   },
-  "gitHead": "645f1b773bface51d08aa223c29e8d146f856a3a"
+  "gitHead": "c0edcf7412000e9bafa67dfbc09a35e79e2a58d5"
 }

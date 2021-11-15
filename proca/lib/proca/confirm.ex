@@ -1,36 +1,75 @@
 defmodule Proca.Confirm do
+
   @moduledoc """
-  Confirm represents an action deferred in time.
 
-  OPERATION
-  SUBJECT_ID - requester id 
-  OBJECT_ID - on what the opration is performed
-  CODE
+  Confirm represents a confirmable
+  action deferred in time. It is called confirm, because it is a confirmable -
+  something that must be confirmed by a party. Usually party A creates a
+  confirm, and party B accepts or rejects it. Upon acceptance, the operation can
+  run. Optionaly upon rejection a different action can be triggered.
 
-  # Asking to join a campaign:
-  
+  The confirm uses subject - operation - object terminology.
+
+  Eg. Marcin eats a-dosa would contain "eats" as operation, subject_id would be
+  an FK to Marcin and object_id would be a FK to a dosa. To eat a dosa, Marcin
+  creats a `Confirm{operation: :eats, subject_id: marcin.id, object_id: dosa.id}`.
+  Then someone who is responsible for the dosas can accept the confirm, after
+  which Marcin will instantly devour the dosa.
+
+  The order of subject and object can also be altered.
+
+  Eg. A dosa served to Marcin, in which case subject will be a dosa, and object
+  is Marcin. In this case the dosa maker will create a `Confirm{operaition:
+  :serving, subject_id: dosa.id, object_id: marcin.id}` and Marcin must accept
+  this offer, after which he will instantly devour the dosa.
+
+  There are also other possibilities. The Confirm can omit the object_id, but
+  just have a special code to accept it. In our example the dosa maker will make
+  a `Confirm{operation: :serving, subject_id: dosa.id, code: "98429214"}`, and
+  whoever is the lucky person to use that _open code_ can become the object of
+  the confirm and devour the dosa. The code can be used by both authenticated
+  and non-authenticated users (works like one-time-password).
+
+  Similarly, the confirm can be given an email, in which case the code will be
+  sent to a person with particular email, as the intended devourer of the dosa.
+  This way of creating a confirm is useful when we do not have the user.id for
+  someone, but want them to confirm an operation (eg.: inviting new users to do
+  somehing by email).
+
+  The confirm can have many _charges_ which means they can be used more then
+  once - for example when we have more then one dosa to give away.
+
+  Confirm contains:
+  - operation - name of operation, an enum defined in Proca.EctoEnum
+  - subject_id - the action taker
+  - object_id - some object
+  - code - code to trigger the accept or reject
+  - charge - how many times can be used? defaults to 1
+
+  ### Partner joins a campaign
+
+  ```
           subject v   object v
-  join_campaign(org, campaign)
-  - confirms someone from ^ this org.
-    Staffers with proper permission? 
-  - times: 1
-  XXX should send email after
+  join_campaign(partner_org, campaign)
+  ```
+  - confirm created by partner_org
+  - accepted by someone from campaign lead or campaign coordinator
+  - charges: 1
 
-  # Asking to add a partner
-  add_partner()
-  
-  Confirm supporter data - is confirmed by REF
- 
-  # Confirm action data - it's an open confirm
-  confirm_action(action, nil, code)
- 
+  ### Inviting a partner over email
 
-  defenum(ConfirmOperation, confirm_action: 0, join_campaign: 1, add_partner: 2)
+  ```
+  invite_partner(campaign, email)
 
-  CONFIRMS/REJECTS ARE SYNC
-
-  XXX Expire and remove old confirms!
+  invite_partner(campaign, code)
+  ```
+  - confirm created by campaign lead or coordinator
+  - confirm sent by email to particular org so they can accept the invitation instantly
+  - or confirm code can be put on some forum or group, with 20 charges - the first 20 users of the code can accept the invitation.
+  - after 20 uses, a new code needs to be generated.
   """
+
+  # XXX Expire and remove old confirms!
 
   use Ecto.Schema
   import Ecto.Changeset
@@ -136,6 +175,25 @@ defmodule Proca.Confirm do
     String.split(email, "@") |> List.first
   end
 
+  def notify_fields(
+    cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
+  ) do
+
+    operation = Confirm.Operation.mod(cnf)
+    cnf = Proca.Repo.preload(cnf, [:creator])
+
+    %{
+      email: email || "",
+      message: message || "",
+      subject_id: subj_id,
+      object_id: obj_id || "",
+      code: confirm_code,
+      creator: %{email: (if cnf.creator != nil, do: cnf.creator.email, else: "")},
+      accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
+      reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
+    } |> Map.merge(operation.notify_fields(cnf))
+  end
+
 
   @doc """
   Send a confirm operation specific email notification to list of emails or to confirm email.
@@ -155,9 +213,8 @@ defmodule Proca.Confirm do
       %EmailRecipient{
         first_name: notify_first_name(email),
         email: email,
-        fields: operation.email_fields(cnf)
+        fields: notify_fields(cnf)
       }
-      |> EmailRecipient.put_confirm(cnf)
     end)
 
     with {:ok, template_ref} <- EmailTemplateDirectory.ref_by_name_reload(
