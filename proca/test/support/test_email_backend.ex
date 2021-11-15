@@ -139,6 +139,7 @@ defmodule Proca.TestEmailBackend do
   def deliver(emails, _org) do
     emails
     |> Enum.map(&send_to(Enum.at(&1.to, 0), &1))
+    :ok
   end
 end
 
