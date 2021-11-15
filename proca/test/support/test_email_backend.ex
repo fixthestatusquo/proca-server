@@ -13,17 +13,23 @@ defmodule Proca.TestEmailBackend do
 
   # Test part
   use ExUnit.CaseTemplate
+
   def test_email_backend(context) do 
     io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
     backend = Proca.Factory.insert(:email_backend, org: io)
-    
-    _io = Ecto.Changeset.change(io)
+
+    Ecto.Changeset.change(io, email_from: "no-reply@" <> backend.host)
     |> Ecto.Changeset.put_assoc(:services, [backend])
     |> Proca.Org.put_service(backend)
     |> Proca.Repo.update!
 
-    context 
-    |> Map.put(:email_backend, Proca.TestEmailBackend.start_link([]))
+    {:ok, email_backend_pid} = Proca.TestEmailBackend.start_link([])
+    on_exit :stop_email_backend, fn ->
+      Process.exit email_backend_pid, :kill
+    end
+
+    context
+    |> Map.put(:email_backend, email_backend_pid)
   end
 
   using do 

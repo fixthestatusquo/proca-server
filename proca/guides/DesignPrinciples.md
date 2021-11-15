@@ -18,6 +18,9 @@
 - When input is not so required, allow passing it as "opaque" data. 
 - Even with opaque or unstructured data, care must be taken not to break/crash the action data processing pipeline (microservices, queue processors and ultimately CRM system).
 - Even with opaque or unstructured data, limits must be set not to allow trashing of unreasonable amount of data into the processing system (eg 10MB file content).
+- Assume that every opaque/JSON-bag data will eventually contain trash and do not rely on it.
+  ![A JSON field in db with serialization error](assets/json-fail.png)
+  Such data can be passed around and queried to implement convenience features, but not critical ones.
  
 #### Examples:
 

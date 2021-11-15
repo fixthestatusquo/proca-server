@@ -1,13 +1,15 @@
 {
   "name": "@proca/crypto",
-  "version": "3.0.0-alpha.16",
+  "version": "3.0.2",
   "description": "Decrypt personal information in Proca action",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "author": "Marcin Koziej <code@fixthestatusquo.org>",
   "license": "AGPL-3.0",
-  "files": [],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -21,5 +23,6 @@
     "lodash": "^4.17.21",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
-  }
+  },
+  "gitHead": "c0edcf7412000e9bafa67dfbc09a35e79e2a58d5"
 }

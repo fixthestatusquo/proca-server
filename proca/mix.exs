@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "2.4.1",
+      version: "3.0.2",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -128,7 +128,8 @@ defmodule Proca.MixProject do
         "README.md",
         "code_of_conduct.md"
       ] ++ Path.wildcard("guides/*.md"),
-      extra_section: "Guides"
+      extra_section: "Guides",
+      assets: "guides/assets"
     ]
       # Example from broadway:
       # groups_for_extras: [

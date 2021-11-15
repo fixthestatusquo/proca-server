@@ -19,7 +19,7 @@ defmodule Proca.Server.KeysTest do
     {:ok, _pid} = GenServer.start_link(Proca.Server.Keys, org.name)
   end
 
-  test "Sever works when instance org has keys", %{red_org: org} do
+  test "Server works when instance org has keys", %{red_org: org} do
     {:ok, k} = PublicKey.build_for(org) |> Repo.insert()
     PublicKey.activate_for(org, k.id)
 

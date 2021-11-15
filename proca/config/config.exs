@@ -14,9 +14,9 @@ config :proca,
 config :proca, ProcaWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "AW/2W3wBPlNgOj39H7IGyyI9Ycp+hScpt/oaQTvE6m2fGnrxHKVUR3AVhLRDq/QL",
+  signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w",
   render_errors: [view: ProcaWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Proca.PubSub,
-  live_view: [signing_salt: "uM50prEz688OESGJwzwxmFgxf5ZRaw4w"],
   allow_origin: "*",
   router: (if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router),
   captcha_service: "hcaptcha"
@@ -41,10 +41,11 @@ config :proca, ProcaWeb.UserAuth,
 
 
 config :proca, Proca,
-  org_name: "test",
+  org_name: "instance",
   stats_sync_interval: 0,  # XXX move to Proca.Server.Stats
   process_old_interval: 0,  # XXX move to Proca.Server.Stats
-  require_verified_email: false
+  require_verified_email: false,
+  start_daemon_servers: true
 
 # FPR seed only for development
 config :proca, Proca.Supporter,

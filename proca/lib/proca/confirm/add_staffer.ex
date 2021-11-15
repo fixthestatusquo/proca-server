@@ -43,11 +43,13 @@ defmodule Proca.Confirm.AddStaffer do
 
   def email_template(%Confirm{operation: :add_staffer}), do: "add_staffer"
 
-  def email_fields(%Confirm{operation: :add_staffer, subject_id: org_id}) do
+  def notify_fields(%Confirm{operation: :add_staffer, subject_id: org_id}) do
     org = Org.one(id: org_id)
     %{
-      "org_name" => org.name,
-      "org_title" => org.title
+      org: %{
+        name: org.name,
+        title: org.title
+      }
     }
   end
 end

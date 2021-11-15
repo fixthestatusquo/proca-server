@@ -9,7 +9,7 @@ defmodule ProcaWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_proca_key",
-    signing_salt: Application.get_env(:proca, __MODULE__)[:live_view][:signing_salt],
+    signing_salt: Application.get_env(:proca, __MODULE__)[:signing_salt],
     same_site: "Strict"
   ]
 

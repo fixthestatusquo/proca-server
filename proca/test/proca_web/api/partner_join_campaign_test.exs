@@ -10,6 +10,8 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     |> Map.put(:partner_user, insert(:user))
   end
 
+  @moduletag start: [:notify]
+
   defp add_org_query(org) do 
     %{
       "query" => """
@@ -152,7 +154,7 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       conn: conn,
       partner_user: pu, 
       yellow_campaign: camp, yellow_user: yu
-      } do 
+      } do
 
       new_org_params = %{
         name: "purple",
@@ -223,13 +225,14 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       }} = res4
 
       yellow_email = yu.email
+
       assert [request_email] = mailbox(yu.email)
       assert %Swoosh.Email{
         provider_options: %{
           fields: %{
-            "confirm_code" => confirm_code,
-            "confirm_object_id" => confirm_object_id,
-            "confirm_link" => confirm_link
+            "code" => confirm_code,
+            "objectId" => confirm_object_id,
+            "acceptLink" => confirm_link
           },
           template_ref: "ref:launchpage"
         }

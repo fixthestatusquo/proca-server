@@ -78,4 +78,52 @@ defmodule Proca.Stage.Support do
     ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code)
   end
 
+  @doc """
+  Flattens the nested map keys so that there is only one nesting level of keys and values.
+  The resulting keys are joined by underscore to form a snake-case key name.
+  """
+  def flatten_keys(map, nil_to \\ nil) when is_map(map) do
+    map
+    |> Enum.map(fn x -> flatten_keys_entry(x, nil_to) end)
+    |> List.flatten()
+    |> Map.new()
+  end
+
+  defp flatten_keys_entry(entry, nil_to, path \\ [])
+
+  defp flatten_keys_entry({k, map}, nil_to, path) when is_map(map) do
+    map
+    |> Enum.map(fn entry -> flatten_keys_entry(entry, nil_to, [k | path]) end)
+  end
+
+  defp flatten_keys_entry({k, other}, nil_to, path) do
+    full_key = [k | path]
+    |> Enum.map(&ensure_string/1)
+    |> Enum.reverse()
+    |> Enum.join("_")
+    |> ProperCase.camel_case()
+
+    value = case other do
+              nil -> nil_to
+              x -> x
+            end
+
+    {full_key, value}
+  end
+
+  def ensure_string(a) when is_atom(a), do: Atom.to_string(a)
+  def ensure_string(s) when is_bitstring(s), do: s
+
+  @doc """
+  Turn the case of keys in the map to camel case
+  """
+  def camel_case_keys(map) when is_map(map) do
+    map
+    |> Enum.map(fn {key, val} ->
+      {ProperCase.camel_case(key), camel_case_keys(val)}
+    end)
+    |> Map.new()
+     end
+
+  def camel_case_keys(other), do: other
 end

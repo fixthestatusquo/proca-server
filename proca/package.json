@@ -1,6 +1,6 @@
 {
   "name": "@proca/server",
-  "version": "3.0.0-alpha.16",
+  "version": "3.0.2",
   "description": "Proca server",
   "repository": "git@github.com:fixthestatusquo/proca-backend.git",
   "author": "Marcin Koziej <marcin@fixthestatusquo.org>",
@@ -12,7 +12,7 @@
     "install": "yarn install.assets; mix deps.get",
     "postinstall": "mix compile",
     "prepublish": "yarn gen.schema",
-    "prepare": "mix compile && docker build -t $(git describe --tags) .",
+    "prepare": "./utils/bump-version && mix compile && docker build -t $(git describe --tags) .",
     "test": "mix test",
     "docker-build": "docker build -t ftsq/proca-backend:latest . && echo 'Image built, now You can: cd utils; docker-compose up'"
   }
