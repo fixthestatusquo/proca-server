@@ -30,8 +30,6 @@ interface Campaign {
 
   org: Org!
 
-  targets: [Target]
-
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -66,8 +64,6 @@ type PublicCampaign implements Campaign {
 
   org: Org!
 
-  targets: [Target]
-
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -78,7 +74,7 @@ type PublicCampaign implements Campaign {
   ): PublicActionsResult!
 }
 
-input TargetEmail {
+type TargetEmail {
   email: String!
 }
 
@@ -959,8 +955,6 @@ type PrivateCampaign implements Campaign {
 
   org: Org!
 
-  targets: [Target]
-
   "Fetch public actions"
   actions(
     "Return actions of this action type"
@@ -975,6 +969,8 @@ type PrivateCampaign implements Campaign {
 
   "List of partnerships and requests"
   partnerships: [Partnership!]
+
+  targets: [Target]
 }
 
 "Encryption or sign key with integer id (database)"
@@ -1053,6 +1049,7 @@ type Target {
   name: String!
   area: String
   fields: Json
+  emails: [TargetEmail]!
 }
 
 input StripePaymentIntentInput {
@@ -1067,6 +1064,10 @@ type Contact {
   nonce: String
   publicKey: KeyIds
   signKey: KeyIds
+}
+
+input TargetEmailInput {
+  email: String!
 }
 
 type JoinOrgResult {
@@ -1131,7 +1132,7 @@ input TargetInput {
   campaignId: Int!
   externalId: String!
   fields: Json
-  emails: [TargetEmail]
+  emails: [TargetEmailInput]!
 }
 
 input UserInput {
