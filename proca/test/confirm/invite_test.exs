@@ -4,21 +4,11 @@ defmodule Proca.Confirm.InviteTest do
   alias Proca.Factory
 
   alias Proca.{Confirm, Repo, Org}
-  alias Proca.TestEmailBackend
+  use Proca.TestEmailBackend
   import Ecto.Changeset
 
   setup do 
-    io = Org.instance_org_name()
-    |> Org.get_by_name([:template_backend, :email_backend])
-
-    io = io
-    |> Org.put_service(Factory.insert(:email_backend, org: io))
-    |> Repo.update!
-
     red_story()
-    |> Map.put(:instance, io)
-    |> Map.put(:email_backend, TestEmailBackend.start_link([]))
-    |> Map.put(:template_directory, Proca.Service.EmailTemplateDirectory.start_link([]))
   end
 
   test "Invite red org to yellow campaign", %{red_bot: red_staff, yellow_ap: ap, yellow_org: yellow_org} do 
@@ -32,7 +22,7 @@ defmodule Proca.Confirm.InviteTest do
     
     [sent_mail] = TestEmailBackend.mailbox(red_staff.user.email)
     fields = sent_mail.provider_options.fields
-    assert fields["confirm_code"] == cnf.code
+    assert fields["code"] == cnf.code
 
 
   end

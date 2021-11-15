@@ -19,17 +19,22 @@ defmodule Proca.Schema do
     schema_mod = opts[:module]
 
     quote do 
-      import Ecto.Query, only: [from: 1, preload: 3]
       alias Proca.Repo
 
       def one(kw) when is_list(kw), do: all(kw ++ [one: true])
       def one!(kw) when is_list(kw), do: all(kw ++ [one!: true])
 
-      def all(kw) when is_list(kw), do: all(from(a in unquote(schema_mod)), kw)
+      def all(kw) when is_list(kw) do
+        import Ecto.Query, only: [from: 1]
+        all(from(a in unquote(schema_mod)), kw)
+      end
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
-      def all(query, [{:preload, assocs} | kw]), do: preload(query, [a], ^assocs) |> all(kw)
+      def all(query, [{:preload, assocs} | kw]) do
+        import Ecto.Query, only: [preload: 3]
+        preload(query, [a], ^assocs) |> all(kw)
+      end
 
       def create(kw) when is_list(kw), do: update(Ecto.Changeset.change(struct!(unquote(schema_mod))), kw)
       def create(chset = %Ecto.Changeset{}, []), do: update(chset, [])

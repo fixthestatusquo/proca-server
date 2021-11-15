@@ -7,9 +7,10 @@ defmodule Proca.Org do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, except: [update: 2]
   alias Proca.Org
   alias Proca.Service.EmailTemplateDirectory
+  import Logger
 
   schema "orgs" do
     field :name, :string
@@ -40,10 +41,15 @@ defmodule Proca.Org do
     field :email_opt_in_template, :string
 
     # confirming and delivery configuration
-    field :custom_supporter_confirm, :boolean
-    field :custom_action_confirm, :boolean
-    field :custom_action_deliver, :boolean
-    field :system_sqs_deliver, :boolean
+    field :custom_supporter_confirm, :boolean, default: false
+    field :custom_action_confirm, :boolean, default: false
+    field :custom_action_deliver, :boolean, default: false
+    field :system_sqs_deliver, :boolean, default: false
+
+    belongs_to :event_backend, Proca.Service
+    field :event_processing, :boolean, default: false # for system events from Proca.Server.Notify
+    field :confirm_processing, :boolean, default: false # confirmable operations
+
 
     field :config, :map
 
@@ -64,7 +70,10 @@ defmodule Proca.Org do
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
-      :system_sqs_deliver
+      :system_sqs_deliver,
+
+      :event_processing,
+      :confirm_processing
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
@@ -78,6 +87,7 @@ defmodule Proca.Org do
       end
     end)
     |> cast_email_backend(org, attrs)
+    |> cast_event_backend(org, attrs)
   end
 
   def cast_email_backend(chset, org, %{email_backend: srv_name}) 
@@ -98,6 +108,21 @@ defmodule Proca.Org do
   def cast_email_backend(ch, _org, _a), do: ch 
 
 
+  def cast_event_backend(chset, org, %{event_backend: srv_name})
+    when srv_name in [:webhook] do
+    case Proca.Service.get_one_for_org(srv_name, org) do
+      nil -> add_error(chset, :event_backend, "no such service")
+      %{id: id} -> chset
+        |> put_change(:event_backend_id, id)
+    end
+  end
+
+  def cast_event_backend(ch, _org, %{event_backend: srv_name})
+    when is_atom(srv_name) do
+      add_error(ch, :event_backend, "service does not support events")
+  end
+
+  def cast_event_backend(ch, _org, _a), do: ch
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
   def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
@@ -110,6 +135,25 @@ defmodule Proca.Org do
     |> order_by([o, k], asc: k.inserted_at)
     |> preload([o, k], [public_keys: k])
     |> all(kw)
+  end
+
+  def update(org, [{:params, attrs} | kw])
+  when is_map(attrs) do
+    changeset(org, attrs)
+    |> update(kw)
+  end
+
+  def update(%Ecto.Changeset{} = changeset, [:notify]) do
+    org = Proca.Repo.update! changeset
+
+    is_new = is_nil changeset.data.id
+    if is_new do
+      Proca.Server.Notify.org_created(org)
+    else
+      Proca.Server.Notify.org_updated(org, changeset)
+    end
+
+    org
   end
 
   def get_by_name(name, preload \\ []) do
@@ -137,7 +181,7 @@ defmodule Proca.Org do
     else
       org
     end
-  end
+   end
 
   def get_by_id(id, preload \\ []) do
     Proca.Repo.one(from o in Proca.Org, where: o.id == ^id, preload: ^preload)

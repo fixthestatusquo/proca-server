@@ -33,6 +33,7 @@ defmodule Proca.Pipes.OrgSupervisor do
     workers = [
       Proca.Stage.EmailSupporter,
       Proca.Stage.SQS,
+      Proca.Stage.Webhook
     ]
     |> Enum.filter(fn mod -> apply(mod, :start_for?, [org]) end)
     |> Enum.map(fn mod -> {mod, org} end)

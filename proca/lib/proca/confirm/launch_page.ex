@@ -16,6 +16,8 @@ defmodule Proca.Confirm.LaunchPage do
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
+  import Logger
+
   @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
   def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
     # XXX test for campaign manager
@@ -64,27 +66,38 @@ defmodule Proca.Confirm.LaunchPage do
   def email_template(%Confirm{operation: :launch_page}), do: "launch_page"
 
   @impl true
-  def email_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
-    %Campaign{name: campaign_name, title: campaign_title} = get(Campaign, campaign_id)
-    %ActionPage{org: %{name: org_name, title: org_title} = org} = ActionPage.find(ap_id)
-
+  def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
+    with %Campaign{name: campaign_name, title: campaign_title} <- get(Campaign, campaign_id),
+         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.find(ap_id)
+    do
     %{
-      "campaign_name" => campaign_name,
-      "campaign_title" => campaign_title,
-      "org_name" => org_name,
-      "org_title" => org_title
+      campaign: %{
+        name: campaign_name,
+        title: campaign_title
+      },
+      org: %{
+        name: org_name,
+        title: org_title
+      } |> Map.merge(email_org_config_fields(org))
     }
-    |> Map.merge(email_org_config_fields(org))
+    else
+      nil ->
+        error("launch_page confirm: Cannot get campaign id #{campaign_id} or page id #{ap_id}")
+      %{}
+    end
+
   end
 
   def email_org_config_fields(%Org{config: config}) do
     data = %{
-      "org_twitter_name" => get_in(config, ["twitter", "name"]),
-      "org_twitter_screen_name" => get_in(config, ["twitter", "screen_name"]),
-      "org_twitter_picture" => get_in(config, ["twitter", "picture"]),
-      "org_twitter_description" => get_in(config, ["twitter", "description"]),
-      "org_twitter_url" => get_in(config, ["twitter", "url"]),
-      "org_twitter_followers_count" => get_in(config, ["twitter", "followers_count"])
+      twitter: %{
+        name: get_in(config, ["twitter", "name"]),
+        screen_name: get_in(config, ["twitter", "screen_name"]),
+        picture: get_in(config, ["twitter", "picture"]),
+        description: get_in(config, ["twitter", "description"]),
+        url: get_in(config, ["twitter", "url"]),
+        followers_count: get_in(config, ["twitter", "followers_count"])
+      }
     }
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)

@@ -10,7 +10,7 @@ defmodule Proca.Service.Mailjet do
   - You cannot use default in some places: for example in attributes (href value).
   - You can conditionally show a block: use foo:"" in the field - but you need to use “greater then” + start of the string - no way to input “not empty” condition
   - The links prohibit use of default "" - so you must provide or hide it.
-  - Use {% if var:dupa:"" %} and {% endif %} for conditional block
+  - Use {% if var:givenname:"" %} and {% endif %} for conditional block
 
   """
 
@@ -44,7 +44,7 @@ defmodule Proca.Service.Mailjet do
 
   defp template_from_json(data) do
     %EmailTemplate{
-      ref: Integer.to_string(data["ID"]),
+      ref: data["ID"],
       name: data["Name"]
     }
   end
@@ -89,11 +89,12 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def deliver(emails, %Org{email_backend: srv}) do
-    try do
-      Mailjet.deliver_many(emails, config(srv))
-    rescue
-      e in MailjetAdapter.ApiError ->
-        reraise EmailBackend.NotDelivered.exception(e), __STACKTRACE__
+    case Mailjet.deliver_many(emails, config(srv)) do
+      {:ok, _} -> :ok
+      {:error, {_code, %{"ErrorMessage" => msg}}} ->
+        raise EmailBackend.NotDelivered.exception(msg)
+      {:error, reason} ->
+        raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
     end
   end
 

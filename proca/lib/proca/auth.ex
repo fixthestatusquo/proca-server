@@ -1,5 +1,5 @@
 defmodule Proca.Auth do 
-  @defmodule """
+  @moduledoc """
   Authorization Context for resolvers.
 
   We have these authorization scopes:

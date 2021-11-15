@@ -74,8 +74,8 @@ defmodule Proca.Server.Processing do
   end
 
   @impl true
-  def handle_call(:sync, state, _from) do
-    {:reply, state, :ok}
+  def handle_call(:sync, _from, state) do
+    {:reply, :ok, state}
   end
 
   def process_async(action) do

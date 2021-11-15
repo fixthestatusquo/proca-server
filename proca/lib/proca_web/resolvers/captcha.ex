@@ -71,7 +71,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
   end
 
   @doc """
-  If the hcaptcha is configured for the instance, verify the captcha. Otherwise, noop.
+  If the hcaptcha or procaptcha is configured for the instance, verify the captcha. Otherwise, noop.
   """
   def verify(resolution = %{extensions: ext = %{captcha: code}}) do
     preferred_service = Map.get(ext, :captcha_service, default_service()) 
