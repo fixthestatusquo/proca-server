@@ -15,13 +15,15 @@ defmodule ProcaWeb.Schema.UserTypes do
 
       arg :select, :select_user
       resolve(&Resolvers.User.list_users/3)
-
     end
   end
 
   object :user do
     field :id, non_null(:integer)
     field :email, non_null(:string)
+    field :phone, :string
+    field :picture_url, :string
+    field :job_title, :string
 
     field :is_admin, non_null(:boolean) do 
       resolve(fn u, _, _ -> {:ok, can?(u, :instance_owner)} end)
@@ -50,7 +52,7 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :add_org_user, type: non_null(:change_user_status) do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
-      arg :input, non_null(:user_input)
+      arg :input, non_null(:org_user_input)
       resolve(&Resolvers.User.add_org_user/3)
     end
 
@@ -58,7 +60,7 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :invite_org_user, type: non_null(:confirm) do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
-      arg :input, non_null(:user_input)
+      arg :input, non_null(:org_user_input)
 
       @desc "Optional message for invited user"
       arg :message, :string
@@ -68,7 +70,7 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :update_org_user, type: non_null(:change_user_status) do
       middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
-      arg :input, non_null(:user_input)
+      arg :input, non_null(:org_user_input)
       resolve(&Resolvers.User.update_org_user/3)
     end
 
@@ -77,14 +79,36 @@ defmodule ProcaWeb.Schema.UserTypes do
       arg :org_name, non_null(:string)
       arg :email, non_null(:string)
       resolve(&Resolvers.User.delete_org_user/3)
+    end
+
+    @desc "Update (current) user details"
+    field :update_user, type: non_null(:user) do
+      middleware Authorized
+      @desc "Input values to update in user"
+      arg :input, non_null(:user_details_input)
+
+      @desc "Admin can use user id to specify user to update"
+      arg :id, :integer
+
+      @desc "Admin can use user email to specify user to update"
+      arg :email, :string
+
+      resolve(&Resolvers.User.update_user/3)
 
     end
-  end
+   end
 
-  input_object :user_input do
+  input_object :org_user_input do
     field :email, non_null(:string)
     field :role, non_null(:string)
   end
+
+  input_object :user_details_input do
+    field :picture_url, :string
+    field :job_title, :string
+    field :phone, :string
+  end
+
 
   object :change_user_status do 
     field :status, non_null(:status)
@@ -108,4 +132,4 @@ defmodule ProcaWeb.Schema.UserTypes do
     @desc "Exact org name"
     field :org_name, :string
   end
-end
+ end

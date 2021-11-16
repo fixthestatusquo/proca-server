@@ -44,9 +44,6 @@ defmodule Proca.Contact.Input do
     |> validate_format(field, ~r/^[\p{L}']([ \p{L},'.-]*[\p{L}.])?$/u)
   end
 
-
-
-
   def validate_address_line(chst, field) do
     chst
     |> validate_format(field, ~r/^[ \p{L}0-9`“"‘’',.(&\/)-]*$/u)
@@ -67,4 +64,27 @@ defmodule Proca.Contact.Input do
   def validate_country_format(ch = %Ecto.Changeset{}) do
     validate_format(ch, :country, ~r/[A-Z]{2}/)
   end
-end
+
+  @doc """
+  Validate if field is an url.
+  Options: type: "image" - check if file extension matches mime type general class ("image/*" in this case)
+  """
+  def validate_url(ch = %Ecto.Changeset{}, field, opts \\ []) do
+    validate_change(ch, field, fn f, uri ->
+      u = URI.parse(uri)
+      if Proca.Source.well_formed_url?(u) and is_url_type?(u, opts[:type]) do
+        []
+      else
+        [{f, "URL is invalid"}]
+      end
+     end)
+  end
+
+  def is_url_type?(_, nil), do: true
+
+  def is_url_type?(%URI{path: path}, type) when is_bitstring(path) do
+    mime = :mimerl.extension(List.last(String.split(path, ".")))
+
+    String.starts_with? mime, type <> "/"
+  end
+ end
