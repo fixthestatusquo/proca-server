@@ -193,11 +193,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
 
-
-  def partnership_launch_requests(%{org: %Org{id: _org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
+  def partnership_launch_requests(%{org: %Org{id: _org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do
     {
       :ok, 
-      from(c in Confirm, where: c.operation == :launch_page and c.subject_id == ^campaign_id) 
+      from(c in Confirm,
+        where: c.operation == :launch_page and c.subject_id == ^campaign_id,
+        preload: [:creator])
       |> where([c], c.charges > 0)
       |> all()
     }
