@@ -14,9 +14,14 @@ defmodule Proca.Users.User do
     field :hashed_password, :string
     field :confirmed_at, :naive_datetime
 
-
+    # auth
     field :perms, :integer, default: 0
     has_many :staffers, Proca.Staffer
+
+    # details
+    field :picture_url, :string
+    field :job_title, :string
+    field :phone, :string
 
     timestamps()
   end
@@ -133,7 +138,7 @@ defmodule Proca.Users.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%Proca.Users.User{hashed_password: hashed_password}, password)
+  def valid_password?(%User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     verify_pass(password, hashed_password)
   end
@@ -169,6 +174,15 @@ defmodule Proca.Users.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  def details_changeset(user, attrs, _opts \\ []) do
+    alias Proca.Contact.Input
+    user
+    |> cast(attrs, [:job_title, :phone, :picture_url])
+    |> Input.validate_name(:job_title)
+    |> Input.validate_phone(:phone)
+    |> Input.validate_url(:picture_url, type: "image")
   end
 
 
@@ -210,9 +224,12 @@ defmodule Proca.Users.User do
     |> update(kw)
   end
 
+  def update(user, [{:params, params} | kw]) do
+    details_changeset(user, params)
+    |> update(kw)
+  end
+
   # XXX
   # -  def reset_password(email) do
   # -  def params_for(email) do
-  
-  
-end
+ end

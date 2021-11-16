@@ -8,7 +8,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   alias ProcaWeb.Resolvers
 
   object :campaign_queries do
-    @desc "Get a list of campains"
+    @desc "Get a list of public campains"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
       @desc "Filter campaigns by title using LIKE format (% means any sequence of characters)"
       arg(:title, :string)
@@ -16,10 +16,18 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       @desc "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
       arg(:name, :string)
 
+      @desc "Select by id, Returns list of 1 result"
+      arg(:id, :integer)
+
       @desc "Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
       resolve(&Resolvers.Campaign.list/3)
     end
-  end
+
+    @desc "Get campaign"
+    field :campaign, :campaign do
+      arg(:select, :select_campaign)
+    end
+   end
 
   interface :campaign do
     @desc "Campaign id"
@@ -210,5 +218,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
   input_object :select_campaign do
     field :id, :integer
+    field :name, :string
   end
 end

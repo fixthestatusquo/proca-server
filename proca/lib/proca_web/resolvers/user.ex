@@ -112,6 +112,35 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
+  defp update_user_by(criteria, params, auth) do
+    if Permission.can? auth, :manage_users do
+      q = case criteria do
+            %{id: id} -> [id: id]
+            %{email: email} -> [email: email]
+            _ -> raise "Called #{__MODULE__}.update_user_by with neither id or email criteria"
+          end
+      case User.one(q) do
+        nil -> {:error, "User not found"}
+        user -> User.update(user, [params: params])
+      end
+    else
+      {:error, "Only admin with manage_users permission can modify other users"}
+    end
+  end
+
+  def update_user(_, criteria = %{id: _id, input: input}, %{context: %{auth: auth}}) do
+    update_user_by(criteria, input, auth)
+  end
+
+  def update_user(_, criteria = %{email: _email, input: input}, %{context: %{auth: auth}}) do
+    update_user_by(criteria, input, auth)
+  end
+
+  def update_user(_, %{input: input}, %{context: %{auth: %Auth{user: user}}}) do
+    user
+    |> Proca.Users.User.update([params: input])
+  end
+
   def delete_org_user(_,  %{email: email}, %{context: %{auth: %Auth{user: actor}, org: org}}) do 
     with  {user, staffer} when not is_nil(user) and not is_nil(staffer)  <- existing(email, org),
       true <- staffer.user_id != user.id or can_remove_self?(actor)
@@ -140,7 +169,7 @@ defmodule ProcaWeb.Resolvers.User do
       }
       end)
     {:ok, lst}
-  end
+    end
 
   def list_users(_, params, _) do 
     criteria = params
@@ -152,6 +181,5 @@ defmodule ProcaWeb.Resolvers.User do
     end)
 
     { :ok, User.all(criteria) }
-  end
-
+   end
 end

@@ -50,7 +50,8 @@ defmodule Proca.Source do
     ])
   end
 
-  def well_formed_url?(%URI{host: h, path: p, scheme: s}) when h != nil and p != nil and s in ["https", "http", "ws", "wss"], do: true
+  def well_formed_url?(%URI{host: h, path: p, scheme: s})
+  when h != nil and h != "" and p != nil and s in ["https", "http", "ws", "wss"], do: true
   def well_formed_url?(_), do: false
 
   def strip_url(%URI{host: h, path: p, scheme: s, port: prt}) do 
