@@ -8,6 +8,6 @@ defmodule ProcaWeb.HelperTest do
     errors = [value: {"can't be blank", [validation: :required]}]
     ch = change(%Action{})
     ch = %{ch | valid?: false, errors: errors}
-    assert Helper.format_errors(ch) == [%{message: "value: can't be blank", path: ["value"]}]
+    assert Helper.format_errors(ch) == [%{message: "can't be blank", path: ["value"]}]
   end
 end

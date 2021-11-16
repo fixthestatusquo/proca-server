@@ -46,10 +46,10 @@ defmodule ProcaWeb.Helper do
   # handle messages list (it's a list of %{message: "123"})
   def flatten_errors([], _), do: []
 
-  def flatten_errors([%{message: msg} = m | other_msg], path = [lastkey | _])
+  def flatten_errors([%{message: msg} = m | other_msg], path)
        when map_size(m) == 1 do
     [%{
-        message: "#{lastkey}: #{msg}",
+        message: msg,
         path: Enum.reverse(path)
      } | flatten_errors(other_msg, path)]
   end
