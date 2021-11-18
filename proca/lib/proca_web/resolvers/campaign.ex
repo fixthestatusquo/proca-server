@@ -4,7 +4,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   """
   import Ecto.Query
   import Proca.Repo
-  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm, Target}
   import Proca.Permission
   alias ProcaWeb.Helper
 
@@ -41,7 +41,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   defp list_query() do
-    from(x in Proca.Campaign, preload: [:org])
+    from(x in Proca.Campaign, preload: [:org, :targets])
   end
 
   def stats(campaign, _a, _c) do
@@ -59,6 +59,14 @@ defmodule ProcaWeb.Resolvers.Campaign do
        supporter_count_by_org: supporter_count_by_org,
        action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct} end),
      }}
+  end
+
+  def targets(campaign, _a, _c) do
+    targets = Target
+    |> where(campaign_id: ^campaign.id)
+    |> Proca.Repo.all()
+
+    {:ok, targets}
   end
 
   def org_stats(%{supporter_count_by_org: org_st}, _, _) do 
