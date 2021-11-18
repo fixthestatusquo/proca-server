@@ -20,6 +20,7 @@ defmodule Proca.Campaign do
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
+    has_many :targets, Proca.Target
 
     timestamps()
   end

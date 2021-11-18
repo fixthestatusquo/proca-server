@@ -74,6 +74,10 @@ type PublicCampaign implements Campaign {
   ): PublicActionsResult!
 }
 
+type TargetEmail {
+  email: String!
+}
+
 "Tracking codes"
 type Tracking {
   source: String!
@@ -667,6 +671,8 @@ type RootMutationType {
   acceptUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
+
+  upsertTargets(targets: [TargetInput]!, campaignId: Int!): [Target]!
 }
 
 type RootQueryType {
@@ -726,6 +732,8 @@ type RootQueryType {
     "Name of organisation"
     name: String!
   ): PrivateOrg!
+
+  targets(campaignId: Int!): [Target]!
 }
 
 interface Org {
@@ -967,6 +975,8 @@ type PrivateCampaign implements Campaign {
 
   "List of partnerships and requests"
   partnerships: [Partnership!]
+
+  targets: [Target]
 }
 
 "Encryption or sign key with integer id (database)"
@@ -1040,6 +1050,14 @@ type ContactReference {
   firstName: String
 }
 
+type Target {
+  id: String!
+  name: String!
+  area: String
+  fields: Json
+  emails: [TargetEmail]!
+}
+
 input StripePaymentIntentInput {
   amount: Int!
   currency: String!
@@ -1052,6 +1070,10 @@ type Contact {
   nonce: String
   publicKey: KeyIds
   signKey: KeyIds
+}
+
+input TargetEmailInput {
+  email: String!
 }
 
 type JoinOrgResult {
@@ -1108,6 +1130,14 @@ input OrgInput {
 type CustomField {
   key: String!
   value: String!
+}
+
+input TargetInput {
+  name: String!
+  area: String
+  externalId: String!
+  fields: Json
+  emails: [TargetEmailInput]!
 }
 
 input UserInput {

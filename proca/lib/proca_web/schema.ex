@@ -20,6 +20,7 @@ defmodule ProcaWeb.Schema do
   import_types(ProcaWeb.Schema.ServiceTypes)
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
+  import_types(ProcaWeb.Schema.TargetTypes)
 
   query do
     import_fields(:campaign_queries)
@@ -27,6 +28,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:action_queries)
     import_fields(:user_queries)
     import_fields(:org_queries)
+    import_fields(:target_queries)
   end
 
   mutation do
@@ -37,6 +39,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:org_mutations)
     import_fields(:service_mutations)
     import_fields(:confirm_mutations)
+    import_fields(:target_mutations)
   end
 
   subscription do
