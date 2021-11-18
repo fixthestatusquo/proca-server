@@ -5,7 +5,6 @@ schema {
   subscription: RootSubscriptionType
 }
 
-"Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
 interface Campaign {
   "Campaign id"
   id: Int!
@@ -74,6 +73,10 @@ type PublicCampaign implements Campaign {
   ): PublicActionsResult!
 }
 
+type TargetEmail {
+  email: String!
+}
+
 "Tracking codes"
 type Tracking {
   source: String!
@@ -115,6 +118,11 @@ input ConsentInput {
 
   "Opt in to the campaign leader"
   leadOptIn: Boolean
+}
+
+input OrgUserInput {
+  email: String!
+  role: String!
 }
 
 input NationalityInput {
@@ -216,6 +224,7 @@ type Confirm {
   email: String
   message: String
   objectId: Int
+  creator: User
 }
 
 input SelectKey {
@@ -322,6 +331,12 @@ type AreaCount {
 
   "count of supporters in this area"
   count: Int!
+}
+
+input UserDetailsInput {
+  pictureUrl: String
+  jobTitle: String
+  phone: String
 }
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
@@ -555,21 +570,33 @@ type RootMutationType {
   ): ContactReference!
 
   "Add user to org by email"
-  addOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+  addOrgUser(orgName: String!, input: OrgUserInput!): ChangeUserStatus!
 
   "Invite an user to org by email (can be not yet user!)"
   inviteOrgUser(
     orgName: String!
 
-    input: UserInput!
+    input: OrgUserInput!
 
     "Optional message for invited user"
     message: String
   ): Confirm!
 
-  updateOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+  updateOrgUser(orgName: String!, input: OrgUserInput!): ChangeUserStatus!
 
   deleteOrgUser(orgName: String!, email: String!): DeleteUserResult
+
+  "Update (current) user details"
+  updateUser(
+    "Input values to update in user"
+    input: UserDetailsInput!
+
+    "Admin can use user id to specify user to update"
+    id: Int
+
+    "Admin can use user email to specify user to update"
+    email: String
+  ): User!
 
   addOrg(input: OrgInput!): Org!
 
@@ -601,6 +628,8 @@ type RootMutationType {
     customActionDeliver: Boolean
 
     sqsDeliver: Boolean
+
+    eventBackend: ServiceName
 
     eventProcessing: Boolean
 
@@ -667,17 +696,25 @@ type RootMutationType {
   acceptUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
+
+  upsertTargets(targets: [TargetInput]!, campaignId: Int!): [Target]!
 }
 
 type RootQueryType {
-  "Get a list of campains"
+  "Get a list of public campains"
   campaigns(
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
 
     "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
     name: String
+
+    "Select by id, Returns list of 1 result"
+    id: Int
   ): [Campaign!]!
+
+  "Get campaign"
+  campaign(select: SelectCampaign): Campaign
 
   "Get action page"
   actionPage(
@@ -726,6 +763,8 @@ type RootQueryType {
     "Name of organisation"
     name: String!
   ): PrivateOrg!
+
+  targets(campaignId: Int!): [Target]!
 }
 
 interface Org {
@@ -757,6 +796,7 @@ type Processing {
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
   sqsDeliver: Boolean!
+  eventBackend: ServiceName
   eventProcessing: Boolean!
   confirmProcessing: Boolean!
 }
@@ -927,6 +967,7 @@ enum DonationSchema {
 
 input SelectCampaign {
   id: Int
+  name: String
 }
 
 type PrivateCampaign implements Campaign {
@@ -967,6 +1008,8 @@ type PrivateCampaign implements Campaign {
 
   "List of partnerships and requests"
   partnerships: [Partnership!]
+
+  targets: [Target]
 }
 
 "Encryption or sign key with integer id (database)"
@@ -1030,6 +1073,7 @@ enum ServiceName {
   MAILJET
   WORDPRESS
   STRIPE
+  WEBHOOK
 }
 
 type ContactReference {
@@ -1038,6 +1082,14 @@ type ContactReference {
 
   "Contacts first name"
   firstName: String
+}
+
+type Target {
+  id: String!
+  name: String!
+  area: String
+  fields: Json
+  emails: [TargetEmail]!
 }
 
 input StripePaymentIntentInput {
@@ -1052,6 +1104,10 @@ type Contact {
   nonce: String
   publicKey: KeyIds
   signKey: KeyIds
+}
+
+input TargetEmailInput {
+  email: String!
 }
 
 type JoinOrgResult {
@@ -1110,9 +1166,12 @@ type CustomField {
   value: String!
 }
 
-input UserInput {
-  email: String!
-  role: String!
+input TargetInput {
+  name: String!
+  area: String
+  externalId: String!
+  fields: Json
+  emails: [TargetEmailInput]!
 }
 
 "Contact information"
@@ -1161,6 +1220,9 @@ enum Status {
 type User {
   id: Int!
   email: String!
+  phone: String
+  pictureUrl: String
+  jobTitle: String
   isAdmin: Boolean!
   roles: [UserRole!]!
 }
