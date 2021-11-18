@@ -163,7 +163,6 @@ export type AreaCount = {
   count: Scalars['Int'];
 };
 
-/** Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list */
 export type Campaign = {
   /** Campaign id */
   id: Scalars['Int'];
@@ -185,7 +184,6 @@ export type Campaign = {
 };
 
 
-/** Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list */
 export type CampaignActionsArgs = {
   actionType: Scalars['String'];
   limit: Scalars['Int'];
@@ -238,6 +236,7 @@ export type Confirm = {
   email: Maybe<Scalars['String']>;
   message: Maybe<Scalars['String']>;
   objectId: Maybe<Scalars['Int']>;
+  creator: Maybe<User>;
 };
 
 export type ConfirmInput = {
@@ -468,6 +467,11 @@ export type OrgUser = {
   lastSigninAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
+export type OrgUserInput = {
+  email: Scalars['String'];
+  role: Scalars['String'];
+};
+
 export type Partnership = {
   __typename?: 'Partnership';
   org: Org;
@@ -538,6 +542,7 @@ export type PrivateCampaign = Campaign & {
   forceDelivery: Scalars['Boolean'];
   /** List of partnerships and requests */
   partnerships: Maybe<Array<Partnership>>;
+  targets: Maybe<Array<Maybe<Target>>>;
 };
 
 
@@ -617,6 +622,7 @@ export type Processing = {
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
   sqsDeliver: Scalars['Boolean'];
+  eventBackend: Maybe<ServiceName>;
   eventProcessing: Scalars['Boolean'];
   confirmProcessing: Scalars['Boolean'];
 };
@@ -723,6 +729,8 @@ export type RootMutationType = {
   inviteOrgUser: Confirm;
   updateOrgUser: ChangeUserStatus;
   deleteOrgUser: Maybe<DeleteUserResult>;
+  /** Update (current) user details */
+  updateUser: User;
   addOrg: Org;
   deleteOrg: Scalars['Boolean'];
   updateOrg: PrivateOrg;
@@ -748,6 +756,7 @@ export type RootMutationType = {
   rejectOrgConfirm: ConfirmResult;
   acceptUserConfirm: ConfirmResult;
   rejectUserConfirm: ConfirmResult;
+  upsertTargets: Array<Maybe<Target>>;
 };
 
 
@@ -818,26 +827,33 @@ export type RootMutationTypeLinkActionsArgs = {
 
 export type RootMutationTypeAddOrgUserArgs = {
   orgName: Scalars['String'];
-  input: UserInput;
+  input: OrgUserInput;
 };
 
 
 export type RootMutationTypeInviteOrgUserArgs = {
   orgName: Scalars['String'];
-  input: UserInput;
+  input: OrgUserInput;
   message?: Maybe<Scalars['String']>;
 };
 
 
 export type RootMutationTypeUpdateOrgUserArgs = {
   orgName: Scalars['String'];
-  input: UserInput;
+  input: OrgUserInput;
 };
 
 
 export type RootMutationTypeDeleteOrgUserArgs = {
   orgName: Scalars['String'];
   email: Scalars['String'];
+};
+
+
+export type RootMutationTypeUpdateUserArgs = {
+  input: UserDetailsInput;
+  id?: Maybe<Scalars['Int']>;
+  email?: Maybe<Scalars['String']>;
 };
 
 
@@ -865,6 +881,7 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
   sqsDeliver?: Maybe<Scalars['Boolean']>;
+  eventBackend?: Maybe<ServiceName>;
   eventProcessing?: Maybe<Scalars['Boolean']>;
   confirmProcessing?: Maybe<Scalars['Boolean']>;
 };
@@ -944,10 +961,18 @@ export type RootMutationTypeRejectUserConfirmArgs = {
   confirm: ConfirmInput;
 };
 
+
+export type RootMutationTypeUpsertTargetsArgs = {
+  targets: Array<Maybe<TargetInput>>;
+  campaignId: Scalars['Int'];
+};
+
 export type RootQueryType = {
   __typename?: 'RootQueryType';
-  /** Get a list of campains */
+  /** Get a list of public campains */
   campaigns: Array<Campaign>;
+  /** Get campaign */
+  campaign: Maybe<Campaign>;
   /** Get action page */
   actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
@@ -955,12 +980,19 @@ export type RootQueryType = {
   users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
+  targets: Array<Maybe<Target>>;
 };
 
 
 export type RootQueryTypeCampaignsArgs = {
   title?: Maybe<Scalars['String']>;
   name?: Maybe<Scalars['String']>;
+  id?: Maybe<Scalars['Int']>;
+};
+
+
+export type RootQueryTypeCampaignArgs = {
+  select?: Maybe<SelectCampaign>;
 };
 
 
@@ -991,6 +1023,11 @@ export type RootQueryTypeOrgArgs = {
   name: Scalars['String'];
 };
 
+
+export type RootQueryTypeTargetsArgs = {
+  campaignId: Scalars['Int'];
+};
+
 export type RootSubscriptionType = {
   __typename?: 'RootSubscriptionType';
   actionPageUpserted: ActionPage;
@@ -1007,6 +1044,7 @@ export type SelectActionPage = {
 
 export type SelectCampaign = {
   id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
 };
 
 export type SelectKey = {
@@ -1050,7 +1088,8 @@ export enum ServiceName {
   Sqs = 'SQS',
   Mailjet = 'MAILJET',
   Wordpress = 'WORDPRESS',
-  Stripe = 'STRIPE'
+  Stripe = 'STRIPE',
+  Webhook = 'WEBHOOK'
 }
 
 export enum Status {
@@ -1072,6 +1111,32 @@ export type StripeSubscriptionInput = {
   amount: Scalars['Int'];
   currency: Scalars['String'];
   frequencyUnit: DonationFrequencyUnit;
+};
+
+export type Target = {
+  __typename?: 'Target';
+  id: Scalars['String'];
+  name: Scalars['String'];
+  area: Maybe<Scalars['String']>;
+  fields: Maybe<Scalars['Json']>;
+  emails: Array<Maybe<TargetEmail>>;
+};
+
+export type TargetEmail = {
+  __typename?: 'TargetEmail';
+  email: Scalars['String'];
+};
+
+export type TargetEmailInput = {
+  email: Scalars['String'];
+};
+
+export type TargetInput = {
+  name: Scalars['String'];
+  area?: Maybe<Scalars['String']>;
+  externalId: Scalars['String'];
+  fields?: Maybe<Scalars['Json']>;
+  emails: Array<Maybe<TargetEmailInput>>;
 };
 
 /** Tracking codes */
@@ -1097,13 +1162,17 @@ export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
   email: Scalars['String'];
+  phone: Maybe<Scalars['String']>;
+  pictureUrl: Maybe<Scalars['String']>;
+  jobTitle: Maybe<Scalars['String']>;
   isAdmin: Scalars['Boolean'];
   roles: Array<UserRole>;
 };
 
-export type UserInput = {
-  email: Scalars['String'];
-  role: Scalars['String'];
+export type UserDetailsInput = {
+  pictureUrl?: Maybe<Scalars['String']>;
+  jobTitle?: Maybe<Scalars['String']>;
+  phone?: Maybe<Scalars['String']>;
 };
 
 export type UserRole = {
@@ -2166,6 +2235,10 @@ export const scalarLocations : ScalarLocations = {
     },
     "OrgInput": {
       "config": "Json"
+    },
+    "TargetInput": {
+      "fields": "Json",
+      "emails": "TargetEmailInput"
     }
   },
   "outputObjectFieldTypes": {
@@ -2193,6 +2266,9 @@ export const scalarLocations : ScalarLocations = {
       "supporterCountByArea": "AreaCount",
       "supporterCountByOrg": "OrgCount",
       "actionCount": "ActionTypeCount"
+    },
+    "Confirm": {
+      "creator": "User"
     },
     "ConfirmResult": {
       "actionPage": [
@@ -2257,7 +2333,8 @@ export const scalarLocations : ScalarLocations = {
         "PublicOrg"
       ],
       "actions": "PublicActionsResult",
-      "partnerships": "Partnership"
+      "partnerships": "Partnership",
+      "targets": "Target"
     },
     "PrivateOrg": {
       "config": "Json",
@@ -2316,6 +2393,10 @@ export const scalarLocations : ScalarLocations = {
         "PublicActionPage"
       ]
     },
+    "Target": {
+      "fields": "Json",
+      "emails": "TargetEmail"
+    },
     "User": {
       "roles": "UserRole"
     },
@@ -2355,6 +2436,7 @@ export const scalarLocations : ScalarLocations = {
     "inviteOrgUser": "Confirm",
     "updateOrgUser": "ChangeUserStatus",
     "deleteOrgUser": "DeleteUserResult",
+    "updateUser": "User",
     "addOrg": [
       "PrivateOrg",
       "PublicOrg"
@@ -2373,7 +2455,12 @@ export const scalarLocations : ScalarLocations = {
     "rejectOrgConfirm": "ConfirmResult",
     "acceptUserConfirm": "ConfirmResult",
     "rejectUserConfirm": "ConfirmResult",
+    "upsertTargets": "Target",
     "campaigns": [
+      "PrivateCampaign",
+      "PublicCampaign"
+    ],
+    "campaign": [
       "PrivateCampaign",
       "PublicCampaign"
     ],
@@ -2384,7 +2471,8 @@ export const scalarLocations : ScalarLocations = {
     "exportActions": "Action",
     "currentUser": "User",
     "users": "User",
-    "org": "PrivateOrg"
+    "org": "PrivateOrg",
+    "targets": "Target"
   },
   "scalars": [
     "Json"

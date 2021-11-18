@@ -5,7 +5,6 @@ schema {
   subscription: RootSubscriptionType
 }
 
-"Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
 interface Campaign {
   "Campaign id"
   id: Int!
@@ -121,6 +120,11 @@ input ConsentInput {
   leadOptIn: Boolean
 }
 
+input OrgUserInput {
+  email: String!
+  role: String!
+}
+
 input NationalityInput {
   "Nationality \/ issuer of id document"
   country: String!
@@ -220,6 +224,7 @@ type Confirm {
   email: String
   message: String
   objectId: Int
+  creator: User
 }
 
 input SelectKey {
@@ -326,6 +331,12 @@ type AreaCount {
 
   "count of supporters in this area"
   count: Int!
+}
+
+input UserDetailsInput {
+  pictureUrl: String
+  jobTitle: String
+  phone: String
 }
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
@@ -559,21 +570,33 @@ type RootMutationType {
   ): ContactReference!
 
   "Add user to org by email"
-  addOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+  addOrgUser(orgName: String!, input: OrgUserInput!): ChangeUserStatus!
 
   "Invite an user to org by email (can be not yet user!)"
   inviteOrgUser(
     orgName: String!
 
-    input: UserInput!
+    input: OrgUserInput!
 
     "Optional message for invited user"
     message: String
   ): Confirm!
 
-  updateOrgUser(orgName: String!, input: UserInput!): ChangeUserStatus!
+  updateOrgUser(orgName: String!, input: OrgUserInput!): ChangeUserStatus!
 
   deleteOrgUser(orgName: String!, email: String!): DeleteUserResult
+
+  "Update (current) user details"
+  updateUser(
+    "Input values to update in user"
+    input: UserDetailsInput!
+
+    "Admin can use user id to specify user to update"
+    id: Int
+
+    "Admin can use user email to specify user to update"
+    email: String
+  ): User!
 
   addOrg(input: OrgInput!): Org!
 
@@ -605,6 +628,8 @@ type RootMutationType {
     customActionDeliver: Boolean
 
     sqsDeliver: Boolean
+
+    eventBackend: ServiceName
 
     eventProcessing: Boolean
 
@@ -676,14 +701,20 @@ type RootMutationType {
 }
 
 type RootQueryType {
-  "Get a list of campains"
+  "Get a list of public campains"
   campaigns(
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
 
     "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
     name: String
+
+    "Select by id, Returns list of 1 result"
+    id: Int
   ): [Campaign!]!
+
+  "Get campaign"
+  campaign(select: SelectCampaign): Campaign
 
   "Get action page"
   actionPage(
@@ -765,6 +796,7 @@ type Processing {
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
   sqsDeliver: Boolean!
+  eventBackend: ServiceName
   eventProcessing: Boolean!
   confirmProcessing: Boolean!
 }
@@ -935,6 +967,7 @@ enum DonationSchema {
 
 input SelectCampaign {
   id: Int
+  name: String
 }
 
 type PrivateCampaign implements Campaign {
@@ -1040,6 +1073,7 @@ enum ServiceName {
   MAILJET
   WORDPRESS
   STRIPE
+  WEBHOOK
 }
 
 type ContactReference {
@@ -1140,11 +1174,6 @@ input TargetInput {
   emails: [TargetEmailInput]!
 }
 
-input UserInput {
-  email: String!
-  role: String!
-}
-
 "Contact information"
 input ContactInput {
   "Full name"
@@ -1191,6 +1220,9 @@ enum Status {
 type User {
   id: Int!
   email: String!
+  phone: String
+  pictureUrl: String
+  jobTitle: String
   isAdmin: Boolean!
   roles: [UserRole!]!
 }
