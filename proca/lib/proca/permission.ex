@@ -41,9 +41,10 @@ defmodule Proca.Permission do
 
   @spec can?(Auth | User | Staffer | nil, [atom] | atom | number) :: boolean
 
+  # XXX change into macros?
   # Auth context: pass to legacy methods
-  def can?(auth = %Auth{user: user, staffer: nil}, permission), do: can?(user, permission)
-  def can?(auth = %Auth{user: user, staffer: staffer}, permission), do: can?(%{staffer | user: user}, permission)
+  def can?(%Auth{user: user, staffer: nil}, permission), do: can?(user, permission)
+  def can?(%Auth{user: user, staffer: staffer}, permission), do: can?(%Staffer{staffer | user: user}, permission)
 
   # staffer with user set: check both org and user params
   def can?(%Staffer{perms: org_perms, user: %User{perms: user_perms}}, permission) when is_number(permission) do
