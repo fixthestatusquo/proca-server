@@ -16,7 +16,7 @@ defmodule Proca.Service.Mailjet do
 
   @behaviour Proca.Service.EmailBackend
 
-  alias Proca.{Org, Service}
+  alias Proca.{Org, Service, Supporter, Target}
   alias Proca.Service.{EmailTemplate, EmailBackend}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
@@ -88,6 +88,12 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
+  def put_custom_id(email, custom_id) do
+    email
+    |> Email.put_provider_option(:custom_id, custom_id)
+  end
+
+  @impl true
   def deliver(emails, %Org{email_backend: srv}) do
     case Mailjet.deliver_many(emails, config(srv)) do
       {:ok, _} -> :ok
@@ -97,6 +103,25 @@ defmodule Proca.Service.Mailjet do
         raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
     end
   end
+
+  @impl true
+  def handle_bounce(params) do
+    {type, id} = parse_type(String.split(Map.get(params, "CustomID"), ":", trim: true))
+    bounce_params = %{
+      id: id,
+      email: Map.get(params, "email"),
+      reason: String.to_atom(Map.get(params, "event"))
+    }
+
+    case type do
+      :action -> Supporter.handle_bounce(bounce_params)
+      :target -> Target.handle_bounce(bounce_params)
+    end
+  end
+
+  defp parse_type(["action" | [tail | _]]), do: {:action, tail}
+  defp parse_type(["target" | [tail | _]]), do: {:target, tail}
+  defp parse_type(args), do: {:empty, nil}
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{

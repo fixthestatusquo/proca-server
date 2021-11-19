@@ -4,7 +4,7 @@ defmodule Proca.Target do
   """
 
   use Ecto.Schema
-  alias Proca.{Repo, Target}
+  alias Proca.{Repo, Target, TargetEmail}
   import Ecto.Changeset
   import Ecto.Query
 
@@ -47,4 +47,22 @@ defmodule Proca.Target do
   end
 
   def get(target), do: get(Target, target)
+
+  def handle_bounce(args) do
+    target_email = get_target_email(args.id, args.email)
+    target_email = change(target_email, email_status: args.reason)
+    Repo.update!(target_email)
+  end
+
+  def get_target_email(id, email) do
+    query = from(
+      te in TargetEmail,
+      join: t in Target,
+      on: t.id == te.target_id,
+      where: te.email == ^email and t.id == ^id,
+      limit: 1
+    )
+
+    Repo.one(query)
+  end
 end

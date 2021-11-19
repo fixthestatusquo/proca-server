@@ -5,7 +5,7 @@ defmodule Proca.Supporter do
   """
   use Ecto.Schema
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage, Org}
+  alias Proca.{Supporter, Contact, ActionPage, Org, Action}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
@@ -26,6 +26,7 @@ defmodule Proca.Supporter do
     field :area, :string
 
     field :processing_status, ProcessingStatus, default: :new
+    field :email_status, EmailStatus, default: :none
 
     timestamps()
   end
@@ -120,6 +121,29 @@ defmodule Proca.Supporter do
       end
     end
   end
+
+  def handle_bounce(args) do
+    supporter = get_by_action_id(args.id)
+    reject(supporter)
+
+    supporter = change(supporter, email_status: args.reason)
+
+    Repo.update!(supporter)
+  end
+
+  def get_by_action_id(action_id) do
+    query = from(
+      s in Supporter,
+      join: a in Action,
+      on: a.supporter_id == s.id,
+      where: a.id == ^action_id,
+      order_by: [desc: :inserted_at],
+      limit: 1
+    )
+
+    Repo.one(query)
+  end
+
 
 # XXX rename this to something like "clear_transient_fields"
   def clear_transient_fields_query(supporter) do
