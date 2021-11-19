@@ -6,6 +6,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.Authorized
+  alias Proca.Auth
+  import Proca.Permission
 
   object :org_queries do
     @desc "Organization api (authenticated)"
@@ -31,9 +33,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :config, non_null(:json)
 
     resolve_type fn 
-      %{id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_org
-      # XXX maybe add created_by user_id so they could be matched here? that would mean they are forever owners?
-      # the access check here should be dynamic to work in add_org scenario, but it also must be fast
+      %{id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} -> :private_org
+      _, %{context: %{auth: %Auth{} = auth}} -> if can?(auth, [:manage_orgs]) do
+        :private_org
+      else
+        :public_org
+      end
       _, _ -> :public_org
     end
   end
