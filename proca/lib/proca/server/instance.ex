@@ -26,7 +26,7 @@ defmodule Proca.Server.Instance do
 
   def org() do
     case GenServer.call(__MODULE__, :get_org) do
-      {:ok, org} -> org
+      %Proca.Org{} = org -> org
       _ -> nil
     end
   end
