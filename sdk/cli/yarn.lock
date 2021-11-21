@@ -1013,9 +1013,9 @@
     "@types/node" "*"
 
 "@types/line-by-line@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@types/line-by-line/-/line-by-line-0.1.4.tgz#c8a3d9e37f7cf2beb851621d807066acfe849b98"
-  integrity sha512-H3v9Mge3+9p1Y5Zj10996zwlgnuv1mFls3uHxauUfuxaKqzBluToKK9p5FAb0dCfrOHQClVs+ECFpKv4jJ4yWw==
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@types/line-by-line/-/line-by-line-0.1.5.tgz#c5a1672395a5b4009a19dbc6dcfcc3abbbac1833"
+  integrity sha512-Ua09O4xtfQ0glYji54AxN7zaNa4NSVc/gbVghKQ4xEuhVeMWJouIGAaWxbijAJ3POwFrDN5uJm+RCDeMrHmxog==
   dependencies:
     "@types/node" "*"
 
