@@ -7,6 +7,7 @@ defmodule Proca.Target do
   alias Proca.{Repo, Target}
   import Ecto.Changeset
   import Ecto.Query
+  import Proca.Validations, only: [validate_flat_map: 2]
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
 
@@ -27,7 +28,9 @@ defmodule Proca.Target do
     target
     |> cast(attrs, [:name, :campaign_id, :fields, :area, :external_id])
     |> validate_required([:name, :external_id])
+    |> validate_flat_map(:fields)
     |> unique_constraint(:external_id)
+    |> check_constraint(:fields, name: :max_fields_size)
   end
 
   def upsert(target, emails) do

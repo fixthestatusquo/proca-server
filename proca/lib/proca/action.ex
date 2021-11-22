@@ -12,6 +12,7 @@ defmodule Proca.Action do
   import Ecto.Query
   alias Proca.{Action, Supporter}
   alias Proca.Repo
+  import Proca.Validations, only: [validate_flat_map: 2]
 
   schema "actions" do
     field :ref, :binary
@@ -59,30 +60,6 @@ defmodule Proca.Action do
     |> put_change(:campaign_id, action_page.campaign_id)
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
     |> check_constraint(:fields, name: :max_fields_size)
-  end
-
-  @doc """
-  Validate that change is a:
-  - map 
-  - keys are strings
-  - values are strings, numbers, or lists of strings and numbers
-  """
-  @spec validate_flat_map(Ecto.Changeset.t, atom()) :: Changeset.t
-  def validate_flat_map(changeset, fieldname) do 
-    Ecto.Changeset.validate_change(changeset, fieldname, fn (f, fields) -> 
-      valid = is_map(fields) and Enum.all?(
-      Enum.map(fields, fn {k, v} -> 
-        is_bitstring(k) 
-        and (is_bitstring(v) or is_number(v) or (is_list(v) 
-        and (Enum.all?(Enum.map(v, &is_bitstring/1)) 
-        or Enum.all?(Enum.map(v, &is_number/1)))))
-      end))
-      if valid do 
-        []
-      else
-        [{f, "Custom fields must be a map of string to values of strings or numbers, or lists of them"}]
-      end
-    end)
   end
 
   @doc """
