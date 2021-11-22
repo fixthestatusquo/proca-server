@@ -876,10 +876,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@proca/api@^3.0.2":
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.2.tgz#82b1731dfaf93338afe72b06a647a7d07c4fe8ed"
-  integrity sha512-zcrK9ltDE1qnKRt5Uax7AHtHQwWjcWX6rm/0WTKQZd2yG0SHxxGu5Ak0aDusAKIXqzUiyIQsE2GEZH2e7sp5sQ==
+"@proca/api@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.0.3.tgz#61bd710aff4a0dfaa71ddc05d7964c44f57d2d5c"
+  integrity sha512-TjqxFTQkkhQUZSBz0o+2TjVDWEKRFmj8BrTbi0ld33I9XSB5Xor/P9cA3w0v6Jxt2g1vAGPDhoKgRkQR1tc1qg==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.0"
     "@urql/core" "^2.3.4"
@@ -4370,23 +4370,10 @@ yargs@^15.3.1:
     y18n "^4.0.0"
     yargs-parser "^18.1.2"
 
-yargs@^16.2.0:
-  version "16.2.0"
-  resolved "https://registry.yarnpkg.com/yargs/-/yargs-16.2.0.tgz#1c82bf0f6b6a66eafce7ef30e376f49a12477f66"
-  integrity sha512-D1mvvtDG0L5ft/jGWkLpG1+m0eQxOfaBvTNELraWj22wSVUMWxZUvYgJYcKh6jGGIkJFhH4IZPQhR4TKpc8mBw==
-  dependencies:
-    cliui "^7.0.2"
-    escalade "^3.1.1"
-    get-caller-file "^2.0.5"
-    require-directory "^2.1.1"
-    string-width "^4.2.0"
-    y18n "^5.0.5"
-    yargs-parser "^20.2.2"
-
-yargs@^17.0.0:
-  version "17.0.1"
-  resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.0.1.tgz#6a1ced4ed5ee0b388010ba9fd67af83b9362e0bb"
-  integrity sha512-xBBulfCc8Y6gLFcrPvtqKz9hz8SO0l1Ni8GgDekvBX2ro0HRQImDGnikfc33cgzcYUSncapnNcZDjVFIH3f6KQ==
+yargs@^17.0.0, yargs@^17.2.1:
+  version "17.2.1"
+  resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.2.1.tgz#e2c95b9796a0e1f7f3bf4427863b42e0418191ea"
+  integrity sha512-XfR8du6ua4K6uLGm5S6fA+FIJom/MdJcFNVY8geLlp2v8GYbOXD4EB1tPNZsRn4vBzKGMgb5DRZMeWuFc2GO8Q==
   dependencies:
     cliui "^7.0.2"
     escalade "^3.1.1"
