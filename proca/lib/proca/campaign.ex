@@ -4,7 +4,8 @@ defmodule Proca.Campaign do
   """
 
   use Ecto.Schema
-  alias Proca.{Repo, Campaign, ActionPage}
+  use Proca.Schema, module: __MODULE__
+  alias Proca.{Repo, Campaign, ActionPage, Org}
   import Ecto.Changeset
   import Ecto.Query
 
@@ -46,34 +47,40 @@ defmodule Proca.Campaign do
     |> put_assoc(:org, org)
   end
 
-  def get(queryable, [{:org, org} | criteria]) do 
-    from(c in queryable, where: c.org_id == ^org.id)
-    |> get(criteria)
+
+  def all(queryable, [{:org, %Org{id: org_id}} | criteria]) do
+    queryable
+    |> where([c], c.org_id == ^org_id)
+    |> all(criteria)
   end
 
-  def get(queryable, [name: name]) do 
-    from(c in queryable, where: c.name == ^name)
-    |> preloads()
-    |> Repo.one()
+  def all(queryable, [{:name, name} | criteria]) do
+    queryable
+    |> where([c], c.name == ^name)
+    |> all(criteria)
   end
 
-  def get(queryable, [external_id: id]) do 
-    from(c in queryable, where: c.external_id == ^id) 
-    |> preloads()
-    |> Repo.one()
+  def all(queryable, [{:external_id, id} | criteria]) do
+    queryable
+    |> where([c], c.external_id == ^id)
+    |> all(criteria)
   end
 
-  def get(queryable, [id: id]) do 
-    from(c in queryable, where: c.id == ^id) 
-    |> preloads()
-    |> Repo.one()
+  def all(queryable, [{:id, id} | criteria]) do
+    queryable
+    |> where([c], c.id == ^id)
+    |> all(criteria)
   end
 
-  def get(crit) when is_list(crit), do: get(Campaign, crit)
-
-  def preloads(queryable) do 
-    queryable |> preload([c], [:org])
+  def all(queryable, [:with_local_pages | criteria]) do
+    queryable
+    |> join(:left, [c], a in assoc(c, :action_pages), on: a.org_id == c.org_id)
+    |> order_by([c, a], [desc: a.id])
+    |> preload([c, a], [:org, action_pages: a])
+    |> all(criteria)
   end
+
+  def get(crit) when is_list(crit), do: one(crit ++ [preload: [:org]])
 
   def select_by_org(org) do
     from(c in Campaign,
@@ -84,28 +91,18 @@ defmodule Proca.Campaign do
     |> distinct(true)
   end
 
-  def get_with_local_pages(campaign_id) when is_integer(campaign_id) do 
-    from(c in Campaign, where: c.id == ^campaign_id,
-      left_join: a in assoc(c, :action_pages),
-      on: a.org_id == c.org_id,
-      order_by: [desc: a.id],
-      preload: [:org, action_pages: a])
-    |> Repo.one()
+  def get_with_local_pages(campaign_id) when is_integer(campaign_id) do
+    one([id: campaign_id] ++ [:with_local_pages])
   end
 
-  def get_with_local_pages(campaign_name) when is_bitstring(campaign_name) do 
-    from(c in Campaign, where: c.name == ^campaign_name,
-      left_join: a in assoc(c, :action_pages),
-      on: a.org_id == c.org_id,
-      order_by: [desc: a.id],
-      preload: [:org, action_pages: a])
-    |> Repo.one()
+  def get_with_local_pages(campaign_name) when is_bitstring(campaign_name) do
+    one([name: campaign_name] ++ [:with_local_pages])
   end
 
   def public_action_keys(%Campaign{public_actions: public_actions}, action_type) 
     when is_bitstring(action_type) 
     do 
-    public_keys = public_actions 
+    public_actions
     |> Enum.map(fn p -> String.split(p, ":") end)
     |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
     |> Enum.reject(&is_nil/1)

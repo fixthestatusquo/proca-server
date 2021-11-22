@@ -100,7 +100,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
 
   def add_action_page(_, %{name: name, campaign_name: cn, locale: locale}, %{context: %{org: org}}) do 
     with campaign when campaign != nil <- Campaign.get(name: cn),
-      {:ok, new_ap} <- ActionPage.create(params: %{
+      {:ok, new_ap} <- ActionPage.create(cast: %{
         name: name, locale: locale}, campaign: campaign, org: org) do
 
       Proca.Server.Notify.action_page_added(new_ap)

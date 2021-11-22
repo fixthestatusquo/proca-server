@@ -119,7 +119,7 @@ defmodule Proca.ActionPage do
 
 
   def update(ap, [{assoc, record} | kw]) when assoc == :campaign or assoc == :org, do: put_assoc(ap, assoc, record) |> update(kw)
-  def update(ap, [{:params, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> update(kw)
+  def update(ap, [{:cast, attrs} | kw]), do: ActionPage.changeset(ap, attrs) |> update(kw)
   def update(ap, [{:copy, ap_tmpl} | kw]), do: change(ap, Map.take(ap_tmpl, [:config, :delivery, :locale])) |> update(kw)
 
   def find(id) when is_integer(id) do
