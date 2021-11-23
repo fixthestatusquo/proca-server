@@ -133,7 +133,7 @@ defmodule ProcaWeb.Resolvers.Org do
     perms = Staffer.Role.permissions(:owner)
 
     op = Multi.new()
-    |> Multi.insert(:org, Org.changeset(%Org{}, params))
+    |> Multi.insert(:org, Org.changeset(%Org{}, params) |> change(email_from: user.email))
     |> Multi.run(:staffer, fn _repo, %{org: org} ->
       Staffer.create(user: user, org: org, perms: perms)
     end)

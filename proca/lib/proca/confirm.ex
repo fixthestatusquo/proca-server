@@ -188,7 +188,7 @@ defmodule Proca.Confirm do
       subject_id: subj_id,
       object_id: obj_id || "",
       code: confirm_code,
-      creator: (if cnf.creator != nil, do: Map.take(cnf.creator.email, [:email, :job_title]), else: %{}),
+      creator: (if cnf.creator != nil, do: Map.take(cnf.creator, [:email, :job_title]), else: %{}),
       accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
       reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
     } |> Map.merge(operation.notify_fields(cnf))
