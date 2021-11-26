@@ -72,6 +72,12 @@ defmodule Proca.Service.Mailjet do
     |> Email.put_provider_option(:template_id, ref)
   end
 
+  @impl true
+  def put_template(email, tmpl = %EmailTemplate{ref: ref}) when is_bitstring(ref) do
+    put_template(email, %{tmpl | ref: String.to_integer(ref)})
+  end
+
+  @impl true
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
     when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
 
