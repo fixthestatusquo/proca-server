@@ -11,7 +11,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       story = red_story()
       %{red_bot: red_bot} = story
 
-      {:ok, red_user} = Proca.Users.User.update(red_bot.user, [:admin]) 
+      {:ok, red_user} = Repo.update Proca.Users.User.make_admin_changeset(red_bot.user)
 
       %{story | red_bot: %{red_bot | user: red_user}}
     end
@@ -40,7 +40,7 @@ defmodule ProcaWeb.Api.JoinOrg do
       conn: conn, red_bot: %{user: red_user}
         } do 
       hq = Repo.get_by Org, name: Org.instance_org_name()
-      {:ok, adst} = Staffer.create(org: hq, user: red_user)
+      {:ok, adst} = Repo.insert Staffer.changeset(%{org: hq, user: red_user})
 
       query = """
         mutation Join {
@@ -61,8 +61,8 @@ defmodule ProcaWeb.Api.JoinOrg do
       conn: conn, red_bot: %{user: red_user}
         } do 
       hq = Repo.get_by Org, name: Org.instance_org_name()
-      {:ok, red_user} = User.update(red_user, perms: [:instance_owner])
-      {:ok, adst} = Staffer.create(user: red_user, org: hq)
+      {:ok, red_user} = Repo.update User.perms_changeset(red_user, [:instance_owner])
+      {:ok, adst} = Repo.insert Staffer.changeset(%{user: red_user, org: hq})
 
       query = """
         mutation Join {

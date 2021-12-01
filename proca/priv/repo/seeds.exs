@@ -13,7 +13,7 @@
 
 org_name = Application.get_env(:proca, Proca)[:org_name]
 
-instance_org = Proca.Org.get_by_name(org_name, [:active_public_keys])
+instance_org = Proca.Org.one([:instance, :active_public_keys])
 
 create_keys = fn org -> 
   Proca.PublicKey.build_for(org, "seeded keys") 
@@ -32,7 +32,8 @@ create_admin = fn org, username ->
   IO.puts "#####   Password: #{user.password}"
   IO.puts "#####"
 
-  Proca.Org.update(org, [params: %{email_from: username}])
+  Proca.Org.changeset(org, %{email_from: username})
+  |> Proca.Repo.update!()
 end
 
 instance_org = if is_nil(instance_org) do

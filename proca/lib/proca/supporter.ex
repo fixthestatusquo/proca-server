@@ -4,6 +4,7 @@ defmodule Proca.Supporter do
   Has associated contacts, which contain personal data dediacted to every receiving org
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   alias Proca.Repo
   alias Proca.{Supporter, Contact, ActionPage, Org}
   alias Proca.Contact.Data

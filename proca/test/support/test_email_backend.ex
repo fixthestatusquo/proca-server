@@ -65,7 +65,7 @@ defmodule Proca.TestEmailBackend do
     end
 
     mbox = mbox 
-    |> Map.update(address, [email], fn e -> [email|e] end ) 
+    |> Map.update(address, [email], fn e -> [email|e] end )
 
     {:reply, :ok, %{st | mbox: mbox}}
   end

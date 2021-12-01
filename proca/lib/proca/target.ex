@@ -4,6 +4,7 @@ defmodule Proca.Target do
   """
 
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   alias Proca.{Repo, Target}
   import Ecto.Changeset
   import Ecto.Query
@@ -33,21 +34,16 @@ defmodule Proca.Target do
     |> check_constraint(:fields, name: :max_fields_size)
   end
 
+  def all(query, [{:external_id, external_id} | kw]) do
+    import Ecto.Query, only: [where: 3]
+    query
+    |> where([t], t.external_id == ^external_id)
+    |> all(kw)
+  end
+
   def upsert(target, emails) do
-    (get(external_id: target.external_id) || %Target{})
+    (one(external_id: target.external_id, preload: [:emails, :campaign]) || %Target{})
     |> Target.changeset(target)
     |> put_assoc(:emails, emails)
   end
-
-  def get(queryable, [external_id: external_id]) do
-    from(t in queryable, where: t.external_id == ^external_id)
-    |> preloads()
-    |> Repo.one()
-  end
-
-  def preloads(queryable) do
-    queryable |> preload([t], [:emails, :campaign])
-  end
-
-  def get(target), do: get(Target, target)
 end

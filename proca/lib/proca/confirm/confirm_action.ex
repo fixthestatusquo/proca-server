@@ -4,11 +4,11 @@ defmodule Proca.Confirm.ConfirmAction do
   import Proca.Changeset 
   import Proca.Repo
 
-  def create(%Action{id: id}) do 
+  def changeset(%Action{id: id}) do
     %{
       operation: :confirm_action,
       subject_id: id
-    } |> Confirm.create()
+    }
   end
 
   @impl true

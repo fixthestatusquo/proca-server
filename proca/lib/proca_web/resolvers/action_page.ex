@@ -61,36 +61,32 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   def update(_, %{input: attrs}, %{context: %{action_page: ap}}) do
-    case ap
+    ap
     |> ActionPage.changeset(attrs)
-    |> Repo.update()
-      do
-      {:error,  chset = %Ecto.Changeset{}} -> {:error, Helper.format_errors(chset)}
-      {:ok, ap} ->
-        Proca.Server.Notify.action_page_updated(ap)
-        {:ok, ap}
-    end
+    |> Repo.update_and_notify()
   end
 
+  @doc """
+  Copy an action page in campaign. The new copy is owned by caller org.
+  """
   def copy_from(_, %{name: name, from_name: from_name}, %{context: %{org: org}}) do
-    with ap when not is_nil(ap) <- ActionPage.find(from_name),
-         {:ok, new_ap} <- ActionPage.create_copy_in(org, ap, %{name: name})
-    do
-    Proca.Server.Notify.action_page_added(new_ap)
-    {:ok, new_ap}
+    with ap when not is_nil(ap) <- ActionPage.find(from_name) do
+      ActionPage.create_copy_in(org, ap, %{name: name})
+      |> Repo.insert_and_notify()
     else
       nil -> {:error, "ActionPage named #{from_name} not found"}
       {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
     end
   end
 
+  @doc """
+  Copy any action page in campaign. The new copy is owned by caller org.
+  """
   def copy_from_campaign(_, %{name: name, from_campaign_name: camp_name}, %{context: %{org: org}}) do
     with campaign when not is_nil(campaign) <- Campaign.get_with_local_pages(camp_name),
-        [ap | _] <- campaign.action_pages,
-        {:ok, new_ap} <- ActionPage.create_copy_in(org, ap, %{name: name})
-    do
-    Proca.Server.Notify.action_page_added(new_ap)
-    {:ok, new_ap}
+        [ap | _] <- campaign.action_pages do
+      ActionPage.create_copy_in(org, ap, %{name: name})
+      |> Repo.insert_and_notify()
     else
       nil -> {:error, "Campaign named #{camp_name} not found"}
       [] -> {:error, "Campaign #{camp_name} does not have action pages"}
@@ -99,12 +95,14 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   end
 
   def add_action_page(_, %{name: name, campaign_name: cn, locale: locale}, %{context: %{org: org}}) do 
-    with campaign when campaign != nil <- Campaign.get(name: cn),
-      {:ok, new_ap} <- ActionPage.create(cast: %{
-        name: name, locale: locale}, campaign: campaign, org: org) do
-
-      Proca.Server.Notify.action_page_added(new_ap)
-      {:ok, new_ap}
+    with campaign when campaign != nil <- Campaign.get(name: cn) do
+      ActionPage.changeset(%{
+            name: name,
+            locale: locale,
+            campaign: campaign,
+            org: org
+                           })
+      |> Repo.insert_and_notify()
     else
       nil -> {:error, "Campaign named #{cn} not found"}
       {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
@@ -123,8 +121,8 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         end
       else
         # partner org
-        cnf = Proca.Confirm.LaunchPage.create(ap, auth, Map.get(params, :message))
-        Proca.Server.Notify.org_confirm_created(cnf, org)
+        Proca.Confirm.LaunchPage.changeset(ap, auth, Map.get(params, :message))
+        |> Proca.Confirm.insert_and_notify!()
 
         {:ok, %{status: :confirming}}
       end

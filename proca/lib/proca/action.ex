@@ -8,6 +8,7 @@ defmodule Proca.Action do
   """
 
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query
   alias Proca.{Action, Supporter}
@@ -41,8 +42,10 @@ defmodule Proca.Action do
 
   defp put_supporter_or_ref(ch, contact_ref, action_page) when is_bitstring(contact_ref) do
     case Supporter.find_by_fingerprint(contact_ref, action_page.org_id) do
-      %Supporter{} = supporter -> put_assoc(ch, :supporter, supporter)
-      nil -> put_change(ch, :ref, contact_ref)
+      %Supporter{} = supporter ->
+        put_assoc(ch, :supporter, supporter)
+      nil ->
+        change(ch, %{ref: contact_ref, supporter: nil})
     end
   end
 
@@ -68,23 +71,28 @@ defmodule Proca.Action do
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
     |> Repo.update_all(set: [supporter_id: id, ref: nil])
+    # XXX decouple in a way that lets use do notify
   end
 
   def get_by_id(action_id) do
-    from(a in Action,
-      where: a.id == ^action_id,
-      preload: [:campaign, [action_page: :org], [supporter: :contacts], :fields],
-      limit: 1
-    )
-    |> Repo.one()
+    one(id: action_id, preload: [:campaign, [action_page: :org], [supporter: :contacts], :fields])
   end
 
-  def get_by_id_and_ref(action_id, ref) do 
-    from(a in Action, 
-      join: s in Supporter, on: s.id == a.supporter_id,
-      where: a.id == ^action_id and s.fingerprint == ^ref, 
-      preload: [supporter: s])
-    |> Repo.one()
+  def get_by_id_and_ref(action_id, ref) do
+    one(id: action_id, contact_ref: ref)
+    # from(a in Action,
+    #   join: s in Supporter, on: s.id == a.supporter_id,
+    #   where: a.id == ^action_id and s.fingerprint == ^ref,
+    #   preload: [supporter: s])
+    # |> Repo.one()
+  end
+
+  def all(q, [{:contact_ref, ref} | kw]) do
+    q
+    |> join(:inner, [a], s in assoc(a, :supporter))
+    |> where([a, s], s.fingerprint == ^ref)
+    |> preload([a, s], [supporter: s])
+    |> all(kw)
   end
 
   def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do 
@@ -121,4 +129,4 @@ defmodule Proca.Action do
       :delivered -> Repo.update(change(action, processing_status: :rejected))
     end
   end
-end
+ end

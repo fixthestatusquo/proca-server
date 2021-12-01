@@ -53,7 +53,7 @@ defmodule Proca.Server.Keys do
   Fetch all active public keys
   """
   def handle_continue(:get_keys, {ioid, _keys, nonce}) do
-    keys = PublicKey.active_keys() |> Repo.all() |> Map.new(fn pk -> {pk.org_id, pk} end)
+    keys = PublicKey.active_keys() |> Map.new(fn pk -> {pk.org_id, pk} end)
 
     case keys[ioid] do
       %PublicKey{public: pub, private: priv} when is_binary(pub) and is_binary(priv) ->

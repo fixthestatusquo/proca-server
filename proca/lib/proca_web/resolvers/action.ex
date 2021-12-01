@@ -133,9 +133,8 @@ defmodule ProcaWeb.Resolvers.Action do
          |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
            {:ok, link_references(supporter, params)}
          end)
-         |> Repo.transaction() do
+         |> Repo.transaction_and_notify(:add_action_contact, all_error: true) do
       {:ok, %{supporter: supporter, action: action}} ->
-        Proca.Server.Notify.action_created(action, supporter)
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
@@ -166,9 +165,8 @@ defmodule ProcaWeb.Resolvers.Action do
            |> put_assoc(:source, source)
            |> repo.insert()
          end)
-         |> Repo.transaction() do
+         |> Repo.transaction_and_notify(:add_action, all_error: :true) do
       {:ok, %{supporter: supporter, action: action}} ->
-        Proca.Server.Notify.action_created(action)
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->

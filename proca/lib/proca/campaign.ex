@@ -7,7 +7,7 @@ defmodule Proca.Campaign do
   use Proca.Schema, module: __MODULE__
   alias Proca.{Repo, Campaign, ActionPage, Org}
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, except: [update: 2]
 
   schema "campaigns" do
     field :name, :string
@@ -28,25 +28,24 @@ defmodule Proca.Campaign do
 
   @doc false
   def changeset(campaign, attrs) do
+    assocs = Map.take(attrs, [:org])
     campaign
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
     |> validate_required([:name, :title, :contact_schema])
+    |> change(assocs)
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)
     |> unique_constraint(:name)
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
-    (get(org: org, external_id: id) || %Campaign{contact_schema: org.contact_schema})
-    |> Campaign.changeset(attrs)
-    |> put_assoc(:org, org)
+    (one(org: org, external_id: id) || %Campaign{contact_schema: org.contact_schema, org_id: org.id})
+    |> changeset(attrs)
   end
 
   def upsert(org, attrs = %{name: cname}) do
-    (get(org: org, name: cname) || %Campaign{contact_schema: org.contact_schema})
-    |> Campaign.changeset(attrs)
-    |> put_assoc(:org, org)
+    (one(org: org, name: cname) || %Campaign{contact_schema: org.contact_schema, org_id: org.id})
+    |> changeset(attrs)
   end
-
 
   def all(queryable, [{:org, %Org{id: org_id}} | criteria]) do
     queryable
@@ -66,12 +65,6 @@ defmodule Proca.Campaign do
     |> all(criteria)
   end
 
-  def all(queryable, [{:id, id} | criteria]) do
-    queryable
-    |> where([c], c.id == ^id)
-    |> all(criteria)
-  end
-
   def all(queryable, [:with_local_pages | criteria]) do
     queryable
     |> join(:left, [c], a in assoc(c, :action_pages), on: a.org_id == c.org_id)
@@ -82,6 +75,8 @@ defmodule Proca.Campaign do
 
   def get(crit) when is_list(crit), do: one(crit ++ [preload: [:org]])
 
+  # XXX replace when we have Partnership
+  @doc "Select campaigns where org is lead or partner"
   def select_by_org(org) do
     from(c in Campaign,
       left_join: ap in ActionPage,
@@ -107,4 +102,4 @@ defmodule Proca.Campaign do
     |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
     |> Enum.reject(&is_nil/1)
   end
-end
+ end

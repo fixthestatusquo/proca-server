@@ -60,7 +60,7 @@ defmodule Proca.Staffer.Role do
 
   def add_user_as(%Proca.Users.User{} = user, %Proca.Org{} = org, role) do 
     case Staffer.for_user_in_org(user, org.id) do 
-      nil -> Staffer.build_for_user(user, org.id, Proca.Permission.add(0, permissions(role)))
+      nil -> Staffer.changeset(%{user_id: user.id, org_id: org.id, role: role})
       st -> change(st, role)
     end
   end

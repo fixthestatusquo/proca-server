@@ -14,13 +14,13 @@ defmodule Proca.Confirm.JoinCampaign do
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
-  def create(%Campaign{id: campaign_id} = campaign, %Auth{staffer: %Staffer{org_id: org_id}}) do 
+  def changeset(%Campaign{id: campaign_id}, %Auth{staffer: %Staffer{org_id: org_id}}) do
     # XXX test for campaign manager
     %{
       operation: :join_campaign,
       subject_id: org_id,
       object_id: campaign_id
-    } |> Confirm.create()
+    }
   end
 
   defp can_approve?(staffer, campaign) do 
