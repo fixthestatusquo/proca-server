@@ -7,6 +7,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm, Target}
   import Proca.Permission
   alias ProcaWeb.Helper
+  alias Ecto.Multi
 
   def list(_, %{id: id}, _) do
     cl =
@@ -96,51 +97,29 @@ defmodule ProcaWeb.Resolvers.Campaign do
     }
   end 
 
-  @doc "XXX deprecated in favor of upsert/3"
-  def declare_upsert(p, attrs, res) do
-    upsert(p, %{input: attrs}, res)
-  end
 
-  def upsert(_, %{input: attrs = %{action_pages: pages}}, %{context: %{org: org}}) do
-    # XXX Add name: attributes if url given (Legacy for declare_campaign)
-    pages =
-      Enum.map(pages, fn ap ->
-        case ap do
-          %{url: url} -> Map.put(ap, :name, url)
-          ap -> ap
-        end
-      end)
+  def upsert(_, %{input: attrs}, %{context: %{org: org}}) do
+    alias Ecto.Multi
 
-    result = transaction(fn ->
-      campaign = upsert_campaign(org, attrs)
+    {pages, attrs} = Map.pop(attrs, :action_pages, [])
+
+    upsert_all = Multi.new()
+    |> Multi.insert_or_update(:campaign, Campaign.upsert(org, attrs))
+    |> Multi.merge(fn %{campaign: campaign} ->
       pages
-      |> Enum.map(&fix_page_legacy_url/1)
-      |> Enum.each(fn page ->
-        ap = upsert_action_page(org, campaign, page)
-        Proca.Server.Notify.action_page_updated(ap)
-        ap
+      |> Enum.with_index()
+      |> Enum.reduce(Multi.new(), fn {idx, page}, multi ->
+        Multi.insert_or_update(multi, "page-#{idx}", ActionPage.upsert(org, campaign, page))
       end)
-
-      campaign
     end)
+
+    result = transaction_and_notify(upsert_all, :upsert_campaign)
 
     case result do
       {:ok, _} = r -> r
       {:error, invalid} -> {:error, Helper.format_errors(invalid)}
     end
   end
-
-  # XXX for declareCampaign support
-  defp fix_page_legacy_url(page = %{url: url}) do
-    case url do
-      "https://" <> n -> %{page | name: n}
-      "http://" <> n -> %{page | name: n}
-      n -> %{page | name: n}
-    end
-    |> Map.delete(:url)
-  end
-
-  defp fix_page_legacy_url(page), do: page
 
   def upsert_campaign(org, attrs) do
     campaign = Campaign.upsert(org, attrs)

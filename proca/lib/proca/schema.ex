@@ -31,16 +31,19 @@ defmodule Proca.Schema do
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
+
+      def all(query, [{:id, id} | kw]) do
+        import Ecto.Query, only: [where: 3]
+        where(query, [a], a.id == ^id) |> all(kw)
+      end
       def all(query, [{:preload, assocs} | kw]) do
         import Ecto.Query, only: [preload: 3]
         preload(query, [a], ^assocs) |> all(kw)
       end
-
-      def create(kw) when is_list(kw), do: update(Ecto.Changeset.change(struct!(unquote(schema_mod))), kw)
-      def create(chset = %Ecto.Changeset{}, []), do: update(chset, [])
-      def create(chset = %Ecto.Changeset{}, kw) when is_list(kw), do: update(chset, kw)
-
-      def update(chset = %Ecto.Changeset{}, []), do: Repo.insert_or_update(chset)
+      def all(query, [{:order_by, order} | kw]) do
+        import Ecto.Query, only: [order_by: 3]
+        order_by(query, [a], ^order)
+      end
     end
   end
 end

@@ -5,7 +5,7 @@ defmodule ProcaWeb.Resolvers.Service do
   import Proca.Repo
 
   def upsert_service(_p, %{input: attrs = %{name: name}}, %{context: %{org: org}}) do
-    result = case Service.get_one_for_org(name, org) do 
+    result = case Service.one([name: name, org: org] ++ [:latest]) do
       nil -> Service.build_for_org(attrs, org, name)
       srv -> Service.changeset(srv, attrs)
     end
@@ -23,7 +23,7 @@ defmodule ProcaWeb.Resolvers.Service do
         context
       ) do
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
+         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       pi = input
 
       meta =
@@ -47,7 +47,7 @@ defmodule ProcaWeb.Resolvers.Service do
         context
       ) do
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
+         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       sbscr = input
 
       meta =
@@ -67,7 +67,7 @@ defmodule ProcaWeb.Resolvers.Service do
 
   def add_stripe_object(_parent, params = %{ action_page_id: ap_id }, _ctx) do 
     with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.get_one_for_org(:stripe, ap.org) do
+         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
 
       case assemble_stripe_objects(params, stripe) do 
         {:ok, object} -> {:ok, object}

@@ -66,7 +66,7 @@ defmodule ProcaWeb.Resolvers.User do
           role when role != nil <- Role.from_string(role_str),
           true <- Role.can_assign_role?(auth, role)
     do 
-      case Staffer.create(user: user, org: org, role: role) do 
+      case insert Staffer.changeset(%{user: user, org: org, role: role}) do
         {:ok, _} -> {:ok, %{status: :success}}
         {:error, _} = e -> e
       end
@@ -79,12 +79,15 @@ defmodule ProcaWeb.Resolvers.User do
     end
   end
 
-  def invite_org_user(_, params = %{input: %{email: email, role: role_str}}, %{context: %{auth: auth, org: org}}) do 
+  def invite_org_user(_, params = %{input: %{email: email, role: role_str}}, %{context: %{auth: auth}}) do
+    alias Proca.Confirm
     with role when role != nil <- Role.from_string(role_str),
          true <- Role.can_assign_role?(auth, role) do 
 
-      confirm = Proca.Confirm.AddStaffer.create(email, role, auth, params[:message])
-      case Proca.Confirm.notify_by_email(confirm) do 
+      confirm = Confirm.AddStaffer.changeset(email, role, auth, params[:message])
+      |> Confirm.insert!()
+
+      case Confirm.notify_by_email(confirm) do
         :ok -> {:ok, confirm}
         {:error, :no_template} -> {:error, msg_ext("Email template not available", "no_template")}
       end
@@ -121,7 +124,7 @@ defmodule ProcaWeb.Resolvers.User do
           end
       case User.one(q) do
         nil -> {:error, "User not found"}
-        user -> User.update(user, [params: params])
+        user -> update User.details_changeset(user, params)
       end
     else
       {:error, "Only admin with manage_users permission can modify other users"}
@@ -138,7 +141,7 @@ defmodule ProcaWeb.Resolvers.User do
 
   def update_user(_, %{input: input}, %{context: %{auth: %Auth{user: user}}}) do
     user
-    |> Proca.Users.User.update([params: input])
+    |> Proca.Users.User.details_changeset(input)
   end
 
   def delete_org_user(_,  %{email: email}, %{context: %{auth: %Auth{user: actor}, org: org}}) do 

@@ -81,7 +81,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
-
     # field :processing, :processing
     #  field :email_from, :string
     #  field :email_backend, :string
@@ -93,6 +92,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     #
     #  field :sqs_deliver, :boolean
 
+    # XXX rethink this API after we add partnerships
+    # Campaign should not be hidden under the org, but should be available somehow.
+    # Perhaps via partnerships as then we can select by partnership-role
     @desc "List campaigns this org is leader or partner of"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
       arg :select, :select_campaign
@@ -112,6 +114,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.action_page/3)
     end
 
+    # XXX just like campaigns, probably remove
     @desc "Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
       arg(:id, non_null(:integer))

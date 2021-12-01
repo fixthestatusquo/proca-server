@@ -8,16 +8,24 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   alias ProcaWeb.Resolvers
 
   object :campaign_queries do
-    @desc "Get a list of public campains"
+    @desc "Get a list of campains"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
       @desc "Filter campaigns by title using LIKE format (% means any sequence of characters)"
       arg(:title, :string)
 
-      @desc "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
+      @desc "DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
       arg(:name, :string)
 
-      @desc "Select by id, Returns list of 1 result"
+      @desc "DEPRECATED: use campaign(). Select by id, Returns list of 1 result"
       arg(:id, :integer)
+
+      # XXX by partnership perhaps?
+      # by org_name
+
+      # @desc "Campaigns accesible to current user (via group or org)"
+      # arg(:mine, :boolean)
+
+
 
       @desc "Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
       resolve(&Resolvers.Campaign.list/3)
@@ -126,8 +134,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       resolve(&Resolvers.Campaign.upsert/3)
     end
-  end
 
+    field :update_campaign, type: non_null(:campaign) do
+      middleware Authorized,
+        access: [:campaign, by: :name],
+        can?: [:manage_campaigns]
+
+      arg :name, non_null(:string)
+      arg :input, non_null(:campaign_input)
+    end
+  end
 
 
 
@@ -149,7 +165,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field(:config, :json)
 
     @desc "Action pages of this campaign"
-    field(:action_pages, non_null(list_of(non_null(:action_page_input))))
+    field(:action_pages, list_of(non_null(:action_page_input)))
   end
 
   # public counters
@@ -223,5 +239,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   input_object :select_campaign do
     field :id, :integer
     field :name, :string
+    field :external_id, :integer
+    field :org_name, :string
   end
 end

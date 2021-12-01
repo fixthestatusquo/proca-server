@@ -18,8 +18,8 @@ defmodule Proca.Confirm.LaunchPage do
 
   import Logger
 
-  @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
+  @spec changeset(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
+  def changeset(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
@@ -28,7 +28,7 @@ defmodule Proca.Confirm.LaunchPage do
       message: message,
       creator: user
     }
-    |> Confirm.create()
+    |> Confirm.changeset()
   end
 
   defp can_approve?(user_id, campaign) do

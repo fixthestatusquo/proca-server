@@ -224,12 +224,11 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     # """
     # field :journey, list_of(non_null(:string))
 
-@desc """
+    @desc """
     JSON string containing Action Page config
     """
     field :config, :json
   end
-
 
 
   input_object :select_action_page do

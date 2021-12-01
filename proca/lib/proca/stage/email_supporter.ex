@@ -112,6 +112,8 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
+
+  # XXX rename :opt_in to confirm_supporter like elsewhere
   @impl true
   def handle_batch(:opt_in, [fm|_] = messages, _, _) do
     org_id = fm.data["orgId"]
@@ -192,7 +194,9 @@ defmodule Proca.Stage.EmailSupporter do
 
   ## XXX use this ?
   defp add_action_confirm(rcpt = %EmailRecipient{}, action_id) do 
-    confirm = Proca.Confirm.ConfirmAction.create(%Action{id: action_id})
+    confirm =
+      Proca.Confirm.ConfirmAction.changeset(%Action{id: action_id})
+      |> Proca.Confirm.insert!()
     EmailRecipient.put_confirm(rcpt, confirm)
   end
 

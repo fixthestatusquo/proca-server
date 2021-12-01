@@ -11,7 +11,6 @@ defmodule ProcaWeb.Resolvers.Org do
   alias ProcaWeb.Helper
   alias ProcaWeb.Resolvers.ChangeAuth
   alias Ecto.Multi
-  alias Proca.Server.Notify
 
   alias Proca.Repo
   import Logger
@@ -121,52 +120,35 @@ defmodule ProcaWeb.Resolvers.Org do
     |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)
 
     chset = Org.changeset(org, args)
-    case Repo.update(chset) do 
-      {:ok, org} -> 
-        Proca.Server.Notify.org_updated(org, chset)
-        {:ok, org}
-      {:error, errors} -> {:error, Helper.format_errors(errors) }
-    end
+    |> Repo.update_and_notify()
   end
 
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
-    perms = Staffer.Role.permissions(:owner)
+    defaults = %{email_from: user.email}
 
-    op = Multi.new()
-    |> Multi.insert(:org, Org.changeset(%Org{}, params) |> change(email_from: user.email))
-    |> Multi.run(:staffer, fn _repo, %{org: org} ->
-      Staffer.create(user: user, org: org, perms: perms)
+    result = Multi.new()
+    |> Multi.insert(:org, Org.changeset(%Org{}, Map.merge(defaults, params)))
+    |> Multi.insert(:staffer, fn %{org: org} ->
+      Staffer.changeset(%{user: user, org: org, role: :owner})
     end)
+    |> Repo.transaction_and_notify(:user_created_org)
 
-    case Repo.transaction(op) do
+    case result do
       {:ok, %{org: org, staffer: staffer}} ->
-        Proca.Server.Notify.org_created(org)
-
         %Auth{user: user, staffer: staffer}
         |> ChangeAuth.return({:ok, org})
 
-      {:error, _fail_op, fail_val, _ch} -> {:error, fail_val}
-    end
+      {:error, _error} = e -> e
+     end
   end
 
   def delete_org(_, _, %{context: %{org: org}}) do
-    case Repo.delete(org) do
-      {:ok, _} ->
-        Proca.Server.Notify.org_deleted(org)
-        {:ok, true}
-      {:error, ch} -> {:error, Helper.format_errors(ch)}
-    end
+    Repo.delete_and_notify org
   end
 
   def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
-    changeset = Org.changeset(org, attrs)
-    case changeset |> Repo.update()
-      do
-      {:error, ch} -> {:error, Helper.format_errors(ch)}
-      {:ok, org} ->
-        Proca.Server.Notify.org_updated(org, changeset)
-        {:ok, org}
-    end
+    Org.changeset(org, attrs)
+    |> Repo.update_and_notify()
   end
 
   def list_keys(org_id, criteria) do
@@ -288,7 +270,8 @@ defmodule ProcaWeb.Resolvers.Org do
          }}
       %PublicKey{} ->
         pk = PublicKey.activate_for(org, id)
-        Notify.public_key_activated(org, pk)
+        |> Repo.transaction_and_notify(:key_activated)
+
         {:ok, %{status: :success}}
     end
   end
@@ -299,13 +282,13 @@ defmodule ProcaWeb.Resolvers.Org do
 
     joining = 
     case Staffer.one(user: user, org: org) do 
-      nil -> Staffer.create(user: user, org: org, perms: [:org_owner])
-      st = %Staffer{} -> Staffer.update(st, [role: :owner])
+      nil -> Staffer.changeset(%{user: user, org: org, perms: [:org_owner]})
+      st = %Staffer{} -> Staffer.changeset(st, [role: :owner])
     end
 
-    case joining do 
-      {:ok, _} -> 
-        %Auth{user: user, staffer: joining} 
+    case Repo.insert(joining) do
+      {:ok, joined} ->
+        %Auth{user: user, staffer: joined}
         |> ChangeAuth.return({:ok, %{status: :success, org: org}})
       {:error, _} = e -> e
     end 

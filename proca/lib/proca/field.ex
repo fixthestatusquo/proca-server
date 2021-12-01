@@ -1,34 +1,7 @@
 defmodule Proca.Field do
   @moduledoc """
-  Custom field.
-
-  Transient fields are removed after being processed (delivered)
+  Custom field helpers (to support deprecated Field model)
   """
-  use Ecto.Schema
-  import Ecto.Query
-  import Ecto.Changeset
-  alias Proca.{Field, Action}
-
-  schema "fields" do
-    field :key, :string
-    field :value, :string
-    field :transient, :boolean
-    belongs_to :action, Proca.Action
-  end
-
-  def changesets(custom_fields) when is_list(custom_fields) do
-    custom_fields
-    |> Enum.map(fn cf -> changeset(cf) end)
-  end
-
-  def changeset(attr = %{key: _key, value: _value}) do
-    %Field{}
-    |> cast(attr, [:key, :value, :transient], empty_values: [])
-    # |> validate_required([:key, :value])
-    |> validate_format(:key, ~r/^([\w\d_-]+$)/)
-    |> validate_length(:key, min: 1, max: 64)
-    |> validate_length(:value, max: 4096)
-  end
 
   @doc """
   Converts list of key->value to a map, and if some key is present more then once, the values will be aggregated in an array.
@@ -51,10 +24,6 @@ defmodule Proca.Field do
         [%{key: k, value: "#{v}"}]
       end
     end)
-    |> List.flatten
-  end
-
-  def select_transient_fields(action = %Action{}) do
-    from(f in Field, where: f.action_id == ^action.id and f.transient == true)
+    |> List.flatten()
   end
 end

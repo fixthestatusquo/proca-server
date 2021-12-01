@@ -92,7 +92,7 @@ defmodule Proca.Org do
 
   def cast_email_backend(chset, org, %{email_backend: srv_name}) 
     when srv_name in [:mailjet, :ses] do 
-    case Proca.Service.get_one_for_org(srv_name, org) do 
+    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
       nil -> add_error(chset, :email_backend, "no such service")
       %{id: id} -> chset 
         |> put_change(:email_backend_id, id)
@@ -110,7 +110,7 @@ defmodule Proca.Org do
 
   def cast_event_backend(chset, org, %{event_backend: srv_name})
     when srv_name in [:webhook] do
-    case Proca.Service.get_one_for_org(srv_name, org) do
+    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
       nil -> add_error(chset, :event_backend, "no such service")
       %{id: id} -> chset
         |> put_change(:event_backend_id, id)
@@ -126,7 +126,6 @@ defmodule Proca.Org do
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
   def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
-  def all(q, [{:id, id} | kw]), do: where(q, [o], o.id == ^id) |> all(kw) 
 
   def all(q, [:active_public_keys | kw]) do 
     q
@@ -137,54 +136,12 @@ defmodule Proca.Org do
     |> all(kw)
   end
 
-  def update(org, [{:params, attrs} | kw])
-  when is_map(attrs) do
-    changeset(org, attrs)
-    |> update(kw)
-  end
-
-  def update(%Ecto.Changeset{} = changeset, [:notify]) do
-    org = Proca.Repo.update! changeset
-
-    is_new = is_nil changeset.data.id
-    if is_new do
-      Proca.Server.Notify.org_created(org)
-    else
-      Proca.Server.Notify.org_updated(org, changeset)
-    end
-
-    org
-  end
-
   def get_by_name(name, preload \\ []) do
-    {preload, select_active_keys} =
-      if Enum.member?(preload, :active_public_keys) do
-        {
-          [:public_keys | List.delete(preload, :active_public_keys)],
-          true
-        }
-      else
-        {preload, false}
-      end
-
-    q = from o in Proca.Org, where: o.name == ^name, preload: ^preload
-    org = Proca.Repo.one(q)
-
-    if not is_nil(org) and select_active_keys do
-      %{
-        org
-        | public_keys:
-            org.public_keys
-            |> Enum.filter(& &1.active)
-            |> Enum.sort(fn a, b -> a.inserted_at > b.inserted_at end)
-      }
-    else
-      org
-    end
-   end
+    one(name: name, preload: preload)
+  end
 
   def get_by_id(id, preload \\ []) do
-    Proca.Repo.one(from o in Proca.Org, where: o.id == ^id, preload: ^preload)
+    one(id: id, preload: preload)
   end
 
   def instance_org_name do
