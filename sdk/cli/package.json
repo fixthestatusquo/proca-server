@@ -37,7 +37,7 @@
     "email-validator": "^2.0.4",
     "esm": "^3.2.25",
     "graphql": "15.5.0",
-    "inquirer": "^7.3.3",
+    "inquirer": "^8.2.0",
     "line-by-line": "^0.1.6",
     "node-fetch": "^2.6.1",
     "node-mailjet": "^3.3.1",
