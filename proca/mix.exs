@@ -75,7 +75,7 @@ defmodule Proca.MixProject do
       {:json, "~> 1.4.1"},  # XXX migrate to jason
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
-      {:phoenix_live_view, "~> 0.13.0"},
+      {:phoenix_live_view, "~> 0.15.7"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this
