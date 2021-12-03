@@ -1037,9 +1037,9 @@
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
 "@types/node-mailjet@^3.3.4":
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/@types/node-mailjet/-/node-mailjet-3.3.4.tgz#2a62f71953a211dff03dde79d05c446bfe79221a"
-  integrity sha512-KbbbBe5TphBalButPkEC8R6B2uhhj/STHUT5zrK8UhEguB1UybTjqHJ4CoJtTR07CS1lKJKL/yFcCLGdayJwLA==
+  version "3.3.7"
+  resolved "https://registry.yarnpkg.com/@types/node-mailjet/-/node-mailjet-3.3.7.tgz#e81ac4b79ff0cd419c3bce4ae514871992ea647e"
+  integrity sha512-kpXL41O0a30D5lch4Z82f1n/7ZIx2IFxaMBbcQjf3ul5H7rXA8P6NlraL4iAt8J2EPjJi3931ydshr7y89MjJA==
 
 "@types/node@*", "@types/node@^14.14.7":
   version "14.14.31"
