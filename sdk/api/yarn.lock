@@ -933,9 +933,9 @@
     "@types/node" "*"
 
 "@urql/core@^2.3.4":
-  version "2.3.4"
-  resolved "https://registry.yarnpkg.com/@urql/core/-/core-2.3.4.tgz#4eb00d6b2c631b031e4ad235fcce1a11ceb09ecd"
-  integrity sha512-KXeR55ONqkTZ2gwNgyFGJEGRp1/jEnyqkFjEguknnG6GFaikAwAX0TMijKcX6ZQ4qE59cDtVEtSbqpVkd9XNmA==
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/@urql/core/-/core-2.3.5.tgz#eb1cbbfe23236615ecb8e65850bb772d4f61b6b5"
+  integrity sha512-kM/um4OjXmuN6NUS/FSm7dESEKWT7By1kCRCmjvU4+4uEoF1cd4TzIhQ7J1I3zbDAFhZzmThq9X0AHpbHAn3bA==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.0"
     wonka "^4.0.14"
