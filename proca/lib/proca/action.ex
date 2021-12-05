@@ -41,7 +41,7 @@ defmodule Proca.Action do
   end
 
   defp put_supporter_or_ref(ch, contact_ref, action_page) when is_bitstring(contact_ref) do
-    case Supporter.find_by_fingerprint(contact_ref, action_page.org_id) do
+    case Supporter.one(fingerprint: contact_ref, org_id: action_page.org_id) do
       %Supporter{} = supporter ->
         put_assoc(ch, :supporter, supporter)
       nil ->

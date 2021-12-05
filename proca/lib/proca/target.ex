@@ -48,20 +48,14 @@ defmodule Proca.Target do
   end
 
   def handle_bounce(args) do
-    target_email = get_target_email(args.id, args.email)
-    target_email = change(target_email, email_status: args.reason)
-    Repo.update!(target_email)
+    case get_target_email(args.id, args.email) do
+      nil -> {:ok, %TargetEmail{}}  # ignore a bounce when not found
+      target_email ->
+        Repo.update! change(target_email, email_status: args.reason)
+    end
   end
 
   def get_target_email(id, email) do
-    query = from(
-      te in TargetEmail,
-      join: t in Target,
-      on: t.id == te.target_id,
-      where: te.email == ^email and t.id == ^id,
-      limit: 1
-    )
-
-    Repo.one(query)
+    TargetEmail.one(target_id: id, email: email)
   end
 end
