@@ -116,7 +116,7 @@ defmodule Proca.Service.Mailjet do
     bounce_params = %{
       id: id,
       email: Map.get(params, "email"),
-      reason: String.to_atom(Map.get(params, "event"))
+      reason: String.to_existing_atom(Map.get(params, "event"))
     }
 
     case type do
