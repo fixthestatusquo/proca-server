@@ -33,6 +33,12 @@ defmodule ProcaWeb.Router do
     plug ProcaWeb.Plugs.JwtAuthPlug
   end
 
+  pipeline :api_without_auth do
+    plug :accepts, ["json"]
+    plug CORSPlug
+    plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
+  end
+
   # unused currently, might be useful for /console
   pipeline :auth do
     plug ProcaWeb.Plugs.JwtAuthPlug, query_param: "jwt", enable_session: true
@@ -52,6 +58,12 @@ defmodule ProcaWeb.Router do
     get "/ok/:org_id/:action_id", ProcaWeb.ConfirmController, :double_opt_in
     get "/:verb/:code", ProcaWeb.ConfirmController, :confirm
     #get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
+  end
+
+  scope "/webhook" do
+    pipe_through :api_without_auth
+
+    post "/mailjet", ProcaWeb.WebhookController, :mailjet
   end
 
   scope "/api" do

@@ -136,6 +136,12 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
+  def put_custom_id(email, custom_id) do
+    email
+    |> Map.update(:provider_options, %{}, &Map.put(&1, :custom_id, custom_id))
+  end
+
+  @impl true
   def deliver(emails, _org) do
     emails
     |> Enum.map(&send_to(Enum.at(&1.to, 0), &1))

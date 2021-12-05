@@ -172,4 +172,18 @@ defmodule Proca.Factory do
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
+
+  def target_factory(attrs) do
+    emails = [
+      %Proca.TargetEmail{email: sequence("email")}
+    ]
+
+    %Proca.Target{
+      external_id: sequence("external_id"),
+      name: sequence("name"),
+      emails: emails
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes
+  end
 end
