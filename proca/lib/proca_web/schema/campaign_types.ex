@@ -142,6 +142,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       arg :name, non_null(:string)
       arg :input, non_null(:campaign_input)
+
+      resolve(&Resolvers.Campaign.update/3)
     end
   end
 
