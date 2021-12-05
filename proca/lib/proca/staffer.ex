@@ -84,6 +84,7 @@ defmodule Proca.Staffer do
     Proca.Repo.all(from s in Proca.Staffer, where: s.org_id == ^org_id, preload: ^preload)
   end
 
+  @spec not_in_org(any) :: any
   def not_in_org(org_id) do
     from(u in User,
       left_join: st in Staffer,

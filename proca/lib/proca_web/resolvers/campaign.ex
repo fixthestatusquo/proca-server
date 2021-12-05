@@ -149,6 +149,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
+  def update(_, params, %{context: %{campaign: campaign}}) do
+    campaign
+    |> Campaign.changeset(params)
+    |> update_and_notify()
+  end
+
   @doc """
   We do not have a partnership object yet but lets simulate it by getting all partner orgs with ap in that campaign
   """
@@ -171,7 +177,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
         |> Enum.map(fn o -> %{org: o, campaign: campaign} end)
         {:ok, partnerships}
     end
-  end
+   end
 
   def partnership_action_pages(%{org: %Org{id: org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
     {:ok, 
