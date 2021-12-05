@@ -57,7 +57,7 @@ defmodule Proca.MixProject do
       {:jason, "~> 1.2"},
       {:sentry, "~> 8.0"},
       {:plug_cowboy, "~> 2.3"},
-      {:absinthe, "1.6.4"},
+      {:absinthe, "1.6.6"},
       {:absinthe_phoenix, "~> 2.0.1"},
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
@@ -68,14 +68,14 @@ defmodule Proca.MixProject do
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
       {:stripity_stripe, "~> 2.9.0"},
-      {:hackney, "~> 1.17.4"},
+      {:hackney, "~> 1.18.0"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:jose, "~> 1.11.1"},
-      {:json, "~> 1.3.0"},  # XXX migrate to jason
+      {:json, "~> 1.4.1"},  # XXX migrate to jason
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
-      {:phoenix_live_view, "~> 0.13.0"},
+      {:phoenix_live_view, "~> 0.15.7"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this
