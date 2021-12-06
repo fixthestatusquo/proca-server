@@ -23,6 +23,7 @@ defmodule Proca.Campaign do
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
     has_many :targets, Proca.Target, on_delete: :delete_all
+    has_many :mtt, Proca.MTT
 
     timestamps()
   end
