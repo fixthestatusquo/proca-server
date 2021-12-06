@@ -61,7 +61,7 @@ defmodule Proca.MixProject do
       {:absinthe_phoenix, "~> 2.0.1"},
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
-      {:kcl, "~> 1.3.0"},
+      {:kcl, "~> 1.4.0"},
       {:amqp, "~> 2.0"},
       {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"}, # until support for amqp 2.0 is released
       {:ex_aws, "~> 2.1"},
