@@ -20,6 +20,7 @@ defmodule Proca.Target do
 
     belongs_to :campaign, Proca.Campaign
     has_many :emails, Proca.TargetEmail, on_delete: :delete_all, on_replace: :delete
+    has_many :messages, Proca.Action.Message
 
     timestamps()
   end
@@ -39,6 +40,13 @@ defmodule Proca.Target do
 
     query
     |> where([t], t.external_id == ^external_id)
+    |> all(kw)
+  end
+
+  def all(query, [{:name, name} | kw]) do
+    import Ecto.Query
+    query
+    |> where([t], t.name == ^name)
     |> all(kw)
   end
 
@@ -62,4 +70,4 @@ defmodule Proca.Target do
   def get_target_email(id, email) do
     TargetEmail.one(target_id: id, email: email)
   end
-end
+ end
