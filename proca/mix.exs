@@ -67,7 +67,7 @@ defmodule Proca.MixProject do
       {:ex_aws, "~> 2.1"},
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
-      {:stripity_stripe, "~> 2.9.0"},
+      {:stripity_stripe, "~> 2.12.1"},
       {:hackney, "~> 1.18.0"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
