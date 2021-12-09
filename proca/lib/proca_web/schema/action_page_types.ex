@@ -4,7 +4,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
   """
 
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
   alias ProcaWeb.Resolvers
 
   object :action_page_queries do
@@ -18,7 +18,10 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "Get action page by url the widget is displayed on (DEPRECATED, use name)"
       arg(:url, :string)
 
-      resolve(&Resolvers.ActionPage.find/3)
+      load :action_page, by: [:id, :name, :url], preload: [[campaign: :org], :org]
+      resolve fn _, _, %{context: %{action_page: ap}} -> {:ok, ap} end
+      determine_auth for: :action_page
+
     end
   end
 
@@ -51,8 +54,8 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     end
 
     resolve_type fn 
-      %{org_id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_action_page
-      page, %{context: %{staffer: %{org_id: staffer_org_id}}} ->
+      %{org_id: org_id}, %{context: %{auth: %{staffer: %{org_id: org_id}}}} -> :private_action_page
+      page, %{context: %{auth: %{staffer: %{org_id: staffer_org_id}}}} ->
         if Proca.Repo.preload(page, [:campaign]).campaign.org_id == staffer_org_id do
           :private_action_page
         else
@@ -73,12 +76,12 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do 
       resolve fn page, _, _ -> 
-        {:ok, Proca.ActionPage.location(page)}
+        {:ok, Proca.ActionPage.location(page)}   # XXX move to resolver
       end
     end
 
     @desc "Status of action page"
-    field :status, :action_page_status do 
+    field :status, :action_page_status do        # XXX ditto
       resolve fn page, _, _ -> 
         case Proca.ActionPage.Status.get_last_at(page.id) do 
           nil -> {:ok, :standby}
@@ -106,16 +109,15 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     Update an Action Page
     """
     field :update_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:action_page, by: [:id]],
-        can?: [:manage_action_pages]
-
-      # XXX Copy from action_page_input and find/replace field->arg. GraphQL is silly here
       @desc """
       Action Page id
       """
       arg :id, non_null(:integer)
       arg :input, non_null(:action_page_input)
+
+      load :action_page, by: [:id]
+      determine_auth for: :action_page
+      allow [:manage_action_pages]
 
       resolve(&Resolvers.ActionPage.update/3)
     end
@@ -125,10 +127,6 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
     """
     field :copy_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_action_pages]
-
       @desc "Org owner of new Action Page"
       arg :org_name, non_null(:string)
 
@@ -138,6 +136,11 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "Name of Action Page this one is cloned from"
       arg :from_name, non_null(:string)
 
+      load :org, by: [name: :org_name]
+      load :action_page, by: [name: :from_name]
+      determine_auth for: :org
+      allow [:manage_action_pages]
+
       resolve(&Resolvers.ActionPage.copy_from/3)
     end
 
@@ -146,10 +149,6 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     create a partner action page based off lead's one. Copies: campaign, locale, config, delivery flag
     """
     field :copy_campaign_action_page, type: non_null(:action_page) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_action_pages]
-
       @desc "Org owner of new Action Page"
       arg :org_name, non_null(:string)
 
@@ -159,14 +158,15 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "Name of Campaign from which the page is copied"
       arg :from_campaign_name, non_null(:string)
 
+      load :org, by: [name: :org_name]
+      load :campaign, [:with_local_pages, by: [name: :from_campaign_name]]
+      determine_auth for: :org
+      allow [:manage_action_pages]
+
       resolve(&Resolvers.ActionPage.copy_from_campaign/3)
     end
 
     field :add_action_page, type: non_null(:action_page) do 
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_action_pages]
-
       @desc "Org owner of new Action Page"
       arg :org_name, non_null(:string)
 
@@ -179,16 +179,24 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "Name of campaign where page is created"
       arg :campaign_name, non_null(:string)
 
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:manage_action_pages]
+
       resolve(&Resolvers.ActionPage.add_action_page/3)
     end
 
     field :launch_action_page, type: non_null(:launch_action_page_result) do
-      middleware Authorized, access: [:action_page, by: [:name]]
-
-      arg :name, non_null(:string) 
+      @desc "Action Page name"
+      arg :name, non_null(:string)
 
       @desc "Optional message for approver"
       arg :message, :string
+
+
+      load :action_page, by: [:name], preload: [:campaign]
+      determine_auth for: :action_page
+      allow [:manage_action_pages]
 
       resolve &ProcaWeb.Resolvers.ActionPage.launch_page/3
     end

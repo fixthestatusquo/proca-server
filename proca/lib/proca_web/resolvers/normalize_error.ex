@@ -20,6 +20,10 @@ defmodule ProcaWeb.Resolvers.NormalizeError do
     }
   end
 
+  defp to_absinthe(error = %Error{message: nil, code: code}) do
+    %{error | message: code}
+  end
+
   defp to_absinthe(%Error{message: msg, code: code, context: []}) do 
     %{
       message: msg, extensions: %{code: code}

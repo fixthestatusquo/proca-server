@@ -44,7 +44,6 @@ defmodule Proca.Pipes.Connection do
 
   @impl true 
   def handle_info({:basic_return, payload, meta}, st) do 
-    IO.inspect({payload, meta}, label: "basic_return")
     {:noreply, st}
   end
 

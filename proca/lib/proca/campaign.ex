@@ -20,8 +20,8 @@ defmodule Proca.Campaign do
     field :config, :map, default: %{}
 
     belongs_to :org, Proca.Org
-    has_many :action_pages, Proca.ActionPage
-    has_many :targets, Proca.Target
+    has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
+    has_many :targets, Proca.Target, on_delete: :delete_all
 
     timestamps()
   end
@@ -53,6 +53,13 @@ defmodule Proca.Campaign do
     |> all(criteria)
   end
 
+  def all(queryable, [{:org_name, org_name} | criteria]) do
+    case Org.one(name: org_name) do
+      nil -> where(queryable, [c], false) |> all(criteria)
+      org -> all(queryable, [{:org, org} | criteria])
+    end
+  end
+
   def all(queryable, [{:name, name} | criteria]) do
     queryable
     |> where([c], c.name == ^name)
@@ -70,6 +77,12 @@ defmodule Proca.Campaign do
     |> join(:left, [c], a in assoc(c, :action_pages), on: a.org_id == c.org_id)
     |> order_by([c, a], [desc: a.id])
     |> preload([c, a], [:org, action_pages: a])
+    |> all(criteria)
+  end
+
+  def all(queryable, [{:title_like, title} | criteria]) do
+    queryable
+    |> where([c], like(c.title, ^title))
     |> all(criteria)
   end
 
@@ -102,4 +115,4 @@ defmodule Proca.Campaign do
     |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
     |> Enum.reject(&is_nil/1)
   end
- end
+  end

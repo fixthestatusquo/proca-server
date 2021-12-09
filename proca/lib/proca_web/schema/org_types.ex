@@ -5,17 +5,18 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
   alias Proca.Auth
-  import Proca.Permission
+  import Proca.Permission, only: [can?: 2]
 
   object :org_queries do
     @desc "Organization api (authenticated)"
     field :org, non_null(:private_org) do
-      middleware(Authorized, access: [:org, by: [:name]])
-
       @desc "Name of organisation"
       arg(:name, non_null(:string))
+
+      load :org, by: [:name]
+      determine_auth for: :org
 
       resolve(&Resolvers.Org.get_by_name/3)
     end
@@ -34,11 +35,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     resolve_type fn 
       %{id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} -> :private_org
-      _, %{context: %{auth: %Auth{} = auth}} -> if can?(auth, [:manage_orgs]) do
-        :private_org
-      else
-        :public_org
-      end
+      _, %{context: %{auth: %Auth{} = auth}} ->
+        if can?(auth, [:manage_orgs]) do
+          :private_org
+        else
+          :public_org
+        end
       _, _ -> :public_org
     end
   end
@@ -98,7 +100,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "List campaigns this org is leader or partner of"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
       arg :select, :select_campaign
-      resolve(&Resolvers.Org.campaigns/3)
+      resolve(&Resolvers.Campaign.list/3)
     end
 
     @desc "List action pages this org has"
@@ -114,8 +116,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.action_page/3)
     end
 
-    # XXX just like campaigns, probably remove
-    @desc "Get campaign this org is leader or partner of by id"
+    # XXX remove, campaigns should be accessed directly
+    @desc "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
       arg(:id, non_null(:integer))
       resolve(&Resolvers.Org.campaign_by_id/3)
@@ -145,39 +147,37 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   object :org_mutations do
     field :add_org, type: non_null(:org) do
-      middleware Authorized
 
       arg :input, non_null(:org_input)
 
+      allow :user
       resolve(&Resolvers.Org.add_org/3)
     end
 
-    field :delete_org, type: non_null(:boolean) do
-      middleware Authorized, access: [:org, by: [:name]], can?: :org_owner
+    field :delete_org, type: non_null(:status) do
       @desc "Name of organisation"
       arg :name, non_null(:string)
+
+      load :org, by: [:name]
+      determine_auth for: :org
+      allow [:org_owner]
 
       resolve(&Resolvers.Org.delete_org/3)
     end
 
     field :update_org, type: non_null(:private_org) do
-      middleware Authorized,
-        access: [:org, by: [:name]],
-        can?: [:change_org_settings]
-
       @desc "Name of organisation, used for lookup, can't be used to change org name"
       arg(:name, non_null(:string))
       arg(:input, non_null(:org_input))
 
+      load :org, by: [:name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.Org.update_org/3)
     end
 
     @desc "Update org processing settings"
     field :update_org_processing, type: non_null(:private_org) do 
-      middleware Authorized,
-        access: [:org, by: [:name]],
-        can?: [:change_org_settings]
-
       @desc "Set email backend to"
 
       arg(:name, non_null(:string))
@@ -193,20 +193,25 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:event_processing, :boolean)
       arg(:confirm_processing, :boolean)
 
+      load :org, by: [:name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.Org.update_org_processing/3)
     end
 
     field :join_org, type: non_null(:join_org_result) do
-      middleware Authorized
+
       arg :name, non_null(:string)
 
+      load :org, by: [name: :name]
+      allow [:join_orgs]
       resolve(&Resolvers.Org.join_org/3)
     end
 
     field :generate_key, type: non_null(:key_with_private) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:change_org_settings, :export_contacts]
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
 
       @desc "Name of organisation"
       arg :org_name, non_null(:string)
@@ -216,9 +221,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     end
 
     field :add_key, type: non_null(:key) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:change_org_settings, :export_contacts]
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
 
       @desc "Name of organisation"
       arg :org_name, non_null(:string)
@@ -229,9 +234,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "A separate key activate operation, because you also need to add the key to receiving system before it is used"
     field :activate_key, type: non_null(:activate_key_result) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:change_org_settings, :export_contacts]
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
 
       arg :org_name, non_null(:string)
       @desc "Key id"

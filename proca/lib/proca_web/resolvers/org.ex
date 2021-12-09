@@ -8,7 +8,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
   alias Proca.{ActionPage, Campaign, Action, Permission}
   alias Proca.{Org, Staffer, PublicKey, Service, Auth}
-  alias ProcaWeb.Helper
+  alias ProcaWeb.{Error, Helper}
   alias ProcaWeb.Resolvers.ChangeAuth
   alias Ecto.Multi
 
@@ -30,19 +30,11 @@ defmodule ProcaWeb.Resolvers.Org do
       |> Repo.one()
 
     case c do
-      nil -> {:error, "not_found"}
+      nil -> {:error, %Error{message: "Cannot find campaign", code: "not_found"}}
       c -> {:ok, c}
     end
   end
 
-  def campaigns(org, _, _) do
-    cl =
-      Campaign.select_by_org(org)
-      |> preload([c], [:org])
-      |> Repo.all()
-
-    {:ok, cl}
-  end
 
   def action_pages_select(query, %{select: %{campaign_id: cid}}) do
     query
@@ -143,7 +135,10 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def delete_org(_, _, %{context: %{org: org}}) do
-    Repo.delete_and_notify org
+    case Repo.delete_and_notify org do
+      {:ok, removed} -> {:ok, :success}
+      e -> e
+    end
   end
 
   def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
@@ -276,42 +271,18 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def join_org(_, %{name: org_name}, %{context: %{auth: %Auth{user: user}}}) do 
-    with true <- Permission.can?(user, :join_orgs),
-         {:org, org} <- {:org, Org.one(name: org_name)}  do 
-
-    joining = 
-    case Staffer.one(user: user, org: org) do 
-      nil -> Staffer.changeset(%{user: user, org: org, perms: [:org_owner]})
-      st = %Staffer{} -> Staffer.changeset(st, [role: :owner])
-    end
+  def join_org(_, _, %{context: %{org: org, auth: %Auth{user: user}}}) do
+    joining =
+      case Staffer.one(user: user, org: org) do
+        nil -> Staffer.changeset(%{user: user, org: org, role: :org_owner})
+        st = %Staffer{} -> Staffer.changeset(st, %{role: :owner})
+      end
 
     case Repo.insert(joining) do
       {:ok, joined} ->
         %Auth{user: user, staffer: joined}
         |> ChangeAuth.return({:ok, %{status: :success, org: org}})
       {:error, _} = e -> e
-    end 
-
-    else
-      {:org, nil} -> {:error, %{
-        message: "Org not found",
-        extensions: %{
-          code: "not_found"
-        }}}
-
-      false -> {:error, %{
-        message: "You need to have join_orgs permission to join orgs",
-        extensions: %{
-          code: "permission_denied"
-        }}}
-
-      {:admin, nil} -> {:error, %{
-        message: "Only members of #{Org.instance_org_name} can join organisations",
-        extensions: %{
-          code: "permission_denied"
-        }}}
-
     end 
   end
 end
