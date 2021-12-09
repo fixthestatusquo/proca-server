@@ -6,8 +6,8 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
   - you can accept / reject confirm on behalf of your user (invitation to an org team) - although you might not have a user yet
   """
   use Absinthe.Schema.Notation
+  import ProcaWeb.Resolvers.AuthNotation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
 
   input_object :confirm_input do 
     field :code, non_null(:string)
@@ -24,34 +24,40 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
   
   object :confirm_mutations do 
     @desc "Accept a confirm on behalf of organisation."
-    field :accept_org_confirm, type: non_null(:confirm_result) do 
-      middleware Authorized, access: [:org, by: [:name]]
+    field :accept_org_confirm, type: non_null(:confirm_result) do
 
       arg :name, non_null(:string)
       arg :confirm, non_null(:confirm_input)
+
+      load :org, by: [:name]
+      determine_auth for: :org
+      allow :staffer
 
       resolve &Resolvers.Confirm.org_confirm/3
     end
 
     @desc "Reject a confirm on behalf of organisation."
     field :reject_org_confirm, type: non_null(:confirm_result) do 
-      middleware Authorized, access: [:org, by: [:name]]
 
       arg :name, non_null(:string)
       arg :confirm, non_null(:confirm_input)
 
+      load :org, by: [:name]
+      determine_auth for: :org
+      allow :staffer
+
       resolve &Resolvers.Confirm.org_reject/3
     end
 
-    field :accept_user_confirm, type: non_null(:confirm_result) do 
-      middleware Authorized
+    field :accept_user_confirm, type: non_null(:confirm_result) do
       arg :confirm, non_null(:confirm_input)
+      allow :user
       resolve &Resolvers.Confirm.user_confirm/3
     end
 
     field :reject_user_confirm, type: non_null(:confirm_result) do 
-      middleware Authorized
       arg :confirm, non_null(:confirm_input)
+      allow :user
       resolve &Resolvers.Confirm.user_reject/3
     end
   end

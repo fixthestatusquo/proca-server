@@ -4,46 +4,47 @@ defmodule ProcaWeb.Resolvers.Campaign do
   """
   import Ecto.Query
   import Proca.Repo
+  alias Proca.Auth
   alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm, Target}
   import Proca.Permission
   alias ProcaWeb.Helper
   alias Ecto.Multi
 
-  def list(_, %{id: id}, _) do
-    cl =
-      list_query()
-      |> where([x], x.id == ^id)
-      |> all()
+  @list_preload [preload: [:org, :targets]]
 
-    {:ok, cl}
+  def list(%Org{} = org, %{select: criteria}, _) do
+    Campaign.select_by_org(org)
+    |> Campaign.all(Enum.to_list(criteria) ++ @list_preload)
+  end
+
+  def list(_, %{id: id}, _) do
+    {
+      :ok,
+      Campaign.all [id: id] ++ @list_preload
+    }
   end
 
   def list(_, %{name: name}, _) do
-    cl =
-      list_query()
-      |> where([x], x.name == ^name)
-      |> all()
-
-    {:ok, cl}
+    {
+      :ok,
+      Campaign.all [name: name] ++ @list_preload
+    }
   end
 
   def list(_, %{title: title}, _) do
-    cl =
-      list_query()
-      |> where([x], like(x.title, ^title))
-      |> all()
-
-    {:ok, cl}
+    {
+      :ok,
+      Campaign.all [title_like: title] ++ @list_preload
+    }
   end
 
-  def list(_, _, _) do
-    cl = all(list_query())
-    {:ok, cl}
+  def get(_, params, _) do
+    case Campaign.one(Enum.to_list(params) ++ @list_preload) do
+      nil -> {:error, :not_found}
+      campaign -> {:ok, campaign}
+    end
   end
 
-  defp list_query() do
-    from(x in Proca.Campaign, preload: [:org, :targets])
-  end
 
   def stats(campaign, _a, _c) do
     %Proca.Server.Stats{
@@ -58,7 +59,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
        supporter_count: supporters,
        supporter_count_by_area: supporters_by_areas |> Enum.map(fn {area, ct} -> %{area: area, count: ct} end),
        supporter_count_by_org: supporter_count_by_org,
-       action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct} end),
+       action_count: at_cts |> Enum.map(fn {at, ct} -> %{action_type: at, count: ct}    end),
      }}
   end
 
@@ -149,10 +150,26 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
+  def add(_, %{input: params}, %{context: %{org: org}}) do
+    %Campaign{}
+    |> Campaign.changeset(
+      params
+      |> Map.put(:org, org)
+    )
+    |> insert_and_notify()
+  end
+
   def update(_, params, %{context: %{campaign: campaign}}) do
     campaign
     |> Campaign.changeset(params)
     |> update_and_notify()
+  end
+
+  def delete(_, _, %{context: %{campaign: campaign}}) do
+    case delete_and_notify(campaign) do
+      {:ok, _deleted} -> {:ok, :success}
+      e -> e
+    end
   end
 
   @doc """
@@ -177,7 +194,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
         |> Enum.map(fn o -> %{org: o, campaign: campaign} end)
         {:ok, partnerships}
     end
-   end
+    end
 
   def partnership_action_pages(%{org: %Org{id: org_id}, campaign: %Campaign{id: campaign_id}}, _, _) do 
     {:ok, 

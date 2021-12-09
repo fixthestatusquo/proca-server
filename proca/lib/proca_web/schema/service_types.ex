@@ -5,17 +5,18 @@ defmodule ProcaWeb.Schema.ServiceTypes do
 
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
 
   object :service_mutations do 
     field :upsert_service, type: non_null(:service) do 
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:change_org_services]
 
       arg :org_name, non_null(:string)
       arg :id, :integer
       arg :input, non_null(:service_input)
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:change_org_services]
 
       resolve(&Resolvers.Service.upsert_service/3)
     end

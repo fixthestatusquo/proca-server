@@ -13,9 +13,9 @@ defmodule ProcaWeb.AddActionPageTest do
       nil,
       %{
         name: newname,
-        from_name: yellow_ap.name,
       },
       %{context: %{
+           action_page: yellow_ap,
            org: red_org
         }})
     assert red_ap.campaign_id == yellow_ap.campaign_id

@@ -1,19 +1,19 @@
 defmodule ProcaWeb.Schema.UserTypes do
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
   alias ProcaWeb.Resolvers
   import Proca.Permission, only: [can?: 2]
 
   object :user_queries do
     field :current_user, non_null(:user) do
-      middleware Authorized
+      allow :user
       resolve(&Resolvers.User.current_user/3)
     end
 
     field :users, non_null(list_of(non_null(:user))) do 
-      middleware Authorized, can?: [:manage_users]
-
       arg :select, :select_user
+
+      allow [:manage_users]
       resolve(&Resolvers.User.list_users/3)
     end
   end
@@ -50,40 +50,51 @@ defmodule ProcaWeb.Schema.UserTypes do
   object :user_mutations do
     @desc "Add user to org by email"
     field :add_org_user, type: non_null(:change_user_status) do
-      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :input, non_null(:org_user_input)
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.User.add_org_user/3)
     end
 
     @desc "Invite an user to org by email (can be not yet user!)"
     field :invite_org_user, type: non_null(:confirm) do
-      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :input, non_null(:org_user_input)
 
       @desc "Optional message for invited user"
       arg :message, :string
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.User.invite_org_user/3)
     end
 
     field :update_org_user, type: non_null(:change_user_status) do
-      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :input, non_null(:org_user_input)
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.User.update_org_user/3)
     end
 
     field :delete_org_user, type: :delete_user_result do
-      middleware Authorized, access: [:org, by: [name: :org_name]], can?: :change_org_settings
       arg :org_name, non_null(:string)
       arg :email, non_null(:string)
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:change_org_settings]
       resolve(&Resolvers.User.delete_org_user/3)
     end
 
     @desc "Update (current) user details"
     field :update_user, type: non_null(:user) do
-      middleware Authorized
       @desc "Input values to update in user"
       arg :input, non_null(:user_details_input)
 
@@ -93,8 +104,8 @@ defmodule ProcaWeb.Schema.UserTypes do
       @desc "Admin can use user email to specify user to update"
       arg :email, :string
 
+      allow :user
       resolve(&Resolvers.User.update_user/3)
-
     end
    end
 

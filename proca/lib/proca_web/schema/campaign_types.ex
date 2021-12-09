@@ -4,18 +4,26 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   """
 
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
   alias ProcaWeb.Resolvers
+  alias Proca.Auth
 
   object :campaign_queries do
+
+    # XXX this works as search function
+    # XXX maybe rename this to public? We cannot easily determine auth context for each
+    # campaign in the list.
+    # XXX add: by org name
     @desc "Get a list of campains"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
       @desc "Filter campaigns by title using LIKE format (% means any sequence of characters)"
       arg(:title, :string)
 
+      # XXX remove
       @desc "DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
       arg(:name, :string)
 
+      # XXX remove
       @desc "DEPRECATED: use campaign(). Select by id, Returns list of 1 result"
       arg(:id, :integer)
 
@@ -25,17 +33,20 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       # @desc "Campaigns accesible to current user (via group or org)"
       # arg(:mine, :boolean)
 
-
-
       @desc "Filter campaigns by id. If found, returns list of 1 campaign, otherwise an empty list"
       resolve(&Resolvers.Campaign.list/3)
     end
 
     @desc "Get campaign"
     field :campaign, :campaign do
-      arg(:select, :select_campaign)
+      arg :id, :integer
+      arg :name, :string
+      arg :external_id, :integer
+
+      resolve &Resolvers.Campaign.get/3
+      determine_auth for: :result
     end
-   end
+  end
 
   interface :campaign do
     @desc "Campaign id"
@@ -69,7 +80,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     end
 
     resolve_type fn 
-      %{org_id: org_id}, %{context: %{staffer: %{org_id: org_id}}} -> :private_campaign
+      %{org_id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} -> :private_campaign
       _, _ -> :public_campaign
     end
   end
@@ -124,9 +135,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     Action Pages will be removed (principle of not removing signature data).
     """
     field :upsert_campaign, type: non_null(:campaign) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:manage_campaigns, :manage_action_pages]
+      load :org, by: [name: :org_name]
+      allow [:manage_campaigns]
 
       @desc "Org name"
       arg :org_name, non_null(:string)
@@ -136,18 +146,44 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     end
 
     field :update_campaign, type: non_null(:campaign) do
-      middleware Authorized,
-        access: [:campaign, by: :name],
-        can?: [:manage_campaigns]
+      arg :id, :integer
+      arg :name, :string
+      arg :external_id, :integer
 
-      arg :name, non_null(:string)
       arg :input, non_null(:campaign_input)
+
+      load :campaign, by: [:id, :name, :external_id]
+      determine_auth for: :campaign
+      allow [:manage_campaigns]
 
       resolve(&Resolvers.Campaign.update/3)
     end
+
+    field :add_campaign, type: non_null(:campaign) do
+      @desc "Org that is lead of this campaign"
+      arg :org_name, non_null(:string)
+
+      arg :input, non_null(:campaign_input)
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:manage_campaigns]
+
+      resolve(&Resolvers.Campaign.add/3)
+    end
+
+    field :delete_campaign, type: non_null(:status) do
+      arg :id, :integer
+      arg :name, :string
+      arg :external_id, :integer
+
+      load :campaign, by: [:id, :name, :external_id]
+      determine_auth for: :campaign
+      allow [:manage_campaigns]
+
+      resolve(&Resolvers.Campaign.delete/3)
+    end
   end
-
-
 
   @desc "Campaign input"
   input_object :campaign_input do
@@ -239,9 +275,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   end
 
   input_object :select_campaign do
-    field :id, :integer
-    field :name, :string
-    field :external_id, :integer
+    field :title_like, :string
     field :org_name, :string
   end
 end

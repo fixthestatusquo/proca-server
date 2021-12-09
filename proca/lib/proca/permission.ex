@@ -96,6 +96,8 @@ defmodule Proca.Permission do
     perms ||| permission
   end
 
+  def add(permission) when is_list(permission), do: add(0, permission)
+
   def remove(perms, permission) when is_integer(perms) and is_atom(permission) do
     bit = @bits[permission]
     perms &&& bnot(bit)
@@ -119,7 +121,7 @@ defmodule Proca.Permission do
 
   def to_list(perms) when is_integer(perms) do
     Enum.filter(@bits, fn {_p, b} -> (b &&& perms) > 0 end)
-    |> Enum.map(fn {p, _b} -> p end)
+    |> Enum.map(fn {p, _b} -> p   end)
   end
 end
 

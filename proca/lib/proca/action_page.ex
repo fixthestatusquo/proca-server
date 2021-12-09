@@ -138,6 +138,7 @@ defmodule Proca.ActionPage do
   end
 
   def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
+  def all(q, [{:url, name} | kw]), do: all(q, [{:name, name} | kw])
 
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do

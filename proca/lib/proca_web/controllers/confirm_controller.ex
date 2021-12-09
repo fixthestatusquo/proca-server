@@ -160,7 +160,6 @@ defmodule ProcaWeb.ConfirmController do
     if args.valid? do 
       {:ok, apply_changes(args)}
     else 
-      IO.inspect(args)
       {:error, 400, "malformed link"}
     end
   end
