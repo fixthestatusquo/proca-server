@@ -2824,9 +2824,9 @@ path-type@^4.0.0:
   integrity sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==
 
 phoenix@^1.5.9:
-  version "1.5.9"
-  resolved "https://registry.yarnpkg.com/phoenix/-/phoenix-1.5.9.tgz#5aad82072c8d90e7e20a187063c5db9b9ab9b5cd"
-  integrity sha512-NBRQaCYIrXL/wd5+OoO+DLlNTIdRvxKat0DSkfJ/c8qwYqKK7jNrf1GWPBOPzSVJ9HNMPjgmniJ87m9Os9IQGg==
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/phoenix/-/phoenix-1.6.4.tgz#1bc701cc0a51ca15bc940339233a350839b75826"
+  integrity sha512-RXtt0zmz43pCr6jHqj1djSLcj4UJER2q3JXOKPqQngcmZDNhp+9/YIu/arl93Go+GquI9Lc2kKrPAt112Luwrg==
 
 picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.3:
   version "2.2.3"
