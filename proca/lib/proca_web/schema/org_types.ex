@@ -114,7 +114,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:id, :integer)
       arg(:name, :string)
 
-      load :action_page, [by: [:id, :name], preload: [campaign: :org, :org]]
+      load :action_page, by: [:id, :name], preload: [:org, campaign: :org]
       resolve(&Resolvers.Org.action_page/3)
     end
 
