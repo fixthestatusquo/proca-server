@@ -464,6 +464,17 @@ type RootMutationType {
     input: CampaignInput!
   ): Campaign!
 
+  updateCampaign(id: Int, name: String, externalId: Int, input: CampaignInput!): Campaign!
+
+  addCampaign(
+    "Org that is lead of this campaign"
+    orgName: String!
+
+    input: CampaignInput!
+  ): Campaign!
+
+  deleteCampaign(id: Int, name: String, externalId: Int): Status!
+
   "Update an Action Page"
   updateActionPage(
     "Action Page id"
@@ -506,22 +517,28 @@ type RootMutationType {
     "Org owner of new Action Page"
     orgName: String!
 
-    "New Action Page name"
-    name: String!
-
-    "Action Page locale"
-    locale: String!
-
     "Name of campaign where page is created"
     campaignName: String!
+
+    "Action Page attributes"
+    input: ActionPageInput!
   ): ActionPage!
 
   launchActionPage(
+    "Action Page name"
     name: String!
 
     "Optional message for approver"
     message: String
   ): LaunchActionPageResult!
+
+  deleteActionPage(
+    "Action Page id"
+    id: Int
+
+    "Action Page name"
+    name: String
+  ): Status!
 
   "Adds an action referencing contact data via contactRef"
   addAction(
@@ -603,7 +620,7 @@ type RootMutationType {
   deleteOrg(
     "Name of organisation"
     name: String!
-  ): Boolean!
+  ): Status!
 
   updateOrg(
     "Name of organisation, used for lookup, can't be used to change org name"
@@ -701,20 +718,20 @@ type RootMutationType {
 }
 
 type RootQueryType {
-  "Get a list of public campains"
+  "Get a list of campains"
   campaigns(
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
 
-    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
+    "DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
     name: String
 
-    "Select by id, Returns list of 1 result"
+    "DEPRECATED: use campaign(). Select by id, Returns list of 1 result"
     id: Int
   ): [Campaign!]!
 
   "Get campaign"
-  campaign(select: SelectCampaign): Campaign
+  campaign(id: Int, name: String, externalId: Int): Campaign
 
   "Get action page"
   actionPage(
@@ -875,7 +892,7 @@ input CampaignInput {
   config: Json
 
   "Action pages of this campaign"
-  actionPages: [ActionPageInput!]!
+  actionPages: [ActionPageInput!]
 }
 
 type LaunchActionPageResult {
@@ -966,8 +983,8 @@ enum DonationSchema {
 }
 
 input SelectCampaign {
-  id: Int
-  name: String
+  titleLike: String
+  orgName: String
 }
 
 type PrivateCampaign implements Campaign {
@@ -1063,7 +1080,7 @@ type PrivateOrg implements Org {
   "Action Page"
   actionPage(id: Int, name: String): ActionPage!
 
-  "Get campaign this org is leader or partner of by id"
+  "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
   campaign(id: Int!): Campaign!
 }
 
