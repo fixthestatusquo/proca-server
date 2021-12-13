@@ -18,12 +18,11 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def add_stripe_payment_intent(
-        _parent,
-        params = %{action_page_id: ap_id, input: input},
-        context
-      ) do
-    with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+    _parent,
+    params = %{input: input},
+    context = %{context: %{action_page: ap}}
+  ) do
+    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       pi = input
 
       meta =
@@ -37,17 +36,16 @@ defmodule ProcaWeb.Resolvers.Service do
         {:error, %Ecto.Changeset{} = ch} -> {:error, ProcaWeb.Helper.format_errors(ch)}
       end
     else
-      nil -> {:error, "Action Page not found or does not support Stripe"}
+      nil -> {:error, "Action Page does not support Stripe"}
     end
   end
 
   def add_stripe_subscription(
-        _parent,
-        params = %{action_page_id: ap_id, input: input},
-        context
-      ) do
-    with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+    _parent,
+    params = %{input: input},
+    context = %{context: %{action_page: ap}}
+  ) do
+    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       sbscr = input
 
       meta =
@@ -61,20 +59,22 @@ defmodule ProcaWeb.Resolvers.Service do
         {:error, %Ecto.Changeset{} = ch} -> {:error, ProcaWeb.Helper.format_errors(ch)}
       end
     else
-      nil -> {:error, "Action Page not found or does not support Stripe"}
+      nil -> {:error, "Action Page does not support Stripe"}
     end
   end
 
-  def add_stripe_object(_parent, params = %{ action_page_id: ap_id }, _ctx) do 
-    with ap = %ActionPage{} <- ActionPage.find(ap_id),
-         stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
-
-      case assemble_stripe_objects(params, stripe) do 
+  def add_stripe_object(
+    _parent,
+    params,
+    %{context: %{action_page: ap}}
+    ) do
+    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+      case assemble_stripe_objects(params, stripe) do
         {:ok, object} -> {:ok, object}
         {:error, e} -> Service.Stripe.error_to_graphql(e)
       end
     else
-      nil -> {:error, "Action Page not found or does not support Stripe"}
+      nil -> {:error, "Action Page does not support Stripe"}
     end
   end
 

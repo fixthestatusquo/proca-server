@@ -144,6 +144,13 @@ defmodule Proca.Supporter do
     |> all(kw)
   end
 
+  def all(q, [{:action_page, %ActionPage{id: id}} | kw]) do
+    import Ecto.Query
+    q
+    |> where([a], a.action_page_id == ^id)
+    |> all(kw)
+  end
+
   def get_by_action_id(action_id) do
     one(action_id: action_id)
   end

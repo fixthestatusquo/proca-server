@@ -11,7 +11,7 @@ defmodule Proca.Action do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query
-  alias Proca.{Action, Supporter}
+  alias Proca.{Action, Supporter, ActionPage}
   alias Proca.Repo
   import Proca.Validations, only: [validate_flat_map: 2]
 
@@ -95,6 +95,21 @@ defmodule Proca.Action do
     |> all(kw)
   end
 
+  def all(q, [{:action_page, %ActionPage{id: id}} | kw]) do
+    q
+    |> where([a], a.action_page_id == ^id)
+    |> all(kw)
+  end
+
+  def all(q, [{:processing_status, status} | kw]) when is_atom(status) do
+    all(q, [{:processing_status, [status]} | kw])
+  end
+
+  def all(q, [{:processing_status, status} | kw]) when is_list(status) do
+    q
+    |> where([a], a.processing_status in ^status)
+  end
+
   def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do 
     keys = Supporter.Privacy.transient_action_fields(action, page)
 
@@ -129,4 +144,4 @@ defmodule Proca.Action do
       :delivered -> Repo.update(change(action, processing_status: :rejected))
     end
   end
- end
+  end

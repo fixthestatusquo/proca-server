@@ -103,6 +103,16 @@ defmodule Proca.Server.Notify do
     created(org)
   end
 
+  def multi(:delete_action_page, result) do
+    {_, page} = Enum.find(result, fn {{:action_page, _}, _} -> true; _ -> false end)
+    info("Deleted page #{inspect page}")
+  end
+
+  def multi(:delete_campaign, result) do
+    {_, campaign} = Enum.find(result, fn {{:campaign, _}, _} -> true; _ -> false end)
+    info("Deleted campaign #{inspect campaign}")
+  end
+
   ##### SIDE EFFECTS ######
   def instance_org_updated(org) do
     Proca.Server.Instance.update(org)

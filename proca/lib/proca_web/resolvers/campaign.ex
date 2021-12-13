@@ -12,9 +12,11 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
   @list_preload [preload: [:org, :targets]]
 
-  def list(%Org{} = org, %{select: criteria}, _) do
-    Campaign.select_by_org(org)
-    |> Campaign.all(Enum.to_list(criteria) ++ @list_preload)
+  def list(%Org{} = org, params, _) do
+    r = Campaign.select_by_org(org)
+    |> Campaign.all(Enum.to_list(Map.get(params, :select, %{})) ++ @list_preload)
+
+    {:ok, r}
   end
 
   def list(_, %{id: id}, _) do
@@ -37,6 +39,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
       Campaign.all [title_like: title] ++ @list_preload
     }
   end
+
 
   def get(_, params, _) do
     case Campaign.one(Enum.to_list(params) ++ @list_preload) do
@@ -109,15 +112,15 @@ defmodule ProcaWeb.Resolvers.Campaign do
     |> Multi.merge(fn %{campaign: campaign} ->
       pages
       |> Enum.with_index()
-      |> Enum.reduce(Multi.new(), fn {idx, page}, multi ->
-        Multi.insert_or_update(multi, "page-#{idx}", ActionPage.upsert(org, campaign, page))
+      |> Enum.reduce(Multi.new(), fn {page, idx}, multi ->
+        Multi.insert_or_update(multi, {:action_page, idx}, ActionPage.upsert(org, campaign, page))
       end)
     end)
 
     result = transaction_and_notify(upsert_all, :upsert_campaign)
 
     case result do
-      {:ok, _} = r -> r
+      {:ok, %{campaign: campaign}} -> {:ok, campaign}
       {:error, invalid} -> {:error, Helper.format_errors(invalid)}
     end
   end
@@ -166,7 +169,10 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def delete(_, _, %{context: %{campaign: campaign}}) do
-    case delete_and_notify(campaign) do
+    res = Campaign.delete(campaign)
+    |> transaction_and_notify(:delete_campaign)
+
+    case res do
       {:ok, _deleted} -> {:ok, :success}
       e -> e
     end

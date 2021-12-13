@@ -90,4 +90,12 @@ defmodule ProcaWeb.Resolvers.ActionPage do
         {:ok, %{status: :confirming}}
     end
   end
+
+  def delete(_, _, %{context: %{action_page: ap}}) do
+    res = Repo.transaction_and_notify(ActionPage.delete(ap), :delete_action_page)
+    case res do
+      {:ok, _ap} -> {:ok, :success}
+      e -> e
+    end
+  end
 end
