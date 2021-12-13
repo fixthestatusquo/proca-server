@@ -56,19 +56,9 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     end
   end
 
-  def add_action_page(_, %{name: name, campaign_name: cn, locale: locale}, %{context: %{org: org}}) do 
-    with campaign when campaign != nil <- Campaign.get(name: cn) do
-      ActionPage.changeset(%{
-            name: name,
-            locale: locale,
-            campaign: campaign,
-            org: org
-                           })
-      |> Repo.insert_and_notify()
-    else
-      nil -> {:error, "Campaign named #{cn} not found"}
-      {:error, %Ecto.Changeset{valid?: false} = ch} -> {:error, Helper.format_errors(ch)}
-    end
+  def add_action_page(_, %{input: input}, %{context: %{org: org, campaign: campaign}}) do
+    ActionPage.changeset(%{campaign: campaign, org: org} |> Map.merge(input))
+    |> Repo.insert_and_notify()
   end
 
   def launch_page(_, params,
