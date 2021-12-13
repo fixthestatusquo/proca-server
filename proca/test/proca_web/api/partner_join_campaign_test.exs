@@ -97,9 +97,11 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       ) {
         addActionPage(
         orgName: $orgName
-        campaignName: $campaignName
-        name: $name
-        locale: $locale
+        campaignName: $campaignName,
+        input: {
+          name: $name
+          locale: $locale
+        }
         ) {
           id name live
         }

@@ -177,16 +177,14 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc "Org owner of new Action Page"
       arg :org_name, non_null(:string)
 
-      @desc "New Action Page name"
-      arg :name, non_null(:string)
-
-      @desc "Action Page locale"
-      arg :locale, non_null(:string)
-
       @desc "Name of campaign where page is created"
       arg :campaign_name, non_null(:string)
 
+      @desc "Action Page attributes"
+      arg :input, non_null(:action_page_input)
+
       load :org, by: [name: :org_name]
+      load :campaign, by: [name: :campaign_name]
       determine_auth for: :org
       allow [:manage_action_pages]
 
