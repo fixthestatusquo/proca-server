@@ -8,6 +8,7 @@ defmodule Proca.Org do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query, except: [update: 2]
+  alias Ecto.Multi
   alias Proca.Org
   alias Proca.Service.EmailTemplateDirectory
   import Logger
@@ -135,6 +136,7 @@ defmodule Proca.Org do
     |> preload([o, k], [public_keys: k])
     |> all(kw)
   end
+
 
   def get_by_name(name, preload \\ []) do
     one(name: name, preload: preload)

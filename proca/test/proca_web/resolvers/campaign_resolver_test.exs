@@ -121,13 +121,24 @@ defmodule ProcaWeb.CampaignResolverTest do
   end
 
 
-  test "delete one campaign", %{
+  test "cannot delete campaign with partner pages", %{
     conn: conn, yellow_campaign: camp, yellow_user: user, orange_aps: [partner_ap|_]
   } do
     q = delete_query(%{"id" => camp.id})
     res = auth_api_post(conn, q, user)
     |> json_response(200)
 
+    assert [%{"message" => "has action pages"}] = res["errors"]
+  end
+
+  test "can delete campaign with only local pages", %{
+    conn: conn, red_campaign: camp, red_ap: page, red_user: user
+  } do
+    q = delete_query(%{"id" => camp.id})
+    res = auth_api_post(conn, q, user)
+    |> json_response(200)
+
     assert res["data"]["deleteCampaign"] == "SUCCESS"
+    assert is_nil Proca.ActionPage.one(id: page.id)
   end
 end

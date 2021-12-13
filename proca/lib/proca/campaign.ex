@@ -6,6 +6,7 @@ defmodule Proca.Campaign do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   alias Proca.{Repo, Campaign, ActionPage, Org}
+  alias Ecto.Multi
   import Ecto.Changeset
   import Ecto.Query, except: [update: 2]
 
@@ -20,7 +21,7 @@ defmodule Proca.Campaign do
     field :config, :map, default: %{}
 
     belongs_to :org, Proca.Org
-    has_many :action_pages, Proca.ActionPage, on_delete: :nilify_all
+    has_many :action_pages, Proca.ActionPage
     has_many :targets, Proca.Target, on_delete: :delete_all
 
     timestamps()
@@ -86,6 +87,27 @@ defmodule Proca.Campaign do
     |> all(criteria)
   end
 
+  def delete(%Multi{} = multi, %Campaign{} = campaign) do
+    %{action_pages: owned_pages} = one([id: campaign.id] ++ [:with_local_pages])
+
+    owned_pages
+    |> Enum.reduce(multi, fn page, m ->
+      ActionPage.delete(m, page)
+    end)
+    |> Multi.delete({:campaign, campaign.id}, change(campaign)
+    |> foreign_key_constraint(:action_pages, [
+          name: :action_pages_campaign_id_fkey,
+          message: "has action pages"
+        ])
+    )
+  end
+
+  def delete(%Campaign{} = campaign) do
+    Multi.new()
+    |> delete(campaign)
+  end
+
+
   def get(crit) when is_list(crit), do: one(crit ++ [preload: [:org]])
 
   # XXX replace when we have Partnership
@@ -115,4 +137,4 @@ defmodule Proca.Campaign do
     |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
     |> Enum.reject(&is_nil/1)
   end
-  end
+   end

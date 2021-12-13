@@ -21,6 +21,9 @@ defmodule Proca.Schema do
     quote do 
       alias Proca.Repo
 
+      def defaults(Proca.ActionPage), do: []
+      def defaults(_), do: []
+
       def one(kw) when is_list(kw), do: all(kw ++ [one: true])
       def one!(kw) when is_list(kw), do: all(kw ++ [one!: true])
 

@@ -26,6 +26,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg :input, non_null(:stripe_payment_intent_input)
       arg :contact_ref, :id
 
+      load :action_page, by: [id: :action_page_id, preload: [:org, :campaign]]
       resolve(&Resolvers.Service.add_stripe_payment_intent/3)
     end
 
@@ -34,6 +35,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg :input, non_null(:stripe_subscription_input)
       arg :contact_ref, :id
 
+      load :action_page, by: [id: :action_page_id, preload: [:org, :campaign]]
       resolve(&Resolvers.Service.add_stripe_subscription/3)
     end
 
@@ -55,6 +57,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       @desc "Parameters for Stripe Price creation"
       arg :price, :json
 
+      load :action_page, by: [id: :action_page_id, preload: [:org, :campaign]]
       resolve(&Resolvers.Service.add_stripe_object/3)
     end
   end

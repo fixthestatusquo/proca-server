@@ -58,4 +58,10 @@ defmodule Proca.Repo do
       {:error, _errors} = e -> e
     end
   end
+
+  def delete_and_notify!(changeset, opts \\ []) do
+    record = delete!(changeset, opts)
+    Notify.deleted(record)
+    record
+  end
 end

@@ -8,10 +8,11 @@ defmodule Proca.ActionPage do
   use Proca.Schema, module: __MODULE__
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3]
+  import Ecto.Query
+  alias Ecto.Multi
 
   alias Proca.Repo
-  alias Proca.{ActionPage, Campaign, Org}
+  alias Proca.{ActionPage, Campaign, Org, Action, Supporter}
 
   schema "action_pages" do
     field :locale, :string
@@ -129,6 +130,36 @@ defmodule Proca.ActionPage do
     |> changeset_copy(ap, Map.put(attrs, :org_id, org.id))
   end
 
+  def delete(%ActionPage{} = ap) do
+    Multi.new()
+    |> delete(ap)
+  end
+
+  def delete(%Multi{} = multi, %ActionPage{id: page_id} = page) do
+    no_action_supporters = from(s in Supporter,
+      select: s.id,
+      left_join: a in assoc(s, :actions),
+      having: count(a.id) == 0, group_by: s.id)
+
+
+    multi
+    |> Multi.delete_all({:test_actions, page.id}, Action.all([
+          action_page: page,
+          processing_status: [:testing]]
+        )
+    )
+    |> Multi.delete_all({:no_action_supporters, page.id}, from(
+          s in Supporter, where: s.id in subquery(no_action_supporters)))
+    |> Multi.delete({:action_page, page_id}, change(page)
+      |> foreign_key_constraint(:actions, [
+          name: :actions_action_page_id_fkey, message: "has action data"
+        ])
+      |> foreign_key_constraint(:supporters, [
+          name: :actions_supporter_id_fkey, message: "has suporter data"
+        ])
+    )
+  end
+
   def find(id) when is_integer(id) do
     one(id: id, preload: [:campaign, :org])
   end
@@ -140,6 +171,11 @@ defmodule Proca.ActionPage do
   def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
   def all(q, [{:url, name} | kw]), do: all(q, [{:name, name} | kw])
 
+  def all(q, [{:trash, trash} | kw]) do
+    q
+    |> where([ap], is_nil(ap.campaign_id) == ^trash)
+    |> all(kw)
+  end
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do

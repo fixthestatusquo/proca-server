@@ -53,15 +53,22 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       resolve(&Resolvers.ActionPage.org/3)
     end
 
-    resolve_type fn 
-      %{org_id: org_id}, %{context: %{auth: %{staffer: %{org_id: org_id}}}} -> :private_action_page
-      page, %{context: %{auth: %{staffer: %{org_id: staffer_org_id}}}} ->
-        if Proca.Repo.preload(page, [:campaign]).campaign.org_id == staffer_org_id do
-          :private_action_page
-        else
-          :public_action_page
-        end
-      _, _ -> :public_action_page
+    resolve_type fn
+    # staffer
+    %{org_id: org_id}, %{context: %{auth: %{staffer: %{org_id: org_id}}}} -> :private_action_page
+    # simulate campaign group
+    page, %{context: %{auth: %{staffer: %{org_id: staffer_org_id}}}} ->
+      if Proca.Repo.preload(page, [:campaign]).campaign.org_id == staffer_org_id do
+        :private_action_page
+      else
+        :public_action_page
+      end
+    # admin
+    _, %{context: %{auth: auth}} -> if Proca.Permission.can?(auth, [:instance_owner]) do
+        :private_action_page
+      else
+        :public_action_page
+      end
     end
   end
 
@@ -199,6 +206,20 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       allow [:manage_action_pages]
 
       resolve &ProcaWeb.Resolvers.ActionPage.launch_page/3
+    end
+
+    field :delete_action_page, type: non_null(:status) do
+      @desc "Action Page id"
+      arg :id, :integer
+
+      @desc "Action Page name"
+      arg :name, :string
+
+      load :action_page, by: [:id, :name]
+      determine_auth for: :action_page
+      allow [:manage_action_pages]
+
+      resolve &ProcaWeb.Resolvers.ActionPage.delete/3
     end
   end
 

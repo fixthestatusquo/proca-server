@@ -135,8 +135,15 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def delete_org(_, _, %{context: %{org: org}}) do
-    case Repo.delete_and_notify org do
-      {:ok, removed} -> {:ok, :success}
+    # Try to delete campaigns of this org but do not fail if you can't
+    campaigns = Campaign.all(org: org)
+
+    for c <- campaigns do
+      Repo.transaction_and_notify(Campaign.delete(c), :delete_campaign)
+    end
+
+    case Repo.delete_and_notify(org) do
+      {:ok, _removed} -> {:ok, :success}
       e -> e
     end
   end

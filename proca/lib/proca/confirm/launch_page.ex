@@ -49,7 +49,7 @@ defmodule Proca.Confirm.LaunchPage do
         %Auth{staffer: st}
       ) do
     with camp when not is_nil(camp) <- get(Campaign, campaign_id),
-         ap when not is_nil(ap) <- ActionPage.find(ap_id),
+         ap when not is_nil(ap) <- ActionPage.one(id: ap_id, preload: [:org, :campaign]),
          {:perms, true} <- {:perms, can_approve?(st.user_id, camp)} do
       ActionPage.go_live(ap)
     else
@@ -68,7 +68,7 @@ defmodule Proca.Confirm.LaunchPage do
   @impl true
   def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
     with %Campaign{name: campaign_name, title: campaign_title} <- get(Campaign, campaign_id),
-         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.find(ap_id)
+         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.one(id: ap_id, preload: [:org, :campaign])
     do
     %{
       campaign: %{
