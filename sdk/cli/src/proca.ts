@@ -202,7 +202,7 @@ export type CampaignInput = {
   /** Custom config as stringified JSON map */
   config?: Maybe<Scalars['Json']>;
   /** Action pages of this campaign */
-  actionPages: Array<ActionPageInput>;
+  actionPages?: Maybe<Array<ActionPageInput>>;
 };
 
 /** Campaign statistics */
@@ -574,7 +574,7 @@ export type PrivateOrg = Org & {
   actionPages: Array<ActionPage>;
   /** Action Page */
   actionPage: ActionPage;
-  /** Get campaign this org is leader or partner of by id */
+  /** DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id */
   campaign: Campaign;
 };
 
@@ -703,6 +703,9 @@ export type RootMutationType = {
    * Action Pages will be removed (principle of not removing signature data).
    */
   upsertCampaign: Campaign;
+  updateCampaign: Campaign;
+  addCampaign: Campaign;
+  deleteCampaign: Status;
   /** Update an Action Page */
   updateActionPage: ActionPage;
   /**
@@ -717,6 +720,7 @@ export type RootMutationType = {
   copyCampaignActionPage: ActionPage;
   addActionPage: ActionPage;
   launchActionPage: LaunchActionPageResult;
+  deleteActionPage: Status;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
   /** Adds an action with contact data */
@@ -732,7 +736,7 @@ export type RootMutationType = {
   /** Update (current) user details */
   updateUser: User;
   addOrg: Org;
-  deleteOrg: Scalars['Boolean'];
+  deleteOrg: Status;
   updateOrg: PrivateOrg;
   /** Update org processing settings */
   updateOrgProcessing: PrivateOrg;
@@ -766,6 +770,27 @@ export type RootMutationTypeUpsertCampaignArgs = {
 };
 
 
+export type RootMutationTypeUpdateCampaignArgs = {
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
+  externalId?: Maybe<Scalars['Int']>;
+  input: CampaignInput;
+};
+
+
+export type RootMutationTypeAddCampaignArgs = {
+  orgName: Scalars['String'];
+  input: CampaignInput;
+};
+
+
+export type RootMutationTypeDeleteCampaignArgs = {
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
+  externalId?: Maybe<Scalars['Int']>;
+};
+
+
 export type RootMutationTypeUpdateActionPageArgs = {
   id: Scalars['Int'];
   input: ActionPageInput;
@@ -788,15 +813,20 @@ export type RootMutationTypeCopyCampaignActionPageArgs = {
 
 export type RootMutationTypeAddActionPageArgs = {
   orgName: Scalars['String'];
-  name: Scalars['String'];
-  locale: Scalars['String'];
   campaignName: Scalars['String'];
+  input: ActionPageInput;
 };
 
 
 export type RootMutationTypeLaunchActionPageArgs = {
   name: Scalars['String'];
   message?: Maybe<Scalars['String']>;
+};
+
+
+export type RootMutationTypeDeleteActionPageArgs = {
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
 };
 
 
@@ -969,7 +999,7 @@ export type RootMutationTypeUpsertTargetsArgs = {
 
 export type RootQueryType = {
   __typename?: 'RootQueryType';
-  /** Get a list of public campains */
+  /** Get a list of campains */
   campaigns: Array<Campaign>;
   /** Get campaign */
   campaign: Maybe<Campaign>;
@@ -992,7 +1022,9 @@ export type RootQueryTypeCampaignsArgs = {
 
 
 export type RootQueryTypeCampaignArgs = {
-  select?: Maybe<SelectCampaign>;
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
+  externalId?: Maybe<Scalars['Int']>;
 };
 
 
@@ -1043,8 +1075,8 @@ export type SelectActionPage = {
 };
 
 export type SelectCampaign = {
-  id?: Maybe<Scalars['Int']>;
-  name?: Maybe<Scalars['String']>;
+  titleLike?: Maybe<Scalars['String']>;
+  orgName?: Maybe<Scalars['String']>;
 };
 
 export type SelectKey = {
@@ -1228,6 +1260,7 @@ export const GetOrgAttrsDocument = {"kind":"Document","definitions":[{"kind":"Op
 export const LaunchActionPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"launchActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"launchActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<LaunchActionPage, LaunchActionPageVariables>;
 export const AcceptLaunchRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"acceptLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"acceptOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}}]}}]}},...ActionPageFields.definitions]} as unknown as DocumentNode<AcceptLaunchRequest, AcceptLaunchRequestVariables>;
 export const RejectLaunchRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"rejectLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<RejectLaunchRequest, RejectLaunchRequestVariables>;
+export const AddPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"campaignName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"campaignName"}}},{"kind":"Argument","name":{"kind":"Name","value":"orgName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"locale"},"value":{"kind":"StringValue","value":"en","block":false}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<AddPage, AddPageVariables>;
 export type CampaignOverview = (
   { __typename?: 'PrivateCampaign' }
   & { org: (
@@ -2196,6 +2229,24 @@ export type ActionExport = (
   ) }
 );
 
+export type AddPageVariables = Exact<{
+  campaignName: Scalars['String'];
+  org: Scalars['String'];
+  name: Scalars['String'];
+}>;
+
+
+export type AddPage = (
+  { __typename?: 'RootMutationType' }
+  & { addActionPage: (
+    { __typename?: 'PrivateActionPage' }
+    & Pick<PrivateActionPage, 'id'>
+  ) | (
+    { __typename?: 'PublicActionPage' }
+    & Pick<PublicActionPage, 'id'>
+  ) }
+);
+
 
 export type ObjectFieldTypes = {
     [key: string]: { [key: string]: string | string[] }
@@ -2409,6 +2460,14 @@ export const scalarLocations : ScalarLocations = {
   },
   "operationMap": {
     "upsertCampaign": [
+      "PrivateCampaign",
+      "PublicCampaign"
+    ],
+    "updateCampaign": [
+      "PrivateCampaign",
+      "PublicCampaign"
+    ],
+    "addCampaign": [
       "PrivateCampaign",
       "PublicCampaign"
     ],
