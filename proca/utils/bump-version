@@ -4,6 +4,6 @@
 set -u
 set -e
 
-version=$(cat package.json| gawk 'match($0, /version.: ["]([0-9.]+)["]/, v) { print v[1] }')
+version=$(cat package.json| gawk 'match($0, /version.: ["]([0-9a-z.-]+)["]/, v) { print v[1] }')
 
 sed -i0 "s/version: \"[0-9.]*\"/version: \"$version\"/" mix.exs
