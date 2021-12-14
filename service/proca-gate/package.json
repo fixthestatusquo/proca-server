@@ -17,7 +17,7 @@
     "scripts": {
         "build": "tsc",
         "watch": "tsc -w --preserveWatchOutput",
-        "prepare": "echo no prepare"
+        "prepack": "true"
     },
     "peerDependencies": {
         "typescript": "^4.2.4"
