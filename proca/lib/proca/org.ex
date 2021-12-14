@@ -137,6 +137,13 @@ defmodule Proca.Org do
     |> all(kw)
   end
 
+  def delete(org) do
+    change(org)
+    |> foreign_key_constraint(:action_pages, [
+          name: :action_pages_org_id_fkey,
+          message: "has action pages"
+        ])
+  end
 
   def get_by_name(name, preload \\ []) do
     one(name: name, preload: preload)
@@ -159,7 +166,7 @@ defmodule Proca.Org do
     public_keys
     |> Enum.filter(& &1.active)
     |> Enum.sort(fn a, b -> a.inserted_at < b.inserted_at end)
-  end
+   end
 
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
