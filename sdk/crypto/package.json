@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "prepare": "yarn build",
+    "prepack": "yarn build",
     "test": "echo No tests for proca/api"
   },
   "dependencies": {

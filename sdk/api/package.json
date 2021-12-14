@@ -10,7 +10,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "generate": "cp -f ../../proca/schema.graphql schema/schema.graphql && yarn graphql-codegen",
-    "prepare": "yarn generate && yarn build",
+    "prepack": "yarn generate && yarn build",
     "test": "echo No tests for proca/api"
   },
   "repository": {
