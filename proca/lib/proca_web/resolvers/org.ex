@@ -128,11 +128,17 @@ defmodule ProcaWeb.Resolvers.Org do
       Repo.transaction_and_notify(Campaign.delete(c), :delete_campaign)
     end
 
-    case Repo.delete_and_notify(org) do
+    action_pages = ActionPage.all(org: org)
+
+    for ap <- action_pages do
+      Repo.transaction_and_notify(ActionPage.delete(ap), :delete_action_page)
+    end
+
+    case Repo.delete_and_notify(Org.delete(org)) do
       {:ok, _removed} -> {:ok, :success}
       e -> e
     end
-  end
+   end
 
   def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
     Org.changeset(org, attrs)
