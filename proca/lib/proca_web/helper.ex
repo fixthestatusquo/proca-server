@@ -138,11 +138,11 @@ defmodule ProcaWeb.Helper do
 end
 
 # XXX not sure if best place for this
-defimpl Inspect, for: Absinthe.Resolution do
-  def inspect(resolution, _opts) do
-    show_only = Map.take(resolution, [:value, :errors, :state, :arguments, :context])
-    |> Enum.to_list()
-
-    "#Absinthe.Resolution<#{inspect(show_only)}>"
-  end
-end
+# defimpl Inspect, for: Absinthe.Resolution do
+#   def inspect(resolution, _opts) do
+#     show_only = Map.take(resolution, [:value, :errors, :state, :arguments, :context])
+#     |> Enum.to_list()
+#
+#     "#Absinthe.Resolution<#{inspect(show_only)}>"
+#   end
+# end
