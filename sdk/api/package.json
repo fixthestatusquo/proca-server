@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "^3.1.0",
-    "@urql/core": "2.1.6",
+    "@urql/core": "2.3.6",
     "js-base64": "^3.5.2",
     "phoenix": "^1.5.9",
     "ws": "^7.3.1"

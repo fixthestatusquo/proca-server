@@ -6,16 +6,19 @@
 
 // apollo stack
 
-import {createClient, Client, OperationResult, Exchange, dedupExchange, fetchExchange} from '@urql/core'
-import {Source, subscribe as makeSink, pipe} from 'wonka'
+import {
+  createClient, Client, OperationResult, Exchange,
+  dedupExchange, fetchExchange, OperationContext, PromisifiedSource
+} from '@urql/core'
+import {subscribe as makeSink, pipe} from 'wonka'
 import util from 'util'
-import {tap} from 'wonka'
+import {tap, Source} from 'wonka'
 
 // websocket stack
 import createAbsintheExchange from './absintheExchange'
 
 // Types used in our queries
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { DefinitionNode } from 'graphql'
 
 import {AuthHeader} from './auth'
@@ -36,11 +39,11 @@ function isSubscription(definition: DefinitionNode) {
     definition.operation === "subscription"
 }
 
-function hasSubscription(documentNode: DocumentNode): boolean {
+function hasSubscription(documentNode:TypedDocumentNode): boolean {
   return documentNode.definitions.some(isSubscription)
 }
 
-function hasMutation(documentNode: DocumentNode): boolean {
+function hasMutation(documentNode:TypedDocumentNode): boolean {
   return documentNode.definitions.some((def) =>
     def.kind === "OperationDefinition" && def.operation === "mutation");
 }
@@ -118,24 +121,43 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
  */
 
 
-export async function request<Q,R>(
+// XXX monkey patch urql type
+// the urql signature has:
+// DocumentNode | TypeDocumentNode<Data, Variables>
+// my suspicion is that TS inference chooses the first one
+// and uses generic type info
+type UrqlMethod = <Data = any, Variables extends object = {}>(
+  query: TypedDocumentNode<Data, Variables>,
+  variables?: Variables,
+  context?: Partial<OperationContext>
+) => PromisifiedSource<OperationResult<Data, Variables>>;
+
+export async function request<Q,R extends object>(
   link: Client,
-  query: DocumentNode<Q,R>,
+  query: TypedDocumentNode<Q,R>,
   variables: R,
   extensions?: Extensions) : Promise<OperationResult<Q, R>> {
 
-  const method = hasMutation(query) ? link.mutation : link.query;
-    const res = method(query, variables as undefined as object).toPromise();
-    return res as undefined as Promise<OperationResult<Q,R>>;
+
+  const method : UrqlMethod = hasMutation(query) ? link.mutation : link.query;
+  return method(query, variables).toPromise();
 }
 
-export function subscription<Q,R>(
+
+// XXX monkey patch urql type
+type UrqlSubscription = <Data = any, Variables extends object = {}>(
+  query: TypedDocumentNode<Data, Variables>,
+  variables?: Variables,
+  context?: Partial<OperationContext>
+) => Source<OperationResult<Data, Variables>>;
+
+export function subscription<Q,R extends object>(
   link: Client,
-  query: DocumentNode<Q,R>,
+  query:TypedDocumentNode<Q,R>,
   variables: R
 )  {
-  const source = link.subscription(query, variables as unknown as object)
-  return source as undefined as Source<OperationResult<Q,R>>
+  const subscription : UrqlSubscription = link.subscription;
+  return subscription(query, variables);
 }
 
 export function subscribe<Q,R>(
