@@ -68,7 +68,7 @@ defmodule Proca.PublicKey do
                              update: [set: [active: fragment("id = ?", ^id)]]
                             ])
     end, [])
-    |> Multi.run(:active_key, fn repo, _ -> {:ok, repo.get(PublicKey, id)} end)
+    |> Multi.run(:active_key, fn _repo, _ -> {:ok, PublicKey.one(id: id, preload: [:org])} end)
   end
 
   def build_for(org, name \\ "generated") do

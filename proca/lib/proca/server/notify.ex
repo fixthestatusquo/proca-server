@@ -86,7 +86,7 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
-  def multi(:key_activated, %{active_key: key}) do
+  def multi(:key_activated, m = %{active_key: key}) do
     key_activated(key)
   end
 

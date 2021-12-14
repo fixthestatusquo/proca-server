@@ -127,7 +127,7 @@ defmodule Proca.Server.Keys do
     :ok
   end
 
-  def update_key(_org, pk) do
+  def update_key(%Org{}, pk = %{active: false}) do
     raise "Tried to use an inactive key id: #{pk.id}"
   end
 
