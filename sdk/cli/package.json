@@ -17,7 +17,7 @@
     "build": "npx tsc",
     "watch": "npx tsc -w",
     "codegen": "yarn graphql-codegen",
-    "prepare": "yarn codegen && yarn build"
+    "prepack": "yarn codegen && yarn build"
   },
   "files": [
     "dist",
