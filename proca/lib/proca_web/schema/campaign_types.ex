@@ -68,7 +68,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.Campaign.stats/3)
     end
 
-    field :org, non_null(:org)
+    field :org, non_null(:org), do: load_assoc()
 
     @desc "Fetch public actions"
     field :actions, non_null(:public_actions_result) do
@@ -188,7 +188,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   @desc "Campaign input"
   input_object :campaign_input do
     @desc "Campaign unchanging identifier"
-    field(:name, non_null(:string))
+    field(:name, :string)
 
     @desc "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
     field(:external_id, :integer)

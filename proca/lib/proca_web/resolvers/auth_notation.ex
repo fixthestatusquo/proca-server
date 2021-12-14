@@ -38,6 +38,27 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
     end
   end
 
+  def load_assoc_resolver(parent, _, resol = %{
+    definition: %{
+      schema_node: %{
+        identifier: field
+      }
+    }
+  }) do
+    alias Proca.Repo
+    {
+      :ok,
+      Repo.preload(parent, field)
+      |> Map.get(field)
+    }
+  end
+
+  defmacro load_assoc() do
+    quote do
+      resolve(&ProcaWeb.Resolvers.AuthNotation.load_assoc_resolver/3)
+    end
+  end
+
   @doc """
   allow [:manage_orgs, :perm2, :perm3]
   """
@@ -46,4 +67,4 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
       middleware ProcaWeb.Resolvers.AuthAllow, unquote(perms)
     end
   end
-end
+ end

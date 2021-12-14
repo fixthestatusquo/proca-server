@@ -162,7 +162,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     |> insert_and_notify()
   end
 
-  def update(_, params, %{context: %{campaign: campaign}}) do
+  def update(_, %{input: params}, %{context: %{campaign: campaign}}) do
     campaign
     |> Campaign.changeset(params)
     |> update_and_notify()
