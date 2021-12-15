@@ -45,7 +45,7 @@ defmodule Proca.Schema do
       end
       def all(query, [{:order_by, order} | kw]) do
         import Ecto.Query, only: [order_by: 3]
-        order_by(query, [a], ^order)
+        order_by(query, [a], ^order) |> all(kw)
       end
     end
   end
