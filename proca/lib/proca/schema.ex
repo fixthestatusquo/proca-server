@@ -47,6 +47,11 @@ defmodule Proca.Schema do
         import Ecto.Query, only: [order_by: 3]
         order_by(query, [a], ^order) |> all(kw)
       end
+      def all(query, [{:limit, limit} | kw]) do
+        import Ecto.Query, only: [limit: 3]
+        limit(query, [a], ^limit) |> all(kw)
+      end
+
     end
   end
 end
