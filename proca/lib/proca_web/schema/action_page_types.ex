@@ -54,21 +54,22 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     end
 
     resolve_type fn
-    # staffer
-    %{org_id: org_id}, %{context: %{auth: %{staffer: %{org_id: org_id}}}} -> :private_action_page
-    # simulate campaign group
-    page, %{context: %{auth: %{staffer: %{org_id: staffer_org_id}}}} ->
-      if Proca.Repo.preload(page, [:campaign]).campaign.org_id == staffer_org_id do
-        :private_action_page
-      else
-        :public_action_page
-      end
-    # admin
-    _, %{context: %{auth: auth}} -> if Proca.Permission.can?(auth, [:instance_owner]) do
-        :private_action_page
-      else
-        :public_action_page
-      end
+      # staffer
+      %{org_id: org_id}, %{context: %{auth: %{staffer: %{org_id: org_id}}}} -> :private_action_page
+      # simulate campaign group
+      page, %{context: %{auth: %{staffer: %{org_id: staffer_org_id}}}} ->
+        if Proca.Repo.preload(page, [:campaign]).campaign.org_id == staffer_org_id do
+          :private_action_page
+        else
+          :public_action_page
+        end
+      # admin
+      _, %{context: %{auth: auth}} -> if Proca.Permission.can?(auth, [:instance_owner]) do
+          :private_action_page
+        else
+          :public_action_page
+        end
+      _, _ -> :public_action_page
     end
   end
 
