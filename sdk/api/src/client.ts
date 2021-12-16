@@ -122,15 +122,19 @@ export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) 
 
 
 // XXX monkey patch urql type
+// XXX If you encounter subtle TypedDocumentNode typescript discrepancies,
+//     break the glass below and cast method
+//
 // the urql signature has:
 // DocumentNode | TypeDocumentNode<Data, Variables>
 // my suspicion is that TS inference chooses the first one
 // and uses generic type info
-type UrqlMethod = <Data = any, Variables extends object = {}>(
-  query: TypedDocumentNode<Data, Variables>,
-  variables?: Variables,
-  context?: Partial<OperationContext>
-) => PromisifiedSource<OperationResult<Data, Variables>>;
+//
+// type UrqlMethod = <Data = any, Variables extends object = {}>(
+//   query: TypedDocumentNode<Data, Variables>,
+//   variables?: Variables,
+//   context?: Partial<OperationContext>
+// ) => PromisifiedSource<OperationResult<Data, Variables>>;
 
 export async function request<Q,R extends object>(
   link: Client,
@@ -138,25 +142,25 @@ export async function request<Q,R extends object>(
   variables: R,
   extensions?: Extensions) : Promise<OperationResult<Q, R>> {
 
-
-  const method : UrqlMethod = hasMutation(query) ? link.mutation : link.query;
+  const method = hasMutation(query) ? link.mutation : link.query;
   return method(query, variables).toPromise();
 }
 
 
-// XXX monkey patch urql type
-type UrqlSubscription = <Data = any, Variables extends object = {}>(
-  query: TypedDocumentNode<Data, Variables>,
-  variables?: Variables,
-  context?: Partial<OperationContext>
-) => Source<OperationResult<Data, Variables>>;
+// XXX If you encounter subtle TypedDocumentNode typescript discrepancies,
+//     break the glass below and cast subscription
+// type UrqlSubscription = <Data = any, Variables extends object = {}>(
+//   query: TypedDocumentNode<Data, Variables>,
+//   variables?: Variables,
+//   context?: Partial<OperationContext>
+// ) => Source<OperationResult<Data, Variables>>;
 
 export function subscription<Q,R extends object>(
   link: Client,
   query:TypedDocumentNode<Q,R>,
   variables: R
 )  {
-  const subscription : UrqlSubscription = link.subscription;
+  const subscription = link.subscription;
   return subscription(query, variables);
 }
 
