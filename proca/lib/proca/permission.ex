@@ -34,7 +34,8 @@ defmodule Proca.Permission do
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
     # XXX this is unused but maybe could be usefull for moderation
-    launch_action_page: 1 <<< 19
+    launch_action_page: 1 <<< 19,
+    change_campaign_settings: 1 <<< 20
   ]
 
   @admin_bits 0x0F 
