@@ -137,16 +137,18 @@ defmodule Proca.Server.Notify do
       Event.emit(:confirm_created, cnf, org_id)
   end
 
-  def send_confirm_by_email(cnf, org) do
+  def send_confirm_by_email(cnf = %Proca.Confirm{email: nil}, org) do
     recipients =
       Repo.preload(org, [staffers: :user]).staffers
       |> Enum.map(fn %{user: user} -> user.email end)
 
-
     cnf = Repo.preload(cnf, [:creator])
     Proca.Confirm.notify_by_email(cnf, recipients)
-   end
+  end
 
+  def send_confirm_by_email(cnf = %Proca.Confirm{email: _email}, _org) do
+    Proca.Confirm.notify_by_email(cnf)
+  end
 
   def start_org_pipes(org = %Org{}) do
       Pipes.Supervisor.start_child(org)

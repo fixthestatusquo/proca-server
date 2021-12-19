@@ -84,13 +84,8 @@ defmodule ProcaWeb.Resolvers.User do
     with role when role != nil <- Role.from_string(role_str),
          true <- Role.can_assign_role?(auth, role) do 
 
-      confirm = Confirm.AddStaffer.changeset(email, role, auth, params[:message])
-      |> Confirm.insert!()
-
-      case Confirm.notify_by_email(confirm) do
-        :ok -> {:ok, confirm}
-        {:error, :no_template} -> {:error, msg_ext("Email template not available", "no_template")}
-      end
+      Confirm.AddStaffer.changeset(email, role, auth, params[:message])
+      |> insert_and_notify()
     else
       false -> {:error, msg_ext("User must have higher role", "permission_denied")}
       nil -> {:error, msg_ext("No such role", "not_found")}
