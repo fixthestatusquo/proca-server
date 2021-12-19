@@ -105,8 +105,12 @@ defmodule Proca.Pipes.Topology do
   end
 
   @impl true
-  def handle_call({:configuration_change?, org = %Org{}}, _from, %{configuration: current}) do
-    configuration(org) != current
+  def handle_call({:configuration_change?, org = %Org{}}, _from, st = %{configuration: current}) do
+    {
+      :reply,
+      configuration(org) != current,
+      st
+    }
   end
 
 

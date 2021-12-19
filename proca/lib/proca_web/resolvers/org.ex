@@ -97,7 +97,7 @@ defmodule ProcaWeb.Resolvers.Org do
     args = args
     |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)
 
-    chset = Org.changeset(org, args)
+    Org.changeset(org, args)
     |> Repo.update_and_notify()
   end
 
