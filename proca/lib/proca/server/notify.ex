@@ -40,6 +40,9 @@ defmodule Proca.Server.Notify do
     end
   end
 
+  def created(%Confirm{} = cnf) do
+    confirm_notify(cnf, nil)
+  end
 
   def created(_), do: :ok
 
@@ -122,7 +125,7 @@ defmodule Proca.Server.Notify do
     Proca.Server.Keys.update_key(org, key)
   end
 
-  def confirm_notify(cnf, org) do
+  def confirm_notify(cnf, %Proca.Org{} = org) do
     {global, instance_org_id} = global_confirm_processing?()
 
     if not global and not org.confirm_processing do
@@ -130,6 +133,16 @@ defmodule Proca.Server.Notify do
     else
       if global, do: send_confirm_as_event(cnf, instance_org_id)
       if org.confirm_processing, do: send_confirm_as_event(cnf, org.id)
+    end
+  end
+
+  def confirm_notify(cnf, nil) do
+    {global, instance_org_id} = global_confirm_processing?()
+
+    if not global do
+      send_confirm_by_email(cnf, nil)
+    else
+      send_confirm_as_event(cnf, instance_org_id)
     end
   end
 
@@ -144,9 +157,9 @@ defmodule Proca.Server.Notify do
 
     cnf = Repo.preload(cnf, [:creator])
     Proca.Confirm.notify_by_email(cnf, recipients)
-  end
+   end
 
-  def send_confirm_by_email(cnf = %Proca.Confirm{email: _email}, _org) do
+  def send_confirm_by_email(cnf = %Proca.Confirm{email: _email}, nil) do
     Proca.Confirm.notify_by_email(cnf)
   end
 
