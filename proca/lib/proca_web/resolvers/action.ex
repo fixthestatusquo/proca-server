@@ -69,7 +69,7 @@ defmodule ProcaWeb.Resolvers.Action do
   def get_supporter(action_page, %{contact_ref: cref}) do
     case Supporter.base_decode(cref) do
       {:ok, fpr} ->
-        case Supporter.one(contact_ref: fpr, org_id: action_page.org_id) do
+        case Supporter.one(contact_ref: fpr, org_id: action_page.org_id, limit: 1, order_by: [desc: :id]) do
           s = %Supporter{} -> {:ok, s}
           nil -> {:ok, cref}
         end
