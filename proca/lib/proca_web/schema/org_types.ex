@@ -17,6 +17,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       load :org, by: [:name]
       determine_auth for: :org
+      allow :staffer
 
       resolve(&Resolvers.Org.get_by_name/3)
     end
