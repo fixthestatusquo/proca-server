@@ -39,5 +39,12 @@ defmodule ProcaWeb.Resolvers.NormalizeError do
     }
   end
 
+  defp to_absinthe(code) when is_atom(code) do
+    %{
+      message: Atom.to_string(code),
+      extensions: %{ code: Atom.to_string(code) }
+    }
+  end
+
   defp to_absinthe(error), do: error
 end
