@@ -54,7 +54,7 @@ defmodule ProcaWeb.Resolvers.Org do
     {:ok, c}
   end
 
-  def action_page(_, _, %{context: %{action_pages: page}}), do: {:ok, page}
+  def action_page(_, _, %{context: %{action_page: page}}), do: {:ok, page}
 
 
   def org_personal_data(org, _args, _ctx) do
