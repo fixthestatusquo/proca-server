@@ -1,4 +1,4 @@
-defmodule Proca.Schema do 
+defmodule Proca.Schema do
   @moduledoc """
   Contains helpers for writing Proca Schemas.
   use Proca.Schema, module: Proca.MyRecordModule
@@ -11,14 +11,14 @@ defmodule Proca.Schema do
   ```
 
   After the criteria run out, list of records is returned. If last criteria is [one: true] then Repo.one() is called.
-  
+
   - `MyRecordModule.one(criteria_keyword_list)` calls `all(criteria_keyword_list ++ [one: true])`
   """
 
-  defmacro __using__(opts) do 
+  defmacro __using__(opts) do
     schema_mod = opts[:module]
 
-    quote do 
+    quote do
       alias Proca.Repo
 
       def defaults(Proca.ActionPage), do: []
@@ -31,6 +31,7 @@ defmodule Proca.Schema do
         import Ecto.Query, only: [from: 1]
         all(from(a in unquote(schema_mod)), kw)
       end
+
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
@@ -39,19 +40,21 @@ defmodule Proca.Schema do
         import Ecto.Query, only: [where: 3]
         where(query, [a], a.id == ^id) |> all(kw)
       end
+
       def all(query, [{:preload, assocs} | kw]) do
         import Ecto.Query, only: [preload: 3]
         preload(query, [a], ^assocs) |> all(kw)
       end
+
       def all(query, [{:order_by, order} | kw]) do
         import Ecto.Query, only: [order_by: 3]
         order_by(query, [a], ^order) |> all(kw)
       end
+
       def all(query, [{:limit, limit} | kw]) do
         import Ecto.Query, only: [limit: 3]
         limit(query, [a], ^limit) |> all(kw)
       end
-
     end
   end
 end

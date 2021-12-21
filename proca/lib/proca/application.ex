@@ -18,10 +18,10 @@ defmodule Proca.Application do
 
       # Core servers (data providers and caches)
       # Dynamic instance configuration
-      {Proca.Server.Instance, Proca.Org.instance_org_name},
+      {Proca.Server.Instance, Proca.Org.instance_org_name()},
 
       # Encryption
-      {Proca.Server.Keys, Proca.Org.instance_org_name},
+      {Proca.Server.Keys, Proca.Org.instance_org_name()},
 
       # Email template directory
       {Proca.Service.EmailTemplateDirectory, []},
@@ -29,24 +29,24 @@ defmodule Proca.Application do
       # Processing / queue management
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
-      {Proca.Pipes.Connection, Proca.Pipes.queue_url()},
-
+      {Proca.Pipes.Connection, Proca.Pipes.queue_url()}
     ]
 
     # Proca SErvers
-    children = children ++ if Application.get_env(:proca, Proca)[:start_daemon_servers] do
-      daemon_servers()
-    else
-      []
-    end
-
-
+    children =
+      children ++
+        if Application.get_env(:proca, Proca)[:start_daemon_servers] do
+          daemon_servers()
+        else
+          []
+        end
 
     # AMQP logging is very verbose so quiet it:
     :logger.add_primary_filter(
       :ignore_rabbitmq_progress_reports,
       {&:logger_filters.domain/2, {:stop, :equal, [:progress]}}
     )
+
     # Sentry logger
     Logger.add_backend(Sentry.LoggerBackend)
 
@@ -67,12 +67,9 @@ defmodule Proca.Application do
     [
       # Async processing systems
       {Proca.Server.Processing, []},
-
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
-
       {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
       {Proca.ActionPage.Status, []},
-
       {Proca.Server.Jwks, Application.get_env(:proca, Proca.Server.Jwks)[:url]}
     ]
   end

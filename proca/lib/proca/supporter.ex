@@ -48,12 +48,11 @@ defmodule Proca.Supporter do
 
   # @spec add_contacts(Ecto.Changeset.t(Supporter), Ecto.Changeset.t(Contact), %ActionPage{}, %Privacy{}) :: Ecto.Changeset.t(Supporter)
   def add_contacts(
-    new_supporter = %Ecto.Changeset{},
-    new_contact = %Ecto.Changeset{},
-    action_page = %ActionPage{},
-    privacy = %Privacy{}
-  ) do
-
+        new_supporter = %Ecto.Changeset{},
+        new_contact = %Ecto.Changeset{},
+        action_page = %ActionPage{},
+        privacy = %Privacy{}
+      ) do
     consents = Privacy.consents(action_page, privacy)
     contacts = Contact.spread(new_contact, consents)
 
@@ -61,8 +60,8 @@ defmodule Proca.Supporter do
     |> put_assoc(:contacts, contacts)
   end
 
-  def confirm(sup = %Supporter{}) do 
-    case sup.processing_status do 
+  def confirm(sup = %Supporter{}) do
+    case sup.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(sup, processing_status: :accepted))
       :rejected -> {:error, "supporter data already rejected"}
@@ -71,8 +70,8 @@ defmodule Proca.Supporter do
     end
   end
 
-  def reject(sup = %Supporter{}) do 
-    case sup.processing_status do 
+  def reject(sup = %Supporter{}) do
+    case sup.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(sup, processing_status: :rejected))
       :rejected -> {:noop, "supporter data already rejected"}
@@ -89,7 +88,6 @@ defmodule Proca.Supporter do
     Map.put(p, :lead_opt_in, false)
   end
 
-
   def base_encode(data) when is_bitstring(data) do
     Base.url_encode64(data, padding: false)
   end
@@ -98,22 +96,28 @@ defmodule Proca.Supporter do
     Base.url_decode64(encoded, padding: false)
   end
 
-  def decode_ref(changeset = %Ecto.Changeset{}, field) do 
-    case get_change(changeset, field) do 
-      nil -> changeset
-      base -> case base_decode(base) do 
-        {:ok, val} -> put_change(changeset, field, val)
-        :error -> add_error(changeset, field, "Cannot decode from Base64url")
-      end
+  def decode_ref(changeset = %Ecto.Changeset{}, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      base ->
+        case base_decode(base) do
+          {:ok, val} -> put_change(changeset, field, val)
+          :error -> add_error(changeset, field, "Cannot decode from Base64url")
+        end
     end
   end
 
   def handle_bounce(args) do
     case one(action_id: args.id) do
-      nil -> {:ok, %Supporter{}} # ignore a bounce when not found
+      # ignore a bounce when not found
+      nil ->
+        {:ok, %Supporter{}}
+
       supporter ->
         reject(supporter)
-        Repo.update! change(supporter, email_status: args.reason)
+        Repo.update!(change(supporter, email_status: args.reason))
     end
   end
 
@@ -127,16 +131,19 @@ defmodule Proca.Supporter do
   end
 
   def all(q, [{:fingerprint, fpr} | kw]), do: all(q, [{:contact_ref, fpr} | kw])
+
   def all(q, [{:contact_ref, fpr} | kw]) do
     import Ecto.Query
+
     q
     |> where([s], s.fingerprint == ^fpr)
-    |> order_by([s], [desc: :inserted_at])
+    |> order_by([s], desc: :inserted_at)
     |> all(kw)
   end
 
   def all(q, [{:org_id, org_id} | kw]) do
     import Ecto.Query
+
     q
     |> join(:inner, [s], ap in assoc(s, :action_page))
     |> join(:inner, [s, ap], org in assoc(ap, :org))
@@ -146,6 +153,7 @@ defmodule Proca.Supporter do
 
   def all(q, [{:action_page, %ActionPage{id: id}} | kw]) do
     import Ecto.Query
+
     q
     |> where([a], a.action_page_id == ^id)
     |> all(kw)
@@ -155,11 +163,13 @@ defmodule Proca.Supporter do
     one(action_id: action_id)
   end
 
-# XXX rename this to something like "clear_transient_fields"
+  # XXX rename this to something like "clear_transient_fields"
   def clear_transient_fields_query(supporter) do
     import Ecto.Query
-    clear_fields = Supporter.Privacy.transient_supporter_fields(supporter.action_page)
-    |> Enum.map(fn f -> {f, nil} end)
+
+    clear_fields =
+      Supporter.Privacy.transient_supporter_fields(supporter.action_page)
+      |> Enum.map(fn f -> {f, nil} end)
 
     from(s in Supporter,
       where: s.id == ^supporter.id,

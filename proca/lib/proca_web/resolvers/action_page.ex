@@ -15,7 +15,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     }
   end
 
-  def org(ap, %{}, _) do 
+  def org(ap, %{}, _) do
     {
       :ok,
       Repo.preload(ap, :org).org
@@ -31,11 +31,12 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   @doc """
   Copy an action page in campaign. The new copy is owned by caller org.
   """
-  def copy_from(_, %{name: name}, %{context:
-                                    %{
-                                      action_page: ap,
-                                      org: org
-                                    }}) do
+  def copy_from(_, %{name: name}, %{
+        context: %{
+          action_page: ap,
+          org: org
+        }
+      }) do
     ActionPage.create_copy_in(org, ap, %{name: name})
     |> Repo.insert_and_notify()
   end
@@ -43,16 +44,19 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   @doc """
   Copy any action page in campaign. The new copy is owned by caller org.
   """
-  def copy_from_campaign(_, %{name: name}, %{context:
-                                             %{
-                                               org: org,
-                                               campaign: campaign
-                                             }}) do
+  def copy_from_campaign(_, %{name: name}, %{
+        context: %{
+          org: org,
+          campaign: campaign
+        }
+      }) do
     case campaign.action_pages do
-      [ap | _ ] ->
+      [ap | _] ->
         ActionPage.create_copy_in(org, ap, %{name: name})
         |> Repo.insert_and_notify()
-      [] -> {:error, "Campaign #{campaign.name} does not have action pages"}
+
+      [] ->
+        {:error, "Campaign #{campaign.name} does not have action pages"}
     end
   end
 
@@ -61,18 +65,19 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     |> Repo.insert_and_notify()
   end
 
-  def launch_page(_, params,
-    %{context: %{
-         auth: auth = %Auth{staffer: %{id: org_id}},
-         action_page: ap
-      }}) do
-
+  def launch_page(_, params, %{
+        context: %{
+          auth: auth = %Auth{staffer: %{id: org_id}},
+          action_page: ap
+        }
+      }) do
     case Org.get_by_id(ap.campaign.org_id) do
       %Org{id: ^org_id} ->
         case ActionPage.go_live(ap) do
           {:ok, _} -> {:ok, %{status: :success}}
           {:error, _ch} = e -> e
         end
+
       _ ->
         Proca.Confirm.LaunchPage.changeset(ap, auth, Map.get(params, :message))
         |> Proca.Confirm.insert_and_notify!()
@@ -83,6 +88,7 @@ defmodule ProcaWeb.Resolvers.ActionPage do
 
   def delete(_, _, %{context: %{action_page: ap}}) do
     res = Repo.transaction_and_notify(ActionPage.delete(ap), :delete_action_page)
+
     case res do
       {:ok, _ap} -> {:ok, :success}
       e -> e

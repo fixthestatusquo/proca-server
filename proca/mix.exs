@@ -41,7 +41,8 @@ defmodule Proca.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.5.0"},
-      {:phoenix_pubsub, "~> 2.0"}, # See below
+      # See below
+      {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phx_gen_auth, "~> 0.7.0"},
       {:bcrypt_elixir, "~> 2.0"},
@@ -63,7 +64,8 @@ defmodule Proca.MixProject do
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
       {:amqp, "~> 2.0"},
-      {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"}, # until support for amqp 2.0 is released
+      # until support for amqp 2.0 is released
+      {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_ses, "~> 2.1"},
       {:ex_aws_sqs, "~> 3.2"},
@@ -72,13 +74,15 @@ defmodule Proca.MixProject do
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:jose, "~> 1.11.1"},
-      {:json, "~> 1.4.1"},  # XXX migrate to jason
+      # XXX migrate to jason
+      {:json, "~> 1.4.1"},
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
       {:phoenix_live_view, "~> 0.15.7"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:logger_file_backend, "~> 0.0.11"}, # TODO: evaluate if we need this
+      # TODO: evaluate if we need this
+      {:logger_file_backend, "~> 0.0.11"},
       {:mix_systemd, "~> 0.7.3"},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.7", only: :test},
@@ -116,7 +120,7 @@ defmodule Proca.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema",
+      "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema"
     ]
   end
 
@@ -124,27 +128,29 @@ defmodule Proca.MixProject do
     [
       main: "readme",
       logo: "assets/static/images/proca-logo-light.png",
-      extras: [
-        "README.md",
-        "code_of_conduct.md"
-      ] ++ Path.wildcard("guides/*.md"),
+      extras:
+        [
+          "README.md",
+          "code_of_conduct.md"
+        ] ++ Path.wildcard("guides/*.md"),
       extra_section: "Guides",
       assets: "guides/assets"
     ]
-      # Example from broadway:
-      # groups_for_extras: [
-      #   Examples: Path.wildcard("guides/examples/*.md"),
-      #   Internals: Path.wildcard("guides/internals/*.md")
-      # ],
-      # groups_for_modules: [
-      #   Acknowledgement: [
-      #     Broadway.Acknowledger,
-      #     Broadway.CallerAcknowledger,
-      #     Broadway.NoopAcknowledger
-      #   ],
-      #   Producers: [
-      #     Broadway.DummyProducer,
-      #     Broadway.TermStorage
-      #   ]
+
+    # Example from broadway:
+    # groups_for_extras: [
+    #   Examples: Path.wildcard("guides/examples/*.md"),
+    #   Internals: Path.wildcard("guides/internals/*.md")
+    # ],
+    # groups_for_modules: [
+    #   Acknowledgement: [
+    #     Broadway.Acknowledger,
+    #     Broadway.CallerAcknowledger,
+    #     Broadway.NoopAcknowledger
+    #   ],
+    #   Producers: [
+    #     Broadway.DummyProducer,
+    #     Broadway.TermStorage
+    #   ]
   end
 end

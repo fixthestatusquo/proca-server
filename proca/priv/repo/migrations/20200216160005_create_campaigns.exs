@@ -9,6 +9,5 @@ defmodule Proca.Repo.Migrations.CreateCampaigns do
 
       timestamps()
     end
-
   end
 end

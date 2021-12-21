@@ -25,7 +25,7 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
   """
   defmacro determine_auth(opts) do
     quote do
-      middleware ProcaWeb.Resolvers.AuthResolver, unquote(opts)
+      middleware(ProcaWeb.Resolvers.AuthResolver, unquote(opts))
     end
   end
 
@@ -34,18 +34,23 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
   """
   defmacro load(type, by_fields) do
     quote do
-      middleware ProcaWeb.Resolvers.Loader, [unquote(type) | unquote(by_fields)]
+      middleware(ProcaWeb.Resolvers.Loader, [unquote(type) | unquote(by_fields)])
     end
   end
 
-  def load_assoc_resolver(parent, _, resol = %{
-    definition: %{
-      schema_node: %{
-        identifier: field
-      }
-    }
-  }) do
+  def load_assoc_resolver(
+        parent,
+        _,
+        resol = %{
+          definition: %{
+            schema_node: %{
+              identifier: field
+            }
+          }
+        }
+      ) do
     alias Proca.Repo
+
     {
       :ok,
       Repo.preload(parent, field)
@@ -64,7 +69,7 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
   """
   defmacro allow(perms) do
     quote do
-      middleware ProcaWeb.Resolvers.AuthAllow, unquote(perms)
+      middleware(ProcaWeb.Resolvers.AuthAllow, unquote(perms))
     end
   end
- end
+end

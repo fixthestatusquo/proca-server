@@ -15,16 +15,16 @@ defmodule ProcaWeb.Schema.OrgTypes do
       @desc "Name of organisation"
       arg(:name, non_null(:string))
 
-      load :org, by: [:name]
-      determine_auth for: :org
-      allow :staffer
+      load(:org, by: [:name])
+      determine_auth(for: :org)
+      allow(:staffer)
 
       resolve(&Resolvers.Org.get_by_name/3)
     end
   end
 
   # MAIN TYPE
-  interface :org do 
+  interface :org do
     @desc "Organisation short name"
     field :name, non_null(:string)
 
@@ -34,26 +34,30 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "config"
     field :config, non_null(:json)
 
-    resolve_type fn 
-      %{id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} -> :private_org
+    resolve_type(fn
+      %{id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
+        :private_org
+
       _, %{context: %{auth: %Auth{} = auth}} ->
         if can?(auth, [:manage_orgs]) do
           :private_org
         else
           :public_org
         end
-      _, _ -> :public_org
-    end
+
+      _, _ ->
+        :public_org
+    end)
   end
 
-  object :public_org do 
-    interface :org 
-    import_fields :org
+  object :public_org do
+    interface(:org)
+    import_fields(:org)
   end
 
   object :private_org do
-    interface :org 
-    import_fields :org
+    interface(:org)
+    import_fields(:org)
 
     @desc "Organization id"
     field :id, non_null(:integer)
@@ -62,25 +66,27 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :personal_data, non_null(:personal_data) do
       resolve(&Resolvers.Org.org_personal_data/3)
     end
+
     field :keys, non_null(list_of(non_null(:key))) do
-      arg :select, :select_key
+      arg(:select, :select_key)
       resolve(&Resolvers.Org.list_keys/3)
     end
+
     field :key, non_null(:key) do
-      arg :select, non_null(:select_key)
+      arg(:select, non_null(:select_key))
       resolve(&Resolvers.Org.get_key/3)
     end
 
-    field :services, non_null(list_of(:service)) do 
-      arg :select, :select_service
+    field :services, non_null(list_of(:service)) do
+      arg(:select, :select_service)
       resolve(&Resolvers.Org.list_services/3)
     end
 
-    field :users, non_null(list_of(:org_user)) do 
+    field :users, non_null(list_of(:org_user)) do
       resolve(&Resolvers.User.list_org_users/3)
     end
 
-    field :processing, non_null(:processing) do 
+    field :processing, non_null(:processing) do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
@@ -100,13 +106,13 @@ defmodule ProcaWeb.Schema.OrgTypes do
     # Perhaps via partnerships as then we can select by partnership-role
     @desc "List campaigns this org is leader or partner of"
     field :campaigns, non_null(list_of(non_null(:campaign))) do
-      arg :select, :select_campaign
+      arg(:select, :select_campaign)
       resolve(&Resolvers.Campaign.list/3)
     end
 
     @desc "List action pages this org has"
     field :action_pages, non_null(list_of(non_null(:action_page))) do
-      arg :select, :select_action_page
+      arg(:select, :select_action_page)
       resolve(&Resolvers.Org.action_pages/3)
     end
 
@@ -115,7 +121,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:id, :integer)
       arg(:name, :string)
 
-      load :action_page, by: [:id, :name], preload: [:org, campaign: :org]
+      load(:action_page, by: [:id, :name], preload: [:org, campaign: :org])
       resolve(&Resolvers.Org.action_page/3)
     end
 
@@ -147,23 +153,21 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :config, :json
   end
 
-
   object :org_mutations do
     field :add_org, type: non_null(:org) do
+      arg(:input, non_null(:org_input))
 
-      arg :input, non_null(:org_input)
-
-      allow :user
+      allow(:user)
       resolve(&Resolvers.Org.add_org/3)
     end
 
     field :delete_org, type: non_null(:status) do
       @desc "Name of organisation"
-      arg :name, non_null(:string)
+      arg(:name, non_null(:string))
 
-      load :org, by: [:name]
-      determine_auth for: :org
-      allow [:org_owner]
+      load(:org, by: [:name])
+      determine_auth(for: :org)
+      allow([:org_owner])
 
       resolve(&Resolvers.Org.delete_org/3)
     end
@@ -173,14 +177,14 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, non_null(:string))
       arg(:input, non_null(:org_input))
 
-      load :org, by: [:name]
-      determine_auth for: :org
-      allow [:change_org_settings]
+      load(:org, by: [:name])
+      determine_auth(for: :org)
+      allow([:change_org_settings])
       resolve(&Resolvers.Org.update_org/3)
     end
 
     @desc "Update org processing settings"
-    field :update_org_processing, type: non_null(:private_org) do 
+    field :update_org_processing, type: non_null(:private_org) do
       @desc "Set email backend to"
 
       arg(:name, non_null(:string))
@@ -196,54 +200,53 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:event_processing, :boolean)
       arg(:confirm_processing, :boolean)
 
-      load :org, by: [:name]
-      determine_auth for: :org
-      allow [:change_org_settings]
+      load(:org, by: [:name])
+      determine_auth(for: :org)
+      allow([:change_org_settings])
       resolve(&Resolvers.Org.update_org_processing/3)
     end
 
     field :join_org, type: non_null(:join_org_result) do
+      arg(:name, non_null(:string))
 
-      arg :name, non_null(:string)
-
-      load :org, by: [name: :name]
-      allow [:join_orgs]
+      load(:org, by: [name: :name])
+      allow([:join_orgs])
       resolve(&Resolvers.Org.join_org/3)
     end
 
     field :generate_key, type: non_null(:key_with_private) do
-      load :org, by: [name: :org_name]
-      determine_auth for: :org
-      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([Proca.Permission.add([:change_org_settings, :export_contacts])])
 
       @desc "Name of organisation"
-      arg :org_name, non_null(:string)
-      arg :input, non_null(:gen_key_input)
+      arg(:org_name, non_null(:string))
+      arg(:input, non_null(:gen_key_input))
 
       resolve(&Resolvers.Org.generate_key/3)
     end
 
     field :add_key, type: non_null(:key) do
-      load :org, by: [name: :org_name]
-      determine_auth for: :org
-      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([Proca.Permission.add([:change_org_settings, :export_contacts])])
 
       @desc "Name of organisation"
-      arg :org_name, non_null(:string)
-      arg :input, non_null(:add_key_input)
+      arg(:org_name, non_null(:string))
+      arg(:input, non_null(:add_key_input))
 
       resolve(&Resolvers.Org.add_key/3)
     end
 
     @desc "A separate key activate operation, because you also need to add the key to receiving system before it is used"
     field :activate_key, type: non_null(:activate_key_result) do
-      load :org, by: [name: :org_name]
-      determine_auth for: :org
-      allow [Proca.Permission.add([:change_org_settings, :export_contacts])]
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([Proca.Permission.add([:change_org_settings, :export_contacts])])
 
-      arg :org_name, non_null(:string)
+      arg(:org_name, non_null(:string))
       @desc "Key id"
-      arg :id, non_null(:integer)
+      arg(:id, non_null(:integer))
 
       resolve(&Resolvers.Org.activate_key/3)
     end
@@ -289,7 +292,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :expired_at, :naive_datetime
   end
 
-  object :key_ids do 
+  object :key_ids do
     field :id, non_null(:integer)
     field :public, non_null(:string)
   end
@@ -318,13 +321,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :status, non_null(:status)
   end
 
-
   input_object :select_service do
     field :name, :service_name
   end
 
-
-  object :processing do 
+  object :processing do
     field :email_from, :string
     field :email_backend, :service_name
 

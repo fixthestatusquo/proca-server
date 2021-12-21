@@ -1,20 +1,21 @@
-defmodule ProcaWeb.Resolvers.NormalizeError do 
+defmodule ProcaWeb.Resolvers.NormalizeError do
   @behaviour Absinthe.Middleware
   alias ProcaWeb.Error
 
   @impl true
   def call(resolution, _config) do
-      errors =
-        resolution.errors
+    errors =
+      resolution.errors
       |> Enum.map(&to_absinthe/1)
       |> List.flatten()
 
-    %{ resolution | errors: errors }
+    %{resolution | errors: errors}
   end
 
   defp to_absinthe(chset = %Ecto.Changeset{}), do: ProcaWeb.Helper.format_errors(chset)
   defp to_absinthe(lst) when is_list(lst), do: Enum.map(lst, &to_absinthe/1)
-  defp to_absinthe(%Error{message: msg, code: nil, context: []}) do 
+
+  defp to_absinthe(%Error{message: msg, code: nil, context: []}) do
     %{
       message: msg
     }
@@ -24,25 +25,27 @@ defmodule ProcaWeb.Resolvers.NormalizeError do
     %{error | message: code}
   end
 
-  defp to_absinthe(%Error{message: msg, code: code, context: []}) do 
+  defp to_absinthe(%Error{message: msg, code: code, context: []}) do
     %{
-      message: msg, extensions: %{code: code}
+      message: msg,
+      extensions: %{code: code}
     }
   end
 
-  defp to_absinthe(%Error{message: msg, code: code, context: ctx}) do 
+  defp to_absinthe(%Error{message: msg, code: code, context: ctx}) do
     %{
       message: msg,
-      extensions: Enum.into(ctx, %{
-        code: code
-      })
+      extensions:
+        Enum.into(ctx, %{
+          code: code
+        })
     }
   end
 
   defp to_absinthe(code) when is_atom(code) do
     %{
       message: Atom.to_string(code),
-      extensions: %{ code: Atom.to_string(code) }
+      extensions: %{code: Atom.to_string(code)}
     }
   end
 

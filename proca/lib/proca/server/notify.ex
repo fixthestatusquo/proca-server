@@ -13,6 +13,7 @@ defmodule Proca.Server.Notify do
   @type global_confirm_processing?() :: {boolean, number}
   defp global_confirm_processing?() do
     instance = Proca.Server.Instance.org()
+
     if instance != nil do
       {instance.confirm_processing, instance.id}
     else
@@ -46,21 +47,22 @@ defmodule Proca.Server.Notify do
 
   def created(_), do: :ok
 
-
   @doc """
   Notifications on update of record
   """
   def updated(org = %Org{}) do
     restart_org_pipes(org)
-    if org.name == Org.instance_org_name, do: instance_org_updated(org)
+    if org.name == Org.instance_org_name(), do: instance_org_updated(org)
   end
 
   def updated(%ActionPage{} = action_page) do
     action_page = Repo.preload(action_page, [:org, :campaign])
     publish_subscription_event(action_page, action_page_upserted: "$instance")
+
     if not is_nil(action_page.org) do
       publish_subscription_event(action_page, action_page_upserted: action_page.org.name)
     end
+
     :ok
   end
 
@@ -70,19 +72,17 @@ defmodule Proca.Server.Notify do
 
   def updated(_), do: :ok
 
-
-
   @doc """
   Notifications on deletion of record
   """
   def deleted(org = %Org{}) do
     stop_org_pipes(org)
   end
+
   def deleted(_), do: :ok
 
-
   def multi(op, %{action: action})
-  when op in [:add_action, :add_action_contact] do
+      when op in [:add_action, :add_action_contact] do
     increment_counter(action, action.supporter)
     process_action(action)
     update_action_page_status(action)
@@ -97,6 +97,7 @@ defmodule Proca.Server.Notify do
     {campaign, pages_map} = Map.pop(records, :campaign)
 
     updated(campaign)
+
     Enum.each(pages_map, fn {_k, page} ->
       updated(page)
     end)
@@ -107,13 +108,23 @@ defmodule Proca.Server.Notify do
   end
 
   def multi(:delete_action_page, result) do
-    {_, page} = Enum.find(result, fn {{:action_page, _}, _} -> true; _ -> false end)
-    info("Deleted page #{inspect page}")
+    {_, page} =
+      Enum.find(result, fn
+        {{:action_page, _}, _} -> true
+        _ -> false
+      end)
+
+    info("Deleted page #{inspect(page)}")
   end
 
   def multi(:delete_campaign, result) do
-    {_, campaign} = Enum.find(result, fn {{:campaign, _}, _} -> true; _ -> false end)
-    info("Deleted campaign #{inspect campaign}")
+    {_, campaign} =
+      Enum.find(result, fn
+        {{:campaign, _}, _} -> true
+        _ -> false
+      end)
+
+    info("Deleted campaign #{inspect(campaign)}")
   end
 
   ##### SIDE EFFECTS ######
@@ -147,24 +158,24 @@ defmodule Proca.Server.Notify do
   end
 
   def send_confirm_as_event(cnf, org_id) do
-      Event.emit(:confirm_created, cnf, org_id)
+    Event.emit(:confirm_created, cnf, org_id)
   end
 
   def send_confirm_by_email(cnf = %Proca.Confirm{email: nil}, org) do
     recipients =
-      Repo.preload(org, [staffers: :user]).staffers
+      Repo.preload(org, staffers: :user).staffers
       |> Enum.map(fn %{user: user} -> user.email end)
 
     cnf = Repo.preload(cnf, [:creator])
     Proca.Confirm.notify_by_email(cnf, recipients)
-   end
+  end
 
   def send_confirm_by_email(cnf = %Proca.Confirm{email: _email}, nil) do
     Proca.Confirm.notify_by_email(cnf)
   end
 
   def start_org_pipes(org = %Org{}) do
-      Pipes.Supervisor.start_child(org)
+    Pipes.Supervisor.start_child(org)
   end
 
   def restart_org_pipes(org = %Org{}) do
@@ -175,23 +186,27 @@ defmodule Proca.Server.Notify do
     Pipes.Supervisor.terminate_child(org)
   end
 
-
   defp process_action(action) do
     Proca.Server.Processing.process_async(action)
   end
 
-  defp update_action_page_status(action) do 
+  defp update_action_page_status(action) do
     Proca.ActionPage.Status.track_action(action)
   end
 
-  defp increment_counter(%Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype}, nil) do
+  defp increment_counter(
+         %Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype},
+         nil
+       ) do
     Proca.Server.Stats.increment(cid, org_id, atype, nil, false)
   end
 
-  defp increment_counter(%Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype}, %Supporter{area: area}) do
+  defp increment_counter(
+         %Action{campaign_id: cid, action_page: %{org_id: org_id}, action_type: atype},
+         %Supporter{area: area}
+       ) do
     Proca.Server.Stats.increment(cid, org_id, atype, area, true)
   end
-
 
   defp publish_subscription_event(record, routing_key) do
     Absinthe.Subscription.publish(ProcaWeb.Endpoint, record, routing_key)

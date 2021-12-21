@@ -71,10 +71,12 @@ defmodule Proca.ActionPage do
     changeset(%ActionPage{}, attrs)
   end
 
-  def go_live(action_page) do 
-    case action_page do 
-      %{live: true} -> {:ok, action_page}
-      %{live: false} -> 
+  def go_live(action_page) do
+    case action_page do
+      %{live: true} ->
+        {:ok, action_page}
+
+      %{live: false} ->
         # XXX do the health checks! 
         change(action_page, live: true) |> Repo.update_and_notify()
     end
@@ -122,7 +124,8 @@ defmodule Proca.ActionPage do
     page
     |> changeset(
       Map.take(original, [:config, :delivery, :locale, :org_id, :campaign_id])
-      |> Map.merge(params))
+      |> Map.merge(params)
+    )
   end
 
   def create_copy_in(org, ap, attrs) do
@@ -136,27 +139,40 @@ defmodule Proca.ActionPage do
   end
 
   def delete(%Multi{} = multi, %ActionPage{id: page_id} = page) do
-    no_action_supporters = from(s in Supporter,
-      select: s.id,
-      left_join: a in assoc(s, :actions),
-      having: count(a.id) == 0, group_by: s.id)
-
+    no_action_supporters =
+      from(s in Supporter,
+        select: s.id,
+        left_join: a in assoc(s, :actions),
+        having: count(a.id) == 0,
+        group_by: s.id
+      )
 
     multi
-    |> Multi.delete_all({:test_actions, page.id}, Action.all([
-          action_page: page,
-          processing_status: [:testing]]
-        )
+    |> Multi.delete_all(
+      {:test_actions, page.id},
+      Action.all(
+        action_page: page,
+        processing_status: [:testing]
+      )
     )
-    |> Multi.delete_all({:no_action_supporters, page.id}, from(
-          s in Supporter, where: s.id in subquery(no_action_supporters)))
-    |> Multi.delete({:action_page, page_id}, change(page)
-      |> foreign_key_constraint(:actions, [
-          name: :actions_action_page_id_fkey, message: "has action data"
-        ])
-      |> foreign_key_constraint(:supporters, [
-          name: :actions_supporter_id_fkey, message: "has suporter data"
-        ])
+    |> Multi.delete_all(
+      {:no_action_supporters, page.id},
+      from(
+        s in Supporter,
+        where: s.id in subquery(no_action_supporters)
+      )
+    )
+    |> Multi.delete(
+      {:action_page, page_id},
+      change(page)
+      |> foreign_key_constraint(:actions,
+        name: :actions_action_page_id_fkey,
+        message: "has action data"
+      )
+      |> foreign_key_constraint(:supporters,
+        name: :actions_supporter_id_fkey,
+        message: "has suporter data"
+      )
     )
   end
 
@@ -186,12 +202,10 @@ defmodule Proca.ActionPage do
     end
   end
 
-  def kept_personalization_fields(
-        %ActionPage{
-          campaign: _campaign,
-          org: _org
-        }
-      ) do
+  def kept_personalization_fields(%ActionPage{
+        campaign: _campaign,
+        org: _org
+      }) do
     [:email, :first_name]
   end
 
@@ -203,17 +217,17 @@ defmodule Proca.ActionPage do
   @doc """
   Get the name part before /
   """
-  def name_domain(name) when is_bitstring(name) do 
-    [d|_] = String.split(name, "/")
+  def name_domain(name) when is_bitstring(name) do
+    [d | _] = String.split(name, "/")
     d
   end
 
-  def location(%ActionPage{id: id}) do 
-    Proca.ActionPage.Status.get_last_location(id) 
+  def location(%ActionPage{id: id}) do
+    Proca.ActionPage.Status.get_last_location(id)
   end
 
-  def name_path(name) when is_bitstring(name) do 
-    [_|p] = String.split(name, "/")
+  def name_path(name) when is_bitstring(name) do
+    [_ | p] = String.split(name, "/")
     p |> Enum.join("/")
   end
 

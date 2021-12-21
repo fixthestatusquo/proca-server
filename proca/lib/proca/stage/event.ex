@@ -7,9 +7,11 @@ defmodule Proca.Stage.Event do
     routing_key = "confirm_created." <> Atom.to_string(confirm.operation)
 
     meta = %{event_type: "confirm_created", operation: confirm.operation}
-    data = Confirm.notify_fields(confirm)
-    |> Map.merge(meta)
-    |> camel_case_keys()
+
+    data =
+      Confirm.notify_fields(confirm)
+      |> Map.merge(meta)
+      |> camel_case_keys()
 
     Connection.publish(exchange_for(org_id), routing_key, data)
   end

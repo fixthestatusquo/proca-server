@@ -30,6 +30,7 @@ defmodule Proca.Campaign do
   @doc false
   def changeset(campaign, attrs) do
     assocs = Map.take(attrs, [:org])
+
     campaign
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
     |> validate_required([:name, :title, :contact_schema])
@@ -39,7 +40,8 @@ defmodule Proca.Campaign do
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
-    (one(org: org, external_id: id) || %Campaign{contact_schema: org.contact_schema, org_id: org.id})
+    (one(org: org, external_id: id) ||
+       %Campaign{contact_schema: org.contact_schema, org_id: org.id})
     |> changeset(attrs)
   end
 
@@ -76,7 +78,7 @@ defmodule Proca.Campaign do
   def all(queryable, [:with_local_pages | criteria]) do
     queryable
     |> join(:left, [c], a in assoc(c, :action_pages), on: a.org_id == c.org_id)
-    |> order_by([c, a], [desc: a.id])
+    |> order_by([c, a], desc: a.id)
     |> preload([c, a], [:org, action_pages: a])
     |> all(criteria)
   end
@@ -94,11 +96,13 @@ defmodule Proca.Campaign do
     |> Enum.reduce(multi, fn page, m ->
       ActionPage.delete(m, page)
     end)
-    |> Multi.delete({:campaign, campaign.id}, change(campaign)
-    |> foreign_key_constraint(:action_pages, [
-          name: :action_pages_campaign_id_fkey,
-          message: "has action pages"
-        ])
+    |> Multi.delete(
+      {:campaign, campaign.id},
+      change(campaign)
+      |> foreign_key_constraint(:action_pages,
+        name: :action_pages_campaign_id_fkey,
+        message: "has action pages"
+      )
     )
   end
 
@@ -106,7 +110,6 @@ defmodule Proca.Campaign do
     Multi.new()
     |> delete(campaign)
   end
-
 
   def get(crit) when is_list(crit), do: one(crit ++ [preload: [:org]])
 
@@ -129,12 +132,11 @@ defmodule Proca.Campaign do
     one([name: campaign_name] ++ [:with_local_pages])
   end
 
-  def public_action_keys(%Campaign{public_actions: public_actions}, action_type) 
-    when is_bitstring(action_type) 
-    do 
+  def public_action_keys(%Campaign{public_actions: public_actions}, action_type)
+      when is_bitstring(action_type) do
     public_actions
     |> Enum.map(fn p -> String.split(p, ":") end)
     |> Enum.map(fn [at, f | _] -> if at == action_type, do: f, else: nil end)
     |> Enum.reject(&is_nil/1)
   end
-   end
+end

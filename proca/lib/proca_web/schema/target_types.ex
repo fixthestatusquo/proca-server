@@ -33,12 +33,12 @@ defmodule ProcaWeb.Schema.TargetTypes do
 
   object :target_mutations do
     field :upsert_targets, type: non_null(list_of(:target)) do
-      arg :targets, non_null(list_of(:target_input))
-      arg :campaign_id, non_null(:integer)
+      arg(:targets, non_null(list_of(:target_input)))
+      arg(:campaign_id, non_null(:integer))
 
-      load :campaign, by: [id: :campaign_id]
-      determine_auth for: :campaign
-      allow [:manage_campaigns]
+      load(:campaign, by: [id: :campaign_id])
+      determine_auth(for: :campaign)
+      allow([:manage_campaigns])
 
       resolve(&Resolvers.Target.upsert_targets/3)
     end
@@ -46,7 +46,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
 
   object :target_queries do
     field :targets, non_null(list_of(:target)) do
-      arg :campaign_id, non_null(:integer)
+      arg(:campaign_id, non_null(:integer))
 
       resolve(&Resolvers.Target.list/3)
     end

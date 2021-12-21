@@ -83,6 +83,7 @@ defmodule Proca.Pipes.Topology do
 
   def whereis(o = %Org{}) do
     {:via, Registry, {reg, nam}} = process_name(o)
+
     case Registry.lookup(reg, nam) do
       [{pid, _}] -> pid
       [] -> nil
@@ -93,12 +94,13 @@ defmodule Proca.Pipes.Topology do
   @impl true
   def init(org = %Org{id: org_id}) do
     config = configuration(org)
-    Pipes.Connection.with_chan fn chan ->
+
+    Pipes.Connection.with_chan(fn chan ->
       declare_exchanges(chan, org)
       declare_retry_circuit(chan, org)
       declare_worker_queues(chan, org, config)
       declare_custom_queues(chan, org)
-    end
+    end)
 
     # Setup queues (without the Broadway ones)
     {:ok, %{org_id: org_id, configuration: config}}
@@ -113,13 +115,14 @@ defmodule Proca.Pipes.Topology do
     }
   end
 
-
   def configuration(o = %Org{}) do
     %{
-      confirm_supporter: Stage.EmailSupporter.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
+      confirm_supporter:
+        Stage.EmailSupporter.start_for?(o) and o.email_opt_in and
+          is_bitstring(o.email_opt_in_template),
       email_supporter: Stage.EmailSupporter.start_for?(o),
       sqs: Stage.SQS.start_for?(o),
-      webhook:  Stage.Webhook.start_for?(o)
+      webhook: Stage.Webhook.start_for?(o)
     }
   end
 
@@ -138,7 +141,8 @@ defmodule Proca.Pipes.Topology do
     :ok = Exchange.declare(chan, xn(o, "deliver"), :topic, durable: true)
     :ok = Exchange.declare(chan, xn(o, "fail"), :fanout, durable: true)
     :ok = Exchange.declare(chan, xn(o, "retry"), :direct, durable: true)
-    :ok = Exchange.declare(chan, xn(o, "event"), :fanout, durable: true) # TODO -> topic or direct?
+    # TODO -> topic or direct?
+    :ok = Exchange.declare(chan, xn(o, "event"), :fanout, durable: true)
   end
 
   def declare_retry_circuit(chan, o = %Org{}) do
@@ -146,17 +150,23 @@ defmodule Proca.Pipes.Topology do
     # fail queue = fail exchange
     qn = xn(o, "fail")
 
-    Queue.declare(chan, qn, durable: true, arguments: [
-          {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
-          {"x-message-ttl", :long, round(sec * 1000)}
-        ])
+    Queue.declare(chan, qn,
+      durable: true,
+      arguments: [
+        {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
+        {"x-message-ttl", :long, round(sec * 1000)}
+      ]
+    )
+
     Queue.bind(chan, qn, qn)
   end
 
   def declare_custom_queues(chan, o = %Org{}) do
     [
-      {xn(o, "confirm.supporter"), cqn(o, "confirm.supporter"), bind: o.custom_supporter_confirm, route: "#"},
-      {xn(o, "confirm.action"), cqn(o, "confirm.action"), bind: o.custom_action_confirm, route: "#"},
+      {xn(o, "confirm.supporter"), cqn(o, "confirm.supporter"),
+       bind: o.custom_supporter_confirm, route: "#"},
+      {xn(o, "confirm.action"), cqn(o, "confirm.action"),
+       bind: o.custom_action_confirm, route: "#"},
       {xn(o, "deliver"), cqn(o, "deliver"), bind: o.custom_action_deliver, route: "#"}
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
@@ -167,29 +177,22 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "confirm.supporter"),
         wqn(o, "email.supporter"),
-        bind: config[:confirm_supporter],
-        route: "#"
+        bind: config[:confirm_supporter], route: "#"
       },
-
       {
         xn(o, "deliver"),
         wqn(o, "email.supporter"),
-        bind: config[:email_supporter],
-        route: "#"
+        bind: config[:email_supporter], route: "#"
       },
-
       {
         xn(o, "deliver"),
         wqn(o, "sqs"),
-        bind: config[:sqs],
-        route: "#"
+        bind: config[:sqs], route: "#"
       },
-
       {
         xn(o, "event"),
         wqn(o, "webhook"),
-        bind: config[:webhook],
-        route: "#"
+        bind: config[:webhook], route: "#"
       }
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
@@ -202,11 +205,19 @@ defmodule Proca.Pipes.Topology do
     ]
   end
 
-  def declare_retrying_queue(chan, o = %Org{}, {exchange_name, queue_name, [bind: bind?, route: rk]}) do
+  def declare_retrying_queue(
+        chan,
+        o = %Org{},
+        {exchange_name, queue_name, [bind: bind?, route: rk]}
+      ) do
     # IO.inspect({exchange_name, queue_name, o.name, [bind: bind?]}, label: "declare retrying queue")
 
     if bind? do
-      Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
+      Queue.declare(chan, queue_name,
+        durable: true,
+        arguments: retry_queue_arguments(o, queue_name)
+      )
+
       :ok = Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
       :ok = Queue.bind(chan, queue_name, xn(o, "retry"), routing_key: queue_name)
     else
@@ -218,6 +229,7 @@ defmodule Proca.Pipes.Topology do
 
   def broadway_producer(o = %Org{}, work_type) do
     queue_name = wqn(o, work_type)
+
     {
       BroadwayRabbitMQ.Producer,
       queue: queue_name,

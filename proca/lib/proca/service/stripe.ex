@@ -12,7 +12,6 @@ defmodule Proca.Service.Stripe do
         metadata
       )
       when is_integer(amount) and is_bitstring(currency) do
-    
     case validate_params(params) do
       {:ok, input} ->
         intent_params =
@@ -25,74 +24,75 @@ defmodule Proca.Service.Stripe do
 
         do_create_payment_intent(intent_params, service)
 
-      {:error, _} = e -> e
+      {:error, _} = e ->
+        e
     end
   end
 
-  def validate_params(params) do 
-    input = cast(%Donation{}, params, [:amount, :currency])
-    |> Donation.validate_amount(:amount)
-    |> Donation.validate_currency(:currency)
+  def validate_params(params) do
+    input =
+      cast(%Donation{}, params, [:amount, :currency])
+      |> Donation.validate_amount(:amount)
+      |> Donation.validate_currency(:currency)
 
-    if input.valid? do 
+    if input.valid? do
       {:ok, apply_changes(input)}
-    else 
+    else
       {:error, input}
     end
   end
 
-  def do_create_payment_intent(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_payment_intent(params, %Service{name: :stripe, password: api_key}) do
     Stripe.PaymentIntent.create(params, api_key: api_key)
   end
 
-  def do_create_customer(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_customer(params, %Service{name: :stripe, password: api_key}) do
     Stripe.Customer.create(params, api_key: api_key)
   end
 
-  def do_create_price(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_price(params, %Service{name: :stripe, password: api_key}) do
     Stripe.Price.create(params, api_key: api_key)
   end
 
-  def do_create_subscription(params, %Service{name: :stripe, password: api_key}) do 
+  def do_create_subscription(params, %Service{name: :stripe, password: api_key}) do
     Stripe.Subscription.create(params, api_key: api_key)
   end
 
   def create_subscription(
-    service,
-    %{ 
-      amount: amount, 
-      currency: currency,
-      frequency_unit: unit 
-    } = params,
-    metadata
-  ) 
-  when is_integer(amount) and is_bitstring(currency)
-  do 
-    case validate_params(params) do 
-      {:error, _} = e -> e
+        service,
+        %{
+          amount: amount,
+          currency: currency,
+          frequency_unit: unit
+        } = params,
+        metadata
+      )
+      when is_integer(amount) and is_bitstring(currency) do
+    case validate_params(params) do
+      {:error, _} = e ->
+        e
+
       {:ok, input} ->
         price_param = %{
           currency: input.currency,
           unit_amount: input.amount,
           recurring: %{
             interval: to_interval(unit)
-            },
-            product_data: %{
-              name: "Donation"
-            } 
+          },
+          product_data: %{
+            name: "Donation"
           }
-
+        }
 
         with {:ok, customer} <- do_create_customer(customer(metadata), service),
-             {:ok, price} <- do_create_price(price_param, service)   # warning because of product_data -> not expected in stripe library
-        do
-
+             # warning because of product_data -> not expected in stripe library
+             {:ok, price} <- do_create_price(price_param, service) do
           %{
             customer: customer.id,
-            items: [ %{ price: price.id } ],
+            items: [%{price: price.id}],
             payment_behavior: "default_incomplete",
             expand: ["latest_invoice.payment_intent", "customer"]
-          } 
+          }
           |> add_metadata(metadata)
           |> do_create_subscription(service)
         else
@@ -101,12 +101,11 @@ defmodule Proca.Service.Stripe do
     end
   end
 
-  defp customer(%{"contactRef" => ref}) when not is_nil(ref) do 
-    %{metadata: %{"contactRef" => ref} }
+  defp customer(%{"contactRef" => ref}) when not is_nil(ref) do
+    %{metadata: %{"contactRef" => ref}}
   end
 
   defp customer(_ref), do: %{}
-
 
   # hmm nothing similar in standard library...
   defp add_if_given(map, params, key) do
@@ -131,7 +130,8 @@ defmodule Proca.Service.Stripe do
      [
        %{
          message: message,
-         extensions: %{
+         extensions:
+           %{
              code: Atom.to_string(code_atom)
            }
            |> Map.merge(info)
@@ -139,7 +139,6 @@ defmodule Proca.Service.Stripe do
      ]}
   end
 end
-
 
 require Protocol
 

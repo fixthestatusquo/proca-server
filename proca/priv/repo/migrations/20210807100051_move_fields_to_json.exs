@@ -2,7 +2,7 @@ defmodule Proca.Repo.Migrations.MoveFieldsToJson do
   use Ecto.Migration
 
   def up do
-    alter table(:actions) do 
+    alter table(:actions) do
       add :fields, :map, null: false, default: "{}"
     end
 
@@ -16,6 +16,7 @@ defmodule Proca.Repo.Migrations.MoveFieldsToJson do
     ) f
     WHERE actions.id = f.action_id
     """
+
     execute move_to_json
     drop table(:fields)
 
@@ -24,7 +25,7 @@ defmodule Proca.Repo.Migrations.MoveFieldsToJson do
     end
   end
 
-  def down do 
+  def down do
     create table(:fields) do
       add :key, :string, null: false
       add :value, :string, null: false
@@ -33,7 +34,6 @@ defmodule Proca.Repo.Migrations.MoveFieldsToJson do
     end
 
     create index(:fields, [:key])
-
 
     move_to_fields = """
     INSERT INTO fields (key, value, action_id) 
@@ -51,7 +51,7 @@ defmodule Proca.Repo.Migrations.MoveFieldsToJson do
 
     execute move_to_fields
 
-    alter table(:actions) do 
+    alter table(:actions) do
       remove :fields
     end
 

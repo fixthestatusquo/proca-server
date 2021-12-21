@@ -36,6 +36,7 @@ defmodule Proca.Target do
 
   def all(query, [{:external_id, external_id} | kw]) do
     import Ecto.Query, only: [where: 3]
+
     query
     |> where([t], t.external_id == ^external_id)
     |> all(kw)
@@ -49,9 +50,12 @@ defmodule Proca.Target do
 
   def handle_bounce(args) do
     case get_target_email(args.id, args.email) do
-      nil -> {:ok, %TargetEmail{}}  # ignore a bounce when not found
+      # ignore a bounce when not found
+      nil ->
+        {:ok, %TargetEmail{}}
+
       target_email ->
-        Repo.update! change(target_email, email_status: args.reason)
+        Repo.update!(change(target_email, email_status: args.reason))
     end
   end
 

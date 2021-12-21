@@ -1,5 +1,4 @@
 defmodule Proca.Confirm do
-
   @moduledoc """
 
   Confirm represents a confirmable
@@ -92,7 +91,6 @@ defmodule Proca.Confirm do
     timestamps()
   end
 
-
   @doc false
   def changeset(confirm, attrs) do
     confirm
@@ -104,7 +102,7 @@ defmodule Proca.Confirm do
 
   def changeset(attrs), do: changeset(%Confirm{}, attrs)
 
-  def add_code(ch) do 
+  def add_code(ch) do
     code = Confirm.SimpleCode.generate()
     change(ch, code: code) |> unique_constraint(:code)
   end
@@ -115,16 +113,19 @@ defmodule Proca.Confirm do
   """
   def insert!(ch = %Ecto.Changeset{}) do
     case Repo.insert(ch) do
-      {:ok, cnf} -> cnf
+      {:ok, cnf} ->
+        cnf
 
       {:error, %{errors: [{:code, _} | _]}} ->
         code = get_change(ch, :code)
         random_digit = :rand.uniform(10)
-        ch 
+
+        ch
         |> change(code: code <> Integer.to_string(random_digit))
         |> insert!()
 
-      {:error, err} -> raise ArgumentError, "Cannot insert Confirm: #{inspect(err)}"
+      {:error, err} ->
+        raise ArgumentError, "Cannot insert Confirm: #{inspect(err)}"
     end
   end
 
@@ -135,56 +136,66 @@ defmodule Proca.Confirm do
 
   def insert_and_notify!(ch) do
     cnf = insert!(ch)
-    Proca.Server.Notify.created cnf
+    Proca.Server.Notify.created(cnf)
     cnf
   end
 
   def by_open_code(code) when is_bitstring(code) do
-    from(c in Confirm, where: c.code == ^code and is_nil(c.object_id) and is_nil(c.email), limit: 1)
+    from(c in Confirm,
+      where: c.code == ^code and is_nil(c.object_id) and is_nil(c.email),
+      limit: 1
+    )
     |> Repo.one()
   end
 
-  def by_object_code(object_id, code) when is_integer(object_id) and is_bitstring(code) do 
+  def by_object_code(object_id, code) when is_integer(object_id) and is_bitstring(code) do
     from(c in Confirm, where: c.code == ^code and c.object_id == ^object_id, limit: 1)
     |> Repo.one()
   end
 
-  def by_email_code(email, code)  when is_bitstring(email) and is_bitstring(code) do 
+  def by_email_code(email, code) when is_bitstring(email) and is_bitstring(code) do
     from(c in Confirm, where: c.code == ^code and c.email == ^email, limit: 1)
     |> Repo.one()
   end
 
   def reject(confirm = %Confirm{}, auth \\ nil) do
-    confirm 
-    |> change(charges: 0) 
-    |> Repo.update!
+    confirm
+    |> change(charges: 0)
+    |> Repo.update!()
     |> Confirm.Operation.run(:reject, auth)
   end
 
-  def confirm(confirm = %Confirm{}, auth \\ nil) do 
-    if confirm.charges <= 0 do 
+  def confirm(confirm = %Confirm{}, auth \\ nil) do
+    if confirm.charges <= 0 do
       {:error, "expired"}
     else
-      case Confirm.Operation.run(confirm, :confirm, auth) do 
-        {:error, e} -> {:error, e}
-        ok -> 
-          confirm 
-          |> change(charges: confirm.charges - 1) 
-          |> Repo.update!
+      case Confirm.Operation.run(confirm, :confirm, auth) do
+        {:error, e} ->
+          {:error, e}
+
+        ok ->
+          confirm
+          |> change(charges: confirm.charges - 1)
+          |> Repo.update!()
 
           ok
       end
     end
   end
 
-  defp notify_first_name(email) do 
-    String.split(email, "@") |> List.first
+  defp notify_first_name(email) do
+    String.split(email, "@") |> List.first()
   end
 
   def notify_fields(
-    cnf = %Proca.Confirm{code: confirm_code, email: email, message: message, object_id: obj_id, subject_id: subj_id}
-  ) do
-
+        cnf = %Proca.Confirm{
+          code: confirm_code,
+          email: email,
+          message: message,
+          object_id: obj_id,
+          subject_id: subj_id
+        }
+      ) do
     operation = Confirm.Operation.mod(cnf)
     cnf = Proca.Repo.preload(cnf, [:creator])
 
@@ -194,41 +205,48 @@ defmodule Proca.Confirm do
       subject_id: subj_id,
       object_id: obj_id || "",
       code: confirm_code,
-      creator: (if cnf.creator != nil, do: Map.take(cnf.creator, [:email, :job_title]), else: %{}),
+      creator: if(cnf.creator != nil, do: Map.take(cnf.creator, [:email, :job_title]), else: %{}),
       accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
       reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
-    } |> Map.merge(operation.notify_fields(cnf))
+    }
+    |> Map.merge(operation.notify_fields(cnf))
   end
-
 
   @doc """
   Send a confirm operation specific email notification to list of emails or to confirm email.
   Uses dynamic dispatch to get template name and personalisation fields from each Confirm operation module.
   Will send the email from instance org backend.
   """
-  def notify_by_email(cnf = %Confirm{email: email}) when is_bitstring(email), do: notify_by_email(cnf, [email])
-  def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do 
+  def notify_by_email(cnf = %Confirm{email: email}) when is_bitstring(email),
+    do: notify_by_email(cnf, [email])
+
+  def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do
     alias Proca.Service.EmailTemplateDirectory
 
     operation = Confirm.Operation.mod(cnf)
 
     instance = Org.one([preload: [:email_backend, :template_backend]] ++ [:instance])
 
-    recipients = emails 
-    |> Enum.map(fn email -> 
-      %EmailRecipient{
-        first_name: notify_first_name(email),
-        email: email,
-        fields: notify_fields(cnf)
-      }
-    end)
+    recipients =
+      emails
+      |> Enum.map(fn email ->
+        %EmailRecipient{
+          first_name: notify_first_name(email),
+          email: email,
+          fields: notify_fields(cnf)
+        }
+      end)
 
     case EmailTemplateDirectory.ref_by_name_reload(instance, operation.email_template(cnf)) do
       {:ok, template_ref} ->
         template = %EmailTemplate{ref: template_ref}
         EmailBackend.deliver(recipients, instance, template)
-      :not_found -> {:error, :no_template}
-      :not_configured -> {:error, :no_template}
+
+      :not_found ->
+        {:error, :no_template}
+
+      :not_configured ->
+        {:error, :no_template}
     end
   end
 end

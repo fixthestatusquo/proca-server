@@ -1,7 +1,6 @@
 defmodule ProcaWeb.UserRegistrationController do
   use ProcaWeb, :controller
 
-
   plug :put_layout, "entry.html"
   alias Proca.Users
   alias Proca.Users.User

@@ -46,8 +46,8 @@ defmodule ProcaWeb.Endpoint do
     json_decoder: Phoenix.json_library()
 
   plug Sentry.PlugContext
-    # body_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_params/1,
-    # header_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_headers/1
+  # body_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_params/1,
+  # header_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_headers/1
 
   plug Plug.MethodOverride
   plug Plug.Head

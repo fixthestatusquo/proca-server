@@ -29,7 +29,7 @@ defmodule Proca.Staffer.Role do
     ]
   ]
 
-  @spec from_string(String.t) :: atom() | nil
+  @spec from_string(String.t()) :: atom() | nil
   def from_string(rs) when is_bitstring(rs) do
     Keyword.keys(@roles)
     |> Enum.find(fn r -> Atom.to_string(r) == rs end)
@@ -57,20 +57,21 @@ defmodule Proca.Staffer.Role do
     @roles[role] || []
   end
 
-  def lesser_equal?(weaker, stronger) when is_atom(weaker) and is_atom(stronger) do 
+  def lesser_equal?(weaker, stronger) when is_atom(weaker) and is_atom(stronger) do
     @roles[weaker] -- @roles[stronger] == []
   end
 
-  def add_user_as(%Proca.Users.User{} = user, %Proca.Org{} = org, role) do 
-    case Staffer.for_user_in_org(user, org.id) do 
+  def add_user_as(%Proca.Users.User{} = user, %Proca.Org{} = org, role) do
+    case Staffer.for_user_in_org(user, org.id) do
       nil -> Staffer.changeset(%{user_id: user.id, org_id: org.id, role: role})
       st -> change(st, role)
     end
   end
 
-  def add_user_as(email, org,  role) when is_bitstring(email) do 
+  def add_user_as(email, org, role) when is_bitstring(email) do
     user = Proca.Users.User.one(email: email)
-    case user do 
+
+    case user do
       nil -> {:error, :not_found}
       user -> add_user_as(user, org, role)
     end
@@ -79,11 +80,11 @@ defmodule Proca.Staffer.Role do
   @doc """
   Check if current user or staffer has big enough permission to assign a role
   """
-  def can_assign_role?(%Auth{staffer: %Staffer{perms: perms}}, role) do 
+  def can_assign_role?(%Auth{staffer: %Staffer{perms: perms}}, role) do
     permissions(role) -- Permission.to_list(perms) == []
   end
 
-  def can_assign_role?(%Auth{user: user = %User{}}) do 
+  def can_assign_role?(%Auth{user: user = %User{}}) do
     Permission.can?(user, :manage_users)
   end
 end

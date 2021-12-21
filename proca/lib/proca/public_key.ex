@@ -44,7 +44,7 @@ defmodule Proca.PublicKey do
 
   def all(q, [:active | kw]) do
     q
-    |> order_by([pk], [desc: pk.inserted_at])
+    |> order_by([pk], desc: pk.inserted_at)
     |> where([pk], pk.active)
     |> distinct([pk], pk.org_id)
     |> all(kw)
@@ -62,12 +62,18 @@ defmodule Proca.PublicKey do
   @spec activate_for(Org, integer) :: Ecto.Multi
   def activate_for(%Org{id: org_id}, id) when is_number(id) do
     alias Ecto.Multi
+
     Multi.new()
-    |> Multi.update_all(:keys, fn _ ->
-      from(pk in PublicKey, [where: pk.org_id == ^org_id and not pk.expired,
-                             update: [set: [active: fragment("id = ?", ^id)]]
-                            ])
-    end, [])
+    |> Multi.update_all(
+      :keys,
+      fn _ ->
+        from(pk in PublicKey,
+          where: pk.org_id == ^org_id and not pk.expired,
+          update: [set: [active: fragment("id = ?", ^id)]]
+        )
+      end,
+      []
+    )
     |> Multi.run(:active_key, fn _repo, _ -> {:ok, PublicKey.one(id: id, preload: [:org])} end)
   end
 
@@ -123,24 +129,29 @@ defmodule Proca.PublicKey do
     [:public, :private]
     |> Enum.reduce(ch, fn f, ch ->
       case get_change(ch, f) do
-        nil -> ch
-        encoded -> case base_decode(encoded) do
-                     {:ok, decoded} -> change(ch, %{f => decoded})
-                     :error -> add_error(ch, f, "must be Base64url encoded")
-                   end
-      end
+        nil ->
+          ch
 
+        encoded ->
+          case base_decode(encoded) do
+            {:ok, decoded} -> change(ch, %{f => decoded})
+            :error -> add_error(ch, f, "must be Base64url encoded")
+          end
+      end
     end)
   end
 
   def validate_bit_size(ch, field, size) do
     case get_field(ch, field) do
-      nil -> ch
-      val -> if bit_size(val) == size do
+      nil ->
         ch
-      else
-        add_error(ch, field, "must by #{size} bits")
-      end
+
+      val ->
+        if bit_size(val) == size do
+          ch
+        else
+          add_error(ch, field, "must by #{size} bits")
+        end
     end
   end
 

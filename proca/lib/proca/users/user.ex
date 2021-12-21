@@ -49,7 +49,7 @@ defmodule Proca.Users.User do
     |> validate_email()
     |> validate_password(opts)
   end
-  
+
   def registration_from_sso_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email])
@@ -73,7 +73,9 @@ defmodule Proca.Users.User do
     |> validate_length(:password, min: 12, max: 80)
     |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
     |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/,
+      message: "at least one digit or punctuation character"
+    )
     |> maybe_hash_password(opts)
   end
 
@@ -134,10 +136,11 @@ defmodule Proca.Users.User do
 
   def make_admin_changeset(user) do
     perms_changeset(user, [
-          :instance_owner,
-          :join_orgs,
-          :manage_users,
-          :manage_orgs])
+      :instance_owner,
+      :join_orgs,
+      :manage_users,
+      :manage_orgs
+    ])
   end
 
   @doc """
@@ -165,19 +168,25 @@ defmodule Proca.Users.User do
   end
 
   # backward compatible password verify with Pow
-  def verify_pass(password, hashed_password = ("$pbkdf2" <> _ )) do 
+  def verify_pass(password, hashed_password = "$pbkdf2" <> _) do
     ["pbkdf2-" <> digest, rounds, salt, hash] = String.split(hashed_password, "$", trim: true)
-    {:ok, salt} = Base.decode64 salt
-    {:ok, hash} = Base.decode64 hash
-    
-    hashed_password = "$pbkdf2-" <> digest <> "$" <> rounds <> "$" <> Base.encode64(salt, padding: false) <> "$" <> Base.encode64(hash, padding: false)
+    {:ok, salt} = Base.decode64(salt)
+    {:ok, hash} = Base.decode64(hash)
 
-    rounds = String.to_integer rounds
+    hashed_password =
+      "$pbkdf2-" <>
+        digest <>
+        "$" <>
+        rounds <>
+        "$" <> Base.encode64(salt, padding: false) <> "$" <> Base.encode64(hash, padding: false)
 
-    hashed_password == Pbkdf2.Base.hash_password(password, salt, rounds: rounds, length: 64, digest: digest)
+    rounds = String.to_integer(rounds)
+
+    hashed_password ==
+      Pbkdf2.Base.hash_password(password, salt, rounds: rounds, length: 64, digest: digest)
   end
 
-  def verify_pass(password, hashed_password) do 
+  def verify_pass(password, hashed_password) do
     Bcrypt.verify_pass(password, hashed_password)
   end
 
@@ -194,6 +203,7 @@ defmodule Proca.Users.User do
 
   def details_changeset(user, attrs) do
     alias Proca.Contact.Input
+
     user
     |> cast(attrs, [:job_title, :phone, :picture_url])
     |> Input.validate_name(:job_title)
@@ -201,24 +211,23 @@ defmodule Proca.Users.User do
     |> Input.validate_url(:picture_url, type: "image")
   end
 
-
-  def all(q, [{:email, email} | kw]) do 
+  def all(q, [{:email, email} | kw]) do
     q |> where([u], u.email == ^email) |> all(kw)
   end
 
-  def all(q, [{:email_like, email} | kw]) do 
+  def all(q, [{:email_like, email} | kw]) do
     q |> where([u], like(u.email, ^email)) |> all(kw)
   end
 
   def all(q, [{:org_name, org_name} | kw]) do
-    q 
+    q
     |> join(:inner, [u], s in assoc(u, :staffers))
     |> join(:inner, [u, s], o in assoc(s, :org))
     |> where([u, s, o], o.name == ^org_name)
     |> all(kw)
   end
 
-  def all(q, [:preload | kw]) do 
-    q |> preload([u], [staffers: :org]) |> all(kw)
+  def all(q, [:preload | kw]) do
+    q |> preload([u], staffers: :org) |> all(kw)
   end
 end

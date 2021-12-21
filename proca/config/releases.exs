@@ -2,10 +2,10 @@ import Config
 
 database_url =
   System.get_env("DATABASE_URL") ||
-  raise """
-  environment variable DATABASE_URL is missing.
-  For example: ecto://USER:PASS@HOST/DATABASE
-  """
+    raise """
+    environment variable DATABASE_URL is missing.
+    For example: ecto://USER:PASS@HOST/DATABASE
+    """
 
 config :proca, Proca.Repo,
   # ssl: true,
@@ -28,33 +28,31 @@ local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: local_auth_enable],
   sso: [
-      enabled: not is_nil(sso_home_url), 
-      home_url: sso_home_url
-    ]
+    enabled: not is_nil(sso_home_url),
+    home_url: sso_home_url
+  ]
 
-config :proca, Proca.Server.Jwks,
-  url: System.get_env("JWKS_URL")
-
+config :proca, Proca.Server.Jwks, url: System.get_env("JWKS_URL")
 
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
-  raise """
-  environment variable SECRET_KEY_BASE is missing.
-  You can generate one by calling: mix phx.gen.secret
-  """
+    raise """
+    environment variable SECRET_KEY_BASE is missing.
+    You can generate one by calling: mix phx.gen.secret
+    """
 
 signing_salt =
   System.get_env("SIGNING_SALT") ||
-  raise """
-  environment variable SIGNING_SALT is missing.
-  You can generate one by calling: mix phx.gen.secret
-  """
+    raise """
+    environment variable SIGNING_SALT is missing.
+    You can generate one by calling: mix phx.gen.secret
+    """
 
-
-bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
-|> String.split(".")
-|> Enum.map(&String.to_integer/1)
-|> List.to_tuple
+bind_ip =
+  System.get_env("LISTEN_IP", "0.0.0.0")
+  |> String.split(".")
+  |> Enum.map(&String.to_integer/1)
+  |> List.to_tuple()
 
 config :proca, ProcaWeb.Endpoint,
   url: [
@@ -67,7 +65,8 @@ config :proca, ProcaWeb.Endpoint,
     port: String.to_integer(System.get_env("PORT", "4000"))
     # transport_options: [socket_opts: [:inet6]]
   ],
-  check_origin: ["//" <> System.get_env("DOMAIN", "localhost")], # for WebSocket security
+  # for WebSocket security
+  check_origin: ["//" <> System.get_env("DOMAIN", "localhost")],
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base,
   signing_salt: signing_salt,
@@ -79,11 +78,9 @@ config :sentry,
 config :proca, ProcaWeb.Resolvers.ReportError,
   enable: System.get_env("REPORT_USER_ERRORS") == "true" || false
 
-config :proca, ProcaWeb.Resolvers.Captcha,
-  hcaptcha_key: System.get_env("HCAPTCHA_KEY")
+config :proca, ProcaWeb.Resolvers.Captcha, hcaptcha_key: System.get_env("HCAPTCHA_KEY")
 
-config :proca, Proca.Service.Procaptcha,
-  url: System.get_env("PROCAPTCHA_URL")
+config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
@@ -91,8 +88,7 @@ config :proca, Proca,
   process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
   require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
 
-config :proca, Proca.Supporter,
-  fpr_seed: System.get_env("FINGERPRINT_SEED", "")
+config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 
 # Configures Elixir's Logger
 config :logger,

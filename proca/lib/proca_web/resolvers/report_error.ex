@@ -1,53 +1,62 @@
-defmodule ProcaWeb.Resolvers.ReportError do 
+defmodule ProcaWeb.Resolvers.ReportError do
   @behaviour Absinthe.Middleware
 
-  def call(%Absinthe.Resolution{
-    state: :resolved,
-    errors: [_|_]
-    } = resolution, _)  do 
-      if enabled?() do
-        try do 
-          info = %{
-            path: Enum.map(resolution.path, &Map.get(&1, :name)),
-            extensions: resolution.extensions,
-            errors: resolution.errors,
-            user: get_in(resolution.context, [:user, :email]),
-            org: get_in(resolution.context, [:org, :name]),
-            campaign: get_in(resolution.context, [:campaign, :name]),
-            name: get_in(resolution.arguments, [:name]),
-            id: get_in(resolution.arguments, [:id])
-          }
-          event = "User error " <> (info.path |> Enum.join(".")) <> " " <> (Enum.map(info.errors, &error_message/1) |> Enum.join(", "))
+  def call(
+        %Absinthe.Resolution{
+          state: :resolved,
+          errors: [_ | _]
+        } = resolution,
+        _
+      ) do
+    if enabled?() do
+      try do
+        info = %{
+          path: Enum.map(resolution.path, &Map.get(&1, :name)),
+          extensions: resolution.extensions,
+          errors: resolution.errors,
+          user: get_in(resolution.context, [:user, :email]),
+          org: get_in(resolution.context, [:org, :name]),
+          campaign: get_in(resolution.context, [:campaign, :name]),
+          name: get_in(resolution.arguments, [:name]),
+          id: get_in(resolution.arguments, [:id])
+        }
 
-          Sentry.capture_message(event, extra: info)
-        rescue 
-          e in RuntimeError -> 
-            Sentry.capture_message("Other user error", extra: %{exception: Map.get(e, :message, "(no message)")})
-        end
+        event =
+          "User error " <>
+            (info.path |> Enum.join(".")) <>
+            " " <> (Enum.map(info.errors, &error_message/1) |> Enum.join(", "))
+
+        Sentry.capture_message(event, extra: info)
+      rescue
+        e in RuntimeError ->
+          Sentry.capture_message("Other user error",
+            extra: %{exception: Map.get(e, :message, "(no message)")}
+          )
       end
+    end
+
     resolution
   end
 
-  def call(reso, _) do 
-    reso 
+  def call(reso, _) do
+    reso
   end
 
-  defp error_message(e) when is_map(e) do 
+  defp error_message(e) when is_map(e) do
     Map.get(e, :message)
   end
 
-  defp error_message(e) when is_bitstring(e) do 
+  defp error_message(e) when is_bitstring(e) do
     e
   end
-  
-  defp error_message(e) do 
+
+  defp error_message(e) do
     inspect(e)
   end
 
   def enabled? do
-    Application.get_env(:proca, __MODULE__)[:enable] and not is_nil Sentry.Config.dsn
+    Application.get_env(:proca, __MODULE__)[:enable] and not is_nil(Sentry.Config.dsn())
   end
-
 
   def scrub_params(conn) do
     # Makes use of the default body_scrubber to avoid sending password
@@ -64,9 +73,9 @@ defmodule ProcaWeb.Resolvers.ReportError do
     |> Map.drop(["X-Forwarded-For", "X-Real-Ip"])
   end
 
-  def censor_bars(a) when is_map(a) do 
-    for {k, v} <- a, into: %{} do 
-      if Enum.member?(["country", "documentType"], k) do 
+  def censor_bars(a) when is_map(a) do
+    for {k, v} <- a, into: %{} do
+      if Enum.member?(["country", "documentType"], k) do
         {k, v}
       else
         {k, censor_bars(v)}
@@ -76,10 +85,10 @@ defmodule ProcaWeb.Resolvers.ReportError do
 
   def censor_bars(a) when is_list(a) do
     for e <- a, do: censor_bars(e)
-  end 
+  end
 
-  def censor_bars(a) when is_bitstring(a) do 
-    a 
+  def censor_bars(a) when is_bitstring(a) do
+    a
     |> String.replace(~r/[0-9]/, "0")
     |> String.replace(~r/\p{L}/u, "X")
   end

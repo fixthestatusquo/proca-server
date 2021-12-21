@@ -19,7 +19,11 @@ defmodule Proca.Confirm.LaunchPage do
   import Logger
 
   @spec changeset(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def changeset(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
+  def changeset(
+        %ActionPage{id: ap_id, campaign_id: campaign_id},
+        %Auth{user: user},
+        message \\ nil
+      ) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
@@ -68,24 +72,25 @@ defmodule Proca.Confirm.LaunchPage do
   @impl true
   def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
     with %Campaign{name: campaign_name, title: campaign_title} <- get(Campaign, campaign_id),
-         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.one(id: ap_id, preload: [:org, :campaign])
-    do
-    %{
-      campaign: %{
-        name: campaign_name,
-        title: campaign_title
-      },
-      org: %{
-        name: org_name,
-        title: org_title
-      } |> Map.merge(email_org_config_fields(org))
-    }
+         %ActionPage{org: %{name: org_name, title: org_title} = org} <-
+           ActionPage.one(id: ap_id, preload: [:org, :campaign]) do
+      %{
+        campaign: %{
+          name: campaign_name,
+          title: campaign_title
+        },
+        org:
+          %{
+            name: org_name,
+            title: org_title
+          }
+          |> Map.merge(email_org_config_fields(org))
+      }
     else
       nil ->
         error("launch_page confirm: Cannot get campaign id #{campaign_id} or page id #{ap_id}")
-      %{}
+        %{}
     end
-
   end
 
   def email_org_config_fields(%Org{config: config}) do
@@ -102,7 +107,4 @@ defmodule Proca.Confirm.LaunchPage do
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)
   end
-
-  
 end
-

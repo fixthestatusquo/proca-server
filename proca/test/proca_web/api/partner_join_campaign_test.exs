@@ -1,18 +1,18 @@
-defmodule ProcaWeb.PartnerJoinCampaignTest do 
+defmodule ProcaWeb.PartnerJoinCampaignTest do
   use ProcaWeb.ConnCase
   import Proca.StoryFactory, only: [red_story: 0]
   import Proca.Factory
 
   use Proca.TestEmailBackend
 
-  setup do 
+  setup do
     red_story()
     |> Map.put(:partner_user, insert(:user))
   end
 
   @moduletag start: [:notify]
 
-  defp add_org_query(org) do 
+  defp add_org_query(org) do
     %{
       "query" => """
 
@@ -55,10 +55,9 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
         "org" => org
       }
     }
-
   end
 
-  defp public_campaigns_query(name) do 
+  defp public_campaigns_query(name) do
     """
     {
       campaigns(name: "#{name}") {
@@ -69,7 +68,7 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     """
   end
 
-  defp current_user_query do 
+  defp current_user_query do
     """
       {
         currentUser {
@@ -83,12 +82,11 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     """
   end
 
-  defp add_page_query(vars) do 
+  defp add_page_query(vars) do
     %{
       "operationName" => "AddActionPage",
       "variables" => vars,
-      "query" => 
-      """
+      "query" => """
       mutation AddActionPage(
         $orgName: String!
         $campaignName: String!
@@ -107,10 +105,10 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
         }
       }
       """
-      }
+    }
   end
 
-  defp launch_page_query(name, message) do 
+  defp launch_page_query(name, message) do
     """
     mutation  {
       launchActionPage(name: "#{name}", message: "#{message}") {
@@ -120,10 +118,10 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     """
   end
 
-  defp accept_org_request(orgName, confirm) do 
+  defp accept_org_request(orgName, confirm) do
     %{
       variables: %{
-        org: orgName, 
+        org: orgName,
         confirm: confirm
       },
       operationName: "Accept",
@@ -140,39 +138,44 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     }
   end
 
-  describe "yellow campaign joining by partner" do 
+  describe "yellow campaign joining by partner" do
     test "campaign data is visible without auth", %{
       conn: conn,
       yellow_campaign: camp
-        } do 
-
-      res = api_post(conn, public_campaigns_query(camp.name))
-      |> json_response(200)
+    } do
+      res =
+        api_post(conn, public_campaigns_query(camp.name))
+        |> json_response(200)
 
       assert length(res["data"]["campaigns"]) == 1
     end
 
     test "org, page creation and launch request", %{
       conn: conn,
-      partner_user: pu, 
-      yellow_campaign: camp, yellow_user: yu
-      } do
-
+      partner_user: pu,
+      yellow_campaign: camp,
+      yellow_user: yu
+    } do
       new_org_params = %{
         name: "purple",
         title: "Sea creatures",
         config: Jason.encode!(%{"twitter_handle" => "@sea__creature"})
       }
 
-      res = conn
-      |> auth_api_post(add_org_query(new_org_params), pu)
-      |> json_response(200)
+      res =
+        conn
+        |> auth_api_post(add_org_query(new_org_params), pu)
+        |> json_response(200)
 
-      assert %{"data" => %{"addOrg" => %{
-        "name" => name2, 
-        "title" => title2, 
-        "config" => config2
-      }}} = res
+      assert %{
+               "data" => %{
+                 "addOrg" => %{
+                   "name" => name2,
+                   "title" => title2,
+                   "config" => config2
+                 }
+               }
+             } = res
 
       assert name2 == new_org_params[:name]
       assert title2 == new_org_params[:title]
@@ -180,21 +183,27 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
 
       # XXX unforutnately this API does not return the privateOrg!
 
-      res2 = conn 
-      |> auth_api_post(current_user_query(), pu)
-      |> json_response(200)
+      res2 =
+        conn
+        |> auth_api_post(current_user_query(), pu)
+        |> json_response(200)
 
-      assert %{"data" => %{
-        "currentUser" => %{
-          "email" => my_email, 
-          "roles" => [%{
-            "org" => %{
-              "name" => ^name2
-            }, 
-            "role" => "owner"
-          }]
-        }
-      }} = res2
+      assert %{
+               "data" => %{
+                 "currentUser" => %{
+                   "email" => my_email,
+                   "roles" => [
+                     %{
+                       "org" => %{
+                         "name" => ^name2
+                       },
+                       "role" => "owner"
+                     }
+                   ]
+                 }
+               }
+             } = res2
+
       assert my_email == pu.email
 
       page_vars = %{
@@ -204,60 +213,74 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
         campaignName: camp.name
       }
 
-      res3 = conn 
-      |> auth_api_post(add_page_query(page_vars), pu)
-      |> json_response(200)
+      res3 =
+        conn
+        |> auth_api_post(add_page_query(page_vars), pu)
+        |> json_response(200)
 
-      assert %{"data" => %{
-        "addActionPage" => %{
-          "id" => page_id, "live" => false
-        }
-      }} = res3
+      assert %{
+               "data" => %{
+                 "addActionPage" => %{
+                   "id" => page_id,
+                   "live" => false
+                 }
+               }
+             } = res3
 
       assert page_id > 0
 
-      res4 = conn 
-      |> auth_api_post(launch_page_query(page_vars[:name], "please add me"), pu)
-      |> json_response(200)
+      res4 =
+        conn
+        |> auth_api_post(launch_page_query(page_vars[:name], "please add me"), pu)
+        |> json_response(200)
 
-      assert %{"data"=> %{
-        "launchActionPage" => %{
-          "status" => "CONFIRMING"
-        }
-      }} = res4
+      assert %{
+               "data" => %{
+                 "launchActionPage" => %{
+                   "status" => "CONFIRMING"
+                 }
+               }
+             } = res4
 
       yellow_email = yu.email
 
       assert [request_email] = mailbox(yu.email)
+
       assert %Swoosh.Email{
-        provider_options: %{
-          fields: %{
-            "code" => confirm_code,
-            "objectId" => confirm_object_id,
-            "acceptLink" => confirm_link
-          },
-          template_ref: "ref:launchpage"
-        }
-      } = request_email
+               provider_options: %{
+                 fields: %{
+                   "code" => confirm_code,
+                   "objectId" => confirm_object_id,
+                   "acceptLink" => confirm_link
+                 },
+                 template_ref: "ref:launchpage"
+               }
+             } = request_email
 
-      assert String.ends_with?(confirm_link, "/link/accept/#{confirm_code}?id=#{confirm_object_id}")
+      assert String.ends_with?(
+               confirm_link,
+               "/link/accept/#{confirm_code}?id=#{confirm_object_id}"
+             )
 
-      res5 = conn 
-      |> auth_api_post(accept_org_request("yellow", %{
-        code: confirm_code, object_id: confirm_object_id
-      }), yu)
-      |> json_response(200)
+      res5 =
+        conn
+        |> auth_api_post(
+          accept_org_request("yellow", %{
+            code: confirm_code,
+            object_id: confirm_object_id
+          }),
+          yu
+        )
+        |> json_response(200)
 
       assert %{
-        "data" => %{
-          "acceptOrgConfirm" => %{
-            "actionPage" => %{"id" => ^page_id, "name" => "purple/yellow", "live" => true},
-            "status" => "SUCCESS"
-          }
-        }
-      } = res5
+               "data" => %{
+                 "acceptOrgConfirm" => %{
+                   "actionPage" => %{"id" => ^page_id, "name" => "purple/yellow", "live" => true},
+                   "status" => "SUCCESS"
+                 }
+               }
+             } = res5
     end
   end
-
-
 end

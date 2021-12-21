@@ -28,13 +28,13 @@ defmodule ProcaWeb.Schema.ActionTypes do
       arg(:only_opt_in, :boolean)
 
       @desc "Only download opted in contacts and actions (default true)"
-      arg :onlyOptIn, :boolean
+      arg(:onlyOptIn, :boolean)
 
-      load :org, by: [name: :org_name]
-      determine_auth for: :org
-      allow [:export_contacts]
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:export_contacts])
 
-      resolve &Resolvers.ExportActions.export_actions/3
+      resolve(&Resolvers.ExportActions.export_actions/3)
     end
   end
 
@@ -53,7 +53,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
       resolve(&Resolvers.Action.add_action/3)
 
-      if ReportError.enabled?, do: middleware ReportError
+      if ReportError.enabled?(), do: middleware(ReportError)
     end
 
     @desc "Adds an action with contact data"
@@ -76,8 +76,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
       arg(:contact_ref, :id)
 
       resolve(&Resolvers.Action.add_action_contact/3)
-      
-      if ReportError.enabled?, do: middleware ReportError
+
+      if ReportError.enabled?(), do: middleware(ReportError)
     end
 
     @desc "Link actions with refs to contact with contact reference"
@@ -173,7 +173,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
     @desc "Deprecated format: Other fields added to action"
     field :fields, list_of(non_null(:custom_field_input)), deprecate: "use custom_fields"
 
-
     @desc "Donation payload"
     field :donation, :donation_action_input
   end
@@ -186,11 +185,12 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :custom_fields, non_null(:json)
 
     @desc "Deprecated, use customFields"
-    field :fields, non_null(list_of(non_null(:custom_field))), deprecate: "use custom_fields" do 
-      resolve(fn action, _p, _c -> 
+    field :fields, non_null(list_of(non_null(:custom_field))), deprecate: "use custom_fields" do
+      resolve(fn action, _p, _c ->
         {:ok, Proca.Field.map_to_list(action.custom_fields)}
       end)
     end
+
     field :tracking, :tracking
     field :campaign, non_null(:campaign)
     field :action_page, non_null(:action_page)
@@ -250,6 +250,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :medium, non_null(:string)
     field :campaign, non_null(:string)
     field :content, :string
+
     @desc "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
     field :location, :string
   end
@@ -262,7 +263,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :first_name, :string
   end
 
-  input_object :donation_action_input do 
+  input_object :donation_action_input do
     @desc "Provide payload schema to validate, eg. stripe_payment_intent"
     field :schema, :donation_schema
     @desc "Provide amount of this donation, in smallest units for currency"
@@ -273,7 +274,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :payload, non_null(:json)
   end
 
-  object :donation do 
+  object :donation do
     field :schema, :donation_schema
     @desc "Provide amount of this donation, in smallest units for currency"
     field :amount, non_null(:integer)

@@ -3,6 +3,5 @@ defmodule Proca.Repo.Migrations.AddUniqueIndexToActionPageName do
 
   def change do
     create unique_index(:action_pages, [:name])
-
   end
 end

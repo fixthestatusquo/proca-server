@@ -16,11 +16,11 @@ defmodule Proca.Field do
     end)
   end
 
-  def map_to_list(field_map) do 
-    Enum.map(field_map, fn {k, v} -> 
-      if is_list(v) do 
+  def map_to_list(field_map) do
+    Enum.map(field_map, fn {k, v} ->
+      if is_list(v) do
         Enum.map(v, fn vi -> %{key: k, value: "#{vi}"} end)
-      else 
+      else
         [%{key: k, value: "#{v}"}]
       end
     end)

@@ -53,25 +53,28 @@ defmodule EciDataTest do
           }
         }
         |> Map.merge(names),
-       nl: 
-       %{
-        birth_date: ~D[1990-04-28],
-        nationality: %{country: "NL"},
-        address: %{
-          country: "NL",
-          postcode: "9876",
-          locality: "AMS",
-          street: "Some 123, 20"
+      nl:
+        %{
+          birth_date: ~D[1990-04-28],
+          nationality: %{country: "NL"},
+          address: %{
+            country: "NL",
+            postcode: "9876",
+            locality: "AMS",
+            street: "Some 123, 20"
+          }
         }
-       }
-       |> Map.merge(names),
-       be: 
-       %{
-        birth_date: ~D[1990-04-28],
-        nationality: %{country: "BE", document_type: "national.id.number", document_number: "00.01.01-123.45"}
-       }
-       |> Map.merge(names)
-
+        |> Map.merge(names),
+      be:
+        %{
+          birth_date: ~D[1990-04-28],
+          nationality: %{
+            country: "BE",
+            document_type: "national.id.number",
+            document_number: "00.01.01-123.45"
+          }
+        }
+        |> Map.merge(names)
     }
   end
 
@@ -114,6 +117,7 @@ defmodule EciDataTest do
     c = EciData.from_input(no_dn)
 
     assert not c.valid?
+
     assert [%{message: "can't be blank", path: ["nationality", "documentNumber"]}] =
              format_errors(c)
 
@@ -151,10 +155,9 @@ defmodule EciDataTest do
     c = EciData.from_input(unsupported_type)
     assert not c.valid?
 
-    assert [%{message: "is invalid", path: ["nationality", "documentType"]}] =
-             format_errors(c)
+    assert [%{message: "is invalid", path: ["nationality", "documentType"]}] = format_errors(c)
 
-    dn_spaces = %{d | nationality: %{n | document_number: "R 1234567" } }
+    dn_spaces = %{d | nationality: %{n | document_number: "R 1234567"}}
 
     assert not c.valid?
 
@@ -181,8 +184,7 @@ defmodule EciDataTest do
     c = EciData.from_input(d)
     assert not c.valid?
 
-    assert [%{message: "can't be blank", path: ["address", "locality"]}] =
-             format_errors(c)
+    assert [%{message: "can't be blank", path: ["address", "locality"]}] = format_errors(c)
   end
 
   test "Greek with ill formatted postcode", %{gr: gr} do
@@ -190,8 +192,7 @@ defmodule EciDataTest do
     c = EciData.from_input(d)
     assert not c.valid?
 
-    assert [%{message: "has invalid format", path: ["address", "postcode"]}] =
-             format_errors(c)
+    assert [%{message: "has invalid format", path: ["address", "postcode"]}] = format_errors(c)
   end
 
   test "Greek with spaces/hyphens in postcode", %{gr: gr} do
@@ -204,11 +205,11 @@ defmodule EciDataTest do
     assert c.valid?
   end
 
-  test "Greek with dot in last name", %{gr: gr} do 
+  test "Greek with dot in last name", %{gr: gr} do
     d = %{gr | last_name: "Mr. Something"}
     c = EciData.from_input(d)
     assert c.valid?
-  end 
+  end
 
   test "Greek with lowercase country name is upcased", %{gr: gr} do
     d = %{gr | nationality: %{gr.nationality | country: "gr"}}
@@ -227,12 +228,12 @@ defmodule EciDataTest do
     assert record.country == "BE"
   end
 
-  test "Dutch postcode", %{nl: nl} do 
+  test "Dutch postcode", %{nl: nl} do
     c = EciData.from_input(nl)
     assert c.valid?
   end
 
-  test "Belgian ID", %{be: be} do 
+  test "Belgian ID", %{be: be} do
     c = EciData.from_input(be)
     assert c.valid?
   end

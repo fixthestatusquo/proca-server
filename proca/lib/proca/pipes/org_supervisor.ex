@@ -11,6 +11,7 @@ defmodule Proca.Pipes.OrgSupervisor do
 
   def whereis(o = %Org{}) do
     {:via, Registry, {reg, nam}} = process_name(o)
+
     case Registry.lookup(reg, nam) do
       [{pid, _}] -> pid
       [] -> nil
@@ -30,13 +31,14 @@ defmodule Proca.Pipes.OrgSupervisor do
   def init(org = %Org{}) do
     topology = {Proca.Pipes.Topology, org}
 
-    workers = [
-      Proca.Stage.EmailSupporter,
-      Proca.Stage.SQS,
-      Proca.Stage.Webhook
-    ]
-    |> Enum.filter(fn mod -> apply(mod, :start_for?, [org]) end)
-    |> Enum.map(fn mod -> {mod, org} end)
+    workers =
+      [
+        Proca.Stage.EmailSupporter,
+        Proca.Stage.SQS,
+        Proca.Stage.Webhook
+      ]
+      |> Enum.filter(fn mod -> apply(mod, :start_for?, [org]) end)
+      |> Enum.map(fn mod -> {mod, org} end)
 
     Supervisor.init([topology | workers], strategy: :rest_for_one)
   end

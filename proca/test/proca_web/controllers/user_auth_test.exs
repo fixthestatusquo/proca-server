@@ -21,7 +21,7 @@ defmodule ProcaWeb.UserAuthTest do
       conn = ProcaWeb.UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
       # LiveView
-      #assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
+      # assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
       assert redirected_to(conn) == "/"
       assert Users.get_user_by_session_token(token)
     end

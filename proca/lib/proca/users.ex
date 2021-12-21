@@ -79,14 +79,15 @@ defmodule Proca.Users do
     |> Repo.insert()
   end
 
-  def register_user_from_sso!(attrs) do 
-    new_user = %User{}
-    |> User.registration_from_sso_changeset(attrs)
-    |> Repo.insert()
+  def register_user_from_sso!(attrs) do
+    new_user =
+      %User{}
+      |> User.registration_from_sso_changeset(attrs)
+      |> Repo.insert()
 
     case new_user do
       {:ok, user} -> user
-      {:error, %{errors: [%{message: msg} | _]}} -> raise ArgumentError, msg 
+      {:error, %{errors: [%{message: msg} | _]}} -> raise ArgumentError, msg
     end
   end
 

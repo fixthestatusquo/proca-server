@@ -30,12 +30,11 @@ defmodule ProcaWeb.ConnCase do
       @endpoint ProcaWeb.Endpoint
 
       def auth_api_post(conn, query, %User{email: email}) do
-        auth_api_post(conn, query, email, 
-          Proca.Factory.password_from_email(email))
+        auth_api_post(conn, query, email, Proca.Factory.password_from_email(email))
       end
 
-      def auth_api_post(conn, query, email, password) 
-        when is_bitstring(email) and is_bitstring(password) do
+      def auth_api_post(conn, query, email, password)
+          when is_bitstring(email) and is_bitstring(password) do
         conn
         |> put_req_header("authorization", "Basic " <> Base.encode64(email <> ":" <> password))
         |> api_post(query)
@@ -58,10 +57,12 @@ defmodule ProcaWeb.ConnCase do
 
       def has_error_message(res, message) do
         assert length(Map.get(res, "errors", [])) > 0
+
         assert Enum.any?(Map.get(res, "errors", []), fn
-          %{"message" => msg} -> msg == message
-          _ -> false
-        end)
+                 %{"message" => msg} -> msg == message
+                 _ -> false
+               end)
+
         res
       end
 
@@ -106,7 +107,4 @@ defmodule ProcaWeb.ConnCase do
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
-
-
-
 end

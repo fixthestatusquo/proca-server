@@ -7,6 +7,7 @@ defmodule Proca.Repo.Migrations.AddSignKeyToContacts do
     end
 
     org_name = Application.get_env(:proca, Proca)[:org_name]
+
     execute """
     UPDATE contacts
     SET sign_key_id = (SELECT pk.id FROM public_keys pk JOIN orgs o ON pk.org_id = o.id
