@@ -21,6 +21,7 @@ defmodule Proca.Service do
 
   def changeset(service, attrs) do
     assocs = Map.take(attrs, [:org])
+
     service
     |> cast(attrs, [:name, :host, :user, :password, :path])
     |> change(assocs)
@@ -35,13 +36,13 @@ defmodule Proca.Service do
 
   def all(q, [{:name, name} | kw]), do: where(q, [s], s.name == ^name) |> all(kw)
   def all(q, [{:org, %Org{id: org_id}} | kw]), do: where(q, [s], s.org_id == ^org_id) |> all(kw)
+
   def all(q, [:latest | kw]) do
     q
     |> order_by([s], desc: s.updated_at)
     |> limit(1)
     |> all(kw)
   end
-
 
   # AWS helpers. 
   def aws_request(req, name, org = %Org{}) do
@@ -77,11 +78,11 @@ defmodule Proca.Service do
         json_request_read_body(hdrs, ref)
 
       {:ok, code, _hdrs, _ref} ->
-        {:ok, code} 
+        {:ok, code}
 
       {:error, reason} ->
         {:error, reason}
-     end
+    end
   end
 
   defp json_request_read_body(hdrs, ref) do
@@ -95,6 +96,7 @@ defmodule Proca.Service do
         else
           x -> x
         end
+
       ct ->
         case :hackney.body(ref) do
           {:ok, raw} -> {:ok, 200, raw}
@@ -123,15 +125,15 @@ defmodule Proca.Service do
   end
 
   defp json_request_opts(req, [{:auth, :basic} | rest], srv = %{user: u, password: p})
-  when is_bitstring(u) and is_bitstring(p)
-    do
+       when is_bitstring(u) and is_bitstring(p) do
     auth = "#{u}:#{p}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 
-  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd}) when is_bitstring(pwd) do
+  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd})
+       when is_bitstring(pwd) do
     %{req | headers: [Authorization: pwd]}
     |> json_request_opts(rest, srv)
   end
@@ -140,12 +142,13 @@ defmodule Proca.Service do
     json_request_opts(req, rest, srv)
   end
 
-  defp json_request_opts(req, [{:form, form} | rest], srv) do 
-    %{req | 
-      method: :post, 
-      body: {:form, form}, 
-      headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
-      }
+  defp json_request_opts(req, [{:form, form} | rest], srv) do
+    %{
+      req
+      | method: :post,
+        body: {:form, form},
+        headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
+    }
     |> json_request_opts(rest, srv)
   end
-   end
+end

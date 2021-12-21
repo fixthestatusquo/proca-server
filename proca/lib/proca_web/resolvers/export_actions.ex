@@ -9,7 +9,6 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   alias Proca.{Supporter, Action, Contact, Org, Staffer, PublicKey}
   alias Proca.Repo
 
-
   def filter_start(q, %{start: start}) do
     q
     |> where([a], a.id >= ^start)
@@ -104,43 +103,42 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> put_action_donation(action.donation)
   end
 
-  def put_action_donation(action_map, donation = %Action.Donation{}) do 
-    action_map 
+  def put_action_donation(action_map, donation = %Action.Donation{}) do
+    action_map
     |> Map.put(:donation, donation)
   end
 
   def put_action_donation(action_map, donation) when is_nil(donation), do: action_map
 
-
   @default_limit 100
   def export_actions(_parent, params, %{context: %{org: org}}) do
     lim = Map.get(params, :limit, @default_limit)
 
-      from(a in Action,
-        join: s in Supporter,
-        on: a.supporter_id == s.id,
-        join: c in Contact,
-        on: c.supporter_id == s.id and c.org_id == ^org.id,
-        left_join: pk in assoc(c, :public_key),
-        left_join: sk in assoc(c, :sign_key),
-        left_join: ad in assoc(a, :donation),
-        limit: ^lim,
-        preload: [
-          [supporter: {s, [contacts: {c, [:public_key, :sign_key]}]}],
-          :action_page,
-          :campaign,
-          :source,
-          :donation
-        ]
-      )
-      |> filter_start(params)
-      |> filter_after(params)
-      |> filter_campaign(params)
-      |> filter_optin(params)
-      |> order_by([a], asc: a.id)
-      |> Repo.all()
-      |> Enum.map(&format/1)
-      |> ok()
+    from(a in Action,
+      join: s in Supporter,
+      on: a.supporter_id == s.id,
+      join: c in Contact,
+      on: c.supporter_id == s.id and c.org_id == ^org.id,
+      left_join: pk in assoc(c, :public_key),
+      left_join: sk in assoc(c, :sign_key),
+      left_join: ad in assoc(a, :donation),
+      limit: ^lim,
+      preload: [
+        [supporter: {s, [contacts: {c, [:public_key, :sign_key]}]}],
+        :action_page,
+        :campaign,
+        :source,
+        :donation
+      ]
+    )
+    |> filter_start(params)
+    |> filter_after(params)
+    |> filter_campaign(params)
+    |> filter_optin(params)
+    |> order_by([a], asc: a.id)
+    |> Repo.all()
+    |> Enum.map(&format/1)
+    |> ok()
   end
 
   defp ok(val) do

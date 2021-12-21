@@ -6,7 +6,7 @@ defmodule ProcaWeb.Schema.InstanceTypes do
 
   object :instance_queries do
     field :instance, non_null(:instance) do
-      allow [:instance_owner]
+      allow([:instance_owner])
     end
   end
 

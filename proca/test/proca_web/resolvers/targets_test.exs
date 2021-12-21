@@ -37,12 +37,14 @@ defmodule ProcaWeb.TargetsTest do
       ],
       campaign_id: red_campaign.id
     }
+
     assert {:ok, targets} = ProcaWeb.Resolvers.Target.upsert_targets(nil, targets, nil)
 
-    red_camp = Proca.Campaign
-    |> where(id: ^red_campaign.id)
-    |> preload(targets: [:emails])
-    |> Proca.Repo.one
+    red_camp =
+      Proca.Campaign
+      |> where(id: ^red_campaign.id)
+      |> preload(targets: [:emails])
+      |> Proca.Repo.one()
 
     target = Enum.at(red_camp.targets, 0)
 

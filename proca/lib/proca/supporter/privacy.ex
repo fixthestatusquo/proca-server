@@ -67,36 +67,42 @@ defmodule Proca.Supporter.Privacy do
     # lead org delivers, if widget org doesn't, or if it overrides it
     lead_delivery = not widget_delivery or action_page.campaign.force_delivery
 
-    is_lead = action_page.campaign.org_id != action_page.org_id 
+    is_lead = action_page.campaign.org_id != action_page.org_id
 
     widget_communication = privacy.opt_in
     lead_communication = privacy.lead_opt_in
 
-    widget_org = cond do 
-      widget_delivery or widget_communication ->
-        [
-          %Consent{
-            org: action_page.org,
-            communication_consent: widget_communication,
-            communication_scopes: @default_communication_scopes,
-            delivery_consent: widget_delivery
-          }
-        ]
-      true -> []
-    end
+    widget_org =
+      cond do
+        widget_delivery or widget_communication ->
+          [
+            %Consent{
+              org: action_page.org,
+              communication_consent: widget_communication,
+              communication_scopes: @default_communication_scopes,
+              delivery_consent: widget_delivery
+            }
+          ]
 
-    lead_org = cond do 
-      is_lead and (lead_delivery or lead_communication) and action_page.live ->
-        [
-          %Consent{
-            org: action_page.campaign.org,
-            communication_consent: lead_communication,
-            communication_scopes: @default_communication_scopes,
-            delivery_consent: lead_delivery
-          }
-        ]
-      true -> []
-    end
+        true ->
+          []
+      end
+
+    lead_org =
+      cond do
+        is_lead and (lead_delivery or lead_communication) and action_page.live ->
+          [
+            %Consent{
+              org: action_page.campaign.org,
+              communication_consent: lead_communication,
+              communication_scopes: @default_communication_scopes,
+              delivery_consent: lead_delivery
+            }
+          ]
+
+        true ->
+          []
+      end
 
     widget_org ++ lead_org
   end
@@ -105,8 +111,8 @@ defmodule Proca.Supporter.Privacy do
     [:area]
   end
 
-  def cleartext_fields(_) do 
-    [:email, :first_name, :area] 
+  def cleartext_fields(_) do
+    [:email, :first_name, :area]
   end
 
   @doc "Which supporter fields are cleared after processing"
@@ -115,12 +121,15 @@ defmodule Proca.Supporter.Privacy do
   end
 
   def transient_supporter_fields(_) do
-    [:email] 
+    [:email]
   end
 
-  def transient_action_fields(%Action{action_type: action_type}, %ActionPage{campaign: %Campaign{transient_actions: afs}}) do 
+  def transient_action_fields(%Action{action_type: action_type}, %ActionPage{
+        campaign: %Campaign{transient_actions: afs}
+      }) do
     x = action_type <> ":"
-    afs 
+
+    afs
     |> Enum.filter(fn af -> String.starts_with?(af, x) end)
     |> Enum.map(fn af -> af |> String.split(":") |> Enum.at(1) end)
   end

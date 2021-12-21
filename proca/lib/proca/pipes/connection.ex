@@ -31,19 +31,19 @@ defmodule Proca.Pipes.Connection do
     do_reconnecting(st, @connection_down_reconnect)
   end
 
-  @impl true 
-  def handle_info(:reconnect, st = %{status: :reconnecting}) do 
+  @impl true
+  def handle_info(:reconnect, st = %{status: :reconnecting}) do
     do_connect(st)
   end
 
-  @impl true 
-  def handle_info(:reconnect, st) do 
+  @impl true
+  def handle_info(:reconnect, st) do
     # noop, we are not reconnecting
     {:noreply, st}
   end
 
-  @impl true 
-  def handle_info({:basic_return, payload, meta}, st) do 
+  @impl true
+  def handle_info({:basic_return, payload, meta}, st) do
     {:noreply, st}
   end
 
@@ -69,15 +69,16 @@ defmodule Proca.Pipes.Connection do
             status: :connected
           }
         }
-      
-      {:error, :econnrefused} -> 
+
+      {:error, :econnrefused} ->
         do_reconnecting(st, @econnrefused_reconnect)
-        # Try reconnecting and run in lowered mode
-      
-      {:error, {:socket_closed_unexpectedly, _details}} -> 
+
+      # Try reconnecting and run in lowered mode
+
+      {:error, {:socket_closed_unexpectedly, _details}} ->
         do_reconnecting(st, @connection_closed_reconnect)
 
-      {:error, reason} -> 
+      {:error, reason} ->
         error("Queue connection: failed with #{inspect(reason)}")
         {:stop, reason, st}
     end
@@ -91,19 +92,21 @@ defmodule Proca.Pipes.Connection do
     need = [:cacertfile, :certfile, :keyfile]
     extra_opt = [verify: :verify_peer, fail_if_no_peer_cert: true]
 
-    if opt != nil and Enum.all?(need, fn k -> Keyword.get(opt, k) != nil end) do 
+    if opt != nil and Enum.all?(need, fn k -> Keyword.get(opt, k) != nil end) do
       [ssl_options: opt ++ extra_opt]
     else
       []
     end
   end
 
-
   @doc """
   Reconnecting procedure - shutdown processing and schedule connection attempt `after_seconds`
   """
   def do_reconnecting(%{url: url}, after_seconds) do
-    debug("Queue connection: Cannot connect. Running in degraded mode and will retry in #{after_seconds} sec")
+    debug(
+      "Queue connection: Cannot connect. Running in degraded mode and will retry in #{after_seconds} sec"
+    )
+
     Proca.Pipes.Supervisor.handle_disconnected()
     Process.send_after(self(), :reconnect, after_seconds * 1000)
 
@@ -116,14 +119,13 @@ defmodule Proca.Pipes.Connection do
     }
   end
 
-
   @impl true
   def handle_call(:connection, _from, %{conn: conn} = st) do
     {:reply, {:ok, conn}, st}
   end
 
   @impl true
-  def handle_call(:connection, _from, %{status: :reconnecting} = st) do 
+  def handle_call(:connection, _from, %{status: :reconnecting} = st) do
     {:reply, {:error, :reconnecting}, st}
   end
 
@@ -137,10 +139,10 @@ defmodule Proca.Pipes.Connection do
     GenServer.call(__MODULE__, :connection)
   end
 
-  def is_connected?() do 
+  def is_connected?() do
     case connection() do
       {:ok, _conn} -> true
-      _ -> false 
+      _ -> false
     end
   end
 
@@ -149,8 +151,9 @@ defmodule Proca.Pipes.Connection do
   end
 
   def with_chan(f) do
-    case connection() do 
-      {:error, _reason} = e -> e
+    case connection() do
+      {:error, _reason} = e ->
+        e
 
       {:ok, conn} ->
         {:ok, chan} = Channel.open(conn)
@@ -170,14 +173,15 @@ defmodule Proca.Pipes.Connection do
       persistent: true
     ]
 
-    r = with_chan(fn chan ->
-      case JSON.encode(data) do
-        {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
-        _e -> :error
-      end
-    end)
+    r =
+      with_chan(fn chan ->
+        case JSON.encode(data) do
+          {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
+          _e -> :error
+        end
+      end)
 
-    case r do 
+    case r do
       :ok -> :ok
       {:error, _reason} -> :error
       :error -> :error

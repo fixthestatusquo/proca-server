@@ -68,10 +68,10 @@ defmodule Proca.Contact.Input.Contact do
     attr
   end
 
-  def normalize_email(attr = %{email: email}) do 
-    attr 
+  def normalize_email(attr = %{email: email}) do
+    attr
     |> Map.put(:email, String.trim(String.downcase(email)))
-  end 
-  
+  end
+
   def normalize_email(attr), do: attr
 end

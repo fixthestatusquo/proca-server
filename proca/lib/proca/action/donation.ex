@@ -24,18 +24,19 @@ defmodule Proca.Action.Donation do
     |> validate_required([:payload, :amount, :currency])
     |> validate_format(:currency, ~r/^[A-Z]{3}$/)
     |> validate_currency(:currency)
-    |> validate_change(:amount, fn :amount, amount -> 
+    |> validate_change(:amount, fn :amount, amount ->
       if Decimal.gt?(amount, 0), do: [], else: [amount: "must be positive"]
     end)
   end
 
-  def changeset(attrs) when is_map(attrs) do 
+  def changeset(attrs) when is_map(attrs) do
     changeset(%Donation{}, attrs)
   end
 
-  def extract_amount(%Ecto.Changeset{changes: %{payload: payload}} = ch) do 
+  def extract_amount(%Ecto.Changeset{changes: %{payload: payload}} = ch) do
     schema = get_field(ch, :schema)
-    case amount_in_schema(schema, payload) do 
+
+    case amount_in_schema(schema, payload) do
       :error -> add_error(ch, :payload, "payload does not contain amount, schema: #{schema}")
       nil -> ch
       amount -> put_change(ch, :amount, amount)
@@ -44,9 +45,10 @@ defmodule Proca.Action.Donation do
 
   def extract_amount(ch), do: ch
 
-  def extract_currency(%Ecto.Changeset{changes: %{payload: payload}} = ch) do 
+  def extract_currency(%Ecto.Changeset{changes: %{payload: payload}} = ch) do
     schema = get_field(ch, :schema)
-    case currency_in_schema(schema, payload) do 
+
+    case currency_in_schema(schema, payload) do
       :error -> add_error(ch, :payload, "payload does not contain currency, schema: #{schema}")
       nil -> ch
       amount -> put_change(ch, :currency, amount)
@@ -55,18 +57,20 @@ defmodule Proca.Action.Donation do
 
   def extract_currency(ch), do: ch
 
-  def amount_in_schema(:stripe_payment_intent, payload) do 
-    case payload do 
-      %{"amount" => cents} when is_integer(cents) -> 
+  def amount_in_schema(:stripe_payment_intent, payload) do
+    case payload do
+      %{"amount" => cents} when is_integer(cents) ->
         cents
-      _ -> :error
+
+      _ ->
+        :error
     end
   end
 
-  def amount_in_schema(_opaque_schema, _payload), do: nil 
+  def amount_in_schema(_opaque_schema, _payload), do: nil
 
-  def currency_in_schema(:stripe_payment_intent, payload) do 
-    case payload do 
+  def currency_in_schema(:stripe_payment_intent, payload) do
+    case payload do
       %{"currency" => currency} -> String.upcase(currency)
       _ -> :error
     end
@@ -74,17 +78,17 @@ defmodule Proca.Action.Donation do
 
   def currency_in_schema(_other, _payload), do: nil
 
-  def validate_currency(ch = %Ecto.Changeset{}, field) do 
-    validate_change ch, field, fn ^field, cur -> 
-      if not Money.Currency.exists?(cur) do 
+  def validate_currency(ch = %Ecto.Changeset{}, field) do
+    validate_change(ch, field, fn ^field, cur ->
+      if not Money.Currency.exists?(cur) do
         [{field, "does not exist"}]
       else
         []
       end
-    end
+    end)
   end
 
-  def validate_amount(ch = %Ecto.Changeset{}, field) do 
+  def validate_amount(ch = %Ecto.Changeset{}, field) do
     validate_number(ch, field, greater_than: 0)
   end
 end

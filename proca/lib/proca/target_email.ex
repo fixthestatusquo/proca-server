@@ -24,6 +24,7 @@ defmodule Proca.TargetEmail do
 
   def all(q, [{:email, email} | kw]) do
     import Ecto.Query
+
     q
     |> where([te], te.email == ^email)
     |> all(kw)
@@ -31,8 +32,9 @@ defmodule Proca.TargetEmail do
 
   def all(q, [{:target_id, target_id} | kw]) do
     import Ecto.Query
+
     q
     |> where([te], te.target_id == ^target_id)
     |> all(kw)
   end
- end
+end

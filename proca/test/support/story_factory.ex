@@ -15,8 +15,20 @@ defmodule Proca.StoryFactory do
   @blue_website "blue.org"
   def blue_story() do
     blue_org = Factory.insert(:org, name: sequence("blue_org"))
-    camp = Factory.insert(:campaign, name: sequence("whales_campaign"), title: "Save the whales!", org: blue_org)
-    ap = Factory.insert(:action_page, campaign: camp, org: blue_org, name: @blue_website <> "/whales_now")
+
+    camp =
+      Factory.insert(:campaign,
+        name: sequence("whales_campaign"),
+        title: "Save the whales!",
+        org: blue_org
+      )
+
+    ap =
+      Factory.insert(:action_page,
+        campaign: camp,
+        org: blue_org,
+        name: @blue_website <> "/whales_now"
+      )
 
     %{
       org: blue_org,
@@ -31,37 +43,71 @@ defmodule Proca.StoryFactory do
   @yellow_website "yellow.org"
   def red_story() do
     red_org = Factory.insert(:org, name: sequence("red_org"))
-    red_camp = Factory.insert(:campaign, name: sequence("blood-donors"), title: "Donate blood", org: red_org)
-    red_ap = Factory.insert(:action_page, campaign: red_camp, org: red_org, name: @red_website <> "/sign")
+
+    red_camp =
+      Factory.insert(:campaign,
+        name: sequence("blood-donors"),
+        title: "Donate blood",
+        org: red_org
+      )
+
+    red_ap =
+      Factory.insert(:action_page, campaign: red_camp, org: red_org, name: @red_website <> "/sign")
 
     yellow_org = Factory.insert(:org, name: "yellow")
-    yellow_camp = Factory.insert(:campaign, name: sequence("free-beer"), title: "Donate beer", org: yellow_org)
-    yellow_ap = Factory.insert(:action_page, campaign: yellow_camp, org: yellow_org, name: @yellow_website <> "/sign")
+
+    yellow_camp =
+      Factory.insert(:campaign, name: sequence("free-beer"), title: "Donate beer", org: yellow_org)
+
+    yellow_ap =
+      Factory.insert(:action_page,
+        campaign: yellow_camp,
+        org: yellow_org,
+        name: @yellow_website <> "/sign"
+      )
 
     yellow_owner = Factory.insert(:staffer, org: yellow_org, perms: @owner_perms)
     red_owner = Factory.insert(:staffer, org: red_org, perms: @owner_perms)
     red_bot = Factory.insert(:staffer, org: red_org, perms: @api_perms)
 
     # red org joins yellows campaign
-    orange_ap1 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-walk-with-yellow")
-    orange_ap2 = Factory.insert(:action_page, campaign: yellow_camp, org: red_org, name: @red_website <> "/we-donate-with-yellow")
+    orange_ap1 =
+      Factory.insert(:action_page,
+        campaign: yellow_camp,
+        org: red_org,
+        name: @red_website <> "/we-walk-with-yellow"
+      )
+
+    orange_ap2 =
+      Factory.insert(:action_page,
+        campaign: yellow_camp,
+        org: red_org,
+        name: @red_website <> "/we-donate-with-yellow"
+      )
 
     %{
-      red_org: red_org,       yellow_org: yellow_org,
-      red_campaign: red_camp, yellow_campaign: yellow_camp,
-      red_ap: red_ap,         yellow_ap: yellow_ap,
+      red_org: red_org,
+      yellow_org: yellow_org,
+      red_campaign: red_camp,
+      yellow_campaign: yellow_camp,
+      red_ap: red_ap,
+      yellow_ap: yellow_ap,
       orange_aps: [orange_ap1, orange_ap2],
-      red_user: red_owner.user, yellow_user: yellow_owner.user,
-      red_bot: red_bot,       yellow_owner: yellow_owner,
+      red_user: red_owner.user,
+      yellow_user: yellow_owner.user,
+      red_bot: red_bot,
+      yellow_owner: yellow_owner,
       red_bot_user: red_bot.user,
       red_owner: red_owner
     }
-
   end
 
   def eci_story() do
     org = Factory.insert(:org, name: "runner", title: "ECI runner", contact_schema: :eci)
-    camp = Factory.insert(:campaign, name: "the-eci", title: "ECI", org: org, contact_schema: :eci)
+
+    camp =
+      Factory.insert(:campaign, name: "the-eci", title: "ECI", org: org, contact_schema: :eci)
+
     ap = Factory.insert(:action_page, campaign: camp, org: org, name: "eci.eu/pl", locale: "pl")
 
     %{

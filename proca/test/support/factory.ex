@@ -8,6 +8,7 @@ defmodule Proca.Factory do
   def org_factory do
     org_name = sequence("org")
     email_service = build(:email_backend)
+
     %Proca.Org{
       name: org_name,
       title: "Org with name #{org_name}",
@@ -17,7 +18,7 @@ defmodule Proca.Factory do
     }
   end
 
-  def email_backend_factory do 
+  def email_backend_factory do
     %Proca.Service{
       name: :testmail,
       host: "email.host.com",
@@ -28,9 +29,10 @@ defmodule Proca.Factory do
 
   def public_key_factory(attrs = %{org: org}) do
     name = sequence("public_key")
+
     Proca.PublicKey.build_for(org, name)
     |> Ecto.Changeset.change(Map.delete(attrs, :org))
-    |> Ecto.Changeset.apply_changes
+    |> Ecto.Changeset.apply_changes()
   end
 
   def campaign_factory(attrs) do
@@ -43,10 +45,10 @@ defmodule Proca.Factory do
       org: Map.get(attrs, :org) || insert(:org),
       force_delivery: false
     }
-    |> merge_attributes(attrs) 
+    |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
- 
+
   def action_page_factory(attrs) do
     campaign = Map.get(attrs, :campaign) || build(:campaign)
     org = Map.get(attrs, :org, campaign.org)
@@ -60,12 +62,13 @@ defmodule Proca.Factory do
       live: true,
       config: %{"journey" => ["Petition", "Share"]}
     }
-    |> merge_attributes(attrs) 
+    |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
 
   def user_factory do
     email = sequence("email", &"member-#{&1}@example.org")
+
     %Proca.Users.User{
       email: email,
       hashed_password: Bcrypt.hash_pwd_salt(password_from_email(email))
@@ -99,7 +102,7 @@ defmodule Proca.Factory do
     data = Map.get(attrs, :data) || build(:basic_data_pl)
 
     Proca.Contact.Data.to_contact(data, action_page)
-    |> Ecto.Changeset.apply_changes
+    |> Ecto.Changeset.apply_changes()
   end
 
   def basic_data_pl_supporter_factory(attrs) do
@@ -107,7 +110,7 @@ defmodule Proca.Factory do
     data = Map.get(attrs, :data) || build(:basic_data_pl)
 
     Proca.Supporter.new_supporter(data, action_page)
-    |> Ecto.Changeset.apply_changes
+    |> Ecto.Changeset.apply_changes()
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
@@ -126,10 +129,15 @@ defmodule Proca.Factory do
   end
 
   def contact_factory do
-    {:ok, payload} = %{
-      first_name: "John", last_name: "Brown", email: "john.brown@gmail.com",
-      country: "GB", postcode: "012345"
-    } |> JSON.encode()
+    {:ok, payload} =
+      %{
+        first_name: "John",
+        last_name: "Brown",
+        email: "john.brown@gmail.com",
+        country: "GB",
+        postcode: "012345"
+      }
+      |> JSON.encode()
 
     %Proca.Contact{
       payload: payload
@@ -147,9 +155,11 @@ defmodule Proca.Factory do
   def action_factory(attrs) do
     # NOTE: insert here so AP is reused in both action and supporter
     # if I used build it would try to insert both (copies) of AP and result in name conflict
-    s = Map.get(attrs, :supporter) || build(:basic_data_pl_supporter_with_contact, %{
-      action_page: Map.get(attrs, :action_page) || insert(:action_page)
-    })
+    s =
+      Map.get(attrs, :supporter) ||
+        build(:basic_data_pl_supporter_with_contact, %{
+          action_page: Map.get(attrs, :action_page) || insert(:action_page)
+        })
 
     %Proca.Action{
       action_type: "register",
@@ -158,16 +168,16 @@ defmodule Proca.Factory do
       supporter: s,
       with_consent: true
     }
-    |> merge_attributes(attrs) 
+    |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
   end
 
-  def source_factory(attrs) do 
+  def source_factory(attrs) do
     %Proca.Source{
       source: "unknown",
       medium: "unknown",
       campaign: "unknown",
-      location: "https://proca.app",
+      location: "https://proca.app"
     }
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()

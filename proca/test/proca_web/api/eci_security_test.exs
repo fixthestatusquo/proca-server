@@ -36,7 +36,6 @@ defmodule ProcaWeb.Api.EciSecurityTest do
     """
   end
 
-
   test "Sending HTML tags in fields fails", %{conn: conn, pages: [ap]} do
     bad_input = [
       {%{first_name: "<SCRIPT>alert()"}, "has invalid format"},
@@ -46,36 +45,34 @@ defmodule ProcaWeb.Api.EciSecurityTest do
       {%{first_name: "http://0000331.0x0000045.168.0xE1"}, "has invalid format"},
       {%{last_name: "<SCRIPT>alert()"}, "has invalid format"},
       {%{birth_date: ""},
-       "Argument \"contact\" has invalid value {nationality: {country: \"at\", documentType: \"passport\", documentNumber: \"R1234567\"}, firstName: \"Olaf\", lastName: \"Foobar\", birthDate: \"\", address: {country: \"\", postcode: \"\", locality: \"\", street: \"\"}}.\nIn field \"birthDate\": Expected type \"Date\", found \"\"."
-       },
+       "Argument \"contact\" has invalid value {nationality: {country: \"at\", documentType: \"passport\", documentNumber: \"R1234567\"}, firstName: \"Olaf\", lastName: \"Foobar\", birthDate: \"\", address: {country: \"\", postcode: \"\", locality: \"\", street: \"\"}}.\nIn field \"birthDate\": Expected type \"Date\", found \"\"."},
       {%{nat_country: "fr", add_postcode: "0000-000000000000000-0000"}, "has invalid format"}
-      
     ]
 
     bad_input
     |> Enum.each(fn {vars, message} ->
       q = query(ap.id, vars)
+
       conn
       |> api_post(q)
       |> json_response(200)
       |> has_error_message(message)
     end)
-
   end
 
   test "Send a very long field", %{conn: conn, pages: [ap]} do
     bad_input = [
       {%{first_name: String.duplicate("Foo", 2000)}, "should be at most 64 character(s)"}
     ]
- 
+
     bad_input
     |> Enum.each(fn {vars, message} ->
       q = query(ap.id, vars)
+
       conn
       |> api_post(q)
       |> json_response(200)
       |> has_error_message(message)
     end)
   end
-
 end

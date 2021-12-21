@@ -12,7 +12,8 @@ defmodule Proca.Repo.Migrations.AllowNullForCampaignId do
     ALTER TABLE action_pages DROP CONSTRAINT IF EXISTS "action_pages_campaign_id_fkey";
     """
 
-    String.split(drop_constraints, "\n") |> Enum.each(fn sql ->
+    String.split(drop_constraints, "\n")
+    |> Enum.each(fn sql ->
       if String.length(sql) > 0 do
         execute sql, ""
       end

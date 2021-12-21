@@ -1,4 +1,4 @@
-defmodule ProcaWeb.ConfirmController do 
+defmodule ProcaWeb.ConfirmController do
   @moduledoc """
   Controller processing two kinds of confirm links:
   1. supporter confirm (double opt in in most cases)
@@ -13,7 +13,6 @@ defmodule ProcaWeb.ConfirmController do
   alias Proca.Server.Processing
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
-
   @doc """
   Handle a supporter confirm link of form:
   /link/s/123/REF_REF_REF/accept
@@ -25,26 +24,26 @@ defmodule ProcaWeb.ConfirmController do
   def supporter(conn, params) do
     with {:ok, args} <- supporter_parse_params(params),
          {:ok, action} <- find_action(args),
-         :ok <- handle_supporter(action, args.verb)
-    do
+         :ok <- handle_supporter(action, args.verb) do
       conn
       |> redirect(external: handle_supporter_redirect(action, args))
       |> halt()
-    else 
-      {:error, status, msg} -> 
+    else
+      {:error, status, msg} ->
         conn |> resp(status, error_msg(msg)) |> halt()
     end
   end
 
   def handle_supporter_redirect(_action, %{redir: url}) when not is_nil(url), do: url
-  def handle_supporter_redirect(action, %{verb: verb}) do 
-    case ActionPage.Status.get_last_location(action.action_page_id)  do
+
+  def handle_supporter_redirect(action, %{verb: verb}) do
+    case ActionPage.Status.get_last_location(action.action_page_id) do
       nil -> "/"
       url -> "#{url}?proca_confirm=#{verb}"
     end
   end
 
-  defp supporter_parse_params(params) do 
+  defp supporter_parse_params(params) do
     types = %{
       action_id: :integer,
       verb: :string,
@@ -52,38 +51,39 @@ defmodule ProcaWeb.ConfirmController do
       redir: :string
     }
 
-    args = cast({%{}, types}, params, Map.keys(types))
-    |> validate_inclusion(:verb, ["accept", "reject"])
-    |> Supporter.decode_ref(:ref)
-    |> validate_required([:action_id, :verb, :ref])
+    args =
+      cast({%{}, types}, params, Map.keys(types))
+      |> validate_inclusion(:verb, ["accept", "reject"])
+      |> Supporter.decode_ref(:ref)
+      |> validate_required([:action_id, :verb, :ref])
 
-    if args.valid? do 
+    if args.valid? do
       {:ok, apply_changes(args)}
-    else 
+    else
       {:error, 400, "malformed link"}
     end
   end
 
-
-  defp find_action(%{action_id: action_id, ref: ref}) do 
+  defp find_action(%{action_id: action_id, ref: ref}) do
     action = Action.get_by_id_and_ref(action_id, ref)
-    if is_nil(action) do 
+
+    if is_nil(action) do
       {:error, 404, "malformed link"}
-    else 
+    else
       {:ok, action}
     end
   end
 
-  defp handle_supporter(action = %Action{supporter: sup}, "accept") do 
-    case Supporter.confirm(sup) do 
+  defp handle_supporter(action = %Action{supporter: sup}, "accept") do
+    case Supporter.confirm(sup) do
       {:ok, sup2} -> Processing.process_async(%{action | supporter: sup2})
       {:noop, _} -> :ok
       {:error, msg} -> {:error, 400, msg}
     end
   end
 
-  defp handle_supporter(_action = %Action{supporter: sup}, "reject") do 
-    case Supporter.reject(sup) do 
+  defp handle_supporter(_action = %Action{supporter: sup}, "reject") do
+    case Supporter.reject(sup) do
       {:ok, _} -> :ok
       {:noop, _} -> :ok
       {:error, msg} -> {:error, 400, msg}
@@ -100,7 +100,7 @@ defmodule ProcaWeb.ConfirmController do
   - id - if this Confirm was created for particular object id (schema determined by Confirm operation)
   - redir - query param to redirect after accepting/rejecting.
   """
-  def confirm(conn, params) do 
+  def confirm(conn, params) do
     with {:ok, args} <- confirm_parse_params(params),
          confirm = %Confirm{} <- get_confirm(args),
          :ok <- handle_confirm(confirm, args.verb, get_auth(conn, Map.get(params, "org", nil))) do
@@ -114,18 +114,25 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp get_auth(conn, org_name) do 
-    case conn.assigns.user do 
-      nil -> nil 
-      user = %Proca.Users.User{} -> %Auth{
-        user: user,
-        staffer: (if is_nil(org_name), do: Staffer.for_user(user), else: Staffer.for_user_in_org(user, org_name))
-      }
+  defp get_auth(conn, org_name) do
+    case conn.assigns.user do
+      nil ->
+        nil
+
+      user = %Proca.Users.User{} ->
+        %Auth{
+          user: user,
+          staffer:
+            if(is_nil(org_name),
+              do: Staffer.for_user(user),
+              else: Staffer.for_user_in_org(user, org_name)
+            )
+        }
     end
   end
 
-  defp handle_confirm(confirm, "accept", auth) do 
-    case Confirm.confirm(confirm, auth) do 
+  defp handle_confirm(confirm, "accept", auth) do
+    case Confirm.confirm(confirm, auth) do
       :ok -> :ok
       {:ok, _} -> :ok
       {:error, "unauthorized"} -> {:error, 401, "unauthorized"}
@@ -134,7 +141,7 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp handle_confirm(confirm, "reject", auth) do 
+  defp handle_confirm(confirm, "reject", auth) do
     case Confirm.reject(confirm, auth) do
       :ok -> :ok
       {:ok, _} -> :ok
@@ -143,7 +150,7 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp confirm_parse_params(params) do 
+  defp confirm_parse_params(params) do
     types = %{
       code: :string,
       verb: :string,
@@ -152,27 +159,28 @@ defmodule ProcaWeb.ConfirmController do
       redir: :string
     }
 
-    args = cast({%{}, types}, params, Map.keys(types))
-    |> validate_inclusion(:verb, ["accept", "reject"])
-    |> validate_format(:code, ~r/^[0-9]+$/)
-    |> validate_required([:code, :verb])
+    args =
+      cast({%{}, types}, params, Map.keys(types))
+      |> validate_inclusion(:verb, ["accept", "reject"])
+      |> validate_format(:code, ~r/^[0-9]+$/)
+      |> validate_required([:code, :verb])
 
-    if args.valid? do 
+    if args.valid? do
       {:ok, apply_changes(args)}
-    else 
+    else
       {:error, 400, "malformed link"}
     end
   end
 
-  defp get_confirm(%{code: code, email: email}) do 
+  defp get_confirm(%{code: code, email: email}) do
     Confirm.by_email_code(email, code)
   end
 
-  defp get_confirm(%{code: code, id: id}) do 
+  defp get_confirm(%{code: code, id: id}) do
     Confirm.by_object_code(id, code)
   end
 
-  defp get_confirm(%{code: code}) do 
+  defp get_confirm(%{code: code}) do
     Confirm.by_open_code(code)
   end
 
@@ -193,13 +201,13 @@ defmodule ProcaWeb.ConfirmController do
     {:ok, ""}
   end
 
-  defp error_msg(msg) when is_bitstring(msg) do 
-    %{errors: [%{message: msg}]} |> Jason.encode!
+  defp error_msg(msg) when is_bitstring(msg) do
+    %{errors: [%{message: msg}]} |> Jason.encode!()
   end
 
-  defp error_msg(msg = %Ecto.Changeset{}) do 
-    %{errors: ProcaWeb.Helper.format_errors(msg)} |> Jason.encode!
+  defp error_msg(msg = %Ecto.Changeset{}) do
+    %{errors: ProcaWeb.Helper.format_errors(msg)} |> Jason.encode!()
   end
 
-  defp error_msg(other), do: other |>Jason.encode!()
-end 
+  defp error_msg(other), do: other |> Jason.encode!()
+end

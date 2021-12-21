@@ -48,9 +48,10 @@ defmodule Proca.Org do
     field :system_sqs_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
-    field :event_processing, :boolean, default: false # for system events from Proca.Server.Notify
-    field :confirm_processing, :boolean, default: false # confirmable operations
-
+    # for system events from Proca.Server.Notify
+    field :event_processing, :boolean, default: false
+    # confirmable operations
+    field :confirm_processing, :boolean, default: false
 
     field :config, :map
 
@@ -61,18 +62,18 @@ defmodule Proca.Org do
   def changeset(org, attrs) do
     org
     |> cast(attrs, [
-      :name, :title, 
-      :contact_schema, 
+      :name,
+      :title,
+      :contact_schema,
       :email_from,
-      :email_opt_in, :email_opt_in_template, 
-      :config, 
+      :email_opt_in,
+      :email_opt_in_template,
+      :config,
       :high_security,
-
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
       :system_sqs_deliver,
-
       :event_processing,
       :confirm_processing
     ])
@@ -81,7 +82,7 @@ defmodule Proca.Org do
     |> unique_constraint(:name)
     |> Proca.Contact.Input.validate_email(:email_from)
     |> validate_change(:email_opt_in_template, fn f, tmpl_name ->
-      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do 
+      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
         {:ok, _ref} -> []
         :not_found -> [{f, "template not found"}]
         :not_configured -> [{f, "templating not configured"}]
@@ -91,58 +92,62 @@ defmodule Proca.Org do
     |> cast_event_backend(org, attrs)
   end
 
-  def cast_email_backend(chset, org, %{email_backend: srv_name}) 
-    when srv_name in [:mailjet, :ses] do 
+  def cast_email_backend(chset, org, %{email_backend: srv_name})
+      when srv_name in [:mailjet, :ses] do
     case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
-      nil -> add_error(chset, :email_backend, "no such service")
-      %{id: id} -> chset 
+      nil ->
+        add_error(chset, :email_backend, "no such service")
+
+      %{id: id} ->
+        chset
         |> put_change(:email_backend_id, id)
         |> put_change(:template_backend_id, id)
     end
   end
 
-  def cast_email_backend(ch, _org, %{email_backend: srv_name}) 
-    when is_atom(srv_name) do 
-      add_error(ch, :email_backend, "service does not support email")
+  def cast_email_backend(ch, _org, %{email_backend: srv_name})
+      when is_atom(srv_name) do
+    add_error(ch, :email_backend, "service does not support email")
   end
 
-  def cast_email_backend(ch, _org, _a), do: ch 
-
+  def cast_email_backend(ch, _org, _a), do: ch
 
   def cast_event_backend(chset, org, %{event_backend: srv_name})
-    when srv_name in [:webhook] do
+      when srv_name in [:webhook] do
     case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
-      nil -> add_error(chset, :event_backend, "no such service")
-      %{id: id} -> chset
+      nil ->
+        add_error(chset, :event_backend, "no such service")
+
+      %{id: id} ->
+        chset
         |> put_change(:event_backend_id, id)
     end
   end
 
   def cast_event_backend(ch, _org, %{event_backend: srv_name})
-    when is_atom(srv_name) do
-      add_error(ch, :event_backend, "service does not support events")
+      when is_atom(srv_name) do
+    add_error(ch, :event_backend, "service does not support events")
   end
 
   def cast_event_backend(ch, _org, _a), do: ch
 
-  def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw) 
-  def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw]) 
+  def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw)
+  def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw])
 
-  def all(q, [:active_public_keys | kw]) do 
+  def all(q, [:active_public_keys | kw]) do
     q
-    |> join(:left, [o], k in assoc(o, :public_keys), 
-      on: k.active)
+    |> join(:left, [o], k in assoc(o, :public_keys), on: k.active)
     |> order_by([o, k], asc: k.inserted_at)
-    |> preload([o, k], [public_keys: k])
+    |> preload([o, k], public_keys: k)
     |> all(kw)
   end
 
   def delete(org) do
     change(org)
-    |> foreign_key_constraint(:action_pages, [
-          name: :action_pages_org_id_fkey,
-          message: "has action pages"
-        ])
+    |> foreign_key_constraint(:action_pages,
+      name: :action_pages_org_id_fkey,
+      message: "has action pages"
+    )
   end
 
   def get_by_name(name, preload \\ []) do
@@ -158,7 +163,7 @@ defmodule Proca.Org do
   end
 
   def list(preloads \\ []) do
-    all([preload: preloads])
+    all(preload: preloads)
   end
 
   @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
@@ -166,19 +171,17 @@ defmodule Proca.Org do
     public_keys
     |> Enum.filter(& &1.active)
     |> Enum.sort(fn a, b -> a.inserted_at < b.inserted_at end)
-   end
+  end
 
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
-    Proca.Repo.one from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1)
+    Proca.Repo.one(from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1))
   end
-
 
   def put_service(%Org{} = org, service), do: put_service(change(org), service)
 
   def put_service(%Ecto.Changeset{} = ch, %Proca.Service{name: name} = service)
-    when name in [:mailjet, :testmail]
-    do
+      when name in [:mailjet, :testmail] do
     ch
     |> put_assoc(:email_backend, service)
     |> put_assoc(:template_backend, service)

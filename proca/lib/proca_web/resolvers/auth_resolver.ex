@@ -10,21 +10,22 @@ defmodule ProcaWeb.Resolvers.AuthResolver do
   alias Absinthe.Resolution
 
   @impl true
-  def call(resolution, [for: :result]) do
+  def call(resolution, for: :result) do
     resolution
     |> get_auth_for_value(resolution.value)
   end
 
   @impl true
-  def call(resolution, [for: type]) when type in [:org, :campaign, :action_page] do
+  def call(resolution, for: type) when type in [:org, :campaign, :action_page] do
     resolution
     |> get_auth_for_value(resolution.context[type])
   end
 
   defp get_auth_for_value(
-    resolution = %Resolution{context: %{user: user}},
-    record) when is_struct(record) do
-
+         resolution = %Resolution{context: %{user: user}},
+         record
+       )
+       when is_struct(record) do
     auth = Auth.get_for_user(record, user)
     %{resolution | context: Map.put(resolution.context, :auth, auth)}
   end

@@ -28,7 +28,6 @@ defmodule ProcaWeb.EciRouter do
     pipe_through :auth_api
     forward "/", ProcaWeb.PrivateAbsinthePlug, schema: ProcaWeb.Schema
   end
-  
 
   # forward "/graphiql", Absinthe.Plug.GraphiQL,
   #   schema: ProcaWeb.Schema.EciSchema,

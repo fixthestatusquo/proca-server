@@ -17,7 +17,8 @@ defmodule Proca.ReleaseTasks do
   ]
 
   def migrate do
-    IO.puts "Migrate the database if necessary"
+    IO.puts("Migrate the database if necessary")
+
     load_and_run(fn _ ->
       # Run migrations
       Enum.each(@myapps, &run_migrations_for/1)
@@ -25,7 +26,8 @@ defmodule Proca.ReleaseTasks do
   end
 
   def seed do
-    IO.puts "Seeding the database (if not done already)"
+    IO.puts("Seeding the database (if not done already)")
+
     load_and_run(fn _ ->
       # Run the seed script if it exists
       seed_script = seed_path(:proca)
@@ -61,10 +63,14 @@ defmodule Proca.ReleaseTasks do
     case Proca.Users.User.one(email: email) do
       u when not is_nil(u) ->
         p = [:instance_owner, :join_orgs, :manage_users, :manage_orgs]
+
         Ecto.Changeset.change(u, perms: Proca.Permission.add(u.perms, p))
-        |> Proca.Repo.update!
+        |> Proca.Repo.update!()
+
         IO.puts("Added #{email} as admin")
-      _ -> IO.puts("Can't find user #{email}")
+
+      _ ->
+        IO.puts("Can't find user #{email}")
     end
   end
 

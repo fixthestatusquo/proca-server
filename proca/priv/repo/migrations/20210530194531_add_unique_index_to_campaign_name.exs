@@ -3,6 +3,5 @@ defmodule Proca.Repo.Migrations.AddUniqueIndexToCampaignName do
 
   def change do
     create unique_index(:campaigns, [:name])
-
   end
 end

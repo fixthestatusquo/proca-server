@@ -1,27 +1,29 @@
-defmodule Proca.MessageTest do 
+defmodule Proca.MessageTest do
   use Proca.DataCase
   import Proca.StoryFactory, only: [blue_story: 0]
   import Proca.Factory
 
-  setup do 
+  setup do
     story = blue_story()
     [page] = story[:pages]
 
     {:ok, source} = Proca.Source.get_or_create_by(params_for(:source))
 
-    action = insert(:action, %{
-      action_page: page, 
-      fields: %{
-        "event" => "Warsaw", "friends" => 3
-      }, 
-      source: source
-    })
+    action =
+      insert(:action, %{
+        action_page: page,
+        fields: %{
+          "event" => "Warsaw",
+          "friends" => 3
+        },
+        source: source
+      })
 
     Map.put(story, :action, action)
   end
 
-  describe "action_data in two versions" do 
-    setup %{action: action, org: org} do 
+  describe "action_data in two versions" do
+    setup %{action: action, org: org} do
       %{
         msg1: Proca.Stage.MessageV1.action_data(action, :deliver, org.id),
         msg2: Proca.Stage.MessageV2.action_data(action, :deliver, org.id)
@@ -29,13 +31,16 @@ defmodule Proca.MessageTest do
     end
 
     test "have common keys", %{
-      action: a, pages: [page], msg1: m1, msg2: m2} do 
-      
-      #IO.inspect(m1, label: "1")
-      #IO.inspect(m2, label: "2")
-      #IO.inspect(a.with_consent, label: "has consent")
+      action: a,
+      pages: [page],
+      msg1: m1,
+      msg2: m2
+    } do
+      # IO.inspect(m1, label: "1")
+      # IO.inspect(m2, label: "2")
+      # IO.inspect(a.with_consent, label: "has consent")
 
-      assert "event" in Map.keys(a.fields) 
+      assert "event" in Map.keys(a.fields)
 
       assert m1["actionId"] == a.id
       assert m1["actionPageId"] == page.id
@@ -67,8 +72,11 @@ defmodule Proca.MessageTest do
     end
 
     test "have different keys", %{
-      action: a, pages: [page], msg1: m1, msg2: m2} do 
-
+      action: a,
+      pages: [page],
+      msg1: m1,
+      msg2: m2
+    } do
       [%Proca.Contact{payload: contact_json}] = a.supporter.contacts
       {:ok, pii} = Jason.decode(contact_json)
 
@@ -90,7 +98,6 @@ defmodule Proca.MessageTest do
       assert m2["contact"]["phone"] == pii["phone"]
       assert m2["contact"]["last_name"] == pii["last_name"]
       assert m2["contact"]["first_name"] == pii["first_name"]
-
     end
   end
 end

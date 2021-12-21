@@ -8,7 +8,7 @@ defmodule Proca.Contact.Input do
   @doc """
   Accepts attributes and returns a (virtual) validated data changeset
   """
-  @callback from_input(map()) :: Changeset.t
+  @callback from_input(map()) :: Changeset.t()
 
   @email_format Regex.compile!(
                   "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$"
@@ -72,12 +72,13 @@ defmodule Proca.Contact.Input do
   def validate_url(ch = %Ecto.Changeset{}, field, opts \\ []) do
     validate_change(ch, field, fn f, uri ->
       u = URI.parse(uri)
+
       if Proca.Source.well_formed_url?(u) and is_url_type?(u, opts[:type]) do
         []
       else
         [{f, "URL is invalid"}]
       end
-     end)
+    end)
   end
 
   def is_url_type?(_, nil), do: true
@@ -85,6 +86,6 @@ defmodule Proca.Contact.Input do
   def is_url_type?(%URI{path: path}, type) when is_bitstring(path) do
     mime = :mimerl.extension(List.last(String.split(path, ".")))
 
-    String.starts_with? mime, type <> "/"
+    String.starts_with?(mime, type <> "/")
   end
- end
+end

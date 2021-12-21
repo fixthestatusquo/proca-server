@@ -44,6 +44,7 @@ defmodule Proca.Action do
     case Supporter.one(fingerprint: contact_ref, org_id: action_page.org_id) do
       %Supporter{} = supporter ->
         put_assoc(ch, :supporter, supporter)
+
       nil ->
         change(ch, %{ref: contact_ref, supporter: nil})
     end
@@ -71,6 +72,7 @@ defmodule Proca.Action do
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
     |> Repo.update_all(set: [supporter_id: id, ref: nil])
+
     # XXX decouple in a way that lets use do notify
   end
 
@@ -91,7 +93,7 @@ defmodule Proca.Action do
     q
     |> join(:inner, [a], s in assoc(a, :supporter))
     |> where([a, s], s.fingerprint == ^ref)
-    |> preload([a, s], [supporter: s])
+    |> preload([a, s], supporter: s)
     |> all(kw)
   end
 
@@ -110,14 +112,15 @@ defmodule Proca.Action do
     |> where([a], a.processing_status in ^status)
   end
 
-  def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do 
+  def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do
     keys = Supporter.Privacy.transient_action_fields(action, page)
 
-    if keys == [] do 
+    if keys == [] do
       :noop
     else
       fields2 = Map.drop(fields, keys)
-      if fields2 == fields do 
+
+      if fields2 == fields do
         :noop
       else
         from(a in Action, where: a.id == ^id, update: [set: [fields: ^fields2]])
@@ -125,8 +128,8 @@ defmodule Proca.Action do
     end
   end
 
-  def confirm(action = %Action{}) do 
-    case action.processing_status do 
+  def confirm(action = %Action{}) do
+    case action.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(action, processing_status: :accepted))
       :rejected -> {:error, "data already rejected"}
@@ -135,8 +138,8 @@ defmodule Proca.Action do
     end
   end
 
-  def reject(action = %Action{}) do 
-    case action.processing_status do 
+  def reject(action = %Action{}) do
+    case action.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(action, processing_status: :rejected))
       :rejected -> {:noop, "already rejected"}
@@ -144,4 +147,4 @@ defmodule Proca.Action do
       :delivered -> Repo.update(change(action, processing_status: :rejected))
     end
   end
-  end
+end

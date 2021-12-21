@@ -73,7 +73,6 @@ defmodule Proca.Contact.EciData do
     put_embed(ch, :nationality, nationality)
   end
 
-
   def validate_address(ch = %{valid?: false}), do: ch
 
   def validate_address(ch) do
@@ -90,6 +89,7 @@ defmodule Proca.Contact.EciData do
 
       address ->
         residence_country = get_change(address, :country)
+
         address =
           address
           |> validate_required(required_address_fields)

@@ -1,4 +1,4 @@
-defmodule Proca.Auth do 
+defmodule Proca.Auth do
   @moduledoc """
   Authorization Context for resolvers.
 
@@ -34,5 +34,4 @@ defmodule Proca.Auth do
   def get_for_user(_, user = %User{}) when not is_nil(user) do
     %Auth{user: user}
   end
-
 end

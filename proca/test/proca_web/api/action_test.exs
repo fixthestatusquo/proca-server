@@ -8,7 +8,7 @@ defmodule ProcaWeb.Api.ActionTest do
 
   @basic_data %{}
 
-  setup do 
+  setup do
     blue_story()
   end
 
@@ -21,21 +21,33 @@ defmodule ProcaWeb.Api.ActionTest do
       contact_ref: ref
     }
 
-    result = ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{} )
+    result = ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{})
     assert result = {:ok, %{contact_ref: ref}}
     result
   end
 
-  def action_with_contact(_org, ap, action_info, contact_info, 
-      other_params \\ %{}, context \\ %{}) do
-    params = %{
-      action: action_info,
-      action_page_id: ap.id,
-      contact: contact_info,
-      privacy: %{opt_in: true}
-    } |> Map.merge(other_params)
-    
-    result = ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{context: context} )
+  def action_with_contact(
+        _org,
+        ap,
+        action_info,
+        contact_info,
+        other_params \\ %{},
+        context \\ %{}
+      ) do
+    params =
+      %{
+        action: action_info,
+        action_page_id: ap.id,
+        contact: contact_info,
+        privacy: %{opt_in: true}
+      }
+      |> Map.merge(other_params)
+
+    result =
+      ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{
+        context: context
+      })
+
     assert {:ok, %{contact_ref: _ref}} = result
     result
   end
@@ -44,9 +56,7 @@ defmodule ProcaWeb.Api.ActionTest do
     action_with_ref(org, ap, %{action_type: "petiton"})
 
     [action] =
-      Repo.all(
-        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter])
-      )
+      Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter]))
 
     assert action.fields == %{}
     assert action.processing_status == :new
@@ -56,7 +66,6 @@ defmodule ProcaWeb.Api.ActionTest do
   end
 
   test "create petition action with custom fields", %{org: org, pages: [ap]} do
-
     action_with_ref(org, ap, %{
       action_type: "petition",
       fields: [
@@ -66,9 +75,7 @@ defmodule ProcaWeb.Api.ActionTest do
     })
 
     [action] =
-      Repo.all(
-        from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter])
-      )
+      Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter]))
 
     assert map_size(action.fields) == 2
     assert action.processing_status == :new
@@ -123,26 +130,37 @@ defmodule ProcaWeb.Api.ActionTest do
   }
   """
 
-  test "create stripe donation action", %{org: org, pages: [ap]} do 
-    {:ok, %{contact_ref: ref}} = action_with_contact(org, ap, %{
-        action_type: "stripe-donation",
-        donation: %{
-          schema: :stripe_payment_intent,
-          payload: Jason.decode!(@stripe_payment_intent_example1)
+  test "create stripe donation action", %{org: org, pages: [ap]} do
+    {:ok, %{contact_ref: ref}} =
+      action_with_contact(
+        org,
+        ap,
+        %{
+          action_type: "stripe-donation",
+          donation: %{
+            schema: :stripe_payment_intent,
+            payload: Jason.decode!(@stripe_payment_intent_example1)
+          }
+        },
+        %{
+          email: "donor@example.com",
+          first_name: "Mike",
+          last_name: "Scott",
+          address: %{country: "PL", postcode: "03-123"}
         }
-      },
-      %{email: "donor@example.com", 
-        first_name: "Mike", last_name: "Scott", 
-        address: %{country: "PL", postcode: "03-123"}}
-    )
+      )
 
     # fetch last donation action
     {:ok, ref} = Supporter.base_decode(ref)
-    last_action = from(s in Supporter, 
-      left_join: a in  assoc(s, :actions), 
-      where: s.fingerprint == ^ref, 
-      order_by: [desc: a.id],
-      select: a) |> Repo.one() 
+
+    last_action =
+      from(s in Supporter,
+        left_join: a in assoc(s, :actions),
+        where: s.fingerprint == ^ref,
+        order_by: [desc: a.id],
+        select: a
+      )
+      |> Repo.one()
 
     assert not is_nil(last_action)
 
@@ -154,15 +172,19 @@ defmodule ProcaWeb.Api.ActionTest do
     # IO.inspect last_action.donation
   end
 
-  test "create action with location tracking", %{org: org, pages: [ap]} do 
-    {:ok, result} = action_with_contact(org, ap, 
-      %{action_type: "x"}, %{first_name: "Jan", email: "j@a.n"}, 
-      %{}, %{headers: %{"referer" => "https://example.com/petition?foo=123"}}) 
+  test "create action with location tracking", %{org: org, pages: [ap]} do
+    {:ok, result} =
+      action_with_contact(
+        org,
+        ap,
+        %{action_type: "x"},
+        %{first_name: "Jan", email: "j@a.n"},
+        %{},
+        %{headers: %{"referer" => "https://example.com/petition?foo=123"}}
+      )
 
-    action = Repo.one from(a in Action, order_by: [desc: a.id], limit: 1) 
+    action = Repo.one(from(a in Action, order_by: [desc: a.id], limit: 1))
 
     assert action.source_id != nil
-
   end
-
 end

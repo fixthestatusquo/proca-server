@@ -47,7 +47,7 @@ defmodule Proca.Staffer do
 
   def all(q, [:preload | kw]), do: preload(q, [:user, :org]) |> all(kw)
 
-  def all(q, [{:org, org} | kw]), do: where(q, [s], s.org_id == ^org.id)  |> all(kw)
+  def all(q, [{:org, org} | kw]), do: where(q, [s], s.org_id == ^org.id) |> all(kw)
   def all(q, [{:user, user} | kw]), do: where(q, [s], s.user_id == ^user.id) |> all(kw)
 
   # XXX rewrite
@@ -94,5 +94,4 @@ defmodule Proca.Staffer do
     |> distinct(true)
     |> Repo.all()
   end
-
 end

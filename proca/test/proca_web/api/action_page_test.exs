@@ -24,13 +24,12 @@ defmodule ProcaWeb.Api.ActionPageTest do
     }
     """
 
-    res = api_post(conn, %{query: query, variables: %{id: ap.id}})
-    |> json_response(200)
+    res =
+      api_post(conn, %{query: query, variables: %{id: ap.id}})
+      |> json_response(200)
 
-    assert not is_nil res["data"]
+    assert not is_nil(res["data"])
     assert res["data"]["actionPage"]["name"] == ap.name
     assert res["data"]["actionPage"]["__typename"] == "PublicActionPage"
-
   end
-
 end

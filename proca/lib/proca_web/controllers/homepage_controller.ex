@@ -18,6 +18,6 @@ defmodule ProcaWeb.HomepageController do
     render(conn, "index.html", %{
       staffer: conn.assigns[:staffer],
       user_orgs: user_orgs
-  })
+    })
   end
 end

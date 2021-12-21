@@ -5,23 +5,24 @@ defmodule ProcaWeb.Resolvers.Service do
   import Proca.Repo
 
   def upsert_service(_p, %{input: attrs = %{name: name}}, %{context: %{org: org}}) do
-    result = case Service.one([name: name, org: org] ++ [:latest]) do
-      nil -> Service.build_for_org(attrs, org, name)
-      srv -> Service.changeset(srv, attrs)
-    end
-    |> insert_or_update()
+    result =
+      case Service.one([name: name, org: org] ++ [:latest]) do
+        nil -> Service.build_for_org(attrs, org, name)
+        srv -> Service.changeset(srv, attrs)
+      end
+      |> insert_or_update()
 
-    case result do 
+    case result do
       {:ok, service} -> {:ok, service}
       {:error, error} -> {:error, Helper.format_errors(error)}
     end
   end
 
   def add_stripe_payment_intent(
-    _parent,
-    params = %{input: input},
-    context = %{context: %{action_page: ap}}
-  ) do
+        _parent,
+        params = %{input: input},
+        context = %{context: %{action_page: ap}}
+      ) do
     with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       pi = input
 
@@ -41,10 +42,10 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def add_stripe_subscription(
-    _parent,
-    params = %{input: input},
-    context = %{context: %{action_page: ap}}
-  ) do
+        _parent,
+        params = %{input: input},
+        context = %{context: %{action_page: ap}}
+      ) do
     with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       sbscr = input
 
@@ -64,10 +65,10 @@ defmodule ProcaWeb.Resolvers.Service do
   end
 
   def add_stripe_object(
-    _parent,
-    params,
-    %{context: %{action_page: ap}}
-    ) do
+        _parent,
+        params,
+        %{context: %{action_page: ap}}
+      ) do
     with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
       case assemble_stripe_objects(params, stripe) do
         {:ok, object} -> {:ok, object}
@@ -78,59 +79,61 @@ defmodule ProcaWeb.Resolvers.Service do
     end
   end
 
-  def assemble_stripe_objects(params = %{customer: customer, payment_intent: pi}, stripe) do 
-    case Service.Stripe.do_create_customer(customer, stripe) do 
-      {:ok , %{id: id}} -> 
+  def assemble_stripe_objects(params = %{customer: customer, payment_intent: pi}, stripe) do
+    case Service.Stripe.do_create_customer(customer, stripe) do
+      {:ok, %{id: id}} ->
         Map.delete(params, :customer)
         |> Map.put(:payment_intent, Map.put(pi, :customer, id))
         |> assemble_stripe_objects(stripe)
-      e -> e
+
+      e ->
+        e
     end
   end
-  
 
-  def assemble_stripe_objects(params = %{customer: customer, subscription: sbscr}, stripe) do 
-    case Service.Stripe.do_create_customer(customer, stripe) do 
-      {:ok , %{id: id}} -> 
+  def assemble_stripe_objects(params = %{customer: customer, subscription: sbscr}, stripe) do
+    case Service.Stripe.do_create_customer(customer, stripe) do
+      {:ok, %{id: id}} ->
         Map.delete(params, :customer)
         |> Map.put(:subscription, Map.put(sbscr, :customer, id))
         |> assemble_stripe_objects(stripe)
-      e -> e
+
+      e ->
+        e
     end
   end
 
-  def assemble_stripe_objects(params = %{price: price, subscription: sbscr}, stripe) do 
-    case Service.Stripe.do_create_price(price, stripe) do 
-      {:ok , %{id: id}} -> 
+  def assemble_stripe_objects(params = %{price: price, subscription: sbscr}, stripe) do
+    case Service.Stripe.do_create_price(price, stripe) do
+      {:ok, %{id: id}} ->
         Map.delete(params, :price)
-        |> Map.put(:subscription, Map.put(sbscr, :items, [ %{ price: id } ]))
+        |> Map.put(:subscription, Map.put(sbscr, :items, [%{price: id}]))
         |> assemble_stripe_objects(stripe)
-      e -> e
+
+      e ->
+        e
     end
   end
 
-  def assemble_stripe_objects(%{payment_intent: pi}, stripe) do 
-      Service.Stripe.do_create_payment_intent(pi, stripe)
+  def assemble_stripe_objects(%{payment_intent: pi}, stripe) do
+    Service.Stripe.do_create_payment_intent(pi, stripe)
   end
 
-  def assemble_stripe_objects(%{price: price}, stripe) do 
-      Service.Stripe.do_create_price(price, stripe)
+  def assemble_stripe_objects(%{price: price}, stripe) do
+    Service.Stripe.do_create_price(price, stripe)
   end
 
-  def assemble_stripe_objects(%{customer: customer}, stripe) do 
-      Service.Stripe.do_create_customer(customer, stripe)
+  def assemble_stripe_objects(%{customer: customer}, stripe) do
+    Service.Stripe.do_create_customer(customer, stripe)
   end
 
-
-  def assemble_stripe_objects(%{subscription: sbscr}, stripe) do 
-      Service.Stripe.do_create_subscription(sbscr, stripe)
+  def assemble_stripe_objects(%{subscription: sbscr}, stripe) do
+    Service.Stripe.do_create_subscription(sbscr, stripe)
   end
 
-  def assemble_stripe_objects(%{}, _stripe) do 
+  def assemble_stripe_objects(%{}, _stripe) do
     {:error, "Provide Stripe objects to create"}
   end
-
-
 
   defp payment_intent_metadata(%ActionPage{
          name: name,
@@ -149,4 +152,3 @@ defmodule ProcaWeb.Resolvers.Service do
   defp put_contact_ref(map, %{contact_ref: ref}), do: Map.put(map, "contactRef", ref)
   defp put_contact_ref(map, _meta), do: map
 end
-

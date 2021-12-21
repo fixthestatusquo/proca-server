@@ -10,7 +10,9 @@ defmodule Proca.Repo do
       {:ok, record} ->
         Notify.created(record)
         {:ok, record}
-      {:error, _errors} = e -> e
+
+      {:error, _errors} = e ->
+        e
     end
   end
 
@@ -19,7 +21,9 @@ defmodule Proca.Repo do
       {:ok, record} ->
         Notify.updated(record)
         {:ok, record}
-      {:error, _errors} = e -> e
+
+      {:error, _errors} = e ->
+        e
     end
   end
 
@@ -40,7 +44,10 @@ defmodule Proca.Repo do
       {:ok, result} ->
         Notify.multi(operation_name, result)
         {:ok, result}
-      {:error, _error} = e -> e
+
+      {:error, _error} = e ->
+        e
+
       {:error, _failed, error, _so_far} = e ->
         if opts[:all_error] do
           e
@@ -55,7 +62,9 @@ defmodule Proca.Repo do
       {:ok, record} ->
         Notify.deleted(record)
         {:ok, record}
-      {:error, _errors} = e -> e
+
+      {:error, _errors} = e ->
+        e
     end
   end
 

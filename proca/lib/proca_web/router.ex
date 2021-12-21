@@ -8,7 +8,7 @@ defmodule ProcaWeb.Router do
   # import Phoenix.LiveView.Router
   use Plug.ErrorHandler
 
-  def allow_origin, do: Application.get_env( :proca, ProcaWeb.Endpoint)[:allow_origin]
+  def allow_origin, do: Application.get_env(:proca, ProcaWeb.Endpoint)[:allow_origin]
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -51,13 +51,13 @@ defmodule ProcaWeb.Router do
     get "/", ProcaWeb.HomepageController, :index
   end
 
-  scope "/link" do 
+  scope "/link" do
     pipe_through [:api]
 
     get "/s/:action_id/:verb/:ref", ProcaWeb.ConfirmController, :supporter
     get "/ok/:org_id/:action_id", ProcaWeb.ConfirmController, :double_opt_in
     get "/:verb/:code", ProcaWeb.ConfirmController, :confirm
-    #get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
+    # get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
   end
 
   scope "/webhook" do

@@ -94,7 +94,7 @@ defmodule ProcaWeb.UserAuth do
     assign(conn, :user, user)
   end
 
-  def assign_current_user(conn, user) do 
+  def assign_current_user(conn, user) do
     assign(conn, :user, user)
   end
 
@@ -125,12 +125,12 @@ defmodule ProcaWeb.UserAuth do
     end
   end
 
-  def redirect_if_sso(conn, _opts) do 
-    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
+  def redirect_if_sso(conn, _opts) do
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do
       conn
       |> redirect(external: config(:sso, :home_url))
       |> halt()
-    else 
+    else
       conn
     end
   end
@@ -161,31 +161,33 @@ defmodule ProcaWeb.UserAuth do
 
   defp signed_in_path(_conn), do: "/"
 
-  defp home_url(conn) do 
-    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
-      config(:sso, :home_url) 
+  defp home_url(conn) do
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do
+      config(:sso, :home_url)
     else
       "/"
     end
   end
 
-  def sign_in_url(conn) do 
-    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do 
+  def sign_in_url(conn) do
+    if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do
       config(:sso, :home_url)
     else
       Routes.user_session_path(conn, :new)
     end
   end
 
-  def sso_url(_conn) do 
-    if auth_enabled?(:sso) and config(:sso, :home_url) do 
+  def sso_url(_conn) do
+    if auth_enabled?(:sso) and config(:sso, :home_url) do
       config(:sso, :home_url)
-    else 
+    else
       nil
     end
   end
 
-  def auth_enabled?(:local), do: (Application.get_env(:proca, __MODULE__) |> get_in([:local, :enabled]))
-  def auth_enabled?(:sso), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, :enabled]))
-  defp config(:sso, k), do: (Application.get_env(:proca, __MODULE__) |> get_in([:sso, k]))
+  def auth_enabled?(:local),
+    do: Application.get_env(:proca, __MODULE__) |> get_in([:local, :enabled])
+
+  def auth_enabled?(:sso), do: Application.get_env(:proca, __MODULE__) |> get_in([:sso, :enabled])
+  defp config(:sso, k), do: Application.get_env(:proca, __MODULE__) |> get_in([:sso, k])
 end

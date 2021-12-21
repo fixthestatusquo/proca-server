@@ -9,6 +9,5 @@ defmodule Proca.Repo.Migrations.AddDeliverySettings do
     alter table(:campaigns) do
       add :force_delivery, :boolean, null: false, default: false
     end
-
   end
 end
