@@ -5,6 +5,7 @@ defmodule ProcaWeb.Schema.EciSchema do
   use Absinthe.Schema
   alias ProcaWeb.Resolvers
   alias ProcaWeb.Resolvers.ReportError
+  import ProcaWeb.Resolvers.AuthNotation
 
   import_types(Absinthe.Type.Custom)
 
@@ -31,7 +32,9 @@ defmodule ProcaWeb.Schema.EciSchema do
       @desc "Get action page by url the widget is displayed on (DEPRECATED, use name)"
       arg(:url, :string)
 
-      resolve(&Resolvers.ActionPage.find/3)
+      load :action_page, by: [:id, :name, :url], preload: [[campaign: :org], :org]
+      resolve fn _, _, %{context: %{action_page: ap}} -> {:ok, ap} end
+
       if ReportError.enabled?, do: middleware ReportError
     end
   end

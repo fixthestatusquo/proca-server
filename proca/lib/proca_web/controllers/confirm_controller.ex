@@ -160,7 +160,6 @@ defmodule ProcaWeb.ConfirmController do
     if args.valid? do 
       {:ok, apply_changes(args)}
     else 
-      IO.inspect(args)
       {:error, 400, "malformed link"}
     end
   end
@@ -175,6 +174,23 @@ defmodule ProcaWeb.ConfirmController do
 
   defp get_confirm(%{code: code}) do 
     Confirm.by_open_code(code)
+  end
+
+  # XXX complete
+  def double_opt_in(conn, params) do
+    # find contact by action_id + org_id
+    # check if processing status delivered
+    # flag double_opt_in
+    # re-send to processing
+    # XXX problem: how to find out delived/dblOptIn+ using ProcessOld server?
+    #  - add new flag? dblDelivered? new processing status ?
+    #  - redelivery vs TYE sender - endless loop
+    #  - IDEA: timeout no dblOptIn?
+    #  - IDEA: MTT send regardless of confirming status?
+    #
+    # huh, this dblOptIn is messaging
+    #
+    {:ok, ""}
   end
 
   defp error_msg(msg) when is_bitstring(msg) do 

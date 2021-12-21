@@ -5,7 +5,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
 
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
 
   input_object :target_email_input do
     field :email, non_null(:string)
@@ -35,6 +35,10 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :upsert_targets, type: non_null(list_of(:target)) do
       arg :targets, non_null(list_of(:target_input))
       arg :campaign_id, non_null(:integer)
+
+      load :campaign, by: [id: :campaign_id]
+      determine_auth for: :campaign
+      allow [:manage_campaigns]
 
       resolve(&Resolvers.Target.upsert_targets/3)
     end

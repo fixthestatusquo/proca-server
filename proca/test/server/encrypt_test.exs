@@ -18,13 +18,13 @@ defmodule Server.EncryptTest do
 
   test "Encryption key is updated using notification", %{red_org: red_org} do
     key = Factory.insert(:public_key, org: red_org, active: true)
-    Proca.Server.Notify.public_key_activated(red_org, key)
+    Proca.Server.Notify.updated(key)
+
     {encrypted, nonce, enc_id, sign_id} = Encrypt.encrypt(red_org, "tabula rasa")
     assert not is_nil(nonce)
     assert enc_id == key.id
 
-    instance_org =
-      Application.get_env(:proca, Proca)[:org_name] |> Org.get_by_name([:active_public_keys])
+    instance_org = Org.one([:instance, :active_public_keys])
 
     instance_key = instance_org.public_keys |> List.first()
     assert sign_id == instance_key.id

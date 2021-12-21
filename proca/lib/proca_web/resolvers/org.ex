@@ -8,10 +8,9 @@ defmodule ProcaWeb.Resolvers.Org do
 
   alias Proca.{ActionPage, Campaign, Action, Permission}
   alias Proca.{Org, Staffer, PublicKey, Service, Auth}
-  alias ProcaWeb.Helper
+  alias ProcaWeb.{Error, Helper}
   alias ProcaWeb.Resolvers.ChangeAuth
   alias Ecto.Multi
-  alias Proca.Server.Notify
 
   alias Proca.Repo
   import Logger
@@ -31,19 +30,11 @@ defmodule ProcaWeb.Resolvers.Org do
       |> Repo.one()
 
     case c do
-      nil -> {:error, "not_found"}
+      nil -> {:error, %Error{message: "Cannot find campaign", code: "not_found"}}
       c -> {:ok, c}
     end
   end
 
-  def campaigns(org, _, _) do
-    cl =
-      Campaign.select_by_org(org)
-      |> preload([c], [:org])
-      |> Repo.all()
-
-    {:ok, cl}
-  end
 
   def action_pages_select(query, %{select: %{campaign_id: cid}}) do
     query
@@ -63,22 +54,8 @@ defmodule ProcaWeb.Resolvers.Org do
     {:ok, c}
   end
 
-  def action_page(%{id: org_id}, params, _) do
-    case ProcaWeb.Resolvers.ActionPage.find(nil, params, nil) do
-      {:ok, %ActionPage{org_id: ^org_id}} = ret ->
-        ret
+  def action_page(_, _, %{context: %{action_page: page}}), do: {:ok, page}
 
-      {:ok, %ActionPage{}} ->
-        {:error,
-         %{
-           message: "Action page not found",
-           extensions: %{code: "not_found"}
-         }}
-
-      {:error, x} ->
-        {:error, x}
-    end
-  end
 
   def org_personal_data(org, _args, _ctx) do
     {
@@ -120,53 +97,52 @@ defmodule ProcaWeb.Resolvers.Org do
     args = args
     |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)
 
-    chset = Org.changeset(org, args)
-    case Repo.update(chset) do 
-      {:ok, org} -> 
-        Proca.Server.Notify.org_updated(org, chset)
-        {:ok, org}
-      {:error, errors} -> {:error, Helper.format_errors(errors) }
-    end
+    Org.changeset(org, args)
+    |> Repo.update_and_notify()
   end
 
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
-    perms = Staffer.Role.permissions(:owner)
+    defaults = %{email_from: user.email}
 
-    op = Multi.new()
-    |> Multi.insert(:org, Org.changeset(%Org{}, params) |> change(email_from: user.email))
-    |> Multi.run(:staffer, fn _repo, %{org: org} ->
-      Staffer.create(user: user, org: org, perms: perms)
+    result = Multi.new()
+    |> Multi.insert(:org, Org.changeset(%Org{}, Map.merge(defaults, params)))
+    |> Multi.insert(:staffer, fn %{org: org} ->
+      Staffer.changeset(%{user: user, org: org, role: :owner})
     end)
+    |> Repo.transaction_and_notify(:user_created_org)
 
-    case Repo.transaction(op) do
+    case result do
       {:ok, %{org: org, staffer: staffer}} ->
-        Proca.Server.Notify.org_created(org)
-
         %Auth{user: user, staffer: staffer}
         |> ChangeAuth.return({:ok, org})
 
-      {:error, _fail_op, fail_val, _ch} -> {:error, fail_val}
-    end
+      {:error, _error} = e -> e
+     end
   end
 
   def delete_org(_, _, %{context: %{org: org}}) do
-    case Repo.delete(org) do
-      {:ok, _} ->
-        Proca.Server.Notify.org_deleted(org)
-        {:ok, true}
-      {:error, ch} -> {:error, Helper.format_errors(ch)}
+    # Try to delete campaigns of this org but do not fail if you can't
+    campaigns = Campaign.all(org: org)
+
+    for c <- campaigns do
+      Repo.transaction_and_notify(Campaign.delete(c), :delete_campaign)
     end
-  end
+
+    action_pages = ActionPage.all(org: org)
+
+    for ap <- action_pages do
+      Repo.transaction_and_notify(ActionPage.delete(ap), :delete_action_page)
+    end
+
+    case Repo.delete_and_notify(Org.delete(org)) do
+      {:ok, _removed} -> {:ok, :success}
+      e -> e
+    end
+   end
 
   def update_org(_p, %{input: attrs}, %{context: %{org: org}}) do
-    changeset = Org.changeset(org, attrs)
-    case changeset |> Repo.update()
-      do
-      {:error, ch} -> {:error, Helper.format_errors(ch)}
-      {:ok, org} ->
-        Proca.Server.Notify.org_updated(org, changeset)
-        {:ok, org}
-    end
+    Org.changeset(org, attrs)
+    |> Repo.update_and_notify()
   end
 
   def list_keys(org_id, criteria) do
@@ -288,47 +264,24 @@ defmodule ProcaWeb.Resolvers.Org do
          }}
       %PublicKey{} ->
         pk = PublicKey.activate_for(org, id)
-        Notify.public_key_activated(org, pk)
+        |> Repo.transaction_and_notify(:key_activated)
+
         {:ok, %{status: :success}}
     end
   end
 
-  def join_org(_, %{name: org_name}, %{context: %{auth: %Auth{user: user}}}) do 
-    with true <- Permission.can?(user, :join_orgs),
-         {:org, org} <- {:org, Org.one(name: org_name)}  do 
+  def join_org(_, _, %{context: %{org: org, auth: %Auth{user: user}}}) do
+    joining =
+      case Staffer.one(user: user, org: org) do
+        nil -> Staffer.changeset(%{user: user, org: org, role: :org_owner})
+        st = %Staffer{} -> Staffer.changeset(st, %{role: :owner})
+      end
 
-    joining = 
-    case Staffer.one(user: user, org: org) do 
-      nil -> Staffer.create(user: user, org: org, perms: [:org_owner])
-      st = %Staffer{} -> Staffer.update(st, [role: :owner])
-    end
-
-    case joining do 
-      {:ok, _} -> 
-        %Auth{user: user, staffer: joining} 
+    case Repo.insert(joining) do
+      {:ok, joined} ->
+        %Auth{user: user, staffer: joined}
         |> ChangeAuth.return({:ok, %{status: :success, org: org}})
       {:error, _} = e -> e
-    end 
-
-    else
-      {:org, nil} -> {:error, %{
-        message: "Org not found",
-        extensions: %{
-          code: "not_found"
-        }}}
-
-      false -> {:error, %{
-        message: "You need to have join_orgs permission to join orgs",
-        extensions: %{
-          code: "permission_denied"
-        }}}
-
-      {:admin, nil} -> {:error, %{
-        message: "Only members of #{Org.instance_org_name} can join organisations",
-        extensions: %{
-          code: "permission_denied"
-        }}}
-
     end 
   end
 end

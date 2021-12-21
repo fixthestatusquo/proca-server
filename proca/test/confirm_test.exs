@@ -9,7 +9,7 @@ defmodule ConfirmTest do
   describe "Confirm schema" do 
     test "has 1 charge normally" do 
       action = Factory.insert(:action)
-      cnf = Proca.Confirm.ConfirmAction.create(action)
+      cnf = Confirm.insert! Confirm.ConfirmAction.changeset(action)
       assert cnf.charges == 1
       assert cnf.subject_id == action.id 
       assert is_nil cnf.object_id 
@@ -21,7 +21,7 @@ defmodule ConfirmTest do
     test "can't go under 0 charges" do 
       action = Factory.insert(:action, processing_status: :confirming)
 
-      cnf = Proca.Confirm.ConfirmAction.create(action)
+      cnf = Confirm.insert! Confirm.ConfirmAction.changeset(action)
       assert :ok == Confirm.confirm(cnf)
 
       # reload with charge == 0 
@@ -37,7 +37,7 @@ defmodule ConfirmTest do
     end
 
     test "via api", %{conn: conn, red_org: red_org, red_bot: red_bot, yellow_ap: yellow_ap} do 
-      cnf = Proca.Confirm.AddPartner.create(yellow_ap, red_bot.user.email)
+      cnf = Confirm.AddPartner.changeset(yellow_ap, red_bot.user.email) |> Confirm.insert!()
       assert not is_nil(cnf.code)
       assert is_nil(cnf.object_id)
       assert cnf.subject_id == yellow_ap.id

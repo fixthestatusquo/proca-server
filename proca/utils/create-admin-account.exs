@@ -30,7 +30,7 @@ defmodule Proca.CreateAdminAccount do
     case user do
       nil -> IO.puts("I couldn't create or find a user with email \"#{email}\". Is it really an email?")
       %Proca.Users.User{} -> 
-        Proca.Users.User.update(user, [:admin])
+        Proca.Repo.update! Proca.Users.User.make_admin_changeset(user)
 
         IO.puts("""
 

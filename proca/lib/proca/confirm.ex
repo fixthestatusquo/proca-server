@@ -74,7 +74,7 @@ defmodule Proca.Confirm do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  import Proca.Repo
+  alias Proca.Repo
   alias Proca.{Confirm, Org}
   alias Proca.Users.User
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
@@ -113,45 +113,51 @@ defmodule Proca.Confirm do
   Try to insert the confirm with special handling of situation, when randomly generated code is duplicated.
   In case of duplication, we will keep adding one random digit to the code, until we succeed
   """
-  def create(ch = %Ecto.Changeset{data: %Confirm{}}) do 
-    case insert(ch) do 
+  def insert!(ch = %Ecto.Changeset{}) do
+    case Repo.insert(ch) do
       {:ok, cnf} -> cnf
 
-      {:error, %{errors: [{:code,_} | _]}} -> 
+      {:error, %{errors: [{:code, _} | _]}} ->
         code = get_change(ch, :code)
         random_digit = :rand.uniform(10)
         ch 
         |> change(code: code <> Integer.to_string(random_digit))
-        |> create()
+        |> insert!()
 
-      {:error, err} -> {:error, err} 
+      {:error, err} -> raise ArgumentError, "Cannot insert Confirm: #{inspect(err)}"
     end
   end
 
-  def create(attr) when is_map(attr) do 
-    changeset(attr) 
-    |> create()
+  def insert!(attr) when is_map(attr) do
+    changeset(attr)
+    |> insert!()
+  end
+
+  def insert_and_notify!(ch) do
+    cnf = insert!(ch)
+    Proca.Server.Notify.created cnf
+    cnf
   end
 
   def by_open_code(code) when is_bitstring(code) do
     from(c in Confirm, where: c.code == ^code and is_nil(c.object_id) and is_nil(c.email), limit: 1)
-    |> one()
+    |> Repo.one()
   end
 
   def by_object_code(object_id, code) when is_integer(object_id) and is_bitstring(code) do 
     from(c in Confirm, where: c.code == ^code and c.object_id == ^object_id, limit: 1)
-    |> one()
+    |> Repo.one()
   end
 
   def by_email_code(email, code)  when is_bitstring(email) and is_bitstring(code) do 
     from(c in Confirm, where: c.code == ^code and c.email == ^email, limit: 1)
-    |> one()
+    |> Repo.one()
   end
 
   def reject(confirm = %Confirm{}, auth \\ nil) do
     confirm 
     |> change(charges: 0) 
-    |> update!
+    |> Repo.update!
     |> Confirm.Operation.run(:reject, auth)
   end
 
@@ -164,7 +170,7 @@ defmodule Proca.Confirm do
         ok -> 
           confirm 
           |> change(charges: confirm.charges - 1) 
-          |> update!
+          |> Repo.update!
 
           ok
       end
@@ -217,15 +223,12 @@ defmodule Proca.Confirm do
       }
     end)
 
-    with {:ok, template_ref} <- EmailTemplateDirectory.ref_by_name_reload(
-                                    instance, operation.email_template(cnf))
-      do 
+    case EmailTemplateDirectory.ref_by_name_reload(instance, operation.email_template(cnf)) do
+      {:ok, template_ref} ->
         template = %EmailTemplate{ref: template_ref}
-
         EmailBackend.deliver(recipients, instance, template)
-      else 
-        :not_found -> {:error, :no_template}
-        :not_configured -> {:error, :no_template}
+      :not_found -> {:error, :no_template}
+      :not_configured -> {:error, :no_template}
     end
   end
 end

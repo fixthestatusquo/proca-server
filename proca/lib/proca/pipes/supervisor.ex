@@ -43,6 +43,19 @@ defmodule Proca.Pipes.Supervisor do
     end)
   end
 
+  @doc "Restart org pipes topology if configuration chanaged"
+  def reload_child(org = %Org{}) do
+    case Pipes.Topology.whereis(org) do
+      nil -> start_child(org)
+      pid ->
+        if GenServer.call(pid, {:configuration_change?, org}) do
+          info("Org processing configuration changed for #{org.name} (#{org.id})")
+          terminate_child(org)
+          start_child(org)
+        end
+    end
+  end
+
   def handle_connected() do 
     # run after the connection is made but synchronously, in which case we would have deadlock
     # waiting for OrgSupervisor->Topology->Connection.connection()

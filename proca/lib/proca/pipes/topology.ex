@@ -5,7 +5,10 @@ defmodule Proca.Pipes.Topology do
   Each Org has its own Topology server and set of exchanges/queues. Processing
   load and problems are isolated for each org.
 
-  This Topology service will reconfigure the excahnges and queues when notified by Proca.Server.Notify `org_updated`, `org_created` and `org_deleted`. These notifications are sent by the API layer when respective event occurs. They are not sent by operations on Proca.Org directly.
+  This Topology service will reconfigure the excahnges and queues when notified
+  by Proca.Server.Notify `updated`, `created` and `deleted`. These notifications
+  are sent by the API layer when respective event occurs. They are not sent by
+  operations on Proca.Org directly.
 
   (previously responsibility of Proca.Server.Plumbing)
 
@@ -78,17 +81,46 @@ defmodule Proca.Pipes.Topology do
     {:via, Registry, {Proca.Pipes.Registry, {__MODULE__, org_id}}}
   end
 
+  def whereis(o = %Org{}) do
+    {:via, Registry, {reg, nam}} = process_name(o)
+    case Registry.lookup(reg, nam) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
+  end
+
   ## Callbacks
+  @impl true
   def init(org = %Org{id: org_id}) do
+    config = configuration(org)
     Pipes.Connection.with_chan fn chan ->
       declare_exchanges(chan, org)
       declare_retry_circuit(chan, org)
-      declare_worker_queues(chan, org)
+      declare_worker_queues(chan, org, config)
       declare_custom_queues(chan, org)
     end
 
     # Setup queues (without the Broadway ones)
-    {:ok, %{org_id: org_id}}
+    {:ok, %{org_id: org_id, configuration: config}}
+  end
+
+  @impl true
+  def handle_call({:configuration_change?, org = %Org{}}, _from, st = %{configuration: current}) do
+    {
+      :reply,
+      configuration(org) != current,
+      st
+    }
+  end
+
+
+  def configuration(o = %Org{}) do
+    %{
+      confirm_supporter: Stage.EmailSupporter.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
+      email_supporter: Stage.EmailSupporter.start_for?(o),
+      sqs: Stage.SQS.start_for?(o),
+      webhook:  Stage.Webhook.start_for?(o)
+    }
   end
 
   @doc "Exchange name for an org, name is exchange name (stage name org fail, retry)"
@@ -130,33 +162,33 @@ defmodule Proca.Pipes.Topology do
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
   end
 
-  def declare_worker_queues(chan, o = %Org{}) do
+  def declare_worker_queues(chan, o = %Org{}, config) do
     [
       {
         xn(o, "confirm.supporter"),
         wqn(o, "email.supporter"),
-        bind: Stage.EmailSupporter.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
+        bind: config[:confirm_supporter],
         route: "#"
       },
 
       {
         xn(o, "deliver"),
         wqn(o, "email.supporter"),
-        bind: Stage.EmailSupporter.start_for?(o),
+        bind: config[:email_supporter],
         route: "#"
       },
 
       {
         xn(o, "deliver"),
         wqn(o, "sqs"),
-        bind: Stage.SQS.start_for?(o),
+        bind: config[:sqs],
         route: "#"
       },
 
       {
         xn(o, "event"),
         wqn(o, "webhook"),
-        bind: Stage.Webhook.start_for?(o),
+        bind: config[:webhook],
         route: "#"
       }
     ]

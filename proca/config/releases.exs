@@ -15,7 +15,7 @@ config :proca, Proca.Repo,
   queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000")
 
 config :proca, Proca.Pipes,
-  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL"),
+  url: System.get_env("AMQP_URL") || System.get_env("CLOUDAMQP_URL") || "",
   ssl_options: [
     cacertfile: System.get_env("AMQP_CACERTFILE"),
     certfile: System.get_env("AMQP_CERTFILE"),
@@ -58,23 +58,23 @@ bind_ip = System.get_env("LISTEN_IP", "0.0.0.0")
 
 config :proca, ProcaWeb.Endpoint,
   url: [
-    host: System.get_env("DOMAIN"),
+    host: System.get_env("DOMAIN", "localhost"),
     scheme: "https",
     port: 443
   ],
   http: [
     ip: bind_ip,
-    port: String.to_integer(System.get_env("PORT") || "4000")
+    port: String.to_integer(System.get_env("PORT", "4000"))
     # transport_options: [socket_opts: [:inet6]]
   ],
-  check_origin: ["//" <> System.get_env("DOMAIN")], # for WebSocket security
+  check_origin: ["//" <> System.get_env("DOMAIN", "localhost")], # for WebSocket security
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base,
   signing_salt: signing_salt,
   captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
 
 config :sentry,
-  dsn: System.get_env("SENTRY_DSN") || nil
+  dsn: System.get_env("SENTRY_DSN")
 
 config :proca, ProcaWeb.Resolvers.ReportError,
   enable: System.get_env("REPORT_USER_ERRORS") == "true" || false
@@ -86,13 +86,13 @@ config :proca, Proca.Service.Procaptcha,
   url: System.get_env("PROCAPTCHA_URL")
 
 config :proca, Proca,
-  org_name: System.get_env("ORG_NAME"),
-  stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL") || "60000"),
-  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL") || "30000"),
+  org_name: System.get_env("ORG_NAME", "instance"),
+  stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
+  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
   require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
 
 config :proca, Proca.Supporter,
-  fpr_seed: System.get_env("FINGERPRINT_SEED") || ""
+  fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 
 # Configures Elixir's Logger
 config :logger,
@@ -100,13 +100,17 @@ config :logger,
   format: "$date $time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :logger, :console,
+  format: "$date $time $metadata[$level] $message\n",
+  level: :info
+
 config :logger, :error_log,
   format: "$date $time $metadata[$level] $message\n",
-  path: System.get_env("LOGS_DIR") <> "/error.log",
+  path: System.get_env("LOGS_DIR", ".") <> "/error.log",
   level: :error
 
 config :logger, :audit_log,
-  path: System.get_env("LOGS_DIR") <> "/audit.log",
+  path: System.get_env("LOGS_DIR", ".") <> "/audit.log",
   level: :info,
   format: "$date $time [$level] $metadata $message\n",
   metadata: [:user, :op],

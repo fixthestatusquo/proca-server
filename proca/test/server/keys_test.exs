@@ -21,7 +21,7 @@ defmodule Proca.Server.KeysTest do
 
   test "Server works when instance org has keys", %{red_org: org} do
     {:ok, k} = PublicKey.build_for(org) |> Repo.insert()
-    PublicKey.activate_for(org, k.id)
+    PublicKey.activate_for(org, k.id) |> Repo.transaction()
 
     p = GenServer.start_link(Proca.Server.Keys, org.name)
     refute_receive({:EXIT, p, _}, 100)
@@ -31,8 +31,8 @@ defmodule Proca.Server.KeysTest do
     {:ok, pk1} = PublicKey.build_for(o1) |> Repo.insert()
     {:ok, pk2} = PublicKey.build_for(o2) |> Repo.insert()
 
-    PublicKey.activate_for(o1, pk1.id)
-    PublicKey.activate_for(o2, pk2.id)
+    PublicKey.activate_for(o1, pk1.id) |> Repo.transaction()
+    PublicKey.activate_for(o2, pk2.id) |> Repo.transaction()
     {:ok, p} = GenServer.start_link(Proca.Server.Keys, o1.name)
 
     {o1_priv, o2_pub, nonce1, key_ids} =
@@ -61,7 +61,7 @@ defmodule Proca.Server.KeysTest do
   test "I get null for recipient key if they don't have a key", %{red_org: o1, yellow_org: o2} do
     {:ok, pk1} = PublicKey.build_for(o1) |> Repo.insert()
 
-    PublicKey.activate_for(o1, pk1.id)
+    PublicKey.activate_for(o1, pk1.id) |> Repo.transaction()
     {:ok, p} = GenServer.start_link(Proca.Server.Keys, o1.name)
 
     assert :plaintext == GenServer.call(p, {:encryption, [from: o1.id, to: o2.id]})
