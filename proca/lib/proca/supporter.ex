@@ -6,7 +6,7 @@ defmodule Proca.Supporter do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage, Org, Action}
+  alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
@@ -27,15 +27,21 @@ defmodule Proca.Supporter do
 
     field :processing_status, ProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
+    field :email_status_changed, :naive_datetime
 
     timestamps()
   end
 
   @doc false
   def changeset(supporter, attrs) do
-    supporter
-    |> cast(attrs, [])
-    |> validate_required([])
+    ch =
+      supporter
+      |> cast(attrs, [:email_status])
+
+    case ch.changes do
+      %{email_status: _} -> change(ch, email_status_changed: NaiveDateTime.utc_now())
+      _ -> ch
+    end
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do
@@ -117,7 +123,7 @@ defmodule Proca.Supporter do
 
       supporter ->
         reject(supporter)
-        Repo.update!(change(supporter, email_status: args.reason))
+        Repo.update!(changeset(supporter, %{email_status: args.reason}))
     end
   end
 
