@@ -47,6 +47,8 @@ defmodule Proca.Application do
       :ignore_rabbitmq_progress_reports,
       {&:logger_filters.domain/2, {:stop, :equal, [:progress]}}
     )
+    # Sentry logger
+    Logger.add_backend(Sentry.LoggerBackend)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

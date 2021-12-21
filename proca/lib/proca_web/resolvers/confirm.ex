@@ -1,6 +1,7 @@
 defmodule ProcaWeb.Resolvers.Confirm do 
   import Proca.Repo
   alias Proca.{ActionPage, Campaign, Org}
+  alias ProcaWeb.Error
 
   def get(%{code: code, email: email}) when is_bitstring(code) and is_bitstring(email) do 
     Proca.Confirm.by_email_code(email, code)
@@ -49,6 +50,7 @@ defmodule ProcaWeb.Resolvers.Confirm do
       {:ok, ca = %Campaign{}} -> {:ok, %{status: :success, campaign: ca}}
       {:ok, org = %Org{}} -> {:ok, %{status: :success, org: org}}
       {:noop, _} -> {:ok, %{status: :noop}}
+      {:error, e} when is_bitstring(e) -> {:error, %Error{message: e, code: e}}
       {:error, e} -> {:error, e}
     end
   end

@@ -20,7 +20,7 @@ defmodule ActionPageTest do
     })
     |> Repo.insert_or_update!()
 
-    ap = ActionPage.find(red_ap.id)
+    ap = ActionPage.one(id: red_ap.id, preload: [:org, :campaign])
 
     assert ap.name == "stop-fires.org/petition"
   end

@@ -3,11 +3,12 @@ defmodule Proca.Server.Notify do
   Server that decides what actions should be done after different events
   """
   alias Proca.Repo
-  alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service}
+  alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service, ActionPage, Campaign}
   alias Proca.Stage.Event
   alias Proca.Pipes
   import Logger
 
+  # Instance wide notification settings
 
   @type global_confirm_processing?() :: {boolean, number}
   defp global_confirm_processing?() do
@@ -20,50 +21,41 @@ defmodule Proca.Server.Notify do
   end
 
   ####################
-  def instance_org_updated(org) do
-    Proca.Server.Instance.update(org)
-  end
 
-  def org_created(org = %Org{}) do
+  @doc """
+  Notifications on creation of record
+  """
+  def created(org = %Org{}) do
     start_org_pipes(org)
   end
 
-  def org_updated(org = %Org{}, changeset) do
-    restart_org_pipes(org, changeset)
+  def created(%ActionPage{} = action_page) do
+    updated(action_page)
+  end
+
+  def created(%Confirm{operation: :launch_page, subject_id: campaign_id} = cnf) do
+    case Campaign.one(id: campaign_id, preload: [:org]) do
+      nil -> :ok
+      %Campaign{org: %Org{} = org} -> confirm_notify(cnf, org)
+    end
+  end
+
+  def created(%Confirm{} = cnf) do
+    confirm_notify(cnf, nil)
+  end
+
+  def created(_), do: :ok
+
+
+  @doc """
+  Notifications on update of record
+  """
+  def updated(org = %Org{}) do
+    restart_org_pipes(org)
     if org.name == Org.instance_org_name, do: instance_org_updated(org)
-   end
-
-  def org_deleted(org = %Org{}) do
-    stop_org_pipes(org)
   end
 
-  def org_confirm_created(cnf = %Confirm{}, org = %Org{}) do
-    confirm_notify(cnf, org)
-  end
-
-  @spec action_created(%Action{}, %Supporter{} | nil) :: :ok
-  def action_created(action, supporter \\ nil) do
-    increment_counter(action, supporter)
-    process_action(action)
-    update_action_page_status(action)
-    :ok
-  end
-
-  @spec public_key_created(Org, PublicKey) :: :ok
-  def public_key_created(org, key) do
-    :ok
-  end
-
-  @spec public_key_activated(Org, PublicKey) :: :ok
-  def public_key_activated(org, key) do
-    Proca.Server.Keys.update_key(org, key)
-  end
-
-  def action_page_added(action_page) do
-    action_page_updated(action_page)
-  end
-
-  def action_page_updated(action_page) do
+  def updated(%ActionPage{} = action_page) do
     action_page = Repo.preload(action_page, [:org, :campaign])
     publish_subscription_event(action_page, action_page_upserted: "$instance")
     if not is_nil(action_page.org) do
@@ -72,13 +64,68 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
-  # XXX add Campaign
+  def updated(%PublicKey{active: true} = key) do
+    key_activated(key)
+  end
+
+  def updated(_), do: :ok
 
 
+
+  @doc """
+  Notifications on deletion of record
+  """
+  def deleted(org = %Org{}) do
+    stop_org_pipes(org)
+  end
+  def deleted(_), do: :ok
+
+
+  def multi(op, %{action: action})
+  when op in [:add_action, :add_action_contact] do
+    increment_counter(action, action.supporter)
+    process_action(action)
+    update_action_page_status(action)
+    :ok
+  end
+
+  def multi(:key_activated, m = %{active_key: key}) do
+    key_activated(key)
+  end
+
+  def multi(:upsert_campaign, records) do
+    {campaign, pages_map} = Map.pop(records, :campaign)
+
+    updated(campaign)
+    Enum.each(pages_map, fn {_k, page} ->
+      updated(page)
+    end)
+  end
+
+  def multi(:user_created_org, %{org: org}) do
+    created(org)
+  end
+
+  def multi(:delete_action_page, result) do
+    {_, page} = Enum.find(result, fn {{:action_page, _}, _} -> true; _ -> false end)
+    info("Deleted page #{inspect page}")
+  end
+
+  def multi(:delete_campaign, result) do
+    {_, campaign} = Enum.find(result, fn {{:campaign, _}, _} -> true; _ -> false end)
+    info("Deleted campaign #{inspect campaign}")
+  end
 
   ##### SIDE EFFECTS ######
+  def instance_org_updated(org) do
+    Proca.Server.Instance.update(org)
+  end
 
-  def confirm_notify(cnf, org) do
+  def key_activated(%PublicKey{active: true, org: org} = key) do
+    Proca.Server.Keys.update_key(org, key)
+  end
+
+  def confirm_notify(cnf, %Proca.Org{} = org) do
     {global, instance_org_id} = global_confirm_processing?()
 
     if not global and not org.confirm_processing do
@@ -89,45 +136,40 @@ defmodule Proca.Server.Notify do
     end
   end
 
+  def confirm_notify(cnf, nil) do
+    {global, instance_org_id} = global_confirm_processing?()
+
+    if not global do
+      send_confirm_by_email(cnf, nil)
+    else
+      send_confirm_as_event(cnf, instance_org_id)
+    end
+  end
+
   def send_confirm_as_event(cnf, org_id) do
       Event.emit(:confirm_created, cnf, org_id)
   end
 
-  def send_confirm_by_email(cnf, org) do
+  def send_confirm_by_email(cnf = %Proca.Confirm{email: nil}, org) do
     recipients =
-    Repo.preload(org, [staffers: :user]).staffers
-    |> Enum.map(fn %{user: user} -> user.email end)
-
+      Repo.preload(org, [staffers: :user]).staffers
+      |> Enum.map(fn %{user: user} -> user.email end)
 
     cnf = Repo.preload(cnf, [:creator])
     Proca.Confirm.notify_by_email(cnf, recipients)
    end
 
+  def send_confirm_by_email(cnf = %Proca.Confirm{email: _email}, nil) do
+    Proca.Confirm.notify_by_email(cnf)
+  end
 
   def start_org_pipes(org = %Org{}) do
       Pipes.Supervisor.start_child(org)
   end
 
-  def restart_org_pipes(org = %Org{}, %Ecto.Changeset{changes: changes}) do
-    relevant_changes = Enum.any?([
-      :email_backend_id, # transactional emails
-      :email_template_id,
-      :system_sqs_deliver,
-      :custom_supporter_confirm,
-      :custom_action_confirm,
-      :custom_action_deliver,
-      :email_opt_in,
-      :email_opt_in_template,
-      :event_backend_id,
-      :event_processing,
-      :confirm_processing
-    ], fn prop -> Map.has_key?(changes, prop) end)
-
-    if relevant_changes do
-      Pipes.Supervisor.terminate_child(org)
-      Pipes.Supervisor.start_child(org)
-    end
-    end
+  def restart_org_pipes(org = %Org{}) do
+    Pipes.Supervisor.reload_child(org)
+  end
 
   def stop_org_pipes(org = %Org{}) do
     Pipes.Supervisor.terminate_child(org)

@@ -14,7 +14,8 @@ defmodule Proca.Confirm.LaunchPageTest do
   end
 
   test "email variables contain twitter meta", %{
-    yellow_org: yellow_org, yellow_user: yellow_user, yellow_owner: yellow_owner, red_ap: red_ap
+    yellow_org: yellow_org, yellow_user: yellow_user, yellow_owner: yellow_owner,
+    red_user: red_user, red_ap: red_ap
   } do 
     change(yellow_org, config: %{
       "twitter" => %{
@@ -33,17 +34,16 @@ defmodule Proca.Confirm.LaunchPageTest do
       }
     }) |> Repo.update!
     
-    {:ok, new_page} = Proca.ActionPage.create_copy_in(yellow_org, red_ap, %{name: red_ap.name <> "/partner"})
+    {:ok, new_page} = Repo.insert Proca.ActionPage.create_copy_in(yellow_org, red_ap, %{name: red_ap.name <> "/partner"})
     assert yellow_owner.id != nil
     auth = %Proca.Auth{user: yellow_user, staffer: yellow_owner}
-    cnf = Confirm.LaunchPage.create(new_page, auth, "Request message")
+    cnf = Confirm.LaunchPage.changeset(new_page, auth, "Request message")
+    |> Confirm.insert_and_notify!()
 
     assert cnf.message == "Request message"
     assert cnf.creator_id != nil
 
-    Proca.Server.Notify.org_confirm_created(cnf, yellow_org)
-
-    owner_mbox = Proca.TestEmailBackend.mailbox yellow_owner.user.email    
+    owner_mbox = Proca.TestEmailBackend.mailbox red_user.email
 
     [%{provider_options: %{fields: all_perso_fields}}] = owner_mbox
 

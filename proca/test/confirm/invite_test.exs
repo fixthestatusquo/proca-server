@@ -12,14 +12,14 @@ defmodule Proca.Confirm.InviteTest do
   end
 
   test "Invite red org to yellow campaign", %{red_bot: red_staff, yellow_ap: ap, yellow_org: yellow_org} do 
-    cnf = Confirm.AddPartner.create(ap, red_staff.user.email)
+    cnf = Confirm.AddPartner.changeset(ap, red_staff.user.email)
+    |> Confirm.insert_and_notify!()
+
     assert %{operation: :add_partner} = cnf
     assert String.length(cnf.code) > 0
     assert cnf.email == red_staff.user.email
     assert cnf.subject_id == ap.id
 
-    assert :ok == Confirm.notify_by_email(cnf)
-    
     [sent_mail] = TestEmailBackend.mailbox(red_staff.user.email)
     fields = sent_mail.provider_options.fields
     assert fields["code"] == cnf.code

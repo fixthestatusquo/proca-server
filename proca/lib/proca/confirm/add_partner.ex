@@ -5,10 +5,10 @@ defmodule Proca.Confirm.AddPartner do
   """
   alias Proca.{Action, ActionPage, Confirm, Staffer, Auth}
   @behaviour Confirm.Operation
-  import Proca.Changeset 
   import Proca.Repo
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
+  alias Proca.Confirm
 
   @doc """
   # Inviting to a campaign (by email)
@@ -20,18 +20,19 @@ defmodule Proca.Confirm.AddPartner do
   # Inviting to a campaign (open)
   clone_action_page(action_page, nil)
   """
-  def create(%ActionPage{id: id, campaign: _camp}, email) when is_bitstring(email) do
+  def changeset(%ActionPage{id: id, campaign: _camp}, email) when is_bitstring(email) do
     %{
       operation: :add_partner, 
       subject_id: id,
       email: email
-    } |> Confirm.create()
+    }
+    |> Confirm.changeset()
   end
 
   def try_create_copy(org, page, new_name, tryno \\ 0) do 
     name = if tryno > 0, do: new_name <> "-#{tryno}", else: new_name
 
-    case ActionPage.create_copy_in(org, page, %{name: name}) do 
+    case insert_and_notify ActionPage.create_copy_in(org, page, %{name: name}) do
       {:ok, p} -> {:ok, p}
       {:error, ch = %{errors: errors}} -> 
         if has_error?(errors, :name, "has already been taken") do

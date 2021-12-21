@@ -1,12 +1,12 @@
 defmodule ProcaWeb.Schema.InstanceTypes do
   use Absinthe.Schema.Notation
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
 
   # XXX unused, remove?
 
   object :instance_queries do
     field :instance, non_null(:instance) do
-      middleware Authorized
+      allow [:instance_owner]
     end
   end
 

@@ -6,15 +6,11 @@ defmodule ProcaWeb.Schema.ActionTypes do
   use Absinthe.Schema.Notation
 
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
   alias ProcaWeb.Resolvers.ReportError
 
   object :action_queries do
     field :export_actions, non_null(list_of(:action)) do
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:export_contacts]
-
       @desc "Organization name"
       arg(:org_name, non_null(:string))
       @desc "Limit results to campaign name"
@@ -33,6 +29,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
       @desc "Only download opted in contacts and actions (default true)"
       arg :onlyOptIn, :boolean
+
+      load :org, by: [name: :org_name]
+      determine_auth for: :org
+      allow [:export_contacts]
 
       resolve &Resolvers.ExportActions.export_actions/3
     end

@@ -11,7 +11,7 @@ defmodule Proca.Confirm.AddStaffer do
   alias Proca.{Campaign, ActionPage, Staffer, Org, Auth, Error, Permission}
   import Proca.Repo
 
-  def create(email, role, %Auth{user: user, staffer: %Staffer{org_id: org_id}}, message \\ nil) when is_bitstring(email) do
+  def changeset(email, role, %Auth{user: user, staffer: %Staffer{org_id: org_id}}, message \\ nil) when is_bitstring(email) do
     role_perms = Permission.add(0, Staffer.Role.permissions(role))
 
     %{
@@ -22,13 +22,13 @@ defmodule Proca.Confirm.AddStaffer do
       message: message,
       creator: user
     }
-    |> Confirm.create()
+    |> Confirm.changeset()
   end
   
   def run(%Confirm{operation: :add_staffer, subject_id: org_id, object_id: perms}, :confirm, %Auth{user: user}) do 
     with {:org, org = %Org{}} <- {:org, Org.one(id: org_id)},
       {:exists?, nil} <- {:exists?, Staffer.one(org: org, user: user)},
-      {:ok, new_staffer} <- Staffer.create(user: user, org: org, perms: perms) do 
+      {:ok, _new_staffer} <- insert Staffer.changeset(%{user: user, org: org, perms: perms}) do
 
       {:ok, org}
     else 

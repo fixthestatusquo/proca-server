@@ -34,7 +34,8 @@ defmodule Proca.Permission do
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
     # XXX this is unused but maybe could be usefull for moderation
-    launch_action_page: 1 <<< 19
+    launch_action_page: 1 <<< 19,
+    change_campaign_settings: 1 <<< 20
   ]
 
   @admin_bits 0x0F 
@@ -96,6 +97,8 @@ defmodule Proca.Permission do
     perms ||| permission
   end
 
+  def add(permission) when is_list(permission), do: add(0, permission)
+
   def remove(perms, permission) when is_integer(perms) and is_atom(permission) do
     bit = @bits[permission]
     perms &&& bnot(bit)
@@ -119,7 +122,7 @@ defmodule Proca.Permission do
 
   def to_list(perms) when is_integer(perms) do
     Enum.filter(@bits, fn {_p, b} -> (b &&& perms) > 0 end)
-    |> Enum.map(fn {p, _b} -> p end)
+    |> Enum.map(fn {p, _b} -> p   end)
   end
 end
 

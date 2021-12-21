@@ -124,6 +124,22 @@ defmodule Proca.Users.User do
     |> validate_password(opts)
   end
 
+  def generate_password_changeset(user) do
+    change(user, password: StrongPassword.generate())
+  end
+
+  def perms_changeset(user, perms) do
+    change(user, perms: Proca.Permission.add(0, perms))
+  end
+
+  def make_admin_changeset(user) do
+    perms_changeset(user, [
+          :instance_owner,
+          :join_orgs,
+          :manage_users,
+          :manage_orgs])
+  end
+
   @doc """
   Confirms the account by setting `confirmed_at`.
   """
@@ -176,7 +192,7 @@ defmodule Proca.Users.User do
     end
   end
 
-  def details_changeset(user, attrs, _opts \\ []) do
+  def details_changeset(user, attrs) do
     alias Proca.Contact.Input
     user
     |> cast(attrs, [:job_title, :phone, :picture_url])
@@ -189,47 +205,20 @@ defmodule Proca.Users.User do
   def all(q, [{:email, email} | kw]) do 
     q |> where([u], u.email == ^email) |> all(kw)
   end
+
   def all(q, [{:email_like, email} | kw]) do 
     q |> where([u], like(u.email, ^email)) |> all(kw)
   end
-  def all(q, [{:id, id} | kw]) do 
-    q |> where([u], u.id == ^id) |> all(kw)
-  end
-  def all(q, [{:org_name, org_name} | kw]) do 
+
+  def all(q, [{:org_name, org_name} | kw]) do
     q 
     |> join(:inner, [u], s in assoc(u, :staffers))
     |> join(:inner, [u, s], o in assoc(s, :org))
     |> where([u, s, o], o.name == ^org_name)
     |> all(kw)
   end
+
   def all(q, [:preload | kw]) do 
     q |> preload([u], [staffers: :org]) |> all(kw)
   end
-
-  def update(user, [:admin | kw]) do 
-    update(user, [{:perms, [
-      :instance_owner, 
-      :join_orgs, 
-      :manage_users, 
-      :manage_orgs]} | kw])
-  end
-
-  def update(user, [:generate_password | kw]) do 
-    change(user, password: StrongPassword.generate())
-    |> update(kw)
-  end
-
-  def update(user, [{:perms, permissions} | kw]) do 
-    change(user, perms: Proca.Permission.add(0, permissions))
-    |> update(kw)
-  end
-
-  def update(user, [{:params, params} | kw]) do
-    details_changeset(user, params)
-    |> update(kw)
-  end
-
-  # XXX
-  # -  def reset_password(email) do
-  # -  def params_for(email) do
- end
+end
