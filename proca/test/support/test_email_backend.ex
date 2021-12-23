@@ -189,4 +189,8 @@ defmodule Proca.TestEmailBackend do
 
     :ok
   end
+
+  @impl true
+  def handle_bounce(type) do
+  end
 end

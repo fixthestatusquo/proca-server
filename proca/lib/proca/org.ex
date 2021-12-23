@@ -36,10 +36,9 @@ defmodule Proca.Org do
     field :email_from, :string
     belongs_to :template_backend, Proca.Service
 
-    # double opt in configuration
-    # XXX maybe move these two into config
-    field :email_opt_in, :boolean, default: false
-    field :email_opt_in_template, :string
+    # supporter confirm in configuration
+    field :supporter_confirm, :boolean, default: false
+    field :supporter_confirm_template, :string
 
     # confirming and delivery configuration
     field :custom_supporter_confirm, :boolean, default: false
@@ -66,8 +65,8 @@ defmodule Proca.Org do
       :title,
       :contact_schema,
       :email_from,
-      :email_opt_in,
-      :email_opt_in_template,
+      :supporter_confirm,
+      :supporter_confirm_template,
       :config,
       :high_security,
       :custom_supporter_confirm,
@@ -81,7 +80,7 @@ defmodule Proca.Org do
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
     |> Proca.Contact.Input.validate_email(:email_from)
-    |> validate_change(:email_opt_in_template, fn f, tmpl_name ->
+    |> validate_change(:supporter_confirm_template, fn f, tmpl_name ->
       case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
         {:ok, _ref} -> []
         :not_found -> [{f, "template not found"}]

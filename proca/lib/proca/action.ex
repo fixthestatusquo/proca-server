@@ -110,6 +110,7 @@ defmodule Proca.Action do
   def all(q, [{:processing_status, status} | kw]) when is_list(status) do
     q
     |> where([a], a.processing_status in ^status)
+    |> all(kw)
   end
 
   def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do

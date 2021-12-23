@@ -31,9 +31,9 @@ defmodule Proca.Service.EmailTemplateDirectory do
 
   def load_templates(org) do
     org = Repo.preload(org, [:template_backend])
-    %Org{template_backend: tb} = org
 
-    with {:ok, templates} <- EmailBackend.list_templates(org) do
+    with tb when not is_nil(tb) <- org.template_backend,
+         {:ok, templates} <- EmailBackend.list_templates(org) do
       delete_templates(org)
 
       for t <- templates do
@@ -42,6 +42,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
 
       {:ok, length(templates)}
     else
+      nil -> {:ok, 0}
       r = {:error, _reason} -> r
     end
   end
@@ -59,6 +60,8 @@ defmodule Proca.Service.EmailTemplateDirectory do
 
   def load_templates_async(org), do: GenServer.cast(__MODULE__, {:load_templates, org})
   def load_templates_sync(org), do: GenServer.call(__MODULE__, {:load_templates, org})
+
+  def ref_by_name(_, nil), do: {:ok, nil}
 
   def ref_by_name(%Org{template_backend_id: bid}, name)
       when is_integer(bid) and is_bitstring(name) do
@@ -94,5 +97,28 @@ defmodule Proca.Service.EmailTemplateDirectory do
       :not_configured = e ->
         e
     end
+  end
+
+  def name_by_ref(%Org{template_backend_id: bid}, ref)
+      when is_integer(bid) and not is_nil(ref) do
+    lookup = :ets.lookup(table_name(), {bid, ref})
+
+    case lookup do
+      [{_key, %{name: name}}] -> {:ok, name}
+      [] -> :not_found
+    end
+  end
+
+  def name_by_ref(%Org{template_backend_id: bid}, _ref) when is_nil(bid) do
+    :not_configured
+  end
+
+  def list_names(%Org{template_backend_id: bid}) do
+    spec =
+      fun do
+        {{id, ref}, %{name: n}} when id == ^bid -> n
+      end
+
+    :ets.select(table_name(), spec)
   end
 end

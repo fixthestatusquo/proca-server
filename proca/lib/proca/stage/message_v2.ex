@@ -25,7 +25,8 @@ defmodule Proca.Stage.MessageV2 do
       "actionPage" => %{
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
-        "thankYouTemplateRef" => action.action_page.thank_you_template_ref
+        "thankYouTemplate" => action.action_page.thank_you_template,
+        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page)
       },
       "campaignId" => action.campaign_id,
       "campaign" => %{
