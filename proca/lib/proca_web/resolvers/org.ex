@@ -61,8 +61,8 @@ defmodule ProcaWeb.Resolvers.Org do
       :ok,
       Map.take(org, [
         :contact_schema,
-        :email_opt_in,
-        :email_opt_in_template,
+        :supporter_confirm,
+        :supporter_confirm_template,
         :high_security
       ])
     }

@@ -10,7 +10,7 @@ defmodule Proca.Server.StatsTest do
   import Ecto.Query
 
   setup do
-    red_story
+    red_story()
   end
 
   test "Signed second campaign with just action", %{

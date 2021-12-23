@@ -18,7 +18,7 @@ defmodule Proca.Stage.Support do
       where: a.id in ^action_ids,
       preload: [
         [supporter: [contacts: [:public_key, :sign_key, :org]]],
-        :action_page,
+        [action_page: :org],
         :campaign,
         :source
       ]

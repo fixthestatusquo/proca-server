@@ -26,7 +26,9 @@ defmodule Proca.ActionPage do
 
     field :extra_supporters, :integer, default: 0
 
-    field :thank_you_template_ref, :string
+    field :thank_you_template, :string
+    field :supporter_confirm_template, :string
+    # field :thank_you_template_ref, :string
     # XXX add :thank_you_template and calculate the ref via TemplateDictionary
 
     timestamps()
@@ -49,7 +51,7 @@ defmodule Proca.ActionPage do
       :locale,
       :extra_supporters,
       :delivery,
-      :thank_you_template_ref,
+      :thank_you_template,
       :config,
       :org_id,
       :campaign_id
@@ -150,9 +152,9 @@ defmodule Proca.ActionPage do
     multi
     |> Multi.delete_all(
       {:test_actions, page.id},
-      Action.all(
-        action_page: page,
-        processing_status: [:testing]
+      from(
+        a in Action,
+        where: a.action_page_id == ^page.id and a.processing_status in [:testing]
       )
     )
     |> Multi.delete_all(
@@ -234,5 +236,14 @@ defmodule Proca.ActionPage do
   # XXX deprecated url support
   def remove_schema_from_name(name) when is_bitstring(name) do
     Regex.replace(~r/^https?:\/\//, name, "")
+  end
+
+  def thank_you_template_ref(%ActionPage{} = ap) do
+    ap = Repo.preload(ap, [:org])
+
+    case Proca.Service.EmailTemplateDirectory.ref_by_name(ap.org, ap.thankyou_template) do
+      {:ok, ref} -> ref
+      _ -> nil
+    end
   end
 end
