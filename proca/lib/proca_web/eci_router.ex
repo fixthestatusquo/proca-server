@@ -3,7 +3,6 @@ defmodule ProcaWeb.EciRouter do
   Alternative router used in ECI build. Minimal version of ProcaWeb.Router
   """
   use ProcaWeb, :router
-  use Plug.ErrorHandler
 
   pipeline :api do
     plug :accepts, ["json"]
