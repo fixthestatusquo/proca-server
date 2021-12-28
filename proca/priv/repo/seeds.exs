@@ -21,11 +21,17 @@ create_keys = fn org ->
 end
 
 create_admin = fn org, username ->
+  alias Proca.Users.User
+
   user =
     Proca.Users.get_user_by_email(username) ||
       Proca.Users.register_user_from_sso!(%{email: username})
 
-  {:ok, user} = Proca.Users.User.update(Ecto.Changeset.change(user), [:admin, :generate_password])
+  {:ok, user} =
+    user
+    |> User.generate_password_changeset()
+    |> User.make_admin_changeset()
+    |> Proca.Repo.update()
 
   IO.puts("#####")
   IO.puts("#####   Created Admin user #{username}  #####")
