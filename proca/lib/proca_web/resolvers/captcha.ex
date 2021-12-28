@@ -76,7 +76,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
     preferred_service = Map.get(ext, :captcha_service, default_service())
 
     cond do
-      secret = hcaptcha_key() and preferred_service == "hcaptcha" ->
+      secret = hcaptcha_key() != nil and preferred_service == "hcaptcha" ->
         verify_hcaptcha(resolution, secret)
 
       Service.Procaptcha.enabled?() and preferred_service == "procaptcha" ->
