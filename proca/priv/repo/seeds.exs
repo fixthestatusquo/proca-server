@@ -27,15 +27,16 @@ create_admin = fn org, username ->
     Proca.Users.get_user_by_email(username) ||
       Proca.Users.register_user_from_sso!(%{email: username})
 
-  {:ok, user} =
+  {ch, pwd} =
     user
-    |> User.generate_password_changeset()
     |> User.make_admin_changeset()
-    |> Proca.Repo.update()
+    |> User.generate_password_changeset()
+
+  {:ok, user} = ch |> Proca.Repo.update()
 
   IO.puts("#####")
-  IO.puts("#####   Created Admin user #{username}  #####")
-  IO.puts("#####   Password: #{user.password}")
+  IO.puts("#####   Created Admin user #{user.email}  #####")
+  IO.puts("#####   Password: #{pwd}")
   IO.puts("#####")
 
   Proca.Org.changeset(org, %{email_from: username})

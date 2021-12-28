@@ -127,7 +127,9 @@ defmodule Proca.Users.User do
   end
 
   def generate_password_changeset(user) do
-    change(user, password: StrongPassword.generate())
+    pwd = StrongPassword.generate()
+    ch = password_changeset(user, %{password: pwd})
+    {ch, pwd}
   end
 
   def perms_changeset(user, perms) do
