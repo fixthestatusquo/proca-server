@@ -6,7 +6,6 @@ defmodule ProcaWeb.Router do
 
   import ProcaWeb.UserAuth
   # import Phoenix.LiveView.Router
-  use Plug.ErrorHandler
 
   def allow_origin, do: Application.get_env(:proca, ProcaWeb.Endpoint)[:allow_origin]
 
