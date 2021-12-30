@@ -113,12 +113,18 @@ defmodule Proca.Service.EmailTemplateDirectory do
     :not_configured
   end
 
-  def list_names(%Org{template_backend_id: bid}) do
+  def list_names(org = %Org{template_backend_id: bid}) when is_number(bid) do
+    load_templates_sync(org)
+
     spec =
       fun do
         {{id, ref}, %{name: n}} when id == ^bid -> n
       end
 
     :ets.select(table_name(), spec)
+  end
+
+  def list_names(_) do
+    :not_configured
   end
 end

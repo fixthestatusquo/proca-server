@@ -85,6 +85,7 @@ defmodule ProcaWeb.Resolvers.Org do
 
     {:ok,
      %{
+       org: org,
        email_from: org.email_from,
        email_backend: email_service,
        custom_supporter_confirm: org.custom_supporter_confirm,
@@ -95,6 +96,13 @@ defmodule ProcaWeb.Resolvers.Org do
        event_backend: event_service,
        confirm_processing: org.confirm_processing
      }}
+  end
+
+  def org_processing_templates(%{org: org}, _, _) do
+    case Proca.Service.EmailTemplateDirectory.list_names(org) do
+      :not_configured -> {:ok, nil}
+      lst -> {:ok, lst}
+    end
   end
 
   def update_org_processing(_, args, %{context: %{org: org}}) do

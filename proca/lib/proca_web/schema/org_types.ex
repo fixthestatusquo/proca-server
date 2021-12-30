@@ -337,5 +337,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :event_backend, :service_name
     field :event_processing, non_null(:boolean)
     field :confirm_processing, non_null(:boolean)
+
+    field :email_templates, list_of(non_null(:string)) do
+      resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
+    end
   end
 end

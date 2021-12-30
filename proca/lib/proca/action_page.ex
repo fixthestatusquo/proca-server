@@ -66,6 +66,7 @@ defmodule Proca.ActionPage do
       :locale,
       ~r/^[a-z]{2}(_[A-Z]{2})?$/
     )
+    |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
     |> change(assocs)
   end
 
@@ -189,11 +190,14 @@ defmodule Proca.ActionPage do
   def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
   def all(q, [{:url, name} | kw]), do: all(q, [{:name, name} | kw])
 
-  def all(q, [{:trash, trash} | kw]) do
-    q
-    |> where([ap], is_nil(ap.campaign_id) == ^trash)
-    |> all(kw)
-  end
+  def all(q, [{:org, %Proca.Org{id: org_id}} | kw]),
+    do: where(q, [a], a.org_id == ^org_id) |> all(kw)
+
+  # def all(q, [{:trash, trash} | kw]) do
+  #   q
+  #   |> where([ap], is_nil(ap.campaign_id) == ^trash)
+  #   |> all(kw)
+  # end
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do
