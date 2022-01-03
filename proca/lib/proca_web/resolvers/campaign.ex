@@ -183,6 +183,24 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
+  def action_pages_for_auth(%Campaign{} = camp, _params, %{
+        context: %{auth: auth = %Auth{staffer: staffer}}
+      }) do
+    if Proca.Permission.can?(auth, [:instance_owner]) do
+      {
+        :ok,
+        ActionPage.all(campaign: camp)
+      }
+    else
+      org = Org.one(id: staffer.org_id)
+
+      {
+        :ok,
+        ActionPage.all(org: org)
+      }
+    end
+  end
+
   @doc """
   We do not have a partnership object yet but lets simulate it by getting all partner orgs with ap in that campaign
   """
