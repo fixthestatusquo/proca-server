@@ -9,6 +9,7 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
+  alias Proca.Stage.Support
   import Ecto.Changeset
 
   schema "supporters" do
@@ -32,7 +33,6 @@ defmodule Proca.Supporter do
     timestamps()
   end
 
-  @doc false
   def changeset(supporter, attrs) do
     ch =
       supporter
