@@ -73,13 +73,13 @@ defmodule ProcaWeb.Resolvers.Org do
 
     email_service =
       case org do
-        %{email_backend: %{name: name}} -> name
+        %Org{email_backend: %{name: name}} -> name
         _ -> nil
       end
 
     event_service =
       case org do
-        %{event_service: %{name: name}} -> name
+        %Org{event_backend: %{name: name}} -> name
         _ -> nil
       end
 

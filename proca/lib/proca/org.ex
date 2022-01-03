@@ -45,6 +45,7 @@ defmodule Proca.Org do
     field :custom_action_confirm, :boolean, default: false
     field :custom_action_deliver, :boolean, default: false
     field :system_sqs_deliver, :boolean, default: false
+    field :custom_event_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
     # for system events from Proca.Server.Notify
