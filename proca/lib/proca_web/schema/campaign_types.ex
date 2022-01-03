@@ -99,6 +99,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
     field :force_delivery, non_null(:boolean)
 
+    @desc "Action Pages of this campaign that are accessible to current user"
+    field :action_pages, non_null(list_of(non_null(:private_action_page))) do
+      resolve(&Resolvers.Campaign.action_pages_for_auth/3)
+    end
+
     @desc "List of partnerships and requests"
     field :partnerships, list_of(non_null(:partnership)) do
       resolve(&Resolvers.Campaign.partnerships/3)
