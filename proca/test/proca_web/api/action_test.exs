@@ -27,7 +27,6 @@ defmodule ProcaWeb.Api.ActionTest do
   end
 
   def action_with_contact(
-        _org,
         ap,
         action_info,
         contact_info,
@@ -133,7 +132,6 @@ defmodule ProcaWeb.Api.ActionTest do
   test "create stripe donation action", %{org: org, pages: [ap]} do
     {:ok, %{contact_ref: ref}} =
       action_with_contact(
-        org,
         ap,
         %{
           action_type: "stripe-donation",
@@ -175,7 +173,6 @@ defmodule ProcaWeb.Api.ActionTest do
   test "create action with location tracking", %{org: org, pages: [ap]} do
     {:ok, result} =
       action_with_contact(
-        org,
         ap,
         %{action_type: "x"},
         %{first_name: "Jan", email: "j@a.n"},

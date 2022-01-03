@@ -52,7 +52,13 @@ defmodule Proca.Server.Notify do
   """
   def updated(org = %Org{}) do
     restart_org_pipes(org)
-    if org.name == Org.instance_org_name(), do: instance_org_updated(org)
+
+    if org.name == Org.instance_org_name() do
+      instance_org_updated(org)
+
+      Org.all([])
+      |> Enum.each(&Proca.Pipes.Supervisor.reload_child/1)
+    end
   end
 
   def updated(%ActionPage{} = action_page) do
@@ -68,6 +74,19 @@ defmodule Proca.Server.Notify do
 
   def updated(%PublicKey{active: true} = key) do
     key_activated(key)
+  end
+
+  def updated(%Supporter{processing_status: processing_status} = supporter)
+      when processing_status in [:accepted, :rejected] do
+    supporter = Repo.preload(supporter, [:contacts])
+
+    for c <- supporter.contacts do
+      Event.emit(:supporter_updated, supporter, c.org_id)
+    end
+  end
+
+  def updated(%Campaign{org_id: org_id} = campaign) when is_number(org_id) do
+    Event.emit(:campaign_updated, campaign, org_id)
   end
 
   def updated(_), do: :ok
@@ -89,7 +108,7 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
-  def multi(:key_activated, m = %{active_key: key}) do
+  def multi(:key_activated, %{active_key: key}) do
     key_activated(key)
   end
 

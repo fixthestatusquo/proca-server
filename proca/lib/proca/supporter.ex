@@ -9,6 +9,7 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
+  alias Proca.Stage.Support
   import Ecto.Changeset
 
   schema "supporters" do
@@ -32,15 +33,17 @@ defmodule Proca.Supporter do
     timestamps()
   end
 
-  @doc false
   def changeset(supporter, attrs) do
     ch =
       supporter
       |> cast(attrs, [:email_status])
 
     case ch.changes do
-      %{email_status: _} -> change(ch, email_status_changed: NaiveDateTime.utc_now())
-      _ -> ch
+      %{email_status: _} ->
+        change(ch, email_status_changed: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+
+      _ ->
+        ch
     end
   end
 
