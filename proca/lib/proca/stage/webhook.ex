@@ -98,6 +98,10 @@ defmodule Proca.Stage.Webhook do
           error("Webhook returned 404 Not found: #{webhook.host}")
           Message.failed(msg, "Not found")
 
+        {:ok, code} ->
+          error("Webhook returned #{code} code: #{webhook.host}")
+          Message.failed(msg, "Code #{code}")
+
         {:error, reason} ->
           error("Webhook failed: #{inspect(reason)}: #{webhook.host}")
           Message.failed(msg, reason)
