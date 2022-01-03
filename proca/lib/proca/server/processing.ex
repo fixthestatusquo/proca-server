@@ -5,6 +5,7 @@ defmodule Proca.Server.Processing do
   alias Proca.Pipes.Connection
   import Proca.Stage.Support, only: [action_data: 2, action_data: 3]
   import Ecto.Changeset
+  import Logger
 
   @moduledoc """
   For these cases:
@@ -93,7 +94,9 @@ defmodule Proca.Server.Processing do
   This function implements the state machine for Action. It returns a changeset to update action/supporter (state) and atoms telling where to route action.
   """
   @spec transition(%Action{}, %ActionPage{}) ::
-          :ok | {Ecto.Changeset.t(%Action{}), :action | :supporter, :confirm | :deliver}
+          :ok
+          | {Ecto.Changeset.t(%Action{}), :action | :supporter, :confirm | :deliver}
+          | {Ecto.Changeset.t(%Action{}), nil, nil}
   def transition(
         %{
           processing_status: :new,
@@ -129,6 +132,21 @@ defmodule Proca.Server.Processing do
 
   def transition(
         action = %{
+          processing_status: :new,
+          supporter: %{processing_status: :rejected}
+        },
+        _ap
+      ) do
+    # Supporter was rejected, reject also the actions
+    {
+      change_status(action, :rejected, :rejected),
+      nil,
+      nil
+    }
+  end
+
+  def transition(
+        action = %{
           processing_status: action_status,
           supporter: %{processing_status: :accepted}
         },
@@ -150,7 +168,7 @@ defmodule Proca.Server.Processing do
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
-        %ActionPage{org: %{email_opt_in: opt_in}, live: live}
+        %ActionPage{org: %{supporter_confirm: opt_in}, live: live}
       ) do
     # we should handle confirmation if required, but before it's implemented let's accept supporter
     # and instantly go to delivery
@@ -202,8 +220,8 @@ defmodule Proca.Server.Processing do
   @doc """
   This method emits an effect on transition.
 
-  If custom processing is enabled, we send whole action data, because a
-   different system will consume it straight from rabbitmq.
+  We send whole action data, because a different system will consume it straight
+   from rabbitmq.
 
   """
   @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
@@ -238,6 +256,8 @@ defmodule Proca.Server.Processing do
     end
   end
 
+  def emit(_action, nil, nil), do: :ok
+
   def routing_for(%{action_type: at, campaign: %{name: cname}}) do
     at <> "." <> cname
   end
@@ -266,8 +286,12 @@ defmodule Proca.Server.Processing do
       {state_change, thing, stage} ->
         Repo.transaction(fn ->
           case emit(action, thing, stage) do
-            :ok -> Repo.update!(state_change)
-            :error -> Repo.rollback(:publish_failed)
+            :ok ->
+              Repo.update!(state_change)
+
+            :error ->
+              error("Failed to publish #{thing} #{stage}")
+              Repo.rollback(:publish_failed)
           end
         end)
 

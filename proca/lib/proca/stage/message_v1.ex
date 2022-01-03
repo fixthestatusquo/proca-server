@@ -123,7 +123,8 @@ defmodule Proca.Stage.MessageV1 do
       "actionPage" => %{
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
-        "thankYouTemplateRef" => action.action_page.thank_you_template_ref
+        "thankYouTemplate" => action.action_page.thank_you_template,
+        "thankYouTemplateRef" => action_page_template_ref(action.action_page)
       },
       "campaign" => %{
         "name" => action.campaign.name,
@@ -161,4 +162,13 @@ defmodule Proca.Stage.MessageV1 do
   end
 
   def put_action_donation(action_map, donation) when is_nil(donation), do: action_map
+
+  def action_page_template_ref(action_page) do
+    alias Proca.Service.EmailTemplateDirectory
+
+    case EmailTemplateDirectory.ref_by_name(action_page.org, action_page.thank_you_template) do
+      {:ok, ref} -> ref
+      _ -> nil
+    end
+  end
 end

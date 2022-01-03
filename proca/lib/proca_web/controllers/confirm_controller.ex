@@ -17,6 +17,9 @@ defmodule ProcaWeb.ConfirmController do
   Handle a supporter confirm link of form:
   /link/s/123/REF_REF_REF/accept
 
+  Optionally can contain:
+  ?doi=1  - for a double opt in
+
   This is a special case where we do not use Confirm model. Instead, we use the ref known to supporter. This way we do not have to create so many Confirm records when org is using double opt in.
 
   This path optionally takes a ?redir query param to redirect after accepting/rejecting.
@@ -24,6 +27,7 @@ defmodule ProcaWeb.ConfirmController do
   def supporter(conn, params) do
     with {:ok, args} <- supporter_parse_params(params),
          {:ok, action} <- find_action(args),
+         {:ok, action} <- handle_double_opt_in(action, args[:doi]),
          :ok <- handle_supporter(action, args.verb) do
       conn
       |> redirect(external: handle_supporter_redirect(action, args))
@@ -36,10 +40,13 @@ defmodule ProcaWeb.ConfirmController do
 
   def handle_supporter_redirect(_action, %{redir: url}) when not is_nil(url), do: url
 
-  def handle_supporter_redirect(action, %{verb: verb}) do
+  def handle_supporter_redirect(action, args) do
+    query1 = if args[:verb], do: %{proca_confirm: args[:verb]}, else: %{}
+    query2 = if args[:doi], do: Map.put(query1, :proca_doi, args[:doi]), else: query1
+
     case ActionPage.Status.get_last_location(action.action_page_id) do
       nil -> "/"
-      url -> "#{url}?proca_confirm=#{verb}"
+      url -> url <> "?" <> URI.encode_query(query2, :rfc3986)
     end
   end
 
@@ -48,12 +55,14 @@ defmodule ProcaWeb.ConfirmController do
       action_id: :integer,
       verb: :string,
       ref: :string,
-      redir: :string
+      redir: :string,
+      doi: :string
     }
 
     args =
       cast({%{}, types}, params, Map.keys(types))
       |> validate_inclusion(:verb, ["accept", "reject"])
+      |> validate_inclusion(:doi, ["1", "0", "true", "false", "yes", "no"])
       |> Supporter.decode_ref(:ref)
       |> validate_required([:action_id, :verb, :ref])
 
@@ -89,6 +98,16 @@ defmodule ProcaWeb.ConfirmController do
       {:error, msg} -> {:error, 400, msg}
     end
   end
+
+  defp handle_double_opt_in(action = %Action{supporter: sup}, doi)
+       when doi in ["1", "yes", "true"] do
+    case update(Supporter.changeset(sup, %{email_status: :double_opt_in})) do
+      {:ok, sup2} -> {:ok, %{action | supporter: sup2}}
+      {:error, _ch} -> {:error, 400, "cannot double opt in"}
+    end
+  end
+
+  defp handle_double_opt_in(action, _), do: {:ok, action}
 
   @doc """
   Handles a generic accept/reject of a Confirm.
@@ -184,21 +203,36 @@ defmodule ProcaWeb.ConfirmController do
     Confirm.by_open_code(code)
   end
 
-  # XXX complete
   def double_opt_in(conn, params) do
-    # find contact by action_id + org_id
-    # check if processing status delivered
-    # flag double_opt_in
-    # re-send to processing
-    # XXX problem: how to find out delived/dblOptIn+ using ProcessOld server?
-    #  - add new flag? dblDelivered? new processing status ?
-    #  - redelivery vs TYE sender - endless loop
-    #  - IDEA: timeout no dblOptIn?
-    #  - IDEA: MTT send regardless of confirming status?
-    #
-    # huh, this dblOptIn is messaging
-    #
-    {:ok, ""}
+    with {:ok, args} <- double_opt_in_parse_params(params),
+         {:ok, action} <- find_action(args),
+         {:ok, action} <- handle_double_opt_in(action, "true") do
+      conn
+      |> redirect(external: handle_supporter_redirect(action, args))
+      |> halt()
+    else
+      {:error, status, msg} ->
+        conn |> resp(status, error_msg(msg)) |> halt()
+    end
+  end
+
+  defp double_opt_in_parse_params(params) do
+    types = %{
+      action_id: :integer,
+      ref: :string,
+      redir: :string
+    }
+
+    args =
+      cast({%{}, types}, params, Map.keys(types))
+      |> Supporter.decode_ref(:ref)
+      |> validate_required([:action_id, :ref])
+
+    if args.valid? do
+      {:ok, apply_changes(args)}
+    else
+      {:error, 400, "malformed link"}
+    end
   end
 
   defp error_msg(msg) when is_bitstring(msg) do

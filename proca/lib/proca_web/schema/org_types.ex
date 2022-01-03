@@ -144,10 +144,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :contact_schema, :contact_schema
 
     @desc "Email opt in enabled"
-    field :email_opt_in, :boolean
+    field :supporter_confirm, :boolean
 
     @desc "Email opt in template name"
-    field :email_opt_in_template, :string
+    field :supporter_confirm_template, :string
 
     @desc "Config"
     field :config, :json
@@ -259,10 +259,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :contact_schema, non_null(:contact_schema)
 
     @desc "Email opt in enabled"
-    field :email_opt_in, non_null(:boolean)
+    field :supporter_confirm, non_null(:boolean)
 
     @desc "Email opt in template name"
-    field :email_opt_in_template, :string
+    field :supporter_confirm_template, :string
 
     @desc "High data security enabled"
     field :high_security, non_null(:boolean)
@@ -337,5 +337,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :event_backend, :service_name
     field :event_processing, non_null(:boolean)
     field :confirm_processing, non_null(:boolean)
+
+    field :email_templates, list_of(non_null(:string)) do
+      resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
+    end
   end
 end

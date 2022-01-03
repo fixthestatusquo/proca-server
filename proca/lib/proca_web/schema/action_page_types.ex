@@ -30,8 +30,15 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     field :locale, non_null(:string)
     @desc "Name where the widget is hosted"
     field :name, non_null(:string)
-    @desc "Reference to thank you email templated of this Action Page"
-    field :thank_you_template_ref, :string
+    @desc "Thank you email templated of this Action Page"
+    field :thank_you_template, :string
+    @desc "A reference to thank you email template of this ActionPage"
+    field :thank_you_template_ref, :string do
+      resolve(fn ap, _, _ ->
+        Proca.ActionPage.thank_you_template_ref(ap)
+      end)
+    end
+
     @desc "Is live?"
     field :live, non_null(:boolean)
     @desc "List of steps in journey (DEPRECATED: moved under config)"
@@ -246,8 +253,8 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "2-letter, lowercase, code of ActionPage language"
     field :locale, :string
 
-    @desc "A reference to thank you email template of this ActionPage"
-    field :thank_you_template_ref, :string
+    @desc "Thank you email template of this ActionPage"
+    field :thank_you_template, :string
 
     @desc """
     Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here.

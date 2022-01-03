@@ -35,11 +35,11 @@ defmodule Proca.Service.EmailBackend do
 
   @type recipient :: %EmailRecipient{}
 
-  @callback put_recipient(email :: %Email{}, recipients :: [recipient]) :: %Email{}
+  @callback put_recipient(email :: %Email{}, recipients :: recipient) :: %Email{}
   @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
   @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t()) :: %Email{}
   @callback put_custom_id(email :: %Email{}, custom_id :: String.t()) :: %Email{}
-  @callback deliver(%Email{}, %Org{}) :: any()
+  @callback deliver([%Email{}], %Org{}) :: any()
 
   @callback handle_bounce(params :: any()) :: any()
 

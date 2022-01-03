@@ -36,22 +36,22 @@ defmodule Proca.Schema do
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
 
-      def all(query, [{:id, id} | kw]) do
+      def all(query, [{:id, id} | kw]) when is_number(id) do
         import Ecto.Query, only: [where: 3]
         where(query, [a], a.id == ^id) |> all(kw)
       end
 
-      def all(query, [{:preload, assocs} | kw]) do
+      def all(query, [{:preload, assocs} | kw]) when is_list(assocs) do
         import Ecto.Query, only: [preload: 3]
         preload(query, [a], ^assocs) |> all(kw)
       end
 
-      def all(query, [{:order_by, order} | kw]) do
+      def all(query, [{:order_by, order} | kw]) when is_list(order) do
         import Ecto.Query, only: [order_by: 3]
         order_by(query, [a], ^order) |> all(kw)
       end
 
-      def all(query, [{:limit, limit} | kw]) do
+      def all(query, [{:limit, limit} | kw]) when is_number(limit) do
         import Ecto.Query, only: [limit: 3]
         limit(query, [a], ^limit) |> all(kw)
       end
