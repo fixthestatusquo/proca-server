@@ -193,6 +193,9 @@ defmodule Proca.ActionPage do
   def all(q, [{:org, %Proca.Org{id: org_id}} | kw]),
     do: where(q, [a], a.org_id == ^org_id) |> all(kw)
 
+  def all(q, [{:campaign, %Proca.Campaign{id: c_id}} | kw]),
+    do: where(q, [a], a.campaign_id == ^c_id) |> all(kw)
+
   # def all(q, [{:trash, trash} | kw]) do
   #   q
   #   |> where([ap], is_nil(ap.campaign_id) == ^trash)
