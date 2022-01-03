@@ -18,7 +18,7 @@ defmodule Proca.Stage.Webhook do
   import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
 
   @doc "Get selected webhook service"
-  def get_service(org = %{event_backend_id: id}) do
+  def get_service(org = %{event_backend_id: id}) when is_number(id) do
     Service.one(org: org, id: id, name: :webhook)
   end
 
