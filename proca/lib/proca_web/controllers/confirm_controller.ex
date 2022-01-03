@@ -20,9 +20,19 @@ defmodule ProcaWeb.ConfirmController do
   Optionally can contain:
   ?doi=1  - for a double opt in
 
-  This is a special case where we do not use Confirm model. Instead, we use the ref known to supporter. This way we do not have to create so many Confirm records when org is using double opt in.
+  This is a special case where we do not use Confirm model. Instead, we use the
+  ref known to supporter. This way we do not have to create so many Confirm
+  records when org is using double opt in.
 
   This path optionally takes a ?redir query param to redirect after accepting/rejecting.
+
+  Handle double opt in link of form:
+  /link/d/1234/REF_REF_REF
+
+  It will double opt in Supporter email_status. This will just change the
+  email_status, and possibly send the supporter_updated event. Can be useful to
+  do a double opt in when we have actually already processed the action.
+
   """
   def supporter(conn, params) do
     with {:ok, args} <- supporter_parse_params(params),
