@@ -28,7 +28,7 @@ defmodule Proca.Supporter do
 
     field :processing_status, ProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
-    field :email_status_changed, :naive_datetime
+    field :email_status_changed, :utc_datetime
 
     timestamps()
   end
@@ -40,7 +40,7 @@ defmodule Proca.Supporter do
 
     case ch.changes do
       %{email_status: _} ->
-        change(ch, email_status_changed: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+        change(ch, email_status_changed: DateTime.truncate(DateTime.utc_now(), :second))
 
       _ ->
         ch
