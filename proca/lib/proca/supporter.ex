@@ -9,7 +9,6 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
-  alias Proca.Stage.Support
   import Ecto.Changeset
 
   schema "supporters" do
