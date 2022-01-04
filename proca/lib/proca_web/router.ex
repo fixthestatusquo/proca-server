@@ -54,7 +54,7 @@ defmodule ProcaWeb.Router do
     pipe_through [:api]
 
     get "/s/:action_id/:verb/:ref", ProcaWeb.ConfirmController, :supporter
-    get "/ok/:org_id/:action_id", ProcaWeb.ConfirmController, :double_opt_in
+    get "/d/:action_id/:ref", ProcaWeb.ConfirmController, :double_opt_in
     get "/:verb/:code", ProcaWeb.ConfirmController, :confirm
     # get "/a/:action_id/:ref/:verb/:code", ProcaWeb.ConfirmController, :confirm_code
   end

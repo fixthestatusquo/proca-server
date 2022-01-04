@@ -17,7 +17,7 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
-  alias Proca.Service.{EmailTemplate, EmailBackend}
+  alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
@@ -66,7 +66,7 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_recipient(email, recipient) do
+  def put_recipient(email, %EmailRecipient{} = recipient) do
     email
     |> Email.to({recipient.first_name, recipient.email})
     |> Email.put_provider_option(:variables, recipient.fields)
@@ -105,7 +105,7 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def deliver(emails, %Org{email_backend: srv}) do
+  def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
     case Mailjet.deliver_many(emails, config(srv)) do
       {:ok, _} ->
         :ok
@@ -136,7 +136,7 @@ defmodule Proca.Service.Mailjet do
 
   defp parse_type(["action" | [tail | _]]), do: {:action, tail}
   defp parse_type(["target" | [tail | _]]), do: {:target, tail}
-  defp parse_type(args), do: {:empty, nil}
+  defp parse_type(_args), do: {:empty, nil}
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{

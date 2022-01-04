@@ -82,7 +82,7 @@ defmodule Proca.Stage.EmailSupporter do
         if send_opt_in?(org_id, action_id) do
           message
           |> Message.update_data(fn _ -> action end)
-          |> Message.put_batcher(:opt_in)
+          |> Message.put_batcher(:supporter_confirm)
         else
           ignore(message)
         end
@@ -111,17 +111,12 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
-  # XXX rename :opt_in to confirm_supporter like elsewhere
   @impl true
-  def handle_batch(:opt_in, [fm | _] = messages, _, _) do
-    org_id = fm.data["orgId"]
+  def handle_batch(:supporter_confirm, [fm | _] = messages, _, _) do
+    actionPageId = fm.data["actionPageId"]
 
-    org =
-      from(org in Org,
-        where: org.id == ^org_id,
-        preload: [[email_backend: :org], [template_backend: :org]]
-      )
-      |> Repo.one()
+    ap = ActionPage.one(id: actionPageId, preload: [org: [:email_backend, :template_backend]])
+    org = ap.org
 
     recipients =
       Enum.map(messages, fn m ->
@@ -129,7 +124,8 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_supporter_confirm(m.data)
       end)
 
-    tmpl_name = org.email_opt_in_template || org.template_backend.org.email_opt_in_template
+    # XXX add action_page
+    tmpl_name = ap.supporter_confirm_template || org.supporter_confirm_template
 
     case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
       {:ok, tmpl_ref} ->
@@ -190,7 +186,7 @@ defmodule Proca.Stage.EmailSupporter do
     if action.with_consent do
       org = Repo.get(Org, org_id)
 
-      is_bitstring(org.email_opt_in_template) and
+      is_bitstring(org.supporter_confirm_template) and
         is_number(org.email_backend_id) and
         is_number(org.template_backend_id)
     else

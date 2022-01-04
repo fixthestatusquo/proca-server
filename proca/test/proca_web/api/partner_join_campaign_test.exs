@@ -30,8 +30,8 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
         id
         personalData {
           contactSchema
-          emailOptIn
-          emailOptInTemplate
+          supporterConfirm
+          supporterConfirmTemplate
         }
       }
 

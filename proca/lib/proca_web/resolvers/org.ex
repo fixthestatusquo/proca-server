@@ -61,8 +61,8 @@ defmodule ProcaWeb.Resolvers.Org do
       :ok,
       Map.take(org, [
         :contact_schema,
-        :email_opt_in,
-        :email_opt_in_template,
+        :supporter_confirm,
+        :supporter_confirm_template,
         :high_security
       ])
     }
@@ -73,18 +73,19 @@ defmodule ProcaWeb.Resolvers.Org do
 
     email_service =
       case org do
-        %{email_backend: %{name: name}} -> name
+        %Org{email_backend: %{name: name}} -> name
         _ -> nil
       end
 
     event_service =
       case org do
-        %{event_service: %{name: name}} -> name
+        %Org{event_backend: %{name: name}} -> name
         _ -> nil
       end
 
     {:ok,
      %{
+       org: org,
        email_from: org.email_from,
        email_backend: email_service,
        custom_supporter_confirm: org.custom_supporter_confirm,
@@ -95,6 +96,13 @@ defmodule ProcaWeb.Resolvers.Org do
        event_backend: event_service,
        confirm_processing: org.confirm_processing
      }}
+  end
+
+  def org_processing_templates(%{org: org}, _, _) do
+    case Proca.Service.EmailTemplateDirectory.list_names(org) do
+      :not_configured -> {:ok, nil}
+      lst -> {:ok, lst}
+    end
   end
 
   def update_org_processing(_, args, %{context: %{org: org}}) do

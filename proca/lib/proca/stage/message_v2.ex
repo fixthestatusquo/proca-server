@@ -25,7 +25,8 @@ defmodule Proca.Stage.MessageV2 do
       "actionPage" => %{
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
-        "thankYouTemplateRef" => action.action_page.thank_you_template_ref
+        "thankYouTemplate" => action.action_page.thank_you_template,
+        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page)
       },
       "campaignId" => action.campaign_id,
       "campaign" => %{
@@ -43,7 +44,7 @@ defmodule Proca.Stage.MessageV2 do
         |> MessageV1.put_action_donation(action.donation),
       "contact" => contact_data(action.supporter, contact),
       "personalInfo" => personal_info_data(contact),
-      "privacy" => contact_privacy(action, contact),
+      "privacy" => contact_privacy(action.supporter, contact, action.with_consent),
       "tracking" => MessageV1.tracking_data(action)
     }
     |> put_action_meta(stage)
@@ -101,16 +102,43 @@ defmodule Proca.Stage.MessageV2 do
     }
   end
 
-  def contact_privacy(%Action{with_consent: true}, contact = %Contact{}) do
-    %{
-      "optIn" => contact.communication_consent,
-      "givenAt" => contact.inserted_at |> Support.to_iso8601()
+  def contact_privacy(supporter, contact, new_consent \\ true)
+
+  def contact_privacy(
+        %Supporter{
+          email_status: email_status,
+          email_status_changed: email_status_changed
+        },
+        contact = %Contact{},
+        new_consent
+      ) do
+    p = %{
+      "emailStatus" =>
+        if email_status == :none do
+          nil
+        else
+          Atom.to_string(email_status)
+        end,
+      "emailStatusChanged" =>
+        if email_status_changed != nil do
+          Support.to_iso8601(email_status_changed)
+        else
+          nil
+        end
     }
+
+    if new_consent do
+      %{
+        "optIn" => contact.communication_consent,
+        "givenAt" => contact.inserted_at |> Support.to_iso8601()
+      }
+      |> Map.merge(p)
+    else
+      p
+    end
   end
 
-  def contact_privacy(%Action{with_consent: false}, %Contact{}), do: nil
-
-  def contact_privacy(%Action{}, nil), do: nil
+  def contact_privacy(_, nil, _), do: nil
 
   def put_action_meta(map, stage) do
     map
