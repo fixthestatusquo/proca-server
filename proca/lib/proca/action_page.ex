@@ -26,7 +26,9 @@ defmodule Proca.ActionPage do
 
     field :extra_supporters, :integer, default: 0
 
-    field :thank_you_template_ref, :string
+    field :thank_you_template, :string
+    field :supporter_confirm_template, :string
+    # field :thank_you_template_ref, :string
     # XXX add :thank_you_template and calculate the ref via TemplateDictionary
 
     timestamps()
@@ -49,7 +51,7 @@ defmodule Proca.ActionPage do
       :locale,
       :extra_supporters,
       :delivery,
-      :thank_you_template_ref,
+      :thank_you_template,
       :config,
       :org_id,
       :campaign_id
@@ -64,6 +66,7 @@ defmodule Proca.ActionPage do
       :locale,
       ~r/^[a-z]{2}(_[A-Z]{2})?$/
     )
+    |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
     |> change(assocs)
   end
 
@@ -150,9 +153,9 @@ defmodule Proca.ActionPage do
     multi
     |> Multi.delete_all(
       {:test_actions, page.id},
-      Action.all(
-        action_page: page,
-        processing_status: [:testing]
+      from(
+        a in Action,
+        where: a.action_page_id == ^page.id and a.processing_status in [:testing]
       )
     )
     |> Multi.delete_all(
@@ -187,11 +190,17 @@ defmodule Proca.ActionPage do
   def all(q, [{:name, name} | kw]), do: where(q, [a], a.name == ^name) |> all(kw)
   def all(q, [{:url, name} | kw]), do: all(q, [{:name, name} | kw])
 
-  def all(q, [{:trash, trash} | kw]) do
-    q
-    |> where([ap], is_nil(ap.campaign_id) == ^trash)
-    |> all(kw)
-  end
+  def all(q, [{:org, %Proca.Org{id: org_id}} | kw]),
+    do: where(q, [a], a.org_id == ^org_id) |> all(kw)
+
+  def all(q, [{:campaign, %Proca.Campaign{id: c_id}} | kw]),
+    do: where(q, [a], a.campaign_id == ^c_id) |> all(kw)
+
+  # def all(q, [{:trash, trash} | kw]) do
+  #   q
+  #   |> where([ap], is_nil(ap.campaign_id) == ^trash)
+  #   |> all(kw)
+  # end
 
   def contact_schema(%ActionPage{campaign: %Campaign{contact_schema: cs}}) do
     case cs do
@@ -234,5 +243,14 @@ defmodule Proca.ActionPage do
   # XXX deprecated url support
   def remove_schema_from_name(name) when is_bitstring(name) do
     Regex.replace(~r/^https?:\/\//, name, "")
+  end
+
+  def thank_you_template_ref(%ActionPage{} = ap) do
+    ap = Repo.preload(ap, [:org])
+
+    case Proca.Service.EmailTemplateDirectory.ref_by_name(ap.org, ap.thankyou_template) do
+      {:ok, ref} -> ref
+      _ -> nil
+    end
   end
 end

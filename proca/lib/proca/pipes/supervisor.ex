@@ -51,6 +51,7 @@ defmodule Proca.Pipes.Supervisor do
   def reload_child(org = %Org{}) do
     case Pipes.Topology.whereis(org) do
       nil ->
+        info("Org processing starting for #{org.name} (#{org.id})")
         start_child(org)
 
       pid ->

@@ -87,8 +87,8 @@ defmodule Proca.Factory do
 
   def basic_data_pl_factory do
     %Proca.Contact.BasicData{
-      first_name: sequence("first_name"),
-      last_name: sequence("last_name"),
+      first_name: sequence("first_name", &"#{<<&1::utf8>>}aniel", start_at: ?A),
+      last_name: sequence("last_name", &"#{<<&1::utf8>>}ikiski", start_at: ?A),
       email: sequence("email", &"member-#{&1}@example.org"),
       phone: sequence("phone", ["+48123498213", "6051233412", "0048600919929"]),
       postcode: sequence("postcode", ["02-123", "03-999", "03-123", "33-123"]),
