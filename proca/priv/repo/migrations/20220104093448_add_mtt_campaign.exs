@@ -3,10 +3,10 @@ defmodule Proca.Repo.Migrations.AddMttCampaign do
 
   def change do
     create table(:mtt) do
-      add :campaign_id, references(:campaigns, on_delete: :do_nothing), null: false
+      add :campaign_id, references(:campaigns, on_delete: :delete_all), null: false
       add :start_at, :utc_datetime, null: false
       add :end_at, :utc_datetime, null: false
-      add :sending_rate, :integer, null: false
+      # add :sending_rate, :integer, null: false
       add :stats, :map, null: false, default: "{}"
     end
   end
