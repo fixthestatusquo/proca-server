@@ -90,6 +90,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :public_campaign do
     interface(:campaign)
     import_fields(:campaign)
+
+    field :targets, list_of(:public_target) do
+      resolve(&Resolvers.Campaign.targets/3)
+    end
   end
 
   object :private_campaign do

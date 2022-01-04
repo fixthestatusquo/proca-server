@@ -64,6 +64,15 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:stalled, description: "This action page did not receive actions lately")
   end
 
+  enum :email_status do
+    value(:none)
+    value(:double_opt_in)
+    value(:bounce)
+    value(:blocked)
+    value(:spam)
+    value(:unsub)
+  end
+
   # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)
