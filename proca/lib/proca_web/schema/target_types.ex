@@ -13,6 +13,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
 
   object :target_email do
     field :email, non_null(:string)
+    field :email_status, non_null(:email_status)
   end
 
   input_object :target_input do
@@ -20,7 +21,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :area, :string, default_value: ""
     field :external_id, non_null(:string)
     field :fields, :json, default_value: %{}
-    field :emails, non_null(list_of(:target_email_input))
+    field :emails, list_of(:target_email_input)
   end
 
   object :target do
@@ -29,6 +30,13 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :area, :string, default_value: ""
     field :fields, :json, default_value: %{}
     field :emails, non_null(list_of(:target_email))
+  end
+
+  object :public_target do
+    field :id, non_null(:string)
+    field :name, non_null(:string)
+    field :area, :string, default_value: ""
+    field :fields, :json, default_value: %{}
   end
 
   object :target_mutations do

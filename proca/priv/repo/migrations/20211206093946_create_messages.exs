@@ -13,5 +13,5 @@ defmodule Proca.Repo.Migrations.CreateMessages do
       add :target_id, references(:targets, type: :uuid, on_delete: :delete_all), null: false
       add :delivered, :boolean, default: false, null: false
     end
-   end
+  end
 end

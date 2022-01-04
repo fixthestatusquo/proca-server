@@ -12,7 +12,8 @@ defmodule Proca.Action.MessageContent do
 
   def changeset(ch, params) do
     cast(ch, params, [:subject, :body])
-    |> validate_length(:subject, max: 100) # https://stackoverflow.com/questions/1592291/what-is-the-email-subject-length-limit
-    |> validate_length(:body, max: 4*1024)
+    # https://stackoverflow.com/questions/1592291/what-is-the-email-subject-length-limit
+    |> validate_length(:subject, max: 100)
+    |> validate_length(:body, max: 4 * 1024)
   end
 end
