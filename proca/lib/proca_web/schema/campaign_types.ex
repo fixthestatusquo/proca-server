@@ -116,6 +116,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :targets, list_of(:target) do
       resolve(&Resolvers.Campaign.targets/3)
     end
+
+    field :mtt, :campaign_mtt, do: load_assoc()
   end
 
   # Partnership
@@ -162,7 +164,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       arg(:input, non_null(:campaign_input))
 
-      load(:campaign, by: [:id, :name, :external_id])
+      load(:campaign, by: [:id, :name, :external_id], preload: [:mtt])
       determine_auth(for: :campaign)
       allow([:manage_campaigns])
 
@@ -214,6 +216,19 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Action pages of this campaign"
     field(:action_pages, list_of(non_null(:action_page_input)))
+
+    @desc "MTT configuration"
+    field(:mtt, :campaign_mtt_input)
+  end
+
+  object :campaign_mtt do
+    field :start_at, non_null(:datetime)
+    field :end_at, non_null(:datetime)
+  end
+
+  input_object :campaign_mtt_input do
+    field :start_at, :datetime
+    field :end_at, :datetime
   end
 
   # public counters

@@ -23,7 +23,7 @@ defmodule Proca.Campaign do
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
     has_many :targets, Proca.Target, on_delete: :delete_all
-    has_many :mtt, Proca.MTT
+    has_one :mtt, Proca.MTT, on_delete: :delete_all, on_replace: :update
 
     timestamps()
   end
@@ -34,6 +34,7 @@ defmodule Proca.Campaign do
 
     campaign
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
+    |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
     |> change(assocs)
     |> validate_format(:name, ~r/^([\w\d_-]+$)/)

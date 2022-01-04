@@ -29,6 +29,7 @@ defmodule Proca.Action do
     belongs_to :source, Proca.Source
 
     has_one :donation, Proca.Action.Donation
+    has_many :messages, Proca.Action.Message
 
     field :processing_status, ProcessingStatus, default: :new
 
@@ -63,6 +64,7 @@ defmodule Proca.Action do
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
+    |> Action.Message.put_messages(Map.get(attrs, :mtt, nil), action_page)
     |> check_constraint(:fields, name: :max_fields_size)
   end
 

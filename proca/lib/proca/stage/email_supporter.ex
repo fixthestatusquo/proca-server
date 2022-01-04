@@ -99,7 +99,7 @@ defmodule Proca.Stage.EmailSupporter do
 
     recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
 
-    tmpl = %EmailTemplate{ref: ap.thank_you_template_ref}
+    tmpl = %EmailTemplate{ref: ap.thank_you_template}
 
     try do
       EmailBackend.deliver(recipients, ap.org, tmpl)
@@ -170,7 +170,7 @@ defmodule Proca.Stage.EmailSupporter do
         a.id == ^action_id and
           a.with_consent and
           ap.id == ^action_page_id and
-          not is_nil(ap.thank_you_template_ref) and
+          not is_nil(ap.thank_you_template) and
           not is_nil(o.email_backend_id) and
           not is_nil(o.template_backend_id) and
           not is_nil(o.email_from)

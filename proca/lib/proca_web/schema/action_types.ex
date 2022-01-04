@@ -175,6 +175,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Donation payload"
     field :donation, :donation_action_input
+
+    @desc "MTT payload"
+    field :mtt, :mtt_action_input
   end
 
   object :action do
@@ -272,6 +275,17 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :currency, :string
     field :frequency_unit, :donation_frequency_unit
     field :payload, non_null(:json)
+  end
+
+  input_object :mtt_action_input do
+    @desc "Subject line"
+    field :subject, non_null(:string)
+
+    @desc "Body"
+    field :body, non_null(:string)
+
+    @desc "Target ids"
+    field :targets, non_null(list_of(non_null(:string)))
   end
 
   object :donation do

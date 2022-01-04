@@ -41,7 +41,7 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
   def load_assoc_resolver(
         parent,
         _,
-        resol = %{
+        _resol = %{
           definition: %{
             schema_node: %{
               identifier: field
@@ -53,7 +53,7 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
 
     {
       :ok,
-      Repo.preload(parent, field)
+      Repo.preload(parent, [field])
       |> Map.get(field)
     }
   end
