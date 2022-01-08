@@ -18,8 +18,7 @@ config :proca, ProcaWeb.Endpoint,
   render_errors: [view: ProcaWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Proca.PubSub,
   allow_origin: "*",
-  router: if(System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router),
-  captcha_service: "hcaptcha"
+  router: if(System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router)
 
 config :cors_plug,
   origin: &ProcaWeb.Router.allow_origin/0
@@ -37,6 +36,10 @@ config :proca, ProcaWeb.UserAuth,
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
 #  procaptcha_url: "https://captcha.proca.app"
+
+config :proca, ProcaWeb.Resolvers.Captcha,
+  captcha_service: "procaptcha",
+  procaptcha_url: "https://captcha.proca.app"
 
 config :proca, Proca,
   org_name: "instance",
