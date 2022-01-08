@@ -69,8 +69,7 @@ config :proca, ProcaWeb.Endpoint,
   check_origin: ["//" <> System.get_env("DOMAIN", "localhost")],
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true),
   secret_key_base: secret_key_base,
-  signing_salt: signing_salt,
-  captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
+  signing_salt: signing_salt
 
 config :sentry,
   dsn: System.get_env("SENTRY_DSN")
@@ -78,7 +77,9 @@ config :sentry,
 config :proca, ProcaWeb.Resolvers.ReportError,
   enable: System.get_env("REPORT_USER_ERRORS") == "true" || false
 
-config :proca, ProcaWeb.Resolvers.Captcha, hcaptcha_key: System.get_env("HCAPTCHA_KEY")
+config :proca, ProcaWeb.Resolvers.Captcha,
+  hcaptcha_key: System.get_env("HCAPTCHA_KEY"),
+  captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
 
 config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 
