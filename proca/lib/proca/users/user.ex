@@ -18,7 +18,7 @@ defmodule Proca.Users.User do
     field :perms, :integer, default: 0
     has_many :staffers, Proca.Staffer
 
-    # details
+    # details XXX migrate to Groupware
     field :picture_url, :string
     field :job_title, :string
     field :phone, :string
