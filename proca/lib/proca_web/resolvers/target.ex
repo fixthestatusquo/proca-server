@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.Target do
   import Ecto.Query
   alias Proca.Repo
 
-  def upsert_targets(_p, params = %{targets: targets, campaign_id: campaign_id}, _) do
+  def upsert_targets(_p, %{targets: targets, campaign_id: campaign_id}, _) do
     result =
       Multi.new()
       |> upsert(targets, campaign_id)

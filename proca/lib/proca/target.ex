@@ -51,6 +51,14 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
+  def all(q, [{:campaign, c} | kw]) do
+    import Ecto.Query
+
+    q
+    |> where([t], t.campaign_id == ^c.id)
+    |> all(kw)
+  end
+
   def upsert(target, emails) do
     (one(external_id: target.external_id, preload: [:emails, :campaign]) || %Target{})
     |> Target.changeset(target)

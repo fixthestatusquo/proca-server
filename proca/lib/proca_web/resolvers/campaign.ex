@@ -67,12 +67,9 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def targets(campaign, _a, _c) do
-    targets =
-      Target
-      |> where(campaign_id: ^campaign.id)
-      |> Proca.Repo.all()
+    t = Proca.Target.all(campaign: campaign, preload: [:emails])
 
-    {:ok, targets}
+    {:ok, t}
   end
 
   def org_stats(%{supporter_count_by_org: org_st}, _, _) do
