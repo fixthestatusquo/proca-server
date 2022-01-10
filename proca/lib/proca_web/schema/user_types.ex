@@ -10,6 +10,7 @@ defmodule ProcaWeb.Schema.UserTypes do
       resolve(&Resolvers.User.current_user/3)
     end
 
+    @desc "Select users from this instnace. Requires a manage users admin permission."
     field :users, non_null(list_of(non_null(:user))) do
       arg(:select, :select_user)
 
@@ -41,9 +42,13 @@ defmodule ProcaWeb.Schema.UserTypes do
 
   object :org_user do
     field :email, non_null(:string)
+    @desc "Role in an org"
     field :role, non_null(:string)
+    @desc "Date and time the user was created on this instance"
     field :created_at, non_null(:naive_datetime)
+    @desc "Date and time when user joined org"
     field :joined_at, non_null(:naive_datetime)
+    @desc "Will be removed"
     field :last_signin_at, :naive_datetime
   end
 
