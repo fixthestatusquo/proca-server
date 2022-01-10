@@ -78,6 +78,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
+    field :targets, list_of(:target) do
+      resolve(&Resolvers.Campaign.targets/3)
+    end
+
     resolve_type(fn
       %{org_id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
         :private_campaign
@@ -90,10 +94,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :public_campaign do
     interface(:campaign)
     import_fields(:campaign)
-
-    field :targets, list_of(:public_target) do
-      resolve(&Resolvers.Campaign.targets/3)
-    end
   end
 
   object :private_campaign do
@@ -113,10 +113,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.Campaign.partnerships/3)
     end
 
-    field :targets, list_of(:target) do
-      resolve(&Resolvers.Campaign.targets/3)
-    end
-
+    @desc "MTT configuration"
     field :mtt, :campaign_mtt, do: load_assoc()
   end
 

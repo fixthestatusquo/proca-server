@@ -24,19 +24,29 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :emails, list_of(:target_email_input)
   end
 
-  object :target do
+  interface :target do
     field :id, non_null(:string)
     field :name, non_null(:string)
     field :area, :string, default_value: ""
     field :fields, :json, default_value: %{}
-    field :emails, non_null(list_of(:target_email))
+
+    resolve_type(fn
+      _, %{parent_type: %{identifier: :private_campaign}} -> :private_target
+      _, %{parent_type: %{identifier: :public_campaign}} -> :public_target
+      _, %{parent_type: pt} -> :public_target
+    end)
   end
 
   object :public_target do
-    field :id, non_null(:string)
-    field :name, non_null(:string)
-    field :area, :string, default_value: ""
-    field :fields, :json, default_value: %{}
+    interface(:target)
+    import_fields(:target)
+  end
+
+  object :private_target do
+    interface(:target)
+    import_fields(:target)
+
+    field :emails, non_null(list_of(:target_email))
   end
 
   object :target_mutations do
@@ -53,10 +63,11 @@ defmodule ProcaWeb.Schema.TargetTypes do
   end
 
   object :target_queries do
-    field :targets, non_null(list_of(:target)) do
-      arg(:campaign_id, non_null(:integer))
+    # XXX perhaps better to access via campaign.targets
+    # field :targets, non_null(list_of(:target)) do
+    #   arg(:campaign_id, non_null(:integer))
 
-      resolve(&Resolvers.Target.list/3)
-    end
+    #   resolve(&Resolvers.Target.list/3)
+    # end
   end
 end
