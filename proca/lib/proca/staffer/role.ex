@@ -21,6 +21,7 @@ defmodule Proca.Staffer.Role do
       :export_contacts,
       :change_org_users,
       :change_org_settings,
+      :change_campaign_settings,
       :manage_campaigns,
       :manage_action_pages
     ],
@@ -84,7 +85,7 @@ defmodule Proca.Staffer.Role do
     permissions(role) -- Permission.to_list(perms) == []
   end
 
-  def can_assign_role?(%Auth{user: user = %User{}}) do
-    Permission.can?(user, :manage_users)
+  def can_assign_role?(%Auth{} = auth) do
+    Permission.can?(auth, :manage_users)
   end
 end

@@ -61,25 +61,38 @@ defmodule ProcaWeb.Resolvers.Captcha do
     end
   end
 
-  defp hcaptcha_key() do
+  def hcaptcha_key() do
     Application.get_env(:proca, __MODULE__)[:hcaptcha_key]
   end
 
-  defp default_service() do
-    Application.get_env(:proca, :captcha_service)
+  def default_service() do
+    Application.get_env(:proca, __MODULE__)[:captcha_service]
+  end
+
+  def enabled_services() do
+    h = if hcaptcha_key(), do: ["hcaptcha"], else: []
+    p = if Service.Procaptcha.enabled?(), do: ["procaptcha"], else: []
+    h ++ p
   end
 
   @doc """
   If the hcaptcha or procaptcha is configured for the instance, verify the captcha. Otherwise, noop.
   """
   def verify(resolution = %{extensions: ext = %{captcha: code}}) do
-    preferred_service = Map.get(ext, :captcha_service, default_service())
+    services = enabled_services()
+    s = Map.get(ext, :captcha_service, default_service())
 
     cond do
-      secret = hcaptcha_key() != nil and preferred_service == "hcaptcha" ->
-        verify_hcaptcha(resolution, secret)
+      services == [] ->
+        resolution
 
-      Service.Procaptcha.enabled?() and preferred_service == "procaptcha" ->
+      s not in services ->
+        Resolution.put_result(resolution, {:error, captcha_error("not enabled", "bad_arg")})
+
+      s == "hcaptcha" ->
+        verify_hcaptcha(resolution, hcaptcha_key())
+
+      s == "procaptcha" ->
         case Service.Procaptcha.verify(code) do
           :ok ->
             resolution
@@ -88,9 +101,6 @@ defmodule ProcaWeb.Resolvers.Captcha do
             resolution
             |> Resolution.put_result({:error, captcha_error(msg, "bad_captcha")})
         end
-
-      true ->
-        resolution
     end
   end
 
