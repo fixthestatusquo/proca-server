@@ -35,7 +35,10 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "A reference to thank you email template of this ActionPage"
     field :thank_you_template_ref, :string do
       resolve(fn ap, _, _ ->
-        Proca.ActionPage.thank_you_template_ref(ap)
+        {
+          :ok,
+          Proca.ActionPage.thank_you_template_ref(ap)
+        }
       end)
     end
 
