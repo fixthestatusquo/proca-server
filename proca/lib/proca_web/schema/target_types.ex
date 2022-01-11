@@ -27,6 +27,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
   interface :target do
     field :id, non_null(:string)
     field :name, non_null(:string)
+    field :external_id, non_null(:string)
     field :area, :string, default_value: ""
     field :fields, :json, default_value: %{}
 
@@ -50,13 +51,13 @@ defmodule ProcaWeb.Schema.TargetTypes do
   end
 
   object :target_mutations do
-    field :upsert_targets, type: non_null(list_of(:target)) do
-      arg(:targets, non_null(list_of(:target_input)))
+    field :upsert_targets, type: non_null(list_of(:private_target)) do
+      arg(:targets, non_null(list_of(non_null(:target_input))))
       arg(:campaign_id, non_null(:integer))
 
       load(:campaign, by: [id: :campaign_id])
       determine_auth(for: :campaign)
-      allow([:manage_campaigns])
+      allow([:change_campaign_settings])
 
       resolve(&Resolvers.Target.upsert_targets/3)
     end
