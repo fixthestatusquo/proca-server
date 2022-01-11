@@ -6,6 +6,7 @@ defmodule Proca.Server.MTT do
 
   import Ecto.Query
   alias Proca.Repo
+  alias Proca.Server.MTTWorker
 
   @impl true
   def start_link(_opts) do
@@ -31,11 +32,15 @@ defmodule Proca.Server.MTT do
         join: mtt in Proca.MTT,
         on: mtt.campaign_id == c.id,
         where: mtt.start_at <= from_now(0, "day") and mtt.end_at >= from_now(0, "day"),
-        select: c.id
+        preload: [:mtt]
       )
     |> Repo.all()
-    IO.puts("processing mtt...")
-    IO.inspect(running_mtts)
 
+    Enum.map(running_mtts, fn campaign ->
+      Task.async(fn ->
+        MTTWorker.process_mtt_campaign(campaign)
+      end)
+    end)
+    |> Enum.map(&Task.await/1)
   end
 end
