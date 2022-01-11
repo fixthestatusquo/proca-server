@@ -193,13 +193,15 @@ defmodule Proca.Confirm do
           email: email,
           message: message,
           object_id: obj_id,
-          subject_id: subj_id
+          subject_id: subj_id,
+          operation: operation
         }
       ) do
-    operation = Confirm.Operation.mod(cnf)
+    opmod = Confirm.Operation.mod(cnf)
     cnf = Proca.Repo.preload(cnf, [:creator])
 
     %{
+      operation: Atom.to_string(operation),
       email: email || "",
       message: message || "",
       subject_id: subj_id,
@@ -209,7 +211,7 @@ defmodule Proca.Confirm do
       accept_link: Proca.Stage.Support.confirm_link(cnf, :confirm),
       reject_link: Proca.Stage.Support.confirm_link(cnf, :reject)
     }
-    |> Map.merge(operation.notify_fields(cnf))
+    |> Map.merge(opmod.notify_fields(cnf))
   end
 
   @doc """
@@ -223,7 +225,7 @@ defmodule Proca.Confirm do
   def notify_by_email(cnf = %Confirm{}, emails) when is_list(emails) do
     alias Proca.Service.EmailTemplateDirectory
 
-    operation = Confirm.Operation.mod(cnf)
+    opmod = Confirm.Operation.mod(cnf)
 
     instance = Org.one([preload: [:email_backend, :template_backend]] ++ [:instance])
 
@@ -237,7 +239,7 @@ defmodule Proca.Confirm do
         }
       end)
 
-    case EmailTemplateDirectory.ref_by_name_reload(instance, operation.email_template(cnf)) do
+    case EmailTemplateDirectory.ref_by_name_reload(instance, opmod.email_template(cnf)) do
       {:ok, template_ref} ->
         template = %EmailTemplate{ref: template_ref}
         EmailBackend.deliver(recipients, instance, template)
