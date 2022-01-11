@@ -1,13 +1,35 @@
 defmodule Proca.Server.MTTWorker do
+  alias Proca.Repo
+  import Ecto.Query
+
   def process_mtt_campaign(campaign) do
     if within_sending_time(campaign) do
-      emails_count_to_send = calculate_emails_to_send(campaign)
-      emails_to_send = get_emails_to_send(campaign, emails_count_to_send)
-      IO.inspect(campaign)
+      cycles_till_end = calculate_cycles(campaign)
+      target_ids = get_sendable_targets(campaign.id)
+      emails_to_send = get_emails_to_send(target_ids, cycles_till_end)
 
+      send_emails(emails_to_send)
     else
       IO.puts("Campaign with ID #{campaign.id} not in sending time")
     end
+  end
+
+  defp get_sendable_targets(campaign_id) do
+    targets =
+      from(t in Proca.Target,
+        join: c in Proca.Campaign,
+        on: c.id == ^campaign_id,
+        join: te in Proca.TargetEmail,
+        on: te.target_id == t.id,
+        where: te.email_status == :none,
+        distinct: t.id,
+        select: t.id
+      )
+    |> Repo.all()
+  end
+
+  defp calculate_cycles(campaign) do
+    return 1
   end
 
   defp within_sending_time(campaign) do
@@ -20,12 +42,30 @@ defmodule Proca.Server.MTTWorker do
     Time.compare(current_time, start_time) == Time.compare(end_time, current_time)
   end
 
-  defp calculate_emails_to_send(campaign) do
-    # Get Sending Rate
-    # Divide Sending Rate by 60 to get minute rate
+  defp get_emails_to_send(target_ids, cycles_till_end) do
+    List.flatten(Enum.map(target_ids, fn target_id ->
+      get_emails_for_target(target_id, cycles_till_end)
+    end))
   end
 
-  defp get_emails_to_send(campaign, emails_count_to_send) do
-    # Pull actions with processed, and no message field
+  defp get_emails_for_target(target_id, cycles_till_end) do
+    emails =
+      from(m in Proca.Action.Message,
+        join: t in Proca.Target,
+        on: m.target_id == t.id,
+        join: a in Proca.Action,
+        on: m.action_id == a.id,
+        where: a.processing_status == :accepted and m.delivered == false,
+        order_by: m.id,
+        preload: [:message_content, :target, [target: :emails]]
+      )
+    |> Repo.all()
+
+    emails_to_send = Integer.floor_div(Enum.count(emails), cycles_till_end)
+    Enum.take(emails, emails_to_send)
+  end
+
+  defp send_emails(emails) do
+    IO.inspect(emails)
   end
 end

@@ -36,6 +36,7 @@ defmodule Proca.Server.MTT do
       )
     |> Repo.all()
 
+    IO.puts("Processing mtt...")
     Enum.map(running_mtts, fn campaign ->
       Task.async(fn ->
         MTTWorker.process_mtt_campaign(campaign)
