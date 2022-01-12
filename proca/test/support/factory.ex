@@ -144,11 +144,15 @@ defmodule Proca.Factory do
     }
   end
 
-  def supporter_factory do
+  def supporter_factory(attrs) do
+    ap = Map.get(attrs, :action_page, build(:action_page))
+
     %Proca.Supporter{
       first_name: sequence("first_name"),
       email: sequence("email"),
-      fingerprint: sequence("fingerprint")
+      fingerprint: sequence("fingerprint"),
+      action_page: ap,
+      campaign: Map.get(attrs, :campaign, ap.campaign)
     }
   end
 
