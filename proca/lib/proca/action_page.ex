@@ -148,8 +148,9 @@ defmodule Proca.ActionPage do
       from(s in Supporter,
         select: s.id,
         left_join: a in assoc(s, :actions),
-        having: count(a.id) == 0,
-        group_by: s.id
+        where: s.action_page_id == ^page_id,
+        group_by: s.id,
+        having: count(a.id) == 0
       )
 
     multi
