@@ -65,13 +65,15 @@ defmodule ProcaWeb.Resolvers.ActionPage do
     |> Repo.insert_and_notify()
   end
 
+  # XXX make this into simple update on action_page, after we have partnerships
   def launch_page(_, params, %{
         context: %{
-          auth: auth = %Auth{staffer: %{id: org_id}},
+          auth: auth = %Auth{staffer: %{org_id: org_id}},
           action_page: ap
         }
       }) do
-    case Org.get_by_id(ap.campaign.org_id) do
+    # Compare to campaign owner
+    case Org.one(id: ap.campaign.org_id) do
       %Org{id: ^org_id} ->
         case ActionPage.go_live(ap) do
           {:ok, _} -> {:ok, %{status: :success}}

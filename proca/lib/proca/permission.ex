@@ -31,6 +31,7 @@ defmodule Proca.Permission do
     change_org_settings: 1 <<< 16,
     # sames as change_org_settings, maybe will be split in the future
     change_org_services: 1 <<< 16,
+    # XXX should become manage_partnerships
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
     # XXX this is unused but maybe could be usefull for moderation
