@@ -125,7 +125,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.action_page/3)
     end
 
-    # XXX remove, campaigns should be accessed directly
+    # XXX remove, campaigns should be accessed directly from root
     @desc "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
       arg(:id, non_null(:integer))
