@@ -1,7 +1,6 @@
 defmodule Proca.Confirm.ConfirmAction do
-  alias Proca.{Auth, Action, Confirm}
+  alias Proca.{Action, Confirm}
   @behaviour Confirm.Operation
-  import Proca.Changeset
   import Proca.Repo
 
   def changeset(%Action{id: id}) do

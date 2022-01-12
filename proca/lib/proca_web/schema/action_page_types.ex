@@ -91,8 +91,12 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     import_fields(:action_page)
 
     field :extra_supporters, non_null(:integer)
+
     @desc "Action page collects also opt-out actions"
     field :delivery, non_null(:boolean)
+
+    @desc "Email template to confirm supporter"
+    field :supporter_confirm_template, :string
 
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do
@@ -255,6 +259,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     @desc "Thank you email template of this ActionPage"
     field :thank_you_template, :string
+
+    @desc "Supporter confirm email template of this ActionPage"
+    field :supporter_confirm_template, :string
 
     @desc """
     Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here.
