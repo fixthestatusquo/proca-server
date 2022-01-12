@@ -96,18 +96,37 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) do
     ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
+    org = ap.org
 
     recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
 
-    tmpl = %EmailTemplate{ref: ap.thank_you_template_ref}
+    case EmailTemplateDirectory.ref_by_name_reload(org, ap.thank_you_template) do
+      {:ok, tmpl_ref} ->
+        tmpl = %EmailTemplate{ref: tmpl_ref}
 
-    try do
-      EmailBackend.deliver(recipients, ap.org, tmpl)
-      messages
-    rescue
-      x in EmailBackend.NotDeliverd ->
-        error("Failed to send email batch #{x.message}")
-        Enum.map(messages, &Message.failed(&1, x.message))
+        try do
+          EmailBackend.deliver(recipients, org, tmpl)
+          messages
+        rescue
+          x in EmailBackend.NotDeliverd ->
+            error("Failed to send email batch #{x.message}")
+            Enum.map(messages, &Message.failed(&1, x.message))
+        end
+
+      :not_found ->
+        Enum.map(
+          messages,
+          &Message.failed(&1, "Template #{ap.thank_you_template} not found (org #{org.name})")
+        )
+
+      :not_configured ->
+        Enum.map(
+          messages,
+          &Message.failed(
+            &1,
+            "Template #{ap.thank_you_template} backend not configured (org #{org.name})"
+          )
+        )
     end
   end
 
@@ -124,33 +143,58 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_supporter_confirm(m.data)
       end)
 
-    # XXX add action_page
     tmpl_name = ap.supporter_confirm_template || org.supporter_confirm_template
 
-    case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
-      {:ok, tmpl_ref} ->
-        tmpl = %EmailTemplate{ref: tmpl_ref}
+    if is_nil(tmpl_name) do
+      # just confirm the supporter straight away, the templates are not set
+      Enum.map(messages, fn m ->
+        action_id = m["actionId"]
 
-        try do
-          EmailBackend.deliver(recipients, org, tmpl)
-          messages
-        rescue
-          x in EmailBackend.NotDeliverd ->
-            error("Failed to send email batch #{x.message}")
-            Enum.map(messages, &Message.failed(&1, x.message))
+        case confirm_supporter(action_id) do
+          :ok ->
+            m
+
+          {:error, e} ->
+            Message.failed(m, "Cannot auto-confirm supporter (action id #{action_id}): #{e}")
         end
+      end)
+    else
+      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
+        {:ok, tmpl_ref} ->
+          tmpl = %EmailTemplate{ref: tmpl_ref}
 
-      :not_found ->
-        Enum.map(
-          messages,
-          &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
-        )
+          try do
+            EmailBackend.deliver(recipients, org, tmpl)
+            messages
+          rescue
+            x in EmailBackend.NotDeliverd ->
+              error("Failed to send email batch #{x.message}")
+              Enum.map(messages, &Message.failed(&1, x.message))
+          end
 
-      :not_configured ->
-        Enum.map(
-          messages,
-          &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})")
-        )
+        :not_found ->
+          Enum.map(
+            messages,
+            &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
+          )
+
+        :not_configured ->
+          Enum.map(
+            messages,
+            &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})")
+          )
+      end
+    end
+  end
+
+  defp confirm_supporter(action_id) do
+    alias Proca.Server.Processing
+    action = Action.one(id: action_id, preload: [:supporter])
+
+    case Supporter.confirm(action.supporter) do
+      {:ok, sup2} -> Processing.process_async(%{action | supporter: sup2})
+      {:noop, _} -> :ok
+      {:error, msg} -> {:error, msg}
     end
   end
 

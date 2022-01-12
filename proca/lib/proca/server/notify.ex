@@ -8,19 +8,6 @@ defmodule Proca.Server.Notify do
   alias Proca.Pipes
   import Logger
 
-  # Instance wide notification settings
-
-  @type global_confirm_processing?() :: {boolean, number}
-  defp global_confirm_processing?() do
-    instance = Proca.Server.Instance.org()
-
-    if instance != nil do
-      {instance.confirm_processing, instance.id}
-    else
-      {false, nil}
-    end
-  end
-
   ####################
 
   def created(record, opts \\ [])

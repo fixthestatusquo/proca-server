@@ -83,18 +83,20 @@ defmodule ProcaWeb.Resolvers.Org do
         _ -> nil
       end
 
+    # Refactor to use Map.take - watch out sqs name is different
     {:ok,
      %{
        org: org,
        email_from: org.email_from,
        email_backend: email_service,
+       supporter_confirm: org.supporter_confirm,
+       supporter_confirm_template: org.supporter_confirm_template,
        custom_supporter_confirm: org.custom_supporter_confirm,
        custom_action_confirm: org.custom_action_confirm,
        custom_action_deliver: org.custom_action_deliver,
        sqs_deliver: org.system_sqs_deliver,
        event_processing: org.event_processing,
-       event_backend: event_service,
-       confirm_processing: org.confirm_processing
+       event_backend: event_service
      }}
   end
 
@@ -106,6 +108,8 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def update_org_processing(_, args, %{context: %{org: org}}) do
+    IO.inspect(args, label: "update org processing")
+
     args =
       args
       |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)
