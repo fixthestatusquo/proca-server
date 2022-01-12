@@ -108,8 +108,6 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def update_org_processing(_, args, %{context: %{org: org}}) do
-    IO.inspect(args, label: "update org processing")
-
     args =
       args
       |> Helper.rename_key(:sqs_deliver, :system_sqs_deliver)

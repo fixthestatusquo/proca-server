@@ -39,7 +39,7 @@ defmodule Proca.Stage.EmailSupporter do
           batch_timeout: 10_000,
           concurrency: 1
         ],
-        opt_in: [
+        supporter_confirm: [
           batch_size: 5,
           batch_timeout: 10_000,
           concurrency: 1
@@ -76,15 +76,25 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok,
        %{
          "stage" => "supporter_confirm",
-         "orgId" => org_id,
+         "actionPageId" => action_page_id,
          "actionId" => action_id
        } = action} ->
-        if send_opt_in?(org_id, action_id) do
+        if send_supporter_confirm?(action_page_id, action_id) do
           message
           |> Message.update_data(fn _ -> action end)
+          |> Message.put_batch_key(action_page_id)
           |> Message.put_batcher(:supporter_confirm)
         else
-          ignore(message)
+          case confirm_supporter(action_id) do
+            :ok ->
+              ignore(message)
+
+            {:error, e} ->
+              Message.failed(
+                message,
+                "Cannot auto-confirm supporter (action id #{action_id}): #{e}"
+              )
+          end
         end
 
       # ignore garbled message
@@ -94,7 +104,7 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   @impl true
-  def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) do
+  def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) when is_number(ap_id) do
     ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
     org = ap.org
 
@@ -131,11 +141,12 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   @impl true
-  def handle_batch(:supporter_confirm, [fm | _] = messages, _, _) do
-    actionPageId = fm.data["actionPageId"]
-
-    ap = ActionPage.one(id: actionPageId, preload: [org: [:email_backend, :template_backend]])
+  def handle_batch(:supporter_confirm, messages, %BatchInfo{batch_key: ap_id}, _)
+      when is_number(ap_id) do
+    ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
     org = ap.org
+
+    tmpl_name = ap.supporter_confirm_template || ap.org.supporter_confirm_template
 
     recipients =
       Enum.map(messages, fn m ->
@@ -143,47 +154,30 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_supporter_confirm(m.data)
       end)
 
-    tmpl_name = ap.supporter_confirm_template || org.supporter_confirm_template
+    case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
+      {:ok, tmpl_ref} ->
+        tmpl = %EmailTemplate{ref: tmpl_ref}
 
-    if is_nil(tmpl_name) do
-      # just confirm the supporter straight away, the templates are not set
-      Enum.map(messages, fn m ->
-        action_id = m["actionId"]
-
-        case confirm_supporter(action_id) do
-          :ok ->
-            m
-
-          {:error, e} ->
-            Message.failed(m, "Cannot auto-confirm supporter (action id #{action_id}): #{e}")
+        try do
+          EmailBackend.deliver(recipients, org, tmpl)
+          messages
+        rescue
+          x in EmailBackend.NotDeliverd ->
+            error("Failed to send email batch #{x.message}")
+            Enum.map(messages, &Message.failed(&1, x.message))
         end
-      end)
-    else
-      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
-        {:ok, tmpl_ref} ->
-          tmpl = %EmailTemplate{ref: tmpl_ref}
 
-          try do
-            EmailBackend.deliver(recipients, org, tmpl)
-            messages
-          rescue
-            x in EmailBackend.NotDeliverd ->
-              error("Failed to send email batch #{x.message}")
-              Enum.map(messages, &Message.failed(&1, x.message))
-          end
+      :not_found ->
+        Enum.map(
+          messages,
+          &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
+        )
 
-        :not_found ->
-          Enum.map(
-            messages,
-            &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
-          )
-
-        :not_configured ->
-          Enum.map(
-            messages,
-            &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})")
-          )
-      end
+      :not_configured ->
+        Enum.map(
+          messages,
+          &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})")
+        )
     end
   end
 
@@ -198,12 +192,6 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
-  # @impl true
-  # def handle_batch(:noop, messages, _, _) do
-  #   messages
-  #   |> Message.ack_immediately()
-  # end
-
   defp send_thank_you?(action_page_id, action_id) do
     from(a in Action,
       join: ap in ActionPage,
@@ -214,7 +202,7 @@ defmodule Proca.Stage.EmailSupporter do
         a.id == ^action_id and
           a.with_consent and
           ap.id == ^action_page_id and
-          not is_nil(ap.thank_you_template_ref) and
+          not is_nil(ap.thank_you_template) and
           not is_nil(o.email_backend_id) and
           not is_nil(o.template_backend_id) and
           not is_nil(o.email_from)
@@ -224,19 +212,23 @@ defmodule Proca.Stage.EmailSupporter do
 
   # The message was already queued for this optin, so lets check
   # for sending invariants, that is, template existence
-  defp send_opt_in?(org_id, action_id) do
-    action = Repo.get(Action, action_id)
-
-    if action.with_consent do
-      org = Repo.get(Org, org_id)
-
-      is_bitstring(org.supporter_confirm_template) and
-        is_number(org.email_backend_id) and
-        is_number(org.template_backend_id)
-    else
-      error("Should not happen: action with no consent in supporter_confirm queue: #{action_id}")
-      false
-    end
+  defp send_supporter_confirm?(action_page_id, action_id) do
+    from(a in Action,
+      join: ap in ActionPage,
+      on: a.action_page_id == ap.id,
+      join: o in Org,
+      on: o.id == ap.org_id,
+      where:
+        a.id == ^action_id and
+          a.with_consent and
+          ap.id == ^action_page_id and
+          (not is_nil(o.supporter_confirm_template) or
+             not is_nil(ap.supporter_confirm_template)) and
+          not is_nil(o.email_backend_id) and
+          not is_nil(o.template_backend_id) and
+          not is_nil(o.email_from)
+    )
+    |> Repo.one() != nil
   end
 
   ## XXX use this ?
@@ -248,9 +240,8 @@ defmodule Proca.Stage.EmailSupporter do
     EmailRecipient.put_confirm(rcpt, confirm)
   end
 
-  defp add_supporter_confirm(rcpt = %EmailRecipient{}, data) do
+  defp add_supporter_confirm(rcpt = %EmailRecipient{ref: ref}, data) do
     action_id = data["actionId"]
-    ref = data["contact"]["ref"]
 
     EmailRecipient.put_fields(rcpt,
       confirm_link: supporter_link(action_id, ref, :confirm),

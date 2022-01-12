@@ -10,7 +10,7 @@ defmodule Proca.Stage.MessageV2 do
         action,
         [
           [supporter: [contacts: [:public_key, :sign_key]]],
-          :action_page,
+          [action_page: :org],
           :campaign,
           :source,
           :donation
@@ -26,7 +26,10 @@ defmodule Proca.Stage.MessageV2 do
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
         "thankYouTemplate" => action.action_page.thank_you_template,
-        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page)
+        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page),
+        "supporterConfirmTemplate" =>
+          action.action_page.supporter_confirm_template ||
+            action.action_page.org.supporter_confirm_template
       },
       "campaignId" => action.campaign_id,
       "campaign" => %{
