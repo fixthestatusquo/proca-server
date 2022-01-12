@@ -28,11 +28,18 @@ defmodule Proca.Server.MTTWorker do
     |> Repo.all()
   end
 
-  defp calculate_cycles(campaign) do
-    return 1
+  def calculate_cycles(campaign) do
+    time_now = DateTime.utc_now()
+    end_time = campaign.mtt.end_at
+
+    cycles_per_day = calculate_cycles(campaign.mtt.start_at, campaign.mtt.end_at)
+    cycles_today = calculate_cycles(Time.utc_now(), campaign.mtt.end_at)
+    days_left = Date.diff(campaign.mtt.end_at, Date.utc_today())
+
+    (days_left * cycles_per_day) + cycles_today
   end
 
-  defp within_sending_time(campaign) do
+  def within_sending_time(campaign) do
     start_time = DateTime.to_time(campaign.mtt.start_at)
     end_time = DateTime.to_time(campaign.mtt.end_at)
     current_time = Time.utc_now()
@@ -42,13 +49,13 @@ defmodule Proca.Server.MTTWorker do
     Time.compare(current_time, start_time) == Time.compare(end_time, current_time)
   end
 
-  defp get_emails_to_send(target_ids, cycles_till_end) do
+  def get_emails_to_send(target_ids, cycles_till_end) do
     List.flatten(Enum.map(target_ids, fn target_id ->
       get_emails_for_target(target_id, cycles_till_end)
     end))
   end
 
-  defp get_emails_for_target(target_id, cycles_till_end) do
+  def get_emails_for_target(target_id, cycles_till_end) do
     emails =
       from(m in Proca.Action.Message,
         join: t in Proca.Target,
@@ -67,5 +74,12 @@ defmodule Proca.Server.MTTWorker do
 
   defp send_emails(emails) do
     IO.inspect(emails)
+  end
+
+  defp calculate_cycles(start_time, end_time) do
+    mins_per_cycles = Application.get_env(:proca, Proca)[:mtt_cycle_time]
+    time_diff = Integer.floor_div(Time.diff(end_time, start_time, :second), 60)
+
+    Integer.floor_div(time_diff, mins_per_cycles)
   end
 end
