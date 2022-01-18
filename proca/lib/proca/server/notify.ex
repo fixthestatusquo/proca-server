@@ -23,6 +23,8 @@ defmodule Proca.Server.Notify do
     updated(action_page, opts)
   end
 
+  # confirm that has associated org
+  # send it to it's owners
   def created(%Confirm{operation: :launch_page, subject_id: campaign_id} = cnf, opts) do
     case Campaign.one(id: campaign_id, preload: [:org]) do
       nil ->
@@ -34,6 +36,9 @@ defmodule Proca.Server.Notify do
     end
   end
 
+  # Confirm that does not have an org to be notified
+  # we send it to confirm.email if exists
+  # and we send it to instance org as event
   def created(%Confirm{} = cnf, opts) do
     send_confirm_by_email(cnf, nil)
 
