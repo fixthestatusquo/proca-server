@@ -96,6 +96,12 @@ defmodule Proca.Org do
     end
   end
 
+  def cast_email_backend(chset, _org, %{email_backend: nil}) do
+    chset
+    |> put_change(:email_backend_id, nil)
+    |> put_change(:template_backend_id, nil)
+  end
+
   def cast_email_backend(ch, _org, %{email_backend: srv_name})
       when is_atom(srv_name) do
     add_error(ch, :email_backend, "service does not support email")
