@@ -20,6 +20,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
     field :action_page, :action_page
     field :campaign, :campaign
     field :org, :org
+    field :message, :string
   end
 
   object :confirm_mutations do
