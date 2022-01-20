@@ -56,7 +56,6 @@ defmodule Proca.Users.User do
     |> change(password: StrongPassword.generate())
     |> validate_email()
     |> validate_password(opts)
-    |> unique_constraint(:email)
   end
 
   defp validate_email(changeset) do
