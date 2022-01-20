@@ -160,7 +160,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       load(:campaign, by: [:id, :name, :external_id])
       determine_auth(for: :campaign)
-      allow([:manage_campaigns])
+      allow([:manage_campaigns, :change_campaign_settings])
 
       resolve(&Resolvers.Campaign.update/3)
     end
