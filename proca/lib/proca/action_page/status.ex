@@ -72,7 +72,7 @@ defmodule Proca.ActionPage.Status do
       source = one(Ecto.assoc(action, [:source]))
 
       if source.location do
-        :ets.insert(:last_seen_location, {id, action.source.location})
+        :ets.insert(:last_seen_location, {id, source.location})
       end
     end
 
