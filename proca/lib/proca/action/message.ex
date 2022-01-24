@@ -8,6 +8,7 @@ defmodule Proca.Action.Message do
 
   schema "messages" do
     field :delivered, :boolean, default: false
+    field :email_from, :string, default: ""
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
     belongs_to :message_content, Proca.Action.MessageContent
@@ -17,7 +18,7 @@ defmodule Proca.Action.Message do
     assocs = Map.take(attrs, [:target, :message_content])
 
     msg
-    |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered])
+    |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered, :email_from])
     |> change(assocs)
   end
 
