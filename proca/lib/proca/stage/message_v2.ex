@@ -109,6 +109,8 @@ defmodule Proca.Stage.MessageV2 do
   Action data for organization that a contact record was created will contain a consent,
   and withConsent field signifying that on this exact action the consent was collected.
   """
+  def contact_privacy(supporter, contact, with_consent \\ false)
+
   def contact_privacy(supporter, contact = %Contact{}, with_consent) do
     %{
       "optIn" => contact.communication_consent,
@@ -118,6 +120,7 @@ defmodule Proca.Stage.MessageV2 do
     |> contact_privacy_consent(with_consent)
   end
 
+  # this variant is only for supporter with no contact (wiped out or missing contact data)
   def contact_privacy(supporter, nil, _with_consent) do
     %{}
     |> contact_privacy_supporter(supporter)
