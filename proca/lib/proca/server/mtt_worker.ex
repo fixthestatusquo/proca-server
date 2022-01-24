@@ -62,7 +62,7 @@ defmodule Proca.Server.MTTWorker do
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
-        where: a.processing_status == :accepted and m.delivered == false,
+        where: a.processing_status == :accepted and m.delivered == false and m.target_id == ^target_id,
         order_by: m.id,
         preload: [:message_content, :target, [target: :emails]]
       )
