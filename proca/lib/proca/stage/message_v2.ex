@@ -10,7 +10,7 @@ defmodule Proca.Stage.MessageV2 do
         action,
         [
           [supporter: [contacts: [:public_key, :sign_key]]],
-          :action_page,
+          [action_page: :org],
           :campaign,
           :source,
           :donation
@@ -26,7 +26,10 @@ defmodule Proca.Stage.MessageV2 do
         "locale" => action.action_page.locale,
         "name" => action.action_page.name,
         "thankYouTemplate" => action.action_page.thank_you_template,
-        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page)
+        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page),
+        "supporterConfirmTemplate" =>
+          action.action_page.supporter_confirm_template ||
+            action.action_page.org.supporter_confirm_template
       },
       "campaignId" => action.campaign_id,
       "campaign" => %{
@@ -102,43 +105,51 @@ defmodule Proca.Stage.MessageV2 do
     }
   end
 
-  def contact_privacy(supporter, contact, new_consent \\ true)
-
-  def contact_privacy(
-        %Supporter{
-          email_status: email_status,
-          email_status_changed: email_status_changed
-        },
-        contact = %Contact{},
-        new_consent
-      ) do
-    p = %{
-      "emailStatus" =>
-        if email_status == :none do
-          nil
-        else
-          Atom.to_string(email_status)
-        end,
-      "emailStatusChanged" =>
-        if email_status_changed != nil do
-          Support.to_iso8601(email_status_changed)
-        else
-          nil
-        end
+  @doc """
+  Action data for organization that a contact record was created will contain a consent,
+  and withConsent field signifying that on this exact action the consent was collected.
+  """
+  def contact_privacy(supporter, contact = %Contact{}, with_consent) do
+    %{
+      "optIn" => contact.communication_consent,
+      "givenAt" => contact.inserted_at |> Support.to_iso8601()
     }
-
-    if new_consent do
-      %{
-        "optIn" => contact.communication_consent,
-        "givenAt" => contact.inserted_at |> Support.to_iso8601()
-      }
-      |> Map.merge(p)
-    else
-      p
-    end
+    |> contact_privacy_supporter(supporter)
+    |> contact_privacy_consent(with_consent)
   end
 
-  def contact_privacy(_, nil, _), do: nil
+  def contact_privacy(supporter, nil, _with_consent) do
+    %{}
+    |> contact_privacy_supporter(supporter)
+    |> contact_privacy_consent(false)
+  end
+
+  defp contact_privacy_supporter(d, %Supporter{
+         email_status: email_status,
+         email_status_changed: email_status_changed
+       }) do
+    es =
+      case email_status do
+        :none -> nil
+        es -> Atom.to_string(es)
+      end
+
+    esch =
+      case email_status_changed do
+        nil -> nil
+        dt -> Support.to_iso8601(dt)
+      end
+
+    %{
+      "emailStatus" => es,
+      "emailStatusChanged" => esch
+    }
+    |> Map.merge(d)
+  end
+
+  defp contact_privacy_consent(d, with_consent) do
+    Map.put(d, "withConsent", with_consent)
+  end
 
   def put_action_meta(map, stage) do
     map

@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e 
+set -u
+export MIX_ENV=prod
+rm -f _build/prod/proca-*tar.gz
+mix compile
+mix release

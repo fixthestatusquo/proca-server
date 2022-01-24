@@ -5,6 +5,28 @@ import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
 import {removeBlank} from '../util'
 
+/*
+ * How to configure Identity consent.
+ *
+ * Consents in speakout/identity have levels:
+ * - none_given             # complex way to say: opt out
+ * - implicit               # complex way to say: no checkbox, opt in assumed
+ * - explicit_not_opt_out   # complex way to say: prechecked opt in
+ * - explicit_opt_in        # complex way to say: checked opt in
+ *
+ * In Proca we have:
+ * - opt_in: false/true
+ * - email_status: null/double_opt_in
+ *
+ * Identity might require a few different consents (each for some different goal)
+ * For identity we want to configure mapping
+ * {
+ *  data_processing_2022: { level: 'explicit_opt_in' }
+ *  newsletter_v2: { level: 'communication' }  # will depend on Proca optIn ? 'explicit_opt_in' : 'none_given',
+ *  newsletter_v3: { level: 'double_opt_in' }  # will depend on Proca double_opt_in ? 'explicit_opt_in' : 'none_given'
+ * }
+ *
+ */
 
 const log = debug('proca:service:identity')
 
@@ -13,7 +35,7 @@ type ConsentConfig = {
 }
 
 type Consent = {
-  level: "communication" | "none_given" | "implicit" | "explicit_not_opt_out" | "explicit_opt_in",
+  level: "communication" | "double_opt_in" | "none_given" | "implicit" | "explicit_not_opt_out" | "explicit_opt_in",
   locale?: string
 }
 
@@ -21,9 +43,19 @@ export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, c
   const url = argv.service_url || config.identity_url 
   const api_token = config.identity_api_token 
   const comm_consent = config.identity_consent
+  const only_opt_in = 'IDENTITY_ONLY_OPT_IN' in process.env
+  const only_double_opt_in = 'IDENTITY_ONLY_DOUBLE_OPT_IN' in process.env
 
   if (!url) throw new Error("identity url not set")
   if (!api_token) throw new Error("identity api token not set")
+
+  // XXX the only_* mode indents to drop data where
+  if (only_double_opt_in && action.privacy.emailStatus !== 'double_opt_in')  {
+    return false;
+  }
+  if (only_opt_in && action.privacy.optIn === false) {
+    return false;
+  }
 
   let consent : ConsentConfig = null
   if (comm_consent === null || comm_consent === undefined) {
@@ -152,18 +184,32 @@ export function toConsent(action : ActionMessageV2, consent_id : string, consent
     }
 
   // Handle opt in to communication
-  if (level == 'communication') {
+  if (level === 'communication') {
     if (action.privacy) {
-      if (action.privacy.optIn) {
+      if (action.privacy.optIn === true) {
         return {
           public_id: consent_id,
           consent_level: 'explicit_opt_in'
         }
-      } else {
+      } else if (action.privacy.optIn === false) {
         return {
           public_id: consent_id,
           consent_level: 'none_given'
         }
+      }
+      // watch out, optIn key can be missing if this is non-consent action
+    }
+    return {
+      public_id: consent_id,
+      consent_level: 'no_change'
+    }
+  }
+
+  if (level === 'double_opt_in') {
+    if (action.privacy.emailStatus === 'double_opt_in')  {
+      return {
+        public_id: consent_id,
+        consent_level: 'explicit_opt_in'
       }
     } else {
       return {

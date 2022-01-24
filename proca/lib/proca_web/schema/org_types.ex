@@ -125,7 +125,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.action_page/3)
     end
 
-    # XXX remove, campaigns should be accessed directly
+    # XXX remove, campaigns should be accessed directly from root
     @desc "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
     field :campaign, non_null(:campaign) do
       arg(:id, non_null(:integer))
@@ -191,6 +191,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:email_backend, :service_name)
       arg(:email_from, :string)
 
+      arg(:supporter_confirm, :boolean)
+      arg(:supporter_confirm_template, :string)
+
       arg(:custom_supporter_confirm, :boolean)
       arg(:custom_action_confirm, :boolean)
       arg(:custom_action_deliver, :boolean)
@@ -198,7 +201,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       arg(:event_backend, :service_name)
       arg(:event_processing, :boolean)
-      arg(:confirm_processing, :boolean)
 
       load(:org, by: [:name])
       determine_auth(for: :org)
@@ -329,6 +331,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :email_from, :string
     field :email_backend, :service_name
 
+    field :supporter_confirm, non_null(:boolean)
+    field :supporter_confirm_template, :string
+
     field :custom_supporter_confirm, non_null(:boolean)
     field :custom_action_confirm, non_null(:boolean)
     field :custom_action_deliver, non_null(:boolean)
@@ -336,7 +341,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     field :event_backend, :service_name
     field :event_processing, non_null(:boolean)
-    field :confirm_processing, non_null(:boolean)
 
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)

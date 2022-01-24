@@ -74,7 +74,9 @@ export type ActionPage = {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -102,8 +104,10 @@ export type ActionPageInput = {
   name?: Maybe<Scalars['String']>;
   /** 2-letter, lowercase, code of ActionPage language */
   locale?: Maybe<Scalars['String']>;
-  /** A reference to thank you email template of this ActionPage */
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
+  /** Thank you email template of this ActionPage */
+  thankYouTemplate?: Maybe<Scalars['String']>;
+  /** Supporter confirm email template of this ActionPage */
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   /** Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. */
   extraSupporters?: Maybe<Scalars['Int']>;
   /** JSON string containing Action Page config */
@@ -192,7 +196,7 @@ export type CampaignActionsArgs = {
 /** Campaign input */
 export type CampaignInput = {
   /** Campaign unchanging identifier */
-  name: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
   /** Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign */
   externalId?: Maybe<Scalars['Int']>;
   /** Campaign human readable title */
@@ -251,6 +255,7 @@ export type ConfirmResult = {
   actionPage: Maybe<ActionPage>;
   campaign: Maybe<Campaign>;
   org: Maybe<Org>;
+  message: Maybe<Scalars['String']>;
 };
 
 /** GDPR consent data for this org */
@@ -451,9 +456,9 @@ export type OrgInput = {
   /** Schema for contact personal information */
   contactSchema?: Maybe<ContactSchema>;
   /** Email opt in enabled */
-  emailOptIn?: Maybe<Scalars['Boolean']>;
+  supporterConfirm?: Maybe<Scalars['Boolean']>;
   /** Email opt in template name */
-  emailOptInTemplate?: Maybe<Scalars['String']>;
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   /** Config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -461,9 +466,13 @@ export type OrgInput = {
 export type OrgUser = {
   __typename?: 'OrgUser';
   email: Scalars['String'];
+  /** Role in an org */
   role: Scalars['String'];
+  /** Date and time the user was created on this instance */
   createdAt: Scalars['NaiveDateTime'];
+  /** Date and time when user joined org */
   joinedAt: Scalars['NaiveDateTime'];
+  /** Will be removed */
   lastSigninAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
@@ -484,9 +493,9 @@ export type PersonalData = {
   /** Schema for contact personal information */
   contactSchema: ContactSchema;
   /** Email opt in enabled */
-  emailOptIn: Scalars['Boolean'];
+  supporterConfirm: Scalars['Boolean'];
   /** Email opt in template name */
-  emailOptInTemplate: Maybe<Scalars['String']>;
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** High data security enabled */
   highSecurity: Scalars['Boolean'];
 };
@@ -498,7 +507,9 @@ export type PrivateActionPage = ActionPage & {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -513,6 +524,8 @@ export type PrivateActionPage = ActionPage & {
   extraSupporters: Scalars['Int'];
   /** Action page collects also opt-out actions */
   delivery: Scalars['Boolean'];
+  /** Email template to confirm supporter */
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** Location of the widget as last seen in HTTP REFERER header */
   location: Maybe<Scalars['String']>;
   /** Status of action page */
@@ -540,6 +553,8 @@ export type PrivateCampaign = Campaign & {
   actions: PublicActionsResult;
   /** Campaign onwer collects opt-out actions for delivery even if campaign partner is */
   forceDelivery: Scalars['Boolean'];
+  /** Action Pages of this campaign that are accessible to current user */
+  actionPages: Array<PrivateActionPage>;
   /** List of partnerships and requests */
   partnerships: Maybe<Array<Partnership>>;
   targets: Maybe<Array<Maybe<Target>>>;
@@ -618,13 +633,15 @@ export type Processing = {
   __typename?: 'Processing';
   emailFrom: Maybe<Scalars['String']>;
   emailBackend: Maybe<ServiceName>;
+  supporterConfirm: Scalars['Boolean'];
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   customSupporterConfirm: Scalars['Boolean'];
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
   sqsDeliver: Scalars['Boolean'];
   eventBackend: Maybe<ServiceName>;
   eventProcessing: Scalars['Boolean'];
-  confirmProcessing: Scalars['Boolean'];
+  emailTemplates: Maybe<Array<Scalars['String']>>;
 };
 
 export type PublicActionPage = ActionPage & {
@@ -634,7 +651,9 @@ export type PublicActionPage = ActionPage & {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -758,7 +777,9 @@ export type RootMutationType = {
   acceptOrgConfirm: ConfirmResult;
   /** Reject a confirm on behalf of organisation. */
   rejectOrgConfirm: ConfirmResult;
+  /** Accept a confirm by user */
   acceptUserConfirm: ConfirmResult;
+  /** Reject a confirm by user */
   rejectUserConfirm: ConfirmResult;
   upsertTargets: Array<Maybe<Target>>;
 };
@@ -907,13 +928,14 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   name: Scalars['String'];
   emailBackend?: Maybe<ServiceName>;
   emailFrom?: Maybe<Scalars['String']>;
+  supporterConfirm?: Maybe<Scalars['Boolean']>;
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   customSupporterConfirm?: Maybe<Scalars['Boolean']>;
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
   sqsDeliver?: Maybe<Scalars['Boolean']>;
   eventBackend?: Maybe<ServiceName>;
   eventProcessing?: Maybe<Scalars['Boolean']>;
-  confirmProcessing?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1007,6 +1029,7 @@ export type RootQueryType = {
   actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
   currentUser: User;
+  /** Select users from this instnace. Requires a manage users admin permission. */
   users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
@@ -1217,7 +1240,7 @@ export const CampaignFields = {"kind":"Document","definitions":[{"kind":"Fragmen
 export const CampaignPrivateFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"forceDelivery"}}]}}]} as unknown as DocumentNode<CampaignPrivateFields, unknown>;
 export const CampaignAllStats = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignAllStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"supporterCount"}},{"kind":"Field","name":{"kind":"Name","value":"supporterCountByOrg"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionType"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<CampaignAllStats, unknown>;
 export const OrgIds = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<OrgIds, unknown>;
-export const ActionPageFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]} as unknown as DocumentNode<ActionPageFields, unknown>;
+export const ActionPageFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"live"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplate"}},{"kind":"Field","name":{"kind":"Name","value":"thankYouTemplateRef"}}]}}]} as unknown as DocumentNode<ActionPageFields, unknown>;
 export const CampaignPartnerships = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignPartnerships"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"partnerships"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"actionPages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"launchRequests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"objectId"}}]}}]}}]}},...OrgIds.definitions,...ActionPageFields.definitions]} as unknown as DocumentNode<CampaignPartnerships, unknown>;
 export const CampaignOverview = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CampaignOverview"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPrivateFields"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignAllStats"}},{"kind":"Field","name":{"kind":"Name","value":"org"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"orgIds"}}]}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"campaignPartnerships"}}]}},...CampaignFields.definitions,...CampaignPrivateFields.definitions,...CampaignAllStats.definitions,...OrgIds.definitions,...CampaignPartnerships.definitions]} as unknown as DocumentNode<CampaignOverview, unknown>;
 export const CampaignIds = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"campaignIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Campaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]} as unknown as DocumentNode<CampaignIds, unknown>;
@@ -1226,7 +1249,7 @@ export const CampaignExportIds = {"kind":"Document","definitions":[{"kind":"Frag
 export const ActionPageIds = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPageIds"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}}]}}]} as unknown as DocumentNode<ActionPageIds, unknown>;
 export const ActionPagePrivateFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"actionPagePrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"extraSupporters"}},{"kind":"Field","name":{"kind":"Name","value":"delivery"}}]}}]} as unknown as DocumentNode<ActionPagePrivateFields, unknown>;
 export const OrgFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Org"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]} as unknown as DocumentNode<OrgFields, unknown>;
-export const OrgPrivateFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"personalData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"emailOptInTemplate"}}]}}]}}]} as unknown as DocumentNode<OrgPrivateFields, unknown>;
+export const OrgPrivateFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"orgPrivateFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateOrg"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"config"}},{"kind":"Field","name":{"kind":"Name","value":"personalData"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactSchema"}},{"kind":"Field","name":{"kind":"Name","value":"supporterConfirm"}},{"kind":"Field","name":{"kind":"Name","value":"supporterConfirmTemplate"}}]}}]}}]} as unknown as DocumentNode<OrgPrivateFields, unknown>;
 export const KeyFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"keyFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Key"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"expired"}},{"kind":"Field","name":{"kind":"Name","value":"expiredAt"}}]}}]} as unknown as DocumentNode<KeyFields, unknown>;
 export const ServiceFields = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"serviceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Service"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"host"}},{"kind":"Field","name":{"kind":"Name","value":"user"}},{"kind":"Field","name":{"kind":"Name","value":"path"}}]}}]} as unknown as DocumentNode<ServiceFields, unknown>;
 export const ContactExport = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"contactExport"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Contact"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contactRef"}},{"kind":"Field","name":{"kind":"Name","value":"payload"}},{"kind":"Field","name":{"kind":"Name","value":"nonce"}},{"kind":"Field","name":{"kind":"Name","value":"publicKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}},{"kind":"Field","name":{"kind":"Name","value":"signKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"public"}}]}}]}}]} as unknown as DocumentNode<ContactExport, unknown>;
@@ -2155,12 +2178,12 @@ export type ActionPageIds = ActionPageIds_PrivateActionPage_ | ActionPageIds_Pub
 
 type ActionPageFields_PrivateActionPage_ = (
   { __typename: 'PrivateActionPage' }
-  & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplateRef'>
+  & Pick<PrivateActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplate' | 'thankYouTemplateRef'>
 );
 
 type ActionPageFields_PublicActionPage_ = (
   { __typename: 'PublicActionPage' }
-  & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplateRef'>
+  & Pick<PublicActionPage, 'id' | 'name' | 'locale' | 'config' | 'live' | 'thankYouTemplate' | 'thankYouTemplateRef'>
 );
 
 export type ActionPageFields = ActionPageFields_PrivateActionPage_ | ActionPageFields_PublicActionPage_;
@@ -2187,7 +2210,7 @@ export type OrgPrivateFields = (
   & Pick<PrivateOrg, 'config'>
   & { personalData: (
     { __typename?: 'PersonalData' }
-    & Pick<PersonalData, 'contactSchema' | 'emailOptIn' | 'emailOptInTemplate'>
+    & Pick<PersonalData, 'contactSchema' | 'supporterConfirm' | 'supporterConfirmTemplate'>
   ) }
 );
 
@@ -2365,6 +2388,7 @@ export const scalarLocations : ScalarLocations = {
         "PublicOrg"
       ],
       "actions": "PublicActionsResult",
+      "actionPages": "PrivateActionPage",
       "partnerships": "Partnership",
       "targets": "Target"
     },

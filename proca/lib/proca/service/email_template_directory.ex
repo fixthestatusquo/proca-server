@@ -75,6 +75,8 @@ defmodule Proca.Service.EmailTemplateDirectory do
     case lookup do
       [ref] -> {:ok, ref}
       [] -> :not_found
+      # inconclusive, maybe a name clash? we need to reload!
+      [_ref, _ref2] -> :not_found
     end
   end
 

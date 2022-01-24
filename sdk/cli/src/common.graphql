@@ -74,6 +74,7 @@ fragment actionPageFields on ActionPage {
   locale 
   config
   live
+  thankYouTemplate
   thankYouTemplateRef
 }
 
@@ -94,8 +95,8 @@ fragment orgPrivateFields on PrivateOrg {
   config
   personalData {
     contactSchema
-    emailOptIn
-    emailOptInTemplate
+    supporterConfirm
+    supporterConfirmTemplate
   }
 }
 

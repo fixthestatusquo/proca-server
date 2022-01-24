@@ -39,6 +39,11 @@ defmodule Proca.Repo.Migrations.CreateUsersAuthTables do
 
     drop table(:pow_users)
 
+    execute "ALTER TABLE users_id_seq1 rename to users_id_seq", ""
+
+    execute "SELECT setval(pg_get_serial_sequence('users', 'id'), coalesce(MAX(id), 1)) from users",
+            ""
+
     alter table(:confirms) do
       modify :creator_id, references(:users, on_delete: :nilify_all), null: true
     end

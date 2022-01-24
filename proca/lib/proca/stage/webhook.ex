@@ -24,11 +24,6 @@ defmodule Proca.Stage.Webhook do
 
   def get_service(_), do: nil
 
-  def start_for?(org = %{confirm_processing: true}) do
-    webhook = get_service(org)
-    not is_nil(webhook)
-  end
-
   def start_for?(org = %{event_processing: true}) do
     webhook = get_service(org)
     not is_nil(webhook)
