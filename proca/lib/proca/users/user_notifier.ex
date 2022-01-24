@@ -16,7 +16,7 @@ defmodule Proca.Users.UserNotifier do
 
       _ ->
         # IO.inspect({instance, template_name}, label: "Failed to send user notification with tempalte")
-        debug("User notification: #{template_name} for <#{email}>: #{inspect(fields)}")
+        info("User notification: #{template_name} for <#{email}>: #{inspect(fields)}")
     end
   end
 

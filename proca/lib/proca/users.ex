@@ -86,8 +86,15 @@ defmodule Proca.Users do
       |> Repo.insert()
 
     case new_user do
-      {:ok, user} -> user
-      {:error, %{errors: [%{message: msg} | _]}} -> raise ArgumentError, msg
+      {:ok, user} ->
+        user
+
+      # handle a race condition where user exists - in that case fetch the user
+      {:error, %{errors: [email: {_m, [{:validation, :unsafe_unique} | _r]}]}} ->
+        User.one(email: attrs[:email])
+
+      {:error, %{errors: [%{message: msg} | _]}} ->
+        raise ArgumentError, msg
     end
   end
 

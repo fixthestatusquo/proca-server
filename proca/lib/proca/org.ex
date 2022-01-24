@@ -50,8 +50,6 @@ defmodule Proca.Org do
     belongs_to :event_backend, Proca.Service
     # for system events from Proca.Server.Notify
     field :event_processing, :boolean, default: false
-    # confirmable operations
-    field :confirm_processing, :boolean, default: false
 
     field :config, :map
 
@@ -74,20 +72,13 @@ defmodule Proca.Org do
       :custom_action_confirm,
       :custom_action_deliver,
       :system_sqs_deliver,
-      :event_processing,
-      :confirm_processing
+      :event_processing
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
     |> Proca.Contact.Input.validate_email(:email_from)
-    |> validate_change(:supporter_confirm_template, fn f, tmpl_name ->
-      case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
-        {:ok, _ref} -> []
-        :not_found -> [{f, "template not found"}]
-        :not_configured -> [{f, "templating not configured"}]
-      end
-    end)
+    |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> cast_email_backend(org, attrs)
     |> cast_event_backend(org, attrs)
   end
@@ -103,6 +94,12 @@ defmodule Proca.Org do
         |> put_change(:email_backend_id, id)
         |> put_change(:template_backend_id, id)
     end
+  end
+
+  def cast_email_backend(chset, _org, %{email_backend: nil}) do
+    chset
+    |> put_change(:email_backend_id, nil)
+    |> put_change(:template_backend_id, nil)
   end
 
   def cast_email_backend(ch, _org, %{email_backend: srv_name})

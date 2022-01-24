@@ -3,7 +3,7 @@ defmodule Proca.Confirm.AddPartner do
   Invite an org to join a campaign, by creating an action page based off action page subject_id
 
   """
-  alias Proca.{Action, ActionPage, Confirm, Staffer, Auth}
+  alias Proca.{ActionPage, Confirm, Auth}
   @behaviour Confirm.Operation
   import Proca.Repo
   import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]

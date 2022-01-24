@@ -20,6 +20,7 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
     field :action_page, :action_page
     field :campaign, :campaign
     field :org, :org
+    field :message, :string
   end
 
   object :confirm_mutations do
@@ -47,12 +48,14 @@ defmodule ProcaWeb.Schema.ConfirmTypes do
       resolve(&Resolvers.Confirm.org_reject/3)
     end
 
+    @desc "Accept a confirm by user"
     field :accept_user_confirm, type: non_null(:confirm_result) do
       arg(:confirm, non_null(:confirm_input))
       allow(:user)
       resolve(&Resolvers.Confirm.user_confirm/3)
     end
 
+    @desc "Reject a confirm by user"
     field :reject_user_confirm, type: non_null(:confirm_result) do
       arg(:confirm, non_null(:confirm_input))
       allow(:user)

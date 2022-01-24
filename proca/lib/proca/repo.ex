@@ -6,9 +6,11 @@ defmodule Proca.Repo do
   alias Proca.Server.Notify
 
   def insert_and_notify(changeset, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
+
     case insert(changeset, opts) do
       {:ok, record} ->
-        Notify.created(record)
+        Notify.created(record, nopts)
         {:ok, record}
 
       {:error, _errors} = e ->
@@ -17,9 +19,11 @@ defmodule Proca.Repo do
   end
 
   def update_and_notify(changeset, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
+
     case update(changeset, opts) do
       {:ok, record} ->
-        Notify.updated(record)
+        Notify.updated(record, nopts)
         {:ok, record}
 
       {:error, _errors} = e ->
@@ -28,21 +32,25 @@ defmodule Proca.Repo do
   end
 
   def insert_and_notify!(changeset, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
     record = insert!(changeset, opts)
-    Notify.created(record)
+    Notify.created(record, nopts)
     record
   end
 
   def update_and_notify!(changeset, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
     record = update!(changeset, opts)
-    Notify.updated(record)
+    Notify.updated(record, nopts)
     record
   end
 
   def transaction_and_notify(%Ecto.Multi{} = multi, operation_name, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
+
     case transaction(multi) do
       {:ok, result} ->
-        Notify.multi(operation_name, result)
+        Notify.multi(operation_name, result, nopts)
         {:ok, result}
 
       {:error, _error} = e ->
@@ -58,9 +66,11 @@ defmodule Proca.Repo do
   end
 
   def delete_and_notify(record, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
+
     case delete(record, opts) do
       {:ok, record} ->
-        Notify.deleted(record)
+        Notify.deleted(record, nopts)
         {:ok, record}
 
       {:error, _errors} = e ->
@@ -69,8 +79,16 @@ defmodule Proca.Repo do
   end
 
   def delete_and_notify!(changeset, opts \\ []) do
+    {nopts, opts} = notify_opts(opts)
     record = delete!(changeset, opts)
-    Notify.deleted(record)
+    Notify.deleted(record, nopts)
     record
+  end
+
+  defp notify_opts(opts) do
+    case Keyword.pop(opts, :auth) do
+      {nil, opts} -> {[], opts}
+      {auth, opts} -> {[auth: auth], opts}
+    end
   end
 end

@@ -52,6 +52,7 @@ defmodule Proca.ActionPage do
       :extra_supporters,
       :delivery,
       :thank_you_template,
+      :supporter_confirm_template,
       :config,
       :org_id,
       :campaign_id
@@ -66,6 +67,7 @@ defmodule Proca.ActionPage do
       :locale,
       ~r/^[a-z]{2}(_[A-Z]{2})?$/
     )
+    |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
     |> change(assocs)
   end
@@ -146,8 +148,9 @@ defmodule Proca.ActionPage do
       from(s in Supporter,
         select: s.id,
         left_join: a in assoc(s, :actions),
-        having: count(a.id) == 0,
-        group_by: s.id
+        where: s.action_page_id == ^page_id,
+        group_by: s.id,
+        having: count(a.id) == 0
       )
 
     multi
