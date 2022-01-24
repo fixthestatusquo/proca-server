@@ -71,7 +71,9 @@ export type ActionPage = {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -99,8 +101,10 @@ export type ActionPageInput = {
   name?: Maybe<Scalars['String']>;
   /** 2-letter, lowercase, code of ActionPage language */
   locale?: Maybe<Scalars['String']>;
-  /** A reference to thank you email template of this ActionPage */
-  thankYouTemplateRef?: Maybe<Scalars['String']>;
+  /** Thank you email template of this ActionPage */
+  thankYouTemplate?: Maybe<Scalars['String']>;
+  /** Supporter confirm email template of this ActionPage */
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   /** Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here. */
   extraSupporters?: Maybe<Scalars['Int']>;
   /** JSON string containing Action Page config */
@@ -186,7 +190,7 @@ export type CampaignActionsArgs = {
 /** Campaign input */
 export type CampaignInput = {
   /** Campaign unchanging identifier */
-  name: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
   /** Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign */
   externalId?: Maybe<Scalars['Int']>;
   /** Campaign human readable title */
@@ -241,6 +245,7 @@ export type ConfirmResult = {
   actionPage: Maybe<ActionPage>;
   campaign: Maybe<Campaign>;
   org: Maybe<Org>;
+  message: Maybe<Scalars['String']>;
 };
 
 /** GDPR consent data for this org */
@@ -429,18 +434,22 @@ export type OrgInput = {
   /** Schema for contact personal information */
   contactSchema?: Maybe<ContactSchema>;
   /** Email opt in enabled */
-  emailOptIn?: Maybe<Scalars['Boolean']>;
+  supporterConfirm?: Maybe<Scalars['Boolean']>;
   /** Email opt in template name */
-  emailOptInTemplate?: Maybe<Scalars['String']>;
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   /** Config */
   config?: Maybe<Scalars['Json']>;
 };
 
 export type OrgUser = {
   email: Scalars['String'];
+  /** Role in an org */
   role: Scalars['String'];
+  /** Date and time the user was created on this instance */
   createdAt: Scalars['NaiveDateTime'];
+  /** Date and time when user joined org */
   joinedAt: Scalars['NaiveDateTime'];
+  /** Will be removed */
   lastSigninAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
@@ -459,9 +468,9 @@ export type PersonalData = {
   /** Schema for contact personal information */
   contactSchema: ContactSchema;
   /** Email opt in enabled */
-  emailOptIn: Scalars['Boolean'];
+  supporterConfirm: Scalars['Boolean'];
   /** Email opt in template name */
-  emailOptInTemplate: Maybe<Scalars['String']>;
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** High data security enabled */
   highSecurity: Scalars['Boolean'];
 };
@@ -472,7 +481,9 @@ export type PrivateActionPage = ActionPage & {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -487,6 +498,8 @@ export type PrivateActionPage = ActionPage & {
   extraSupporters: Scalars['Int'];
   /** Action page collects also opt-out actions */
   delivery: Scalars['Boolean'];
+  /** Email template to confirm supporter */
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** Location of the widget as last seen in HTTP REFERER header */
   location: Maybe<Scalars['String']>;
   /** Status of action page */
@@ -513,6 +526,8 @@ export type PrivateCampaign = Campaign & {
   actions: PublicActionsResult;
   /** Campaign onwer collects opt-out actions for delivery even if campaign partner is */
   forceDelivery: Scalars['Boolean'];
+  /** Action Pages of this campaign that are accessible to current user */
+  actionPages: Array<PrivateActionPage>;
   /** List of partnerships and requests */
   partnerships: Maybe<Array<Partnership>>;
   targets: Maybe<Array<Maybe<Target>>>;
@@ -589,13 +604,15 @@ export type PrivateOrgCampaignArgs = {
 export type Processing = {
   emailFrom: Maybe<Scalars['String']>;
   emailBackend: Maybe<ServiceName>;
+  supporterConfirm: Scalars['Boolean'];
+  supporterConfirmTemplate: Maybe<Scalars['String']>;
   customSupporterConfirm: Scalars['Boolean'];
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
   sqsDeliver: Scalars['Boolean'];
   eventBackend: Maybe<ServiceName>;
   eventProcessing: Scalars['Boolean'];
-  confirmProcessing: Scalars['Boolean'];
+  emailTemplates: Maybe<Array<Scalars['String']>>;
 };
 
 export type PublicActionPage = ActionPage & {
@@ -604,7 +621,9 @@ export type PublicActionPage = ActionPage & {
   locale: Scalars['String'];
   /** Name where the widget is hosted */
   name: Scalars['String'];
-  /** Reference to thank you email templated of this Action Page */
+  /** Thank you email templated of this Action Page */
+  thankYouTemplate: Maybe<Scalars['String']>;
+  /** A reference to thank you email template of this ActionPage */
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
@@ -724,7 +743,9 @@ export type RootMutationType = {
   acceptOrgConfirm: ConfirmResult;
   /** Reject a confirm on behalf of organisation. */
   rejectOrgConfirm: ConfirmResult;
+  /** Accept a confirm by user */
   acceptUserConfirm: ConfirmResult;
+  /** Reject a confirm by user */
   rejectUserConfirm: ConfirmResult;
   upsertTargets: Array<Maybe<Target>>;
 };
@@ -873,13 +894,14 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   name: Scalars['String'];
   emailBackend?: Maybe<ServiceName>;
   emailFrom?: Maybe<Scalars['String']>;
+  supporterConfirm?: Maybe<Scalars['Boolean']>;
+  supporterConfirmTemplate?: Maybe<Scalars['String']>;
   customSupporterConfirm?: Maybe<Scalars['Boolean']>;
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
   sqsDeliver?: Maybe<Scalars['Boolean']>;
   eventBackend?: Maybe<ServiceName>;
   eventProcessing?: Maybe<Scalars['Boolean']>;
-  confirmProcessing?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -972,6 +994,7 @@ export type RootQueryType = {
   actionPage: ActionPage;
   exportActions: Array<Maybe<Action>>;
   currentUser: User;
+  /** Select users from this instnace. Requires a manage users admin permission. */
   users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
