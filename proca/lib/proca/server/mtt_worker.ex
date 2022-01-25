@@ -2,13 +2,15 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Repo
   import Ecto.Query
 
+  alias Proca.Service.{EmailRecipient, EmailBackend, EmailTemplate}
+
   def process_mtt_campaign(campaign) do
     if within_sending_time(campaign) do
       cycles_till_end = calculate_cycles(campaign)
       target_ids = get_sendable_targets(campaign.id)
       emails_to_send = get_emails_to_send(target_ids, cycles_till_end)
 
-      send_emails(emails_to_send)
+      send_emails(campaign, emails_to_send)
     else
       IO.puts("Campaign with ID #{campaign.id} not in sending time")
     end
@@ -72,8 +74,29 @@ defmodule Proca.Server.MTTWorker do
     Enum.take(emails, emails_to_send)
   end
 
-  defp send_emails(emails) do
-    IO.inspect(emails)
+  defp send_emails(campaign, emails) do
+    recipients = emails
+    |> Enum.map(&prepare_recipient/1)
+
+    org = Proca.Org.get_by_id(campaign.org_id, [:email_backend])
+    tmpl = %EmailTemplate{ref: campaign.mtt.message_template}
+
+    EmailBackend.deliver(recipients, org, tmpl)
+  end
+
+  defp prepare_recipient(email) do
+    email_to = Enum.find(email.target.emails, fn email_to ->
+      email_to.email_status == :none
+    end)
+    %EmailRecipient{
+      first_name: email.target.name,
+      email: email_to.email,
+      fields: %{
+        subject: email.message_content.subject,
+        body: email.message_content.body
+      },
+      email_from: email.email_from
+    }
   end
 
   defp calculate_cycles(start_time, end_time) do

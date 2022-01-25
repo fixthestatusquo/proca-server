@@ -74,9 +74,9 @@ defmodule Proca.Service.EmailBackend do
   end
 
   defp make_email(backend, recipient, org, template) do
-    email_from = from(org)
+    email_from = if recipient.email_from, do: recipient.email_from, else: from(org)
 
-    if elem(email_from, 1) == nil,
+    if !recipient.email_from and elem(email_from, 1) == nil,
       do:
         raise("Org #{org.name} (#{org.id}) failed to send email via #{backend}: No from address.")
 
