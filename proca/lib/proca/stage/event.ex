@@ -70,7 +70,7 @@ defmodule Proca.Stage.Event do
 
     supporter_data = %{
       contact: MessageV2.contact_data(supporter, contact),
-      privacy: MessageV2.contact_privacy(%Action{with_consent: true}, contact)
+      privacy: MessageV2.contact_privacy(supporter, contact)
     }
 
     data

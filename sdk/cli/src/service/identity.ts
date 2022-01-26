@@ -40,7 +40,7 @@ type Consent = {
 }
 
 export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, config : CliConfig) {
-  const url = argv.service_url || config.identity_url 
+  const url = argv.service_url || config.identity_url
   const api_token = config.identity_api_token 
   const comm_consent = config.identity_consent
   const only_opt_in = 'IDENTITY_ONLY_OPT_IN' in process.env
@@ -72,16 +72,10 @@ export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, c
     consent[comm_consent] = { level: 'communication' }
   }
 
-  if (Object.keys(action.contact.pii).length == 0) {
-    log(`Cannot decrypt PII; public key is ${action.contact.publicKey}`)
-    throw "Cannot decrypt personal data, please check KEYS"
-  }
-
   const payload = toDataApi(action, consent, config.identity_action_fields, config.identity_contact_fields)
   log(`Identity DATA API payload (without api_token)`, payload)
 
   payload.api_token = api_token
-
 
   const post = bent(url, 'POST', 200)
   const r = await post('/api/actions', removeBlank(payload))
@@ -124,15 +118,15 @@ export function toDataApi(action : ActionMessageV2,
       ([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)
     ).filter(x => x),
     cons_hash: {
-      firstname: action.contact.pii.firstName,
-      lastname: action.contact.pii.lastName,
-      emails: [{ email: action.contact.pii.email }],
+      firstname: action.contact.firstName,
+      lastname: action.contact.lastName,
+      emails: [{ email: action.contact.email }],
       custom_fields: [] as DataApiCustomField[],
       addresses: [{
-        postcode: action.contact.pii.postcode,
-        country: action.contact.pii.country,
-        town: action.contact.pii.locality,
-        state: action.contact.pii.region
+        postcode: action.contact.postcode,
+        country: action.contact.country,
+        town: action.contact.locality,
+        state: action.contact.region
       }]
     }
   }
