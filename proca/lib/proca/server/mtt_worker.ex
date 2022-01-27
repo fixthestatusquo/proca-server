@@ -6,6 +6,8 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Action
   alias Proca.Service.{EmailBackend, EmailTemplate}
 
+  import Logger
+
   def process_mtt_campaign(campaign) do
     if within_sending_time(campaign) do
       cycles_till_end = calculate_cycles(campaign)
@@ -14,7 +16,7 @@ defmodule Proca.Server.MTTWorker do
 
       send_emails(campaign, emails_to_send)
     else
-      IO.puts("Campaign with ID #{campaign.id} not in sending time")
+      debug("Campaign #{campaign.name} (ID #{campaign.id}) not in sending time")
     end
   end
 
@@ -102,11 +104,11 @@ defmodule Proca.Server.MTTWorker do
 
   # Lets handle both: 1.send with a mtt template 2. raw send the message content into subject + body
   defp put_content(
-    email = %Email{},
-    %Action.MessageContent{subject: subject, body: body},
-    template_ref
-  )
-  when is_bitstring(template_ref) do
+         email = %Email{},
+         %Action.MessageContent{subject: subject, body: body},
+         template_ref
+       )
+       when is_bitstring(template_ref) do
     email
     |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
     |> Email.assign(:subject, subject)
@@ -114,7 +116,8 @@ defmodule Proca.Server.MTTWorker do
   end
 
   defp put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do
-    html_body = String.replace(body, ~r/\n/, "<br/>")
+    # XXX should be elsewhere?
+    html_body = EmailTemplate.html_from_text(body)
 
     Email.put_private(email, :template, %EmailTemplate{
       subject: subject,
