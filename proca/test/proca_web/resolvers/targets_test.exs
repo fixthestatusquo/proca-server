@@ -7,7 +7,10 @@ defmodule ProcaWeb.TargetsTest do
     red_story()
   end
 
-  test "adds targets to campaign", %{red_campaign: red_campaign, yellow_campaign: yellow_campaign} do
+  test "adds and update targets to campaign", %{
+    red_campaign: red_campaign,
+    yellow_campaign: yellow_campaign
+  } do
     targets = %{
       targets: [
         %{
@@ -20,7 +23,7 @@ defmodule ProcaWeb.TargetsTest do
               email: "test@html.1234"
             }
           ],
-          external_id: "1234"
+          external_id: "t1"
         },
         %{
           name: "Test Target12",
@@ -32,7 +35,7 @@ defmodule ProcaWeb.TargetsTest do
               email: "test@html.12344"
             }
           ],
-          external_id: "1244"
+          external_id: "t2"
         }
       ],
       campaign_id: red_campaign.id
@@ -46,9 +49,35 @@ defmodule ProcaWeb.TargetsTest do
       |> preload(targets: [:emails])
       |> Proca.Repo.one()
 
-    target = Enum.at(red_camp.targets, 0)
+    target = Enum.find(red_camp.targets, fn %{external_id: x} -> x == "t1" end)
 
     assert target.name == "Test Target"
     assert Enum.count(target.emails) == 2
+
+    # lets try to update
+    targets_to_update = %{
+      targets: [
+        %{
+          external_id: "t1",
+          name: "Updated Test Target",
+          emails: [%{email: "test@html.123", email_status: :unsub}]
+        }
+      ],
+      campaign_id: red_campaign.id
+    }
+
+    assert {:ok, targets} = ProcaWeb.Resolvers.Target.upsert_targets(nil, targets_to_update, nil)
+
+    red_camp =
+      Proca.Campaign
+      |> where(id: ^red_campaign.id)
+      |> preload(targets: [:emails])
+      |> Proca.Repo.one()
+
+    target = Enum.find(red_camp.targets, fn %{external_id: x} -> x == "t1" end)
+
+    assert target.name == "Updated Test Target"
+    assert Enum.count(target.emails) == 1
+    assert [%{email_status: :unsub} | _] = target.emails
   end
 end
