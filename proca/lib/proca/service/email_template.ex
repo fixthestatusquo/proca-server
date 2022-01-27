@@ -33,4 +33,8 @@ defmodule Proca.Service.EmailTemplate do
       end
     end)
   end
+
+  def html_from_text(text) do
+    String.replace(text, ~r/\n/, "<br/>")
+  end
 end

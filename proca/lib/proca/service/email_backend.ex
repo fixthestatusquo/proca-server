@@ -121,7 +121,9 @@ defmodule Proca.Service.EmailBackend do
   defp from_recipient_custom_id(email, cid), do: Email.put_private(email, :custom_id, cid)
 
   defp prepare_template(email, nil), do: email
-  defp prepare_template(email, tmpl = %EmailTemplate{}), do: Email.put_private(email, :template, tmpl)
+
+  defp prepare_template(email, tmpl = %EmailTemplate{}),
+    do: Email.put_private(email, :template, tmpl)
 
   @deprecated "Use Email.header(\"Reply-To\", addr)directly"
   def put_reply_to(email, reply_to_email) do
