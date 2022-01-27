@@ -98,7 +98,7 @@ defmodule Proca.Service.EmailBackend do
         |> from_recipient()
         |> prepare_fields()
         |> determine_sender(org)
-        |> Email.put_private(:template, email_template)
+        |> prepare_template(email_template)
       end)
 
     apply(backend, :deliver, [emails, org])
@@ -115,8 +115,13 @@ defmodule Proca.Service.EmailBackend do
     |> from_recipient_custom_id(cid)
   end
 
+  def from_recipient(email = %Email{}), do: email
+
   defp from_recipient_custom_id(email, nil), do: email
   defp from_recipient_custom_id(email, cid), do: Email.put_private(email, :custom_id, cid)
+
+  defp prepare_template(email, nil), do: email
+  defp prepare_template(email, tmpl = %EmailTemplate{}), do: Email.put_private(email, :template, tmpl)
 
   @deprecated "Use Email.header(\"Reply-To\", addr)directly"
   def put_reply_to(email, reply_to_email) do
