@@ -19,7 +19,7 @@ defmodule Proca.Action.Message do
     assocs = Map.take(attrs, [:target, :message_content])
 
     msg
-    |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered, :email_from])
+    |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered])
     |> change(assocs)
   end
 
