@@ -34,7 +34,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
     resolve_type(fn
       _, %{parent_type: %{identifier: :private_campaign}} -> :private_target
       _, %{parent_type: %{identifier: :public_campaign}} -> :public_target
-      _, %{parent_type: pt} -> :public_target
+      _, %{parent_type: _pt} -> :public_target
     end)
   end
 
