@@ -19,7 +19,7 @@ defmodule Proca.Server.MTTWorker do
   end
 
   defp get_sendable_targets(campaign_id) do
-    targets =
+    _targets =
       from(t in Proca.Target,
         join: c in Proca.Campaign,
         on: c.id == ^campaign_id,
@@ -33,8 +33,8 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def calculate_cycles(campaign) do
-    time_now = DateTime.utc_now()
-    end_time = campaign.mtt.end_at
+    _time_now = DateTime.utc_now()
+    _end_time = campaign.mtt.end_at
 
     cycles_per_day = calculate_cycles(campaign.mtt.start_at, campaign.mtt.end_at)
     cycles_today = calculate_cycles(Time.utc_now(), campaign.mtt.end_at)
