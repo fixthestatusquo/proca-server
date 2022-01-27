@@ -19,23 +19,19 @@ defmodule Proca.Server.MTTWorker do
   end
 
   defp get_sendable_targets(campaign_id) do
-    _targets =
-      from(t in Proca.Target,
-        join: c in Proca.Campaign,
-        on: c.id == ^campaign_id,
-        join: te in Proca.TargetEmail,
-        on: te.target_id == t.id,
-        where: te.email_status == :none,
-        distinct: t.id,
-        select: t.id
-      )
-      |> Repo.all()
+    from(t in Proca.Target,
+      join: c in Proca.Campaign,
+      on: c.id == ^campaign_id,
+      join: te in Proca.TargetEmail,
+      on: te.target_id == t.id,
+      where: te.email_status == :none,
+      distinct: t.id,
+      select: t.id
+    )
+    |> Repo.all()
   end
 
   def calculate_cycles(campaign) do
-    _time_now = DateTime.utc_now()
-    _end_time = campaign.mtt.end_at
-
     cycles_per_day = calculate_cycles(campaign.mtt.start_at, campaign.mtt.end_at)
     cycles_today = calculate_cycles(Time.utc_now(), campaign.mtt.end_at)
     days_left = Date.diff(campaign.mtt.end_at, Date.utc_today())
@@ -71,7 +67,7 @@ defmodule Proca.Server.MTTWorker do
         where:
           a.processing_status == :accepted and m.delivered == false and m.target_id == ^target_id,
         order_by: m.id,
-        preload: [:message_content, :target, [target: :emails]]
+        preload: [:message_content, :target, [target: :emails], :action, [action: :supporter]]
       )
       |> Repo.all()
 
@@ -106,11 +102,11 @@ defmodule Proca.Server.MTTWorker do
 
   # Lets handle both: 1.send with a mtt template 2. raw send the message content into subject + body
   defp put_content(
-         email = %Email{},
-         %Action.MessageContent{subject: subject, body: body},
-         template_ref
-       )
-       when is_bitstring(template_ref) do
+    email = %Email{},
+    %Action.MessageContent{subject: subject, body: body},
+    template_ref
+  )
+  when is_bitstring(template_ref) do
     email
     |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
     |> Email.assign(:subject, subject)
