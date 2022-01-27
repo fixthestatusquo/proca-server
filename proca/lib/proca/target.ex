@@ -59,10 +59,28 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
-  def upsert(target, emails) do
-    (one(external_id: target.external_id, preload: [:emails, :campaign]) || %Target{})
-    |> Target.changeset(target)
-    |> put_assoc(:emails, emails)
+  def upsert(input) do
+    record =
+      one(external_id: input.external_id, preload: [:emails, :campaign]) ||
+        %Target{emails: [], campaign: nil}
+
+    change = Target.changeset(record, input)
+
+    case Map.get(input, :emails) do
+      nil ->
+        change
+
+      emails ->
+        emails =
+          for input <- emails do
+            case Enum.find(record.emails, fn %{email: e} -> e == input.email end) do
+              %TargetEmail{} = te -> TargetEmail.changeset(te, input)
+              nil -> struct(TargetEmail, input)
+            end
+          end
+
+        put_assoc(change, :emails, emails)
+    end
   end
 
   def handle_bounce(args) do
