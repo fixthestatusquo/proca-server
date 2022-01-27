@@ -9,10 +9,14 @@ defmodule Proca.TestEmailBackend do
   ```
   use Proca.TestEmailBackend
   ```
+
+  XXX try to use the Memory adapter from Swoosh? Challenge: can we empty its storage between test runs?
   """
 
   # Test part
   use ExUnit.CaseTemplate
+
+  alias Swoosh.Email
 
   def test_email_backend(context) do
     io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
@@ -158,34 +162,25 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
-  def put_recipient(email, recipient) do
-    email
-    |> Email.to({recipient.first_name, recipient.email})
-    |> Email.put_provider_option(:fields, recipient.fields)
-  end
-
-  @impl true
-  def put_template(email, %EmailTemplate{ref: ref, subject: sub, html: body}) do
-    %{email | subject: sub, html_body: body}
-    |> Map.update(:provider_options, %{}, &Map.put(&1, :template_ref, ref))
-  end
-
-  @impl true
-  def put_reply_to(email, reply_to_email) do
-    email
-    |> Email.header("Reply-To", reply_to_email)
-  end
-
-  @impl true
-  def put_custom_id(email, custom_id) do
-    email
-    |> Map.update(:provider_options, %{}, &Map.put(&1, :custom_id, custom_id))
-  end
-
-  @impl true
   def deliver(emails, _org) do
-    emails
-    |> Enum.map(&send_to(Enum.at(&1.to, 0), &1))
+    for e <- emails do
+      t = e.private[:template]
+
+      e =
+        if t != nil do
+          e
+          |> Email.put_provider_option(:template_ref, t.ref)
+          |> Email.put_provider_option(:custom_id, e.private[:custom_id])
+          |> Email.subject(t.subject)
+          |> Email.text_body(t.text)
+          |> Email.html_body(t.html)
+        else
+          e
+        end
+
+      [to | _] = e.to
+      send_to(to, e)
+    end
 
     :ok
   end
