@@ -8,7 +8,6 @@ defmodule Proca.Server.MTT do
   alias Proca.Repo
   alias Proca.Server.MTTWorker
 
-  @impl true
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{})
   end
@@ -26,7 +25,7 @@ defmodule Proca.Server.MTT do
   end
 
   def process_mtt() do
-    #fetch campaigns to process here
+    # fetch campaigns to process here
     running_mtts =
       from(c in Proca.Campaign,
         join: mtt in Proca.MTT,
@@ -34,9 +33,8 @@ defmodule Proca.Server.MTT do
         where: mtt.start_at <= from_now(0, "day") and mtt.end_at >= from_now(0, "day"),
         preload: [:mtt]
       )
-    |> Repo.all()
+      |> Repo.all()
 
-    IO.puts("Processing mtt...")
     Enum.map(running_mtts, fn campaign ->
       Task.async(fn ->
         MTTWorker.process_mtt_campaign(campaign)

@@ -8,8 +8,15 @@ defmodule Proca.MTT do
     field :end_at, :utc_datetime
     #   field :sending_rate, :integer
     field :stats, :map, default: %{}
+
+    # TODO:
+    # field :distributed, :boolean, default: false
+    # # if distributed, each AP has a template, and each partner sends via their mail system
+    # field :spoof_username, :boolean, default: true
+
+    # maybe an ap override is necessary
+    # optional! must support also sending without it.
     field :message_template, :string
-    field :digest_template, :string
 
     belongs_to :campaign, Proca.Campaign
   end
@@ -18,7 +25,7 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :digest_template])
+    |> cast(attrs, [:start_at, :end_at, :stats, :message_template])
     |> validate_required([:start_at, :end_at])
     |> change(assocs)
   end

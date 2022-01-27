@@ -221,11 +221,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :campaign_mtt do
     field :start_at, non_null(:datetime)
     field :end_at, non_null(:datetime)
+    field :message_template, :string
   end
 
   input_object :campaign_mtt_input do
     field :start_at, :datetime
     field :end_at, :datetime
+    field :message_template, :string
   end
 
   # public counters

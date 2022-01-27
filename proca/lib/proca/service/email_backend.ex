@@ -5,7 +5,16 @@ defmodule Proca.Service.EmailBackend do
   However, we also need to be able to work with templates and Swoosh does not have this.
 
   ## Recipients
-  Recipients of transaction emails are Supporters.
+  Recipients of transaction emails are Supporters or Targets
+
+  Previoudly we used EmailRecipient to carry envelope data, but now we want to
+  just use Swoosh.Email because it is one abstraction layer less and it can hold
+  all the information we need.
+
+  We make use of Email fields:
+  - assigns - to hold EmailRecipient.fields
+  - private[:template] - template
+  - private[:custom_id] - custom_id
 
   1. We prefer to use a template system, for sending emails in batch.
   2. If this is not available, send them one by one
@@ -17,6 +26,27 @@ defmodule Proca.Service.EmailBackend do
   1. We prefer using template if there is web editor for templates
   2. We can also pull the content from a CMS, push as template
   3. We can use email template from `ActionPage.config`
+
+  ## Sender Domain/Adddress
+
+  1. We assume a sender has email backend with full domain support of their
+  org.from_email address
+
+  2. We can check this on time of setting the backend - querying the domains via
+  API (when available - similar to how we check the template)
+
+  3. We can do from email "spoofing" to use mixed FROM and Reply-To. Eg. A sends
+  via B backend, their from is hello@a.org, the from will be hello+a.org@b.org,
+  with Reply-To hello@a.org.
+
+  4. We can use this also for MTT, but this creates a security risk of spoofing
+  the real users' emails if we don't put username after + (member+marcin@a.org)
+  but just in fromt of the @ (marcin@a.org). This could result into some serious
+  problems, if someone abuses this to impersonate root@a.org, postmaster@a.org,
+  or a legitimate user. Those who will have a dedicated campaign domain might
+  feel in the safe, but imagine someone using this to access DNS provider for
+  the domain... Another solution - if member+marcin@ is not good enought, to use
+  a fixed prefix/postfix like member_marcin@.
   """
 
   alias Proca.{Org, Service}
@@ -33,12 +63,8 @@ defmodule Proca.Service.EmailBackend do
   @callback get_template(org :: %Org{}, ref :: String.t()) ::
               {:ok, %EmailTemplate{}} | {:error, reason :: String.t()}
 
-  @type recipient :: %EmailRecipient{}
-
-  @callback put_recipient(email :: %Email{}, recipients :: recipient) :: %Email{}
   @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
-  @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t()) :: %Email{}
-  @callback put_custom_id(email :: %Email{}, custom_id :: String.t()) :: %Email{}
+
   @callback deliver([%Email{}], %Org{}) :: any()
 
   @callback handle_bounce(params :: any()) :: any()
@@ -61,76 +87,102 @@ defmodule Proca.Service.EmailBackend do
   Delivers an email using EmailTemplate to a list of EmailRecipients. Uses Org's email service.
   Can throw EmailBackend.NotDelivered which wraps service error.
   """
-  @spec deliver([%EmailRecipient{}], %Org{}, %EmailTemplate{}) :: :ok
-  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
+  @spec deliver([%Email{}] | [%EmailRecipient{}], %Org{}, %EmailTemplate{} | nil) :: :ok
+  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template \\ nil) do
     backend = service_module(name)
 
     emails =
       recipients
-      |> Enum.map(&prepare_fields/1)
-      |> Enum.map(&make_email(backend, &1, org, email_template))
+      |> Enum.map(fn e ->
+        e
+        |> from_recipient()
+        |> prepare_fields()
+        |> determine_sender(org)
+        |> Email.put_private(:template, email_template)
+      end)
 
     apply(backend, :deliver, [emails, org])
   end
 
-  defp make_email(backend, recipient, org, template) do
-    email_from = if recipient.email_from, do: recipient.email_from, else: from(org)
-
-    if !recipient.email_from and elem(email_from, 1) == nil,
-      do:
-        raise("Org #{org.name} (#{org.id}) failed to send email via #{backend}: No from address.")
-
-    e =
-      Email.new()
-      |> Email.from(email_from)
-
-    e =
-      if elem(e.from, 1) != org.email_from do
-        apply(backend, :put_reply_to, [e, org.email_from])
-      else
-        e
-      end
-
-    e = apply(backend, :put_recipient, [e, recipient])
-    e = apply(backend, :put_template, [e, template])
-    e = apply(backend, :put_custom_id, [e, recipient.custom_id])
-
-    e
+  def from_recipient(%EmailRecipient{
+        email: to,
+        first_name: fname,
+        ref: ref,
+        fields: fld,
+        custom_id: cid
+      }) do
+    Email.new(to: to, assigns: %{first_name: fname, ref: ref} |> Map.merge(fld))
+    |> from_recipient_custom_id(cid)
   end
 
-  # Org uses own email backend
-  def from(org = %Org{id: org_id, email_backend: %Service{org_id: org_id}}) do
-    {org.title, org.email_from}
+  defp from_recipient_custom_id(email, nil), do: email
+  defp from_recipient_custom_id(email, cid), do: Email.put_private(email, :custom_id, cid)
+
+  @deprecated "Use Email.header(\"Reply-To\", addr)directly"
+  def put_reply_to(email, reply_to_email) do
+    email
+    |> Email.header("Reply-To", reply_to_email)
   end
 
-  # org uses someone elses email backend
-  def from(org = %Org{email_backend: %Service{org: via_org = %Org{}}}) do
-    via_from(org, via_org)
+  @deprecated "Use Email.to directly"
+  def put_recipient(email, %EmailRecipient{} = recipient) do
+    email
+    |> Email.to({recipient.first_name, recipient.email})
   end
 
-  def from(org = %Org{email_backend: %Service{org_id: via_org_id}})
-      when via_org_id != nil do
-    via_from(org, Org.one(id: via_org_id))
+  @doc """
+  Determine the From + Reply to of the email.
+
+  Support these cases:
+  1. No from set, and current org sends - use the org.email_from
+  2. No from set, and org sends via other org - set the orgs FROM, then pass to other clause to get a mixed format
+  3. FROM set, we need to check the address - if email is different then sending one, replace FROM email with a mix.
+
+  """
+  def determine_sender(
+        email = %Email{from: nil},
+        org = %Org{id: id, email_backend: %Service{org_id: id}}
+      ) do
+    Email.from(email, {org.title, org.email_from})
   end
 
-  def via_from(
-        %{title: org_title, email_from: email_from},
-        %{email_from: via_email_from}
-      )
-      when email_from != nil and via_email_from != nil do
-    [_user, domain] = Regex.split(~r/@/, email_from)
-    [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
-
-    {org_title, "#{via_user}+#{domain}@#{via_domain}"}
+  def determine_sender(email = %Email{from: nil}, org = %Org{email_backend: %Service{}}) do
+    email
+    |> Email.from({org.title, org.email_from})
+    |> determine_sender(org)
   end
 
-  def via_from(_o1, _o2) do
-    nil
+  def determine_sender(
+        email = %Email{from: {from_name, from_email}},
+        org = %Org{email_backend: srv}
+      ) do
+    %{org: via_org} = Proca.Repo.preload(srv, [:org])
+
+    [username, domain] = Regex.split(~r/@/, from_email)
+    [via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
+
+    cond do
+      # FROM set, but matching the sending backend
+      from_email == via_org.email_from ->
+        email
+
+      # One org borrows the others backend
+      from_email == org.email_from ->
+        email
+        |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
+        |> Email.header("Reply-To", from_email)
+
+      # Any from email - we will use the username here
+      true ->
+        email
+        |> Email.from({from_name, "#{via_username}+#{username}@#{via_domain}"})
+        |> Email.header("Reply-To", from_email)
+    end
   end
 
   # template renderers of Mailjet and friends are happier with a flat list of vars
-  defp prepare_fields(%EmailRecipient{fields: fields} = rcpt) do
-    %{rcpt | fields: flatten_keys(fields, "")}
+  defp prepare_fields(%Email{assigns: fields} = email) do
+    %{email | assigns: flatten_keys(fields, "")}
   end
 
   defmodule NotDelivered do

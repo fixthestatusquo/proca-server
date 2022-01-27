@@ -2,7 +2,9 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Repo
   import Ecto.Query
 
-  alias Proca.Service.{EmailRecipient, EmailBackend, EmailTemplate}
+  alias Swoosh.Email
+  alias Proca.Action
+  alias Proca.Service.{EmailBackend, EmailTemplate}
 
   def process_mtt_campaign(campaign) do
     if within_sending_time(campaign) do
@@ -27,7 +29,7 @@ defmodule Proca.Server.MTTWorker do
         distinct: t.id,
         select: t.id
       )
-    |> Repo.all()
+      |> Repo.all()
   end
 
   def calculate_cycles(campaign) do
@@ -38,7 +40,7 @@ defmodule Proca.Server.MTTWorker do
     cycles_today = calculate_cycles(Time.utc_now(), campaign.mtt.end_at)
     days_left = Date.diff(campaign.mtt.end_at, Date.utc_today())
 
-    (days_left * cycles_per_day) + cycles_today
+    days_left * cycles_per_day + cycles_today
   end
 
   def within_sending_time(campaign) do
@@ -52,9 +54,11 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def get_emails_to_send(target_ids, cycles_till_end) do
-    List.flatten(Enum.map(target_ids, fn target_id ->
-      get_emails_for_target(target_id, cycles_till_end)
-    end))
+    List.flatten(
+      Enum.map(target_ids, fn target_id ->
+        get_emails_for_target(target_id, cycles_till_end)
+      end)
+    )
   end
 
   def get_emails_for_target(target_id, cycles_till_end) do
@@ -64,39 +68,63 @@ defmodule Proca.Server.MTTWorker do
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
-        where: a.processing_status == :accepted and m.delivered == false and m.target_id == ^target_id,
+        where:
+          a.processing_status == :accepted and m.delivered == false and m.target_id == ^target_id,
         order_by: m.id,
         preload: [:message_content, :target, [target: :emails]]
       )
-    |> Repo.all()
+      |> Repo.all()
 
     emails_to_send = Integer.floor_div(Enum.count(emails), cycles_till_end)
     Enum.take(emails, emails_to_send)
   end
 
   defp send_emails(campaign, emails) do
-    recipients = emails
-    |> Enum.map(&prepare_recipient/1)
+    emails =
+      for e <- emails do
+        e
+        |> prepare_recipient()
+        |> put_content(e.message_content, campaign.mtt.message_template)
+      end
 
     org = Proca.Org.get_by_id(campaign.org_id, [:email_backend])
-    tmpl = %EmailTemplate{ref: campaign.mtt.message_template}
 
-    EmailBackend.deliver(recipients, org, tmpl)
+    EmailBackend.deliver(emails, org)
   end
 
-  defp prepare_recipient(email) do
-    email_to = Enum.find(email.target.emails, fn email_to ->
-      email_to.email_status == :none
-    end)
-    %EmailRecipient{
-      first_name: email.target.name,
-      email: email_to.email,
-      fields: %{
-        subject: email.message_content.subject,
-        body: email.message_content.body
-      },
-      email_from: email.email_from
-    }
+  defp prepare_recipient(message = %{action: %{supporter: supporter}}) do
+    email_to =
+      Enum.find(message.target.emails, fn email_to ->
+        email_to.email_status == :none
+      end)
+
+    Email.new(
+      from: {supporter.first_name, supporter.email},
+      to: {message.target.name, email_to.email}
+    )
+  end
+
+  # Lets handle both: 1.send with a mtt template 2. raw send the message content into subject + body
+  defp put_content(
+         email = %Email{},
+         %Action.MessageContent{subject: subject, body: body},
+         template_ref
+       )
+       when is_bitstring(template_ref) do
+    email
+    |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
+    |> Email.assign(:subject, subject)
+    |> Email.assign(:body, body)
+  end
+
+  defp put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do
+    html_body = String.replace(body, ~r/\n/, "<br/>")
+
+    Email.put_private(email, :template, %EmailTemplate{
+      subject: subject,
+      text: body,
+      html: html_body
+    })
   end
 
   defp calculate_cycles(start_time, end_time) do

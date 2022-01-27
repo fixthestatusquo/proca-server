@@ -8,7 +8,8 @@ defmodule Proca.Action.Message do
 
   schema "messages" do
     field :delivered, :boolean, default: false
-    field :email_from, :string, default: ""
+    # We don't want to hardcode email_from in db record
+    #    field :email_from, :string, default: ""
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
     belongs_to :message_content, Proca.Action.MessageContent

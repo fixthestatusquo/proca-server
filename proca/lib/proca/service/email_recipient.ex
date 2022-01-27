@@ -5,7 +5,7 @@ defmodule Proca.Service.EmailRecipient do
   alias Proca.Service.EmailRecipient
   import Proca.Repo, only: [preload: 2]
 
-  defstruct first_name: "", email: "", ref: "", fields: %{}, custom_id: "", email_from: nil
+  defstruct first_name: "", email: "", ref: "", fields: %{}, custom_id: ""
 
   def from_action_data(action_data) do
     action_id = get_in(action_data, ["action", "id"])
