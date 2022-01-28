@@ -3,7 +3,7 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.Action
+  alias Proca.{Action, Campaign}
   alias Proca.Service.{EmailBackend, EmailTemplate}
 
   import Logger
@@ -11,7 +11,7 @@ defmodule Proca.Server.MTTWorker do
   def process_mtt_campaign(campaign) do
     if within_sending_time(campaign) do
       cycles_till_end = calculate_cycles(campaign)
-      target_ids = get_sendable_targets(campaign.id)
+      target_ids = get_sendable_targets(campaign)
       emails_to_send = get_emails_to_send(target_ids, cycles_till_end)
 
       send_emails(campaign, emails_to_send)
@@ -20,13 +20,11 @@ defmodule Proca.Server.MTTWorker do
     end
   end
 
-  defp get_sendable_targets(campaign_id) do
+  def get_sendable_targets(%Campaign{id: id}) do
     from(t in Proca.Target,
-      join: c in Proca.Campaign,
-      on: c.id == ^campaign_id,
-      join: te in Proca.TargetEmail,
-      on: te.target_id == t.id,
-      where: te.email_status == :none,
+      join: c in assoc(t, :campaign),
+      join: te in assoc(t, :emails),
+      where: c.id == ^id and te.email_status == :none,
       distinct: t.id,
       select: t.id
     )
@@ -67,7 +65,7 @@ defmodule Proca.Server.MTTWorker do
         join: a in Proca.Action,
         on: m.action_id == a.id,
         where:
-          a.processing_status == :accepted and m.delivered == false and m.target_id == ^target_id,
+          a.processing_status == :delivered and m.delivered == false and m.target_id == ^target_id,
         order_by: m.id,
         preload: [:message_content, :target, [target: :emails], :action, [action: :supporter]]
       )
