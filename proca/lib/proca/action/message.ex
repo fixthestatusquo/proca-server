@@ -15,11 +15,14 @@ defmodule Proca.Action.Message do
     belongs_to :message_content, Proca.Action.MessageContent
   end
 
+  def changeset(attrs), do: changeset(%Message{}, attrs)
+
   def changeset(msg, attrs) do
     assocs = Map.take(attrs, [:target, :message_content])
 
     msg
     |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered])
+    |> foreign_key_constraint(:target, name: :messages_target_id_fkey, message: "has messages")
     |> change(assocs)
   end
 

@@ -2,6 +2,7 @@ defmodule Proca.Action.MessageContent do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
+  alias __MODULE__
 
   schema "message_contents" do
     field :subject, :string, default: ""
@@ -9,6 +10,8 @@ defmodule Proca.Action.MessageContent do
 
     has_many :messages, Proca.Action.Message
   end
+
+  def changeset(params), do: changeset(%MessageContent{}, params)
 
   def changeset(ch, params) do
     cast(ch, params, [:subject, :body])
