@@ -21,7 +21,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :area, :string, default_value: ""
     field :external_id, non_null(:string)
     field :fields, :json, default_value: %{}
-    field :emails, list_of(:target_email_input)
+    field :emails, list_of(non_null(:target_email_input))
   end
 
   interface :target do
@@ -32,9 +32,16 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :fields, :json, default_value: %{}
 
     resolve_type(fn
-      _, %{parent_type: %{identifier: :private_campaign}} -> :private_target
-      _, %{parent_type: %{identifier: :public_campaign}} -> :public_target
-      _, %{parent_type: _pt} -> :public_target
+      _, %{context: %{auth: auth}} ->
+        if Proca.Permission.can?(auth, [:instance_owner]),
+          do: :private_target,
+          else: :public_target
+
+      # XXX add check for membership of campaign group - when we add them
+      # %{campaign_id: cid}, %{context: %{auth: %Auth{group: %{campaign_id: cid}}}} -> :private_target
+
+      _, _ ->
+        :public_target
     end)
   end
 
@@ -54,6 +61,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :upsert_targets, type: non_null(list_of(:private_target)) do
       arg(:targets, non_null(list_of(non_null(:target_input))))
       arg(:campaign_id, non_null(:integer))
+      arg(:replace, :boolean)
 
       load(:campaign, by: [id: :campaign_id])
       determine_auth(for: :campaign)

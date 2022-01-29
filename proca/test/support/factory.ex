@@ -198,6 +198,21 @@ defmodule Proca.Factory do
       emails: emails
     }
     |> merge_attributes(attrs)
-    |> evaluate_lazy_attributes
+    |> evaluate_lazy_attributes()
+  end
+
+  def message_factory(attrs) do
+    %Proca.Action.Message{
+      message_content: Map.get(attrs, :message_content, build(:message_content))
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  def message_content_factory do
+    %Proca.Action.MessageContent{
+      subject: sequence("MTT Subject"),
+      body: sequence("MTT text body")
+    }
   end
 end

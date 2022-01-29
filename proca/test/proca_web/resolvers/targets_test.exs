@@ -3,8 +3,58 @@ defmodule ProcaWeb.TargetsTest do
 
   import Proca.StoryFactory, only: [red_story: 0]
 
+  alias ProcaWeb.Resolvers.Target
+  alias Proca.Campaign
+  alias Proca.Factory
+  alias Proca.Action.{Message, MessageContent}
+
   setup do
     red_story()
+  end
+
+  test "replace targets", %{
+    red_campaign: red_campaign,
+    red_ap: ap
+  } do
+    targets = [
+      %{name: "Maulhausen", emails: [%{email: "mal@ec.eu"}], external_id: "1"},
+      %{name: "Perrier", area: "IT", emails: [%{email: "perrire@gov.it"}], external_id: "2"}
+    ]
+
+    assert {:ok, _t} =
+             Target.upsert_targets(nil, %{targets: targets, campaign_id: red_campaign.id}, nil)
+
+    c = Campaign.one(id: red_campaign.id, preload: [:targets])
+    assert length(c.targets) == 2
+
+    {targets2, _} = Enum.split(targets, 1)
+
+    targets2 = [
+      %{name: "Newman", emails: [%{email: "newman@pe.pt"}], external_id: "3"} | targets2
+    ]
+
+    assert {:ok, [t1, t3]} =
+             Target.upsert_targets(
+               nil,
+               %{targets: targets2, replace: true, campaign_id: red_campaign.id},
+               nil
+             )
+
+    c = Campaign.one(id: red_campaign.id, preload: [:targets])
+    assert length(c.targets) == 2
+    assert t1.name == "Maulhausen"
+    assert t3.name == "Newman"
+
+    action = Factory.insert(:action, %{action_page: ap})
+
+    msg = Factory.insert(:message, %{action: action, target: t3})
+
+    assert {:error, [%{message: "has messages"}]} =
+             Target.upsert_targets(
+               nil,
+               %{targets: targets, replace: true, campaign_id: red_campaign.id},
+               nil
+             )
   end
 
   test "adds and update targets to campaign", %{
@@ -41,7 +91,7 @@ defmodule ProcaWeb.TargetsTest do
       campaign_id: red_campaign.id
     }
 
-    assert {:ok, targets} = ProcaWeb.Resolvers.Target.upsert_targets(nil, targets, nil)
+    assert {:ok, targets} = Target.upsert_targets(nil, targets, nil)
 
     red_camp =
       Proca.Campaign
