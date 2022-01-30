@@ -6,6 +6,8 @@ defmodule Proca.Server.MTTWorkerTest do
 
   alias Proca.Server.MTTWorker
 
+  use Proca.TestEmailBackend
+
   setup do
     green_story()
   end
@@ -108,6 +110,15 @@ defmodule Proca.Server.MTTWorkerTest do
       # all remining, because we skipped to last cycle
       assert length(emails) == count - 4
       MTTWorker.mark_delivered(emails)
+    end
+
+    test "sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
+      msgs = MTTWorker.get_emails_to_send([tid], {1, 1})
+
+      MTTWorker.send_emails(c, msgs)
+      mbox = Proca.TestEmailBackend.mailbox(email)
+
+      assert length(mbox) == 20
     end
   end
 end

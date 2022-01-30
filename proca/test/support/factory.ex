@@ -149,7 +149,7 @@ defmodule Proca.Factory do
 
     %Proca.Supporter{
       first_name: sequence("first_name"),
-      email: sequence("email"),
+      email: sequence("email", &"member-#{&1}@example.org"),
       fingerprint: sequence("fingerprint"),
       action_page: ap,
       campaign: Map.get(attrs, :campaign, ap.campaign)
@@ -189,7 +189,9 @@ defmodule Proca.Factory do
 
   def target_factory(attrs) do
     emails = [
-      %Proca.TargetEmail{email: sequence("email")}
+      %Proca.TargetEmail{
+        email: sequence("email", &"member-#{&1}@example.org")
+      }
     ]
 
     %Proca.Target{
