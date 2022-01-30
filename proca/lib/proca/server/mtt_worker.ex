@@ -91,6 +91,7 @@ defmodule Proca.Server.MTTWorker do
     import Ecto.Query
     # We send all the unsent test MTTs instantly
     Message.select_by_targets(target_ids, false, true)
+    |> preload([t, m, a], [[target: :emails], [action: :supporter], :message_content])
     |> order_by([t, m, a], asc: m.id)
     |> Repo.all()
   end
