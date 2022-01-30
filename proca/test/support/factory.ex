@@ -203,7 +203,8 @@ defmodule Proca.Factory do
 
   def message_factory(attrs) do
     %Proca.Action.Message{
-      message_content: Map.get(attrs, :message_content, build(:message_content))
+      message_content: Map.get(attrs, :message_content, build(:message_content)),
+      action: Map.get(attrs, :action, build(:action))
     }
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
@@ -213,6 +214,13 @@ defmodule Proca.Factory do
     %Proca.Action.MessageContent{
       subject: sequence("MTT Subject"),
       body: sequence("MTT text body")
+    }
+  end
+
+  def mtt_factory do
+    %Proca.MTT{
+      start_at: DateTime.utc_now(),
+      end_at: DateTime.utc_now() |> DateTime.add(600, :second)
     }
   end
 end

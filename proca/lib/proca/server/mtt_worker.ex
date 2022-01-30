@@ -4,23 +4,30 @@ defmodule Proca.Server.MTTWorker do
 
   alias Swoosh.Email
   alias Proca.{Action, Campaign}
+  alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
 
   import Logger
 
   def process_mtt_campaign(campaign) do
-    if within_sending_time(campaign) do
-      cycles_till_end = calculate_cycles(campaign)
-      target_ids = get_sendable_targets(campaign)
-      emails_to_send = get_emails_to_send(target_ids, cycles_till_end)
+    if within_sending_window(campaign) do
+      {cycle, all_cycles} = calculate_cycles(campaign)
+      target_ids = get_sendable_target_ids(campaign)
 
+      emails_to_send =
+        get_test_emails_to_send(target_ids) ++
+          get_emails_to_send(target_ids, {cycle, all_cycles})
+
+      # Send via central campaign.org.email_backend
       send_emails(campaign, emails_to_send)
+      # Alternative:
+      # send via each action page owner
     else
-      debug("Campaign #{campaign.name} (ID #{campaign.id}) not in sending time")
+      :noop
     end
   end
 
-  def get_sendable_targets(%Campaign{id: id}) do
+  def get_sendable_target_ids(%Campaign{id: id}) do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
       join: te in assoc(t, :emails),
@@ -31,64 +38,123 @@ defmodule Proca.Server.MTTWorker do
     |> Repo.all()
   end
 
-  def calculate_cycles(campaign) do
-    cycles_per_day = calculate_cycles(campaign.mtt.start_at, campaign.mtt.end_at)
-    cycles_today = calculate_cycles(Time.utc_now(), campaign.mtt.end_at)
-    days_left = Date.diff(campaign.mtt.end_at, Date.utc_today())
+  @doc """
+  Return {current_cycle, all_cycles} tuple to know where we are in the schedule
+  """
+  def calculate_cycles(_campaign = %Campaign{mtt: %{start_at: start_at, end_at: end_at}}) do
+    # cycles run in office hours, not 24h, per day it is:
+    cycles_per_day = calculate_cycles_in_day(start_at, end_at)
+    # cycles left today:
+    cycles_today = calculate_cycles_in_day(Time.utc_now(), end_at)
 
-    days_left * cycles_per_day + cycles_today
+    # add +1 to count current day. We validated end_at > start_at, so it's 1 day even if it's a 5 minute one
+    all_days = Date.diff(end_at, start_at) + 1
+    # how many days behind us
+    days_left = Date.diff(end_at, Date.utc_today())
+
+    total_cycles = all_days * cycles_per_day
+
+    {
+      # cycles left are rounded now, so by substracting we will round up - so we are not left with any messages at the end of schedule
+      total_cycles - (days_left * cycles_per_day + cycles_today),
+      total_cycles
+    }
   end
 
-  def within_sending_time(campaign) do
-    start_time = DateTime.to_time(campaign.mtt.start_at)
-    end_time = DateTime.to_time(campaign.mtt.end_at)
-    current_time = Time.utc_now()
+  def calculate_cycles_in_day(start_time, end_time) do
+    mins_per_cycles = Application.get_env(:proca, Proca)[:mtt_cycle_time]
+    time_diff = Integer.floor_div(Time.diff(end_time, start_time, :second), 60)
 
-    # Time.compare returns :gt or :lt or :eq, checking if current_time :gt start_time
-    # and end_time :gt current_time are the same should work just as well
-    Time.compare(current_time, start_time) == Time.compare(end_time, current_time)
+    div(time_diff, mins_per_cycles)
   end
 
-  def get_emails_to_send(target_ids, cycles_till_end) do
-    List.flatten(
-      Enum.map(target_ids, fn target_id ->
-        get_emails_for_target(target_id, cycles_till_end)
-      end)
+  @doc """
+  Check if we are now in sending days, and also in sending hours.
+
+  The Server.MTT select only campaigns in day-window already, but it is worth to double check here.
+  """
+  def within_sending_window(%{mtt: %{start_at: start_at, end_at: end_at}}) do
+    now = DateTime.utc_now()
+
+    in_sending_days =
+      DateTime.compare(now, start_at) == :gt and DateTime.compare(end_at, now) == :gt
+
+    start_time = DateTime.to_time(start_at)
+    end_time = DateTime.to_time(end_at)
+
+    in_sending_time = Time.compare(now, start_time) == :gt and Time.compare(end_time, now) == :gt
+
+    in_sending_days and in_sending_time
+  end
+
+  def get_test_emails_to_send(target_ids) do
+    import Ecto.Query
+    # We send all the unsent test MTTs instantly
+    Message.select_by_targets(target_ids, false, true)
+    |> order_by([t, m, a], asc: m.id)
+    |> Repo.all()
+  end
+
+  def get_emails_to_send(target_ids, {cycle, all_cycles}) do
+    import Ecto.Query
+
+    # Subquery to count delivered/goal messages for each target
+    progress_per_target =
+      Message.select_by_targets(target_ids, [false, true])
+      |> select([m, t, a], %{
+        target_id: t.id,
+        goal: count(m.id) * ^cycle / ^all_cycles,
+        delivered: fragment("count(?) FILTER (WHERE delivered)", m.id)
+      })
+      |> group_by([m, t, a], t.id)
+
+    # Subquery to rank unsent message ids and select only these need to meet current goal
+    unsent_per_target_ids =
+      Message.select_by_targets(target_ids, false)
+      |> select([m, t, a], %{
+        message_id: m.id,
+        target_id: t.id,
+        rank: fragment("RANK() OVER (PARTITION BY ? ORDER BY ?)", t.id, m.id)
+      })
+      |> subquery()
+      |> join(:inner, [r], p in subquery(progress_per_target), on: r.target_id == p.target_id)
+      # <= because rank is 1-based
+      |> where([r, p], p.delivered + r.rank <= p.goal)
+      |> select([r, p], r.message_id)
+
+    # Finally, fetch these messages with associations in one go
+    Repo.all(
+      from(m in Message,
+        where: m.id in subquery(unsent_per_target_ids),
+        preload: [[target: :emails], [action: :supporter]]
+      )
     )
   end
 
-  def get_emails_for_target(target_id, cycles_till_end) do
-    emails =
-      from(m in Proca.Action.Message,
-        join: t in Proca.Target,
-        on: m.target_id == t.id,
-        join: a in Proca.Action,
-        on: m.action_id == a.id,
-        where:
-          a.processing_status == :delivered and m.delivered == false and m.target_id == ^target_id,
-        order_by: m.id,
-        preload: [:message_content, :target, [target: :emails], :action, [action: :supporter]]
-      )
-      |> Repo.all()
+  def send_emails(campaign, emails) do
+    org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
 
-    emails_to_send = Integer.floor_div(Enum.count(emails), cycles_till_end)
-    Enum.take(emails, emails_to_send)
+    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org.email_backend)) do
+      batch =
+        for e <- chunk do
+          e
+          |> prepare_recipient()
+          |> put_content(e.message_content, campaign.mtt.message_template)
+        end
+
+      EmailBackend.deliver(batch, org)
+      mark_delivered(chunk)
+    end
   end
 
-  defp send_emails(campaign, emails) do
-    emails =
-      for e <- emails do
-        e
-        |> prepare_recipient()
-        |> put_content(e.message_content, campaign.mtt.message_template)
-      end
-
-    org = Proca.Org.get_by_id(campaign.org_id, [:email_backend])
-
-    EmailBackend.deliver(emails, org)
+  def mark_delivered(messages) do
+    import Ecto.Query
+    ids = Enum.map(messages, & &1.id)
+    Repo.update_all(from(m in Message, where: m.id in ^ids), set: [delivered: true])
+    :ok
   end
 
-  defp prepare_recipient(message = %{action: %{supporter: supporter}}) do
+  def prepare_recipient(message = %{action: %{supporter: supporter}}) do
     email_to =
       Enum.find(message.target.emails, fn email_to ->
         email_to.email_status == :none
@@ -101,19 +167,19 @@ defmodule Proca.Server.MTTWorker do
   end
 
   # Lets handle both: 1.send with a mtt template 2. raw send the message content into subject + body
-  defp put_content(
-         email = %Email{},
-         %Action.MessageContent{subject: subject, body: body},
-         template_ref
-       )
-       when is_bitstring(template_ref) do
+  def put_content(
+        email = %Email{},
+        %Action.MessageContent{subject: subject, body: body},
+        template_ref
+      )
+      when is_bitstring(template_ref) do
     email
     |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
     |> Email.assign(:subject, subject)
     |> Email.assign(:body, body)
   end
 
-  defp put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do
+  def put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do
     # XXX should be elsewhere?
     html_body = EmailTemplate.html_from_text(body)
 
@@ -122,12 +188,5 @@ defmodule Proca.Server.MTTWorker do
       text: body,
       html: html_body
     })
-  end
-
-  defp calculate_cycles(start_time, end_time) do
-    mins_per_cycles = Application.get_env(:proca, Proca)[:mtt_cycle_time]
-    time_diff = Integer.floor_div(Time.diff(end_time, start_time, :second), 60)
-
-    Integer.floor_div(time_diff, mins_per_cycles)
   end
 end

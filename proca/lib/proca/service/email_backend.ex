@@ -69,9 +69,15 @@ defmodule Proca.Service.EmailBackend do
 
   @callback handle_bounce(params :: any()) :: any()
 
+  @callback batch_size() :: number
+
   def service_module(:mailjet), do: Proca.Service.Mailjet
 
   def service_module(:testmail), do: Proca.TestEmailBackend
+
+  def batch_size(org = %Org{email_backend: %Service{name: name}}) do
+    service_module(name).batch_size()
+  end
 
   def supports_templates?(org = %Org{template_backend: %Service{name: name}}) do
     service_module(name)
