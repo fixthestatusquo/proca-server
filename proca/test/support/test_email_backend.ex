@@ -102,6 +102,9 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
+  def batch_size(), do: 5
+
+  @impl true
   def list_templates(_srv) do
     t = [
       %EmailTemplate{

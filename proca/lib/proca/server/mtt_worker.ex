@@ -126,7 +126,7 @@ defmodule Proca.Server.MTTWorker do
     Repo.all(
       from(m in Message,
         where: m.id in subquery(unsent_per_target_ids),
-        preload: [[target: :emails], [action: :supporter]]
+        preload: [[target: :emails], [action: :supporter], :message_content]
       )
     )
   end
@@ -134,7 +134,7 @@ defmodule Proca.Server.MTTWorker do
   def send_emails(campaign, emails) do
     org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
 
-    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org.email_backend)) do
+    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
       batch =
         for e <- chunk do
           e
