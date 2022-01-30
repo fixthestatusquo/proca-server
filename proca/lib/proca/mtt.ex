@@ -2,6 +2,7 @@ defmodule Proca.MTT do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
+  import Proca.Validations
 
   schema "mtt" do
     field :start_at, :utc_datetime
@@ -27,6 +28,7 @@ defmodule Proca.MTT do
     mtt
     |> cast(attrs, [:start_at, :end_at, :stats, :message_template])
     |> validate_required([:start_at, :end_at])
+    |> validate_after(:start_at, :end_at)
     |> change(assocs)
   end
 end

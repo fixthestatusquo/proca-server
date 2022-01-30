@@ -48,4 +48,23 @@ defmodule Proca.Action.Message do
   end
 
   def put_messages(action, _, _), do: action
+
+  @spec select_by_targets([number], boolean) :: Ecto.Query
+  def select_by_targets(target_ids, delivered \\ false, testing \\ false) do
+    import Ecto.Query
+
+    delivered = List.wrap(delivered)
+
+    action_status = if testing, do: :testing, else: :delivered
+
+    from(m in Proca.Action.Message,
+      join: t in Proca.Target,
+      on: m.target_id == t.id,
+      join: a in Proca.Action,
+      on: m.action_id == a.id,
+      where:
+        a.processing_status == ^action_status and m.delivered in ^delivered and
+          m.target_id in ^target_ids
+    )
+  end
 end

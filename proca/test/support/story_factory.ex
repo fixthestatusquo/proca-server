@@ -116,4 +116,34 @@ defmodule Proca.StoryFactory do
       pages: [ap]
     }
   end
+
+  @doc """
+  Green org is running a MTT campaign.
+  """
+  def green_story() do
+    eml = Factory.build(:email_backend)
+
+    org =
+      Factory.build(:org, name: "panda", title: "The Green Panda", contact_schema: :basic)
+      |> Proca.Org.changeset(%{email_backend: eml})
+      |> Proca.Repo.insert!()
+
+    campaign =
+      Factory.insert(:campaign,
+        org: org,
+        name: "mtt",
+        title: "Mail To Target",
+        mtt: Factory.build(:mtt)
+      )
+
+    ap = Factory.insert(:action_page, org: org, campaign: campaign, name: "mtt/en", locale: "en")
+    targets = Factory.insert_list(10, :target, campaign: campaign)
+
+    %{
+      org: org,
+      campaign: campaign,
+      ap: ap,
+      targets: targets
+    }
+  end
 end

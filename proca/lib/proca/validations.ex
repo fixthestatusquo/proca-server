@@ -1,13 +1,15 @@
 defmodule Proca.Validations do
+  import Ecto.Changeset
+
   @doc """
   Validate that change is a:
   - map
   - keys are strings
   - values are strings, numbers, or lists of strings and numbers
   """
-  @spec validate_flat_map(Ecto.Changeset.t(), atom()) :: Changeset.t()
+  @spec validate_flat_map(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
   def validate_flat_map(changeset, fieldname) do
-    Ecto.Changeset.validate_change(changeset, fieldname, fn f, fields ->
+    validate_change(changeset, fieldname, fn f, fields ->
       valid =
         is_map(fields) and
           Enum.all?(
@@ -26,5 +28,32 @@ defmodule Proca.Validations do
         [{f, "must be a map of string to values of strings or numbers, or lists of them"}]
       end
     end)
+  end
+
+  @doc """
+  Validate that two fields are Datetimes after each other.
+  """
+  def validate_after(%{errors: errors} = changeset, field1, field2) do
+    dt1 = get_change(changeset, field1)
+    dt2 = get_change(changeset, field2)
+
+    case {dt1, dt2} do
+      {%DateTime{}, %DateTime{}} ->
+        case DateTime.compare(dt2, dt1) do
+          :gt ->
+            changeset
+
+          _ ->
+            %{
+              changeset
+              | errors: errors ++ [{field2, {"should be after #{field1}", [validation: :after]}}],
+                valid?: false
+            }
+        end
+
+      # ignore validating if not two DateTimes
+      _ ->
+        changeset
+    end
   end
 end
