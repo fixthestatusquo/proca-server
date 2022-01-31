@@ -27,8 +27,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Only download opted in contacts and actions (default true)"
       arg(:only_opt_in, :boolean)
 
-      @desc "Only download opted in contacts and actions (default true)"
-      arg(:onlyOptIn, :boolean)
+      @desc "Only download double opted in contacts"
+      arg(:only_double_opt_in, :boolean)
 
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
