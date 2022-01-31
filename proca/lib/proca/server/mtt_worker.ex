@@ -10,7 +10,9 @@ defmodule Proca.Server.MTTWorker do
   import Logger
 
   def process_mtt_campaign(campaign) do
-    if within_sending_window(campaign) do
+    campaign = Repo.preload(campaign, [:mtt, [org: [:email_backend, :template_backend]]])
+
+    if campaign.org.email_backend != nil and within_sending_window(campaign) do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
@@ -31,9 +33,10 @@ defmodule Proca.Server.MTTWorker do
       |> Enum.group_by(& &1.action.campaign_id)
 
     for {campaign_id, ms} <- emails do
-      campaign = Campaign.one(id: campaign_id, preload: [:mtt])
+      campaign =
+        Campaign.one(id: campaign_id, preload: [:mtt, org: [:email_backend, :template_backend]])
 
-      if campaign.mtt.test_email != nil do
+      if campaign.org.email_backend != nil and campaign.mtt.test_email != nil do
         send_emails(campaign, ms)
         {campaign_id, length(ms)}
       else

@@ -151,4 +151,30 @@ defmodule Proca.Server.MTTWorkerTest do
       assert length(mbox) == 20
     end
   end
+
+  test "preserving email and last name for MTTs", %{campaign: c, org: org} do
+    preview_ap = Factory.insert(:action_page, campaign: c, org: org, live: false)
+    live_ap = Factory.insert(:action_page, campaign: c, org: org, live: true)
+
+    test_for = fn ap ->
+      supporter = Factory.insert(:basic_data_pl_supporter_with_contact, action_page: ap)
+
+      assert supporter.email != nil
+      assert supporter.last_name != nil
+
+      action = Factory.insert(:action, supporter: supporter)
+
+      Proca.Server.Processing.process(action)
+
+      action = Proca.Repo.reload(action)
+      assert action.processing_status == if(ap.live, do: :delivered, else: :testing)
+
+      supporter = Proca.Repo.reload(supporter)
+      assert supporter.email != nil
+      assert supporter.last_name != nil
+    end
+
+    test_for.(preview_ap)
+    test_for.(live_ap)
+  end
 end

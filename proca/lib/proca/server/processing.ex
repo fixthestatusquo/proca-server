@@ -280,7 +280,11 @@ defmodule Proca.Server.Processing do
 
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
-    action = Repo.preload(action, action_page: [:org, :campaign], supporter: [contacts: :org])
+    action =
+      Repo.preload(action,
+        action_page: [:org, :campaign],
+        supporter: [:action_page, [contacts: :org]]
+      )
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} ->
