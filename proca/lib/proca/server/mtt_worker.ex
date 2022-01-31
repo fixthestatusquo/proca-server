@@ -150,11 +150,12 @@ defmodule Proca.Server.MTTWorker do
 
   def prepare_recipient(
         message = %{action: %{supporter: supporter}},
-        override_to_email \\ false,
+        _override_to_email \\ false,
         to_email \\ nil
       ) do
+    # if override_to_email do # XXX temporary because live APs are all over the place
     email_to =
-      if override_to_email do
+      if to_email != nil do
         %Proca.TargetEmail{email: to_email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
