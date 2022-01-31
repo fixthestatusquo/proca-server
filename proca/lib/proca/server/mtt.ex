@@ -21,6 +21,7 @@ defmodule Proca.Server.MTT do
   @impl true
   def handle_info(:work, state) do
     process_mtt()
+    MTTWorker.process_mtt_test_mails()
     {:noreply, state}
   end
 

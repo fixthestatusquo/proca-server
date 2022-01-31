@@ -76,10 +76,15 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     }
   end
 
-  def format_privacy(%Contact{communication_consent: cc, inserted_at: given_at}) do
+  def format_privacy(
+        %Supporter{email_status: es, email_status_changed: esch},
+        %Contact{communication_consent: cc, inserted_at: given_at}
+      ) do
     %{
       opt_in: cc,
-      given_at: given_at
+      given_at: given_at,
+      email_status: es,
+      email_status_changed: esch
     }
   end
 
@@ -88,14 +93,14 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   # Should actions without any contact data be exported at all?
   # Strange corner case.
 
-  def format(action = %{supporter: %{contacts: [contact]}}) do
+  def format(action = %{supporter: supporter = %{contacts: [contact]}}) do
     %{
       action_id: action.id,
       action_type: action.action_type,
       custom_fields: action.fields,
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
-      privacy: format_privacy(contact),
+      privacy: format_privacy(action.supporter, contact),
       trackng: action.source,
       campaign: action.campaign,
       action_page: action.action_page

@@ -46,7 +46,7 @@ defmodule Proca.Server.MTTWorkerTest do
       tids = MTTWorker.get_sendable_target_ids(c)
       assert length(tids) == 10
 
-      emails = MTTWorker.get_test_emails_to_send(tids)
+      emails = MTTWorker.get_test_emails_to_send()
       assert length(emails) == 3
 
       emails = MTTWorker.get_emails_to_send(tids, {1, 700})
@@ -125,19 +125,8 @@ defmodule Proca.Server.MTTWorkerTest do
       test_email = "testemail@proca.app"
       c = %{c | mtt: Proca.Repo.update!(change(c.mtt, %{test_email: test_email}))}
 
-      msgs = MTTWorker.get_test_emails_to_send([tid])
+      MTTWorker.process_mtt_test_mails()
 
-      assert Enum.all?(msgs, fn %{
-                                  action: %{
-                                    supporter: %{
-                                      last_name: ln
-                                    }
-                                  }
-                                } ->
-               ln != nil
-             end)
-
-      MTTWorker.send_emails(c, msgs, true)
       mbox = Proca.TestEmailBackend.mailbox(test_email)
 
       assert length(mbox) == 20
