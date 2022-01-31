@@ -93,7 +93,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   # Should actions without any contact data be exported at all?
   # Strange corner case.
 
-  def format(action = %{supporter: supporter = %{contacts: [contact]}}) do
+  def format(action = %{supporter: %{contacts: [contact]}}) do
     %{
       action_id: action.id,
       action_type: action.action_type,
