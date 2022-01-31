@@ -15,7 +15,7 @@ defmodule Proca.Server.MTTWorker do
       target_ids = get_sendable_target_ids(campaign)
 
       # Send via central campaign.org.email_backend
-      send_emails(campaign, get_test_emails_to_send(target_ids), true)
+      # send_emails(campaign, get_test_emails_to_send(target_ids), true)
       send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
 
       # Alternative:
@@ -23,6 +23,34 @@ defmodule Proca.Server.MTTWorker do
     else
       :noop
     end
+  end
+
+  def process_mtt_test_mails() do
+    emails =
+      get_test_emails_to_send()
+      |> Enum.group_by(& &1.action.campaign_id)
+
+    for {campaign_id, ms} <- emails do
+      campaign = Campaign.one(id: campaign_id, preload: [:mtt])
+
+      if campaign.mtt.test_email != nil do
+        send_emails(campaign, ms)
+        {campaign_id, length(ms)}
+      else
+        {campaign_id, 0}
+      end
+    end
+  end
+
+  def get_test_emails_to_send() do
+    # lets not search the whole db for this
+    week_ago = DateTime.utc_now() |> DateTime.add(-7 * 60 * 60 * 24, :second)
+
+    Message.select_by_targets(:all, false, true)
+    |> where([m, t, a], a.inserted_at >= ^week_ago)
+    |> order_by([m, t, a], asc: m.id)
+    |> preload([m, t, a], [[target: :emails], [action: :supporter], :message_content])
+    |> Repo.all()
   end
 
   def get_sendable_target_ids(%Campaign{id: id}) do
@@ -85,15 +113,6 @@ defmodule Proca.Server.MTTWorker do
     in_sending_days and in_sending_time
   end
 
-  def get_test_emails_to_send(target_ids) do
-    import Ecto.Query
-    # We send all the unsent test MTTs instantly
-    Message.select_by_targets(target_ids, false, true)
-    |> preload([t, m, a], [[target: :emails], [action: :supporter], :message_content])
-    |> order_by([t, m, a], asc: m.id)
-    |> Repo.all()
-  end
-
   def get_emails_to_send(target_ids, {cycle, all_cycles}) do
     import Ecto.Query
 
@@ -130,33 +149,30 @@ defmodule Proca.Server.MTTWorker do
     )
   end
 
-  def send_emails(campaign, emails, is_test \\ false) do
+  def send_emails(campaign, emails) do
     org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
 
-    if not is_test or campaign.mtt.test_email != nil do
-      for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
-        batch =
-          for e <- chunk do
-            e
-            |> prepare_recipient(is_test, campaign.mtt.test_email)
-            |> put_content(e.message_content, campaign.mtt.message_template)
-          end
+    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
+      batch =
+        for e <- chunk do
+          e
+          |> prepare_recipient(campaign.mtt.test_email)
+          |> put_content(e.message_content, campaign.mtt.message_template)
+        end
 
-        EmailBackend.deliver(batch, org)
-        Message.mark_all(chunk, :sent)
-      end
+      EmailBackend.deliver(batch, org)
+      Message.mark_all(chunk, :sent)
     end
   end
 
   def prepare_recipient(
         message = %{action: %{supporter: supporter}},
-        _override_to_email \\ false,
-        to_email \\ nil
+        test_email \\ nil
       ) do
     # if override_to_email do # XXX temporary because live APs are all over the place
     email_to =
-      if to_email != nil do
-        %Proca.TargetEmail{email: to_email, email_status: :none}
+      if test_email != nil do
+        %Proca.TargetEmail{email: test_email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
           email_to.email_status == :none
