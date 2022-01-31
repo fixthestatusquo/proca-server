@@ -56,8 +56,8 @@ defmodule Proca.Factory do
     %Proca.ActionPage{
       name: sequence("action_page", &"some.url.com/sign/#{&1}"),
       org: org,
-      locale: "en",
       campaign: campaign,
+      locale: "en",
       delivery: false,
       live: true,
       config: %{"journey" => ["Petition", "Share"]}

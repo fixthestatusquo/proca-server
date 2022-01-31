@@ -6,7 +6,7 @@ defmodule ContactTest do
   alias Proca.Contact.Data
 
   test "build contact and supporter from basic data" do
-    action_page = Factory.build(:action_page)
+    action_page = Factory.insert(:action_page)
 
     data = Factory.build(:basic_data_pl)
     assert %Proca.Contact.BasicData{} = data
