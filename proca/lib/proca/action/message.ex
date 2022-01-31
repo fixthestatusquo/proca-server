@@ -7,9 +7,11 @@ defmodule Proca.Action.Message do
   alias __MODULE__
 
   schema "messages" do
+    field :sent, :boolean, default: false
     field :delivered, :boolean, default: false
-    # We don't want to hardcode email_from in db record
-    #    field :email_from, :string, default: ""
+    field :opened, :boolean, default: false
+    field :clicked, :boolean, default: false
+
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
     belongs_to :message_content, Proca.Action.MessageContent
@@ -21,7 +23,15 @@ defmodule Proca.Action.Message do
     assocs = Map.take(attrs, [:target, :message_content])
 
     msg
-    |> cast(attrs, [:target_id, :action_id, :message_content_id, :delivered])
+    |> cast(attrs, [
+      :target_id,
+      :action_id,
+      :message_content_id,
+      :sent,
+      :delivered,
+      :opened,
+      :clicked
+    ])
     |> foreign_key_constraint(:target, name: :messages_target_id_fkey, message: "has messages")
     |> change(assocs)
   end
@@ -49,11 +59,11 @@ defmodule Proca.Action.Message do
 
   def put_messages(action, _, _), do: action
 
-  @spec select_by_targets([number], boolean) :: Ecto.Query
-  def select_by_targets(target_ids, delivered \\ false, testing \\ false) do
+  @spec select_by_targets([number], boolean, boolean) :: %Ecto.Query{}
+  def select_by_targets(target_ids, sent \\ false, testing \\ false) do
     import Ecto.Query
 
-    delivered = List.wrap(delivered)
+    sent = List.wrap(sent)
 
     action_status = if testing, do: :testing, else: :delivered
 
@@ -63,8 +73,16 @@ defmodule Proca.Action.Message do
       join: a in Proca.Action,
       on: m.action_id == a.id,
       where:
-        a.processing_status == ^action_status and m.delivered in ^delivered and
+        a.processing_status == ^action_status and m.sent in ^sent and
           m.target_id in ^target_ids
     )
+  end
+
+  @spec mark_all([%Message{}], :sent | :delivered | :opened | :clicked) :: :ok
+  def mark_all(messages, field) when field in [:sent, :delivered, :opened, :clicked] do
+    import Ecto.Query
+    ids = Enum.map(messages, & &1.id)
+    Repo.update_all(from(m in Message, where: m.id in ^ids), set: [{field, true}])
+    :ok
   end
 end

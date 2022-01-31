@@ -306,12 +306,10 @@ defmodule Proca.Server.Processing do
     tx = Ecto.Multi.new()
 
     tx =
-      Ecto.Multi.update_all(
-        tx,
-        :supporter,
-        Supporter.clear_transient_fields_query(action.supporter),
-        []
-      )
+      case Supporter.clear_transient_fields_query(action.supporter) do
+        :noop -> tx
+        query -> Ecto.Multi.update_all(tx, :supporter, query, [])
+      end
 
     tx =
       case Action.clear_transient_fields_query(action) do

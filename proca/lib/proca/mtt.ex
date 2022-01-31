@@ -3,12 +3,14 @@ defmodule Proca.MTT do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Proca.Validations
+  alias Proca.ActionPage
 
   schema "mtt" do
     field :start_at, :utc_datetime
     field :end_at, :utc_datetime
     #   field :sending_rate, :integer
     field :stats, :map, default: %{}
+    field :test_email, :string
 
     # TODO:
     # field :distributed, :boolean, default: false
@@ -26,9 +28,10 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template])
+    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email])
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
+    |> Proca.Contact.Input.validate_email(:test_email)
     |> change(assocs)
   end
 end
