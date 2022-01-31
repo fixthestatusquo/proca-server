@@ -14,12 +14,10 @@ defmodule Proca.Server.MTTWorker do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
-      emails_to_send =
-        get_test_emails_to_send(target_ids) ++
-          get_emails_to_send(target_ids, {cycle, all_cycles})
-
       # Send via central campaign.org.email_backend
-      send_emails(campaign, emails_to_send)
+      send_emails(campaign, get_test_emails_to_send(target_ids), true)
+      send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
+
       # Alternative:
       # send via each action page owner
     else
@@ -105,7 +103,7 @@ defmodule Proca.Server.MTTWorker do
       |> select([m, t, a], %{
         target_id: t.id,
         goal: count(m.id) * ^cycle / ^all_cycles,
-        delivered: fragment("count(?) FILTER (WHERE delivered)", m.id)
+        sent: fragment("count(?) FILTER (WHERE sent)", m.id)
       })
       |> group_by([m, t, a], t.id)
 
@@ -120,7 +118,7 @@ defmodule Proca.Server.MTTWorker do
       |> subquery()
       |> join(:inner, [r], p in subquery(progress_per_target), on: r.target_id == p.target_id)
       # <= because rank is 1-based
-      |> where([r, p], p.delivered + r.rank <= p.goal)
+      |> where([r, p], p.sent + r.rank <= p.goal)
       |> select([r, p], r.message_id)
 
     # Finally, fetch these messages with associations in one go
@@ -132,37 +130,44 @@ defmodule Proca.Server.MTTWorker do
     )
   end
 
-  def send_emails(campaign, emails) do
+  def send_emails(campaign, emails, is_test \\ false) do
     org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
 
-    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
-      batch =
-        for e <- chunk do
-          e
-          |> prepare_recipient()
-          |> put_content(e.message_content, campaign.mtt.message_template)
-        end
+    if not is_test or campaign.mtt.test_email != nil do
+      for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
+        batch =
+          for e <- chunk do
+            e
+            |> prepare_recipient(is_test, campaign.mtt.test_email)
+            |> put_content(e.message_content, campaign.mtt.message_template)
+          end
 
-      EmailBackend.deliver(batch, org)
-      mark_delivered(chunk)
+        EmailBackend.deliver(batch, org)
+        Message.mark_all(chunk, :sent)
+      end
     end
   end
 
-  def mark_delivered(messages) do
-    import Ecto.Query
-    ids = Enum.map(messages, & &1.id)
-    Repo.update_all(from(m in Message, where: m.id in ^ids), set: [delivered: true])
-    :ok
-  end
-
-  def prepare_recipient(message = %{action: %{supporter: supporter}}) do
+  def prepare_recipient(
+        message = %{action: %{supporter: supporter}},
+        override_to_email \\ false,
+        to_email \\ nil
+      ) do
     email_to =
-      Enum.find(message.target.emails, fn email_to ->
-        email_to.email_status == :none
-      end)
+      if override_to_email do
+        %Proca.TargetEmail{email: to_email, email_status: :none}
+      else
+        Enum.find(message.target.emails, fn email_to ->
+          email_to.email_status == :none
+        end)
+      end
+
+    # Re-use logic to convert first_name, last_name to name
+    supporter_name =
+      Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
 
     Email.new(
-      from: {supporter.first_name, supporter.email},
+      from: {supporter_name, supporter.email},
       to: {message.target.name, email_to.email}
     )
   end

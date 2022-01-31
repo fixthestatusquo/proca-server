@@ -99,17 +99,26 @@ defmodule Proca.Supporter.Privacy do
     [:area]
   end
 
+  def cleartext_fields(%ActionPage{campaign: %{mtt: %Proca.MTT{}}}) do
+    [:email, :first_name, :last_name, :address, :area]
+  end
+
   def cleartext_fields(_) do
     [:email, :first_name, :area]
   end
 
   @doc "Which supporter fields are cleared after processing"
   def transient_supporter_fields(%ActionPage{org: %Org{high_security: true}}) do
-    [:email, :first_name]
+    [:email, :first_name, :last_name, :address]
+  end
+
+  # For mtt, do not wipe out the fields too early
+  def transient_supporter_fields(%ActionPage{campaign: %{mtt: %Proca.MTT{}}}) do
+    []
   end
 
   def transient_supporter_fields(_) do
-    [:email]
+    [:email, :last_name, :address]
   end
 
   def transient_action_fields(%Action{action_type: action_type}, %ActionPage{

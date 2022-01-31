@@ -5,6 +5,7 @@ defmodule Proca.Server.MTTWorkerTest do
   alias Proca.Factory
 
   alias Proca.Server.MTTWorker
+  alias Proca.Action.Message
 
   use Proca.TestEmailBackend
 
@@ -20,10 +21,15 @@ defmodule Proca.Server.MTTWorkerTest do
     assert MTTWorker.within_sending_window(c)
   end
 
+  # describe "storing contact fields in supporter" do
+  #   test "last_name", %{campaign: c} do
+  #   end
+  # end
+
   describe "selecting targets to send" do
     setup %{campaign: c, ap: ap, targets: ts} do
-      action1 = Factory.insert(:action, processing_status: :testing)
-      action2 = Factory.insert(:action, processing_status: :delivered)
+      action1 = Factory.insert(:action, action_page: ap, processing_status: :testing)
+      action2 = Factory.insert(:action, action_page: ap, processing_status: :delivered)
 
       {t1, t2} = Enum.split(ts, 3)
 
@@ -73,7 +79,7 @@ defmodule Proca.Server.MTTWorkerTest do
 
   describe "scheduling messages for one target" do
     setup %{campaign: c, ap: ap, targets: [t1 | _]} do
-      actions = Factory.insert_list(20, :action, processing_status: :delivered)
+      actions = Factory.insert_list(20, :action, action_page: ap, processing_status: :delivered)
       msgs = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
 
       %{
@@ -96,24 +102,59 @@ defmodule Proca.Server.MTTWorkerTest do
       cycle = move_schedule(c, 1, 29)
       emails = MTTWorker.get_emails_to_send([tid], cycle)
       assert length(emails) == 2
-      MTTWorker.mark_delivered(emails)
+      Message.mark_all(emails, :sent)
 
       # in second cycle
       cycle = move_schedule(c, 5, 25)
       emails = MTTWorker.get_emails_to_send([tid], cycle)
       assert length(emails) == 2
-      MTTWorker.mark_delivered(emails)
+      Message.mark_all(emails, :sent)
 
       # in second cycle
       cycle = move_schedule(c, 29, 1)
       emails = MTTWorker.get_emails_to_send([tid], cycle)
       # all remining, because we skipped to last cycle
       assert length(emails) == count - 4
-      MTTWorker.mark_delivered(emails)
+      Message.mark_all(emails, :sent)
     end
 
-    test "sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
+    test "test sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
+      import Ecto.Query
+      Proca.Repo.update_all(from(a in Proca.Action), set: [processing_status: :testing])
+
+      test_email = "testemail@proca.app"
+      c = %{c | mtt: Proca.Repo.update!(change(c.mtt, %{test_email: test_email}))}
+
+      msgs = MTTWorker.get_test_emails_to_send([tid])
+
+      assert Enum.all?(msgs, fn %{
+                                  action: %{
+                                    supporter: %{
+                                      last_name: ln
+                                    }
+                                  }
+                                } ->
+               ln != nil
+             end)
+
+      MTTWorker.send_emails(c, msgs, true)
+      mbox = Proca.TestEmailBackend.mailbox(test_email)
+
+      assert length(mbox) == 20
+    end
+
+    test "live sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
       msgs = MTTWorker.get_emails_to_send([tid], {1, 1})
+
+      assert Enum.all?(msgs, fn %{
+                                  action: %{
+                                    supporter: %{
+                                      last_name: ln
+                                    }
+                                  }
+                                } ->
+               ln != nil
+             end)
 
       MTTWorker.send_emails(c, msgs)
       mbox = Proca.TestEmailBackend.mailbox(email)
