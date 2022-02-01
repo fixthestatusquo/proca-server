@@ -32,7 +32,10 @@ defmodule Proca.Action.Message do
       :opened,
       :clicked
     ])
-    |> foreign_key_constraint(:target, name: :messages_target_id_fkey, message: "has messages")
+    |> foreign_key_constraint(:target,
+      name: :messages_target_id_fkey,
+      message: "target to messages association violated"
+    )
     |> change(assocs)
   end
 
