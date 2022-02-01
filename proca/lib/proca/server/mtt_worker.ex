@@ -174,6 +174,7 @@ defmodule Proca.Server.MTTWorker do
           e
           |> prepare_recipient(campaign.mtt.test_email)
           |> put_content(e.message_content, campaign.mtt.message_template)
+          |> put_custom(e.id)
         end
 
       EmailBackend.deliver(batch, org)
@@ -227,5 +228,10 @@ defmodule Proca.Server.MTTWorker do
       text: body,
       html: html_body
     })
+  end
+
+  def put_custom(email, message_id) do
+    email
+    |> Email.put_private(:custom_id, "mttmessage:#{message_id}")
   end
 end

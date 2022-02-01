@@ -95,4 +95,19 @@ defmodule Proca.Action.Message do
     Repo.update_all(from(m in Message, where: m.id in ^ids), set: [{field, true}])
     :ok
   end
+
+  def handle_event(event) do
+    message = Repo.get_by(Message, id: event.id)
+    ## If message found in DB
+    if message do
+      case event.reason do
+        :sent ->
+          Repo.update!(change(message, delivered: true))
+        :open ->
+          Repo.update!(change(message, opened: true))
+        :click ->
+          Repo.update!(change(message, clicked: true))
+      end
+    end
+  end
 end

@@ -17,6 +17,7 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
+  alias Proca.Action.Message
   alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
@@ -138,8 +139,24 @@ defmodule Proca.Service.Mailjet do
     end
   end
 
+  @impl true
+  def handle_event(params) do
+    {type, id} = parse_type(String.split(Map.get(params, "CustomID"), ":", trim: true))
+
+    event_params = %{
+      id: id,
+      email: Map.get(params, "email"),
+      reason: String.to_existing_atom(Map.get(params, "event"))
+    }
+
+    case type do
+      :mttmessage -> Message.handle_event(event_params)
+    end
+  end
+
   defp parse_type(["action" | [tail | _]]), do: {:action, tail}
   defp parse_type(["target" | [tail | _]]), do: {:target, tail}
+  defp parse_type(["mttmessage" | [tail | _]]), do: {:mttmessage, tail}
   defp parse_type(_args), do: {:empty, nil}
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
