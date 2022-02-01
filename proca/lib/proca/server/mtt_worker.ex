@@ -28,10 +28,15 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def process_mtt_test_mails() do
+    # Purge old test messages
+    Repo.delete_all(get_test_emails_to_delete())
+
+    # Get recent messages to send
     emails =
       get_test_emails_to_send()
       |> Enum.group_by(& &1.action.campaign_id)
 
+    # Group per campaign and send
     for {campaign_id, ms} <- emails do
       campaign =
         Campaign.one(id: campaign_id, preload: [:mtt, org: [:email_backend, :template_backend]])
@@ -45,15 +50,23 @@ defmodule Proca.Server.MTTWorker do
     end
   end
 
+  @recent_test_messages 60 * 60 * 24
   def get_test_emails_to_send() do
-    # lets not search the whole db for this
-    week_ago = DateTime.utc_now() |> DateTime.add(-7 * 60 * 60 * 24, :second)
+    # lets just send recent messages
+    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
     Message.select_by_targets(:all, false, true)
-    |> where([m, t, a], a.inserted_at >= ^week_ago)
+    |> where([m, t, a], a.inserted_at >= ^recent)
     |> order_by([m, t, a], asc: m.id)
     |> preload([m, t, a], [[target: :emails], [action: :supporter], :message_content])
     |> Repo.all()
+  end
+
+  def get_test_emails_to_delete() do
+    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
+
+    Message.select_by_targets(:all, true, true)
+    |> where([m, t, a], a.inserted_at < ^recent)
   end
 
   def get_sendable_target_ids(%Campaign{id: id}) do
