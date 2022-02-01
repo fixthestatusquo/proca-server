@@ -69,6 +69,8 @@ defmodule Proca.Service.EmailBackend do
 
   @callback handle_bounce(params :: any()) :: any()
 
+  @callback handle_event(params :: any()) :: any()
+
   @callback batch_size() :: number
 
   def service_module(:mailjet), do: Proca.Service.Mailjet
