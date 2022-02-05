@@ -99,7 +99,7 @@ defmodule Proca.Stage.MessageV1 do
         action,
         [
           [supporter: [contacts: [:public_key, :sign_key]]],
-          :action_page,
+          [action_page: :org],
           :campaign,
           :source,
           :donation
@@ -130,6 +130,10 @@ defmodule Proca.Stage.MessageV1 do
         "name" => action.campaign.name,
         "title" => action.campaign.title,
         "externalId" => action.campaign.external_id
+      },
+      "org" => %{
+        "name" => action.action_page.org.name,
+        "title" => action.action_page.org.title
       },
       "contact" => action_data_contact(action.supporter, contact),
       "privacy" => contact_privacy(action, contact),

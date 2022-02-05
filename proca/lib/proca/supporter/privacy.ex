@@ -112,7 +112,7 @@ defmodule Proca.Supporter.Privacy do
   end
 
   @doc "Which supporter fields are cleared after processing"
-  def transient_supporter_fields(%ActionPage{} = ap) do
+  def transient_supporter_fields(%{} = ap) do
     ap = Proca.Repo.preload(ap, campaign: :mtt)
 
     case ap do

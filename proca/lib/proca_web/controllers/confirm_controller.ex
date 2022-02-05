@@ -218,7 +218,7 @@ defmodule ProcaWeb.ConfirmController do
          {:ok, action} <- find_action(args),
          {:ok, action} <- handle_double_opt_in(action, "true") do
       conn
-      |> redirect(external: handle_supporter_redirect(action, args))
+      |> redirect(external: handle_supporter_redirect(action, Map.put(args, :doi, 1)))
       |> halt()
     else
       {:error, status, msg} ->

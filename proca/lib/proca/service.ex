@@ -74,7 +74,7 @@ defmodule Proca.Service do
     req = json_request_opts(%{}, opts, srv)
 
     case :hackney.request(req.method, url, req.headers, req.body) do
-      {:ok, 200, hdrs, ref} ->
+      {:ok, code, hdrs, ref} when code in [200, 201] ->
         json_request_read_body(hdrs, ref)
 
       {:ok, code, _hdrs, _ref} ->
@@ -148,6 +148,14 @@ defmodule Proca.Service do
       | method: :post,
         body: {:form, form},
         headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
+    }
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:headers, headers} | rest], srv) do
+    %{
+      req
+      | headers: Keyword.merge(req.headers, headers)
     }
     |> json_request_opts(rest, srv)
   end

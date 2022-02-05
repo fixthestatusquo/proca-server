@@ -34,10 +34,15 @@ defmodule Proca.Service.Mailjet do
   def batch_size(), do: 25
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv}) do
-    case Service.json_request(srv, "#{@api_url}#{@template_path}", auth: :basic) do
+  def list_templates(%Org{template_backend: %Service{} = srv} = org, lst \\ []) do
+    case Service.json_request(srv, "#{@api_url}#{@template_path}?limit=50&offset=#{length(lst)}",
+           auth: :basic
+         ) do
       {:ok, 200, %{"Data" => templates}} ->
-        {:ok, templates |> Enum.map(&template_from_json/1)}
+        case Enum.map(templates, &template_from_json/1) do
+          [] -> {:ok, lst}
+          templates -> list_templates(org, lst ++ templates)
+        end
 
       {:ok, 401} ->
         {:error, "not authenticated"}

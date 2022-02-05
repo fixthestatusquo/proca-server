@@ -21,7 +21,7 @@ defmodule Proca.Service.EmailTemplate do
     Changeset.validate_change(changeset, field, fn f, template ->
       org =
         case Changeset.apply_changes(changeset) do
-          %ActionPage{org: %Org{}} = o -> o
+          %ActionPage{org: %Org{} = o} -> o
           %ActionPage{org_id: org_id} -> Org.one(id: org_id)
           %Org{} = o -> o
         end

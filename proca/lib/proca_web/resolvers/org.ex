@@ -63,7 +63,8 @@ defmodule ProcaWeb.Resolvers.Org do
         :contact_schema,
         :supporter_confirm,
         :supporter_confirm_template,
-        :high_security
+        :high_security,
+        :doi_thank_you
       ])
     }
   end
