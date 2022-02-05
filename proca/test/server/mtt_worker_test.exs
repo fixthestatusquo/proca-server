@@ -46,6 +46,9 @@ defmodule Proca.Server.MTTWorkerTest do
       tids = MTTWorker.get_sendable_target_ids(c)
       assert length(tids) == 10
 
+      emails = Proca.Repo.all(MTTWorker.query_test_emails_to_delete())
+      assert length(emails) == 0
+
       emails = MTTWorker.get_test_emails_to_send()
       assert length(emails) == 3
 

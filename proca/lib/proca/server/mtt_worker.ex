@@ -29,7 +29,7 @@ defmodule Proca.Server.MTTWorker do
 
   def process_mtt_test_mails() do
     # Purge old test messages
-    Repo.delete_all(get_test_emails_to_delete())
+    Repo.delete_all(query_test_emails_to_delete())
 
     # Get recent messages to send
     emails =
@@ -50,7 +50,7 @@ defmodule Proca.Server.MTTWorker do
     end
   end
 
-  @recent_test_messages 60 * 60 * 24
+  @recent_test_messages -1 * 60 * 60 * 24
   def get_test_emails_to_send() do
     # lets just send recent messages
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
@@ -62,7 +62,7 @@ defmodule Proca.Server.MTTWorker do
     |> Repo.all()
   end
 
-  def get_test_emails_to_delete() do
+  def query_test_emails_to_delete() do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
     Message.select_by_targets(:all, true, true)

@@ -32,6 +32,10 @@ defmodule Proca.Service.EmailRecipient do
 
     fields =
       Map.merge(fields, %{
+        org: %{
+          name: get_in(action_data, ["org", "name"]),
+          title: get_in(action_data, ["org", "title"])
+        },
         campaign: %{
           name: get_in(action_data, ["campaign", "name"]),
           title: get_in(action_data, ["campaign", "title"])
