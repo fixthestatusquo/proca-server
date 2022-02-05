@@ -62,17 +62,18 @@ defmodule Proca.ActionPage.Status do
         {:action,
          action = %Action{
            id: id,
+           action_page_id: ap_id,
            inserted_at: seen_at
          }},
         s
       ) do
-    :ets.insert(:last_seen_at, {id, seen_at})
+    :ets.insert(:last_seen_at, {ap_id, seen_at})
 
     if action.source_id != nil do
-      source = one(Ecto.assoc(action, [:source]))
+      source = one(Ecto.assoc(action, :source))
 
-      if source.location do
-        :ets.insert(:last_seen_location, {id, source.location})
+      if source.location != "" do
+        :ets.insert(:last_seen_location, {ap_id, source.location})
       end
     end
 
