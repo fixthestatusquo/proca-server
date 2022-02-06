@@ -15,6 +15,9 @@ defmodule Proca.Action.Message do
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
     belongs_to :message_content, Proca.Action.MessageContent
+
+    # inserted_at is same as actions, but updated_at is useful to see when flags changed
+    timestamps(inserted_at: false)
   end
 
   def changeset(attrs), do: changeset(%Message{}, attrs)
