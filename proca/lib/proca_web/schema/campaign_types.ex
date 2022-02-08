@@ -145,6 +145,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     """
     field :upsert_campaign, type: non_null(:campaign) do
       load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
       allow([:manage_campaigns])
 
       @desc "Org name"
