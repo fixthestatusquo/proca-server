@@ -56,8 +56,26 @@ defmodule Proca.TestEmailBackend do
     {:ok, %{opts: opts, mbox: %{}}}
   end
 
+  @doc """
+  Start the gen server, killing an old one if it's still around (it sometimes happen)
+  Try two times.
+  """
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+    case GenServer.start_link(__MODULE__, opts, name: __MODULE__) do
+      {:ok, _pid} = p ->
+        p
+
+      {:error, {:already_started, pid}} = e ->
+        Process.exit(pid, :kill)
+
+        opts = Keyword.updte(opts, :retry, 1, &(&1 + 1))
+
+        if opts[:retry] < 3 do
+          start_link(opts)
+        else
+          e
+        end
+    end
   end
 
   # GenServer server
