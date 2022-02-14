@@ -82,7 +82,7 @@ def http(endpoint, auth=None):
     Return a HTTP client given endpoint and authentication.
     authentication can be a dict with {user: .. password:..}, or {token: } (not yet implemented)
     """
-    if 'user' in auth and 'password' in auth:
+    if auth and 'user' in auth and 'password' in auth:
         auth = BasicAuth(auth['user'], auth['password'])
 
     transport = AIOHTTPTransport(url=endpoint.http_url, auth=auth)
