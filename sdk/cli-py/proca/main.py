@@ -5,6 +5,7 @@ import click
 import proca.config
 from proca.util import log
 from proca.cmd.config import server
+from proca.cmd.user import me
 
 
 @click.group()
@@ -18,3 +19,4 @@ def cli(ctx, server):
 
 
 cli.add_command(server)
+cli.add_command(me)

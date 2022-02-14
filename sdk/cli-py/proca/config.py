@@ -18,6 +18,8 @@ url = "..."
 
 """
 
+import proca.client
+
 import appdirs
 from os import path
 from configparser import ConfigParser, DuplicateSectionError, DuplicateOptionError
@@ -74,3 +76,21 @@ def load():
 def store():
     with open(config_filename, "w") as fd:
         Config.write(fd)
+
+def make_client(ctx, ws=False):
+    sn = ctx.obj.get('server_section', 'server')
+    server = Config[sn]
+
+    endpoint = proca.client.Endpoint(server['url'], server.get('ws_url', None))
+
+    auth = {}
+    try:
+        auth['user'] = server['user']
+        auth['password'] = server['password']
+    except KeyError:
+        auth = None
+
+    if ws:
+        return proca.client.ws(endpoint, auth)
+
+    return proca.client.http(endpoint, auth)

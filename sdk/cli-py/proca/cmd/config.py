@@ -137,7 +137,7 @@ def verify_server_exists(name):
     if name is None:
         return
 
-    if server_section(name) not in Config.sections():
+    if not Config.has_section(server_section(name)):
         hint = ', '.join([n for (n, _, _, _) in list_server_sections(False)])
         if hint:
             hint = " Your servers: " + hint
@@ -153,7 +153,7 @@ def verify_host(url):
 
     with yaspin() as ya:
         if not e.check_http_url():
-            ya.fail(f"🚇 that url does not seem to lead to the API. Tried: {e.http_url}")
+            ya.fail(f"Error: 🚇 that url does not seem to lead to the API. Tried: {e.http_url}")
             raise click.Abort
         else:
             ya.ok(f"🍦 API url looks ok - {e.http_url}")
