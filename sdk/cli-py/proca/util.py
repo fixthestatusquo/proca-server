@@ -6,6 +6,6 @@ def configure_log(logger):
     console = StreamHandler()
     console.setFormatter(Formatter("%(message)s"))
     logger.addHandler(console)
-    logger.setLevel(DEBUG)
+    logger.setLevel(INFO)
 
 log = getLogger("proca")

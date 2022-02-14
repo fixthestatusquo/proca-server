@@ -6,6 +6,16 @@ Except for a few cases (secrets) we do not use ENV variables (they are confusing
 when you want to call different instances for example, or change org).
 
 We use standard user config directory to store the proca.conf file
+
+## Config structure
+
+[server]
+url = "..."
+
+[server:stg]
+url = "..."
+
+
 """
 
 import appdirs
@@ -25,6 +35,8 @@ def server_section(name=None):
        return "server"
     return "server:" + name
 
+
+@explain_error("adding server configuration")
 def add_server_section(name):
     Config.add_section(name)
 
@@ -45,7 +57,9 @@ def initialize():
     default_server()
     store()
 
-@explain_error("loading proca Config at %(fn)", fn=config_filename)
+
+
+@explain_error("loading proca config at %(fn)", fn=config_filename)
 def load():
     "Load the Config"
 
@@ -57,7 +71,7 @@ def load():
         initialize()
     return Config
 
-@explain_error("writing proca Config to %(fn)s", fn=config_filename)
+@explain_error("writing proca config to %(fn)s", fn=config_filename)
 def store():
     with open(config_filename, "w") as fd:
         Config.write(fd)
