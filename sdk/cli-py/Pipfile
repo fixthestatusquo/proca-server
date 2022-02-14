@@ -9,6 +9,7 @@ yaspin = "*"
 gql = "*"
 aiohttp = "*"
 websockets = "*"
+appdirs = "*"
 
 [dev-packages]
 

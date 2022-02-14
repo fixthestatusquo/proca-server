@@ -6,7 +6,8 @@ GraphQL API client code.
 """
 
 from urllib.parse import urlparse
-from gql import gql, Client
+from urllib.request import Request, urlopen, HTTPError
+from gql import Client
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.phoenix_channel_websockets import PhoenixChannelWebsocketsTransport
 from aiohttp.helpers import BasicAuth
@@ -52,6 +53,18 @@ class Endpoint:
 
         self.http_url = url
         self.ws_url = socket
+
+    def check_http_url(self):
+        """
+        Check if OPTIONS on url does not return error (4xx 5xx)
+        """
+        try:
+            urlopen(Request(self.http_url, method="OPTIONS"))
+            return True
+        except HTTPError:
+            return False
+
+
 
     @staticmethod
     def wrap(endpoint):
