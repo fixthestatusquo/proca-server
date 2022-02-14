@@ -5,17 +5,23 @@ import click
 from proca.config import Config, add_server_section, server_section, store
 from proca.util import log
 from proca.client import Endpoint
-from proca.friendly import validate_email
+from proca.friendly import validate_email, fail
 from yaspin import yaspin
 
 @click.group()
-def server(help="Configure API servers"):
-    pass
+@click.pass_context
+def server(ctx):
+    """
+    Configure API servers that you want to talk to.
+    """
+
+    if ctx.invoked_subcommand is None:
+        list()
+    else:
+        pass
 
 
-@server.command(help="Lists API servers")
-def list():
-
+def list_server_sections(show_default=True):
     def display_name(name):
         x = name.split(":")
         if len(x) > 1:
@@ -24,15 +30,33 @@ def list():
 
     l = [
         (
-            sn,
-            Config.get(sn, "url")
+            display_name(sn),
+            Config.get(sn, "url"),
+            Config.get(sn, "ws_url", fallback=None),
+            Config.get(sn, "user", fallback=None)
         )
         for sn in Config.sections()
-        if sn.startswith("server")
+        if sn.startswith("server") and (show_default == True or sn != "server")
     ]
+    return l
 
-    for name, url in l:
-        print(f"{display_name(name)}: {url}")
+
+@server.command()
+def list():
+    """
+    List API servers
+    """
+
+
+    for name, url, ws_url, user in list_server_sections():
+        a = f"{name}: {url}"
+
+        if ws_url:
+            a += f" [WebSocket: {ws_url}]"
+        if user:
+            a += f" as {user}"
+
+        print(a)
 
 
 @server.command()
@@ -66,11 +90,60 @@ def add(host, user, password, name, socket):
     store()
 
 
+@server.command()
+@click.option('-h', '--host', help="API url")
+@click.option('-u', '--user', help="User name (email)", callback=validate_email)
+@click.option('-p', '--password', help="Your password")
+@click.option('-s', '--socket', help="API WebSocket url", default=None)
+@click.argument('name', default=None)
+def set(host, user, password, name, socket):
+    "Set server options"
+
+    verify_server_exists(name)
+
+    sn = server_section(name)
+
+    if host:
+        Config.set(sn, "url", host)
+        verify_host(host)
+
+    if socket:
+        Config.set(sn, "ws_url", socket)
+
+    if user:
+        Config.set(sn, "user", user)
+
+    if password:
+        Config.set(sn, "password", password)
+
+    store()
+
+@server.command()
+@click.argument('name')
+def delete(name):
+    "Delete server"
+
+    verify_server_exists(name)
+
+    sn = server_section(name)
+
+    Config.remove_section(sn)
+
+    store()
 
 
+def verify_server_exists(name):
+    # ok for default
+    if name is None:
+        return
 
-
-
+    if server_section(name) not in Config.sections():
+        hint = ', '.join([n for (n, _, _, _) in list_server_sections(False)])
+        if hint:
+            hint = " Your servers: " + hint
+        else:
+            hint = " You have no defined servers"
+        raise click.BadParameter(f"❔ No server {name}.{hint}", param_hint="name")
 
 
 def verify_host(url):
