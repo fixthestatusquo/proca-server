@@ -24,7 +24,6 @@ from configparser import ConfigParser, DuplicateSectionError, DuplicateOptionErr
 
 from proca.friendly import explain_error
 
-
 Config = ConfigParser()
 
 config_dirname = appdirs.user_config_dir(appname="proca")

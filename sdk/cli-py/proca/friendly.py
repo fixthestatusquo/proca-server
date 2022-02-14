@@ -36,6 +36,11 @@ def explain_error(intent, **fmt_params):
         return explainer_wrap
     return decor
 
+def fail(message, exit_code=1):
+    error = click.UsageError(message)
+    error.exit_code = exit_code
+    raise error
+
 
 def make_into_url(url):
     return urL
