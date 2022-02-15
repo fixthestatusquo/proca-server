@@ -46,9 +46,13 @@ def explain_error(intent, **fmt_params):
 
 def api_error_explanation(msg):
     ex = msg.get('extensions', {})
+    path = '.'.join(msg['path'])
+
     if 'code' in ex:
         if ex['code'] == 'unauthorized':
-            return "you have not provided correct user and password"
+            return f"you have not provided correct user and password at {path}"
+        else:
+            return f"server said: {ex['code']} at {path}"
 
     return msg['message']
 
@@ -68,9 +72,40 @@ def make_into_url(url):
 
 EMAIL_PATTERN = re.compile(r"(?P<user>^[a-zA-Z][a-zA-Z0-9_.+-]+)@(?P<domain>[a-zA-Z0-9-._]+[a-zA-Z])$")
 def validate_email(ctx, param, value):
+    if value is None:
+        return value
+
     m = EMAIL_PATTERN.match(value)
 
     if m is None:
         raise click.BadParameter("user must be an email")
 
     return value
+
+
+def id_options(fn):
+    """
+    Adds options to pass different id/name/external ids to the command.
+    XXX - add uuid later
+    """
+
+
+    fn = click.option("-n", "--name", type=str, help="short name")(fn)
+    fn = click.option("-i", "--id", type=int, help="numerical id")(fn)
+
+    return fn
+
+
+def guess_identifier(id, name, something):
+    pv = len([x for x in [id, name, something] if x is None])
+    if pv != 2:
+        raise click.UsageError(f"You must specify identifier only in one of three ways: 1) -i 123 2) -n somename 3) 123 or somename as argument.")
+
+    if id is not None:
+        return id, None
+    if name is not None:
+        return None, name
+    try:
+        return int(something), None
+    except ValueError:
+        return None, something

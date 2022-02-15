@@ -4,19 +4,30 @@ import click
 
 import proca.config
 from proca.util import log
-from proca.cmd.config import server
-from proca.cmd.user import me
+import proca.cmd.server
+import proca.cmd.user
+import proca.cmd.action
+import proca.cmd.page
 
 
 @click.group()
 @click.option('-@', '--server', default=None, help="Which server to connect to (default: api.proca.app)")
 @click.pass_context
 def cli(ctx, server):
-    ctx.ensure_object(dict)
-
+    """
+    Proca CLI is a command line Proca API client. It a Proca dashboard in your shell 🐚.
+    """
+    # load config
     proca.config.load()
+
+    # build context
+    ctx.ensure_object(dict)
     ctx.obj['server_section'] = proca.config.server_section(server)
 
-
-cli.add_command(server)
-cli.add_command(me)
+cli.add_command(proca.cmd.server.server_list)
+cli.add_command(proca.cmd.server.server_add)
+cli.add_command(proca.cmd.server.server_set)
+cli.add_command(proca.cmd.server.server_delete)
+cli.add_command(proca.cmd.user.me)
+cli.add_command(proca.cmd.page.show)
+cli.add_command(proca.cmd.action.action)
