@@ -33,17 +33,12 @@ defmodule ProcaWeb.Resolvers.Captcha do
         resolution
         |> Resolution.put_result(
           {:error,
-           %{
-             message: "Captcha code is required for this API call",
-             extensions: %{code: "unauthorized"}
-           }}
+           msg_ext(
+             "Captcha code is required for this API call",
+             "unauthorized"
+           )}
         )
     end
-  end
-
-  def captcha_error(msg, code) do
-    msg_ext(msg, code)
-    |> Map.put(:path, ["captcha"])
   end
 
   def verify_hcaptcha(resolution = %{extensions: %{captcha: code}}, secret) do
@@ -56,7 +51,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
 
         resolution
         |> Resolution.put_result(
-          {:error, captcha_error("Captcha code invalid (#{errors_as_str})", "bad_captcha")}
+          {:error, msg_ext("Captcha code invalid (#{errors_as_str})", "bad_captcha")}
         )
     end
   end
@@ -87,7 +82,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
         resolution
 
       s not in services ->
-        Resolution.put_result(resolution, {:error, captcha_error("not enabled", "bad_arg")})
+        Resolution.put_result(resolution, {:error, msg_ext("not enabled", "bad_arg")})
 
       s == "hcaptcha" ->
         verify_hcaptcha(resolution, hcaptcha_key())
@@ -99,7 +94,7 @@ defmodule ProcaWeb.Resolvers.Captcha do
 
           {:error, msg} ->
             resolution
-            |> Resolution.put_result({:error, captcha_error(msg, "bad_captcha")})
+            |> Resolution.put_result({:error, msg_ext(msg, "bad_captcha")})
         end
     end
   end
