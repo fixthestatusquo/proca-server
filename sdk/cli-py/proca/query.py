@@ -3,21 +3,28 @@
 from gql import gql
 
 
-fragments = {
-    "campaignData": """
+campaignData =  """
     fragment campaignData on Campaign {
     __typename
     id name title
     config
     contactSchema
     }
-    """,
+    """
 
-    "actionPageData": """
+actionPageData = """
     fragment actionPageData on ActionPage {
     __typename
     id name locale config
     thankYouTemplate
     }
     """
-}
+
+
+actionPageStatus = """
+    fragment actionPageStatus on ActionPage {
+    ... on PrivateActionPage {
+        status
+    }
+    }
+    """
