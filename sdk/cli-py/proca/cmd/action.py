@@ -3,14 +3,15 @@
 from gql import gql
 import click
 from proca.config import make_client
+from proca.context import pass_context
 from proca.friendly import explain_error
 import json
 
 @click.command("action")
 @click.option("-i", "--id", type=int, help="Action Page Id")
-@click.pass_context
+@pass_context
 def action(ctx, id):
-    client = make_client(ctx)
+    client = ctx.client
 
     add_action_contact(client, id)
 
