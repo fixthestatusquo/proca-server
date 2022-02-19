@@ -2,6 +2,7 @@
 
 
 import click
+import operator
 
 from proca.config import Config, add_server_section, server_section, store, make_client
 from proca.context import pass_context
@@ -36,7 +37,8 @@ def show(ctx, id, name, identifier, ls):
     id, name = guess_identifier(id, name, identifier)
 
     page = fetch_action_page(ctx.client, id, name)
-    print(format(page))
+    out = format(page)
+    print(out)
 
 
 def fetch_action_page(client, id, name):
@@ -51,7 +53,7 @@ def fetch_action_page(client, id, name):
         actionPage(id: $id, name: $name) {
         ...actionPageData
         campaign { ...campaignData }
-        actionPageStatus
+        ...actionPageStatus
         }
     }
     """ + actionPageData + campaignData + actionPageStatus
@@ -71,11 +73,13 @@ def action_pages_by_org(client):
     currentUser {
         roles {
         org {
+            __typename
             name
             title
             ... on PrivateOrg {
             actionPages {
-                id name locale
+                __typename
+                id name locale thankYouTemplate
                 campaign { id externalId name title  }
                 ...actionPageStatus
             }
@@ -94,8 +98,12 @@ def action_pages_by_org(client):
 
 
     orgs = {role['org']['name']: role['org'] for role in roles}
-    pages = {role['org']['name']: [page for page in role['org']['actionPages']] for role in roles}
-
+    pages = {
+        role['org']['name']: sorted(
+            [page for page in role['org']['actionPages']],
+            key=operator.itemgetter('id')
+        )
+        for role in roles}
 
     return orgs, pages
 
@@ -111,13 +119,23 @@ def format(page):
     ids = colored(page['id'], color='yellow')
     locale = colored("locale: ", color='green') + page['locale']
 
-    status = page['status']
-    if status == 'ACTIVE':
-        status = colored(status, color='red', attrs=['bold'])
-    elif status == 'STANDBY':
-        status = colored(status, color='white')
-    elif status == 'STALLED':
-        pass
+    if '__typename' in page and page['__typename'] == 'PrivateActionPage':
+        details = ''
 
+        status = page['status']
+        if status == 'ACTIVE':
+            status = colored(status, color='red', attrs=['bold'])
+        elif status == 'STANDBY':
+            status = colored(status, color='white')
+        elif status == 'STALLED':
+            pass
 
-    return f"{name} ({ids}) {locale} {status}"
+        details += ' ' + status
+
+        if page['thankYouTemplate']:
+            details += colored(' tmpl: ', color='blue') + page['thankYouTemplate']
+
+        if page['extraSupporters']:
+            details += colored('extra: ', color='red') + str(page['extraSupporters'])
+
+    return f"{name} ({ids}) {locale} {details}"
