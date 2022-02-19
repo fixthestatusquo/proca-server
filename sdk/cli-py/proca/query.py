@@ -25,6 +25,7 @@ actionPageStatus = """
     fragment actionPageStatus on ActionPage {
     ... on PrivateActionPage {
         status
+        extraSupporters
     }
     }
     """
