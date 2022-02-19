@@ -77,8 +77,7 @@ def store():
     with open(config_filename, "w") as fd:
         Config.write(fd)
 
-def make_client(ctx, ws=False):
-    sn = ctx.obj.get('server_section', 'server')
+def make_client(sn, ws=False):
     server = Config[sn]
 
     endpoint = proca.client.Endpoint(server['url'], server.get('ws_url', None))
@@ -94,3 +93,4 @@ def make_client(ctx, ws=False):
         return proca.client.ws(endpoint, auth)
 
     return proca.client.http(endpoint, auth)
+

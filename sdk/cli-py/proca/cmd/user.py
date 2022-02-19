@@ -4,6 +4,7 @@
 import click
 
 from proca.config import Config, add_server_section, server_section, store, make_client
+from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail
@@ -14,11 +15,9 @@ from gql import gql
 from termcolor import colored, cprint
 
 @click.command()
-@click.pass_context
+@pass_context
 def me(ctx):
-    client = make_client(ctx)
-
-    user = current_user(client)
+    user = current_user(ctx.client)
 
     cprint(user['email'], color='red', attrs=['bold'])
 

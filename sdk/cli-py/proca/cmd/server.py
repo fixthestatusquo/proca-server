@@ -7,6 +7,7 @@ from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail
 from yaspin import yaspin
+from termcolor import colored
 
 
 def list_server_sections(show_default=True):
@@ -36,12 +37,12 @@ def server_list():
     """
 
     for name, url, ws_url, user in list_server_sections():
-        a = f"{name}: {url}"
+        a = colored(f"{name}", color='white') +  f": {url}"
 
         if ws_url:
             a += f" [WebSocket: {ws_url}]"
         if user:
-            a += f" as {user}"
+            a += colored(" auth:", color='yellow', attrs=['bold']) + f" {user}"
 
         print(a)
 
@@ -87,9 +88,9 @@ def server_add(host, user, password, public, socket, name):
 @click.command("server:set")
 @click.option('-h', '--host', help="API url")
 @click.option('-u', '--user', help="User name (email)", callback=validate_email)
-@click.option('-p', '--password', help="Your password")
+@click.option('-p', '--password', is_flag=False, flag_value='', help="Your password (use -p with no value for prompt)")
 @click.option('-s', '--socket', help="API WebSocket url", default=None)
-@click.argument('name', default=None)
+@click.argument('name', default=None, required=False)
 def server_set(host, user, password, name, socket):
     "Set server options"
 
@@ -106,6 +107,9 @@ def server_set(host, user, password, name, socket):
 
     if user:
         Config.set(sn, "user", user)
+
+    if password == '':
+        password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
 
     if password:
         Config.set(sn, "password", password)

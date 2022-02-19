@@ -4,6 +4,7 @@
 import click
 
 from proca.config import Config, add_server_section, server_section, store, make_client
+from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier
@@ -20,6 +21,7 @@ from termcolor import colored, cprint
 def show(id, name, identifier):
     id, name = guess_identifier(id, name, identifier)
 
+    page = fetch_action_page
 
 
 def fetch_action_page(client, id, name):
@@ -41,3 +43,4 @@ def fetch_action_page(client, id, name):
     """.format(fragments))
 
     data = client.execute(query, variable_values=vars)
+    return data['actionPage']
