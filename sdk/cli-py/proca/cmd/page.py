@@ -20,8 +20,10 @@ from termcolor import colored, cprint
 @click.argument('identifier', default=None, required=False)
 @id_options
 @click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
+@click.option('-c', '--config', type=click.File('w'))
+@click.option('-C', '--campaign-config', type=click.File('w'))
 @pass_context
-def show(ctx, id, name, identifier, ls):
+def show(ctx, id, name, identifier, ls, config, campaign_config):
     if ls:
         orgs, pages = action_pages_by_org(ctx.client)
         for oname, org_pages in pages.items():
@@ -40,8 +42,14 @@ def show(ctx, id, name, identifier, ls):
     out = format(page)
     print(out)
 
+    if config:
+        config.write(page['config'])
 
-def fetch_action_page(client, id, name):
+    if campaign_config:
+        campaign_config.write(page['campaign']['config'])
+
+
+def fetch_action_page(client, id, name, public=False):
     vars = {}
     if id:
         vars['id'] = id
@@ -138,4 +146,4 @@ def format(page):
         if page['extraSupporters']:
             details += colored('extra: ', color='red') + str(page['extraSupporters'])
 
-    return f"{name} ({ids}) {locale} {details}"
+    return f"{name} ({ids}) {locale}{details}"
