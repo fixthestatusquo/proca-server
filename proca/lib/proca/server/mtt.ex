@@ -25,6 +25,10 @@ defmodule Proca.Server.MTT do
     {:noreply, state}
   end
 
+  # XXX
+  # def dedupe_mtt() - calculate dupe_rank
+  # do not process a NULL dupe_rank
+
   def process_mtt() do
     # fetch campaigns to process here
     running_mtts =

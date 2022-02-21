@@ -2,7 +2,7 @@ defmodule Proca.Service.EmailRecipient do
   @moduledoc """
   Represents an email recipient, for email templates that can be persnonalized.
   """
-  alias Proca.Service.EmailRecipient
+  alias Proca.Service.{EmailRecipient, EmailBackend}
   import Proca.Repo, only: [preload: 2]
 
   defstruct first_name: "", email: "", ref: "", fields: %{}, custom_id: ""
@@ -13,7 +13,7 @@ defmodule Proca.Service.EmailRecipient do
     rcpt = %EmailRecipient{
       first_name: get_in(action_data, ["contact", "firstName"]),
       email: get_in(action_data, ["contact", "email"]),
-      custom_id: "action:#{action_id}",
+      custom_id: EmailBackend.format_custom_id(:action, action_id),
       ref:
         case action_data do
           %{"schema" => "proca:action:1"} -> get_in(action_data, ["contact", "ref"])

@@ -69,6 +69,8 @@ defmodule Proca.Service.EmailBackend do
 
   @callback handle_bounce(params :: any()) :: any()
 
+  @callback handle_event(params :: any()) :: any()
+
   @callback batch_size() :: number
 
   def service_module(:mailjet), do: Proca.Service.Mailjet
@@ -197,6 +199,18 @@ defmodule Proca.Service.EmailBackend do
   defp prepare_fields(%Email{assigns: fields} = email) do
     %{email | assigns: flatten_keys(fields, "")}
   end
+
+  def parse_custom_id(custom_id) when is_bitstring(custom_id) do
+    case String.split(custom_id, ":", trim: true) do
+      ["action", id | _] -> {:action, id}
+      ["mtt", id | _] -> {:mtt, id}
+      _other -> {nil, nil}
+    end
+  end
+
+  def format_custom_id(type, message_id)
+      when type in [:action, :mtt] and is_integer(message_id),
+      do: "#{type}:#{message_id}"
 
   defmodule NotDelivered do
     defexception [:message, :reason]
