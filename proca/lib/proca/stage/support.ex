@@ -56,16 +56,26 @@ defmodule Proca.Stage.Support do
   defp link_verb(:confirm), do: "accept"
   defp link_verb(:reject), do: "reject"
 
+  def double_opt_in_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}) do
+    ref = Supporter.base_encode(fpr)
+
+    double_opt_in_link(action_id, ref)
+  end
+
+  def double_opt_in_link(action_id, contact_ref)
+      when is_integer(action_id) and is_bitstring(contact_ref) do
+    ProcaWeb.Router.Helpers.confirm_url(
+      ProcaWeb.Endpoint,
+      :double_opt_in,
+      action_id,
+      contact_ref
+    )
+  end
+
   def supporter_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}, op) do
     ref = Supporter.base_encode(fpr)
 
-    ProcaWeb.Router.Helpers.confirm_url(
-      ProcaWeb.Endpoint,
-      :supporter,
-      action_id,
-      link_verb(op),
-      ref
-    )
+    supporter_link(action_id, ref, op)
   end
 
   def supporter_link(action_id, contact_ref, op)

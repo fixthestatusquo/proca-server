@@ -40,7 +40,7 @@ defmodule ProcaWeb.ConfirmController do
          {:ok, action} <- handle_double_opt_in(action, args[:doi]),
          :ok <- handle_supporter(action, args.verb) do
       conn
-      |> redirect(external: handle_supporter_redirect(action, args))
+      |> redirect(external: redirect_url(action, args))
       |> halt()
     else
       {:error, status, msg} ->
@@ -48,15 +48,39 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  def handle_supporter_redirect(_action, %{redir: url}) when not is_nil(url), do: url
+  defp extra_redirect_params(args) do
+    c = if args[:verb], do: [proca_confirm: args[:verb]], else: []
+    d = if args[:doi], do: [proca_doi: args[:doi]], else: []
 
-  def handle_supporter_redirect(action, args) do
-    query1 = if args[:verb], do: %{proca_confirm: args[:verb]}, else: %{}
-    query2 = if args[:doi], do: Map.put(query1, :proca_doi, args[:doi]), else: query1
+    c ++ d
+  end
 
-    case ActionPage.Status.get_last_location(action.action_page_id) do
-      nil -> "/"
-      url -> url <> "?" <> URI.encode_query(query2, :rfc3986)
+  defp prepend_extra_redirect_params(url, args) do
+    uri = URI.parse(url)
+
+    query =
+      case uri.query do
+        nil -> []
+        q -> URI.query_decoder(q, :rfc3986) |> Enum.to_list()
+      end
+
+    query = extra_redirect_params(args) ++ query
+
+    uri = %{uri | query: URI.encode_query(query)}
+
+    URI.to_string(uri)
+  end
+
+  def redirect_url(action, args) do
+    case args do
+      %{redir: url} when is_bitstring(url) ->
+        prepend_extra_redirect_params(url, args)
+
+      _ ->
+        case ActionPage.Status.get_last_location(action.action_page_id) do
+          nil -> "/"
+          url -> url <> "?" <> URI.encode_query(extra_redirect_params(args), :rfc3986)
+        end
     end
   end
 
@@ -93,6 +117,39 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
+  def double_opt_in(conn, params) do
+    with {:ok, args} <- double_opt_in_parse_params(params),
+         {:ok, action} <- find_action(args),
+         {:ok, action} <- handle_double_opt_in(action, "true") do
+      conn
+      |> redirect(external: redirect_url(action, Map.put(args, :doi, 1)))
+      |> halt()
+    else
+      {:error, status, msg} ->
+        conn |> resp(status, error_msg(msg)) |> halt()
+    end
+  end
+
+  defp double_opt_in_parse_params(params) do
+    types = %{
+      action_id: :integer,
+      ref: :string,
+      redir: :string
+    }
+
+    args =
+      cast({%{}, types}, params, Map.keys(types))
+      |> Supporter.decode_ref(:ref)
+      |> validate_required([:action_id, :ref])
+
+    if args.valid? do
+      {:ok, apply_changes(args)}
+    else
+      {:error, 400, "malformed link"}
+    end
+  end
+
+  # Change the supporter status on supporter confirm
   defp handle_supporter(action = %Action{supporter: sup}, "accept") do
     case Supporter.confirm(sup) do
       {:ok, sup2} -> Processing.process_async(%{action | supporter: sup2})
@@ -109,6 +166,7 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
+  # Change the supporter email_status
   defp handle_double_opt_in(action = %Action{supporter: sup}, doi)
        when doi in ["1", "yes", "true"] do
     case update(Supporter.changeset(sup, %{email_status: :double_opt_in})) do
@@ -211,38 +269,6 @@ defmodule ProcaWeb.ConfirmController do
 
   defp get_confirm(%{code: code}) do
     Confirm.by_open_code(code)
-  end
-
-  def double_opt_in(conn, params) do
-    with {:ok, args} <- double_opt_in_parse_params(params),
-         {:ok, action} <- find_action(args),
-         {:ok, action} <- handle_double_opt_in(action, "true") do
-      conn
-      |> redirect(external: handle_supporter_redirect(action, args))
-      |> halt()
-    else
-      {:error, status, msg} ->
-        conn |> resp(status, error_msg(msg)) |> halt()
-    end
-  end
-
-  defp double_opt_in_parse_params(params) do
-    types = %{
-      action_id: :integer,
-      ref: :string,
-      redir: :string
-    }
-
-    args =
-      cast({%{}, types}, params, Map.keys(types))
-      |> Supporter.decode_ref(:ref)
-      |> validate_required([:action_id, :ref])
-
-    if args.valid? do
-      {:ok, apply_changes(args)}
-    else
-      {:error, 400, "malformed link"}
-    end
   end
 
   defp error_msg(msg) when is_bitstring(msg) do

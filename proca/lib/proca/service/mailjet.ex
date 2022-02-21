@@ -17,10 +17,12 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
+  alias Proca.Action.Message
   alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
+  import Proca.Service.EmailBackend, only: [parse_custom_id: 1]
 
   @api_url "https://api.mailjet.com/v3"
   @template_path "/REST/template"
@@ -31,10 +33,18 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv}) do
-    case Service.json_request(srv, "#{@api_url}#{@template_path}", auth: :basic) do
+  def batch_size(), do: 25
+
+  @impl true
+  def list_templates(%Org{template_backend: %Service{} = srv} = org, lst \\ []) do
+    case Service.json_request(srv, "#{@api_url}#{@template_path}?limit=50&offset=#{length(lst)}",
+           auth: :basic
+         ) do
       {:ok, 200, %{"Data" => templates}} ->
-        {:ok, templates |> Enum.map(&template_from_json/1)}
+        case Enum.map(templates, &template_from_json/1) do
+          [] -> {:ok, lst}
+          templates -> list_templates(org, lst ++ templates)
+        end
 
       {:ok, 401} ->
         {:error, "not authenticated"}
@@ -66,13 +76,8 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_recipient(email, %EmailRecipient{} = recipient) do
-    email
-    |> Email.to({recipient.first_name, recipient.email})
-    |> Email.put_provider_option(:variables, recipient.fields)
-  end
+  def put_template(email, nil), do: email
 
-  @impl true
   def put_template(email, %EmailTemplate{ref: ref}) when is_integer(ref) do
     email
     |> Email.put_provider_option(:template_id, ref)
@@ -93,19 +98,15 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_reply_to(email, reply_to_email) do
-    email
-    |> Email.header("Reply-To", reply_to_email)
-  end
-
-  @impl true
-  def put_custom_id(email, custom_id) do
-    email
-    |> Email.put_provider_option(:custom_id, custom_id)
-  end
-
-  @impl true
   def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
+    emails =
+      Enum.map(emails, fn e ->
+        e
+        |> put_assigns()
+        |> put_template(Map.get(e.private, :template, nil))
+        |> put_custom()
+      end)
+
     case Mailjet.deliver_many(emails, config(srv)) do
       {:ok, _} ->
         :ok
@@ -118,9 +119,19 @@ defmodule Proca.Service.Mailjet do
     end
   end
 
+  defp put_assigns(%Email{assigns: assigns} = email) do
+    Email.put_provider_option(email, :variables, assigns)
+  end
+
+  defp put_custom(%Email{private: %{custom_id: custom_id}} = email) do
+    Email.put_provider_option(email, :custom_id, custom_id)
+  end
+
+  defp put_custom(email), do: email
+
   @impl true
   def handle_bounce(params) do
-    {type, id} = parse_type(String.split(Map.get(params, "CustomID"), ":", trim: true))
+    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
 
     bounce_params = %{
       id: id,
@@ -130,13 +141,24 @@ defmodule Proca.Service.Mailjet do
 
     case type do
       :action -> Supporter.handle_bounce(bounce_params)
-      :target -> Target.handle_bounce(bounce_params)
+      :mtt -> Target.handle_bounce(bounce_params)
     end
   end
 
-  defp parse_type(["action" | [tail | _]]), do: {:action, tail}
-  defp parse_type(["target" | [tail | _]]), do: {:target, tail}
-  defp parse_type(_args), do: {:empty, nil}
+  @impl true
+  def handle_event(params) do
+    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+
+    event_params = %{
+      id: id,
+      email: Map.get(params, "email"),
+      reason: String.to_existing_atom(Map.get(params, "event"))
+    }
+
+    case type do
+      :mtt -> Message.handle_event(event_params)
+    end
+  end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{

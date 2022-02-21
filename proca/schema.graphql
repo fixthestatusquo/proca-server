@@ -37,6 +37,8 @@ interface Campaign {
     "Limit the number of returned actions, default is 10, max is 100)"
     limit: Int!
   ): PublicActionsResult!
+
+  targets: [Target]
 }
 
 type PublicCampaign implements Campaign {
@@ -71,10 +73,13 @@ type PublicCampaign implements Campaign {
     "Limit the number of returned actions, default is 10, max is 100)"
     limit: Int!
   ): PublicActionsResult!
+
+  targets: [Target]
 }
 
 type TargetEmail {
   email: String!
+  emailStatus: EmailStatus!
 }
 
 "Tracking codes"
@@ -140,6 +145,8 @@ input NationalityInput {
 type Consent {
   optIn: Boolean!
   givenAt: NaiveDateTime!
+  emailStatus: EmailStatus!
+  emailStatusChanged: NaiveDateTime
 }
 
 "Tracking codes"
@@ -357,10 +364,13 @@ input ActionInput {
   customFields: Json
 
   "Deprecated format: Other fields added to action"
-  fields: [CustomFieldInput!]
+  fields: [CustomFieldInput!] @deprecated(reason: "use custom_fields")
 
   "Donation payload"
   donation: DonationActionInput
+
+  "MTT payload"
+  mtt: MttActionInput
 }
 
 type ConfirmResult {
@@ -384,6 +394,23 @@ input GenKeyInput {
 type PublicActionsResult {
   fieldKeys: [String!]
   list: [ActionCustomFields]
+}
+
+interface Target {
+  id: String!
+  name: String!
+  externalId: String!
+  area: String
+  fields: Json
+}
+
+type PrivateTarget implements Target {
+  id: String!
+  name: String!
+  externalId: String!
+  area: String
+  fields: Json
+  emails: [TargetEmail]!
 }
 
 type ActivateKeyResult {
@@ -415,12 +442,21 @@ type CampaignStats {
   actionCount: [ActionTypeCount!]!
 }
 
+enum EmailStatus {
+  NONE
+  DOUBLE_OPT_IN
+  BOUNCE
+  BLOCKED
+  SPAM
+  UNSUB
+}
+
 type ActionCustomFields {
   actionId: Int!
   actionType: String!
   insertedAt: NaiveDateTime!
   customFields: Json!
-  fields: [CustomField!]!
+  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
 }
 
 type OrgUser {
@@ -451,7 +487,7 @@ type Action {
   customFields: Json!
 
   "Deprecated, use customFields"
-  fields: [CustomField!]!
+  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
 
   tracking: Tracking
 
@@ -736,7 +772,7 @@ type RootMutationType {
   "Reject a confirm by user"
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
-  upsertTargets(targets: [TargetInput]!, campaignId: Int!): [Target]!
+  upsertTargets(targets: [TargetInput!]!, campaignId: Int!, replace: Boolean): [PrivateTarget]!
 }
 
 type RootQueryType {
@@ -789,8 +825,8 @@ type RootQueryType {
     "Only download opted in contacts and actions (default true)"
     onlyOptIn: Boolean
 
-    "Only download opted in contacts and actions (default true)"
-    onlyOptIn: Boolean
+    "Only download double opted in contacts"
+    onlyDoubleOptIn: Boolean
   ): [Action]!
 
   currentUser: User!
@@ -803,8 +839,6 @@ type RootQueryType {
     "Name of organisation"
     name: String!
   ): PrivateOrg!
-
-  targets(campaignId: Int!): [Target]!
 }
 
 interface Org {
@@ -921,6 +955,9 @@ input CampaignInput {
 
   "Action pages of this campaign"
   actionPages: [ActionPageInput!]
+
+  "MTT configuration"
+  mtt: CampaignMttInput
 }
 
 type LaunchActionPageResult {
@@ -1051,6 +1088,8 @@ type PrivateCampaign implements Campaign {
     limit: Int!
   ): PublicActionsResult!
 
+  targets: [Target]
+
   "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
   forceDelivery: Boolean!
 
@@ -1060,7 +1099,8 @@ type PrivateCampaign implements Campaign {
   "List of partnerships and requests"
   partnerships: [Partnership!]
 
-  targets: [Target]
+  "MTT configuration"
+  mtt: CampaignMtt
 }
 
 "Encryption or sign key with integer id (database)"
@@ -1135,12 +1175,12 @@ type ContactReference {
   firstName: String
 }
 
-type Target {
+type PublicTarget implements Target {
   id: String!
   name: String!
+  externalId: String!
   area: String
   fields: Json
-  emails: [TargetEmail]!
 }
 
 input StripePaymentIntentInput {
@@ -1155,6 +1195,24 @@ type Contact {
   nonce: String
   publicKey: KeyIds
   signKey: KeyIds
+}
+
+input MttActionInput {
+  "Subject line"
+  subject: String!
+
+  "Body"
+  body: String!
+
+  "Target ids"
+  targets: [String!]!
+}
+
+type CampaignMtt {
+  startAt: DateTime!
+  endAt: DateTime!
+  messageTemplate: String
+  testEmail: String
 }
 
 input TargetEmailInput {
@@ -1222,7 +1280,7 @@ input TargetInput {
   area: String
   externalId: String!
   fields: Json
-  emails: [TargetEmailInput]!
+  emails: [TargetEmailInput!]
 }
 
 "Contact information"
@@ -1250,6 +1308,13 @@ input ContactInput {
 
   "Nationality information"
   nationality: NationalityInput
+}
+
+input CampaignMttInput {
+  startAt: DateTime
+  endAt: DateTime
+  messageTemplate: String
+  testEmail: String
 }
 
 type KeyIds {

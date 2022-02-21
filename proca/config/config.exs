@@ -48,7 +48,8 @@ config :proca, Proca,
   # XXX move to Proca.Server.Stats
   process_old_interval: 0,
   require_verified_email: false,
-  start_daemon_servers: true
+  start_daemon_servers: true,
+  mtt_cycle_time: 3
 
 # FPR seed only for development
 config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"

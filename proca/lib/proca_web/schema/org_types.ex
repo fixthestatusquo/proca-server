@@ -149,6 +149,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Email opt in template name"
     field :supporter_confirm_template, :string
 
+    @desc "Only send thank you emails to opt-ins"
+    field :doi_thank_you, :boolean
+
     @desc "Config"
     field :config, :json
   end
@@ -268,6 +271,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "High data security enabled"
     field :high_security, non_null(:boolean)
+
+    @desc "Only send thank you emails to opt-ins"
+    field :doi_thank_you, non_null(:boolean)
   end
 
   @desc "Encryption or sign key with integer id (database)"

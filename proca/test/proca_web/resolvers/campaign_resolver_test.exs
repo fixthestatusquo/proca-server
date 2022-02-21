@@ -44,7 +44,7 @@ defmodule ProcaWeb.CampaignResolverTest do
       "operationName" => "Add",
       "variables" => %{"orgName" => name, "input" => input},
       "query" => """
-      mutation Add($orgName: String, $input: CampaignInput)  {
+      mutation Add($orgName: String!, $input: CampaignInput!)  {
       addCampaign(orgName: $orgName, input: $input) {
         id, name, title, __typename
         org { name }
