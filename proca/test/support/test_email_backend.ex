@@ -68,7 +68,7 @@ defmodule Proca.TestEmailBackend do
       {:error, {:already_started, pid}} = e ->
         Process.exit(pid, :kill)
 
-        opts = Keyword.updte(opts, :retry, 1, &(&1 + 1))
+        opts = Keyword.update(opts, :retry, 1, &(&1 + 1))
 
         if opts[:retry] < 3 do
           start_link(opts)

@@ -11,6 +11,7 @@ defmodule Proca.Action.Message do
     field :delivered, :boolean, default: false
     field :opened, :boolean, default: false
     field :clicked, :boolean, default: false
+    # XXX add dupe rank?
 
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
@@ -25,6 +26,7 @@ defmodule Proca.Action.Message do
   def changeset(msg, attrs) do
     assocs = Map.take(attrs, [:target, :message_content])
 
+    # The foreigh constraing below is there to prevent deleting target with waiting messages.
     msg
     |> cast(attrs, [
       :target_id,
@@ -65,6 +67,10 @@ defmodule Proca.Action.Message do
 
   def put_messages(action, _, _), do: action
 
+  @doc """
+  Returns a query for [message, target, action] for specified target id list, or :all for all.
+  Use sent and testing flags to further select (not) sent or (not) testing actions
+  """
   @spec select_by_targets([number] | :all, boolean, boolean) :: %Ecto.Query{}
   def select_by_targets(target_ids, sent \\ false, testing \\ false) do
     import Ecto.Query
@@ -97,5 +103,22 @@ defmodule Proca.Action.Message do
     ids = Enum.map(messages, & &1.id)
     Repo.update_all(from(m in Message, where: m.id in ^ids), set: [{field, true}])
     :ok
+  end
+
+  def handle_event(event) do
+    message = Repo.get_by(Message, id: event.id)
+    ## If message found in DB
+    if message do
+      case event.reason do
+        :sent ->
+          Repo.update!(change(message, delivered: true))
+
+        :open ->
+          Repo.update!(change(message, opened: true))
+
+        :click ->
+          Repo.update!(change(message, clicked: true))
+      end
+    end
   end
 end

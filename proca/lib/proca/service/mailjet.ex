@@ -17,10 +17,12 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
+  alias Proca.Action.Message
   alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
+  import Proca.Service.EmailBackend, only: [parse_custom_id: 1]
 
   @api_url "https://api.mailjet.com/v3"
   @template_path "/REST/template"
@@ -129,7 +131,7 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def handle_bounce(params) do
-    {type, id} = parse_type(String.split(Map.get(params, "CustomID"), ":", trim: true))
+    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
 
     bounce_params = %{
       id: id,
@@ -139,13 +141,24 @@ defmodule Proca.Service.Mailjet do
 
     case type do
       :action -> Supporter.handle_bounce(bounce_params)
-      :target -> Target.handle_bounce(bounce_params)
+      :mtt -> Target.handle_bounce(bounce_params)
     end
   end
 
-  defp parse_type(["action" | [tail | _]]), do: {:action, tail}
-  defp parse_type(["target" | [tail | _]]), do: {:target, tail}
-  defp parse_type(_args), do: {:empty, nil}
+  @impl true
+  def handle_event(params) do
+    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+
+    event_params = %{
+      id: id,
+      email: Map.get(params, "email"),
+      reason: String.to_existing_atom(Map.get(params, "event"))
+    }
+
+    case type do
+      :mtt -> Message.handle_event(event_params)
+    end
+  end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{
