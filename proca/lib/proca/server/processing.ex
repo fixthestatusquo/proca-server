@@ -280,7 +280,11 @@ defmodule Proca.Server.Processing do
 
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
-    action = Repo.preload(action, action_page: [:org, :campaign], supporter: [contacts: :org])
+    action =
+      Repo.preload(action,
+        action_page: [:org, :campaign],
+        supporter: [:action_page, [contacts: :org]]
+      )
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} ->
@@ -306,12 +310,10 @@ defmodule Proca.Server.Processing do
     tx = Ecto.Multi.new()
 
     tx =
-      Ecto.Multi.update_all(
-        tx,
-        :supporter,
-        Supporter.clear_transient_fields_query(action.supporter),
-        []
-      )
+      case Supporter.clear_transient_fields_query(action.supporter) do
+        :noop -> tx
+        query -> Ecto.Multi.update_all(tx, :supporter, query, [])
+      end
 
     tx =
       case Action.clear_transient_fields_query(action) do

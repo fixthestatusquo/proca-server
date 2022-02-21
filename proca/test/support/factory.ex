@@ -56,8 +56,8 @@ defmodule Proca.Factory do
     %Proca.ActionPage{
       name: sequence("action_page", &"some.url.com/sign/#{&1}"),
       org: org,
-      locale: "en",
       campaign: campaign,
+      locale: "en",
       delivery: false,
       live: true,
       config: %{"journey" => ["Petition", "Share"]}
@@ -87,8 +87,8 @@ defmodule Proca.Factory do
 
   def basic_data_pl_factory do
     %Proca.Contact.BasicData{
-      first_name: sequence("first_name", &"#{<<&1::utf8>>}aniel", start_at: ?A),
-      last_name: sequence("last_name", &"#{<<&1::utf8>>}ikiski", start_at: ?A),
+      first_name: sequence("first_name", &"#{<<?A + rem(&1, 26)::utf8>>}aniel"),
+      last_name: sequence("last_name", &"#{<<?A + rem(&1, 26)::utf8>>}ikiski"),
       email: sequence("email", &"member-#{&1}@example.org"),
       phone: sequence("phone", ["+48123498213", "6051233412", "0048600919929"]),
       postcode: sequence("postcode", ["02-123", "03-999", "03-123", "33-123"]),
@@ -115,6 +115,7 @@ defmodule Proca.Factory do
     |> evaluate_lazy_attributes()
   end
 
+  @spec basic_data_pl_supporter_with_contact_factory(map) :: map
   def basic_data_pl_supporter_with_contact_factory(attrs) do
     action_page = Map.get(attrs, :action_page) || build(:action_page)
     data = Map.get(attrs, :data) || build(:basic_data_pl)
@@ -149,7 +150,7 @@ defmodule Proca.Factory do
 
     %Proca.Supporter{
       first_name: sequence("first_name"),
-      email: sequence("email"),
+      email: sequence("email", &"member-#{&1}@example.org"),
       fingerprint: sequence("fingerprint"),
       action_page: ap,
       campaign: Map.get(attrs, :campaign, ap.campaign)
@@ -189,7 +190,9 @@ defmodule Proca.Factory do
 
   def target_factory(attrs) do
     emails = [
-      %Proca.TargetEmail{email: sequence("email")}
+      %Proca.TargetEmail{
+        email: sequence("email", &"member-#{&1}@example.org")
+      }
     ]
 
     %Proca.Target{
@@ -198,6 +201,29 @@ defmodule Proca.Factory do
       emails: emails
     }
     |> merge_attributes(attrs)
-    |> evaluate_lazy_attributes
+    |> evaluate_lazy_attributes()
+  end
+
+  def message_factory(attrs) do
+    %Proca.Action.Message{
+      message_content: Map.get(attrs, :message_content, build(:message_content)),
+      action: Map.get(attrs, :action, build(:action))
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  def message_content_factory do
+    %Proca.Action.MessageContent{
+      subject: sequence("MTT Subject"),
+      body: sequence("MTT text body")
+    }
+  end
+
+  def mtt_factory do
+    %Proca.MTT{
+      start_at: DateTime.utc_now(),
+      end_at: DateTime.utc_now() |> DateTime.add(600, :second)
+    }
   end
 end

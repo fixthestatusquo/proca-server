@@ -247,12 +247,12 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       assert [request_email] = mailbox(yu.email)
 
       assert %Swoosh.Email{
+               assigns: %{
+                 "code" => confirm_code,
+                 "objectId" => confirm_object_id,
+                 "acceptLink" => confirm_link
+               },
                provider_options: %{
-                 fields: %{
-                   "code" => confirm_code,
-                   "objectId" => confirm_object_id,
-                   "acceptLink" => confirm_link
-                 },
                  template_ref: "ref:launchpage"
                }
              } = request_email

@@ -36,7 +36,10 @@ export type Action = {
   actionType: Scalars['String'];
   contact: Contact;
   customFields: Scalars['Json'];
-  /** Deprecated, use customFields */
+  /**
+   * Deprecated, use customFields
+   * @deprecated use custom_fields
+   */
   fields: Array<CustomField>;
   tracking: Maybe<Tracking>;
   campaign: Campaign;
@@ -50,6 +53,7 @@ export type ActionCustomFields = {
   actionType: Scalars['String'];
   insertedAt: Scalars['NaiveDateTime'];
   customFields: Scalars['Json'];
+  /** @deprecated use custom_fields */
   fields: Array<CustomField>;
 };
 
@@ -63,6 +67,8 @@ export type ActionInput = {
   fields?: Maybe<Array<CustomFieldInput>>;
   /** Donation payload */
   donation?: Maybe<DonationActionInput>;
+  /** MTT payload */
+  mtt?: Maybe<MttActionInput>;
 };
 
 export type ActionPage = {
@@ -179,6 +185,7 @@ export type Campaign = {
   org: Org;
   /** Fetch public actions */
   actions: PublicActionsResult;
+  targets: Maybe<Array<Maybe<Target>>>;
 };
 
 
@@ -201,6 +208,22 @@ export type CampaignInput = {
   config?: Maybe<Scalars['Json']>;
   /** Action pages of this campaign */
   actionPages?: Maybe<Array<ActionPageInput>>;
+  /** MTT configuration */
+  mtt?: Maybe<CampaignMttInput>;
+};
+
+export type CampaignMtt = {
+  startAt: Scalars['DateTime'];
+  endAt: Scalars['DateTime'];
+  messageTemplate: Maybe<Scalars['String']>;
+  testEmail: Maybe<Scalars['String']>;
+};
+
+export type CampaignMttInput = {
+  startAt?: Maybe<Scalars['DateTime']>;
+  endAt?: Maybe<Scalars['DateTime']>;
+  messageTemplate?: Maybe<Scalars['String']>;
+  testEmail?: Maybe<Scalars['String']>;
 };
 
 /** Campaign statistics */
@@ -252,6 +275,8 @@ export type ConfirmResult = {
 export type Consent = {
   optIn: Scalars['Boolean'];
   givenAt: Scalars['NaiveDateTime'];
+  emailStatus: EmailStatus;
+  emailStatusChanged: Maybe<Scalars['NaiveDateTime']>;
 };
 
 /** GDPR consent data structure */
@@ -358,6 +383,15 @@ export enum DonationSchema {
   StripePaymentIntent = 'STRIPE_PAYMENT_INTENT'
 }
 
+export enum EmailStatus {
+  None = 'NONE',
+  DoubleOptIn = 'DOUBLE_OPT_IN',
+  Bounce = 'BOUNCE',
+  Blocked = 'BLOCKED',
+  Spam = 'SPAM',
+  Unsub = 'UNSUB'
+}
+
 export type GenKeyInput = {
   name: Scalars['String'];
 };
@@ -397,6 +431,15 @@ export type KeyWithPrivate = {
 
 export type LaunchActionPageResult = {
   status: Status;
+};
+
+export type MttActionInput = {
+  /** Subject line */
+  subject: Scalars['String'];
+  /** Body */
+  body: Scalars['String'];
+  /** Target ids */
+  targets: Array<Scalars['String']>;
 };
 
 
@@ -524,13 +567,15 @@ export type PrivateCampaign = Campaign & {
   org: Org;
   /** Fetch public actions */
   actions: PublicActionsResult;
+  targets: Maybe<Array<Maybe<Target>>>;
   /** Campaign onwer collects opt-out actions for delivery even if campaign partner is */
   forceDelivery: Scalars['Boolean'];
   /** Action Pages of this campaign that are accessible to current user */
   actionPages: Array<PrivateActionPage>;
   /** List of partnerships and requests */
   partnerships: Maybe<Array<Partnership>>;
-  targets: Maybe<Array<Maybe<Target>>>;
+  /** MTT configuration */
+  mtt: Maybe<CampaignMtt>;
 };
 
 
@@ -601,6 +646,15 @@ export type PrivateOrgCampaignArgs = {
   id: Scalars['Int'];
 };
 
+export type PrivateTarget = Target & {
+  id: Scalars['String'];
+  name: Scalars['String'];
+  externalId: Scalars['String'];
+  area: Maybe<Scalars['String']>;
+  fields: Maybe<Scalars['Json']>;
+  emails: Array<Maybe<TargetEmail>>;
+};
+
 export type Processing = {
   emailFrom: Maybe<Scalars['String']>;
   emailBackend: Maybe<ServiceName>;
@@ -661,6 +715,7 @@ export type PublicCampaign = Campaign & {
   org: Org;
   /** Fetch public actions */
   actions: PublicActionsResult;
+  targets: Maybe<Array<Maybe<Target>>>;
 };
 
 
@@ -676,6 +731,14 @@ export type PublicOrg = Org & {
   title: Scalars['String'];
   /** config */
   config: Scalars['Json'];
+};
+
+export type PublicTarget = Target & {
+  id: Scalars['String'];
+  name: Scalars['String'];
+  externalId: Scalars['String'];
+  area: Maybe<Scalars['String']>;
+  fields: Maybe<Scalars['Json']>;
 };
 
 export type RootMutationType = {
@@ -747,7 +810,7 @@ export type RootMutationType = {
   acceptUserConfirm: ConfirmResult;
   /** Reject a confirm by user */
   rejectUserConfirm: ConfirmResult;
-  upsertTargets: Array<Maybe<Target>>;
+  upsertTargets: Array<Maybe<PrivateTarget>>;
 };
 
 
@@ -981,8 +1044,9 @@ export type RootMutationTypeRejectUserConfirmArgs = {
 
 
 export type RootMutationTypeUpsertTargetsArgs = {
-  targets: Array<Maybe<TargetInput>>;
+  targets: Array<TargetInput>;
   campaignId: Scalars['Int'];
+  replace?: Maybe<Scalars['Boolean']>;
 };
 
 export type RootQueryType = {
@@ -998,7 +1062,6 @@ export type RootQueryType = {
   users: Array<User>;
   /** Organization api (authenticated) */
   org: PrivateOrg;
-  targets: Array<Maybe<Target>>;
 };
 
 
@@ -1031,6 +1094,7 @@ export type RootQueryTypeExportActionsArgs = {
   after?: Maybe<Scalars['DateTime']>;
   limit?: Maybe<Scalars['Int']>;
   onlyOptIn?: Maybe<Scalars['Boolean']>;
+  onlyDoubleOptIn?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1041,11 +1105,6 @@ export type RootQueryTypeUsersArgs = {
 
 export type RootQueryTypeOrgArgs = {
   name: Scalars['String'];
-};
-
-
-export type RootQueryTypeTargetsArgs = {
-  campaignId: Scalars['Int'];
 };
 
 export type RootSubscriptionType = {
@@ -1134,13 +1193,14 @@ export type StripeSubscriptionInput = {
 export type Target = {
   id: Scalars['String'];
   name: Scalars['String'];
+  externalId: Scalars['String'];
   area: Maybe<Scalars['String']>;
   fields: Maybe<Scalars['Json']>;
-  emails: Array<Maybe<TargetEmail>>;
 };
 
 export type TargetEmail = {
   email: Scalars['String'];
+  emailStatus: EmailStatus;
 };
 
 export type TargetEmailInput = {
@@ -1152,7 +1212,7 @@ export type TargetInput = {
   area?: Maybe<Scalars['String']>;
   externalId: Scalars['String'];
   fields?: Maybe<Scalars['Json']>;
-  emails: Array<Maybe<TargetEmailInput>>;
+  emails?: Maybe<Array<TargetEmailInput>>;
 };
 
 /** Tracking codes */

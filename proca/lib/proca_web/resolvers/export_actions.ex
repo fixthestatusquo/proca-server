@@ -35,16 +35,19 @@ defmodule ProcaWeb.Resolvers.ExportActions do
 
   def filter_campaign(q, _), do: q
 
-  def filter_optin(q, %{only_opt_in: false}) do
-    q
-  end
+  @doc "Default to opt in only"
+  def filter_optin(q, %{only_opt_in: false}), do: q
 
   def filter_optin(q, _) do
-    # on only_opt_in=true or omitted
-    # filter by communication consent
-    q
-    |> where([a, s, c], c.communication_consent == true)
+    where(q, [a, s, c], c.communication_consent == true)
   end
+
+  @doc "Default to ignore doi"
+  def filter_doubleoptin(q, %{only_double_opt_in: true}) do
+    where(q, [a, s, c], s.email_status == :double_opt_in)
+  end
+
+  def filter_doubleoptin(q, _), do: q
 
   def format_contact(
         %Supporter{fingerprint: ref},
@@ -76,10 +79,15 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     }
   end
 
-  def format_privacy(%Contact{communication_consent: cc, inserted_at: given_at}) do
+  def format_privacy(
+        %Supporter{email_status: es, email_status_changed: esch},
+        %Contact{communication_consent: cc, inserted_at: given_at}
+      ) do
     %{
       opt_in: cc,
-      given_at: given_at
+      given_at: given_at,
+      email_status: es,
+      email_status_changed: esch
     }
   end
 
@@ -95,7 +103,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       custom_fields: action.fields,
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
-      privacy: format_privacy(contact),
+      privacy: format_privacy(action.supporter, contact),
       trackng: action.source,
       campaign: action.campaign,
       action_page: action.action_page
@@ -135,6 +143,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_after(params)
     |> filter_campaign(params)
     |> filter_optin(params)
+    |> filter_doubleoptin(params)
     |> order_by([a], asc: a.id)
     |> Repo.all()
     |> Enum.map(&format/1)

@@ -6,6 +6,7 @@ defmodule ProcaWeb.Resolvers.NormalizeError do
   def call(resolution, _config) do
     errors =
       resolution.errors
+      |> List.wrap()
       |> Enum.map(&to_absinthe/1)
       |> List.flatten()
 

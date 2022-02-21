@@ -40,11 +40,9 @@ defmodule ProcaWeb.InviteUserToOrgTest do
     [invitation] = mailbox(invite_email)
 
     assert %{
-             provider_options: %{
-               fields: %{
-                 "code" => ^code,
-                 "email" => ^invite_email
-               }
+             assigns: %{
+               "code" => ^code,
+               "email" => ^invite_email
              }
            } = invitation
 

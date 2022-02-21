@@ -15,7 +15,7 @@ defmodule Proca.Service.SES do
   - thank you emails (one per page)
   - supporter confirm email (one per org?)
 
-  ActioPage.thank_you_template_ref (can be null)
+  ActionPage.thank_you_template (can be null)
 
   MVP:
   - send_batch method that creates a template always, (maybe overwriting?)

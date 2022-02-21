@@ -26,7 +26,7 @@ defmodule Proca.Confirm.InviteTest do
     assert cnf.subject_id == ap.id
 
     [sent_mail] = TestEmailBackend.mailbox(red_staff.user.email)
-    fields = sent_mail.provider_options.fields
+    fields = sent_mail.assigns
     assert fields["code"] == cnf.code
   end
 end

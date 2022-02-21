@@ -6,11 +6,13 @@ defmodule Proca.Stage.EmailSupporter do
 
   alias Broadway.Message
   alias Broadway.BatchInfo
-  alias Proca.{Org, ActionPage, Action, Supporter}
+  alias Proca.{Org, ActionPage, Action, Supporter, Contact}
   alias Proca.Repo
   import Ecto.Query
   import Logger
-  import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
+
+  import Proca.Stage.Support,
+    only: [ignore: 1, ignore: 2, supporter_link: 3, double_opt_in_link: 2]
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate, EmailTemplateDirectory}
 
@@ -108,7 +110,11 @@ defmodule Proca.Stage.EmailSupporter do
     ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
     org = ap.org
 
-    recipients = Enum.map(messages, fn m -> EmailRecipient.from_action_data(m.data) end)
+    recipients =
+      Enum.map(messages, fn m ->
+        EmailRecipient.from_action_data(m.data)
+        |> add_doi_link(m.data)
+      end)
 
     case EmailTemplateDirectory.ref_by_name_reload(org, ap.thank_you_template) do
       {:ok, tmpl_ref} ->
@@ -198,6 +204,8 @@ defmodule Proca.Stage.EmailSupporter do
       on: a.action_page_id == ap.id,
       join: o in Org,
       on: o.id == ap.org_id,
+      join: c in Contact,
+      on: c.supporter_id == a.supporter_id and c.org_id == o.id,
       where:
         a.id == ^action_id and
           a.with_consent and
@@ -205,7 +213,8 @@ defmodule Proca.Stage.EmailSupporter do
           not is_nil(ap.thank_you_template) and
           not is_nil(o.email_backend_id) and
           not is_nil(o.template_backend_id) and
-          not is_nil(o.email_from)
+          not is_nil(o.email_from) and
+          (not o.doi_thank_you or c.communication_consent)
     )
     |> Repo.one() != nil
   end
@@ -246,6 +255,14 @@ defmodule Proca.Stage.EmailSupporter do
     EmailRecipient.put_fields(rcpt,
       confirm_link: supporter_link(action_id, ref, :confirm),
       reject_link: supporter_link(action_id, ref, :reject)
+    )
+  end
+
+  defp add_doi_link(rcpt = %EmailRecipient{ref: ref}, data) do
+    action_id = data["actionId"]
+
+    EmailRecipient.put_fields(rcpt,
+      doi_link: double_opt_in_link(action_id, ref)
     )
   end
 end
