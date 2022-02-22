@@ -32,6 +32,7 @@ defmodule Proca.Action do
     has_many :messages, Proca.Action.Message
 
     field :processing_status, ProcessingStatus, default: :new
+    field :testing, :boolean, default: false
 
     timestamps()
   end
@@ -56,7 +57,7 @@ defmodule Proca.Action do
   """
   def build_for_supporter(attrs, supporter, action_page) do
     %Action{}
-    |> cast(attrs, [:action_type, :fields])
+    |> cast(attrs, [:action_type, :fields, :testing])
     |> validate_required([:action_type])
     |> validate_format(:action_type, ~r/^([\w\d_-]+$)/)
     |> validate_flat_map(:fields)
