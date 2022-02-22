@@ -181,7 +181,7 @@ defmodule Proca.Service.EmailBackend do
       from_email == via_org.email_from ->
         email
 
-      # One org borrows the others backend
+      # Sending org uses own email, but sends from another orgs service
       from_email == org.email_from ->
         email
         |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
