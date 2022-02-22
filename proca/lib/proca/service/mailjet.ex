@@ -114,6 +114,9 @@ defmodule Proca.Service.Mailjet do
       {:error, {_code, %{"ErrorMessage" => msg}}} ->
         raise EmailBackend.NotDelivered.exception(msg)
 
+      {:error, {_code, error_list}} when is_list(error_list) ->
+        raise EmailBackend.NotDelivered.exception(error_list)
+
       {:error, reason} ->
         raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
     end
