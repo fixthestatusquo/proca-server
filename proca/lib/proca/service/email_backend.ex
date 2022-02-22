@@ -95,7 +95,8 @@ defmodule Proca.Service.EmailBackend do
   Delivers an email using EmailTemplate to a list of EmailRecipients. Uses Org's email service.
   Can throw EmailBackend.NotDelivered which wraps service error.
   """
-  @spec deliver([%Email{}] | [%EmailRecipient{}], %Org{}, %EmailTemplate{} | nil) :: :ok
+  @spec deliver([%Email{}] | [%EmailRecipient{}], %Org{}, %EmailTemplate{} | nil) ::
+          :ok | {:error | [:ok | {:error | String.t()}]}
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template \\ nil) do
     backend = service_module(name)
 
@@ -211,33 +212,4 @@ defmodule Proca.Service.EmailBackend do
   def format_custom_id(type, message_id)
       when type in [:action, :mtt] and is_integer(message_id),
       do: "#{type}:#{message_id}"
-
-  defmodule NotDelivered do
-    defexception [:message, :reason, :statuses]
-
-    @doc """
-
-    When passing a list of results, make it:
-    [:ok | {:error, message}]
-    """
-    def exception(msg) when is_bitstring(msg) do
-      %NotDelivered{message: msg}
-    end
-
-    def exception(errors) when is_list(errors) do
-      msg =
-        Enum.filter(errors, &(&1 != :ok))
-        |> Enum.map(fn {:error, msg} -> msg end)
-        |> Enum.join(", ")
-
-      %NotDelivered{
-        message: msg,
-        statuses: errors
-      }
-    end
-
-    def exception(original_exception) do
-      %NotDelivered{message: original_exception.message}
-    end
-  end
 end

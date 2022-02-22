@@ -111,14 +111,17 @@ defmodule Proca.Service.Mailjet do
       {:ok, _} ->
         :ok
 
-      {:error, {_code, %{"ErrorMessage" => msg}}} ->
-        raise EmailBackend.NotDelivered.exception(msg)
-
       {:error, {_code, error_list}} when is_list(error_list) ->
-        raise EmailBackend.NotDelivered.exception(error_list)
+        {:error,
+         Enum.map(error_list, fn
+           %{id: _} -> :ok
+           %{"Errors" => [%{"ErrorMessage" => msg} | _]} -> {:error, msg}
+           err -> {:error, inspect(err)}
+         end)}
 
       {:error, reason} ->
-        raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
+        error("Dropping email batch! #{inspect(reason)} - ignoring this batch!")
+        :ok
     end
   end
 

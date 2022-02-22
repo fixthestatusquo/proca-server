@@ -9,6 +9,7 @@ defmodule Proca.Stage.Support do
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Broadway.Message
+  import Logger
 
   # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
   # the AP.delivery flag
@@ -47,15 +48,15 @@ defmodule Proca.Stage.Support do
     |> Message.failed(reason)
   end
 
-  def fail_partially(messages, nil, message) when is_bitstring(message) do
-    Enum.map(messages, &Message.failed(&1, message))
-  end
-
-  def fail_partially(messages, statuses, _message) do
+  def failed_partially(messages, statuses) do
     Enum.zip(messages, statuses)
     |> Enum.map(fn
-      {m, :ok} -> m
-      {m, {:error, reason}} -> Message.failed(m, reason)
+      {m, :ok} ->
+        m
+
+      {m, {:error, reason}} ->
+        error("Cannot sent email: #{inspect(reason)}")
+        Message.failed(m, reason)
     end)
   end
 
