@@ -47,6 +47,18 @@ defmodule Proca.Stage.Support do
     |> Message.failed(reason)
   end
 
+  def fail_partially(messages, nil, message) when is_bitstring(message) do
+    Enum.map(messages, &Message.failed(&1, message))
+  end
+
+  def fail_partially(messages, statuses, _message) do
+    Enum.zip(messages, statuses)
+    |> Enum.map(fn
+      {m, :ok} -> m
+      {m, {:error, reason}} -> Message.failed(m, reason)
+    end)
+  end
+
   def to_iso8601(naivedatetime) do
     naivedatetime
     |> DateTime.from_naive!("Etc/UTC")
