@@ -8,7 +8,7 @@ defmodule Proca.Service.EmailRecipient do
   defstruct first_name: "", email: "", ref: "", fields: %{}, custom_id: ""
 
   def from_action_data(action_data) do
-    action_id = get_in(action_data, ["action", "id"])
+    action_id = get_in(action_data, ["actionId"])
 
     rcpt = %EmailRecipient{
       first_name: get_in(action_data, ["contact", "firstName"]),
