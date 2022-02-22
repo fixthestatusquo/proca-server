@@ -112,3 +112,7 @@ config :logger, :audit_log,
   format: "$date $time [$level] $metadata $message\n",
   metadata: [:user, :op],
   metadata_filter: [audit: true]
+
+config :supabase,
+  base_url: System.get_env("SUPABASE_URL"),
+  api_key: System.get_env("SUPABASE_KEY")

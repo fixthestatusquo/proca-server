@@ -86,7 +86,7 @@ defmodule Proca.Server.Jwks do
 
       with %JOSE.JWS{fields: %{"kid" => kid}} <- sig,
            key when not is_nil(key) <- key(kid) do
-        JOSE.JWT.verify(key, token)
+        JOSE.JWT.verify_strict(key, ["RS256"], token)
       else
         nil -> {false, JOSE.JWT.peek(token), sig}
         _ -> {false, nil, nil}
