@@ -30,6 +30,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Only download double opted in contacts"
       arg(:only_double_opt_in, :boolean)
 
+      @desc "Also include testing actions"
+      arg(:include_testing, :boolean)
+
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
       allow([:export_contacts])
@@ -178,6 +181,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "MTT payload"
     field :mtt, :mtt_action_input
+
+    @desc "Test mode"
+    field :testing, :boolean
   end
 
   object :action do

@@ -7,8 +7,7 @@ defenum(ProcessingStatus,
   confirming: 1,
   rejected: 2,
   accepted: 3,
-  delivered: 4,
-  testing: 8
+  delivered: 4
 )
 
 defenum(ExternalService,

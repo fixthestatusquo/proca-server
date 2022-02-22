@@ -28,7 +28,9 @@ defmodule Proca.Server.MTTWorkerTest do
 
   describe "selecting targets to send" do
     setup %{campaign: c, ap: ap, targets: ts} do
-      action1 = Factory.insert(:action, action_page: ap, processing_status: :testing)
+      action1 =
+        Factory.insert(:action, action_page: ap, processing_status: :delivered, testing: true)
+
       action2 = Factory.insert(:action, action_page: ap, processing_status: :delivered)
 
       {t1, t2} = Enum.split(ts, 3)
@@ -123,7 +125,7 @@ defmodule Proca.Server.MTTWorkerTest do
 
     test "test sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
       import Ecto.Query
-      Proca.Repo.update_all(from(a in Proca.Action), set: [processing_status: :testing])
+      Proca.Repo.update_all(from(a in Proca.Action), set: [testing: true])
 
       test_email = "testemail@proca.app"
       c = %{c | mtt: Proca.Repo.update!(change(c.mtt, %{test_email: test_email}))}
@@ -170,7 +172,7 @@ defmodule Proca.Server.MTTWorkerTest do
       Proca.Server.Processing.process(action)
 
       action = Proca.Repo.reload(action)
-      assert action.processing_status == if(ap.live, do: :delivered, else: :testing)
+      assert action.processing_status == :delivered
 
       supporter = Proca.Repo.reload(supporter)
       assert supporter.email != nil

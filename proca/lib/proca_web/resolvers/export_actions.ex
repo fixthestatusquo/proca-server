@@ -49,6 +49,10 @@ defmodule ProcaWeb.Resolvers.ExportActions do
 
   def filter_doubleoptin(q, _), do: q
 
+  @doc "includeTesting: true disables testing=false filtering"
+  def filter_testing(q, %{include_testing: true}), do: q
+  def filter_testing(q, _), do: where(q, [a, s, c], a.testing == false)
+
   def format_contact(
         %Supporter{fingerprint: ref},
         %Contact{
@@ -144,6 +148,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_campaign(params)
     |> filter_optin(params)
     |> filter_doubleoptin(params)
+    |> filter_testing(params)
     |> order_by([a], asc: a.id)
     |> Repo.all()
     |> Enum.map(&format/1)
