@@ -213,10 +213,27 @@ defmodule Proca.Service.EmailBackend do
       do: "#{type}:#{message_id}"
 
   defmodule NotDelivered do
-    defexception [:message, :reason]
+    defexception [:message, :reason, :statuses]
 
+    @doc """
+
+    When passing a list of results, make it:
+    [:ok | {:error, message}]
+    """
     def exception(msg) when is_bitstring(msg) do
       %NotDelivered{message: msg}
+    end
+
+    def exception(errors) when is_list(errors) do
+      msg =
+        Enum.filter(errors, &(&1 != :ok))
+        |> Enum.map(fn {:error, msg} -> msg end)
+        |> Enum.join(", ")
+
+      %NotDelivered{
+        message: msg,
+        statuses: errors
+      }
     end
 
     def exception(original_exception) do
