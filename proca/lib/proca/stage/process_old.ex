@@ -1,8 +1,20 @@
 defmodule Proca.Stage.ProcessOld do
   @moduledoc """
-  Server which processes older actions, which might be unprocessed because of not queue was available, or processing failed.
 
-  We process the actions one by one synchronously because the processing will update the associated supporter.
+  Server which processes older actions, which might be unprocessed because of
+  not queue was available, or processing failed.
+
+  We process the actions one by one synchronously because the processing will
+  update the associated supporter.
+
+  We use thre intervals to control processing of old actions:
+
+  - @time_margin - (1 minute default) - do not process actions more recent then
+    one minute - they might be actually still processed by async-after-add processing.
+
+  - interval (given as argument to ProcessOld.start_link, 30 sec default) - how often should we check for old actions
+
+  - @batch_interval (1 second default) - how long to wait between processing of 1000 actions batch.
 
   """
   import Proca.Repo
