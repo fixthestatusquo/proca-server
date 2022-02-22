@@ -25,6 +25,12 @@ defmodule Proca.Users do
     User.one(email: email)
   end
 
+  def get_user_from_sso(email, nil), do: get_user_by_email(email)
+
+  def get_user_from_sso(email, external_id) do
+    User.one(external_id: external_id) || get_user_by_email(email)
+  end
+
   @doc """
   Gets a user by email and password.
 
@@ -90,9 +96,9 @@ defmodule Proca.Users do
         user
 
       # handle a race condition where user exists - in that case fetch the user
-      {:error, %{errors: [email: {_m, [c | _r]}]}}
+      {:error, %{errors: [{_field, {_m, [c | _r]}}]}}
       when c in [constraint: :unique, validation: :unsafe_unique] ->
-        User.one(email: attrs[:email])
+        get_user_from_sso(attrs[:email], attrs[:external_id])
 
       {:error, %{errors: [%{message: msg} | _]}} ->
         raise ArgumentError, msg
