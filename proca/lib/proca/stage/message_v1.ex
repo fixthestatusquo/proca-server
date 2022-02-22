@@ -117,7 +117,8 @@ defmodule Proca.Stage.MessageV1 do
         %{
           "actionType" => action.action_type,
           "fields" => action.fields,
-          "createdAt" => action.inserted_at |> Support.to_iso8601()
+          "createdAt" => action.inserted_at |> Support.to_iso8601(),
+          "testing" => action.testing
         }
         |> put_action_donation(action.donation),
       "actionPage" => %{
