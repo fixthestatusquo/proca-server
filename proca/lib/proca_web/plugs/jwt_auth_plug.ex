@@ -11,6 +11,8 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
 
+  use Joken.Config
+
   def init(opts), do: opts
 
   def call(conn, opts) do
