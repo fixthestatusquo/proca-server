@@ -29,7 +29,8 @@ config :proca, ProcaWeb.UserAuth,
   local: [enabled: local_auth_enable],
   sso: [
     enabled: not is_nil(sso_home_url),
-    home_url: sso_home_url
+    home_url: sso_home_url,
+    jwt_secret: System.get_env("JWT_SECRET")
   ]
 
 config :proca, Proca.Server.Jwks, url: System.get_env("JWKS_URL")

@@ -27,7 +27,8 @@ config :proca, ProcaWeb.UserAuth,
   local: [enabled: true],
   sso: [
     enabled: false,
-    home_url: "https://account.fixthestatusquo.org"
+    home_url: "https://account.fixthestatusquo.org",
+    jwt_secret: System.get_env("JWT_SECRET")
     # login_url: ,
     # register_url: "",
   ]

@@ -1,6 +1,13 @@
 defmodule ProcaWeb.Plugs.JwtAuthPlug do
   @moduledoc """
-  A plug that reads JWT from Authorization header and authenticates the user
+  A plug that reads JWT from Authorization header and authenticates the user.
+
+  options:
+  - query_param - specify if you want to fetch JWT from a query param
+  - enable_session - set user also in phoenix session
+  - email_path - list of keys to get email from in JWT (default ["email"])
+  - email_verified_path = list of keys to get email verified info
+  - external_id_path - list of keys to get external_id from JWT (default ["subject"])
   """
   @behaviour Plug
 
@@ -11,13 +18,11 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
 
-  use Joken.Config
-
   def init(opts), do: opts
 
   def call(conn, opts) do
     conn
-    |> jwt_auth(opts[:query_param])
+    |> jwt_auth(opts)
     |> add_to_context()
     |> add_to_session(opts[:enable_session])
   end
@@ -25,23 +30,25 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   @doc """
   Return the current user context based on the authorization header
   """
-  def jwt_auth(conn, param) do
-    with token when not is_nil(token) <- get_token(conn, param),
-         {true, jwt, _sig} <- Proca.Server.Jwks.verify(token),
-         true <- check_has_session(jwt),
-         :ok <- check_email_verified(jwt) do
+  def jwt_auth(conn, opts) do
+    with token when not is_nil(token) <- get_token(conn, opts[:param]),
+         {:ok, key} <- get_key(token),
+         {:ok, claims} <- Joken.verify(token, key),
+         email <- extract_field(claims, opts[:email_path] || ["email"]),
+         external_id <- extract_field(claims, opts[:external_id_path] || ["sub"]),
+         :ok <-
+           check_email_verified(
+             claims,
+             opts[:email_verified_path] || ["user_metadata", "email_verified"]
+           ) do
       conn
-      |> get_or_create_user(jwt)
+      |> get_or_create_user(email, external_id)
     else
-      {false, _, _} ->
-        error_halt(conn, 401, "unauthorized", "JWT token invalid")
+      {:error, reason} ->
+        error_halt(conn, 401, "unauthorized", "Cannot verify JWT token. #{reason}")
 
       :unverified ->
         error_halt(conn, 401, "unauthorized", "Email not verified")
-
-      # token with no identity traits
-      false ->
-        error_halt(conn, 401, "unauthorized", "JWT token has invalid data")
 
       # no token
       nil ->
@@ -49,41 +56,28 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
     end
   end
 
-  def check_has_session(%JOSE.JWT{
-        fields: %{
-          "session" => %{
-            "identity" => %{
-              "traits" => %{"email" => _email},
-              "verifiable_addresses" => _emails
-            }
-          }
-        }
-      }),
-      do: true
+  def get_key(token) do
+    with {:ok, %{"alg" => algo = "HS" <> _}} <- Joken.peek_header(token),
+         secret when secret != nil <-
+           Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwt_secret] do
+      {:ok, Joken.Signer.create(algo, secret)}
+    else
+      {:ok, %{"alg" => algo}} -> {:error, "Unsupported JWT algorithm #{algo}"}
+      nil -> {:error, "JWT not enabled"}
+    end
+  end
 
-  def check_has_session(_), do: false
+  def extract_field(_claims, nil), do: nil
 
-  def check_email_verified(jwt) do
+  def extract_field(claims, path) do
+    get_in(claims, path)
+  end
+
+  def check_email_verified(claims, path) do
     if need_verified_email?() do
-      current =
-        case jwt do
-          %JOSE.JWT{
-            fields: %{
-              "session" => %{
-                "identity" => %{
-                  "traits" => %{"email" => email},
-                  "verifiable_addresses" => emails
-                }
-              }
-            }
-          } ->
-            Enum.find(emails, fn %{"value" => v} -> v == email end)
+      verified = extract_field(claims, path)
 
-          _ ->
-            %{}
-        end
-
-      if current["verified"] do
+      if verified do
         :ok
       else
         :unverified
@@ -93,28 +87,17 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
     end
   end
 
-  def get_or_create_user(conn, jwt) do
-    case jwt do
-      %JOSE.JWT{
-        fields: %{
-          "session" => %{
-            "identity" => %{
-              "traits" => %{"email" => email}
-            }
-          }
-        }
-      } ->
-        case Users.get_user_by_email(email) do
-          nil ->
-            UserAuth.assign_current_user(conn, Users.register_user_from_sso!(%{email: email}))
+  def get_or_create_user(conn, email, external_id) do
+    attrs = %{
+      email: email,
+      external_id: external_id
+    }
 
-          user ->
-            UserAuth.assign_current_user(conn, user)
-        end
+    user =
+      Users.get_user_from_sso(email, external_id) ||
+        Users.register_user_from_sso!(attrs)
 
-      _ ->
-        conn
-    end
+    UserAuth.assign_current_user(conn, user)
   end
 
   defp get_token(conn, nil) do
