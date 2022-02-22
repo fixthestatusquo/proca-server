@@ -213,7 +213,7 @@ defmodule Proca.Server.Stats do
 
     action_counts =
       from(a in Action,
-        where: a.processing_status in [:accepted, :delivered],
+        where: a.processing_status in [:accepted, :delivered] and not a.testing,
         group_by: [a.campaign_id, a.action_type],
         select: {a.campaign_id, a.action_type, count(a.id)}
       )

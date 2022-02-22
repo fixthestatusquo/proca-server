@@ -46,7 +46,8 @@ defmodule Proca.Stage.MessageV2 do
         %{
           "actionType" => action.action_type,
           "customFields" => action.fields,
-          "createdAt" => action.inserted_at |> Support.to_iso8601()
+          "createdAt" => action.inserted_at |> Support.to_iso8601(),
+          "testing" => action.testing
         }
         |> MessageV1.put_action_donation(action.donation),
       "contact" => contact_data(action.supporter, contact),

@@ -77,15 +77,13 @@ defmodule Proca.Action.Message do
 
     sent = List.wrap(sent)
 
-    action_status = if testing, do: :testing, else: :delivered
-
     q =
       from(m in Proca.Action.Message,
         join: t in Proca.Target,
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
-        where: a.processing_status == ^action_status and m.sent in ^sent
+        where: a.processing_status == :delivered and a.testing == ^testing and m.sent in ^sent
       )
 
     case target_ids do

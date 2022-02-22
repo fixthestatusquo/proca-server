@@ -158,7 +158,7 @@ defmodule Proca.ActionPage do
       {:test_actions, page.id},
       from(
         a in Action,
-        where: a.action_page_id == ^page.id and a.processing_status in [:testing]
+        where: a.action_page_id == ^page.id and a.testing
       )
     )
     |> Multi.delete_all(
