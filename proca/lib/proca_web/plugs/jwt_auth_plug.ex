@@ -16,6 +16,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias ProcaWeb.UserAuth
   alias Proca.Users
   alias Proca.Users.User
+  alias Proca.Server.Jwks
   import ProcaWeb.Plugs.Helper
 
   def init(opts), do: opts
@@ -36,6 +37,8 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
          {:ok, claims} <- Joken.verify(token, key),
          email <- extract_field(claims, opts[:email_path] || ["email"]),
          external_id <- extract_field(claims, opts[:external_id_path] || ["sub"]),
+         :ok <- if(is_nil(email), do: :invalid, else: :ok),
+         :ok <- check_expiry(claims),
          :ok <-
            check_email_verified(
              claims,
@@ -50,6 +53,12 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       :unverified ->
         error_halt(conn, 401, "unauthorized", "Email not verified")
 
+      :expired ->
+        error_halt(conn, 401, "unauthorized", "JWT expired")
+
+      :invalid ->
+        error_halt(conn, 401, "unauthorized", "JWT is invalid (missing values)")
+
       # no token
       nil ->
         conn
@@ -57,20 +66,45 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   end
 
   def get_key(token) do
-    with {:ok, %{"alg" => algo = "HS" <> _}} <- Joken.peek_header(token),
-         secret when secret != nil <-
-           Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwt_secret] do
-      {:ok, Joken.Signer.create(algo, secret)}
-    else
-      {:ok, %{"alg" => algo}} -> {:error, "Unsupported JWT algorithm #{algo}"}
-      nil -> {:error, "JWT not enabled"}
+    case Joken.peek_header(token) do
+      {:ok, %{"alg" => algo = "HS" <> _}} -> get_key_secret(algo)
+      {:ok, %{"alg" => algo = "RS" <> _, "kid" => key_id}} -> get_key_jwks(algo, key_id)
+      {:ok, %{"alk" => algo}} -> {:error, "Unsupported JWT algorithm #{algo}"}
+    end
+  end
+
+  def get_key_secret(algo) do
+    case Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwt_secret] do
+      nil -> {:error, "JWT not enabled for symmetric keys (#{algo})"}
+      secret -> {:ok, Joken.Signer.create(algo, secret)}
+    end
+  end
+
+  def get_key_jwks(algo, key_id) do
+    case Jwks.key(key_id) do
+      nil ->
+        {:error, "JWT not enabled for asymmetric keys (#{algo})"}
+
+      key ->
+        {:ok, Joken.Signer.create(algo, key)}
     end
   end
 
   def extract_field(_claims, nil), do: nil
 
   def extract_field(claims, path) do
+    all = fn :get, lst, next -> Enum.map(lst, next) end
+
+    path =
+      Enum.map(path, fn
+        "@" -> all
+        s -> s
+      end)
+
     get_in(claims, path)
+    |> List.wrap()
+    |> List.flatten()
+    |> List.first()
   end
 
   def check_email_verified(claims, path) do
@@ -84,6 +118,15 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
       end
     else
       :ok
+    end
+  end
+
+  def check_expiry(claims) do
+    with {:ok, exp} <- DateTime.from_unix(Map.get(claims, "exp")),
+         :gt <- DateTime.compare(exp, DateTime.utc_now()) do
+      :ok
+    else
+      _ -> :expired
     end
   end
 
