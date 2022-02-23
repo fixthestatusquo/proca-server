@@ -90,7 +90,8 @@ defmodule Proca.Users do
         user
 
       # handle a race condition where user exists - in that case fetch the user
-      {:error, %{errors: [email: {_m, [{:validation, :unsafe_unique} | _r]}]}} ->
+      {:error, %{errors: [email: {_m, [c | _r]}]}}
+      when c in [constraint: :unique, validation: :unsafe_unique] ->
         User.one(email: attrs[:email])
 
       {:error, %{errors: [%{message: msg} | _]}} ->

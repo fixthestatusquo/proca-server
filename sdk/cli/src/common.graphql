@@ -138,6 +138,8 @@ fragment actionExport on Action {
   privacy {
     optIn
     givenAt
+    emailStatus
+    emailStatusChanged
   }
 }
 

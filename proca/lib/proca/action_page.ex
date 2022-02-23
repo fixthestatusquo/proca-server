@@ -158,7 +158,7 @@ defmodule Proca.ActionPage do
       {:test_actions, page.id},
       from(
         a in Action,
-        where: a.action_page_id == ^page.id and a.processing_status in [:testing]
+        where: a.action_page_id == ^page.id and a.testing
       )
     )
     |> Multi.delete_all(
@@ -251,7 +251,7 @@ defmodule Proca.ActionPage do
   def thank_you_template_ref(%ActionPage{} = ap) do
     ap = Repo.preload(ap, [:org])
 
-    case Proca.Service.EmailTemplateDirectory.ref_by_name(ap.org, ap.thankyou_template) do
+    case Proca.Service.EmailTemplateDirectory.ref_by_name(ap.org, ap.thank_you_template) do
       {:ok, ref} -> ref
       _ -> nil
     end

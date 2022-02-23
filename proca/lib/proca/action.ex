@@ -29,8 +29,10 @@ defmodule Proca.Action do
     belongs_to :source, Proca.Source
 
     has_one :donation, Proca.Action.Donation
+    has_many :messages, Proca.Action.Message
 
     field :processing_status, ProcessingStatus, default: :new
+    field :testing, :boolean, default: false
 
     timestamps()
   end
@@ -55,7 +57,7 @@ defmodule Proca.Action do
   """
   def build_for_supporter(attrs, supporter, action_page) do
     %Action{}
-    |> cast(attrs, [:action_type, :fields])
+    |> cast(attrs, [:action_type, :fields, :testing])
     |> validate_required([:action_type])
     |> validate_format(:action_type, ~r/^([\w\d_-]+$)/)
     |> validate_flat_map(:fields)
@@ -63,6 +65,7 @@ defmodule Proca.Action do
     |> put_assoc(:action_page, action_page)
     |> put_change(:campaign_id, action_page.campaign_id)
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
+    |> Action.Message.put_messages(Map.get(attrs, :mtt, nil), action_page)
     |> check_constraint(:fields, name: :max_fields_size)
   end
 

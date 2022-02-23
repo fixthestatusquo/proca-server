@@ -80,6 +80,26 @@ defmodule ProcaWeb.Api.ActionTest do
     assert action.processing_status == :new
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id
+    assert not action.testing
+  end
+
+  test "create testing action", %{org: org, pages: [ap]} do
+    action_with_contact(
+      ap,
+      %{action_type: "petition", testing: true},
+      %{email: "testing@testing.com", first_name: "Theta Tester"}
+    )
+
+    [action] =
+      Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter]))
+
+    assert action.testing
+    assert action.processing_status == :new
+    Proca.Server.Processing.process(action)
+
+    action = Repo.reload(action)
+    assert action.processing_status == :delivered
+    assert action.testing
   end
 
   @stripe_payment_intent_example1 """

@@ -37,12 +37,17 @@ defmodule Proca.Stage.MessageV2 do
         "title" => action.campaign.title,
         "externalId" => action.campaign.external_id
       },
+      "org" => %{
+        "name" => action.action_page.org.name,
+        "title" => action.action_page.org.title
+      },
       "orgId" => action.action_page.org_id,
       "action" =>
         %{
           "actionType" => action.action_type,
           "customFields" => action.fields,
-          "createdAt" => action.inserted_at |> Support.to_iso8601()
+          "createdAt" => action.inserted_at |> Support.to_iso8601(),
+          "testing" => action.testing
         }
         |> MessageV1.put_action_donation(action.donation),
       "contact" => contact_data(action.supporter, contact),

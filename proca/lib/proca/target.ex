@@ -20,6 +20,7 @@ defmodule Proca.Target do
 
     belongs_to :campaign, Proca.Campaign
     has_many :emails, Proca.TargetEmail, on_delete: :delete_all, on_replace: :delete
+    has_many :messages, Proca.Action.Message
 
     timestamps()
   end
@@ -42,10 +43,44 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
-  def upsert(target, emails) do
-    (one(external_id: target.external_id, preload: [:emails, :campaign]) || %Target{})
-    |> Target.changeset(target)
-    |> put_assoc(:emails, emails)
+  def all(query, [{:name, name} | kw]) do
+    import Ecto.Query
+
+    query
+    |> where([t], t.name == ^name)
+    |> all(kw)
+  end
+
+  def all(q, [{:campaign, c} | kw]) do
+    import Ecto.Query
+
+    q
+    |> where([t], t.campaign_id == ^c.id)
+    |> all(kw)
+  end
+
+  def upsert(input) do
+    record =
+      one(external_id: input.external_id, preload: [:emails, :campaign]) ||
+        %Target{emails: [], campaign: nil}
+
+    change = Target.changeset(record, input)
+
+    case Map.get(input, :emails) do
+      nil ->
+        change
+
+      emails ->
+        emails =
+          for input <- emails do
+            case Enum.find(record.emails, fn %{email: e} -> e == input.email end) do
+              %TargetEmail{} = te -> TargetEmail.changeset(te, input)
+              nil -> struct(TargetEmail, input)
+            end
+          end
+
+        put_assoc(change, :emails, emails)
+    end
   end
 
   def handle_bounce(args) do

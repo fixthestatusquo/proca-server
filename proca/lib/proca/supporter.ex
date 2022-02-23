@@ -9,6 +9,7 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
+  alias Proca.MTT
   import Ecto.Changeset
 
   schema "supporters" do
@@ -21,7 +22,10 @@ defmodule Proca.Supporter do
     field :fingerprint, :binary
     has_many :actions, Proca.Action
 
+    # Personalization fields, null if not needed, if not null, kept temporarily
     field :first_name, :string
+    field :last_name, :string
+    field :address, :string
     field :email, :string
     field :area, :string
 
@@ -175,13 +179,19 @@ defmodule Proca.Supporter do
   def clear_transient_fields_query(supporter) do
     import Ecto.Query
 
-    clear_fields =
+    fields =
       Supporter.Privacy.transient_supporter_fields(supporter.action_page)
       |> Enum.map(fn f -> {f, nil} end)
 
-    from(s in Supporter,
-      where: s.id == ^supporter.id,
-      update: [set: ^clear_fields]
-    )
+    case fields do
+      [] ->
+        :noop
+
+      clear_fields ->
+        from(s in Supporter,
+          where: s.id == ^supporter.id,
+          update: [set: ^clear_fields]
+        )
+    end
   end
 end
