@@ -7,8 +7,8 @@
   "license": "AGPL-3.0",
   "scripts": {
     "install": "lerna bootstrap",
-    "prepare": "lerna exec yarn prepare",
+    "prepack": "lerna exec yarn prepack",
     "test": "lerna exec --scope @proca/server yarn test"
-
-  }
+  },
+  "version": "0.0.3-0"
 }

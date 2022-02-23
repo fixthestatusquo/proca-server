@@ -31,18 +31,24 @@ defmodule Proca.Repo.Migrations.CreateUsersAuthTables do
     create unique_index(:users_tokens, [:context, :token])
 
     execute """
-      INSERT INTO users (id, email, hashed_password, perms, confirmed_at, inserted_at, updated_at)
-      SELECT id, email, password_hash, perms, inserted_at, inserted_at, updated_at
-      FROM pow_users
-    """, ""
+              INSERT INTO users (id, email, hashed_password, perms, confirmed_at, inserted_at, updated_at)
+              SELECT id, email, password_hash, perms, inserted_at, inserted_at, updated_at
+              FROM pow_users
+            """,
+            ""
 
     drop table(:pow_users)
 
-    alter table(:confirms) do 
+    execute "ALTER TABLE users_id_seq1 rename to users_id_seq", ""
+
+    execute "SELECT setval(pg_get_serial_sequence('users', 'id'), coalesce(MAX(id), 1)) from users",
+            ""
+
+    alter table(:confirms) do
       modify :creator_id, references(:users, on_delete: :nilify_all), null: true
     end
 
-    alter table(:staffers) do 
+    alter table(:staffers) do
       modify :user_id, references(:users, on_delete: :nilify_all), null: false
     end
   end

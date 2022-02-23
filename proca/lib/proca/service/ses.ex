@@ -27,7 +27,6 @@ defmodule Proca.Service.SES do
   alias Proca.Repo
   alias Proca.{Service, Supporter, Action}
 
-
   @doc """
   XXX this method should later keep track of whether EmailTemplate was changed or not...
   """

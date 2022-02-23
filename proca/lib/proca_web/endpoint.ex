@@ -45,7 +45,7 @@ defmodule ProcaWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 
-  plug Sentry.PlugContext, 
+  plug Sentry.PlugContext,
     body_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_params/1,
     header_scrubber: &ProcaWeb.Resolvers.ReportError.scrub_headers/1
 

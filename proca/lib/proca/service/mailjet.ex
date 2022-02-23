@@ -17,7 +17,7 @@ defmodule Proca.Service.Mailjet do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
-  alias Proca.Service.{EmailTemplate, EmailBackend}
+  alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
@@ -33,10 +33,16 @@ defmodule Proca.Service.Mailjet do
   @impl true
   def list_templates(%Org{template_backend: %Service{} = srv}) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}", auth: :basic) do
-      {:ok, 200, %{"Data" => templates}} -> {:ok, templates |> Enum.map(&template_from_json/1)}
-      {:ok, 401} -> {:error, "not authenticated"}
-      {:error, err} -> {:error, err}
-      x -> 
+      {:ok, 200, %{"Data" => templates}} ->
+        {:ok, templates |> Enum.map(&template_from_json/1)}
+
+      {:ok, 401} ->
+        {:error, "not authenticated"}
+
+      {:error, err} ->
+        {:error, err}
+
+      x ->
         error("Mailjet List Template API unexpected result: #{inspect(x)}")
         {:error, "unexpected return from mailjet list templates"}
     end
@@ -60,7 +66,7 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_recipient(email, recipient) do
+  def put_recipient(email, %EmailRecipient{} = recipient) do
     email
     |> Email.to({recipient.first_name, recipient.email})
     |> Email.put_provider_option(:variables, recipient.fields)
@@ -78,9 +84,8 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def put_template(email, %EmailTemplate{subject: subject, html: html, text: text}) 
-    when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do 
-
+  def put_template(email, %EmailTemplate{subject: subject, html: html, text: text})
+      when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do
     email
     |> Email.subject(subject)
     |> Email.html_body(html)
@@ -100,11 +105,14 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def deliver(emails, %Org{email_backend: srv}) do
+  def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
     case Mailjet.deliver_many(emails, config(srv)) do
-      {:ok, _} -> :ok
+      {:ok, _} ->
+        :ok
+
       {:error, {_code, %{"ErrorMessage" => msg}}} ->
         raise EmailBackend.NotDelivered.exception(msg)
+
       {:error, reason} ->
         raise EmailBackend.NotDelivered.exception("unknown error #{inspect(reason)})")
     end
@@ -113,10 +121,11 @@ defmodule Proca.Service.Mailjet do
   @impl true
   def handle_bounce(params) do
     {type, id} = parse_type(String.split(Map.get(params, "CustomID"), ":", trim: true))
+
     bounce_params = %{
       id: id,
       email: Map.get(params, "email"),
-      reason: String.to_atom(Map.get(params, "event"))
+      reason: String.to_existing_atom(Map.get(params, "event"))
     }
 
     case type do
@@ -127,7 +136,7 @@ defmodule Proca.Service.Mailjet do
 
   defp parse_type(["action" | [tail | _]]), do: {:action, tail}
   defp parse_type(["target" | [tail | _]]), do: {:target, tail}
-  defp parse_type(args), do: {:empty, nil}
+  defp parse_type(_args), do: {:empty, nil}
 
   def config(%Service{name: :mailjet, user: u, password: p}) do
     %{

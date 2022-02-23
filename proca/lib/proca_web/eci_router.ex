@@ -3,7 +3,6 @@ defmodule ProcaWeb.EciRouter do
   Alternative router used in ECI build. Minimal version of ProcaWeb.Router
   """
   use ProcaWeb, :router
-  use Plug.ErrorHandler
 
   pipeline :api do
     plug :accepts, ["json"]
@@ -28,7 +27,6 @@ defmodule ProcaWeb.EciRouter do
     pipe_through :auth_api
     forward "/", ProcaWeb.PrivateAbsinthePlug, schema: ProcaWeb.Schema
   end
-  
 
   # forward "/graphiql", Absinthe.Plug.GraphiQL,
   #   schema: ProcaWeb.Schema.EciSchema,

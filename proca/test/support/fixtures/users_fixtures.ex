@@ -26,6 +26,7 @@ defmodule Proca.UsersFixtures do
   end
 
   import Proca.TestEmailBackend, only: [mailbox: 1]
+
   @doc """
   Runs the Proca.Users.some_send_token_to_user_fun 
   then intercepts the email sent from TestEmailBackend, and takes out the token from confirm_link.
@@ -35,12 +36,17 @@ defmodule Proca.UsersFixtures do
     token_sender_fun.(fn x -> x end)
 
     case mailbox(email) do
-      [%{
-        provider_options: %{
-          fields: fields
+      [
+        %{
+          provider_options: %{
+            fields: fields
+          }
         }
-      }] -> fields["confirmLink"]
-      nil -> ""
+      ] ->
+        fields["confirmLink"]
+
+      nil ->
+        ""
     end
   end
 end

@@ -8,9 +8,10 @@ defmodule ProcaWeb.Helper do
   alias Proca.Permission
   alias ProcaWeb.Error
 
-
   def format_result({:ok, value}), do: {:ok, value}
-  def fromat_result({:error, changeset = %Ecto.Changeset{}}), do: {:error, format_errors(changeset)}
+
+  def fromat_result({:error, changeset = %Ecto.Changeset{}}),
+    do: {:error, format_errors(changeset)}
 
   @doc """
   GraphQL expect a flat list of %{message: "some text"}. Traverse changeset and
@@ -32,8 +33,6 @@ defmodule ProcaWeb.Helper do
     end)
   end
 
-
-
   @doc """
   Must be able to flatten an error structure like:
   %{fields: [%{value: [%{message: "can't be blank"}]}]}
@@ -47,11 +46,14 @@ defmodule ProcaWeb.Helper do
   def flatten_errors([], _), do: []
 
   def flatten_errors([%{message: msg} = m | other_msg], path)
-       when map_size(m) == 1 do
-    [%{
+      when map_size(m) == 1 do
+    [
+      %{
         message: msg,
         path: Enum.reverse(path)
-     } | flatten_errors(other_msg, path)]
+      }
+      | flatten_errors(other_msg, path)
+    ]
   end
 
   # handle an associated list (like has_many)
@@ -77,7 +79,7 @@ defmodule ProcaWeb.Helper do
     |> Enum.concat()
   end
 
-  @spec validate(Ecto.Changeset.t) :: {:ok | :error, Ecto.Changeset.t}
+  @spec validate(Ecto.Changeset.t()) :: {:ok | :error, Ecto.Changeset.t()}
   def validate(changeset) do
     case changeset do
       ch = %{valid?: true} -> {:ok, apply_changes(ch)}
@@ -105,25 +107,30 @@ defmodule ProcaWeb.Helper do
     end
   end
 
-  def cant_msg(perms), do: %Error{
-    message: "User does not have sufficient permissions",
-    code: "permission_denied",
-    context: [required: perms]
-  }
+  def cant_msg(perms),
+    do: %Error{
+      message: "User does not have sufficient permissions",
+      code: "permission_denied",
+      context: [required: perms]
+    }
 
-  def msg_ext(msg, code, ext \\ %{}), do: %Error{
-    message: msg,
-    code: code,
-    context: Enum.into(ext, [])
-  }
+  def msg_ext(msg, code, ext \\ %{}),
+    do: %Error{
+      message: msg,
+      code: code,
+      context: Enum.into(ext, [])
+    }
 
-  def has_error?(errors, field, msg) 
-  when is_list(errors) and is_atom(field) and is_bitstring(msg) do 
-    errors 
-    |> Enum.any?(fn {^field, {^msg, _}} -> true; _ -> false end)
+  def has_error?(errors, field, msg)
+      when is_list(errors) and is_atom(field) and is_bitstring(msg) do
+    errors
+    |> Enum.any?(fn
+      {^field, {^msg, _}} -> true
+      _ -> false
+    end)
   end
 
-  def request_basic_auth(conn, msg) do 
+  def request_basic_auth(conn, msg) do
     conn
     |> Plug.Conn.put_resp_header("WWW-Authenticate", "Basic realm=\"Proca\"")
     |> Plug.Conn.resp(401, msg)
@@ -134,5 +141,15 @@ defmodule ProcaWeb.Helper do
       {nil, m} -> m
       {v, m} -> Map.put(m, k2, v)
     end
-   end
- end
+  end
+end
+
+# XXX not sure if best place for this
+# defimpl Inspect, for: Absinthe.Resolution do
+#   def inspect(resolution, _opts) do
+#     show_only = Map.take(resolution, [:value, :errors, :state, :arguments, :context])
+#     |> Enum.to_list()
+#
+#     "#Absinthe.Resolution<#{inspect(show_only)}>"
+#   end
+# end

@@ -26,8 +26,11 @@ defmodule Proca.Confirm.Operation do
   def mod(:launch_page), do: Proca.Confirm.LaunchPage
   def mod(:add_staffer), do: Proca.Confirm.AddStaffer
 
-  @callback run(%Confirm{}, :confirm | :reject, Auth) :: 
-    :ok | {:ok, %ActionPage{}} | {:ok, %Campaign{}}, {:ok, %Org{}} | {:error, any()}
+  @callback(
+    run(%Confirm{}, :confirm | :reject, Auth) ::
+      :ok | {:ok, %ActionPage{}} | {:ok, %Campaign{}},
+    {:ok, %Org{}} | {:error, any()}
+  )
 
   @doc "Return name of email template used in notification about this confirmable operation"
   @callback email_template(%Confirm{}) :: String.t()

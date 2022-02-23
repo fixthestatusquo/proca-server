@@ -5,55 +5,58 @@ defmodule ProcaWeb.Schema.ServiceTypes do
 
   use Absinthe.Schema.Notation
   alias ProcaWeb.Resolvers
-  alias ProcaWeb.Resolvers.Authorized
+  import ProcaWeb.Resolvers.AuthNotation
 
-  object :service_mutations do 
-    field :upsert_service, type: non_null(:service) do 
-      middleware Authorized,
-        access: [:org, by: [name: :org_name]],
-        can?: [:change_org_services]
+  object :service_mutations do
+    field :upsert_service, type: non_null(:service) do
+      arg(:org_name, non_null(:string))
+      arg(:id, :integer)
+      arg(:input, non_null(:service_input))
 
-      arg :org_name, non_null(:string)
-      arg :id, :integer
-      arg :input, non_null(:service_input)
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:change_org_services])
 
       resolve(&Resolvers.Service.upsert_service/3)
     end
 
-    field :add_stripe_payment_intent, type: non_null(:json) do 
-      arg :action_page_id, non_null(:integer)
-      arg :input, non_null(:stripe_payment_intent_input)
-      arg :contact_ref, :id
+    field :add_stripe_payment_intent, type: non_null(:json) do
+      arg(:action_page_id, non_null(:integer))
+      arg(:input, non_null(:stripe_payment_intent_input))
+      arg(:contact_ref, :id)
 
+      load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_payment_intent/3)
     end
 
-    field :add_stripe_subscription, type: non_null(:json) do 
-      arg :action_page_id, non_null(:integer)
-      arg :input, non_null(:stripe_subscription_input)
-      arg :contact_ref, :id
+    field :add_stripe_subscription, type: non_null(:json) do
+      arg(:action_page_id, non_null(:integer))
+      arg(:input, non_null(:stripe_subscription_input))
+      arg(:contact_ref, :id)
 
+      load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_subscription/3)
     end
 
-#  payment intent, create customer, create subscription
+    #  payment intent, create customer, create subscription
     @desc """
     Create stripe object using Stripe key associated with action page owning org.
     Pass any of paymentIntent, subscription, customer, price json params to be sent as-is to Stripe API. The result is a JSON returned by Stripe API or a GraphQL Error object.
     If you provide customer along payment intent or subscription, it will be first created, then their id will be added to params for the payment intent or subscription, so you can pack 2 Stripe API calls into one. You can do the same with price object in case of a subscription.
     """
-    field :add_stripe_object, type: non_null(:json) do 
-      arg :action_page_id, non_null(:integer)
+    field :add_stripe_object, type: non_null(:json) do
+      arg(:action_page_id, non_null(:integer))
 
       @desc "Parameters for Stripe Payment Intent creation"
-      arg :payment_intent, :json
+      arg(:payment_intent, :json)
       @desc "Parameters for Stripe Subscription creation"
-      arg :subscription, :json
+      arg(:subscription, :json)
       @desc "Parameters for Stripe Customer creation"
-      arg :customer, :json 
+      arg(:customer, :json)
       @desc "Parameters for Stripe Price creation"
-      arg :price, :json
+      arg(:price, :json)
 
+      load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_object/3)
     end
   end
@@ -71,16 +74,16 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     # field :payment_method_types, list_of(non_null(:string))
   end
 
-  enum :service_name do 
-    value :ses 
-    value :sqs 
-    value :mailjet
-    value :wordpress
-    value :stripe
-    value :webhook
-  end 
+  enum :service_name do
+    value(:ses)
+    value(:sqs)
+    value(:mailjet)
+    value(:wordpress)
+    value(:stripe)
+    value(:webhook)
+  end
 
-  object :service do 
+  object :service do
     field :id, non_null(:integer)
     field :name, non_null(:service_name)
     field :host, :string
@@ -88,12 +91,11 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     field :path, :string
   end
 
-  input_object :service_input do 
+  input_object :service_input do
     field :name, non_null(:service_name)
     field :host, :string
     field :user, :string
     field :password, :string
     field :path, :string
   end
-end 
-
+end

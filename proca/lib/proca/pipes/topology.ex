@@ -5,7 +5,10 @@ defmodule Proca.Pipes.Topology do
   Each Org has its own Topology server and set of exchanges/queues. Processing
   load and problems are isolated for each org.
 
-  This Topology service will reconfigure the excahnges and queues when notified by Proca.Server.Notify `org_updated`, `org_created` and `org_deleted`. These notifications are sent by the API layer when respective event occurs. They are not sent by operations on Proca.Org directly.
+  This Topology service will reconfigure the excahnges and queues when notified
+  by Proca.Server.Notify `updated`, `created` and `deleted`. These notifications
+  are sent by the API layer when respective event occurs. They are not sent by
+  operations on Proca.Org directly.
 
   (previously responsibility of Proca.Server.Plumbing)
 
@@ -30,7 +33,7 @@ defmodule Proca.Pipes.Topology do
   x org.N.confirm.action     #  > =wrk.N.email.confirm [*]
                              #  > =cus.N.confirm.action
 
-  x org.N.deliver         *.mtt > =wrk.N.email.mtt [*]
+  x org.N.deliver
                           #     > =wrk.N.email.supporter
                           #     > =wrk.N.sqs              -> proca-gw
                                 > =wrk.N.http  [*]        -> proca-gw
@@ -41,8 +44,9 @@ defmodule Proca.Pipes.Topology do
 
   Event Routing Key: event_type.sub_type
 
-  x org.N.event      # > =wrk.N.event.webhook
-                     # > =cus.N.event
+  x org.N.event      # > =wrk.N.webhook
+                     # > =wrk.N.sqs
+                     # > =cus.N.deliver
 
   [*] - not yet implemented
   ```
@@ -56,7 +60,7 @@ defmodule Proca.Pipes.Topology do
 
   - Worker queues, are enabled by flags on Org (boolean columns):
     - `system_sqs_deliver` sends to SQS (SQS service must be configured)
-    - `email.supporter` sends double-opt-in email when: `email_opt_in` is TRUE, and `email_opt_in_template` is set on Org. Org must have email/template backends set.
+    - `email.supporter` sends double-opt-in email when: `supporter_confirm` is `true`. Org must have email/template backends set. The email will be set if `email_supporter_template` is set on org or action page.
     - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_tempalte_ref refers to template identifier in the backend.
 
 
@@ -78,17 +82,60 @@ defmodule Proca.Pipes.Topology do
     {:via, Registry, {Proca.Pipes.Registry, {__MODULE__, org_id}}}
   end
 
+  def whereis(o = %Org{}) do
+    {:via, Registry, {reg, nam}} = process_name(o)
+
+    case Registry.lookup(reg, nam) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
+  end
+
   ## Callbacks
+  @impl true
   def init(org = %Org{id: org_id}) do
-    Pipes.Connection.with_chan fn chan ->
+    config = configuration(org)
+
+    Pipes.Connection.with_chan(fn chan ->
       declare_exchanges(chan, org)
       declare_retry_circuit(chan, org)
-      declare_worker_queues(chan, org)
-      declare_custom_queues(chan, org)
-    end
+      declare_worker_queues(chan, org, config)
+      declare_custom_queues(chan, org, config)
+    end)
 
     # Setup queues (without the Broadway ones)
-    {:ok, %{org_id: org_id}}
+    {:ok, %{org_id: org_id, configuration: config}}
+  end
+
+  @impl true
+  def handle_call({:configuration_change?, org = %Org{}}, _from, st = %{configuration: current}) do
+    {
+      :reply,
+      configuration(org) != current,
+      st
+    }
+  end
+
+  def configuration(o = %Org{}) do
+    instance = Org.one([:instance])
+
+    %{
+      confirm_supporter: Stage.EmailSupporter.start_for?(o) and o.supporter_confirm,
+      email_supporter: Stage.EmailSupporter.start_for?(o),
+      sqs: Stage.SQS.start_for?(o),
+      webhook: Stage.Webhook.start_for?(o),
+      event_processing: o.event_processing,
+      custom_supporter_confirm: o.custom_supporter_confirm,
+      custom_action_confirm: o.custom_action_confirm,
+      custom_action_deliver: o.custom_action_deliver,
+      custom_event_deliver: o.custom_event_deliver,
+      event_forward_to_instance_sqs: instance.event_processing and Stage.SQS.start_for?(instance),
+      event_forward_to_instance_webhook:
+        instance.event_processing and Stage.Webhook.start_for?(instance),
+      event_forward_to_instance_custom:
+        instance.event_processing and instance.custom_event_deliver,
+      instance_org_id: instance.id
+    }
   end
 
   @doc "Exchange name for an org, name is exchange name (stage name org fail, retry)"
@@ -106,7 +153,13 @@ defmodule Proca.Pipes.Topology do
     :ok = Exchange.declare(chan, xn(o, "deliver"), :topic, durable: true)
     :ok = Exchange.declare(chan, xn(o, "fail"), :fanout, durable: true)
     :ok = Exchange.declare(chan, xn(o, "retry"), :direct, durable: true)
-    :ok = Exchange.declare(chan, xn(o, "event"), :fanout, durable: true) # TODO -> topic or direct?
+    # TODO -> topic or direct?
+    # # migrate queues
+    # ex=$(rabbitmqadmin  list exchanges -f long -V proca | grep event |cut -f 2 -d ' '); for e in $ex; do rabbitmqadmin delete exchange name=$e -V proca; done
+    # in elixir
+    # Proca.Org.all([]) |> Enum.each(&Proca.Pipes.Supervisor.reload_child/1)
+    #
+    :ok = Exchange.declare(chan, xn(o, "event"), :topic, durable: true)
   end
 
   def declare_retry_circuit(chan, o = %Org{}) do
@@ -114,53 +167,85 @@ defmodule Proca.Pipes.Topology do
     # fail queue = fail exchange
     qn = xn(o, "fail")
 
-    Queue.declare(chan, qn, durable: true, arguments: [
-          {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
-          {"x-message-ttl", :long, round(sec * 1000)}
-        ])
+    Queue.declare(chan, qn,
+      durable: true,
+      arguments: [
+        {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
+        {"x-message-ttl", :long, round(sec * 1000)}
+      ]
+    )
+
     Queue.bind(chan, qn, qn)
   end
 
-  def declare_custom_queues(chan, o = %Org{}) do
+  def declare_custom_queues(chan, o = %Org{}, config) do
     [
-      {xn(o, "confirm.supporter"), cqn(o, "confirm.supporter"), bind: o.custom_supporter_confirm, route: "#"},
-      {xn(o, "confirm.action"), cqn(o, "confirm.action"), bind: o.custom_action_confirm, route: "#"},
-      {xn(o, "deliver"), cqn(o, "deliver"), bind: o.custom_action_deliver, route: "#"}
+      {xn(o, "confirm.supporter"), cqn(o, "confirm.supporter"),
+       bind: config[:custom_supporter_confirm], route: "#"},
+      {xn(o, "confirm.action"), cqn(o, "confirm.action"),
+       bind: config[:custom_action_confirm], route: "#"},
+      {xn(o, "deliver"), cqn(o, "deliver"), bind: config[:custom_action_deliver], route: "#"},
+      {xn(o, "event"), cqn(o, "deliver"), bind: config[:custom_event_deliver], route: "#"}
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
   end
 
-  def declare_worker_queues(chan, o = %Org{}) do
+  def declare_worker_queues(chan, o = %Org{}, config) do
+    instance = %Org{id: config[:instance_org_id]}
+
     [
       {
         xn(o, "confirm.supporter"),
         wqn(o, "email.supporter"),
-        bind: Stage.EmailSupporter.start_for?(o) and o.email_opt_in and is_bitstring(o.email_opt_in_template),
-        route: "#"
+        bind: config[:confirm_supporter], route: "#"
       },
-
       {
         xn(o, "deliver"),
         wqn(o, "email.supporter"),
-        bind: Stage.EmailSupporter.start_for?(o),
-        route: "#"
+        bind: config[:email_supporter], route: "#"
       },
-
       {
         xn(o, "deliver"),
         wqn(o, "sqs"),
-        bind: Stage.SQS.start_for?(o),
-        route: "#"
+        bind: config[:sqs], route: "#"
       },
-
+      {
+        xn(o, "event"),
+        wqn(o, "sqs"),
+        bind: config[:event_processing] and config[:sqs], route: "#"
+      },
       {
         xn(o, "event"),
         wqn(o, "webhook"),
-        bind: Stage.Webhook.start_for?(o),
-        route: "#"
+        bind: config[:event_processing] and config[:webhook], route: "#"
+      },
+      {
+        xn(o, "event"),
+        cqn(instance, "deliver"),
+        bind: config[:custom_event_deliver], route: "#"
       }
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
+
+    [
+      # Plug instance to the event queues
+      {
+        xn(o, "event"),
+        wqn(instance, "sqs"),
+        bind: config[:event_forward_to_instance_sqs], route: "#"
+      },
+      {
+        xn(o, "event"),
+        wqn(instance, "webhook"),
+        bind: config[:event_forward_to_instance_webhook], route: "#"
+      },
+      {
+        xn(o, "event"),
+        cqn(instance, "deliver"),
+        bind: config[:event_forward_to_instance_custom], route: "#"
+      }
+    ]
+    |> Enum.each(fn x -> bind_queue(chan, x) end)
   end
 
   def retry_queue_arguments(o = %Org{}, queue_name) do
@@ -170,11 +255,19 @@ defmodule Proca.Pipes.Topology do
     ]
   end
 
-  def declare_retrying_queue(chan, o = %Org{}, {exchange_name, queue_name, [bind: bind?, route: rk]}) do
+  def declare_retrying_queue(
+        chan,
+        o = %Org{},
+        {exchange_name, queue_name, [bind: bind?, route: rk]}
+      ) do
     # IO.inspect({exchange_name, queue_name, o.name, [bind: bind?]}, label: "declare retrying queue")
 
     if bind? do
-      Queue.declare(chan, queue_name, durable: true, arguments: retry_queue_arguments(o, queue_name))
+      Queue.declare(chan, queue_name,
+        durable: true,
+        arguments: retry_queue_arguments(o, queue_name)
+      )
+
       :ok = Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
       :ok = Queue.bind(chan, queue_name, xn(o, "retry"), routing_key: queue_name)
     else
@@ -184,8 +277,20 @@ defmodule Proca.Pipes.Topology do
     end
   end
 
+  def bind_queue(
+        chan,
+        {exchange_name, queue_name, [bind: bind?, route: rk]}
+      ) do
+    if bind? do
+      :ok = Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
+    else
+      :ok = Queue.unbind(chan, queue_name, exchange_name, routing_key: rk)
+    end
+  end
+
   def broadway_producer(o = %Org{}, work_type) do
     queue_name = wqn(o, work_type)
+
     {
       BroadwayRabbitMQ.Producer,
       queue: queue_name,

@@ -56,7 +56,8 @@ defmodule ProcaWeb.Plugs.BasicAuthPlug do
     case conn.assigns[:user] do
       %User{} = u ->
         Absinthe.Plug.assign_context(conn, %{
-          user: u, # XXX for backward compatibility
+          # XXX for backward compatibility
+          user: u,
           auth: %Auth{user: u}
         })
 

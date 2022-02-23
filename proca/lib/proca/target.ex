@@ -4,9 +4,11 @@ defmodule Proca.Target do
   """
 
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   alias Proca.{Repo, Target, TargetEmail}
   import Ecto.Changeset
   import Ecto.Query
+  import Proca.Validations, only: [validate_flat_map: 2]
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
 
@@ -27,42 +29,37 @@ defmodule Proca.Target do
     target
     |> cast(attrs, [:name, :campaign_id, :fields, :area, :external_id])
     |> validate_required([:name, :external_id])
+    |> validate_flat_map(:fields)
     |> unique_constraint(:external_id)
+    |> check_constraint(:fields, name: :max_fields_size)
+  end
+
+  def all(query, [{:external_id, external_id} | kw]) do
+    import Ecto.Query, only: [where: 3]
+
+    query
+    |> where([t], t.external_id == ^external_id)
+    |> all(kw)
   end
 
   def upsert(target, emails) do
-    (get(external_id: target.external_id) || %Target{})
+    (one(external_id: target.external_id, preload: [:emails, :campaign]) || %Target{})
     |> Target.changeset(target)
     |> put_assoc(:emails, emails)
   end
 
-  def get(queryable, [external_id: external_id]) do
-    from(t in queryable, where: t.external_id == ^external_id)
-    |> preloads()
-    |> Repo.one()
-  end
-
-  def preloads(queryable) do
-    queryable |> preload([t], [:emails, :campaign])
-  end
-
-  def get(target), do: get(Target, target)
-
   def handle_bounce(args) do
-    target_email = get_target_email(args.id, args.email)
-    target_email = change(target_email, email_status: args.reason)
-    Repo.update!(target_email)
+    case get_target_email(args.id, args.email) do
+      # ignore a bounce when not found
+      nil ->
+        {:ok, %TargetEmail{}}
+
+      target_email ->
+        Repo.update!(change(target_email, email_status: args.reason))
+    end
   end
 
   def get_target_email(id, email) do
-    query = from(
-      te in TargetEmail,
-      join: t in Target,
-      on: t.id == te.target_id,
-      where: te.email == ^email and t.id == ^id,
-      limit: 1
-    )
-
-    Repo.one(query)
+    TargetEmail.one(target_id: id, email: email)
   end
 end

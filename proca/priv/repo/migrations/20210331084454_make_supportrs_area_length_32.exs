@@ -4,7 +4,7 @@ defmodule Proca.Repo.Migrations.MakeSupportrsAreaLength32 do
   def down, do: nil
 
   def up do
-    alter table(:supporters) do 
+    alter table(:supporters) do
       modify :area, :string, size: 32, null: true
     end
   end

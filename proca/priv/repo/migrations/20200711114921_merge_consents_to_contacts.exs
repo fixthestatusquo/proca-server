@@ -32,6 +32,5 @@ defmodule Proca.Repo.Migrations.MergeConsentsToContacts do
     execute merge_sql, recreate_consents_sql
 
     drop table(:consents)
-
   end
 end

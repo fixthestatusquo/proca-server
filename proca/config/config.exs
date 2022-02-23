@@ -18,8 +18,7 @@ config :proca, ProcaWeb.Endpoint,
   render_errors: [view: ProcaWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Proca.PubSub,
   allow_origin: "*",
-  router: (if System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router),
-  captcha_service: "hcaptcha"
+  router: if(System.get_env("ENABLE_ECI"), do: ProcaWeb.EciRouter, else: ProcaWeb.Router)
 
 config :cors_plug,
   origin: &ProcaWeb.Router.allow_origin/0
@@ -27,37 +26,38 @@ config :cors_plug,
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: true],
   sso: [
-    enabled: false, 
-    home_url: "https://account.fixthestatusquo.org",
-    #login_url: ,
-    #register_url: "",
-    ]
-
+    enabled: false,
+    home_url: "https://account.fixthestatusquo.org"
+    # login_url: ,
+    # register_url: "",
+  ]
 
 # Willfully leaked Hcaptcha secret (used only for development)
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #  hcaptcha: "0x8565EF658CA7fdE55203a4725Dd341b5147dEcf2"
 #  procaptcha_url: "https://captcha.proca.app"
 
+config :proca, ProcaWeb.Resolvers.Captcha,
+  captcha_service: "procaptcha",
+  procaptcha_url: "https://captcha.proca.app"
 
 config :proca, Proca,
   org_name: "instance",
-  stats_sync_interval: 0,  # XXX move to Proca.Server.Stats
-  process_old_interval: 0,  # XXX move to Proca.Server.Stats
+  # XXX move to Proca.Server.Stats
+  stats_sync_interval: 0,
+  # XXX move to Proca.Server.Stats
+  process_old_interval: 0,
   require_verified_email: false,
   start_daemon_servers: true
 
 # FPR seed only for development
-config :proca, Proca.Supporter,
-  fpr_seed: "4xFc6MsafPEwc6ME"
+config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
   url: "amqp://proca:proca@localhost/proca",
   ssl_options: nil
 
-
-config :proca, Proca.Server.Jwks,
-  url: "https://account.fixthestatusquo.org/.well-known/jwks.json"
+config :proca, Proca.Server.Jwks, url: "https://account.fixthestatusquo.org/.well-known/jwks.json"
 
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []
@@ -71,7 +71,6 @@ config :ex_aws, :hackney_opts,
 
 config :ex_aws_sqs, parser: ExAws.SQS.SweetXmlParser
 
-
 config :sentry,
   environment_name: Mix.env(),
   included_environments: [:prod],
@@ -79,8 +78,7 @@ config :sentry,
   root_source_code_paths: [File.cwd!()],
   capture_log_messages: true
 
-config :proca, ProcaWeb.Resolvers.ReportError,
-  enable: false
+config :proca, ProcaWeb.Resolvers.ReportError, enable: false
 
 config :logger,
   level: :info

@@ -23,7 +23,5 @@ defmodule Proca.Repo.Migrations.ChangeNaSourceToUnknown do
     """
 
     execute upsql, downsql
-
-
   end
 end

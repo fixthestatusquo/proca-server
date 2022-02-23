@@ -30,10 +30,10 @@ defmodule Proca.Server.Jwks do
   end
 
   def get_keys("file://" <> path = _url) do
-    try do 
+    try do
       jwks_to_keys(File.read!(path))
     rescue
-      e in File.Error -> 
+      e in File.Error ->
         error("Cannot #{e.action} #{e.path}: #{e.reason}")
         %{}
     end
