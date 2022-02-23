@@ -41,7 +41,7 @@ defmodule Proca.Contact.Input do
   def validate_name(chst, field) do
     chst
     |> Changeset.update_change(field, &String.trim/1)
-    |> validate_format(field, ~r/^[\p{L}']([ \p{L},'.-]*[\p{L}.])?$/u)
+    |> validate_format(field, ~r/^[\p{L}'’]([ \p{L},'’.-]*[\p{L}.])?$/u)
   end
 
   def validate_address_line(chst, field) do
