@@ -5,6 +5,28 @@ import {CliConfig} from '../config'
 import {ServiceOpts} from '.'
 import {removeBlank} from '../util'
 
+/*
+ * How to configure Identity consent.
+ *
+ * Consents in speakout/identity have levels:
+ * - none_given             # complex way to say: opt out
+ * - implicit               # complex way to say: no checkbox, opt in assumed
+ * - explicit_not_opt_out   # complex way to say: prechecked opt in
+ * - explicit_opt_in        # complex way to say: checked opt in
+ *
+ * In Proca we have:
+ * - opt_in: false/true
+ * - email_status: null/double_opt_in
+ *
+ * Identity might require a few different consents (each for some different goal)
+ * For identity we want to configure mapping
+ * {
+ *  data_processing_2022: { level: 'explicit_opt_in' }
+ *  newsletter_v2: { level: 'communication' }  # will depend on Proca optIn ? 'explicit_opt_in' : 'none_given',
+ *  newsletter_v3: { level: 'double_opt_in' }  # will depend on Proca double_opt_in ? 'explicit_opt_in' : 'none_given'
+ * }
+ *
+ */
 
 const log = debug('proca:service:identity')
 
@@ -13,17 +35,27 @@ type ConsentConfig = {
 }
 
 type Consent = {
-  level: "communication" | "none_given" | "implicit" | "explicit_not_opt_out" | "explicit_opt_in",
+  level: "communication" | "double_opt_in" | "none_given" | "implicit" | "explicit_not_opt_out" | "explicit_opt_in",
   locale?: string
 }
 
 export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, config : CliConfig) {
-  const url = argv.service_url || config.identity_url 
+  const url = argv.service_url || config.identity_url
   const api_token = config.identity_api_token 
   const comm_consent = config.identity_consent
+  const only_opt_in = 'IDENTITY_ONLY_OPT_IN' in process.env
+  const only_double_opt_in = 'IDENTITY_ONLY_DOUBLE_OPT_IN' in process.env
 
   if (!url) throw new Error("identity url not set")
   if (!api_token) throw new Error("identity api token not set")
+
+  // XXX the only_* mode indents to drop data where
+  if (only_double_opt_in && action.privacy.emailStatus !== 'double_opt_in')  {
+    return false;
+  }
+  if (only_opt_in && action.privacy.optIn === false) {
+    return false;
+  }
 
   let consent : ConsentConfig = null
   if (comm_consent === null || comm_consent === undefined) {
@@ -40,16 +72,10 @@ export async function syncAction(action : ActionMessageV2, argv : ServiceOpts, c
     consent[comm_consent] = { level: 'communication' }
   }
 
-  if (Object.keys(action.contact.pii).length == 0) {
-    log(`Cannot decrypt PII; public key is ${action.contact.publicKey}`)
-    throw "Cannot decrypt personal data, please check KEYS"
-  }
-
   const payload = toDataApi(action, consent, config.identity_action_fields, config.identity_contact_fields)
   log(`Identity DATA API payload (without api_token)`, payload)
 
   payload.api_token = api_token
-
 
   const post = bent(url, 'POST', 200)
   const r = await post('/api/actions', removeBlank(payload))
@@ -92,15 +118,15 @@ export function toDataApi(action : ActionMessageV2,
       ([pub_id, con_conf]) => toConsent(action, pub_id, con_conf)
     ).filter(x => x),
     cons_hash: {
-      firstname: action.contact.pii.firstName,
-      lastname: action.contact.pii.lastName,
-      emails: [{ email: action.contact.pii.email }],
+      firstname: action.contact.firstName,
+      lastname: action.contact.lastName,
+      emails: [{ email: action.contact.email }],
       custom_fields: [] as DataApiCustomField[],
       addresses: [{
-        postcode: action.contact.pii.postcode,
-        country: action.contact.pii.country,
-        town: action.contact.pii.locality,
-        state: action.contact.pii.region
+        postcode: action.contact.postcode,
+        country: action.contact.country,
+        town: action.contact.locality,
+        state: action.contact.region
       }]
     }
   }
@@ -152,18 +178,32 @@ export function toConsent(action : ActionMessageV2, consent_id : string, consent
     }
 
   // Handle opt in to communication
-  if (level == 'communication') {
+  if (level === 'communication') {
     if (action.privacy) {
-      if (action.privacy.optIn) {
+      if (action.privacy.optIn === true) {
         return {
           public_id: consent_id,
           consent_level: 'explicit_opt_in'
         }
-      } else {
+      } else if (action.privacy.optIn === false) {
         return {
           public_id: consent_id,
           consent_level: 'none_given'
         }
+      }
+      // watch out, optIn key can be missing if this is non-consent action
+    }
+    return {
+      public_id: consent_id,
+      consent_level: 'no_change'
+    }
+  }
+
+  if (level === 'double_opt_in') {
+    if (action.privacy.emailStatus === 'double_opt_in')  {
+      return {
+        public_id: consent_id,
+        consent_level: 'explicit_opt_in'
       }
     } else {
       return {

@@ -249,7 +249,8 @@ defmodule Proca.Contact.EciDataRules do
     "personal.id",
     "national.id.number",
     "citizens.card",
-    "driving.licence" # not ever required by ECI but used by IT-CI
+    # not ever required by ECI but used by IT-CI
+    "driving.licence"
   ]
 
   @postcode_formats %{

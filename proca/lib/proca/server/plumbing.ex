@@ -105,7 +105,9 @@ defmodule Proca.Server.Plumbing do
           :noreply,
           %{st | conn: c}
         }
-      {:error, reason} -> {:stop, reason, st}
+
+      {:error, reason} ->
+        {:stop, reason, st}
     end
   end
 
@@ -264,33 +266,34 @@ defmodule Proca.Server.Plumbing do
   end
 
   def setup_queue(chan, {qu})
-  when is_bitstring(qu) do
+      when is_bitstring(qu) do
     setup_queue(chan, {"", "", qu, bind: :skip})
   end
 
   def setup_queue(chan, {qu, opts})
-  when is_bitstring(qu)
-  and is_list(opts) do
+      when is_bitstring(qu) and
+             is_list(opts) do
     setup_queue(chan, {"", "", qu, opts})
   end
 
   def setup_queue(chan, {ex, rk, qu})
-  when is_bitstring(ex)
-  and is_bitstring(rk)
-  and is_bitstring(qu) do
+      when is_bitstring(ex) and
+             is_bitstring(rk) and
+             is_bitstring(qu) do
     setup_queue(chan, {ex, rk, qu, []})
   end
 
   def setup_queue(chan, {ex, rk, qu, opts})
-  when is_bitstring(ex)
-  and is_bitstring(rk)
-  and is_bitstring(qu)
-  and is_list(opts) do
-    retry_args = if Keyword.get(opts, :retry, false) do
-      [dlx("system.fail"), dlk(qu)]
-    else
-      []
-    end
+      when is_bitstring(ex) and
+             is_bitstring(rk) and
+             is_bitstring(qu) and
+             is_list(opts) do
+    retry_args =
+      if Keyword.get(opts, :retry, false) do
+        [dlx("system.fail"), dlk(qu)]
+      else
+        []
+      end
 
     args = Keyword.get(opts, :arguments, [])
 

@@ -25,7 +25,8 @@ defmodule ProcaWeb do
       import ProcaWeb.Gettext
       alias ProcaWeb.Router.Helpers, as: Routes
 
-      alias ProcaWeb.UserAuth # XXX remove
+      # XXX remove
+      alias ProcaWeb.UserAuth
       import ProcaWeb.UserAuth
       # import Phoenix.LiveView.Controller
     end

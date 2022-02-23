@@ -250,7 +250,10 @@ interface ActionPage {
   "Name where the widget is hosted"
   name: String!
 
-  "Reference to thank you email templated of this Action Page"
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
   thankYouTemplateRef: String
 
   "Is live?"
@@ -278,7 +281,10 @@ type PrivateActionPage implements ActionPage {
   "Name where the widget is hosted"
   name: String!
 
-  "Reference to thank you email templated of this Action Page"
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
   thankYouTemplateRef: String
 
   "Is live?"
@@ -300,6 +306,9 @@ type PrivateActionPage implements ActionPage {
 
   "Action page collects also opt-out actions"
   delivery: Boolean!
+
+  "Email template to confirm supporter"
+  supporterConfirmTemplate: String
 
   "Location of the widget as last seen in HTTP REFERER header"
   location: String
@@ -359,6 +368,7 @@ type ConfirmResult {
   actionPage: ActionPage
   campaign: Campaign
   org: Org
+  message: String
 }
 
 input AddKeyInput {
@@ -415,9 +425,17 @@ type ActionCustomFields {
 
 type OrgUser {
   email: String!
+
+  "Role in an org"
   role: String!
+
+  "Date and time the user was created on this instance"
   createdAt: NaiveDateTime!
+
+  "Date and time when user joined org"
   joinedAt: NaiveDateTime!
+
+  "Will be removed"
   lastSigninAt: NaiveDateTime
 }
 
@@ -464,6 +482,17 @@ type RootMutationType {
     input: CampaignInput!
   ): Campaign!
 
+  updateCampaign(id: Int, name: String, externalId: Int, input: CampaignInput!): Campaign!
+
+  addCampaign(
+    "Org that is lead of this campaign"
+    orgName: String!
+
+    input: CampaignInput!
+  ): Campaign!
+
+  deleteCampaign(id: Int, name: String, externalId: Int): Status!
+
   "Update an Action Page"
   updateActionPage(
     "Action Page id"
@@ -506,22 +535,28 @@ type RootMutationType {
     "Org owner of new Action Page"
     orgName: String!
 
-    "New Action Page name"
-    name: String!
-
-    "Action Page locale"
-    locale: String!
-
     "Name of campaign where page is created"
     campaignName: String!
+
+    "Action Page attributes"
+    input: ActionPageInput!
   ): ActionPage!
 
   launchActionPage(
+    "Action Page name"
     name: String!
 
     "Optional message for approver"
     message: String
   ): LaunchActionPageResult!
+
+  deleteActionPage(
+    "Action Page id"
+    id: Int
+
+    "Action Page name"
+    name: String
+  ): Status!
 
   "Adds an action referencing contact data via contactRef"
   addAction(
@@ -603,7 +638,7 @@ type RootMutationType {
   deleteOrg(
     "Name of organisation"
     name: String!
-  ): Boolean!
+  ): Status!
 
   updateOrg(
     "Name of organisation, used for lookup, can't be used to change org name"
@@ -621,6 +656,10 @@ type RootMutationType {
 
     emailFrom: String
 
+    supporterConfirm: Boolean
+
+    supporterConfirmTemplate: String
+
     customSupporterConfirm: Boolean
 
     customActionConfirm: Boolean
@@ -632,8 +671,6 @@ type RootMutationType {
     eventBackend: ServiceName
 
     eventProcessing: Boolean
-
-    confirmProcessing: Boolean
   ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
@@ -693,28 +730,30 @@ type RootMutationType {
   "Reject a confirm on behalf of organisation."
   rejectOrgConfirm(name: String!, confirm: ConfirmInput!): ConfirmResult!
 
+  "Accept a confirm by user"
   acceptUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
+  "Reject a confirm by user"
   rejectUserConfirm(confirm: ConfirmInput!): ConfirmResult!
 
   upsertTargets(targets: [TargetInput]!, campaignId: Int!): [Target]!
 }
 
 type RootQueryType {
-  "Get a list of public campains"
+  "Get a list of campains"
   campaigns(
     "Filter campaigns by title using LIKE format (% means any sequence of characters)"
     title: String
 
-    "Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
+    "DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list"
     name: String
 
-    "Select by id, Returns list of 1 result"
+    "DEPRECATED: use campaign(). Select by id, Returns list of 1 result"
     id: Int
   ): [Campaign!]!
 
   "Get campaign"
-  campaign(select: SelectCampaign): Campaign
+  campaign(id: Int, name: String, externalId: Int): Campaign
 
   "Get action page"
   actionPage(
@@ -756,6 +795,7 @@ type RootQueryType {
 
   currentUser: User!
 
+  "Select users from this instnace. Requires a manage users admin permission."
   users(select: SelectUser): [User!]!
 
   "Organization api (authenticated)"
@@ -792,13 +832,15 @@ type PublicOrg implements Org {
 type Processing {
   emailFrom: String
   emailBackend: ServiceName
+  supporterConfirm: Boolean!
+  supporterConfirmTemplate: String
   customSupporterConfirm: Boolean!
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
   sqsDeliver: Boolean!
   eventBackend: ServiceName
   eventProcessing: Boolean!
-  confirmProcessing: Boolean!
+  emailTemplates: [String!]
 }
 
 type PublicActionPage implements ActionPage {
@@ -810,7 +852,10 @@ type PublicActionPage implements ActionPage {
   "Name where the widget is hosted"
   name: String!
 
-  "Reference to thank you email templated of this Action Page"
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
   thankYouTemplateRef: String
 
   "Is live?"
@@ -860,7 +905,7 @@ type OrgCount {
 "Campaign input"
 input CampaignInput {
   "Campaign unchanging identifier"
-  name: String!
+  name: String
 
   "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
   externalId: Int
@@ -875,7 +920,7 @@ input CampaignInput {
   config: Json
 
   "Action pages of this campaign"
-  actionPages: [ActionPageInput!]!
+  actionPages: [ActionPageInput!]
 }
 
 type LaunchActionPageResult {
@@ -919,8 +964,11 @@ input ActionPageInput {
   "2-letter, lowercase, code of ActionPage language"
   locale: String
 
-  "A reference to thank you email template of this ActionPage"
-  thankYouTemplateRef: String
+  "Thank you email template of this ActionPage"
+  thankYouTemplate: String
+
+  "Supporter confirm email template of this ActionPage"
+  supporterConfirmTemplate: String
 
   "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
   extraSupporters: Int
@@ -952,10 +1000,10 @@ type PersonalData {
   contactSchema: ContactSchema!
 
   "Email opt in enabled"
-  emailOptIn: Boolean!
+  supporterConfirm: Boolean!
 
   "Email opt in template name"
-  emailOptInTemplate: String
+  supporterConfirmTemplate: String
 
   "High data security enabled"
   highSecurity: Boolean!
@@ -966,8 +1014,8 @@ enum DonationSchema {
 }
 
 input SelectCampaign {
-  id: Int
-  name: String
+  titleLike: String
+  orgName: String
 }
 
 type PrivateCampaign implements Campaign {
@@ -1005,6 +1053,9 @@ type PrivateCampaign implements Campaign {
 
   "Campaign onwer collects opt-out actions for delivery even if campaign partner is"
   forceDelivery: Boolean!
+
+  "Action Pages of this campaign that are accessible to current user"
+  actionPages: [PrivateActionPage!]!
 
   "List of partnerships and requests"
   partnerships: [Partnership!]
@@ -1063,7 +1114,7 @@ type PrivateOrg implements Org {
   "Action Page"
   actionPage(id: Int, name: String): ActionPage!
 
-  "Get campaign this org is leader or partner of by id"
+  "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
   campaign(id: Int!): Campaign!
 }
 
@@ -1151,10 +1202,10 @@ input OrgInput {
   contactSchema: ContactSchema
 
   "Email opt in enabled"
-  emailOptIn: Boolean
+  supporterConfirm: Boolean
 
   "Email opt in template name"
-  emailOptInTemplate: String
+  supporterConfirmTemplate: String
 
   "Config"
   config: Json

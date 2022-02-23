@@ -4,12 +4,12 @@ defmodule Proca.Supporter do
   Has associated contacts, which contain personal data dediacted to every receiving org
   """
   use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage, Org, Action}
+  alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
-  import Ecto.Query
 
   schema "supporters" do
     has_many :contacts, Proca.Contact
@@ -27,15 +27,23 @@ defmodule Proca.Supporter do
 
     field :processing_status, ProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
+    field :email_status_changed, :utc_datetime
 
     timestamps()
   end
 
-  @doc false
   def changeset(supporter, attrs) do
-    supporter
-    |> cast(attrs, [])
-    |> validate_required([])
+    ch =
+      supporter
+      |> cast(attrs, [:email_status])
+
+    case ch.changes do
+      %{email_status: _} ->
+        change(ch, email_status_changed: DateTime.truncate(DateTime.utc_now(), :second))
+
+      _ ->
+        ch
+    end
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do
@@ -48,12 +56,11 @@ defmodule Proca.Supporter do
 
   # @spec add_contacts(Ecto.Changeset.t(Supporter), Ecto.Changeset.t(Contact), %ActionPage{}, %Privacy{}) :: Ecto.Changeset.t(Supporter)
   def add_contacts(
-    new_supporter = %Ecto.Changeset{},
-    new_contact = %Ecto.Changeset{},
-    action_page = %ActionPage{},
-    privacy = %Privacy{}
-  ) do
-
+        new_supporter = %Ecto.Changeset{},
+        new_contact = %Ecto.Changeset{},
+        action_page = %ActionPage{},
+        privacy = %Privacy{}
+      ) do
     consents = Privacy.consents(action_page, privacy)
     contacts = Contact.spread(new_contact, consents)
 
@@ -61,8 +68,8 @@ defmodule Proca.Supporter do
     |> put_assoc(:contacts, contacts)
   end
 
-  def confirm(sup = %Supporter{}) do 
-    case sup.processing_status do 
+  def confirm(sup = %Supporter{}) do
+    case sup.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(sup, processing_status: :accepted))
       :rejected -> {:error, "supporter data already rejected"}
@@ -71,8 +78,8 @@ defmodule Proca.Supporter do
     end
   end
 
-  def reject(sup = %Supporter{}) do 
-    case sup.processing_status do 
+  def reject(sup = %Supporter{}) do
+    case sup.processing_status do
       :new -> {:error, "not allowed"}
       :confirming -> Repo.update(change(sup, processing_status: :rejected))
       :rejected -> {:noop, "supporter data already rejected"}
@@ -89,21 +96,6 @@ defmodule Proca.Supporter do
     Map.put(p, :lead_opt_in, false)
   end
 
-  @doc "Returns %Supporter{} or nil"
-  def find_by_fingerprint(fingerprint, org_id) do
-    query =
-      from(s in Supporter,
-        join: ap in ActionPage,
-        on: s.action_page_id == ap.id,
-        where: ap.org_id == ^org_id and s.fingerprint == ^fingerprint,
-        order_by: [desc: :inserted_at],
-        limit: 1,
-        preload: [:contacts]
-      )
-
-    Repo.one(query)
-  end
-
   def base_encode(data) when is_bitstring(data) do
     Base.url_encode64(data, padding: false)
   end
@@ -112,43 +104,80 @@ defmodule Proca.Supporter do
     Base.url_decode64(encoded, padding: false)
   end
 
-  def decode_ref(changeset = %Ecto.Changeset{}, field) do 
-    case get_change(changeset, field) do 
-      nil -> changeset
-      base -> case base_decode(base) do 
-        {:ok, val} -> put_change(changeset, field, val)
-        :error -> add_error(changeset, field, "Cannot decode from Base64url")
-      end
+  def decode_ref(changeset = %Ecto.Changeset{}, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      base ->
+        case base_decode(base) do
+          {:ok, val} -> put_change(changeset, field, val)
+          :error -> add_error(changeset, field, "Cannot decode from Base64url")
+        end
     end
   end
 
   def handle_bounce(args) do
-    supporter = get_by_action_id(args.id)
-    reject(supporter)
+    case one(action_id: args.id) do
+      # ignore a bounce when not found
+      nil ->
+        {:ok, %Supporter{}}
 
-    supporter = change(supporter, email_status: args.reason)
+      supporter ->
+        reject(supporter)
+        Repo.update!(changeset(supporter, %{email_status: args.reason}))
+    end
+  end
 
-    Repo.update!(supporter)
+  def all(q, [{:action_id, a_id} | kw]) do
+    import Ecto.Query
+
+    q
+    |> join(:inner, [s], a in assoc(s, :actions))
+    |> where([s, a], a.id == ^a_id)
+    |> all(kw)
+  end
+
+  def all(q, [{:fingerprint, fpr} | kw]), do: all(q, [{:contact_ref, fpr} | kw])
+
+  def all(q, [{:contact_ref, fpr} | kw]) do
+    import Ecto.Query
+
+    q
+    |> where([s], s.fingerprint == ^fpr)
+    |> order_by([s], desc: :inserted_at)
+    |> all(kw)
+  end
+
+  def all(q, [{:org_id, org_id} | kw]) do
+    import Ecto.Query
+
+    q
+    |> join(:inner, [s], ap in assoc(s, :action_page))
+    |> join(:inner, [s, ap], org in assoc(ap, :org))
+    |> where([s, ap, org], org.id == ^org_id)
+    |> all(kw)
+  end
+
+  def all(q, [{:action_page, %ActionPage{id: id}} | kw]) do
+    import Ecto.Query
+
+    q
+    |> where([a], a.action_page_id == ^id)
+    |> all(kw)
   end
 
   def get_by_action_id(action_id) do
-    query = from(
-      s in Supporter,
-      join: a in Action,
-      on: a.supporter_id == s.id,
-      where: a.id == ^action_id,
-      order_by: [desc: :inserted_at],
-      limit: 1
-    )
-
-    Repo.one(query)
+    one(action_id: action_id)
   end
 
-
-# XXX rename this to something like "clear_transient_fields"
+  # XXX rename this to something like "clear_transient_fields"
   def clear_transient_fields_query(supporter) do
-    clear_fields = Supporter.Privacy.transient_supporter_fields(supporter.action_page)
-    |> Enum.map(fn f -> {f, nil} end)
+    import Ecto.Query
+
+    clear_fields =
+      Supporter.Privacy.transient_supporter_fields(supporter.action_page)
+      |> Enum.map(fn f -> {f, nil} end)
 
     from(s in Supporter,
       where: s.id == ^supporter.id,

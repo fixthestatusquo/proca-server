@@ -51,7 +51,8 @@ defmodule Proca.Stage.SQS do
 
   @impl true
   def handle_batch(_sqs, msgs, %BatchInfo{batch_key: org_id}, _) do
-    with service when not is_nil(service) <- Service.get_one_for_org("sqs", %Org{id: org_id}),
+    with service when not is_nil(service) <-
+           Service.one([name: :sqs, org: %Org{id: org_id}] ++ [:latest]),
          actions <- Enum.map(msgs, fn m -> m.data end) |> Enum.map(&to_message/1) do
       case ExAws.SQS.send_message_batch(service.path, actions)
            |> Service.aws_request(service) do

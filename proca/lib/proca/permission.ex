@@ -31,42 +31,48 @@ defmodule Proca.Permission do
     change_org_settings: 1 <<< 16,
     # sames as change_org_settings, maybe will be split in the future
     change_org_services: 1 <<< 16,
+    # XXX should become manage_partnerships
     manage_campaigns: 1 <<< 17,
     manage_action_pages: 1 <<< 18,
     # XXX this is unused but maybe could be usefull for moderation
-    launch_action_page: 1 <<< 19
+    launch_action_page: 1 <<< 19,
+    change_campaign_settings: 1 <<< 20
   ]
 
-  @admin_bits 0x0F 
+  @admin_bits 0x0F
 
   @spec can?(Auth | User | Staffer | nil, [atom] | atom | number) :: boolean
 
   # XXX change into macros?
   # Auth context: pass to legacy methods
   def can?(%Auth{user: user, staffer: nil}, permission), do: can?(user, permission)
-  def can?(%Auth{user: user, staffer: staffer}, permission), do: can?(%Staffer{staffer | user: user}, permission)
+
+  def can?(%Auth{user: user, staffer: staffer}, permission),
+    do: can?(%Staffer{staffer | user: user}, permission)
 
   # staffer with user set: check both org and user params
-  def can?(%Staffer{perms: org_perms, user: %User{perms: user_perms}}, permission) when is_number(permission) do
+  def can?(%Staffer{perms: org_perms, user: %User{perms: user_perms}}, permission)
+      when is_number(permission) do
     ((org_perms ||| user_perms) &&& permission) > 0
   end
 
   # only staffer given! check it, but raise error if user perms are checked
   def can?(%Staffer{perms: org_perms}, permission) when is_number(permission) do
-    if (@admin_bits &&& permission) == 0 do 
+    if (@admin_bits &&& permission) == 0 do
       (org_perms &&& permission) > 0
-    else 
-      raise ArgumentError, message: "Cannot check user permission when User is not loaded on Staffer"
+    else
+      raise ArgumentError,
+        message: "Cannot check user permission when User is not loaded on Staffer"
     end
   end
 
   # just user
-  def can?(%User{perms: user_perms}, permission) when is_number(permission) do 
+  def can?(%User{perms: user_perms}, permission) when is_number(permission) do
     (user_perms &&& permission) > 0
   end
 
   # atomic permission - retrieve bit value
-  def can?(user_or_staffer, permission) when is_atom(permission) do 
+  def can?(user_or_staffer, permission) when is_atom(permission) do
     case @bits[permission] do
       bit when is_nil(bit) -> raise ArgumentError, message: "No such permission #{permission}"
       bit -> can?(user_or_staffer, bit)
@@ -96,6 +102,8 @@ defmodule Proca.Permission do
     perms ||| permission
   end
 
+  def add(permission) when is_list(permission), do: add(0, permission)
+
   def remove(perms, permission) when is_integer(perms) and is_atom(permission) do
     bit = @bits[permission]
     perms &&& bnot(bit)
@@ -122,4 +130,3 @@ defmodule Proca.Permission do
     |> Enum.map(fn {p, _b} -> p end)
   end
 end
-

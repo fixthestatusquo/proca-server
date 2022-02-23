@@ -26,7 +26,8 @@ defmodule Proca.Service.EmailBackend do
 
   # Template management
   @callback supports_templates?(org :: %Org{}) :: true | false
-  @callback list_templates(org :: %Org{}) :: {:ok, [%EmailTemplate{}]} | {:error, reason :: String.t()}
+  @callback list_templates(org :: %Org{}) ::
+              {:ok, [%EmailTemplate{}]} | {:error, reason :: String.t()}
   @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) ::
               :ok | {:error, reason :: String.t()}
   @callback get_template(org :: %Org{}, ref :: String.t()) ::
@@ -34,11 +35,11 @@ defmodule Proca.Service.EmailBackend do
 
   @type recipient :: %EmailRecipient{}
 
-  @callback put_recipient(email :: %Email{}, recipients :: [recipient]) :: %Email{}
+  @callback put_recipient(email :: %Email{}, recipients :: recipient) :: %Email{}
   @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
-  @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t) :: %Email{}
-  @callback put_custom_id(email :: %Email{}, custom_id :: String.t) :: %Email{}
-  @callback deliver(%Email{}, %Org{}) :: any()
+  @callback put_reply_to(email :: %Email{}, reply_to_email :: String.t()) :: %Email{}
+  @callback put_custom_id(email :: %Email{}, custom_id :: String.t()) :: %Email{}
+  @callback deliver([%Email{}], %Org{}) :: any()
 
   @callback handle_bounce(params :: any()) :: any()
 
@@ -51,7 +52,7 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:supports_templates?, [org])
   end
 
-  def list_templates(org = %Org{template_backend: %Service{name: name}}) do 
+  def list_templates(org = %Org{template_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:list_templates, [org])
   end
@@ -64,26 +65,31 @@ defmodule Proca.Service.EmailBackend do
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
 
-    emails = recipients
-    |> Enum.map(&prepare_fields/1)
-    |> Enum.map(&make_email(backend, &1, org, email_template))
+    emails =
+      recipients
+      |> Enum.map(&prepare_fields/1)
+      |> Enum.map(&make_email(backend, &1, org, email_template))
 
     apply(backend, :deliver, [emails, org])
   end
 
   defp make_email(backend, recipient, org, template) do
     email_from = from(org)
-    if elem(email_from, 1) == nil, do: raise "Org #{org.name} (#{org.id}) failed to send email via #{backend}: No from address."
 
-    e = Email.new()
-    |> Email.from(email_from)
+    if elem(email_from, 1) == nil,
+      do:
+        raise("Org #{org.name} (#{org.id}) failed to send email via #{backend}: No from address.")
 
+    e =
+      Email.new()
+      |> Email.from(email_from)
 
-    e = if elem(e.from, 1) != org.email_from do
-      apply(backend, :put_reply_to, [e, org.email_from])
-    else
-      e
-    end
+    e =
+      if elem(e.from, 1) != org.email_from do
+        apply(backend, :put_reply_to, [e, org.email_from])
+      else
+        e
+      end
 
     e = apply(backend, :put_recipient, [e, recipient])
     e = apply(backend, :put_template, [e, template])
@@ -103,16 +109,15 @@ defmodule Proca.Service.EmailBackend do
   end
 
   def from(org = %Org{email_backend: %Service{org_id: via_org_id}})
-  when via_org_id != nil do
+      when via_org_id != nil do
     via_from(org, Org.one(id: via_org_id))
   end
 
   def via_from(
-    %{title: org_title, email_from: email_from},
-    %{email_from: via_email_from}
-  ) when email_from != nil and via_email_from != nil
-    do
-
+        %{title: org_title, email_from: email_from},
+        %{email_from: via_email_from}
+      )
+      when email_from != nil and via_email_from != nil do
     [_user, domain] = Regex.split(~r/@/, email_from)
     [via_user, via_domain] = Regex.split(~r/@/, via_email_from)
 
@@ -139,4 +144,4 @@ defmodule Proca.Service.EmailBackend do
       %NotDelivered{message: original_exception.message}
     end
   end
- end
+end

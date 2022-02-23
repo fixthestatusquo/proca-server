@@ -64,7 +64,11 @@ defmodule Proca.UsersTest do
 
       assert %{
                email: ["must have the @ sign and no spaces"],
-               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"]
+               password: [
+                 "at least one digit or punctuation character",
+                 "at least one upper case character",
+                 "should be at least 12 character(s)"
+               ]
              } = errors_on(changeset)
     end
 
@@ -154,15 +158,13 @@ defmodule Proca.UsersTest do
     test "validates email uniqueness", %{user: user} do
       %{email: email} = user_fixture()
 
-      {:error, changeset} =
-        Users.apply_user_email(user, valid_user_password(), %{email: email})
+      {:error, changeset} = Users.apply_user_email(user, valid_user_password(), %{email: email})
 
       assert "has already been taken" in errors_on(changeset).email
     end
 
     test "validates current password", %{user: user} do
-      {:error, changeset} =
-        Users.apply_user_email(user, "invalid", %{email: unique_user_email()})
+      {:error, changeset} = Users.apply_user_email(user, "invalid", %{email: unique_user_email()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
@@ -268,7 +270,11 @@ defmodule Proca.UsersTest do
         })
 
       assert %{
-               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"],
+               password: [
+                 "at least one digit or punctuation character",
+                 "at least one upper case character",
+                 "should be at least 12 character(s)"
+               ],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
     end
@@ -477,7 +483,11 @@ defmodule Proca.UsersTest do
         })
 
       assert %{
-               password: ["at least one digit or punctuation character", "at least one upper case character", "should be at least 12 character(s)"],
+               password: [
+                 "at least one digit or punctuation character",
+                 "at least one upper case character",
+                 "should be at least 12 character(s)"
+               ],
                password_confirmation: ["does not match password"]
              } = errors_on(changeset)
     end

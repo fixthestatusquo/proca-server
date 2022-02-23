@@ -1,7 +1,7 @@
 defmodule ProcaWeb.JwtAuthPlugTest do
   use ProcaWeb.ConnCase
 
-  setup do 
+  setup do
     jwt_json = """
     {
       "exp": 1612385939,
@@ -52,9 +52,11 @@ defmodule ProcaWeb.JwtAuthPlugTest do
     }
   end
 
-  def set_require_verified_email(bool) do 
-    Application.put_env(:proca, Proca, 
-      Application.get_env(:proca, Proca) 
+  def set_require_verified_email(bool) do
+    Application.put_env(
+      :proca,
+      Proca,
+      Application.get_env(:proca, Proca)
       |> Keyword.put(:require_verified_email, bool)
     )
   end
@@ -64,14 +66,14 @@ defmodule ProcaWeb.JwtAuthPlugTest do
     assert ProcaWeb.Plugs.JwtAuthPlug.check_email_verified(jwt) == :ok
 
     jwt2 = %JOSE.JWT{
-      fields: update_in(
-      jwt.fields, 
-      ["session", "identity", "verifiable_addresses"],
-      fn [e] -> [%{e | "verified" => false}] end)
+      fields:
+        update_in(
+          jwt.fields,
+          ["session", "identity", "verifiable_addresses"],
+          fn [e] -> [%{e | "verified" => false}] end
+        )
     }
 
     assert ProcaWeb.Plugs.JwtAuthPlug.check_email_verified(jwt2) == :unverified
-
   end
 end
-

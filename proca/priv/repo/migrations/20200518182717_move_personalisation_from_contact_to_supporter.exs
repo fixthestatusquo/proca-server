@@ -30,7 +30,5 @@ defmodule Proca.Repo.Migrations.MovePersonalisationFromContactToSupporter do
       remove :first_name
       remove :name
     end
-    
-
   end
 end

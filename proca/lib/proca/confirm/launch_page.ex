@@ -18,8 +18,12 @@ defmodule Proca.Confirm.LaunchPage do
 
   import Logger
 
-  @spec create(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
-  def create(%ActionPage{id: ap_id, campaign_id: campaign_id}, %Auth{user: user}, message \\ nil) do
+  @spec changeset(ActionPage, Auth, String.t()) :: {:ok, Confirm} | {:error, Ecto.Changeset}
+  def changeset(
+        %ActionPage{id: ap_id, campaign_id: campaign_id},
+        %Auth{user: user},
+        message \\ nil
+      ) do
     # XXX test for campaign manager
     %{
       operation: :launch_page,
@@ -28,7 +32,7 @@ defmodule Proca.Confirm.LaunchPage do
       message: message,
       creator: user
     }
-    |> Confirm.create()
+    |> Confirm.changeset()
   end
 
   defp can_approve?(user_id, campaign) do
@@ -49,7 +53,7 @@ defmodule Proca.Confirm.LaunchPage do
         %Auth{staffer: st}
       ) do
     with camp when not is_nil(camp) <- get(Campaign, campaign_id),
-         ap when not is_nil(ap) <- ActionPage.find(ap_id),
+         ap when not is_nil(ap) <- ActionPage.one(id: ap_id, preload: [:org, :campaign]),
          {:perms, true} <- {:perms, can_approve?(st.user_id, camp)} do
       ActionPage.go_live(ap)
     else
@@ -68,24 +72,25 @@ defmodule Proca.Confirm.LaunchPage do
   @impl true
   def notify_fields(%Confirm{subject_id: campaign_id, object_id: ap_id}) do
     with %Campaign{name: campaign_name, title: campaign_title} <- get(Campaign, campaign_id),
-         %ActionPage{org: %{name: org_name, title: org_title} = org} <- ActionPage.find(ap_id)
-    do
-    %{
-      campaign: %{
-        name: campaign_name,
-        title: campaign_title
-      },
-      org: %{
-        name: org_name,
-        title: org_title
-      } |> Map.merge(email_org_config_fields(org))
-    }
+         %ActionPage{org: %{name: org_name, title: org_title} = org} <-
+           ActionPage.one(id: ap_id, preload: [:org, :campaign]) do
+      %{
+        campaign: %{
+          name: campaign_name,
+          title: campaign_title
+        },
+        org:
+          %{
+            name: org_name,
+            title: org_title
+          }
+          |> Map.merge(email_org_config_fields(org))
+      }
     else
       nil ->
         error("launch_page confirm: Cannot get campaign id #{campaign_id} or page id #{ap_id}")
-      %{}
+        %{}
     end
-
   end
 
   def email_org_config_fields(%Org{config: config}) do
@@ -102,7 +107,4 @@ defmodule Proca.Confirm.LaunchPage do
 
     :maps.filter(fn _k, v -> not is_nil(v) end, data)
   end
-
-  
 end
-

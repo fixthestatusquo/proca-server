@@ -28,15 +28,15 @@ config :mix_systemd,
     # create /etc/foo
     :runtime,
     :logs,
-    :configuration,
+    :configuration
   ],
   env_files: [
     # Read environment vars from the file /etc/foo/environment
-    [:configuration_dir, "/environment"],
+    [:configuration_dir, "/environment"]
   ],
   env_vars: [
     # Tell release to use /run/foo for temp files
-    ["RELEASE_TMP=", :runtime_dir],
+    ["RELEASE_TMP=", :runtime_dir]
   ]
 
 # ## SSL Support
@@ -72,4 +72,3 @@ config :mix_systemd,
 #       force_ssl: [hsts: true]
 #
 # Check `Plug.SSL` for all available options in `force_ssl`.
-

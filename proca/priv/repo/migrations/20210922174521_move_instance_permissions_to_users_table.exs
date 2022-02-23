@@ -2,9 +2,9 @@ defmodule Proca.Repo.Migrations.MoveInstancePermissionsToUsersTable do
   use Ecto.Migration
 
   def up do
-    alter table(:users) do 
+    alter table(:users) do
       add :perms, :integer, null: false, default: 0
-    end 
+    end
 
     execute """
       update users
@@ -19,16 +19,15 @@ defmodule Proca.Repo.Migrations.MoveInstancePermissionsToUsersTable do
     """
   end
 
-  def down do 
+  def down do
     execute """
       update staffers
       SET perms = staffers.perms | users.perms
       FROM users WHERE users.id = staffers.user_id ;
     """
 
-    alter table(:users) do 
+    alter table(:users) do
       remove :perms
     end
-
   end
 end

@@ -11,8 +11,11 @@ defmodule Proca.Repo.Migrations.CreateContactSignatures do
 
     create index(:contact_signatures, [:contact_id])
     create index(:contact_signatures, [:signature_id])
+
     create(
-      unique_index(:contact_signatures, [:contact_id, :signature_id], name: :contact_id_signature_id_unique_index)
+      unique_index(:contact_signatures, [:contact_id, :signature_id],
+        name: :contact_id_signature_id_unique_index
+      )
     )
   end
 end

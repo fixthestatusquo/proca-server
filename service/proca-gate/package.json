@@ -1,10 +1,10 @@
 {
     "name": "proca-gate",
     "description": "Proca action gateway for AWS Lambda",
-    "version": "3.0.3",
+    "version": "3.1.1",
     "private": true,
     "dependencies": {
-        "@proca/cli": "^3.0.3",
+        "@proca/cli": "^3.1.1",
         "@sentry/node": "^6.3.5",
         "aws-sdk": "^2.815.0",
         "bent": "^7.3.12"
@@ -17,7 +17,7 @@
     "scripts": {
         "build": "tsc",
         "watch": "tsc -w --preserveWatchOutput",
-        "prepare": "echo no prepare"
+        "prepack": "true"
     },
     "peerDependencies": {
         "typescript": "^4.2.4"

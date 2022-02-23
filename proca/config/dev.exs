@@ -3,7 +3,7 @@ use Mix.Config
 # Configure your database
 
 case System.get_env("DATABASE_URL") do
-  nil -> 
+  nil ->
     config :proca, Proca.Repo,
       username: "proca",
       password: "proca",
@@ -21,21 +21,19 @@ case System.get_env("DATABASE_URL") do
 end
 
 case System.get_env("AMQP_URL") do
-  nil -> 
-    config :proca, Proca.Pipes,
-      url: "amqp://proca:proca@localhost/proca"
+  nil ->
+    config :proca, Proca.Pipes, url: "amqp://proca:proca@localhost/proca"
 
   amqp_url ->
-    config :proca, Proca.Pipes,
-      url: amqp_url
+    config :proca, Proca.Pipes, url: amqp_url
 end
 
 case System.get_env("ORGANISATION") do
-  nil -> nil
+  nil ->
+    nil
 
   org_name ->
-    config :proca, Proca,
-      org_name: org_name
+    config :proca, Proca, org_name: org_name
 end
 
 # For development, we disable any cache and enable
@@ -96,7 +94,7 @@ config :proca, ProcaWeb.Endpoint,
   ]
 
 # Do not include metadata nor timestamps in development logs
-#config :logger, :console, format: "[$level] $message\n"
+# config :logger, :console, format: "[$level] $message\n"
 # Configures Elixir's Logger
 config :logger,
   backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],

@@ -43,7 +43,8 @@ defmodule Proca.Contact.BasicData do
         phone: d.phone,
         country: a.country,
         postcode: a.postcode,
-        area: a.country  # XXX we can have some logic here to use some other area type
+        # XXX we can have some logic here to use some other area type
+        area: a.country
       })
       |> validate_length(:area, max: 5)
     else

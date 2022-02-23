@@ -22,12 +22,13 @@ defmodule Proca.Contact.ItCiData do
     field :street, :string
     field :street_number, :string
 
-    field :area, :string  # https://en.wikipedia.org/wiki/List_of_postal_codes_in_Italy - get from 1st 2 digits of postcode
+    # https://en.wikipedia.org/wiki/List_of_postal_codes_in_Italy - get from 1st 2 digits of postcode
+    field :area, :string
 
     embeds_one :nationality, Input.Nationality
   end
 
-  def required_document_types() do 
+  def required_document_types() do
     ["driving.licence" | EciDataRules.required_document_types("IT")]
   end
 
@@ -54,6 +55,7 @@ defmodule Proca.Contact.ItCiData do
 
       address ->
         residence_country = get_change(address, :country)
+
         address =
           address
           |> validate_required([:country, :locality, :postcode, :street])
@@ -126,7 +128,7 @@ defimpl Proca.Contact.Data, for: Proca.Contact.ItCiData do
 
     cont =
       [:country, :first_name, :last_name, :birth_date, :postcode]
-      |> Enum.reduce( fn f, s ->
+      |> Enum.reduce(fn f, s ->
         if f == :birth_date and data.birth_date do
           s <> Date.to_string(data.birth_date)
         else
@@ -137,5 +139,3 @@ defimpl Proca.Contact.Data, for: Proca.Contact.ItCiData do
     :crypto.hash(:sha256, seed <> cont)
   end
 end
-
-

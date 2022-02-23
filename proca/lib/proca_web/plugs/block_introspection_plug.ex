@@ -15,5 +15,4 @@ defmodule ProcaWeb.Plugs.BlockIntrospectionPlug do
   def call(conn, _opts) do
     conn
   end
-
 end

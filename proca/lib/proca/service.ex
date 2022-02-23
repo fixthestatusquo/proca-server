@@ -5,9 +5,8 @@ defmodule Proca.Service do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4, order_by: 3, limit: 2]
+  import Ecto.Query
   alias Proca.{Repo, Service, Org}
-  import Logger
 
   schema "services" do
     field :name, ExternalService
@@ -21,8 +20,11 @@ defmodule Proca.Service do
   end
 
   def changeset(service, attrs) do
+    assocs = Map.take(attrs, [:org])
+
     service
     |> cast(attrs, [:name, :host, :user, :password, :path])
+    |> change(assocs)
   end
 
   def build_for_org(attrs, %Org{id: org_id}, service) do
@@ -32,37 +34,19 @@ defmodule Proca.Service do
     |> put_change(:org_id, org_id)
   end
 
-  def all(q, [{:id, id} | kw]), do: where(q, [s], s.id == ^id) |> all(kw)
   def all(q, [{:name, name} | kw]), do: where(q, [s], s.name == ^name) |> all(kw)
   def all(q, [{:org, %Org{id: org_id}} | kw]), do: where(q, [s], s.org_id == ^org_id) |> all(kw)
 
-  def update(srv, [{:org, org} | kw]) do 
-    srv
-    |> put_assoc(:org, org)
-    |> update(kw)
-  end
-
-  # XXX potential problem - org.services might not be sorted from latest updated
-  # XXX inconsistent arg order 
-  def get_one_for_org(name, %Org{services: lst}) when is_list(lst) do
-    case Enum.filter(lst, fn srv -> srv.name == name end) do
-      [s | _] -> s
-      [] -> nil
-    end
-  end
-
-  def get_one_for_org(name, org = %Org{}) do
-    Ecto.assoc(org, :services)
-    |> where([s], s.name == ^name)
+  def all(q, [:latest | kw]) do
+    q
     |> order_by([s], desc: s.updated_at)
     |> limit(1)
-    |> Repo.one()
+    |> all(kw)
   end
-
 
   # AWS helpers. 
   def aws_request(req, name, org = %Org{}) do
-    case get_one_for_org(name, org) do
+    case one(name: name, org: org) do
       srv = %Service{} -> aws_request(req, srv)
       x when is_nil(x) -> {:error, {:no_service, name}}
     end
@@ -94,11 +78,11 @@ defmodule Proca.Service do
         json_request_read_body(hdrs, ref)
 
       {:ok, code, _hdrs, _ref} ->
-        {:ok, code} 
+        {:ok, code}
 
       {:error, reason} ->
         {:error, reason}
-     end
+    end
   end
 
   defp json_request_read_body(hdrs, ref) do
@@ -112,6 +96,7 @@ defmodule Proca.Service do
         else
           x -> x
         end
+
       ct ->
         case :hackney.body(ref) do
           {:ok, raw} -> {:ok, 200, raw}
@@ -140,15 +125,15 @@ defmodule Proca.Service do
   end
 
   defp json_request_opts(req, [{:auth, :basic} | rest], srv = %{user: u, password: p})
-  when is_bitstring(u) and is_bitstring(p)
-    do
+       when is_bitstring(u) and is_bitstring(p) do
     auth = "#{u}:#{p}" |> Base.encode64()
 
     %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 
-  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd}) when is_bitstring(pwd) do
+  defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd})
+       when is_bitstring(pwd) do
     %{req | headers: [Authorization: pwd]}
     |> json_request_opts(rest, srv)
   end
@@ -157,12 +142,13 @@ defmodule Proca.Service do
     json_request_opts(req, rest, srv)
   end
 
-  defp json_request_opts(req, [{:form, form} | rest], srv) do 
-    %{req | 
-      method: :post, 
-      body: {:form, form}, 
-      headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
-      }
+  defp json_request_opts(req, [{:form, form} | rest], srv) do
+    %{
+      req
+      | method: :post,
+        body: {:form, form},
+        headers: Keyword.put(req.headers, :"Content-Type", "application/x-www-form-urlencoded")
+    }
     |> json_request_opts(rest, srv)
   end
-   end
+end

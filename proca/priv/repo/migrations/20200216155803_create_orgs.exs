@@ -8,6 +8,5 @@ defmodule Proca.Repo.Migrations.CreateOrgs do
 
       timestamps()
     end
-
   end
 end

@@ -62,51 +62,45 @@ defmodule Proca.Supporter.Privacy do
   @spec consents(%ActionPage{}, %Privacy{}) :: [%Consent{}]
   def consents(action_page = %ActionPage{}, privacy = %Privacy{}) when not is_nil(action_page) do
     action_page = Proca.Repo.preload(action_page, [:org, campaign: :org])
-    widget_delivery = action_page.delivery
 
-    # lead org delivers, if widget org doesn't, or if it overrides it
+    is_split = action_page.campaign.org_id != action_page.org_id
+
+    # when not splitting, collector is processor, also when it delivers
+    widget_delivery = not is_split or action_page.delivery
+
     lead_delivery = not widget_delivery or action_page.campaign.force_delivery
-
-    is_lead = action_page.campaign.org_id != action_page.org_id 
 
     widget_communication = privacy.opt_in
     lead_communication = privacy.lead_opt_in
 
-    widget_org = cond do 
-      widget_delivery or widget_communication ->
-        [
-          %Consent{
-            org: action_page.org,
-            communication_consent: widget_communication,
-            communication_scopes: @default_communication_scopes,
-            delivery_consent: widget_delivery
-          }
-        ]
-      true -> []
-    end
+    collector_consent = %Consent{
+      org: action_page.org,
+      communication_consent: widget_communication,
+      communication_scopes: @default_communication_scopes,
+      delivery_consent: widget_delivery
+    }
 
-    lead_org = cond do 
-      is_lead and (lead_delivery or lead_communication) and action_page.live ->
-        [
-          %Consent{
-            org: action_page.campaign.org,
-            communication_consent: lead_communication,
-            communication_scopes: @default_communication_scopes,
-            delivery_consent: lead_delivery
-          }
-        ]
-      true -> []
-    end
+    lead_consent = %Consent{
+      org: action_page.campaign.org,
+      communication_consent: lead_communication,
+      communication_scopes: @default_communication_scopes,
+      delivery_consent: lead_delivery
+    }
 
-    widget_org ++ lead_org
+    if action_page.live do
+      [collector_consent, lead_consent]
+    else
+      [collector_consent]
+    end
+    |> Enum.filter(fn %{delivery_consent: dc, communication_consent: cc} -> dc or cc end)
   end
 
   def cleartext_fields(%ActionPage{org: %Org{high_security: true}}) do
     [:area]
   end
 
-  def cleartext_fields(_) do 
-    [:email, :first_name, :area] 
+  def cleartext_fields(_) do
+    [:email, :first_name, :area]
   end
 
   @doc "Which supporter fields are cleared after processing"
@@ -115,12 +109,15 @@ defmodule Proca.Supporter.Privacy do
   end
 
   def transient_supporter_fields(_) do
-    [:email] 
+    [:email]
   end
 
-  def transient_action_fields(%Action{action_type: action_type}, %ActionPage{campaign: %Campaign{transient_actions: afs}}) do 
+  def transient_action_fields(%Action{action_type: action_type}, %ActionPage{
+        campaign: %Campaign{transient_actions: afs}
+      }) do
     x = action_type <> ":"
-    afs 
+
+    afs
     |> Enum.filter(fn af -> String.starts_with?(af, x) end)
     |> Enum.map(fn af -> af |> String.split(":") |> Enum.at(1) end)
   end

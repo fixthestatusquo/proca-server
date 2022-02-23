@@ -11,9 +11,7 @@ defmodule Proca.Repo.Migrations.CreateContacts do
       add :encrypted, :text
       add :public_key_id, references(:public_keys, on_delete: :nothing)
 
-
       timestamps()
     end
-
   end
 end

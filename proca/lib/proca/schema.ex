@@ -1,4 +1,4 @@
-defmodule Proca.Schema do 
+defmodule Proca.Schema do
   @moduledoc """
   Contains helpers for writing Proca Schemas.
   use Proca.Schema, module: Proca.MyRecordModule
@@ -11,15 +11,18 @@ defmodule Proca.Schema do
   ```
 
   After the criteria run out, list of records is returned. If last criteria is [one: true] then Repo.one() is called.
-  
+
   - `MyRecordModule.one(criteria_keyword_list)` calls `all(criteria_keyword_list ++ [one: true])`
   """
 
-  defmacro __using__(opts) do 
+  defmacro __using__(opts) do
     schema_mod = opts[:module]
 
-    quote do 
+    quote do
       alias Proca.Repo
+
+      def defaults(Proca.ActionPage), do: []
+      def defaults(_), do: []
 
       def one(kw) when is_list(kw), do: all(kw ++ [one: true])
       def one!(kw) when is_list(kw), do: all(kw ++ [one!: true])
@@ -28,19 +31,30 @@ defmodule Proca.Schema do
         import Ecto.Query, only: [from: 1]
         all(from(a in unquote(schema_mod)), kw)
       end
+
       def all(query, []), do: Repo.all(query)
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
-      def all(query, [{:preload, assocs} | kw]) do
+
+      def all(query, [{:id, id} | kw]) when is_number(id) do
+        import Ecto.Query, only: [where: 3]
+        where(query, [a], a.id == ^id) |> all(kw)
+      end
+
+      def all(query, [{:preload, assocs} | kw]) when is_list(assocs) do
         import Ecto.Query, only: [preload: 3]
         preload(query, [a], ^assocs) |> all(kw)
       end
 
-      def create(kw) when is_list(kw), do: update(Ecto.Changeset.change(struct!(unquote(schema_mod))), kw)
-      def create(chset = %Ecto.Changeset{}, []), do: update(chset, [])
-      def create(chset = %Ecto.Changeset{}, kw) when is_list(kw), do: update(chset, kw)
+      def all(query, [{:order_by, order} | kw]) when is_list(order) do
+        import Ecto.Query, only: [order_by: 3]
+        order_by(query, [a], ^order) |> all(kw)
+      end
 
-      def update(chset = %Ecto.Changeset{}, []), do: Repo.insert_or_update(chset)
+      def all(query, [{:limit, limit} | kw]) when is_number(limit) do
+        import Ecto.Query, only: [limit: 3]
+        limit(query, [a], ^limit) |> all(kw)
+      end
     end
   end
 end

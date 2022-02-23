@@ -15,7 +15,6 @@ defmodule Proca.Repo.Migrations.ChangeNamesToCitext do
     alter table(:action_pages) do
       modify :name, :citext, null: false
     end
-
   end
 
   def down do

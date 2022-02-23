@@ -18,7 +18,7 @@ defmodule Proca.Stage.Support do
       where: a.id in ^action_ids,
       preload: [
         [supporter: [contacts: [:public_key, :sign_key, :org]]],
-        :action_page,
+        [action_page: :org],
         :campaign,
         :source
       ]
@@ -27,27 +27,27 @@ defmodule Proca.Stage.Support do
     |> Enum.map(fn a -> action_data(a, stage, org_id) end)
   end
 
-  def action_data(action, stage \\ :deliver, org_id \\ nil) do 
-
+  def action_data(action, stage \\ :deliver, org_id \\ nil) do
     org_id = org_id || action.action_page.org_id
 
-    contact =
-      Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
+    contact = Enum.find(action.supporter.contacts, fn c -> c.org_id == org_id end)
 
-    mod = case contact.org.action_schema_version do 
-      1 -> Proca.Stage.MessageV1
-      2 -> Proca.Stage.MessageV2 
-    end
+    mod =
+      case contact.org.action_schema_version do
+        1 -> Proca.Stage.MessageV1
+        2 -> Proca.Stage.MessageV2
+      end
+
     apply(mod, :action_data, [action, stage, org_id])
   end
 
-  def ignore(message = %Broadway.Message{}, reason \\ "ignored") do 
+  def ignore(message = %Broadway.Message{}, reason \\ "ignored") do
     message
     |> Message.configure_ack(on_failure: :ack)
     |> Message.failed(reason)
   end
 
-  def to_iso8601(naivedatetime) do 
+  def to_iso8601(naivedatetime) do
     naivedatetime
     |> DateTime.from_naive!("Etc/UTC")
     |> DateTime.to_iso8601()
@@ -56,25 +56,42 @@ defmodule Proca.Stage.Support do
   defp link_verb(:confirm), do: "accept"
   defp link_verb(:reject), do: "reject"
 
-  def supporter_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}, op) do 
+  def supporter_link(%Action{id: action_id, supporter: %{fingerprint: fpr}}, op) do
     ref = Supporter.base_encode(fpr)
 
-    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, link_verb(op), ref)
+    ProcaWeb.Router.Helpers.confirm_url(
+      ProcaWeb.Endpoint,
+      :supporter,
+      action_id,
+      link_verb(op),
+      ref
+    )
   end
 
-  def supporter_link(action_id, contact_ref, op) when is_integer(action_id) and is_bitstring(contact_ref) do 
-    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :supporter, action_id, link_verb(op), contact_ref)
+  def supporter_link(action_id, contact_ref, op)
+      when is_integer(action_id) and is_bitstring(contact_ref) do
+    ProcaWeb.Router.Helpers.confirm_url(
+      ProcaWeb.Endpoint,
+      :supporter,
+      action_id,
+      link_verb(op),
+      contact_ref
+    )
   end
 
-  def confirm_link(%Confirm{code: code, email: email}, op) when is_bitstring(code) and is_bitstring(email) do 
-    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code, email: email)
+  def confirm_link(%Confirm{code: code, email: email}, op)
+      when is_bitstring(code) and is_bitstring(email) do
+    ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code,
+      email: email
+    )
   end
 
-  def confirm_link(%Confirm{code: code, object_id: id}, op) when is_bitstring(code) and is_number(id) do 
+  def confirm_link(%Confirm{code: code, object_id: id}, op)
+      when is_bitstring(code) and is_number(id) do
     ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code, id: id)
   end
 
-  def confirm_link(%Confirm{code: code}, op) when is_bitstring(code) do 
+  def confirm_link(%Confirm{code: code}, op) when is_bitstring(code) do
     ProcaWeb.Router.Helpers.confirm_url(ProcaWeb.Endpoint, :confirm, link_verb(op), code)
   end
 
@@ -97,16 +114,18 @@ defmodule Proca.Stage.Support do
   end
 
   defp flatten_keys_entry({k, other}, nil_to, path) do
-    full_key = [k | path]
-    |> Enum.map(&ensure_string/1)
-    |> Enum.reverse()
-    |> Enum.join("_")
-    |> ProperCase.camel_case()
+    full_key =
+      [k | path]
+      |> Enum.map(&ensure_string/1)
+      |> Enum.reverse()
+      |> Enum.join("_")
+      |> ProperCase.camel_case()
 
-    value = case other do
-              nil -> nil_to
-              x -> x
-            end
+    value =
+      case other do
+        nil -> nil_to
+        x -> x
+      end
 
     {full_key, value}
   end
@@ -123,7 +142,7 @@ defmodule Proca.Stage.Support do
       {ProperCase.camel_case(key), camel_case_keys(val)}
     end)
     |> Map.new()
-     end
+  end
 
   def camel_case_keys(other), do: other
 end

@@ -71,8 +71,11 @@ type PrivacyV1 = {
 }
 
 type PrivacyV2 = {
-  optIn: boolean,
-  givenAt: string
+  withConsent: boolean;
+  optIn?: boolean;
+  givenAt?: string;
+  emailStatus: null | 'double_opt_in' | 'bounce' | 'blocked' | 'spam' | 'unsub';
+  emailStatusChanged: null | string
 }
 
 export type ActionMessage = ActionMessageV1 | ActionMessageV2;
@@ -151,8 +154,11 @@ export const actionMessageV1to2 = (a1 : ActionMessageV1) : ActionMessageV2 => {
     personalInfo: personalInfo,
     tracking: a1.tracking,
     privacy: a1.privacy && {
+      withConsent: true,
       optIn: a1.privacy.communication,
-      givenAt: a1.privacy.givenAt
+      givenAt: a1.privacy.givenAt,
+      emailStatus: null,
+      emailStatusChanged: null
     }
   }
   return a2
@@ -198,8 +204,11 @@ export const actionToActionMessage = (
     campaign: campaign,
     tracking: action.tracking,
     privacy: action.privacy && {
+      withConsent: true,
       optIn: action.privacy.optIn,
-      givenAt: action.privacy.givenAt 
+      givenAt: action.privacy.givenAt,
+      emailStatus: null,
+      emailStatusChanged: null
     },
     stage: "deliver"
   } 
