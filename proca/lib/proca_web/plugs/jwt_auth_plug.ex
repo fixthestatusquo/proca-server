@@ -18,8 +18,11 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Users.User
   alias Proca.Server.Jwks
   import ProcaWeb.Plugs.Helper
+  import Logger
 
-  def init(opts), do: opts
+  def init(opts) do
+    opts
+  end
 
   def call(conn, opts) do
     conn
@@ -32,17 +35,19 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   Return the current user context based on the authorization header
   """
   def jwt_auth(conn, opts) do
+    jwt_opts = Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwt]
+
     with token when not is_nil(token) <- get_token(conn, opts[:param]),
          {:ok, key} <- get_key(token),
          {:ok, claims} <- Joken.verify(token, key),
-         email <- extract_field(claims, opts[:email_path] || ["email"]),
-         external_id <- extract_field(claims, opts[:external_id_path] || ["sub"]),
+         email <- extract_field(claims, jwt_opts[:email_path] || ["email"]),
+         external_id <- extract_field(claims, jwt_opts[:external_id_path] || ["sub"]),
          :ok <- if(is_nil(email), do: :invalid, else: :ok),
          :ok <- check_expiry(claims),
          :ok <-
            check_email_verified(
              claims,
-             opts[:email_verified_path] || ["user_metadata", "email_verified"]
+             jwt_opts[:email_verified_path] || ["user_metadata", "email_verified"]
            ) do
       conn
       |> get_or_create_user(email, external_id)

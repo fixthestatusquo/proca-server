@@ -36,10 +36,6 @@ case System.get_env("ORGANISATION") do
     config :proca, Proca, org_name: org_name
 end
 
-config :supabase,
-  base_url: System.get_env("SUPABASE_URL"),
-  api_key: System.get_env("SUPABASE_KEY")
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

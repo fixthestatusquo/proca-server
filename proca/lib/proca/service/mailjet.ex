@@ -119,9 +119,6 @@ defmodule Proca.Service.Mailjet do
            err -> {:error, inspect(err)}
          end)}
 
-      {:error, {_code, error_list}} when is_list(error_list) ->
-        raise EmailBackend.NotDelivered.exception(error_list)
-
       {:error, reason} ->
         error("Dropping email batch! #{inspect(reason)} - ignoring this batch!")
         :ok
