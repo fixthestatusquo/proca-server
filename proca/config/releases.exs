@@ -25,15 +25,25 @@ config :proca, Proca.Pipes,
 sso_home_url = System.get_env("SSO_HOME_URL")
 local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
 
+split_env = fn var, sep, deflt \\ nil ->
+  case System.get_env(var, deflt) do
+    nil -> nil
+    val when is_bitstring(val) -> String.split(val, sep)
+  end
+end
+
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: local_auth_enable],
   sso: [
     enabled: not is_nil(sso_home_url),
     home_url: sso_home_url,
-    jwt_secret: System.get_env("JWT_SECRET")
+    jwt_secret: System.get_env("JWT_SECRET"),
+    jwks_url: System.get_env("JWKS_URL"),
+    jwt: [
+      email_path: split_env("JWT_EMAIL", ~r/[. ]/),
+      email_verified_path: split_env("JWT_EMAIL_VERIFIED", ~r/[. ]/)
+    ]
   ]
-
-config :proca, Proca.Server.Jwks, url: System.get_env("JWKS_URL")
 
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
