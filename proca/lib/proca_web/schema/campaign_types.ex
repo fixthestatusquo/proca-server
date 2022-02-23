@@ -78,6 +78,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.ActionQuery.list_by_action_type/3)
     end
 
+    field :targets, list_of(:target) do
+      resolve(&Resolvers.Campaign.targets/3)
+    end
+
     resolve_type(fn
       %{org_id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
         :private_campaign
@@ -109,9 +113,8 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       resolve(&Resolvers.Campaign.partnerships/3)
     end
 
-    field :targets, list_of(:target) do
-      resolve(&Resolvers.Campaign.targets/3)
-    end
+    @desc "MTT configuration"
+    field :mtt, :campaign_mtt, do: load_assoc()
   end
 
   # Partnership
@@ -142,6 +145,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     """
     field :upsert_campaign, type: non_null(:campaign) do
       load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
       allow([:manage_campaigns])
 
       @desc "Org name"
@@ -158,7 +162,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
       arg(:input, non_null(:campaign_input))
 
-      load(:campaign, by: [:id, :name, :external_id])
+      load(:campaign, by: [:id, :name, :external_id], preload: [:mtt])
       determine_auth(for: :campaign)
       allow([:manage_campaigns, :change_campaign_settings])
 
@@ -210,6 +214,23 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Action pages of this campaign"
     field(:action_pages, list_of(non_null(:action_page_input)))
+
+    @desc "MTT configuration"
+    field(:mtt, :campaign_mtt_input)
+  end
+
+  object :campaign_mtt do
+    field :start_at, non_null(:datetime)
+    field :end_at, non_null(:datetime)
+    field :message_template, :string
+    field :test_email, :string
+  end
+
+  input_object :campaign_mtt_input do
+    field :start_at, :datetime
+    field :end_at, :datetime
+    field :message_template, :string
+    field :test_email, :string
   end
 
   # public counters

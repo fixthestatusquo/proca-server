@@ -63,7 +63,8 @@ defmodule ProcaWeb.Resolvers.Org do
         :contact_schema,
         :supporter_confirm,
         :supporter_confirm_template,
-        :high_security
+        :high_security,
+        :doi_thank_you
       ])
     }
   end
@@ -230,6 +231,7 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
+  # XXX fix error handling
   def sample_email(%{action_id: id}, email) do
     with a when not is_nil(a) <-
            Repo.one(
@@ -240,7 +242,9 @@ defmodule ProcaWeb.Resolvers.Org do
            ),
          ad <- Proca.Stage.Support.action_data(a),
          recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
-         %{thank_you_template_ref: tr} <- a.action_page,
+         %{thank_you_template: tm} <- a.action_page,
+         {:ok, tr} <-
+           Proca.Service.EmailTemplateDirectory.ref_by_name_reload(a.action_page.org, tm),
          tmpl <- %Proca.Service.EmailTemplate{ref: tr} do
       Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
     else

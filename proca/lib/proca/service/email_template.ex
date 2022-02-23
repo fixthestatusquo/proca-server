@@ -21,7 +21,7 @@ defmodule Proca.Service.EmailTemplate do
     Changeset.validate_change(changeset, field, fn f, template ->
       org =
         case Changeset.apply_changes(changeset) do
-          %ActionPage{org: %Org{}} = o -> o
+          %ActionPage{org: %Org{} = o} -> o
           %ActionPage{org_id: org_id} -> Org.one(id: org_id)
           %Org{} = o -> o
         end
@@ -32,5 +32,9 @@ defmodule Proca.Service.EmailTemplate do
         :not_found -> [{f, "Template not found"}]
       end
     end)
+  end
+
+  def html_from_text(text) do
+    String.replace(text, ~r/\n/, "<br/>")
   end
 end

@@ -1,6 +1,6 @@
 {
   "name": "@proca/cli",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "cli[ent] for Proca",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
@@ -25,8 +25,8 @@
     "README.md"
   ],
   "dependencies": {
-    "@proca/api": "^3.1.1",
-    "@proca/crypto": "^3.1.1",
+    "@proca/api": "^3.2.0",
+    "@proca/crypto": "^3.2.0",
     "@types/node-mailjet": "^3.3.4",
     "amqplib": "^0.7.0",
     "backoff": "^2.5.0",

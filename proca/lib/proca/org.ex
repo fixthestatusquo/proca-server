@@ -30,6 +30,8 @@ defmodule Proca.Org do
     # XXX also maybe move to campaign level
     field :high_security, :boolean, default: false
 
+    field :doi_thank_you, :boolean, default: false
+
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
@@ -68,11 +70,13 @@ defmodule Proca.Org do
       :supporter_confirm_template,
       :config,
       :high_security,
+      :doi_thank_you,
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
       :system_sqs_deliver,
-      :event_processing
+      :event_processing,
+      :action_schema_version
     ])
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
@@ -94,6 +98,12 @@ defmodule Proca.Org do
         |> put_change(:email_backend_id, id)
         |> put_change(:template_backend_id, id)
     end
+  end
+
+  def cast_email_backend(chset, _org, %{email_backend: %Proca.Service{id: id}}) do
+    chset
+    |> put_change(:email_backend_id, id)
+    |> put_change(:template_backend_id, id)
   end
 
   def cast_email_backend(chset, _org, %{email_backend: nil}) do

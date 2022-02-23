@@ -38,9 +38,7 @@ defmodule Proca.UsersFixtures do
     case mailbox(email) do
       [
         %{
-          provider_options: %{
-            fields: fields
-          }
+          assigns: fields
         }
       ] ->
         fields["confirmLink"]

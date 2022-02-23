@@ -15,7 +15,7 @@ defmodule ProcaWeb.Resolvers.Action do
   alias ProcaWeb.Helper
 
   defp get_action_page(%{action_page_id: id}) do
-    case ActionPage.one(id: id, preload: [:org, [campaign: :org]]) do
+    case ActionPage.one(id: id, preload: [:org, [campaign: [:org, :mtt]]]) do
       nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
       action_page -> {:ok, action_page}
     end

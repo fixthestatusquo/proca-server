@@ -58,6 +58,12 @@ config :proca, ProcaWeb.Endpoint,
   ],
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true)
 
+# To enable captcha for dev + run with ENABLE_ECI=1
+# config :proca, ProcaWeb.Resolvers.Captcha,
+#   hcaptcha_key: System.get_env("HCAPTCHA_KEY"),
+#   captcha_service: System.get_env("CAPTCHA_SERVICE", "procaptcha")
+# config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

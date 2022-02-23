@@ -56,7 +56,6 @@ defmodule Proca.Stage.Event do
 
   def put_data(data, :supporter_updated, %Supporter{} = supporter, opts) do
     alias Proca.Stage.MessageV2
-    alias Proca.Action
 
     # Find Supporters contact data belonging to that org_id
     org_id = opts[:org_id]

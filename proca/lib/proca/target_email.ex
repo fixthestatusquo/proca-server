@@ -18,7 +18,7 @@ defmodule Proca.TargetEmail do
   @doc false
   def changeset(target_email, attrs) do
     target_email
-    |> cast(attrs, [:email, :target_id])
+    |> cast(attrs, [:email, :email_status, :target_id])
     |> validate_required([:email, :target_id])
   end
 

@@ -27,8 +27,11 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Only download opted in contacts and actions (default true)"
       arg(:only_opt_in, :boolean)
 
-      @desc "Only download opted in contacts and actions (default true)"
-      arg(:onlyOptIn, :boolean)
+      @desc "Only download double opted in contacts"
+      arg(:only_double_opt_in, :boolean)
+
+      @desc "Also include testing actions"
+      arg(:include_testing, :boolean)
 
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
@@ -175,6 +178,12 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Donation payload"
     field :donation, :donation_action_input
+
+    @desc "MTT payload"
+    field :mtt, :mtt_action_input
+
+    @desc "Test mode"
+    field :testing, :boolean
   end
 
   object :action do
@@ -234,6 +243,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
   object :consent do
     field :opt_in, non_null(:boolean)
     field :given_at, non_null(:naive_datetime)
+    field :email_status, non_null(:email_status)
+    field :email_status_changed, :naive_datetime
   end
 
   @desc "Tracking codes"
@@ -272,6 +283,17 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :currency, :string
     field :frequency_unit, :donation_frequency_unit
     field :payload, non_null(:json)
+  end
+
+  input_object :mtt_action_input do
+    @desc "Subject line"
+    field :subject, non_null(:string)
+
+    @desc "Body"
+    field :body, non_null(:string)
+
+    @desc "Target ids"
+    field :targets, non_null(list_of(non_null(:string)))
   end
 
   object :donation do

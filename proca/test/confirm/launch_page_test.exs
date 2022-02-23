@@ -58,7 +58,7 @@ defmodule Proca.Confirm.LaunchPageTest do
 
     owner_mbox = Proca.TestEmailBackend.mailbox(red_user.email)
 
-    [%{provider_options: %{fields: all_perso_fields}}] = owner_mbox
+    [%{assigns: all_perso_fields}] = owner_mbox
 
     pf = all_perso_fields
 

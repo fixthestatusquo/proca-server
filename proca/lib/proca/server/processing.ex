@@ -156,7 +156,7 @@ defmodule Proca.Server.Processing do
     # do the moderation (via email?) XXX need the thank_you handler
     # go strainght to delivered
     {
-      change_status(action, (live && :delivered) || :testing, :accepted),
+      change_status(action, :delivered, :accepted),
       :action,
       :deliver
     }
@@ -168,7 +168,7 @@ defmodule Proca.Server.Processing do
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
-        %ActionPage{org: %{supporter_confirm: opt_in}, live: live}
+        %ActionPage{org: %{supporter_confirm: opt_in}}
       ) do
     # we should handle confirmation if required, but before it's implemented let's accept supporter
     # and instantly go to delivery
@@ -181,7 +181,7 @@ defmodule Proca.Server.Processing do
       }
     else
       {
-        change_status(action, (live && :delivered) || :testing, :accepted),
+        change_status(action, :delivered, :accepted),
         :action,
         :deliver
       }
@@ -195,10 +195,6 @@ defmodule Proca.Server.Processing do
         _ap
       ) do
     # Action already delivered
-    :ok
-  end
-
-  def transition(%{processing_status: :test}, _ap) do
     :ok
   end
 
@@ -280,7 +276,11 @@ defmodule Proca.Server.Processing do
 
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
-    action = Repo.preload(action, action_page: [:org, :campaign], supporter: [contacts: :org])
+    action =
+      Repo.preload(action,
+        action_page: [:org, :campaign],
+        supporter: [:action_page, [contacts: :org]]
+      )
 
     case transition(action, action.action_page) do
       {state_change, thing, stage} ->
@@ -306,12 +306,10 @@ defmodule Proca.Server.Processing do
     tx = Ecto.Multi.new()
 
     tx =
-      Ecto.Multi.update_all(
-        tx,
-        :supporter,
-        Supporter.clear_transient_fields_query(action.supporter),
-        []
-      )
+      case Supporter.clear_transient_fields_query(action.supporter) do
+        :noop -> tx
+        query -> Ecto.Multi.update_all(tx, :supporter, query, [])
+      end
 
     tx =
       case Action.clear_transient_fields_query(action) do

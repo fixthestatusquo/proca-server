@@ -95,23 +95,34 @@ defmodule Proca.Supporter.Privacy do
     |> Enum.filter(fn %{delivery_consent: dc, communication_consent: cc} -> dc or cc end)
   end
 
-  def cleartext_fields(%ActionPage{org: %Org{high_security: true}}) do
-    [:area]
-  end
+  @doc "Which contact fields are stored in cleartext supporter record"
+  def cleartext_fields(%ActionPage{} = ap) do
+    ap = Proca.Repo.preload(ap, campaign: :mtt)
 
-  def cleartext_fields(_) do
-    [:email, :first_name, :area]
+    case ap do
+      %ActionPage{org: %Org{high_security: true}} ->
+        [:area]
+
+      %ActionPage{campaign: %{mtt: %Proca.MTT{}}} ->
+        [:email, :first_name, :last_name, :address, :area]
+
+      _ ->
+        [:email, :first_name, :area]
+    end
   end
 
   @doc "Which supporter fields are cleared after processing"
-  def transient_supporter_fields(%ActionPage{org: %Org{high_security: true}}) do
-    [:email, :first_name]
+  def transient_supporter_fields(%{} = ap) do
+    ap = Proca.Repo.preload(ap, campaign: :mtt)
+
+    case ap do
+      %ActionPage{org: %Org{high_security: true}} -> [:email, :first_name, :last_name, :address]
+      %ActionPage{campaign: %{mtt: %Proca.MTT{}}} -> []
+      _ -> [:email, :last_name, :address]
+    end
   end
 
-  def transient_supporter_fields(_) do
-    [:email]
-  end
-
+  @doc "List of custom fields keys, which are sensitive and should be cleared after delivery"
   def transient_action_fields(%Action{action_type: action_type}, %ActionPage{
         campaign: %Campaign{transient_actions: afs}
       }) do

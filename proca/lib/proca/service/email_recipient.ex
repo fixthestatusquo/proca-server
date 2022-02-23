@@ -2,18 +2,18 @@ defmodule Proca.Service.EmailRecipient do
   @moduledoc """
   Represents an email recipient, for email templates that can be persnonalized.
   """
-  alias Proca.Service.EmailRecipient
+  alias Proca.Service.{EmailRecipient, EmailBackend}
   import Proca.Repo, only: [preload: 2]
 
   defstruct first_name: "", email: "", ref: "", fields: %{}, custom_id: ""
 
   def from_action_data(action_data) do
-    action_id = get_in(action_data, ["action", "id"])
+    action_id = get_in(action_data, ["actionId"])
 
     rcpt = %EmailRecipient{
       first_name: get_in(action_data, ["contact", "firstName"]),
       email: get_in(action_data, ["contact", "email"]),
-      custom_id: "action:#{action_id}",
+      custom_id: EmailBackend.format_custom_id(:action, action_id),
       ref:
         case action_data do
           %{"schema" => "proca:action:1"} -> get_in(action_data, ["contact", "ref"])
@@ -32,6 +32,10 @@ defmodule Proca.Service.EmailRecipient do
 
     fields =
       Map.merge(fields, %{
+        org: %{
+          name: get_in(action_data, ["org", "name"]),
+          title: get_in(action_data, ["org", "title"])
+        },
         campaign: %{
           name: get_in(action_data, ["campaign", "name"]),
           title: get_in(action_data, ["campaign", "title"])

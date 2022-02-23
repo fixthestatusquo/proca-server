@@ -36,7 +36,12 @@ defmodule Proca.Schema do
       def all(query, [{:one, true}]), do: Repo.one(query)
       def all(query, [{:one!, true}]), do: Repo.one!(query)
 
-      def all(query, [{:id, id} | kw]) when is_number(id) do
+      def all(query, [{:id, id} | kw]) when is_list(id) do
+        import Ecto.Query, only: [where: 3]
+        where(query, [a], a.id in ^id) |> all(kw)
+      end
+
+      def all(query, [{:id, id} | kw]) when is_number(id) or is_bitstring(id) do
         import Ecto.Query, only: [where: 3]
         where(query, [a], a.id == ^id) |> all(kw)
       end
