@@ -25,6 +25,7 @@ config :cors_plug,
 
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: true],
+  require_verified_email: false,
   sso: [
     enabled: false,
     home_url: "https://account.fixthestatusquo.org",
@@ -51,7 +52,6 @@ config :proca, Proca,
   stats_sync_interval: 0,
   # XXX move to Proca.Server.Stats
   process_old_interval: 0,
-  require_verified_email: false,
   start_daemon_servers: true,
   mtt_cycle_time: 3
 

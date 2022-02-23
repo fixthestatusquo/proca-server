@@ -181,6 +181,6 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   end
 
   defp need_verified_email? do
-    Application.get_env(:proca, Proca)[:require_verified_email]
+    Application.get_env(:proca, ProcaWeb.UserAuth)[:require_verified_email]
   end
 end
