@@ -29,7 +29,7 @@ config :proca, ProcaWeb.UserAuth,
   sso: [
     enabled: false,
     home_url: "https://account.fixthestatusquo.org",
-    jwt_secret: System.get_env("JWT_SECRET"),
+    jwt_secret: nil,
     jwks_url: nil,
     jwt: [
       email_path: nil,

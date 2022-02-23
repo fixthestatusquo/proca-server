@@ -29,7 +29,7 @@ defmodule ProcaWeb.Router do
     plug CORSPlug
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
     plug ProcaWeb.Plugs.BasicAuthPlug
-    plug ProcaWeb.Plugs.JwtAuthPlug, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwt]
+    plug ProcaWeb.Plugs.JwtAuthPlug
   end
 
   pipeline :api_without_auth do
