@@ -143,10 +143,11 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       @desc """
       Action Page id
       """
-      arg(:id, non_null(:integer))
+      arg(:id, :integer)
+      arg(:name, :string)
       arg(:input, non_null(:action_page_input))
 
-      load(:action_page, by: [:id])
+      load(:action_page, by: [:id, :name])
       determine_auth(for: :action_page)
       allow([:manage_action_pages])
 
@@ -280,6 +281,8 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     JSON string containing Action Page config
     """
     field :config, :json
+
+    field :delivery, :boolean
   end
 
   input_object :select_action_page do
