@@ -4,8 +4,10 @@ defmodule Proca.Users do
   """
 
   import Ecto.Query, warn: false
+  import Ecto.Changeset
   alias Proca.Repo
   alias Proca.Users.{User, UserToken, UserNotifier}
+  import Proca.Validation, only: [is_non_unique_error: 1]
 
   ## Database getters
 
@@ -28,7 +30,18 @@ defmodule Proca.Users do
   def get_user_from_sso(email, nil), do: get_user_by_email(email)
 
   def get_user_from_sso(email, external_id) do
-    User.one(external_id: external_id) || get_user_by_email(email)
+    user = User.one(external_id: external_id) || get_user_by_email(email)
+
+    case user do
+      nil ->
+        nil
+
+      u = %User{external_id: x} when x != external_id ->
+        Repo.update!(change(u, external_id: external_id))
+
+      u = %User{} ->
+        u
+    end
   end
 
   @doc """
@@ -96,8 +109,7 @@ defmodule Proca.Users do
         user
 
       # handle a race condition where user exists - in that case fetch the user
-      {:error, %{errors: [{_field, {_m, [c | _r]}}]}}
-      when c in [constraint: :unique, validation: :unsafe_unique] ->
+      {:error, err} when is_non_unique_error ->
         get_user_from_sso(attrs[:email], attrs[:external_id])
 
       {:error, %{errors: [%{message: msg} | _]}} ->

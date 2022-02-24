@@ -56,4 +56,11 @@ defmodule Proca.Validations do
         changeset
     end
   end
+
+  defguard is_non_unique_error(%{
+             errors: [
+               {_field, {_m, [c | _r]}}
+             ]
+           })
+           when c in [constraint: :unique, validation: :unsafe_unique]
 end
