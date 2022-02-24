@@ -88,10 +88,11 @@ def server_add(host, user, password, public, socket, name):
 @click.command("server:set")
 @click.option('-h', '--host', help="API url")
 @click.option('-u', '--user', help="User name (email)", callback=validate_email)
-@click.option('-p', '--password', is_flag=False, flag_value='', help="Your password (use -p with no value for prompt)")
+@click.option('-p', '--password', help="Your password")
+@click.option('-P', '--password-prompt', is_flag=True, help="Prompt for Your password")
 @click.option('-s', '--socket', help="API WebSocket url", default=None)
 @click.argument('name', default=None, required=False)
-def server_set(host, user, password, name, socket):
+def server_set(host, user, password, password_prompt, name, socket):
     "Set server options"
 
     verify_server_exists(name)
@@ -108,7 +109,7 @@ def server_set(host, user, password, name, socket):
     if user:
         Config.set(sn, "user", user)
 
-    if password == '':
+    if password_prompt:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
 
     if password:

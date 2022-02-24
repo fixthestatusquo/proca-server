@@ -65,16 +65,55 @@ def show(ctx, id, name, identifier, ls, org, config, campaign_config):
 def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
     id, name = guess_identifier(id, name, identifier)
 
-    print(id, name, deliver)
+
+    input = {}
+
+    if rename:
+        input["name"] = rename
+    if locale:
+        input["locale"] = locale
+    if isinstance(extra, int):
+        input["extraSupporters"] = extra
+    if deliver:
+        input["delivery"] = deliver
+    if template:
+        input["thankYouTemplate"] = template
+    if config:
+        config_json = config.read()
+        input["config"] = config_json
+
+    update_action_page(ctx.client, id, name, input)
+
+
+@explain_error('updating action page')
+def update_action_page(client, id, name, input):
+    query = """
+    mutation upd($id: Int, $name: String, $input: ActionPageInput!) {
+        updateActionPage(id: $id, name: $name, input: $input) {
+            id
+        }
+    }
+    """
+
+    query = gql(query)
+
+    varia = {"input": input}
+    if id is not None:
+        varia['id'] = id
+    if name:
+        varia['name'] = name
+
+    data = client.execute(query, variable_values=varia)
+    return data['updateActionPage']
 
 
 @explain_error('fetching action page')
 def fetch_action_page(client, id, name, public=False):
-    vars = {}
+    varia = {}
     if id:
-        vars['id'] = id
+        varia['id'] = id
     if name:
-        vars['name'] = name
+        varia['name'] = name
 
     query = """
     query fetchActionPage($id: Int, $name: String){
@@ -88,7 +127,7 @@ def fetch_action_page(client, id, name, public=False):
 
     query = gql(query)
 
-    data = client.execute(query, variable_values=vars)
+    data = client.execute(query, variable_values=varia)
     return data['actionPage']
 
 @explain_error('fetching all your action pages')
@@ -164,6 +203,6 @@ def format(page):
             details += colored(' tmpl: ', color='blue') + page['thankYouTemplate']
 
         if page['extraSupporters']:
-            details += colored('extra: ', color='red') + str(page['extraSupporters'])
+            details += colored(' extra: ', color='red') + str(page['extraSupporters'])
 
     return f"{name} ({ids}) {locale}{details}"
