@@ -86,6 +86,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       %{org_id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
         :private_campaign
 
+      _org, %{context: %{auth: auth}} ->
+        if Proca.Permission.can?(auth, [:instance_owner]) do
+          :private_campaign
+        else
+          :public_campaign
+        end
+
       _, _ ->
         :public_campaign
     end)

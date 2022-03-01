@@ -282,6 +282,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     """
     field :config, :json
 
+    @desc """
+    Collected PII is processed even with no opt-in
+    """
     field :delivery, :boolean
   end
 
