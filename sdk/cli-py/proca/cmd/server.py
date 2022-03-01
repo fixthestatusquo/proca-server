@@ -6,6 +6,7 @@ from proca.config import Config, add_server_section, server_section, store
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail
+from proca.theme import *
 from yaspin import yaspin
 from termcolor import colored
 
@@ -42,7 +43,7 @@ def server_list():
         if ws_url:
             a += f" [WebSocket: {ws_url}]"
         if user:
-            a += colored(" auth:", color='yellow', attrs=['bold']) + f" {user}"
+            a += ' ' + Y('auth:') + f" {user}"
 
         print(a)
 
