@@ -7,7 +7,7 @@ defmodule Proca.Users do
   import Ecto.Changeset
   alias Proca.Repo
   alias Proca.Users.{User, UserToken, UserNotifier}
-  import Proca.Validation, only: [is_non_unique_error: 1]
+  import Proca.Validations, only: [peek_unique_error: 1]
 
   ## Database getters
 
@@ -104,12 +104,12 @@ defmodule Proca.Users do
       |> User.registration_from_sso_changeset(attrs)
       |> Repo.insert()
 
-    case new_user do
+    case peek_unique_error(new_user) do
       {:ok, user} ->
         user
 
       # handle a race condition where user exists - in that case fetch the user
-      {:error, err} when is_non_unique_error ->
+      {:not_unique, _field, _user} ->
         get_user_from_sso(attrs[:email], attrs[:external_id])
 
       {:error, %{errors: [%{message: msg} | _]}} ->

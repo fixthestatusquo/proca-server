@@ -2,6 +2,7 @@ defmodule ProcaWeb.JwtAuthPlugTest do
   use ProcaWeb.ConnCase
 
   setup do
+    # this is Kratos JWT
     jwt_json = """
     {
       "exp": 1612385939,

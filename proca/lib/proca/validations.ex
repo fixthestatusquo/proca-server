@@ -57,10 +57,24 @@ defmodule Proca.Validations do
     end
   end
 
-  defguard is_non_unique_error(%{
-             errors: [
-               {_field, {_m, [c | _r]}}
-             ]
-           })
-           when c in [constraint: :unique, validation: :unsafe_unique]
+  def peek_unique_error({:ok, record} = x), do: x
+
+  def peek_unique_error({:error, error}) do
+    case error do
+      %{
+        errors: [
+          {field, {_m, [c | _r]}}
+        ]
+      }
+      when c in [
+             constraint: :unique,
+             validation: :unsafe_unique
+           ] ->
+        {:not_unique, field, error}
+
+      # some other error
+      e ->
+        {:error, e}
+    end
+  end
 end
