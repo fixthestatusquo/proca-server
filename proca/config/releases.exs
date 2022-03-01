@@ -41,8 +41,8 @@ config :proca, ProcaWeb.UserAuth,
     jwt_secret: System.get_env("JWT_SECRET"),
     jwks_url: System.get_env("JWKS_URL"),
     jwt: [
-      email_path: split_env.("JWT_EMAIL", ~r/[. ]/),
-      email_verified_path: split_env.("JWT_EMAIL_VERIFIED", ~r/[. ]/)
+      email_path: split_env.("JWT_EMAIL", ~r/[,]/),
+      email_verified_path: split_env.("JWT_EMAIL_VERIFIED", ~r/[,]/)
     ]
   ]
 

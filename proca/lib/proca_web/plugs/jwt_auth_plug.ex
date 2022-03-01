@@ -6,8 +6,8 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   - query_param - specify if you want to fetch JWT from a query param
   - enable_session - set user also in phoenix session
   - email_path - list of keys to get email from in JWT (default ["email"])
-  - email_verified_path = list of keys to get email verified info
-  - external_id_path - list of keys to get external_id from JWT (default ["subject"])
+  - email_verified_path = list of keys to get email verified info (default user_metadata.email_verified)
+  - external_id_path - list of keys to get external_id from JWT (default ["sub"])
   """
   @behaviour Plug
 
@@ -95,14 +95,29 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
     end
   end
 
+  @doc """
+  extract field from nested map, using a path to fetch key:
+
+  eg. session.identity.emails.[].email
+  use [] to access an array (fetching first result)
+
+  Pass a list of paths to try all of them.
+  """
   def extract_field(_claims, nil), do: nil
+  def extract_field(_claims, []), do: nil
+
+  def extract_field(claims, paths = [path | rest]) when is_list(paths) do
+    extract_field(claims, path) || extract_field(claims, rest)
+  end
 
   def extract_field(claims, path) do
+    path = String.split(path, ~r/[. ]/)
+
     all = fn :get, lst, next -> Enum.map(lst, next) end
 
     path =
       Enum.map(path, fn
-        "@" -> all
+        "[]" -> all
         s -> s
       end)
 
