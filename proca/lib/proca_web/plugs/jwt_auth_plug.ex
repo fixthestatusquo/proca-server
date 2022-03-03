@@ -47,7 +47,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
          :ok <-
            check_email_verified(
              claims,
-             jwt_opts[:email_verified_path] || ["user_metadata", "email_verified"]
+             jwt_opts[:email_verified_path] || ["user_metadata.email_verified"]
            ) do
       conn
       |> get_or_create_user(email, external_id)
@@ -105,6 +105,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   """
   def extract_field(_claims, nil), do: nil
   def extract_field(_claims, []), do: nil
+  def extract_field(nil, _path), do: nil
 
   def extract_field(claims, paths = [path | rest]) when is_list(paths) do
     extract_field(claims, path) || extract_field(claims, rest)
@@ -113,7 +114,12 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   def extract_field(claims, path) do
     path = String.split(path, ~r/[. ]/)
 
-    all = fn :get, lst, next -> Enum.map(lst, next) end
+    all = fn :get, lst, next ->
+      case lst do
+        lst when is_list(lst) -> Enum.map(lst, next)
+        _ -> nil
+      end
+    end
 
     path =
       Enum.map(path, fn
