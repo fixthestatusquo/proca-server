@@ -150,7 +150,7 @@ defmodule Proca.Server.Processing do
           processing_status: action_status,
           supporter: %{processing_status: :accepted}
         },
-        %ActionPage{live: live}
+        %ActionPage{}
       )
       when action_status in [:new, :accepted] do
     # do the moderation (via email?) XXX need the thank_you handler

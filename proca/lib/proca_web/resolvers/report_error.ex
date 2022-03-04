@@ -43,7 +43,14 @@ defmodule ProcaWeb.Resolvers.ReportError do
   end
 
   defp error_message(e) when is_map(e) do
-    Map.get(e, :message)
+    path = Map.get(e, :path, nil)
+    msg = Map.get(e, :message)
+
+    if is_list(path) do
+      Enum.join(path, ".") <> " " <> msg
+    else
+      msg
+    end
   end
 
   defp error_message(e) when is_bitstring(e) do
