@@ -177,8 +177,19 @@ defmodule Proca.Server.MTTWorker do
           |> put_custom(e.id)
         end
 
-      EmailBackend.deliver(batch, org)
-      Message.mark_all(chunk, :sent)
+      case EmailBackend.deliver(batch, org) do
+        :ok ->
+          Message.mark_all(chunk, :sent)
+
+        {:error, statuses} ->
+          Enum.zip(chunk, statuses)
+          |> Enum.filter(fn
+            {_, :ok} -> true
+            _ -> false
+          end)
+          |> Enum.map(fn {m, _} -> m end)
+          |> Message.mark_all(:sent)
+      end
     end
   end
 

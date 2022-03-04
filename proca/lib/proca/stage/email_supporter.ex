@@ -12,7 +12,7 @@ defmodule Proca.Stage.EmailSupporter do
   import Logger
 
   import Proca.Stage.Support,
-    only: [ignore: 1, ignore: 2, supporter_link: 3, double_opt_in_link: 2]
+    only: [ignore: 1, ignore: 2, failed_partially: 2, supporter_link: 3, double_opt_in_link: 2]
 
   alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate, EmailTemplateDirectory}
 
@@ -120,13 +120,9 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl_ref} ->
         tmpl = %EmailTemplate{ref: tmpl_ref}
 
-        try do
-          EmailBackend.deliver(recipients, org, tmpl)
-          messages
-        rescue
-          x in EmailBackend.NotDeliverd ->
-            error("Failed to send email batch #{x.message}")
-            Enum.map(messages, &Message.failed(&1, x.message))
+        case EmailBackend.deliver(recipients, org, tmpl) do
+          :ok -> messages
+          {:error, statuses} -> failed_partially(messages, statuses)
         end
 
       :not_found ->
@@ -164,13 +160,9 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl_ref} ->
         tmpl = %EmailTemplate{ref: tmpl_ref}
 
-        try do
-          EmailBackend.deliver(recipients, org, tmpl)
-          messages
-        rescue
-          x in EmailBackend.NotDeliverd ->
-            error("Failed to send email batch #{x.message}")
-            Enum.map(messages, &Message.failed(&1, x.message))
+        case EmailBackend.deliver(recipients, org, tmpl) do
+          :ok -> messages
+          {:error, statuses} -> failed_partially(messages, statuses)
         end
 
       :not_found ->
