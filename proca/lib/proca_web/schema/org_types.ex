@@ -122,6 +122,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, :string)
 
       load(:action_page, by: [:id, :name], preload: [:org, campaign: :org])
+      middleware(ProcaWeb.Resolvers.NormalizeError)
+
       resolve(&Resolvers.Org.action_page/3)
     end
 
