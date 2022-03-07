@@ -26,13 +26,13 @@ defmodule Proca.Server.MTT do
     (
     SELECT
             m.id,
-            rank() OVER (PARTITION BY s.fingerprint, a.campaign_id ORDER BY a.inserted_at) - 1 as dupe_rank
+            rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
         FROM messages m JOIN actions a ON m.action_id = a.id JOIN supporters s ON a.supporter_id = s.id
         WHERE fingerprint IN (
             SELECT s.fingerprint
             FROM messages m JOIN actions a ON m.action_id = a.id JOIN supporters s ON a.supporter_id = s.id
             WHERE m.dupe_rank is NULL
-        )
+        ) AND a.processing_status = 4 AND s.processing_status = 3
     ) ranked
     WHERE messages.id = ranked.id ;
     """

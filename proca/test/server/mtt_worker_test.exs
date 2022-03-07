@@ -29,9 +29,19 @@ defmodule Proca.Server.MTTWorkerTest do
   describe "selecting targets to send" do
     setup %{campaign: c, ap: ap, targets: ts} do
       action1 =
-        Factory.insert(:action, action_page: ap, processing_status: :delivered, testing: true)
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted,
+          testing: true
+        )
 
-      action2 = Factory.insert(:action, action_page: ap, processing_status: :delivered)
+      action2 =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
 
       {t1, t2} = Enum.split(ts, 3)
 
@@ -90,7 +100,13 @@ defmodule Proca.Server.MTTWorkerTest do
 
   describe "scheduling messages for one target" do
     setup %{campaign: c, ap: ap, targets: [t1 | _]} do
-      actions = Factory.insert_list(20, :action, action_page: ap, processing_status: :delivered)
+      actions =
+        Factory.insert_list(20, :action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
+
       msgs = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
 
       Proca.Server.MTT.dupe_rank()

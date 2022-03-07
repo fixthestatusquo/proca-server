@@ -41,7 +41,8 @@ defmodule Proca.Service.EmailRecipient do
           title: get_in(action_data, ["campaign", "title"])
         },
         action_page: %{
-          name: get_in(action_data, ["actionPage", "name"])
+          name: get_in(action_data, ["actionPage", "name"]),
+          locale: get_in(action_data, ["actionPage", "locale"])
         },
         action_id: get_in(action_data, ["actionId"]),
         tracking: get_in(action_data, ["tracking"])
