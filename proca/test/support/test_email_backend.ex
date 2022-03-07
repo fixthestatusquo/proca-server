@@ -99,7 +99,7 @@ defmodule Proca.TestEmailBackend do
 
   @impl true
   def handle_call({:mailbox, address}, _from, s = %{mbox: mbox}) do
-    m = Map.get(mbox, address, nil)
+    m = Map.get(mbox, address, [])
     {:reply, m, s}
   end
 
