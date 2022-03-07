@@ -62,6 +62,9 @@ defmodule Proca.Server.MTTWorker do
     |> Repo.all()
   end
 
+  @doc """
+  Query for test emails which were sent, and were created day ago.
+  """
   def query_test_emails_to_delete() do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
@@ -69,6 +72,10 @@ defmodule Proca.Server.MTTWorker do
     |> where([m, t, a], a.inserted_at < ^recent)
   end
 
+  @doc """
+  Queries for targets with at least one email that is sendable (status none)
+  Returns list of ids
+  """
   def get_sendable_target_ids(%Campaign{id: id}) do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
