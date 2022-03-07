@@ -5,7 +5,7 @@ defmodule Proca.Validations do
   Validate that change is a:
   - map
   - keys are strings
-  - values are strings, numbers, or lists of strings and numbers
+  - values are strings, numbers, or lists of strings and numbers, or booleans
   """
   @spec validate_flat_map(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
   def validate_flat_map(changeset, fieldname) do
@@ -15,7 +15,7 @@ defmodule Proca.Validations do
           Enum.all?(
             Enum.map(fields, fn {k, v} ->
               is_bitstring(k) and
-                (is_bitstring(v) or is_number(v) or
+                (is_bitstring(v) or is_number(v) or is_boolean(v) or
                    (is_list(v) and
                       (Enum.all?(Enum.map(v, &is_bitstring/1)) or
                          Enum.all?(Enum.map(v, &is_number/1)))))
