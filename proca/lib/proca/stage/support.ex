@@ -168,20 +168,4 @@ defmodule Proca.Stage.Support do
   end
 
   def camel_case_keys(other), do: other
-
-  def put_action_data(%Swoosh.Email{} = email, %Action{} = action) do
-    import Swoosh.Email, only: [assign: 3]
-    action = Repo.preload(action, [:supporter, action_page: :org, campaign: :org])
-
-    email
-    |> assign(:org, %{name: action.action_page.org.name, title: action.action_page.org.title})
-    |> assign(:campaign, %{name: action.campain.name, title: action.campaign.title})
-    |> assign(:action_page, %{name: action.action_page.name, locale: action.action_page.locale})
-    |> assign(:action_id, action.id)
-    |> assign(:first_name, action.supporer.first_name)
-    |> assign(:last_name, action.supporer.last_name)
-    |> assign(:email, action.supporer.email)
-  end
-
-  ## XXX implement put_action_data for %{"schema" => "proca:action:2"} ... to replace EmailRecipient.from_action_data
 end

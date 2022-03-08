@@ -3,7 +3,7 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign}
+  alias Proca.{Action, Campaign, ActionPage, Org}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
 
@@ -172,15 +172,24 @@ defmodule Proca.Server.MTTWorker do
     )
   end
 
-  def send_emails(campaign, emails) do
-    org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
+  def send_emails(campaign, msgs) do
+    alias Proca.Service.EmailMerge
 
-    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
+    org = Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
+
+    # fetch action pages for email merge
+    action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
+    action_pages = ActionPage.all(preload: [:org], by_ids: action_pages_ids) |> Enum.into(%{})
+
+    for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(org)) do
       batch =
         for e <- chunk do
           e
-          |> prepare_recipient(campaign.mtt.test_email)
+          |> make_email(campaign.mtt.test_email)
           |> put_content(e.message_content, campaign.mtt.message_template)
+          |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
+          |> EmailMerge.put_campaign(campaign)
+          |> EmailMerge.put_action(e.action)
           |> put_custom(e.id)
         end
 
@@ -200,7 +209,7 @@ defmodule Proca.Server.MTTWorker do
     end
   end
 
-  def prepare_recipient(
+  def make_email(
         message = %{action: %{supporter: supporter, testing: is_test}},
         test_email \\ nil
       ) do
