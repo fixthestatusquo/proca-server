@@ -107,7 +107,7 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   def extract_field(_claims, []), do: nil
   def extract_field(nil, _path), do: nil
 
-  def extract_field(claims, paths = [path | rest]) when is_list(paths) do
+  def extract_field(claims, paths = [path | rest]) when is_list(paths) and is_bitstring(path) do
     extract_field(claims, path) || extract_field(claims, rest)
   end
 
