@@ -42,8 +42,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:name, :string)
       arg(:external_id, :integer)
 
-      resolve(&Resolvers.Campaign.get/3)
-      determine_auth(for: :result)
+      load(:campaign, by: [:id, :name, :external_id], preload: [:org, :targets])
+      determine_auth(for: :campaign)
+      resolve(&Resolvers.Campaign.return_from_context/3)
     end
   end
 
