@@ -10,12 +10,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
   alias ProcaWeb.Helper
   alias Ecto.Multi
 
-  @list_preload [preload: [:org, :targets]]
+  @preload_query [preload: [:org, :targets]]
 
   def list(%Org{} = org, params, _) do
     r =
       Campaign.select_by_org(org)
-      |> Campaign.all(Enum.to_list(Map.get(params, :select, %{})) ++ @list_preload)
+      |> Campaign.all(Enum.to_list(Map.get(params, :select, %{})) ++ @preload_query)
 
     {:ok, r}
   end
@@ -23,29 +23,26 @@ defmodule ProcaWeb.Resolvers.Campaign do
   def list(_, %{id: id}, _) do
     {
       :ok,
-      Campaign.all([id: id] ++ @list_preload)
+      Campaign.all([id: id] ++ @preload_query)
     }
   end
 
   def list(_, %{name: name}, _) do
     {
       :ok,
-      Campaign.all([name: name] ++ @list_preload)
+      Campaign.all([name: name] ++ @preload_query)
     }
   end
 
   def list(_, %{title: title}, _) do
     {
       :ok,
-      Campaign.all([title_like: title] ++ @list_preload)
+      Campaign.all([title_like: title] ++ @preload_query)
     }
   end
 
-  def get(_, params, _) do
-    case Campaign.one(Enum.to_list(params) ++ @list_preload) do
-      nil -> {:error, :not_found}
-      campaign -> {:ok, campaign}
-    end
+  def return_from_context(_, _, %{context: %{campaign: c}}) do
+    {:ok, c}
   end
 
   def stats(campaign, _a, _c) do
