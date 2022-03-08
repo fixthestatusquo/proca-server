@@ -63,7 +63,7 @@ defmodule ProcaWeb.JwtAuthPlugTest do
   test "checking whether email is verified", %{jwt: jwt} do
     set_require_verified_email(true)
 
-    field_path = ~w"session identity verifiable_addresses @ verified"
+    field_path = "session.identity.verifiable_addresses.[].verified"
 
     assert ProcaWeb.Plugs.JwtAuthPlug.check_email_verified(jwt, field_path) == :ok
 
