@@ -60,6 +60,15 @@ defmodule Proca.Schema do
         import Ecto.Query, only: [limit: 3]
         limit(query, [a], ^limit) |> all(kw)
       end
+
+      def all(query, [{:by_ids, ids} | kw]) do
+        import Ecto.Query, only: [where: 3, select: 3]
+
+        query
+        |> where([a], a.id in ^ids)
+        |> select([a], {a.id, a})
+        |> all(kw)
+      end
     end
   end
 end
