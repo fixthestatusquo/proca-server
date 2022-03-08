@@ -136,13 +136,13 @@ defmodule Proca.Service.Mailjet do
   defp put_custom(email), do: email
 
   @impl true
-  def handle_bounce(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+  def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+    {type, id} = parse_custom_id(cid)
 
     bounce_params = %{
       id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
+      email: email,
+      reason: String.to_existing_atom(reason)
     }
 
     case type do
@@ -152,18 +152,28 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def handle_event(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+  def handle_bounce(params) do
+    warn("Malformed Mailjet bounce event: #{inspect(params)}")
+  end
+
+  @impl true
+  def handle_event(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+    {type, id} = parse_custom_id(cid)
 
     event_params = %{
       id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
+      email: email,
+      reason: String.to_existing_atom(reason)
     }
 
     case type do
       :mtt -> Message.handle_event(event_params)
     end
+  end
+
+  @impl true
+  def handle_event(params) do
+    warn("Malformed Mailjet event: #{inspect(params)}")
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do

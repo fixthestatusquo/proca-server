@@ -108,7 +108,11 @@ defmodule Proca.Action.Message do
   def mark_all(messages, field) when field in [:sent, :delivered, :opened, :clicked] do
     import Ecto.Query
     ids = Enum.map(messages, & &1.id)
-    Repo.update_all(from(m in Message, where: m.id in ^ids), set: [{field, true}])
+
+    Repo.update_all(from(m in Message, where: m.id in ^ids),
+      set: [{field, true}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
     :ok
   end
 
