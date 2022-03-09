@@ -17,6 +17,8 @@ defmodule Proca.TargetEmail do
 
   @doc false
   def changeset(target_email, attrs) do
+    attrs = Proca.Contact.Input.Contact.normalize_email(attrs)
+
     target_email
     |> cast(attrs, [:email, :email_status, :target_id])
     |> validate_required([:email, :target_id])
@@ -35,6 +37,16 @@ defmodule Proca.TargetEmail do
 
     q
     |> where([te], te.target_id == ^target_id)
+    |> all(kw)
+  end
+
+  def all(q, [{:message_id, id} | kw]) do
+    import Ecto.Query
+
+    q
+    |> join(:inner, [e], t in assoc(e, :target))
+    |> join(:inner, [e, t], m in assoc(t, :messages))
+    |> where([e, t, m], m.id == ^id)
     |> all(kw)
   end
 end

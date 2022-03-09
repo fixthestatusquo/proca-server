@@ -18,8 +18,31 @@ defmodule Proca.Server.MTT do
     {:ok, state}
   end
 
+  def dupe_rank() do
+    sql = """
+    UPDATE messages
+    SET dupe_rank = ranked.dupe_rank
+    FROM
+    (
+    SELECT
+            m.id,
+            rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
+        FROM messages m JOIN actions a ON m.action_id = a.id JOIN supporters s ON a.supporter_id = s.id
+        WHERE fingerprint IN (
+            SELECT s.fingerprint
+            FROM messages m JOIN actions a ON m.action_id = a.id JOIN supporters s ON a.supporter_id = s.id
+            WHERE m.dupe_rank is NULL
+        ) AND a.processing_status = 4 AND s.processing_status = 3
+    ) ranked
+    WHERE messages.id = ranked.id ;
+    """
+
+    Ecto.Adapters.SQL.query(Proca.Repo, sql)
+  end
+
   @impl true
   def handle_info(:work, state) do
+    dupe_rank()
     process_mtt()
     MTTWorker.process_mtt_test_mails()
     {:noreply, state}

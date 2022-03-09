@@ -17,7 +17,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
   end
 
   input_object :target_input do
-    field :name, non_null(:string)
+    field :name, :string
     field :area, :string, default_value: ""
     field :external_id, non_null(:string)
     field :fields, :json, default_value: %{}

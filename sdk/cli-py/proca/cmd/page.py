@@ -8,7 +8,8 @@ from proca.config import Config, add_server_section, server_section, store, make
 from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
-from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier
+from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier, validate_locale
+from proca.theme import *
 from proca.query import *
 from yaspin import yaspin
 from gql import gql
@@ -32,7 +33,7 @@ def show(ctx, id, name, identifier, ls, org, config, campaign_config):
 
             odata = orgs[oname]
 
-            out = colored(odata['title'], color='white', attrs=['bold']) + colored(f" {odata['name']}", attrs=['bold'], color='yellow')
+            out = W(odata['title']) + w(f" {odata['name']}")
             print(out)
 
             for p in org_pages:
@@ -51,6 +52,16 @@ def show(ctx, id, name, identifier, ls, org, config, campaign_config):
     if campaign_config:
         campaign_config.write(page['campaign']['config'])
 
+@click.command("page:add")
+@click.option('-o', '--org', help="organisation", prompt="Organisation")
+@click.option('-c', '--campaign', help="campaign", prompt="Campaign")
+@click.option('-n', '--name', help="name", prompt="Short name of the page")
+@click.option('-l', '--locale', help="locale", prompt="Locale of the page", callback=validate_locale)
+@pass_context
+def add(ctx, locale, name, org, campaign):
+    print(rainbow(f"{locale}|!{name}|{campaign}"))
+
+    ap = add_action_page(ctx.client, name=name, locale=locale, org=org, campaign=campaign)
 
 @click.command("page:set")
 @click.argument('identifier', default=None, required=False)
@@ -65,16 +76,78 @@ def show(ctx, id, name, identifier, ls, org, config, campaign_config):
 def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
     id, name = guess_identifier(id, name, identifier)
 
-    print(id, name, deliver)
+
+    input = {}
+
+    if rename:
+        input["name"] = rename
+    if locale:
+        input["locale"] = locale
+    if isinstance(extra, int):
+        input["extraSupporters"] = extra
+    if deliver:
+        input["delivery"] = deliver
+    if template:
+        input["thankYouTemplate"] = template
+    if config:
+        config_json = config.read()
+        input["config"] = config_json
+
+    update_action_page(ctx.client, id, name, input)
+
+
+@explain_error('adding action page')
+def add_action_page(client, **attrs):
+    query = """
+    mutation add($org: String!, $campaign: String!, $input: ActionPageInput!) {
+        addActionPage(orgName: $org,  campaignName:$campaign, input: $input) {
+            ...actionPageData
+        }
+    }
+    """ + actionPageData
+
+    query = gql(query)
+
+    org = attrs.pop("org")
+    campaign = attrs.pop("campaign")
+
+    data = client.execute(query, variable_values={
+        "org": org, "campaign": campaign, input: attrs
+    })
+    return data['addActionPage']
+
+
+@explain_error('updating action page')
+def update_action_page(client, id, name, input):
+    query = """
+    mutation upd($id: Int, $name: String, $input: ActionPageInput!) {
+        updateActionPage(id: $id, name: $name, input: $input) {
+            id
+        }
+    }
+    """
+
+    query = gql(query)
+
+    varia = {"input": input}
+    if id is not None:
+        varia['id'] = id
+    if name:
+        varia['name'] = name
+
+    data = client.execute(query, variable_values=varia)
+    return data['updateActionPage']
+
+
 
 
 @explain_error('fetching action page')
 def fetch_action_page(client, id, name, public=False):
-    vars = {}
+    varia = {}
     if id:
-        vars['id'] = id
+        varia['id'] = id
     if name:
-        vars['name'] = name
+        varia['name'] = name
 
     query = """
     query fetchActionPage($id: Int, $name: String){
@@ -88,7 +161,7 @@ def fetch_action_page(client, id, name, public=False):
 
     query = gql(query)
 
-    data = client.execute(query, variable_values=vars)
+    data = client.execute(query, variable_values=varia)
     return data['actionPage']
 
 @explain_error('fetching all your action pages')
@@ -143,9 +216,9 @@ def format(page):
     somename.com/en (123, 9910) locale: en_IE
     """
 
-    name = colored(page['name'], color='white')
-    ids = colored(page['id'], color='yellow')
-    locale = colored("locale: ", color='green') + page['locale']
+    name = f"!{page['name']}"
+    ids = page['id']
+    locale = "locale: " + page['locale']
 
     if '__typename' in page and page['__typename'] == 'PrivateActionPage':
         details = ''
@@ -153,17 +226,13 @@ def format(page):
         status = page['status']
         if status == 'ACTIVE':
             status = colored(status, color='red', attrs=['bold'])
-        elif status == 'STANDBY':
-            status = colored(status, color='white')
-        elif status == 'STALLED':
-            pass
 
-        details += ' ' + status
+        details += f"|{status}"
 
         if page['thankYouTemplate']:
-            details += colored(' tmpl: ', color='blue') + page['thankYouTemplate']
+            details += '|tmpl: ' + page['thankYouTemplate']
 
         if page['extraSupporters']:
-            details += colored('extra: ', color='red') + str(page['extraSupporters'])
+            details += '|extra: ' + str(page['extraSupporters'])
 
-    return f"{name} ({ids}) {locale}{details}"
+    return w(f"{ids:<4} ") + rainbow(f"{name}|{locale}|{details}")

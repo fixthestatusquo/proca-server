@@ -182,7 +182,7 @@ defmodule Proca.Service.EmailBackend do
       from_email == via_org.email_from ->
         email
 
-      # One org borrows the others backend
+      # Sending org uses own email, but sends from another orgs service
       from_email == org.email_from ->
         email
         |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
@@ -203,8 +203,8 @@ defmodule Proca.Service.EmailBackend do
 
   def parse_custom_id(custom_id) when is_bitstring(custom_id) do
     case String.split(custom_id, ":", trim: true) do
-      ["action", id | _] -> {:action, id}
-      ["mtt", id | _] -> {:mtt, id}
+      ["action", id | _] -> {:action, String.to_integer(id)}
+      ["mtt", id | _] -> {:mtt, String.to_integer(id)}
       _other -> {nil, nil}
     end
   end
