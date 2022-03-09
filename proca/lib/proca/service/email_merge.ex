@@ -57,4 +57,7 @@ defmodule Proca.Service.EmailMerge do
   def put_action_page(e, _), do: e
 
   ## XXX implement put_action_data for %{"schema" => "proca:action:2"} ... to replace EmailRecipient.from_action_data
+  def plain_to_html(text) do
+    "<p>" <> String.replace(text, "\n", "</p><p>") <> "</p>"
+  end
 end

@@ -177,6 +177,18 @@ defmodule Proca.Server.MTTWorker do
 
     org = Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
 
+    template =
+      case Proca.Service.EmailTemplateDirectory.ref_by_name_reload(
+             org,
+             campaign.mtt.message_template
+           ) do
+        {:ok, t} ->
+          t
+
+        err when err in [:not_found, :not_configured] ->
+          raise "Cannot find template #{campaign.mtt.message_template} for campaign #{campaign.name} (#{campaign.id}): #{Atom.to_string(err)}"
+      end
+
     # fetch action pages for email merge
     action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
     action_pages = ActionPage.all(preload: [:org], by_ids: action_pages_ids) |> Enum.into(%{})
@@ -186,7 +198,7 @@ defmodule Proca.Server.MTTWorker do
         for e <- chunk do
           e
           |> make_email(campaign.mtt.test_email)
-          |> put_content(e.message_content, campaign.mtt.message_template)
+          |> put_content(e.message_content, template)
           |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
           |> EmailMerge.put_campaign(campaign)
           |> EmailMerge.put_action(e.action)
@@ -238,11 +250,11 @@ defmodule Proca.Server.MTTWorker do
         %Action.MessageContent{subject: subject, body: body},
         template_ref
       )
-      when is_bitstring(template_ref) do
+      when is_bitstring(template_ref) or is_integer(template_ref) do
     email
     |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
     |> Email.assign(:subject, subject)
-    |> Email.assign(:body, body)
+    |> Email.assign(:body, Proca.Service.EmailMerge.plain_to_html(body))
   end
 
   def put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do

@@ -125,10 +125,10 @@ defmodule Proca.Action.Message do
           Repo.update!(change(message, delivered: true))
 
         :open ->
-          Repo.update!(change(message, opened: true))
+          Repo.update!(change(message, opened: true, delivered: true))
 
         :click ->
-          Repo.update!(change(message, clicked: true))
+          Repo.update!(change(message, clicked: true, opened: true, delivered: true))
       end
     end
   end

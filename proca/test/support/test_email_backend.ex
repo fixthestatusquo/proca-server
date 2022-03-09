@@ -71,6 +71,7 @@ defmodule Proca.TestEmailBackend do
         opts = Keyword.update(opts, :retry, 1, &(&1 + 1))
 
         if opts[:retry] < 3 do
+          :timer.sleep(500)
           start_link(opts)
         else
           e
