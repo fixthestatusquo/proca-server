@@ -9,6 +9,7 @@ defmodule Proca.Target do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Validations, only: [validate_flat_map: 2]
+  import Logger
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
 
@@ -51,10 +52,10 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
-  def all(q, [{:campaign, c} | kw]) do
+  def all(query, [{:campaign, c} | kw]) do
     import Ecto.Query
 
-    q
+    query
     |> where([t], t.campaign_id == ^c.id)
     |> all(kw)
   end
@@ -83,18 +84,15 @@ defmodule Proca.Target do
     end
   end
 
-  def handle_bounce(args) do
-    case get_target_email(args.id, args.email) do
+  def handle_bounce(%{id: id, email: email, reason: reason}) do
+    case TargetEmail.one(message_id: id, email: email) do
       # ignore a bounce when not found
       nil ->
+        warn("Could not find target email #{email} for message id #{id}")
         {:ok, %TargetEmail{}}
 
       target_email ->
-        Repo.update!(change(target_email, email_status: args.reason))
+        Repo.update!(change(target_email, email_status: reason))
     end
-  end
-
-  def get_target_email(id, email) do
-    TargetEmail.one(target_id: id, email: email)
   end
 end

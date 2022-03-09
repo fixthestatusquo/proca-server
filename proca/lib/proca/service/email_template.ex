@@ -16,7 +16,7 @@ defmodule Proca.Service.EmailTemplate do
   def validate_exists(%Ecto.Changeset{} = changeset, field) do
     alias Proca.Service.EmailTemplateDirectory
     alias Ecto.Changeset
-    alias Proca.{Org, ActionPage}
+    alias Proca.{Org, ActionPage, MTT, Campaign}
 
     Changeset.validate_change(changeset, field, fn f, template ->
       org =
@@ -24,6 +24,7 @@ defmodule Proca.Service.EmailTemplate do
           %ActionPage{org: %Org{} = o} -> o
           %ActionPage{org_id: org_id} -> Org.one(id: org_id)
           %Org{} = o -> o
+          %MTT{} = mtt -> Proca.Repo.preload(mtt, campaign: :org).campaign.org
         end
 
       case EmailTemplateDirectory.ref_by_name_reload(org, template) do
