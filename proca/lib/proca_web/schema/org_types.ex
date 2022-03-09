@@ -15,11 +15,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
       @desc "Name of organisation"
       arg(:name, non_null(:string))
 
-      load(:org, by: [:name])
+      load(:org, by: [:name], preload: [:action_pages, campaigns: :org])
       determine_auth(for: :org)
       allow(:staffer)
 
-      resolve(&Resolvers.Org.get_by_name/3)
+      resolve(&Resolvers.Org.return_from_context/3)
     end
   end
 
@@ -122,6 +122,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, :string)
 
       load(:action_page, by: [:id, :name], preload: [:org, campaign: :org])
+      middleware(ProcaWeb.Resolvers.NormalizeError)
+
       resolve(&Resolvers.Org.action_page/3)
     end
 

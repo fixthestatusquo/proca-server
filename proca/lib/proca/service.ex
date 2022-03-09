@@ -77,6 +77,9 @@ defmodule Proca.Service do
       {:ok, code, hdrs, ref} when code in [200, 201] ->
         json_request_read_body(hdrs, ref)
 
+      {:ok, code, _hdrs, _ref} when code in 500..599 ->
+        {:error, "HTTP#{code}"}
+
       {:ok, code, _hdrs, _ref} ->
         {:ok, code}
 

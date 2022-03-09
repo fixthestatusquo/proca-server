@@ -6,10 +6,11 @@ defmodule TargetTest do
 
   test "handle_bounce adds bounce reason" do
     target = Factory.insert(:target)
+    message = Factory.insert(:message, %{target: target})
     email = Enum.at(target.emails, 0)
 
     params = %{
-      id: target.id,
+      id: message.id,
       email: email.email,
       reason: :blocked
     }

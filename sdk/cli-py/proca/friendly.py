@@ -46,13 +46,16 @@ def explain_error(intent, **fmt_params):
 
 def api_error_explanation(msg):
     ex = msg.get('extensions', {})
-    path = '.'.join(msg['path'])
+    if 'path' in msg:
+        path = 'at ' '.'.join(msg['path'])
+    else:
+        path = ''
 
     if 'code' in ex:
         if ex['code'] == 'unauthorized':
-            return f"you have not provided correct user and password at {path}"
+            return f"you have not provided correct user and password {path}"
         else:
-            return f"server said: {ex['code']} at {path}"
+            return f"server said: {ex['code']} {path}"
 
     return msg['message']
 
@@ -82,13 +85,25 @@ def validate_email(ctx, param, value):
 
     return value
 
+LOCALE_PATTERN = re.compile(r"^[a-z]{2}(_[A-Z]{2})?$")
+def validate_locale(ctx, param, value):
+    if value is None:
+        return value
+
+    m = LOCALE_PATTERN.match(value)
+    if m is None:
+        raise click.BadParameter("locale must be language code (en) or language+region code (en_IE)")
+
+    return value
+
+
+
 
 def id_options(fn):
     """
     Adds options to pass different id/name/external ids to the command.
     XXX - add uuid later
     """
-
 
     fn = click.option("-n", "--name", type=str, help="short name")(fn)
     fn = click.option("-i", "--id", type=int, help="numerical id")(fn)

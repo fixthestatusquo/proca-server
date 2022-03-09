@@ -6,11 +6,22 @@ from gql import gql
 campaignData =  """
     fragment campaignData on Campaign {
     __typename
-    id name title
+    id name title externalId
     config
     contactSchema
     }
     """
+
+campaignDataStatus = """
+    fragmen campaignDataStatus on Campaign {
+       stats {
+          supporterCount
+          actionCount { actionType count }
+       }
+    }
+"""
+
+
 
 actionPageData = """
     fragment actionPageData on ActionPage {

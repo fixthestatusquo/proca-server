@@ -232,17 +232,17 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "event"),
         wqn(instance, "sqs"),
-        bind: config[:event_forward_to_instance_sqs], route: "#"
+        bind: config[:event_forward_to_instance_sqs], route: "system.*"
       },
       {
         xn(o, "event"),
         wqn(instance, "webhook"),
-        bind: config[:event_forward_to_instance_webhook], route: "#"
+        bind: config[:event_forward_to_instance_webhook], route: "system.*"
       },
       {
         xn(o, "event"),
         cqn(instance, "deliver"),
-        bind: config[:event_forward_to_instance_custom], route: "#"
+        bind: config[:event_forward_to_instance_custom], route: "system.*"
       }
     ]
     |> Enum.each(fn x -> bind_queue(chan, x) end)

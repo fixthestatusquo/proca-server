@@ -12,15 +12,20 @@ defmodule Proca.Stage.Event do
   Routing key for the event message is two-element topic routing key for confirms (because they have subtype), and one element key for CRUD events.
 
   Examples:
-  - confirm_created.add_staffer - for new add_staffer confirm
-  - campaign_updated - for any campaign update
+  - confirm_created.add_staffer - for new add_staffer confirm XXX remove!
+  - supporter.email_status_changed
+  - system.campaign_updated - for any campaign update
   """
   def routing_key(event, %Confirm{operation: op}) do
     Atom.to_string(event) <> "." <> Atom.to_string(op)
   end
 
+  def routing_key(event, %Supporter{}) do
+    "supporter." <> Atom.to_string(event)
+  end
+
   def routing_key(event, _record) do
-    Atom.to_string(event)
+    "system." <> Atom.to_string(event)
   end
 
   def metadata(event, record) do
@@ -54,7 +59,7 @@ defmodule Proca.Stage.Event do
     |> Map.put(:confirm, Confirm.notify_fields(confirm))
   end
 
-  def put_data(data, :supporter_updated, %Supporter{} = supporter, opts) do
+  def put_data(data, :email_status, %Supporter{} = supporter, opts) do
     alias Proca.Stage.MessageV2
 
     # Find Supporters contact data belonging to that org_id

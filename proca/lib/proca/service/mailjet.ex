@@ -2,6 +2,8 @@ defmodule Proca.Service.Mailjet do
   @moduledoc """
   Mailjet Email Backend
 
+  Template ids (refs) are integers
+
   Templates:
   - Use transactional templates (not campaign)
   - Test thoroughly with their preview - MJ provides no debugging otherwise (just HTTP500 on send)
@@ -11,6 +13,7 @@ defmodule Proca.Service.Mailjet do
   - You can conditionally show a block: use foo:"" in the field - but you need to use “greater then” + start of the string - no way to input “not empty” condition
   - The links prohibit use of default "" - so you must provide or hide it.
   - Use {% if var:givenname:"" %} and {% endif %} for conditional block
+
 
   """
 
@@ -136,34 +139,46 @@ defmodule Proca.Service.Mailjet do
   defp put_custom(email), do: email
 
   @impl true
-  def handle_bounce(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+  def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+    {type, id} = parse_custom_id(cid)
 
     bounce_params = %{
       id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
+      email: email,
+      reason: String.to_existing_atom(reason)
     }
 
     case type do
       :action -> Supporter.handle_bounce(bounce_params)
       :mtt -> Target.handle_bounce(bounce_params)
+      _ -> {:error, :invalid_custom_id}
+    end
+  end
+
+  @impl true
+  def handle_bounce(params) do
+    warn("Malformed Mailjet bounce event: #{inspect(params)}")
+  end
+
+  @impl true
+  def handle_event(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+    {type, id} = parse_custom_id(cid)
+
+    event_params = %{
+      id: id,
+      email: email,
+      reason: String.to_existing_atom(reason)
+    }
+
+    case type do
+      :mtt -> Message.handle_event(event_params)
+      _ -> {:error, :invalid_custom_id}
     end
   end
 
   @impl true
   def handle_event(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
-
-    event_params = %{
-      id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
-    }
-
-    case type do
-      :mtt -> Message.handle_event(event_params)
-    end
+    warn("Malformed Mailjet event: #{inspect(params)}")
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do

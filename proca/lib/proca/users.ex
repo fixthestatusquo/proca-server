@@ -4,8 +4,10 @@ defmodule Proca.Users do
   """
 
   import Ecto.Query, warn: false
+  import Ecto.Changeset
   alias Proca.Repo
   alias Proca.Users.{User, UserToken, UserNotifier}
+  import Proca.Validations, only: [peek_unique_error: 1]
 
   ## Database getters
 
@@ -23,6 +25,23 @@ defmodule Proca.Users do
   """
   def get_user_by_email(email) when is_binary(email) do
     User.one(email: email)
+  end
+
+  def get_user_from_sso(email, nil), do: get_user_by_email(email)
+
+  def get_user_from_sso(email, external_id) do
+    user = User.one(external_id: external_id) || get_user_by_email(email)
+
+    case user do
+      nil ->
+        nil
+
+      u = %User{external_id: x} when x != external_id ->
+        Repo.update!(change(u, external_id: external_id))
+
+      u = %User{} ->
+        u
+    end
   end
 
   @doc """
@@ -85,14 +104,13 @@ defmodule Proca.Users do
       |> User.registration_from_sso_changeset(attrs)
       |> Repo.insert()
 
-    case new_user do
+    case peek_unique_error(new_user) do
       {:ok, user} ->
         user
 
       # handle a race condition where user exists - in that case fetch the user
-      {:error, %{errors: [email: {_m, [c | _r]}]}}
-      when c in [constraint: :unique, validation: :unsafe_unique] ->
-        User.one(email: attrs[:email])
+      {:not_unique, _field, _user} ->
+        get_user_from_sso(attrs[:email], attrs[:external_id])
 
       {:error, %{errors: [%{message: msg} | _]}} ->
         raise ArgumentError, msg

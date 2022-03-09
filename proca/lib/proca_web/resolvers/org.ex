@@ -15,11 +15,8 @@ defmodule ProcaWeb.Resolvers.Org do
   alias Proca.Repo
   import Logger
 
-  def get_by_name(_, _, %{context: %{org: org}}) do
-    {
-      :ok,
-      Repo.preload(org, [[campaigns: :org], :action_pages])
-    }
+  def return_from_context(_, _, %{context: %{org: org}}) do
+    {:ok, org}
   end
 
   def campaign_by_id(org, %{id: camp_id}, _) do

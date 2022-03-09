@@ -71,6 +71,7 @@ defmodule Proca.TestEmailBackend do
         opts = Keyword.update(opts, :retry, 1, &(&1 + 1))
 
         if opts[:retry] < 3 do
+          :timer.sleep(500)
           start_link(opts)
         else
           e
@@ -99,7 +100,7 @@ defmodule Proca.TestEmailBackend do
 
   @impl true
   def handle_call({:mailbox, address}, _from, s = %{mbox: mbox}) do
-    m = Map.get(mbox, address, nil)
+    m = Map.get(mbox, address, [])
     {:reply, m, s}
   end
 

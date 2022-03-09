@@ -80,9 +80,7 @@ defmodule Proca.Stage.Webhook do
     webhook = get_service(org)
 
     for msg <- messages do
-      payload = Jason.encode!(msg.data)
-
-      case Webhook.push(webhook, payload) do
+      case Webhook.push(webhook, msg.data) do
         {:ok, 200} ->
           msg
 
