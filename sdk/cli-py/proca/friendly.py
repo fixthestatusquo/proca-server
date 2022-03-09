@@ -54,8 +54,10 @@ def api_error_explanation(msg):
     if 'code' in ex:
         if ex['code'] == 'unauthorized':
             return f"you have not provided correct user and password {path}"
+        elif ex['code'] == 'bad_arg':
+            return f"you have given wrong arguments for {path}: {msg['message']}"
         else:
-            return f"server said: {ex['code']} {path}"
+            return f"server said: {ex['code']} - {msg['message']} {path}"
 
     return msg['message']
 

@@ -9,6 +9,7 @@ import proca.cmd.server
 import proca.cmd.user
 import proca.cmd.action
 import proca.cmd.page
+import proca.cmd.campaign
 
 
 
@@ -27,7 +28,9 @@ cli.add_command(proca.cmd.server.server_add)
 cli.add_command(proca.cmd.server.server_set)
 cli.add_command(proca.cmd.server.server_delete)
 cli.add_command(proca.cmd.user.me)
+cli.add_command(proca.cmd.user.token)
 cli.add_command(proca.cmd.page.show)
 cli.add_command(proca.cmd.page.set)
 cli.add_command(proca.cmd.page.add)
 cli.add_command(proca.cmd.action.action)
+cli.add_command(proca.cmd.campaign.show)
