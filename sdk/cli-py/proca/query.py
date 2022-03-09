@@ -21,6 +21,16 @@ campaignDataStatus = """
     }
 """
 
+mttData = """
+  fragment mttData on Campaign {
+  ... on PrivateCampaign {
+    mtt {
+       startAt endAt testEmail messageTemplate
+    }
+  }
+}
+"""
+
 
 
 actionPageData = """
@@ -40,3 +50,21 @@ actionPageStatus = """
     }
     }
     """
+
+class Null:
+    "A Null value passed to GQL. A None value will not send the variable."
+    pass
+
+def vars(**kv):
+    """
+    A shorthand to product variable_values for gql.client.query - it will filter out nil values
+    """
+
+    def allow_null(z):
+        if z == Null:
+            return None
+        else:
+            return z
+
+    x = {k: allow_null(v) for k, v in kv.items() if v is not None}
+    return {"variable_values": x}

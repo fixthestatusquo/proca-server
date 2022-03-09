@@ -111,9 +111,7 @@ def add_action_page(client, **attrs):
     org = attrs.pop("org")
     campaign = attrs.pop("campaign")
 
-    data = client.execute(query, variable_values={
-        "org": org, "campaign": campaign, input: attrs
-    })
+    data = client.execute(query, **vars(org=org, campaign=campaign, input=attrs))
     return data['addActionPage']
 
 
@@ -129,13 +127,7 @@ def update_action_page(client, id, name, input):
 
     query = gql(query)
 
-    varia = {"input": input}
-    if id is not None:
-        varia['id'] = id
-    if name:
-        varia['name'] = name
-
-    data = client.execute(query, variable_values=varia)
+    data = client.execute(query, **vars(id=id, name=name, input=input))
     return data['updateActionPage']
 
 
@@ -143,11 +135,6 @@ def update_action_page(client, id, name, input):
 
 @explain_error('fetching action page')
 def fetch_action_page(client, id, name, public=False):
-    varia = {}
-    if id:
-        varia['id'] = id
-    if name:
-        varia['name'] = name
 
     query = """
     query fetchActionPage($id: Int, $name: String){
@@ -161,7 +148,7 @@ def fetch_action_page(client, id, name, public=False):
 
     query = gql(query)
 
-    data = client.execute(query, variable_values=varia)
+    data = client.execute(query, **vars(id=id, name=name))
     return data['actionPage']
 
 @explain_error('fetching all your action pages')

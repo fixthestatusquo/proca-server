@@ -9,8 +9,10 @@ from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail
 from proca.friendly import explain_error
+from proca.theme import *
 from yaspin import yaspin
 from gql import gql
+from base64 import b64encode
 
 from termcolor import colored, cprint
 
@@ -46,3 +48,15 @@ def current_user(client):
     """)
     data = client.execute(query)
     return data['currentUser']
+
+@click.command("me:token")
+@pass_context
+def token(ctx):
+    conf = Config[ctx.server_section]
+
+    try:
+        t = f"{conf['user']}:{conf['password']}"
+        t = b64encode(bytes(t, 'utf8')).decode('utf8')
+        print(rainbow(f"Basic|{t}"))
+    except KeyError:
+        print(R("basic auth not configured"))
