@@ -21,7 +21,8 @@ defmodule Proca.TargetEmail do
 
     target_email
     |> cast(attrs, [:email, :email_status, :target_id])
-    |> validate_required([:email, :target_id])
+    |> validate_required([:email])
+    |> Proca.Contact.Input.validate_email(:email)
   end
 
   def all(q, [{:email, email} | kw]) do
