@@ -76,7 +76,7 @@ defmodule Proca.Target do
           for input <- emails do
             case Enum.find(record.emails, fn %{email: e} -> e == input.email end) do
               %TargetEmail{} = te -> TargetEmail.changeset(te, input)
-              nil -> struct(TargetEmail, input)
+              nil -> TargetEmail.changeset(%TargetEmail{}, input)
             end
           end
 
