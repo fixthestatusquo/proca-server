@@ -10,6 +10,7 @@ import proca.cmd.user
 import proca.cmd.action
 import proca.cmd.page
 import proca.cmd.campaign
+import proca.cmd.service
 
 
 
@@ -34,3 +35,4 @@ cli.add_command(proca.cmd.page.set)
 cli.add_command(proca.cmd.page.add)
 cli.add_command(proca.cmd.action.action)
 cli.add_command(proca.cmd.campaign.show)
+cli.add_command(proca.cmd.service.set)
