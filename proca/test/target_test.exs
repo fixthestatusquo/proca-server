@@ -4,11 +4,19 @@ defmodule TargetTest do
   alias Proca.{Target, TargetEmail}
   alias Proca.Factory
 
-  test "handle_bounce adds bounce reason" do
+  setup do
     target = Factory.insert(:target)
     message = Factory.insert(:message, %{target: target})
     email = Enum.at(target.emails, 0)
 
+    %{
+      target: target,
+      message: message,
+      email: email
+    }
+  end
+
+  test "handle_bounce adds bounce reason", %{target: target, message: message, email: email} do
     params = %{
       id: message.id,
       email: email.email,
@@ -20,5 +28,38 @@ defmodule TargetTest do
     email = Repo.get_by!(TargetEmail, email: email.email)
 
     assert email.email_status == :blocked
+  end
+
+  @bounce_event1 """
+  {
+  "event": "bounce",
+  "time": 1430812195,
+  "MessageID": 13792286917004336,
+  "Message_GUID": "1ab23cd4-e567-8901-2345-6789f0gh1i2j",
+  "email": "bounce@mailjet.com",
+  "mj_campaign_id": 0,
+  "mj_contact_id": 0,
+  "customcampaign": "",
+  "CustomID": "helloworld",
+  "Payload": "",
+  "blocked": false,
+  "hard_bounce": true,
+  "error_related_to": "recipient",
+  "error": "user unknown",
+  "comment": "Host or domain name not found. Name service error for name=lbjsnrftlsiuvbsren.com type=A: Host not found"
+  }
+  """
+
+  test "bounce event from Mailjet", %{target: target, message: message, email: email} do
+    event =
+      @bounce_event1
+      |> Jason.decode!()
+      |> Map.put("email", email.email)
+      |> Map.put("CustomID", "mtt:#{message.id}")
+
+    target_email = Proca.Service.Mailjet.handle_bounce(event)
+
+    assert target_email.error ==
+             "recipient: user unknown: Host or domain name not found. Name service error for name=lbjsnrftlsiuvbsren.com type=A: Host not found"
   end
 end

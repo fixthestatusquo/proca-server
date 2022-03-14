@@ -121,15 +121,15 @@ defmodule Proca.Supporter do
     end
   end
 
-  def handle_bounce(args) do
-    case one(action_id: args.id) do
+  def handle_bounce(%{id: id, reason: reason}) do
+    case one(action_id: id) do
       # ignore a bounce when not found
       nil ->
         {:ok, %Supporter{}}
 
       supporter ->
         reject(supporter)
-        Repo.update!(changeset(supporter, %{email_status: args.reason}))
+        Repo.update!(changeset(supporter, %{email_status: reason}))
     end
   end
 

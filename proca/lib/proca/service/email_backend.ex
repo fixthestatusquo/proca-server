@@ -209,7 +209,7 @@ defmodule Proca.Service.EmailBackend do
     end
   end
 
-  def format_custom_id(type, message_id)
-      when type in [:action, :mtt] and is_integer(message_id),
-      do: "#{type}:#{message_id}"
+  def format_custom_id(type, id)
+      when type in [:action, :mtt] and is_integer(id),
+      do: "#{type}:#{id}"
 end
