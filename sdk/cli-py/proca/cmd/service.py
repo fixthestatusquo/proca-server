@@ -12,14 +12,15 @@ SERVICE_NAMES = ['mailjet', 'ses']
 
 @click.command("service:set")
 @click.option("-o", "--org", required=True, help="Org name")
-@click.option("-i", "--id", type=int, help="Service ID")
+#@click.option("-i", "--id", type=int, help="Service ID")
 @click.option("-n", "--name", help="Service name", type=click.Choice(SERVICE_NAMES))
 @click.option("-u", "--user", help="username")
 
 @click.option("-p", "--password", help="password")
 @click.option('-P', '--password-prompt', is_flag=True, help="Prompt for Your password")
 @pass_context
-def set(ctx, org, id, name, user, password, password_prompt):
+def set(ctx, org, name, user, password, password_prompt):
+    id = None # unsupported atm
     if password_prompt:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
 
