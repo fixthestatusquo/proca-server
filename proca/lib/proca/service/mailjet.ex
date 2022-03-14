@@ -139,13 +139,23 @@ defmodule Proca.Service.Mailjet do
   defp put_custom(email), do: email
 
   @impl true
-  def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+  def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason} = event) do
     {type, id} = parse_custom_id(cid)
+
+    error =
+      ~w"error_related_to error comment"
+      |> Enum.map(&event[&1])
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.join(": ")
+
+    IO.inspect(event, label: "BOUNCE EVENT")
 
     bounce_params = %{
       id: id,
       email: email,
-      reason: String.to_existing_atom(reason)
+      reason: String.to_existing_atom(reason),
+      error: error
     }
 
     case type do

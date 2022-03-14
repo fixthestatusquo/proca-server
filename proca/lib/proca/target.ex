@@ -84,7 +84,7 @@ defmodule Proca.Target do
     end
   end
 
-  def handle_bounce(%{id: id, email: email, reason: reason}) do
+  def handle_bounce(%{id: id, email: email, reason: reason} = params) do
     case TargetEmail.one(message_id: id, email: email) do
       # ignore a bounce when not found
       nil ->
@@ -92,7 +92,7 @@ defmodule Proca.Target do
         {:ok, %TargetEmail{}}
 
       target_email ->
-        Repo.update!(change(target_email, email_status: reason))
+        Repo.update!(change(target_email, email_status: reason, error: params[:error]))
     end
   end
 end

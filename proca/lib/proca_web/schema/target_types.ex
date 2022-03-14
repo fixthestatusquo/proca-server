@@ -14,6 +14,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
   object :target_email do
     field :email, non_null(:string)
     field :email_status, non_null(:email_status)
+    field :error, :string
   end
 
   input_object :target_input do

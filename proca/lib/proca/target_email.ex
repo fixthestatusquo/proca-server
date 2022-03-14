@@ -10,6 +10,7 @@ defmodule Proca.TargetEmail do
   schema "target_emails" do
     field :email, :string
     field :email_status, EmailStatus, default: :none
+    field :error, :string
     belongs_to :target, Proca.Target, type: Ecto.UUID
 
     timestamps()
