@@ -8,14 +8,20 @@ defmodule Proca.Server.MTT do
   alias Proca.Repo
   alias Proca.Server.MTTWorker
 
+  @interval 30_000
+
   def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{})
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
   @impl true
   def init(state) do
-    :timer.send_interval(10_000, :work)
+    schedule_work()
     {:ok, state}
+  end
+
+  defp schedule_work() do
+    Process.send_after(self(), :work, @interval)
   end
 
   def dupe_rank() do
@@ -45,6 +51,7 @@ defmodule Proca.Server.MTT do
     dupe_rank()
     process_mtt()
     MTTWorker.process_mtt_test_mails()
+    schedule_work()
     {:noreply, state}
   end
 
