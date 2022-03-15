@@ -15,9 +15,9 @@ defmodule Proca.Server.MTT do
   end
 
   @impl true
-  def init(state) do
+  def init(_) do
     schedule_work()
-    {:ok, state}
+    {:ok, %{workers: []}}
   end
 
   defp schedule_work() do
@@ -47,12 +47,28 @@ defmodule Proca.Server.MTT do
   end
 
   @impl true
-  def handle_info(:work, state) do
+  def handle_info(:work, %{workers: w}) do
     dupe_rank()
-    process_mtt()
+    workers = w ++ process_mtt()
     MTTWorker.process_mtt_test_mails()
-    schedule_work()
+    {:noreply, %{workers: workers}}
+  end
+
+  @impl true
+  def handle_info({_ref, _result}, state) do
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, ref, _, _, reason}, %{workers: workers}) do
+    workers = List.delete(workers, ref)
+
+    if workers == [] do
+      # all workers done
+      schedule_work()
+    end
+
+    {:noreply, workers}
   end
 
   # XXX
@@ -71,10 +87,12 @@ defmodule Proca.Server.MTT do
       |> Repo.all()
 
     Enum.map(running_mtts, fn campaign ->
-      Task.async(fn ->
-        MTTWorker.process_mtt_campaign(campaign)
-      end)
+      task =
+        Task.async(fn ->
+          MTTWorker.process_mtt_campaign(campaign)
+        end)
+
+      task.ref
     end)
-    |> Enum.map(&Task.await/1)
   end
 end
