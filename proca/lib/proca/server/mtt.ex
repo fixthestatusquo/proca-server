@@ -60,7 +60,7 @@ defmodule Proca.Server.MTT do
   end
 
   @impl true
-  def handle_info({:DOWN, ref, _, _, reason}, %{workers: workers}) do
+  def handle_info({:DOWN, ref, _, _, _reason}, %{workers: workers}) do
     workers = List.delete(workers, ref)
 
     if workers == [] do
@@ -68,12 +68,8 @@ defmodule Proca.Server.MTT do
       schedule_work()
     end
 
-    {:noreply, workers}
+    {:noreply, %{workers: workers}}
   end
-
-  # XXX
-  # def dedupe_mtt() - calculate dupe_rank
-  # do not process a NULL dupe_rank
 
   def process_mtt() do
     # fetch campaigns to process here
