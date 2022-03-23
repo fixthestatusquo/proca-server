@@ -12,7 +12,8 @@ import configparser
 import re
 import pprint
 from gql.transport.exceptions import TransportQueryError
-
+from asyncio.exceptions import TimeoutError
+from aiohttp.client_exceptions import ClientOSError
 
 def explain_error(intent, **fmt_params):
     """
@@ -39,6 +40,12 @@ def explain_error(intent, **fmt_params):
                 log.debug("GraphQL Errors:", pprint.pformat(e.errors))
                 msgs  = ", ".join([api_error_explanation(m) for m in e.errors])
                 fail(f"😵 Tried {intent}, but {msgs}")
+            except TimeoutError as e:
+                log.debug("Timeout error", pprint.pformat(e.message))
+                fail(f"👎 Connection to server timed out when {intent}")
+            except ClientOSError as e:
+                log.debug("Network error", pprint.pformat(e.message))
+                fail(f"👎 Connection to server broke while {intent}")
 
         return explainer_wrap
     return decor
@@ -47,7 +54,7 @@ def explain_error(intent, **fmt_params):
 def api_error_explanation(msg):
     ex = msg.get('extensions', {})
     if 'path' in msg:
-        path = 'at ' '.'.join(msg['path'])
+        path = 'at ' + '.'.join(msg['path'])
     else:
         path = ''
 
@@ -59,7 +66,7 @@ def api_error_explanation(msg):
         else:
             return f"server said: {ex['code']} - {msg['message']} {path}"
 
-    return msg['message']
+    return f"{path}: {msg['message']}"
 
 def fail(message, usage=False, exit_code=1):
     if usage:

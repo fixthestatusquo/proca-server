@@ -51,6 +51,28 @@ actionPageStatus = """
     }
     """
 
+orgData = """
+    fragment orgData on PrivateOrg {
+        name
+        title
+        config
+
+        personalData {
+            contactSchema
+            doiThankYou  #  only send thank you if comconsent
+            supporterConfirm
+            supporterConfirmTemplate
+        }
+
+        processing {
+            emailBackend emailFrom
+            eventProcessing eventBackend
+            sqsDeliver
+        }
+    }
+"""
+
+
 class Null:
     "A Null value passed to GQL. A None value will not send the variable."
     pass
