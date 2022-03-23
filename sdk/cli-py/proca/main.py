@@ -14,14 +14,22 @@ import proca.cmd.service
 import proca.cmd.org
 
 
+HELP = """
+       ,,\\\\\\,,
+      ,\\\\\\\\\\\
+     ▲▲▲▲▲▲\\\\\\\\  FIX THE STATUS QUO
+    ▲▲▲▲▲▲▲▲\\\\\\`  PROCA COMMAND TOOL
+    ▼▼▼▼▼▼▼▼\\\\\`
+     ▼▼▼▼▼▼\\\^``    https://proca.app
 
-@click.group()
+    Proca CLI is a command line Proca API client. It is a Proca dashboard in your shell 🐚.
+"""
+
+
+@click.group(help=HELP)
 @click.option('-@', '--server', default=None, help="Which server to connect to (default: api.proca.app)")
 @pass_context
 def cli(ctx, server):
-    """
-    Proca CLI is a command line Proca API client. It is a Proca dashboard in your shell 🐚.
-    """
     proca.cmd.server.verify_server_exists(server)
     ctx.server_section = proca.config.server_section(server)
 

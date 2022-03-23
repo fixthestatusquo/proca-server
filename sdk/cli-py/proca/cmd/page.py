@@ -215,7 +215,7 @@ def format(page):
 
         status = page['status']
         if status == 'ACTIVE':
-            status = colored(status, color='red', attrs=['bold'])
+            status = R(status)
 
         details += f"|{status}"
 
