@@ -68,11 +68,17 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   # XXX make this into simple update on action_page, after we have partnerships
   def launch_page(_, params, %{
         context: %{
-          auth: auth = %Auth{staffer: %{org_id: org_id}},
+          auth: auth = %Auth{staffer: staffer},
           action_page: ap
         }
       }) do
     # Compare to campaign owner
+
+    staffer =
+      staffer || Proca.Staffer.one(org: %Proca.Org{id: ap.campaign.org_id}, user: auth.user)
+
+    org_id = if staffer, do: staffer.org_id, else: nil
+
     case Org.one(id: ap.campaign.org_id) do
       %Org{id: ^org_id} ->
         case ActionPage.go_live(ap) do
