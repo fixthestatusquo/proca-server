@@ -1,0 +1,7 @@
+click==8.0.4
+colored==1.4.3
+gql==3.0.0
+aiohttp==3.8.1
+websockets==10.2
+appdirs==1.4.4
+yaspin==2.1.0
