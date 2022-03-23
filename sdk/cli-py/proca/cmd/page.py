@@ -21,10 +21,11 @@ from termcolor import colored, cprint
 @id_options
 @click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
 @click.option('-o', '--org', 'org', help="Only list for org")
-@click.option('-c', '--config', type=click.File('w'))
-@click.option('-C', '--campaign-config', type=click.File('w'))
+@click.option('-c', '--campaign', help="Only list for campaign")
+@click.option('-f', '--config', type=click.File('w'))
+@click.option('-F', '--campaign-config', type=click.File('w'))
 @pass_context
-def show(ctx, id, name, identifier, ls, org, config, campaign_config):
+def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
     if ls:
         orgs, pages = action_pages_by_org(ctx.client)
         for oname, org_pages in pages.items():
@@ -37,6 +38,8 @@ def show(ctx, id, name, identifier, ls, org, config, campaign_config):
             print(out)
 
             for p in org_pages:
+                if campaign and p['campaign']['name'] != campaign:
+                    continue
                 print(format(p))
         return
 
@@ -71,7 +74,7 @@ def add(ctx, locale, name, org, campaign):
 @click.option('-x', '--extra', type=int)
 @click.option('-d/-D', '--deliver/--no-deliver', default=None)
 @click.option('-t', '--template')
-@click.option('-c', '--config', type=click.File('r'))
+@click.option('-f', '--config', type=click.File('r'))
 @pass_context
 def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
     id, name = guess_identifier(id, name, identifier)
