@@ -14,23 +14,19 @@ from yaspin import yaspin
 from gql import gql
 from base64 import b64encode
 
-from termcolor import colored, cprint
-
 @click.command()
 @pass_context
 def me(ctx):
     user = current_user(ctx.client)
 
-    cprint(user['email'], color='red', attrs=['bold'])
+    print(R(user['email']))
 
     for role in user['roles']:
-        cprint(f"`- ", color='blue', attrs=['bold'], end='')
-
-        t = colored(role['org']['title'], attrs=['bold'], color='white')
+        t = B("`- ") + W(role['org']['title'])
         r = role['role']
         n = role['org']['name']
 
-        print(f"{t} as {r} [{n}]")
+        print(rainbow(f"{t}|as|{r}|⬢ {n}"))
 
 
 @explain_error("fetching your user information")

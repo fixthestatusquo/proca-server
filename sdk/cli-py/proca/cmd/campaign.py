@@ -42,6 +42,22 @@ def show(ctx, id, name, identifier, external_id, ls, org, config):
         if config:
             config.write(c['config'])
 
+@click.command("campaign:add")
+@click.option('-o', '--org', help="organisation", prompt="Organisation")
+@click.option('-n', '--name', help="short code-name", prompt="Short code-name of the campaign")
+@click.option('-t', '--title', help="title of the campaign", prompt="Title, full name of the campaign")
+@pass_context
+def add(ctx, org, name, title):
+    input = {
+        'name': name,
+        'title': title
+    }
+
+    campaign = add_campaign(ctx.client, org, input)
+
+    print(format(campaign))
+
+
 
 @explain_error("fetching org's campaigns")
 def org_campaigns(client, org_name):
@@ -68,12 +84,29 @@ def one_campaign(client, id, name):
             ...campaignData
             ...mttData
             targets {id}
+            org { name title }
         }
     }
     """ + campaignData + mttData)
 
     data = client.execute(query, **vars(id=id, name=name))
     return data['campaign']
+
+@explain_error("adding a campaign")
+def add_campaign(client, org_name, input):
+
+    query = """
+    mutation AddCampaign($org: String! $input: CampaignInput!) {
+      addCampaign(orgName: $org, input: $input) {
+        ...campaignData
+      }
+    }
+    """ + campaignData
+    query = gql(query)
+
+    data = client.execute(query, **vars(org=org_name, input=input))
+    return data['addCampaign']
+
 
 def format(c):
     """
@@ -94,7 +127,7 @@ def format(c):
         trgts = ""
 
     mtt = ''
-    if c['mtt']:
+    if 'mtt' in c and c['mtt']:
         mtt = "{startAt} -> {endAt}".format(**c['mtt'])
         if c['mtt']['testEmail']:
             mtt += " testing to: <{testEmail}>".format(**c['mtt'])
@@ -103,6 +136,9 @@ def format(c):
         else:
             mtt += " RAW"
 
+    by_org = ''
+    if 'org' in c:
+        by_org = attr(0) + f" by|{c['org']['name']}"
 
-    info = w(f"{ids:<4}") + rainbow(f"!{title}|{name}|{ex_id}|!{trgts}|!{mtt}")
+    info = w(f"{ids:<4}") + rainbow(f"!{title}{by_org}|⬢ {name}|{ex_id}|!{trgts}|!{mtt}")
     return info

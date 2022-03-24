@@ -15,10 +15,13 @@ from colored import fg, bg, attr
 gradient = ['royal_blue_1', 'medium_purple_1', 'medium_orchid_1b', 'hot_pink_1a', 'orange_red_1']
 gradient.reverse()
 
-# y = lambda txt: colored(txt, color='yellow')
-# Y = lambda txt: colored(txt, color='yellow', attrs=['bold'])
+y = lambda txt: fg('yellow_4b') + txt + attr(0)
+Y = lambda txt: fg('yellow_4b') + attr(1) + txt + attr(0)
 r = lambda txt: fg(196) + txt + attr(0)
 R = lambda txt: fg(196) + attr(1) + txt + attr(0)
+
+b = lambda txt: fg('royal_blue_1') + txt + attr(0)
+B = lambda txt: fg('royal_blue_1') + attr(1) + txt + attr(0)
 # m = lambda txt: colored(txt, color='magenta')
 # M = lambda txt: colored(txt, color='magenta', attrs=['bold'])
 # b = lambda txt: colored(txt, color='blue')
