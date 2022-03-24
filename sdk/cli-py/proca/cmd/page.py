@@ -199,20 +199,23 @@ def action_pages_by_org(client):
     return orgs, pages
 
 
-def format(page):
+def format(page, show_campaign=True):
     """
     Formats page into
 
     somename.com/en (123, 9910) locale: en_IE
     """
 
-    name = f"!{page['name']}"
+    if show_campaign:
+        name = f"!{page['campaign']['name']}|!⬣ {page['name']}"
+    else:
+        name = f"!{page['name']}"
+
     ids = page['id']
     locale = "locale: " + page['locale']
 
+    details = ''
     if '__typename' in page and page['__typename'] == 'PrivateActionPage':
-        details = ''
-
         status = page['status']
         if status == 'ACTIVE':
             status = R(status)

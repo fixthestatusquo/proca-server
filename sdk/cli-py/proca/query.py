@@ -37,7 +37,7 @@ actionPageData = """
     fragment actionPageData on ActionPage {
     __typename
     id name locale config
-    thankYouTemplate
+        thankYouTemplate
     }
     """
 
