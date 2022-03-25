@@ -57,6 +57,7 @@ defmodule Proca.ActionPage do
       :org_id,
       :campaign_id
     ])
+    |> change(assocs)
     |> validate_required([:name, :locale, :extra_supporters])
     |> unique_constraint(:name)
     |> validate_format(
@@ -69,7 +70,6 @@ defmodule Proca.ActionPage do
     )
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
-    |> change(assocs)
   end
 
   def changeset(attrs) do

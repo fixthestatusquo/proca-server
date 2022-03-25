@@ -38,11 +38,11 @@ defmodule Proca.Action.Message do
       :opened,
       :clicked
     ])
+    |> change(assocs)
     |> foreign_key_constraint(:target,
       name: :messages_target_id_fkey,
       message: "target to messages association violated"
     )
-    |> change(assocs)
   end
 
   def put_messages(action, %{targets: targets} = attrs, %ActionPage{} = action_page) do

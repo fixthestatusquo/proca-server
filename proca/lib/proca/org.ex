@@ -78,13 +78,13 @@ defmodule Proca.Org do
       :event_processing,
       :action_schema_version
     ])
+    |> cast_email_backend(org, attrs)
+    |> cast_event_backend(org, attrs)
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
     |> Proca.Contact.Input.validate_email(:email_from)
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
-    |> cast_email_backend(org, attrs)
-    |> cast_event_backend(org, attrs)
   end
 
   def cast_email_backend(chset, org, %{email_backend: srv_name})

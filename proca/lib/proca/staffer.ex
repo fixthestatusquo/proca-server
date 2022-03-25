@@ -26,8 +26,8 @@ defmodule Proca.Staffer do
 
     staffer
     |> cast(attrs, [:perms, :last_signin_at, :org_id, :user_id])
-    |> validate_required([:perms])
     |> change(assocs)
+    |> validate_required([:perms])
     |> unique_constraint([:org_id, :user_id])
   end
 
