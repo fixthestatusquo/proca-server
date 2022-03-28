@@ -82,20 +82,21 @@ defmodule ProcaWeb.Resolvers.Org do
       end
 
     # Refactor to use Map.take - watch out sqs name is different
-    {:ok,
-     %{
-       org: org,
-       email_from: org.email_from,
-       email_backend: email_service,
-       supporter_confirm: org.supporter_confirm,
-       supporter_confirm_template: org.supporter_confirm_template,
-       custom_supporter_confirm: org.custom_supporter_confirm,
-       custom_action_confirm: org.custom_action_confirm,
-       custom_action_deliver: org.custom_action_deliver,
-       sqs_deliver: org.system_sqs_deliver,
-       event_processing: org.event_processing,
-       event_backend: event_service
-     }}
+    r =
+      %{
+        org: org,
+        email_backend: email_service,
+        event_backend: event_service
+      }
+      |> Map.merge(
+        Map.take(
+          org,
+          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver system_sqs_deliver event_processing)a
+        )
+      )
+      |> Helper.rename_key(:system_sqs_deliver, :sqs_deliver)
+
+    {:ok, r}
   end
 
   def org_processing_templates(%{org: org}, _, _) do

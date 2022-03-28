@@ -145,6 +145,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Schema for contact personal information"
     field :contact_schema, :contact_schema
 
+    # field that are duplicated under personal_data
     @desc "Email opt in enabled"
     field :supporter_confirm, :boolean
 
@@ -198,6 +199,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       arg(:supporter_confirm, :boolean)
       arg(:supporter_confirm_template, :string)
+      arg(:doi_thank_you, :boolean)
 
       arg(:custom_supporter_confirm, :boolean)
       arg(:custom_action_confirm, :boolean)
@@ -341,6 +343,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     field :supporter_confirm, non_null(:boolean)
     field :supporter_confirm_template, :string
+    field :doi_thank_you, non_null(:boolean)
 
     field :custom_supporter_confirm, non_null(:boolean)
     field :custom_action_confirm, non_null(:boolean)
