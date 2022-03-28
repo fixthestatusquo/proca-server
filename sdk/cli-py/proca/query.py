@@ -53,6 +53,7 @@ actionPageStatus = """
 
 orgData = """
     fragment orgData on PrivateOrg {
+        id
         name
         title
         config
@@ -68,8 +69,18 @@ orgData = """
             emailBackend emailFrom
             eventProcessing eventBackend
             sqsDeliver
+
+            supporterConfirm
+            supporterConfirmTemplate
+            customActionDeliver customSupporterConfirm
         }
     }
+"""
+
+serviceData = """
+  fragment serviceData on Service {
+    id name host path user
+  }
 """
 
 
@@ -90,3 +101,24 @@ def vars(**kv):
 
     x = {k: allow_null(v) for k, v in kv.items() if v is not None}
     return {"variable_values": x}
+
+
+def make_input(local_vars, allow_list):
+    """
+    Util to quickly pass arguments from click (which are variables) into an
+    input object. Accepts an object and a list of field names. Will not add None
+    values, but will convert any empty string '' to None (useful to reset a
+    field to null)
+
+    use:
+
+    input = make_input(locals(), ['user', 'password', 'locale'])
+    """
+    def empty_to_null(x):
+        if x == '':
+            return None
+        else:
+            return x
+
+    v1 = {v: empty_to_null(local_vars[v]) for v in allow_list if local_vars[v] is not None}
+    return v1

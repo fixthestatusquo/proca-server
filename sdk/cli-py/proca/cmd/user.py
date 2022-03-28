@@ -10,6 +10,7 @@ from proca.client import Endpoint
 from proca.friendly import validate_email, fail
 from proca.friendly import explain_error
 from proca.theme import *
+from proca.query import vars
 from yaspin import yaspin
 from gql import gql
 from base64 import b64encode
@@ -28,6 +29,36 @@ def me(ctx):
 
         print(rainbow(f"{t}|as|{r}|⬢ {n}"))
 
+
+@click.command("user")
+@click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
+@click.option('-o', '--org', 'org', help="Only list for org")
+#@click.option('-c', '--campaign', help="Only list for campaign")
+@pass_context
+def show(ctx, ls, org):
+    if ls:
+        users = list_org_users(ctx.client, org)
+        for u in users:
+            r = u['role']
+            e = u['email']
+            print(rainbow(f"{e}|as|{r}"))
+
+
+
+@explain_error("listing org users")
+def list_org_users(client, org):
+    query = gql("""
+    query orgUsers($name: String!) {
+      org(name: $name) {
+        ... on PrivateOrg {
+        users { email role joinedAt }
+        }
+      }
+    }
+    """)
+
+    data = client.execute(query, **vars(name=org))
+    return data['org']['users']
 
 @explain_error("fetching your user information")
 def current_user(client):
