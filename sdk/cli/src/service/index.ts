@@ -18,6 +18,7 @@ export interface ServiceOpts {
 export function getService(argv : ServiceOpts) {
   if (typeof argv.service === 'string') {
     let service = require(`./${argv.service}`);
+
     if (argv.backoff) {
       service.syncAction = addBackoff(service.syncAction);
     }
