@@ -3,6 +3,22 @@ defmodule Proca.Service.EmailMerge do
   Logic needed to do personalization / merge tags in Proca email system (to supporter, to target).
 
   Partially replace the EmailRecipient logic
+
+  ## Variables exposed to template
+
+  - firstName - first name of supporter
+  - ref - reference to supporter
+  - orgName
+  - orgTitle
+  - campaignName
+  - campaignTitle
+  - actionPageName
+  - actionPageLocale
+  - actionId
+  - trackingCampaign - the utm_campaign of action
+  - trackingMedium - the utm_medium
+  - trackingSource - the utm_source
+  - custom fields - custom fields (camel cased!)
   """
 
   alias Swoosh.Email

@@ -149,7 +149,7 @@ defmodule Proca.Service.Mailjet do
       |> Enum.reject(&(&1 == ""))
       |> Enum.join(": ")
 
-    IO.inspect(event, label: "BOUNCE EVENT")
+    # IO.inspect(event, label: "BOUNCE EVENT")
 
     bounce_params = %{
       id: id,
