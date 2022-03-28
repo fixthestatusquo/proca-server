@@ -26,6 +26,10 @@ def cli(ctx, server):
 
     proca.cmd.server.verify_server_exists(server)
     ctx.server_section = proca.config.server_section(server)
+    # XXX set defaults map!!!
+    # for:
+    # org paramter
+    # → https://click.palletsprojects.com/en/5.x/commands/
 
 cli.add_command(proca.cmd.server.server_list)
 cli.add_command(proca.cmd.server.server_add)
@@ -33,13 +37,17 @@ cli.add_command(proca.cmd.server.server_set)
 cli.add_command(proca.cmd.server.server_delete)
 cli.add_command(proca.cmd.user.me)
 cli.add_command(proca.cmd.user.token)
+cli.add_command(proca.cmd.user.show)
 cli.add_command(proca.cmd.page.show)
 cli.add_command(proca.cmd.page.set)
 cli.add_command(proca.cmd.page.add)
 cli.add_command(proca.cmd.action.action)
 cli.add_command(proca.cmd.campaign.show)
 cli.add_command(proca.cmd.campaign.add)
+cli.add_command(proca.cmd.service.list)
 cli.add_command(proca.cmd.service.set)
+cli.add_command(proca.cmd.service.email)
 cli.add_command(proca.cmd.org.show)
 cli.add_command(proca.cmd.org.add)
+cli.add_command(proca.cmd.org.leave)
 cli.add_command(proca.cmd.org.set)
