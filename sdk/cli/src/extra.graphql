@@ -1,0 +1,18 @@
+query ActionPageExtra($id: Int!) {
+  actionPage(id: $id) {
+    ... on PrivateActionPage {
+      extraSupporters
+    }
+  }
+}
+
+mutation ActionPageSetExtra($id: Int!, $extra: Int!) {
+  updateActionPage(id: $id, input: {
+      extraSupporters: $extra
+    }) {
+    __typename
+    ... on PrivateActionPage {
+      extraSupporters
+    }
+  }
+}

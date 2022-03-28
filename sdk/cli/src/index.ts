@@ -1,5 +1,6 @@
 export {load as loadConfig, CliConfig} from './config'
 export * as cli from './cli'
+export {default as getClient} from './client'
 export * as crypto from './crypto'
 export * as identity from './service/identity'
 export * as email from './service/email'
