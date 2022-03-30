@@ -12,21 +12,15 @@ from termcolor import colored
 
 
 def list_server_sections(show_default=True):
-    def display_name(name):
-        x = name.split(":")
-        if len(x) > 1:
-            return x[1]
-        return "(default)"
-
     l = [
         (
-            display_name(sn),
+            sn.split(":")[1],
             Config.get(sn, "url"),
             Config.get(sn, "ws_url", fallback=None),
             Config.get(sn, "user", fallback=None)
         )
         for sn in Config.sections()
-        if sn.startswith("server") and (show_default == True or sn != "server")
+        if sn.startswith("server") and (show_default == True or sn != "server:DEFAULT")
     ]
     return l
 
@@ -152,8 +146,11 @@ def verify_host(url):
     e = Endpoint(url)
 
     with yaspin() as ya:
-        if not e.check_http_url():
-            ya.fail(f"Error: 🚇 that url does not seem to lead to the API. Tried: {e.http_url}")
-            raise click.Abort
-        else:
-            ya.ok(f"🍦 API url looks ok - {e.http_url}")
+        try:
+            if not e.check_http_url():
+                ya.fail(f"Error: 🚇 that url does not seem to lead to the API. Tried: {e.http_url}")
+                raise click.Abort
+            else:
+                ya.ok(f"🍦 API url looks ok - {e.http_url}")
+        except ValueError as err:
+            fail(f"🤨 I expected an url, got {err}")

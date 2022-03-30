@@ -33,9 +33,11 @@ config_filename = path.join(config_dirname, "proca.conf")
 
 def server_section(name=None):
     if name is None:
-       return "server"
+       return "server:DEFAULT"
     return "server:" + name
 
+def server_name(section):
+    return section.split(":")[1]
 
 @explain_error("adding server configuration")
 def add_server_section(name):
@@ -46,7 +48,7 @@ def initialize():
     "Initialize the Config"
 
     def default_server():
-        sn = server_section()
+        sn = server_section("DEFAULT")
         try:
             add_server_section(sn)
         except DuplicateSectionError:
