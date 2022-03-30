@@ -11,7 +11,7 @@ class Context:
     def __init__(self):
         self._client = None
 
-        self.server_section = server_section(None) # default
+        self.server_section = server_section("DEFAULT") # default
 
         # load config
         load()
