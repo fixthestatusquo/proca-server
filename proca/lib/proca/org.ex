@@ -53,7 +53,7 @@ defmodule Proca.Org do
     # for system events from Proca.Server.Notify
     field :event_processing, :boolean, default: false
 
-    field :config, :map
+    field :config, :map, default: %{}
 
     timestamps()
   end
