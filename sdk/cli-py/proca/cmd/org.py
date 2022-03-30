@@ -35,7 +35,7 @@ def add(ctx, name, title, default):
         store()
 
 
-    print(rainbow(f"added|{org['name']}|with id|{org['title']}"))
+    print(rainbow(f"⬣ {org['name']}|id: {org['id']}|- {org['title']}"))
 
 @click.command("org:set")
 @click.argument('name', required=True)
