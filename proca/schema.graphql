@@ -80,6 +80,7 @@ type PublicCampaign implements Campaign {
 type TargetEmail {
   email: String!
   emailStatus: EmailStatus!
+  error: String
 }
 
 "Tracking codes"
@@ -147,6 +148,7 @@ type Consent {
   givenAt: NaiveDateTime!
   emailStatus: EmailStatus!
   emailStatusChanged: NaiveDateTime
+  withConsent: Boolean!
 }
 
 "Tracking codes"
@@ -371,6 +373,9 @@ input ActionInput {
 
   "MTT payload"
   mtt: MttActionInput
+
+  "Test mode"
+  testing: Boolean
 }
 
 type ConfirmResult {
@@ -532,7 +537,9 @@ type RootMutationType {
   "Update an Action Page"
   updateActionPage(
     "Action Page id"
-    id: Int!
+    id: Int
+
+    name: String
 
     input: ActionPageInput!
   ): ActionPage!
@@ -696,6 +703,8 @@ type RootMutationType {
 
     supporterConfirmTemplate: String
 
+    doiThankYou: Boolean
+
     customSupporterConfirm: Boolean
 
     customActionConfirm: Boolean
@@ -827,6 +836,9 @@ type RootQueryType {
 
     "Only download double opted in contacts"
     onlyDoubleOptIn: Boolean
+
+    "Also include testing actions"
+    includeTesting: Boolean
   ): [Action]!
 
   currentUser: User!
@@ -868,6 +880,7 @@ type Processing {
   emailBackend: ServiceName
   supporterConfirm: Boolean!
   supporterConfirmTemplate: String
+  doiThankYou: Boolean!
   customSupporterConfirm: Boolean!
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
@@ -1012,6 +1025,9 @@ input ActionPageInput {
 
   "JSON string containing Action Page config"
   config: Json
+
+  "Collected PII is processed even with no opt-in"
+  delivery: Boolean
 }
 
 enum DonationFrequencyUnit {
@@ -1044,6 +1060,9 @@ type PersonalData {
 
   "High data security enabled"
   highSecurity: Boolean!
+
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean!
 }
 
 enum DonationSchema {
@@ -1265,6 +1284,9 @@ input OrgInput {
   "Email opt in template name"
   supporterConfirmTemplate: String
 
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean
+
   "Config"
   config: Json
 }
@@ -1276,7 +1298,7 @@ type CustomField {
 }
 
 input TargetInput {
-  name: String!
+  name: String
   area: String
   externalId: String!
   fields: Json

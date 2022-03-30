@@ -84,14 +84,18 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   end
 
   def format_privacy(
-        %Supporter{email_status: es, email_status_changed: esch},
+        %Action{
+          with_consent: with_consent,
+          supporter: %Supporter{email_status: es, email_status_changed: esch}
+        },
         %Contact{communication_consent: cc, inserted_at: given_at}
       ) do
     %{
       opt_in: cc,
       given_at: given_at,
       email_status: es,
-      email_status_changed: esch
+      email_status_changed: esch,
+      with_consent: with_consent
     }
   end
 
@@ -107,7 +111,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       custom_fields: action.fields,
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
-      privacy: format_privacy(action.supporter, contact),
+      privacy: format_privacy(action, contact),
       trackng: action.source,
       campaign: action.campaign,
       action_page: action.action_page

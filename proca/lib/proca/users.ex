@@ -325,6 +325,18 @@ defmodule Proca.Users do
 
   ## Reset password
 
+  def reset_by_email!(email) do
+    case User.one(email: email) do
+      nil ->
+        raise "No user for email #{email}"
+
+      user ->
+        {ch, pwd} = User.generate_password_changeset(user)
+        Repo.update_and_notify!(ch)
+        {ch, pwd}
+    end
+  end
+
   @doc """
   Delivers the reset password email to the given user.
 

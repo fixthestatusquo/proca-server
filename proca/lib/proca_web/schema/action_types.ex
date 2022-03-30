@@ -245,6 +245,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :given_at, non_null(:naive_datetime)
     field :email_status, non_null(:email_status)
     field :email_status_changed, :naive_datetime
+    field :with_consent, non_null(:boolean)
   end
 
   @desc "Tracking codes"
