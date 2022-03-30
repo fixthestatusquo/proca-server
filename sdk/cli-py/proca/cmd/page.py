@@ -5,7 +5,6 @@ import click
 import operator
 
 from proca.config import Config, add_server_section, server_section, store, make_client
-from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier, validate_locale
@@ -24,7 +23,7 @@ from termcolor import colored, cprint
 @click.option('-c', '--campaign', help="Only list for campaign")
 @click.option('-f', '--config', type=click.File('w'))
 @click.option('-F', '--campaign-config', type=click.File('w'))
-@pass_context
+@click.pass_obj
 def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
     if ls:
         orgs, pages = action_pages_by_org(ctx.client)
@@ -60,7 +59,7 @@ def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
 @click.option('-c', '--campaign', help="campaign", prompt="Campaign")
 @click.option('-n', '--name', help="name", prompt="Short name of the page")
 @click.option('-l', '--locale', help="locale", prompt="Locale of the page", callback=validate_locale)
-@pass_context
+@click.pass_obj
 def add(ctx, locale, name, org, campaign):
     print(rainbow(f"{locale}|!{name}|{campaign}"))
 
@@ -75,7 +74,7 @@ def add(ctx, locale, name, org, campaign):
 @click.option('-d/-D', '--deliver/--no-deliver', default=None)
 @click.option('-t', '--template')
 @click.option('-f', '--config', type=click.File('r'))
-@pass_context
+@click.pass_obj
 def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
     id, name = guess_identifier(id, name, identifier)
 

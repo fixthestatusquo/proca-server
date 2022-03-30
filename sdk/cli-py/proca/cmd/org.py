@@ -3,9 +3,8 @@
 
 import click
 
-from proca.context import pass_context
 from proca.friendly import explain_error
-from proca.config import Config
+from proca.config import Config, store
 from proca.theme import *
 from proca.query import *
 from yaspin import yaspin
@@ -14,7 +13,7 @@ from gql import gql
 @click.command("org")
 @click.argument('name', required=True)
 @click.option('-f', '--config', type=click.File('w'))
-@pass_context
+@click.pass_obj
 def show(ctx, name, config):
     org = get_org(ctx.client, name)
 
@@ -26,9 +25,15 @@ def show(ctx, name, config):
 @click.command("org:add")
 @click.argument('name', required=True)
 @click.argument('title', required=True)
-@pass_context
-def add(ctx, name, title):
+@click.option('-d/-D', '--default/--no-default', is_flag=True, prompt="Set as default?")
+@click.pass_obj
+def add(ctx, name, title, default):
     org = add_org(ctx.client, name, title)
+
+    if default:
+        Config.set(ctx.server_section, 'org', org['name'])
+        store()
+
 
     print(rainbow(f"added|{org['name']}|with id|{org['title']}"))
 
@@ -45,7 +50,7 @@ def add(ctx, name, title):
 @click.option('-D', '--doi/--no-doi', help="Send thenk you email only to do DOI")
 @click.option('-f', '--config', type=click.File('r'))
 @click.option('--custom-deliver/--no-custom-deliver', is_flag=True, help="Deliver actions to custom queue")
-@pass_context
+@click.pass_obj
 def set(ctx,
         name,
         rename,
@@ -88,7 +93,7 @@ def set(ctx,
 
 @click.command("org:leave")
 @click.argument('name', required=True)
-@pass_context
+@click.pass_obj
 def leave(ctx, name):
     email = Config[ctx.server_section].get('user')
     status = leave_org(ctx.client, name, email)
