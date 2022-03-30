@@ -5,7 +5,6 @@ import click
 import operator
 
 from proca.config import Config, add_server_section, server_section, store, make_client
-from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier, validate_locale
@@ -21,9 +20,9 @@ from termcolor import colored, cprint
 @id_options
 @click.option('-I', '--external-id', help="External ID")
 @click.option('-l', '--list', 'ls', is_flag=True, help="List campaigns")
-@click.option('-o', '--org',  help="Only list for org")
+@click.option('-o', '--org', help="Only list for org")
 @click.option('-c', '--config', type=click.File('w'))
-@pass_context
+@click.pass_obj
 def show(ctx, id, name, identifier, external_id, ls, org, config):
     if ls:
         if org:
@@ -46,7 +45,7 @@ def show(ctx, id, name, identifier, external_id, ls, org, config):
 @click.option('-o', '--org', help="organisation", prompt="Organisation")
 @click.option('-n', '--name', help="short code-name", prompt="Short code-name of the campaign")
 @click.option('-t', '--title', help="title of the campaign", prompt="Title, full name of the campaign")
-@pass_context
+@click.pass_obj
 def add(ctx, org, name, title):
     input = {
         'name': name,

@@ -4,7 +4,6 @@
 import click
 
 from proca.config import Config, add_server_section, server_section, store, make_client
-from proca.context import pass_context
 from proca.util import log
 from proca.client import Endpoint
 from proca.friendly import validate_email, fail
@@ -16,7 +15,7 @@ from gql import gql
 from base64 import b64encode
 
 @click.command()
-@pass_context
+@click.pass_obj
 def me(ctx):
     user = current_user(ctx.client)
 
@@ -34,7 +33,7 @@ def me(ctx):
 @click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
 @click.option('-o', '--org', 'org', help="Only list for org")
 #@click.option('-c', '--campaign', help="Only list for campaign")
-@pass_context
+@click.pass_obj
 def show(ctx, ls, org):
     if ls:
         users = list_org_users(ctx.client, org)
@@ -77,7 +76,7 @@ def current_user(client):
     return data['currentUser']
 
 @click.command("me:token")
-@pass_context
+@click.pass_obj
 def token(ctx):
     conf = Config[ctx.server_section]
 

@@ -3,7 +3,7 @@
 import click
 
 import proca.config
-from proca.context import pass_context
+from proca.context import CliContext
 from proca.util import log
 import proca.cmd.server
 import proca.cmd.user
@@ -17,15 +17,24 @@ import proca.cmd.org
 
 
 @click.group()
-@click.option('-@', '--server', default=None, help="Which server to connect to (default: api.proca.app)")
-@pass_context
+@click.option('-@', '--server', default='DEFAULT', help="Which server to connect to (default: api.proca.app)")
+@click.pass_context
 def cli(ctx, server):
     """
     Proca CLI is a command line Proca API client. It is a Proca dashboard in your shell 🐚.
     """
 
+    proca.config.load()
+
+    # validate input
     proca.cmd.server.verify_server_exists(server)
-    ctx.server_section = proca.config.server_section(server)
+
+    # initialize context
+    cc = CliContext(server)
+
+    ctx.obj = cc
+    ctx.default_map = cc.default_map
+
     # XXX set defaults map!!!
     # for:
     # org paramter

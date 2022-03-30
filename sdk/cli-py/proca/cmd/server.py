@@ -17,7 +17,8 @@ def list_server_sections(show_default=True):
             sn.split(":")[1],
             Config.get(sn, "url"),
             Config.get(sn, "ws_url", fallback=None),
-            Config.get(sn, "user", fallback=None)
+            Config.get(sn, "user", fallback=None),
+            Config.get(sn, "org", fallback=None)
         )
         for sn in Config.sections()
         if sn.startswith("server") and (show_default == True or sn != "server:DEFAULT")
@@ -31,15 +32,19 @@ def server_list():
     List API servers
     """
 
-    for name, url, ws_url, user in list_server_sections():
-        a = colored(f"{name}", color='white') +  f": {url}"
+    for name, url, ws_url, user, org in list_server_sections():
+        a = W(f"{name}") +  f"|{url}"
 
         if ws_url:
-            a += f" [WebSocket: {ws_url}]"
-        if user:
-            a += ' ' + Y('auth:') + f" {user}"
+            a += f"|[WebSocket: {ws_url}]"
 
-        print(a)
+        if user:
+            a += f"|auth: {user}"
+
+        if org:
+            a += f"|org: {org}"
+
+        print(rainbow(a))
 
 
 @click.command("server:add")
@@ -86,8 +91,9 @@ def server_add(host, user, password, public, socket, name):
 @click.option('-p', '--password', help="Your password")
 @click.option('-P', '--password-prompt', is_flag=True, help="Prompt for Your password")
 @click.option('-s', '--socket', help="API WebSocket url", default=None)
+@click.option('-o', '--org', help="Set a default organisation name")
 @click.argument('name', default=None, required=False)
-def server_set(host, user, password, password_prompt, name, socket):
+def server_set(host, user, password, password_prompt, name, socket, org):
     "Set server options"
 
     verify_server_exists(name)
@@ -110,6 +116,9 @@ def server_set(host, user, password, password_prompt, name, socket):
     if password:
         Config.set(sn, "password", password)
 
+    if org:
+        Config.set(sn, "org", org)
+
     store()
 
 @click.command("server:delete")
@@ -127,10 +136,6 @@ def server_delete(name):
 
 
 def verify_server_exists(name):
-    # ok for default
-    if name is None:
-        return
-
     if not Config.has_section(server_section(name)):
         hint = ', '.join([n for (n, _, _, _) in list_server_sections(False)])
         if hint:

@@ -3,7 +3,6 @@
 from gql import gql
 import click
 from proca.config import make_client
-from proca.context import pass_context
 from proca.friendly import explain_error
 from proca.theme import *
 from proca.query import *
@@ -14,7 +13,7 @@ SERVICE_NAMES = ['mailjet', 'ses']
 
 @click.command("service")
 @click.option("-o", "--org", required=True, help="Org name")
-@pass_context
+@click.pass_obj
 def list(ctx, org):
     services = org_services(ctx.client, org)
 
@@ -33,7 +32,7 @@ def list(ctx, org):
 
 @click.option("-h", "--host", help="Hostname or region")
 @click.option("-l", "--path", help="Path or section")
-@pass_context
+@click.pass_obj
 def set(ctx, org, name, user, password, password_prompt, host, path):
     id = None # unsupported atm
     if password_prompt:
@@ -56,7 +55,7 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
 #@click.option("-i", "--id", type=int, help="Service ID")
 @click.option("-f", "--from", 'frm', help="Sender email (SMTP From header)")
 @click.option("-n", "--name", help="Service name", type=click.Choice(SERVICE_NAMES), required=True)
-@pass_context
+@click.pass_obj
 def email(ctx, org, frm, name):
     ip = {
         "emailBackend": name,
