@@ -131,11 +131,10 @@ def add_org(client, name, title):
         addOrg(input:{
             name: $name, title: $title
         }) {
-            ... on PrivateOrg {id}
-            name
+            ... orgData
         }
         }
-    """)
+    """ + orgData)
 
     data = client.execute(query, **vars(name=name, title=title))
     return data['addOrg']

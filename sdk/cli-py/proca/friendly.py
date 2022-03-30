@@ -44,7 +44,7 @@ def explain_error(intent, **fmt_params):
                 log.debug("Timeout error", pprint.pformat(e.message))
                 fail(f"👎 Connection to server timed out when {intent}")
             except ClientOSError as e:
-                log.debug("Network error", pprint.pformat(e.message))
+                log.debug("Network error", pprint.pformat(e))
                 fail(f"👎 Connection to server broke while {intent}")
 
         return explainer_wrap
