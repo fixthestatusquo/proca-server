@@ -21,10 +21,10 @@ defmodule ProcaWeb.Helper do
   name will not end up in messages. Maybe we should join all field names by a
   dot and return suchj field, for instance: contact.email instead of email
   """
-  def format_errors(changeset) do
+  def format_errors(changeset, path \\ []) do
     changeset
     |> Changeset.traverse_errors(fn {msg, opts} -> %{message: replace_placeholders(msg, opts)} end)
-    |> flatten_errors()
+    |> flatten_errors(path)
   end
 
   def replace_placeholders(msg, opts) do

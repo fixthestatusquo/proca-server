@@ -21,8 +21,9 @@ defmodule ProcaWeb.Resolvers.Target do
       {:ok, records} ->
         {:ok, pick_targets(records)}
 
-      {:error, _, error, _} ->
-        {:error, Helper.format_errors(error)}
+      {:error, {:target, ext_id}, error, _} ->
+        target_idx = Enum.find_index(targets, fn %{external_id: eid} -> eid == ext_id end)
+        {:error, Helper.format_errors(error, [target_idx, "targets"])}
     end
   end
 
