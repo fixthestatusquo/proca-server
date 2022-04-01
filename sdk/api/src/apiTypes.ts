@@ -512,6 +512,7 @@ export type Partnership = {
   org: Org;
   actionPages: Array<ActionPage>;
   launchRequests: Array<Confirm>;
+  launchRequesters: Array<User>;
 };
 
 export type PersonalData = {
