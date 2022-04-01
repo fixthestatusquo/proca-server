@@ -1,6 +1,6 @@
 {
   "name": "@proca/crypto",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Decrypt personal information in Proca action",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

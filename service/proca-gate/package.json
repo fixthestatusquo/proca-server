@@ -1,10 +1,10 @@
 {
     "name": "proca-gate",
     "description": "Proca action gateway for AWS Lambda",
-    "version": "3.3.0",
+    "version": "3.3.1",
     "private": true,
     "dependencies": {
-        "@proca/cli": "^3.3.0",
+        "@proca/cli": "^3.3.1",
         "@sentry/node": "^6.3.5",
         "aws-sdk": "^2.815.0",
         "bent": "^7.3.12"
