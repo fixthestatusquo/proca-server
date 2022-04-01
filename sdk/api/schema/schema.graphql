@@ -206,6 +206,7 @@ type Partnership {
   org: Org!
   actionPages: [ActionPage!]!
   launchRequests: [Confirm!]!
+  launchRequesters: [User!]!
 }
 
 type RootSubscriptionType {

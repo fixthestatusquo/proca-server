@@ -234,17 +234,36 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def partnership_launch_requests(
-        %{org: %Org{id: _org_id}, campaign: %Campaign{id: campaign_id}},
+        %{org: %Org{id: org_id}, campaign: %Campaign{id: campaign_id}},
         _,
         _
       ) do
     {
       :ok,
       from(c in Confirm,
-        where: c.operation == :launch_page and c.subject_id == ^campaign_id,
+        join: ap in ActionPage,
+        on: c.object_id == ap.id,
+        where:
+          c.operation == :launch_page and c.subject_id == ^campaign_id and ap.org_id == ^org_id,
         preload: [:creator]
       )
       |> where([c], c.charges > 0)
+      |> all()
+    }
+  end
+
+  def partnership_requesters(%{org: %{id: org_id}, campaign: %{id: campaign_id}}, _, _) do
+    {
+      :ok,
+      from(user in Proca.Users.User,
+        join: c in Confirm,
+        on: user.id == c.creator_id,
+        join: ap in ActionPage,
+        on: c.object_id == ap.id,
+        where:
+          c.operation == :launch_page and c.subject_id == ^campaign_id and ap.org_id == ^org_id,
+        distinct: true
+      )
       |> all()
     }
   end

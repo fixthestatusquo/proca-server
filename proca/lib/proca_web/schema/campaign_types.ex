@@ -136,6 +136,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :launch_requests, non_null(list_of(non_null(:confirm))) do
       resolve(&Resolvers.Campaign.partnership_launch_requests/3)
     end
+
+    field :launch_requesters, non_null(list_of(non_null(:user))) do
+      resolve(&Resolvers.Campaign.partnership_requesters/3)
+    end
   end
 
   object :launch_action_page_result do
