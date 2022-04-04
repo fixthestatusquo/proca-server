@@ -91,6 +91,32 @@ def set(ctx,
     org = update_org(ctx.client, name, input, proc_input)
     print(format(org))
 
+@click.command("org:join")
+@click.argument('name', required=True)
+@click.pass_obj
+def join(ctx, name):
+    # email = Config[ctx.server_section].get('user')
+    _status, org = join_org(ctx.client, name)
+    print(f"🛸 joined " + format(org))
+
+@explain_error("joining org")
+def join_org(client, org_name):
+    query_string = """
+    mutation JoinOrg($org: String!) {
+      joinOrg(name: $org) {
+        status
+        org {
+          ... on PrivateOrg {
+          ...orgData
+          }
+        }
+      }
+    }
+    """ + orgData
+
+    query = gql(query_string)
+    data = client.execute(query, **vars(org=org_name))
+    return data['joinOrg']['status'], data['joinOrg']['org']
 
 @click.command("org:leave")
 @click.argument('name', required=True)
@@ -223,7 +249,8 @@ def format(org):
         delivery.append(f"QUEUE[cus.{id}.deliver]")
 
 
-    proc_out += "|▷ " + "|".join(delivery)
+    if delivery != []:
+        proc_out += "|▷ " + "|".join(delivery)
     proc_out += f"|▷ export"
 
     out += rainbow(proc_out)
