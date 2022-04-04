@@ -12,6 +12,7 @@ from proca.theme import *
 from proca.query import *
 from yaspin import yaspin
 from gql import gql
+from proca.cmd.org import CONTACT_SCHEMA_CHOICE
 
 from termcolor import colored, cprint
 
@@ -57,6 +58,31 @@ def add(ctx, org, name, title):
     print(format(campaign))
 
 
+@click.command("campaign:set")
+@click.argument('identifier', default=None, required=False)
+@id_options
+@click.option('-I', '--external-id', help="External ID")
+@click.option('-N', '--rename', help="rename to name")
+@click.option('-t', '--title', help="title of the campaign")
+@click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE)
+@click.pass_obj
+def set(ctx, id, name, identifier, external_id, rename, title, contact_schema):
+    if external_id is None:
+        id, name = guess_identifier(id, name, identifier)
+
+    input = {}
+
+    if rename:
+        input['name'] = rename
+    if title:
+        input['title'] = title
+    if contact_schema:
+        input['contact_schema'] = contact_schema
+
+
+    campaign = update_campaign(ctx.client, id, name, external_id, input)
+
+    print(format(campaign))
 
 @explain_error("fetching org's campaigns")
 def org_campaigns(client, org_name):
@@ -106,6 +132,20 @@ def add_campaign(client, org_name, input):
     data = client.execute(query, **vars(org=org_name, input=input))
     return data['addCampaign']
 
+@explain_error("updating a campaign")
+def update_campaign(client, id, name, external_id, input):
+
+    query = """
+    mutation UpdateCampaign($id: Int, $name: String, $externalid: Int, $input: CampaignInput!) {
+      updateCampaign(id: $id, name: $name, externalId: $externalid, input: $input) {
+        ...campaignData
+      }
+    }
+    """ + campaignData
+    query = gql(query)
+
+    data = client.execute(query, **vars(id=id, name=name, externalid=external_id, input=input))
+    return data['updateCampaign']
 
 def format(c):
     """
@@ -135,9 +175,11 @@ def format(c):
         else:
             mtt += " RAW"
 
+    cs = c['contactSchema']
+
     by_org = ''
     if 'org' in c:
         by_org = attr(0) + f" by|{c['org']['name']}"
 
-    info = w(f"{ids:<4}") + rainbow(f"!{title}{by_org}|⬢ {name}|{ex_id}|!{trgts}|!{mtt}")
+    info = w(f"{ids:<4}") + rainbow(f"!{title}{by_org}|⬢ {name}|{ex_id}|{cs}|!{trgts}|!{mtt}")
     return info

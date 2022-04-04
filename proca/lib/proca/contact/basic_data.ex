@@ -18,6 +18,10 @@ defmodule Proca.Contact.BasicData do
     field :phone, :string
     field :country, :string
     field :postcode, :string
+    field :locality, :string
+    field :region, :string
+    field :street, :string
+    field :street_number, :string
     field :area, :string
   end
 
@@ -35,7 +39,8 @@ defmodule Proca.Contact.BasicData do
       d = apply_changes(ch)
       a = Map.get(d, :address) || %Input.Address{}
 
-      change(%BasicData{}, %{
+      %BasicData{}
+      |> change(%{
         name: d.name,
         first_name: d.first_name,
         last_name: d.last_name,
@@ -43,6 +48,11 @@ defmodule Proca.Contact.BasicData do
         phone: d.phone,
         country: a.country,
         postcode: a.postcode,
+        locality: a.locality,
+        region: a.region,
+        street: a.street,
+        street_number: a.street_number,
+
         # XXX we can have some logic here to use some other area type
         area: a.country
       })
