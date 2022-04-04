@@ -22,11 +22,11 @@ import proca.client
 
 import appdirs
 from os import path
-from configparser import ConfigParser, DuplicateSectionError, DuplicateOptionError
+from configparser import RawConfigParser, DuplicateSectionError, DuplicateOptionError
 
 from proca.friendly import explain_error
 
-Config = ConfigParser()
+Config = RawConfigParser()
 
 config_dirname = appdirs.user_config_dir(appname="proca")
 config_filename = path.join(config_dirname, "proca.conf")
