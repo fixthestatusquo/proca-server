@@ -137,7 +137,7 @@ def server_delete(name):
 
 def verify_server_exists(name):
     if not Config.has_section(server_section(name)):
-        hint = ', '.join([n for (n, _, _, _) in list_server_sections(False)])
+        hint = ', '.join([n for (n, _, _, _, _) in list_server_sections(False)])
         if hint:
             hint = " Your servers: " + hint
         else:

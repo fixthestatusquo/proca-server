@@ -10,6 +10,9 @@ from proca.query import *
 from yaspin import yaspin
 from gql import gql
 
+CONTACT_SCHEMA_CHOICE=click.Choice(['BASIC', 'ECI', 'POPULAR_INITIATIVE'], case_sensitive=False)
+
+
 @click.command("org")
 @click.argument('name', required=True)
 @click.option('-f', '--config', type=click.File('w'))
@@ -41,9 +44,7 @@ def add(ctx, name, title, default):
 @click.argument('name', required=True)
 @click.option('-N', '--rename')
 @click.option('-t', '--title')
-@click.option('-S', '--contact-schema',
-              type=click.Choice(['BASIC', 'ECI', 'POPULAR_INITIATIVE'],
-                                case_sensitive=False), help="Personal data schema/category")
+@click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE, help="Personal data schema/category")
 @click.option('-C', '--supporter-confirm/--no-supporter-confirm', is_flag=True, help="Confirm contact data by email?")
 @click.option('--custom-supporter-confirm/--no-custom-supporter-confirm', is_flag=True, help="Put actions for supporter confirm on custom queue")
 @click.option('-T', '--supporter-confirm-template', help="Contact confirmation email template")
