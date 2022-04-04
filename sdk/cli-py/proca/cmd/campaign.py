@@ -65,8 +65,9 @@ def add(ctx, org, name, title):
 @click.option('-N', '--rename', help="rename to name")
 @click.option('-t', '--title', help="title of the campaign")
 @click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE)
+@click.option('-f', '--config', type=click.File('r'))
 @click.pass_obj
-def set(ctx, id, name, identifier, external_id, rename, title, contact_schema):
+def set(ctx, id, name, identifier, external_id, rename, title, contact_schema, config):
     if external_id is None:
         id, name = guess_identifier(id, name, identifier)
 
@@ -78,7 +79,9 @@ def set(ctx, id, name, identifier, external_id, rename, title, contact_schema):
         input['title'] = title
     if contact_schema:
         input['contact_schema'] = contact_schema
-
+    if config:
+        config_json = config.read()
+        input["config"] = config_json
 
     campaign = update_campaign(ctx.client, id, name, external_id, input)
 
