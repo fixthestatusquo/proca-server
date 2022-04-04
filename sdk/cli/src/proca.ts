@@ -537,6 +537,7 @@ export type Partnership = {
   org: Org;
   actionPages: Array<ActionPage>;
   launchRequests: Array<Confirm>;
+  launchRequesters: Array<User>;
 };
 
 export type PersonalData = {
@@ -2474,7 +2475,8 @@ export const scalarLocations : ScalarLocations = {
         "PrivateActionPage",
         "PublicActionPage"
       ],
-      "launchRequests": "Confirm"
+      "launchRequests": "Confirm",
+      "launchRequesters": "User"
     },
     "PrivateActionPage": {
       "config": "Json",
