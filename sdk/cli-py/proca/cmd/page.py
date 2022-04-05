@@ -19,7 +19,7 @@ from termcolor import colored, cprint
 @click.argument('identifier', default=None, required=False)
 @id_options
 @click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
-@click.option('-o', '--org', 'org', help="Only list for org")
+@click.option('-o', '--org', 'org', help="List for org")
 @click.option('-c', '--campaign', help="Only list for campaign")
 @click.option('-f', '--config', type=click.File('w'))
 @click.option('-F', '--campaign-config', type=click.File('w'))
@@ -29,20 +29,13 @@ def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
     Display action page or list of pages.
     """
     if ls:
-        orgs, pages = action_pages_by_org(ctx.client)
-        for oname, org_pages in pages.items():
-            if org and oname != org:
+        if org is None:
+            raise click.UsageError("Please provide org to list pages")
+        pages = action_pages_by_org(ctx.client, org)
+        for p in pages:
+            if campaign and p['campaign']['name'] != campaign:
                 continue
-
-            odata = orgs[oname]
-
-            out = W(odata['title']) + w(f" {odata['name']}")
-            print(out)
-
-            for p in org_pages:
-                if campaign and p['campaign']['name'] != campaign:
-                    continue
-                print(format(p))
+            print(format(p))
         return
 
     id, name = guess_identifier(id, name, identifier)
@@ -163,48 +156,31 @@ def fetch_action_page(client, id, name, public=False):
     return data['actionPage']
 
 @explain_error('fetching all your action pages')
-def action_pages_by_org(client):
-
+def action_pages_by_org(client, org):
     # all my pages
     query = """
-
-    query AllMyPages {
-    currentUser {
-        roles {
-        org {
+    query OrgPages($org: String!) {
+        org(name: $org) {
             __typename
             name
             title
             ... on PrivateOrg {
-            actionPages {
-                __typename
-                id name locale thankYouTemplate
-                campaign { id externalId name title  }
-                ...actionPageStatus
-            }
+                actionPages {
+                    __typename
+                    id name locale thankYouTemplate
+                    campaign { id externalId name title  }
+                    ...actionPageStatus
+                }
             }
         }
-        }
-    }
     }
     """ + actionPageStatus
 
     query = gql(query)
 
-    data = client.execute(query)
+    data = client.execute(query, **vars(org=org))
 
-    roles = data['currentUser']['roles']
-
-
-    orgs = {role['org']['name']: role['org'] for role in roles}
-    pages = {
-        role['org']['name']: sorted(
-            [page for page in role['org']['actionPages']],
-            key=operator.itemgetter('id')
-        )
-        for role in roles}
-
-    return orgs, pages
+    return data['org']['actionPages']
 
 
 def format(page, show_campaign=True, show_org=True):

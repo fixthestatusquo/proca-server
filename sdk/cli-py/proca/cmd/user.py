@@ -23,7 +23,10 @@ def me(ctx):
     with yaspin(spinner, text="Who am I?"):
         user = current_user(ctx.client)
 
-    print(R(user['email']))
+    adm = user['isAdmin'] and Y(" ADMIN") or ''
+    eml = R(user['email'])
+
+    print(eml + adm)
 
     for role in user['roles']:
         t = B("`- ") + bold(role['org']['title'])
@@ -72,6 +75,7 @@ def current_user(client):
     query user {
         currentUser {
             email
+            isAdmin
             roles {
                 role
                 org { name title }

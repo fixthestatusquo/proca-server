@@ -41,7 +41,7 @@ def explain_error(intent, **fmt_params):
                 msgs  = ", ".join([api_error_explanation(m) for m in e.errors])
                 fail(f"😵 Tried {intent}, but {msgs}")
             except TimeoutError as e:
-                log.debug("Timeout error", pprint.pformat(e.message))
+                log.debug("Timeout error", e)
                 fail(f"👎 Connection to server timed out when {intent}")
             except ClientOSError as e:
                 log.debug("Network error", pprint.pformat(e))

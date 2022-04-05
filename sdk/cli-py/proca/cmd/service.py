@@ -48,7 +48,7 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
     client = ctx.client
 
     input = {
-        "name": name.upper()
+        "name": name
     }
 
     input.update(make_input(locals(), ['user', 'password', 'host', 'path']))
@@ -67,9 +67,8 @@ def email(ctx, org, frm, name):
     """
     Configure email-related options for org.
     """
-    print(name)
     ip = {
-        "emailBackend": name.upper(),
+        "emailBackend": name,
         "emailFrom": frm
     }
     proca.cmd.org.update_org(ctx.client, org, {}, ip)

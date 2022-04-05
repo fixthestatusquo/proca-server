@@ -22,7 +22,7 @@ from termcolor import colored, cprint
 @click.option('-I', '--external-id', help="External ID")
 @click.option('-l', '--list', 'ls', is_flag=True, help="List campaigns")
 @click.option('-o', '--org', help="Only list for org")
-@click.option('-c', '--config', type=click.File('w'))
+@click.option('-f', '--config', type=click.File('w'))
 @click.pass_obj
 def show(ctx, id, name, identifier, external_id, ls, org, config):
     """
