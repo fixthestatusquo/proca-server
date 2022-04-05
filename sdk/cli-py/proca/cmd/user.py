@@ -23,7 +23,7 @@ def me(ctx):
     print(R(user['email']))
 
     for role in user['roles']:
-        t = B("`- ") + W(role['org']['title'])
+        t = B("`- ") + bold(role['org']['title'])
         r = role['role']
         n = role['org']['name']
 

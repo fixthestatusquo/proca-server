@@ -32,6 +32,8 @@ B = lambda txt: fg('royal_blue_1') + attr(1) + txt + attr(0)
 w = lambda txt: fg('white') + txt + attr('reset')
 W = lambda txt: fg('white') + attr('bold') + txt + attr('reset')
 
+bold = lambda txt: attr('bold') + txt + attr('reset')
+
 def cc(cfun, text):
     if len(text) > 0:
         return cfun(colored(text[0], attrs=['bold'])) + cfun(text[1:])
