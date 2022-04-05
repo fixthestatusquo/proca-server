@@ -52,7 +52,19 @@ defmodule Proca.Service do
     end
   end
 
-  def aws_request(req, %Service{user: access_key_id, password: secret_access_key, host: region}) do
+  def aws_request(req = %ExAws.Operation.Query{}, srv) do
+    json_req = ExAws.Operation.JSON.new(req.service, Map.from_struct(req))
+    aws_request(json_req, srv)
+  end
+
+  def aws_request(req = %ExAws.Operation.JSON{}, %Service{
+        user: access_key_id,
+        password: secret_access_key,
+        host: region
+      }) do
+    # Get JSON not XML
+    req = %{req | headers: [{"Accept", "application/json"} | req.headers]}
+
     req
     |> ExAws.request(
       access_key_id: access_key_id,

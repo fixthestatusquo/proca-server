@@ -2,30 +2,73 @@ defmodule Proca.Service.SES do
   @moduledoc """
   This module lets you send bulk emails via AWS SES.
 
-  We use bulk emails for crazy throughput! 
+  We use bulk emails for crazy throughput!
 
   For bulk emails you must use templates. We can either create them for each
   batch and then remove, or we can maintain them somehow in AWS (by a hash?),
   but there is a limit of them, so some sort of GC would have to be done.
 
-  We could also have some other system (for instance WpMailTemplate Server that
-  fetches template, refreshes then every once in a while, and pushes them to SES.)
-
-  What sort of emails do we have?
-  - thank you emails (one per page)
-  - supporter confirm email (one per org?)
-
-  ActionPage.thank_you_template (can be null)
-
-  MVP:
-  - send_batch method that creates a template always, (maybe overwriting?)
-  - send_batch then sends the batch
-  - and does not care about the template
+  We also use the local db mustache tempaltes - then we do not use the bulk send.
   """
+
+  # @behaviour Proca.Service.EmailBackend
 
   alias Proca.Service.EmailTemplate
   alias Proca.Repo
-  alias Proca.{Service, Supporter, Action}
+  alias Proca.{Service, Supporter, Action, Org}
+  import Logger
+
+  @impl true
+  def supports_templates?(_org) do
+    true
+  end
+
+  @impl true
+  def batch_size(), do: 25
+
+  @impl true
+  def list_templates(%Org{template_backend: %Service{} = srv} = _org) do
+    list_templates_page(srv)
+  end
+
+  defp list_templates_page(srv, lst \\ [], next_token \\ nil) do
+    opts =
+      if is_nil(next_token) do
+        []
+      else
+        [next_token: next_token]
+      end
+
+    data =
+      ExAws.SES.list_templates(opts)
+      |> Service.aws_request(srv)
+
+    get_name = fn %{"Name" => name} -> name end
+
+    case data do
+      {:ok,
+       %{
+         "ListTemplatesResponse" => %{
+           "ListTemplatesResult" => %{
+             "NextToken" => nt,
+             "TemplatesMetadata" => templates_meta
+           }
+         }
+       }} ->
+        lst2 = lst ++ Enum.map(templates_meta, get_name)
+
+        if is_nil(nt) do
+          # no paging
+          {:ok, lst2}
+        else
+          list_templates_page(srv, lst2, nt)
+        end
+
+      other ->
+        error("UNEXPECTED AWS SES ListTempaltes reply: #{inspect(other)}")
+        {:error, "unexpected reply from AWS SES"}
+    end
+  end
 
   @doc """
   XXX this method should later keep track of whether EmailTemplate was changed or not...
