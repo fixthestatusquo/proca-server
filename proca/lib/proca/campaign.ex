@@ -37,7 +37,7 @@ defmodule Proca.Campaign do
     |> change(assocs)
     |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
-    |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+    |> validate_format(:name, ~r/^[\w\d_-]+$/)
     |> unique_constraint(:name)
   end
 
