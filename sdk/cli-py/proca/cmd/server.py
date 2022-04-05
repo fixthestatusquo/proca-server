@@ -150,7 +150,7 @@ def verify_host(url):
 
     e = Endpoint(url)
 
-    with yaspin() as ya:
+    with yaspin(spinner) as ya:
         try:
             if not e.check_http_url():
                 ya.fail(f"Error: 🚇 that url does not seem to lead to the API. Tried: {e.http_url}")

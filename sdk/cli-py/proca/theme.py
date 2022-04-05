@@ -5,6 +5,7 @@
 # https://pypi.org/project/colored/
 #
 from colored import fg, bg, attr
+from yaspin import Spinner
 
 # blue 63
 # violet 141
@@ -52,6 +53,8 @@ def rainbow(text):
 
     return ' '.join(out)
 
+
+spinner = Spinner([fg('orange_red_1') + s + attr(0) for s in ["◶", "◵", "◴", "◔"]], 200)
 
 # Awesome triangle symbols
 # https://www.alt-codes.net/triangle-symbols

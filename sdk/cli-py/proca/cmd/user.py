@@ -17,7 +17,8 @@ from base64 import b64encode
 @click.command()
 @click.pass_obj
 def me(ctx):
-    user = current_user(ctx.client)
+    with yaspin(spinner, text="Who am I?"):
+        user = current_user(ctx.client)
 
     print(R(user['email']))
 
