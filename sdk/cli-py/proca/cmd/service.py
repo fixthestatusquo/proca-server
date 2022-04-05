@@ -9,12 +9,16 @@ from proca.query import *
 import proca.cmd.org
 import json
 
-SERVICE_NAMES = ['mailjet', 'ses']
+SERVICE_NAMES = ['MAILJET', 'SES']
+SERVICE_NAMES_CHOICE = click.Choice(SERVICE_NAMES, case_sensitive=False)
 
 @click.command("service")
 @click.option("-o", "--org", required=True, help="Org name")
 @click.pass_obj
 def list(ctx, org):
+    """
+    List services in org
+    """
     services = org_services(ctx.client, org)
 
     for service in services:
@@ -24,7 +28,7 @@ def list(ctx, org):
 @click.command("service:set")
 @click.option("-o", "--org", required=True, help="Org name")
 #@click.option("-i", "--id", type=int, help="Service ID")
-@click.option("-n", "--name", help="Service name", type=click.Choice(SERVICE_NAMES), required=True)
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE, required=True)
 @click.option("-u", "--user", help="username")
 
 @click.option("-p", "--password", help="password")
@@ -34,6 +38,9 @@ def list(ctx, org):
 @click.option("-l", "--path", help="Path or section")
 @click.pass_obj
 def set(ctx, org, name, user, password, password_prompt, host, path):
+    """
+    Set service settings (create if not exists).
+    """
     id = None # unsupported atm
     if password_prompt:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
@@ -54,11 +61,15 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
 @click.option("-o", "--org", required=True, help="Org name")
 #@click.option("-i", "--id", type=int, help="Service ID")
 @click.option("-f", "--from", 'frm', help="Sender email (SMTP From header)")
-@click.option("-n", "--name", help="Service name", type=click.Choice(SERVICE_NAMES), required=True)
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE, required=True)
 @click.pass_obj
 def email(ctx, org, frm, name):
+    """
+    Configure email-related options for org.
+    """
+    print(name)
     ip = {
-        "emailBackend": name,
+        "emailBackend": name.upper(),
         "emailFrom": frm
     }
     proca.cmd.org.update_org(ctx.client, org, {}, ip)

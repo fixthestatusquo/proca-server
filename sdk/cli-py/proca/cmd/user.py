@@ -17,6 +17,9 @@ from base64 import b64encode
 @click.command()
 @click.pass_obj
 def me(ctx):
+    """
+    Display information about current user.
+    """
     with yaspin(spinner, text="Who am I?"):
         user = current_user(ctx.client)
 
@@ -31,11 +34,14 @@ def me(ctx):
 
 
 @click.command("user")
-@click.option('-l', '--list', 'ls', is_flag=True, help="List action pages")
+@click.option('-l', '--list', 'ls', is_flag=True, help="List org users")
 @click.option('-o', '--org', 'org', help="Only list for org")
 #@click.option('-c', '--campaign', help="Only list for campaign")
 @click.pass_obj
 def show(ctx, ls, org):
+    """
+    Shows user information (now: only list of org members)
+    """
     if ls:
         users = list_org_users(ctx.client, org)
         for u in users:
@@ -79,6 +85,9 @@ def current_user(client):
 @click.command("me:token")
 @click.pass_obj
 def token(ctx):
+    """
+    Display Authorization token (copy to GraphiQL)
+    """
     conf = Config[ctx.server_section]
 
     try:

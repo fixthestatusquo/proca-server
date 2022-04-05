@@ -25,6 +25,9 @@ from termcolor import colored, cprint
 @click.option('-c', '--config', type=click.File('w'))
 @click.pass_obj
 def show(ctx, id, name, identifier, external_id, ls, org, config):
+    """
+    Show campaign or list campaigns
+    """
     if ls:
         if org:
             campaigns = org_campaigns(ctx.client, org)
@@ -48,6 +51,9 @@ def show(ctx, id, name, identifier, external_id, ls, org, config):
 @click.option('-t', '--title', help="title of the campaign", prompt="Title, full name of the campaign")
 @click.pass_obj
 def add(ctx, org, name, title):
+    """
+    Add a campaign.
+    """
     input = {
         'name': name,
         'title': title
@@ -68,6 +74,9 @@ def add(ctx, org, name, title):
 @click.option('-f', '--config', type=click.File('r'))
 @click.pass_obj
 def set(ctx, id, name, identifier, external_id, rename, title, contact_schema, config):
+    """
+    Update campaign settings
+    """
     if external_id is None:
         id, name = guess_identifier(id, name, identifier)
 

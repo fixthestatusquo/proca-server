@@ -25,6 +25,9 @@ from termcolor import colored, cprint
 @click.option('-F', '--campaign-config', type=click.File('w'))
 @click.pass_obj
 def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
+    """
+    Display action page or list of pages.
+    """
     if ls:
         orgs, pages = action_pages_by_org(ctx.client)
         for oname, org_pages in pages.items():
@@ -61,6 +64,9 @@ def show(ctx, id, name, identifier, ls, org, campaign, config, campaign_config):
 @click.option('-l', '--locale', help="locale", prompt="Locale of the page", callback=validate_locale)
 @click.pass_obj
 def add(ctx, locale, name, org, campaign):
+    """
+    Add new action page.
+    """
     print(rainbow(f"{locale}|!{name}|{campaign}"))
 
     ap = add_action_page(ctx.client, name=name, locale=locale, org=org, campaign=campaign)
@@ -76,6 +82,9 @@ def add(ctx, locale, name, org, campaign):
 @click.option('-f', '--config', type=click.File('r'))
 @click.pass_obj
 def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
+    """
+    Update settings of action page
+    """
     id, name = guess_identifier(id, name, identifier)
 
 
@@ -198,15 +207,22 @@ def action_pages_by_org(client):
     return orgs, pages
 
 
-def format(page, show_campaign=True):
+def format(page, show_campaign=True, show_org=True):
     """
     Formats page into
 
     somename.com/en (123, 9910) locale: en_IE
     """
 
+    name_prefix=''
+    if show_org and 'org' in page:
+        name_prefix = f"!{page['org']['name']}"
+
     if show_campaign:
-        name = f"!{page['campaign']['name']}|!⬣ {page['name']}"
+        name_prefix += f"!{page['campaign']['name']}"
+
+    if name_prefix:
+        name = f"{name_prefix}|!⬣ {page['name']}"
     else:
         name = f"!{page['name']}"
 

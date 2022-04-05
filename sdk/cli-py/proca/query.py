@@ -35,9 +35,10 @@ mttData = """
 
 actionPageData = """
     fragment actionPageData on ActionPage {
-    __typename
-    id name locale config
+        __typename
+        id name locale config
         thankYouTemplate
+        org { name title }
     }
     """
 
