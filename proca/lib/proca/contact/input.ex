@@ -18,7 +18,7 @@ defmodule Proca.Contact.Input do
     |> Changeset.validate_format(field, @email_format)
   end
 
-  @phone_format ~r/^[0-9+ -]+$/
+  @phone_format ~r/^[+]?[0-9 ()-]+$/
   def validate_phone(chst, field) do
     chst
     |> Changeset.validate_format(field, @phone_format)

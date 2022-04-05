@@ -29,6 +29,9 @@ defmodule ContactDataTest do
     new_data = BasicData.from_input(params |> Map.put(:phone, "Street 123"))
     assert %{errors: [phone: {"has invalid format", [validation: :format]}]} = new_data
 
+    new_data = BasicData.from_input(params |> Map.put(:phone, "2+2"))
+    assert %{errors: [phone: {"has invalid format", [validation: :format]}]} = new_data
+
     new_data = BasicData.from_input(params |> Map.put(:phone, "+48123456789"))
     data = apply_changes(new_data)
     assert data = %{phone: "+48123456789"}
