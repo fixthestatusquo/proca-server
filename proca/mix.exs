@@ -67,7 +67,7 @@ defmodule Proca.MixProject do
       # until support for amqp 2.0 is released
       {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"},
       {:ex_aws, "~> 2.2"},
-      {:ex_aws_ses, "~> 2.3"},
+      {:ex_aws_ses, "~> 2.4"},
       {:ex_aws_sqs, "~> 3.3"},
       {:stripity_stripe, "~> 2.9.0"},
       {:hackney, "~> 1.17.0"},
