@@ -33,7 +33,7 @@ def server_list():
     """
 
     for name, url, ws_url, user, org in list_server_sections():
-        a = W(f"{name}") +  f"|{url}"
+        a = bold(f"{name}") +  f"|{url}"
 
         if ws_url:
             a += f"|[WebSocket: {ws_url}]"
