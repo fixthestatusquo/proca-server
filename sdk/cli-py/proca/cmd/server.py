@@ -81,9 +81,37 @@ def server_add(host, user, password, public, socket, name):
 
         Config.set(sn, "user", user)
         Config.set(sn, "password", password)
+    else:
+        section = Config[sn]
+        del section['user']
+        del section['password']
 
     store()
 
+
+@click.command("server:setup")
+@click.option('-u', '--user', help="User name (email)", callback=validate_email)
+@click.option('-p', '--password', help="Your password")
+@click.option('--public/--no-public', '-P', default=False, help="Public access (do not authenticate)")
+def server_setup(user, password, public):
+    """
+    Set up access to official proca API server.
+    """
+    sn = server_section('DEFAULT')
+    if not public:
+        if user is None:
+            user = click.prompt("Username (email)")
+        if password is None:
+            password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+
+        Config.set(sn, "user", user)
+        Config.set(sn, "password", password)
+    else:
+        section = Config[sn]
+        del section['user']
+        del section['password']
+
+    store()
 
 @click.command("server:set")
 @click.option('-h', '--host', help="API url")
@@ -142,7 +170,7 @@ def verify_server_exists(name):
             hint = " Your servers: " + hint
         else:
             hint = " You have no defined servers"
-        raise click.BadParameter(f"❔ No server {name}.{hint}", param_hint="name")
+        raise click.BadParameter(f"🤔 No server {name}.{hint}", param_hint="name")
 
 
 def verify_host(url):

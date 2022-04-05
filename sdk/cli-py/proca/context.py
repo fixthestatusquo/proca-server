@@ -42,8 +42,14 @@ class CliContext:
         self._server_section = v
 
         if default_org := Config.get(self._server_section, 'org', fallback=None):
-            self.default_map = {'campaign': {'org':  default_org}}
+            # Put org into default argument for all commands that use it
+            cmds = ['campaign', 'campaign:add',  'page', 'page:add', 'service', 'service:set', 'service:email']
+            dm = {c: {'org':  default_org} for c in cmds}
 
+            cmds = ['org', 'org:set']
+            dm.update({c: {'name': default_org} for c in cmds})
+
+            self.default_map = dm
 
     @property
     def client(self):

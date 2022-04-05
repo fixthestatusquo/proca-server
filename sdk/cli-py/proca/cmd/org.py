@@ -18,6 +18,9 @@ CONTACT_SCHEMA_CHOICE=click.Choice(['BASIC', 'ECI', 'POPULAR_INITIATIVE'], case_
 @click.option('-f', '--config', type=click.File('w'))
 @click.pass_obj
 def show(ctx, name, config):
+    """
+    Display org. Can store config of the org in file (-f parameter)
+    """
     org = get_org(ctx.client, name)
 
     if config:
@@ -31,6 +34,9 @@ def show(ctx, name, config):
 @click.option('-d/-D', '--default/--no-default', is_flag=True, prompt="Set as default?")
 @click.pass_obj
 def add(ctx, name, title, default):
+    """
+    Add a new org.
+    """
     org = add_org(ctx.client, name, title)
 
     if default:
@@ -64,6 +70,9 @@ def set(ctx,
         config,
         custom_deliver
         ):
+    """
+    Update org settings.
+    """
     input = {}
 
     proc_input = {}
@@ -95,6 +104,9 @@ def set(ctx,
 @click.argument('name', required=True)
 @click.pass_obj
 def join(ctx, name):
+    """
+    Join existing org.
+    """
     # email = Config[ctx.server_section].get('user')
     _status, org = join_org(ctx.client, name)
     print(f"🛸 joined " + format(org))
@@ -122,6 +134,9 @@ def join_org(client, org_name):
 @click.argument('name', required=True)
 @click.pass_obj
 def leave(ctx, name):
+    """
+    Leave an org
+    """
     email = Config[ctx.server_section].get('user')
     status = leave_org(ctx.client, name, email)
     print(f"👋 left {name}: {status}")
@@ -181,14 +196,16 @@ def update_org(client, name, org, proc):
             $supporterConfirm: Boolean,
             $supporterConfirmTemplate: String,
             $doiThankYou: Boolean,
-            $emailBackend: ServiceName
+            $emailBackend: ServiceName,
+            $emailFrom: String
     ) {
         updateOrgProcessing(
             name: $name,
             supporterConfirm: $supporterConfirm,
             supporterConfirmTemplate: $supporterConfirmTemplate,
             doiThankYou: $doiThankYou,
-            emailBackend: $emailBackend
+            emailBackend: $emailBackend,
+            emailFrom: $emailFrom
         ) {name}
 
         updateOrg(
