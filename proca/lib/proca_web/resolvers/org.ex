@@ -308,7 +308,7 @@ defmodule ProcaWeb.Resolvers.Org do
   def join_org(_, _, %{context: %{org: org, auth: %Auth{user: user}}}) do
     joining =
       case Staffer.one(user: user, org: org, preload: [:org, :user]) do
-        nil -> Staffer.changeset(%{user: user, org: org, role: :org_owner})
+        nil -> Staffer.changeset(%{user: user, org: org, role: :owner})
         st = %Staffer{} -> Staffer.changeset(st, %{role: :owner})
       end
 
