@@ -12,6 +12,7 @@ import proca.cmd.page
 import proca.cmd.campaign
 import proca.cmd.service
 import proca.cmd.org
+import proca.cmd.template
 
 
 
@@ -51,6 +52,7 @@ cli.add_command(proca.cmd.user.show)
 cli.add_command(proca.cmd.page.show)
 cli.add_command(proca.cmd.page.set)
 cli.add_command(proca.cmd.page.add)
+cli.add_command(proca.cmd.page.delete)
 cli.add_command(proca.cmd.action.action)
 cli.add_command(proca.cmd.campaign.show)
 cli.add_command(proca.cmd.campaign.add)
@@ -63,3 +65,4 @@ cli.add_command(proca.cmd.org.add)
 cli.add_command(proca.cmd.org.join)
 cli.add_command(proca.cmd.org.leave)
 cli.add_command(proca.cmd.org.set)
+cli.add_command(proca.cmd.template.list)

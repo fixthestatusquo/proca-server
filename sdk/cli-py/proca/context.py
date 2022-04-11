@@ -43,7 +43,7 @@ class CliContext:
 
         if default_org := Config.get(self._server_section, 'org', fallback=None):
             # Put org into default argument for all commands that use it
-            cmds = ['campaign', 'campaign:add',  'page', 'page:add', 'service', 'service:set', 'service:email']
+            cmds = ['campaign', 'campaign:add',  'page', 'page:add', 'service', 'service:set', 'service:email', 'template']
             dm = {c: {'org':  default_org} for c in cmds}
 
             cmds = ['org', 'org:set']

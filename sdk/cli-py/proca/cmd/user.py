@@ -33,7 +33,12 @@ def me(ctx):
         r = role['role']
         n = role['org']['name']
 
-        print(rainbow(f"{t}|as|{r}|⬢ {n}"))
+        if Config[ctx.server_section].get('org') == n:
+            df = '|(default)'
+        else:
+            df = ''
+
+        print(rainbow(f"{t}|as|{r}|⬢ {n}{df}"))
 
 
 @click.command("user")
