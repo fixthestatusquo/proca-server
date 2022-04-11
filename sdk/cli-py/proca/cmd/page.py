@@ -64,6 +64,32 @@ def add(ctx, locale, name, org, campaign):
 
     ap = add_action_page(ctx.client, name=name, locale=locale, org=org, campaign=campaign)
 
+
+@click.command("page:delete")
+@click.argument('identifier', default=None, required=False)
+@id_options
+@click.pass_obj
+def delete(ctx, identifier, id, name):
+    """
+    Add new action page.
+    """
+    id, name = guess_identifier(id, name, identifier)
+
+    page = fetch_action_page(ctx.client, id, name)
+
+    t = "Delete " + rainbow(format(page))
+    really_delete = click.confirm(t)
+
+    if really_delete:
+        status = delete_action_page(ctx.client, page['id'])
+        if status == 'SUCCESS':
+            print("✨ Deleted.")
+        else:
+            print(f"status {status}")
+    else:
+        print("😌 Phew!")
+
+
 @click.command("page:set")
 @click.argument('identifier', default=None, required=False)
 @id_options
@@ -117,6 +143,17 @@ def add_action_page(client, **attrs):
 
     data = client.execute(query, **vars(org=org, campaign=campaign, input=attrs))
     return data['addActionPage']
+
+@explain_error('deleting action page')
+def delete_action_page(client, id):
+    query = """
+    mutation delete($id: Int!) {
+      deleteActionPage(id: $id)
+    }
+    """
+    query = gql(query)
+    data = client.execute(query, **vars(id=id))
+    return data['deleteActionPage']
 
 
 @explain_error('updating action page')
