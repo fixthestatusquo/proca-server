@@ -72,7 +72,62 @@ defmodule Proca.Service.EmailMerge do
 
   def put_action_page(e, _), do: e
 
-  ## XXX implement put_action_data for %{"schema" => "proca:action:2"} ... to replace EmailRecipient.from_action_data
+  def put_action_message(%Email{} = email, action_data = %{"schema" => "proca:action:1"}) do
+    fields = remove_nil_values(get_in(action_data, ["action", "fields"]) || %{})
+
+    %{email | assigns: Map.merge(fields, email.assigns)}
+    |> assign(:ref, get_in(action_data, ["contact", "ref"]))
+    |> put_action_message_common(action_data)
+  end
+
+  def put_action_message(%Email{} = email, action_data = %{"schema" => "proca:action:2"}) do
+    fields = remove_nil_values(get_in(action_data, ["action", "customFields"]) || %{})
+
+    %{email | assigns: Map.merge(fields, email.assigns)}
+    |> assign(:ref, get_in(action_data, ["contact", "contactRef"]))
+    |> put_action_message_common(action_data)
+  end
+
+  defp put_action_message_common(%Email{} = email, action_data) do
+    email
+    |> put_assigns(%{
+      first_name: get_in(action_data, ["contact", "firstName"]),
+      email: get_in(action_data, ["contact", "email"]),
+      org: %{
+        name: get_in(action_data, ["org", "name"]),
+        title: get_in(action_data, ["org", "title"])
+      },
+      campaign: %{
+        name: get_in(action_data, ["campaign", "name"]),
+        title: get_in(action_data, ["campaign", "title"])
+      },
+      action_page: %{
+        name: get_in(action_data, ["actionPage", "name"]),
+        locale: get_in(action_data, ["actionPage", "locale"])
+      },
+      action_id: get_in(action_data, ["actionId"]),
+      tracking: get_in(action_data, ["tracking"]),
+      privacy: get_in(action_data, ["privacy"])
+    })
+  end
+
+  defp remove_nil_values(fields) do
+    fields
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Map.new()
+  end
+
+  def put_assigns(eml = %Email{assigns: fields}, fields2) when is_map(fields2) do
+    %{eml | assigns: Map.merge(fields, fields2)}
+  end
+
+  def put_assigns(eml, []), do: eml
+
+  def put_assigns(eml = %Email{assigns: fields}, [{key, val} | rest]) do
+    %{eml | assigns: Map.put(fields, Atom.to_string(key), val)}
+    |> put_assigns(rest)
+  end
+
   def plain_to_html(text) do
     "<p>" <> String.replace(text, "\n", "</p><p>") <> "</p>"
   end

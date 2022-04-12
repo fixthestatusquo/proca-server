@@ -76,7 +76,7 @@ defmodule Proca.Confirm do
   alias Proca.Repo
   alias Proca.{Confirm, Org}
   alias Proca.Users.User
-  alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate}
+  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate}
 
   schema "confirms" do
     field :operation, ConfirmOperation
@@ -232,16 +232,12 @@ defmodule Proca.Confirm do
     recipients =
       emails
       |> Enum.map(fn email ->
-        %EmailRecipient{
-          first_name: notify_first_name(email),
-          email: email,
-          fields: notify_fields(cnf)
-        }
+        EmailBackend.make_email({notify_first_name(email), email}, {:user, email})
+        |> EmailMerge.put_assigns(notify_fields(cnf))
       end)
 
-    case EmailTemplateDirectory.ref_by_name_reload(instance, opmod.email_template(cnf)) do
-      {:ok, template_ref} ->
-        template = %EmailTemplate{ref: template_ref}
+    case EmailTemplateDirectory.by_name_reload(instance, opmod.email_template(cnf)) do
+      {:ok, template} ->
         EmailBackend.deliver(recipients, instance, template)
 
       :not_found ->

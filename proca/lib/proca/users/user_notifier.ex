@@ -6,10 +6,12 @@ defmodule Proca.Users.UserNotifier do
     import Logger
     instance = Org.one([:instance] ++ [preload: [:email_backend, :template_backend]])
 
-    case Service.EmailTemplateDirectory.ref_by_name_reload(instance, template_name) do
-      {:ok, ref} ->
-        t = %Service.EmailTemplate{ref: ref}
-        r = %Service.EmailRecipient{first_name: "Proca User", email: email, fields: fields}
+    case Service.EmailTemplateDirectory.by_name_reload(instance, template_name) do
+      {:ok, t} ->
+        r =
+          Service.EmailBackend.make_email({"Proca User", email}, {:user, email})
+          |> Service.EmailMerge.put_assigns(fields)
+
         result = Service.EmailBackend.deliver([r], instance, t)
         info("Email #{template_name} to #{email} delivery: #{inspect(result)}}")
         result
