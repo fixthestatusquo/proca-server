@@ -90,6 +90,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
+    # field :templates, non_null(list_of(non_null(:email_template))) do
+    #   resolve(&Resolvers.Org.list_templates/3)
+    # end
+
     # field :processing, :processing
     #  field :email_from, :string
     #  field :email_backend, :string
@@ -259,6 +263,15 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       resolve(&Resolvers.Org.activate_key/3)
     end
+
+    field :upsert_template, type: :status do
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow(Proca.Permission.add([:change_campaign_settings]))
+
+      arg(:org_name, non_null(:string))
+      arg(:input, non_null(:email_template_input))
+    end
   end
 
   # OTHER TYPES
@@ -356,5 +369,18 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
     end
+  end
+
+  object :email_template do
+    field :name, non_null(:string)
+    field :locales, list_of(non_null(:string))
+  end
+
+  input_object :email_template_input do
+    field :name, non_null(:string)
+    field :locale, :string
+    field :subject, non_null(:string)
+    field :html, non_null(:string)
+    field :text, :string
   end
 end

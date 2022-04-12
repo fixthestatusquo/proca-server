@@ -14,7 +14,8 @@ defmodule Proca.Stage.EmailSupporter do
   import Proca.Stage.Support,
     only: [ignore: 1, ignore: 2, failed_partially: 2, supporter_link: 3, double_opt_in_link: 2]
 
-  alias Proca.Service.{EmailBackend, EmailRecipient, EmailTemplate, EmailTemplateDirectory}
+  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate, EmailTemplateDirectory}
+  alias Swoosh.Email
 
   def start_for?(%Org{email_backend_id: ebid, template_backend_id: tbid})
       when is_number(ebid) and is_number(tbid) do
@@ -112,14 +113,12 @@ defmodule Proca.Stage.EmailSupporter do
 
     recipients =
       Enum.map(messages, fn m ->
-        EmailRecipient.from_action_data(m.data)
-        |> add_doi_link(m.data)
+        make(m.data)
+        |> add_doi_link()
       end)
 
-    case EmailTemplateDirectory.ref_by_name_reload(org, ap.thank_you_template) do
-      {:ok, tmpl_ref} ->
-        tmpl = %EmailTemplate{ref: tmpl_ref}
-
+    case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template) do
+      {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok -> messages
           {:error, statuses} -> failed_partially(messages, statuses)
@@ -152,14 +151,12 @@ defmodule Proca.Stage.EmailSupporter do
 
     recipients =
       Enum.map(messages, fn m ->
-        EmailRecipient.from_action_data(m.data)
-        |> add_supporter_confirm(m.data)
+        make(m.data)
+        |> add_supporter_confirm()
       end)
 
-    case EmailTemplateDirectory.ref_by_name_reload(org, tmpl_name) do
-      {:ok, tmpl_ref} ->
-        tmpl = %EmailTemplate{ref: tmpl_ref}
-
+    case EmailTemplateDirectory.by_name_reload(org, tmpl_name) do
+      {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok -> messages
           {:error, statuses} -> failed_partially(messages, statuses)
@@ -169,12 +166,6 @@ defmodule Proca.Stage.EmailSupporter do
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
-        )
-
-      :not_configured ->
-        Enum.map(
-          messages,
-          &Message.failed(&1, "Template #{tmpl_name} backend not configured (org #{org.name})")
         )
     end
   end
@@ -232,29 +223,22 @@ defmodule Proca.Stage.EmailSupporter do
     |> Repo.one() != nil
   end
 
-  ## XXX use this ?
-  defp add_action_confirm(rcpt = %EmailRecipient{}, action_id) do
-    confirm =
-      Proca.Confirm.ConfirmAction.changeset(%Action{id: action_id})
-      |> Proca.Confirm.insert!()
-
-    EmailRecipient.put_confirm(rcpt, confirm)
+  def make(data) do
+    EmailBackend.make_email(
+      {get_in(data, ["contact", "firstName"]), get_in(data, ["contact", "email"])},
+      {:action, get_in(data, ["actionId"])}
+    )
+    |> EmailMerge.put_action_message(data)
   end
 
-  defp add_supporter_confirm(rcpt = %EmailRecipient{ref: ref}, data) do
-    action_id = data["actionId"]
-
-    EmailRecipient.put_fields(rcpt,
+  defp add_supporter_confirm(email = %Email{assigns: %{ref: ref, action_id: action_id}}) do
+    EmailMerge.put_assigns(email,
       confirm_link: supporter_link(action_id, ref, :confirm),
       reject_link: supporter_link(action_id, ref, :reject)
     )
   end
 
-  defp add_doi_link(rcpt = %EmailRecipient{ref: ref}, data) do
-    action_id = data["actionId"]
-
-    EmailRecipient.put_fields(rcpt,
-      doi_link: double_opt_in_link(action_id, ref)
-    )
+  defp add_doi_link(email = %Email{assigns: %{ref: ref, action_id: action_id}}) do
+    EmailMerge.put_assigns(email, doi_link: double_opt_in_link(action_id, ref))
   end
 end

@@ -147,4 +147,56 @@ defmodule Proca.StoryFactory do
       targets: targets
     }
   end
+
+  @doc """
+  Violet org is sending emails
+
+  """
+  def violet_story() do
+    import Ecto.Changeset
+    import Proca.Repo
+
+    org =
+      Factory.insert(:org,
+        name: "violet",
+        title: "The Violets",
+        contact_schema: :basic,
+        email_from: "contact@violet.org"
+      )
+      |> preload([:email_backend, :template_backend])
+
+    provider = Factory.insert(:email_backend, host: "violet.org", org: org)
+
+    org = update!(change(org, email_backend: provider, template_backend: provider))
+
+    campaign =
+      Factory.insert(:campaign,
+        org: org,
+        name: "violet",
+        title: "Violets not Violence"
+      )
+
+    ap =
+      Factory.insert(:action_page, org: org, campaign: campaign, name: "violet/en", locale: "en")
+
+    insert!(
+      Proca.Service.EmailTemplate.changeset(%{
+        org: org,
+        name: "mustache template",
+        locale: "en",
+        subject: "Hello {{firstName}}",
+        html: """
+        Hi, emailing you at {{email}}.
+
+        You decided to {{#privacy}}{{#optIn}}subscribe{{/optIn}}{{^optIn}}unsubscribe{{/optIn}}{{/privacy}}
+        """
+      })
+    )
+
+    %{
+      org: org,
+      campaign: campaign,
+      ap: ap
+    }
+  end
 end

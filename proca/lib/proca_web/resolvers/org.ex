@@ -100,8 +100,9 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing_templates(%{org: org}, _, _) do
+    org = Repo.preload(org, [:template_backend])
+
     case Proca.Service.EmailTemplateDirectory.list_names(org) do
-      :not_configured -> {:ok, nil}
       lst -> {:ok, lst}
     end
   end
@@ -235,15 +236,15 @@ defmodule ProcaWeb.Resolvers.Org do
            Repo.one(
              from(a in Action,
                where: a.id == ^id,
-               preload: [action_page: [org: [email_backend: :org]]]
+               preload: [action_page: [org: [email_backend: :org]], supporter: :contacts]
              )
            ),
          ad <- Proca.Stage.Support.action_data(a),
-         recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
+         recp <-
+           Proca.Service.EmailBackend.make_email({a.supporter.first_name, email}, {:action, a.id})
+           |> Proca.Service.EmailMerge.put_action_message(ad),
          %{thank_you_template: tm} <- a.action_page,
-         {:ok, tr} <-
-           Proca.Service.EmailTemplateDirectory.ref_by_name_reload(a.action_page.org, tm),
-         tmpl <- %Proca.Service.EmailTemplate{ref: tr} do
+         {:ok, tmpl} <- Proca.Service.EmailTemplateDirectory.by_name_reload(a.action_page.org, tm) do
       Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
     else
       e -> error("sample email", e)
@@ -321,4 +322,10 @@ defmodule ProcaWeb.Resolvers.Org do
         e
     end
   end
+
+  #  def list_templates(_, _, %{context: %{org: org}}) do
+  #    org = Repo.preload(org, [:template_backend])
+  #    Proca.Service.EmailTemplate.EmailTemplateDirectory.list_templates(org)
+
+  #  end
 end

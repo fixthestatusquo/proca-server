@@ -38,9 +38,12 @@ defmodule Proca.Repo.Migrations.NamedActionPageTemplates do
           nil
 
         ref ->
-          case Proca.Service.EmailTemplateDirectory.name_by_ref(o, String.to_integer(ref)) do
-            {:ok, name} -> Proca.Repo.update!(Ecto.Changeset.change(ap, thank_you_template: name))
-            _ -> throw("Action Page #{ap.name} (#{ap.id}): cannot find template name for #{ref}")
+          case Proca.Service.EmailTemplateDirectory.by_ref(o, String.to_integer(ref)) do
+            {:ok, %{name: name}} ->
+              Proca.Repo.update!(Ecto.Changeset.change(ap, thank_you_template: name))
+
+            _ ->
+              throw("Action Page #{ap.name} (#{ap.id}): cannot find template name for #{ref}")
           end
       end
     end

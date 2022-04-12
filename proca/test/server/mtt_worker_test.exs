@@ -208,4 +208,52 @@ defmodule Proca.Server.MTTWorkerTest do
     test_for.(preview_ap)
     test_for.(live_ap)
   end
+
+  test "sending without template", %{campaign: c, targets: [t | _]} do
+    msg = Factory.insert(:message, target: t)
+
+    MTTWorker.send_emails(c, [msg])
+
+    [%{email: target_email}] = t.emails
+
+    [email] = TestEmailBackend.mailbox(target_email)
+
+    assert String.starts_with?(email.html_body, "<p>MTT text body")
+    assert String.starts_with?(email.subject, "MTT Subject")
+  end
+
+  test "sending with local template", %{org: org, campaign: c, ap: page, targets: [t | _]} do
+    import Proca.Repo
+
+    msg = Factory.insert(:message, target: t)
+
+    template =
+      insert!(
+        Proca.Service.EmailTemplate.changeset(%{
+          org: org,
+          name: "local_mtt",
+          locale: "en",
+          subject: "{{subject}}",
+          html: """
+          {{{body}}}
+
+          <p>Sent in {{campaign.title}} campaign</p>
+          """
+        })
+      )
+
+    update!(Proca.MTT.changeset(c.mtt, %{message_template: template.name}))
+
+    c = Proca.Campaign.one(id: c.id, preload: [:mtt, :org])
+
+    MTTWorker.send_emails(c, [msg])
+
+    [%{email: target_email}] = t.emails
+
+    [email] = TestEmailBackend.mailbox(target_email)
+
+    assert email.subject == msg.message_content.subject
+    assert String.contains?(email.html_body, "Sent in Petition about")
+    assert email.private[:custom_id] == "mtt:#{msg.id}"
+  end
 end

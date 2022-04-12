@@ -94,6 +94,10 @@ defmodule Proca.Server.Notify do
     Event.emit(:campaign_updated, campaign, org_id, opts)
   end
 
+  def updated(%Proca.Service.EmailTemplate{} = tmpl, opts) do
+    Proca.Service.EmailTemplateDirectory.bust_cache_template(tmpl)
+  end
+
   def updated(_, _opts), do: :ok
 
   @doc """

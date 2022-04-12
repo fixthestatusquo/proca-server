@@ -3,7 +3,118 @@ defmodule Proca.Service.EmailTemplate do
   Models an email tempalate to be rendered into a thank you email, etc.
   """
 
-  defstruct [:name, :subject, :html, :text, :ref]
+  alias __MODULE__
+  use Ecto.Schema
+  use Proca.Schema, module: __MODULE__
+  alias Proca.Org
+  alias Swoosh.Email
+  import Proca.Stage.Support, only: [camel_case_keys: 1]
+  import Ecto.Changeset
+
+  schema "email_templates" do
+    field :name, :string, null: false
+    field :locale, :string, null: false
+    # only for external ref (could be string)
+    field :ref, :string, null: true, virtual: true
+
+    field :subject, :string, null: false
+    field :html, :string, null: false
+    field :text, :string, null: true
+
+    field :compiled, :map, null: true, virtual: true
+
+    belongs_to :org, Proca.Org
+  end
+
+  @doc """
+  Changeset, only used for local templates stored in DB
+  """
+  def changeset(service, attrs) do
+    related = Map.take(attrs, [:org])
+
+    cast(service, attrs, [:name, :locale, :ref, :subject, :html, :text])
+    |> validate_required([:name, :locale, :subject, :html])
+    |> validate_format(:name, ~r/^[\w\d_ -]+$/)
+    |> change(related)
+  end
+
+  def changeset(attrs), do: changeset(%EmailTemplate{}, attrs)
+
+  def all(queryable, [{:org, %Org{id: org_id}} | criteria]) do
+    import Ecto.Query
+
+    queryable
+    |> where([t], t.org_id == ^org_id)
+    |> all(criteria)
+  end
+
+  def all(queryable, [{:name, name} | criteria]) when is_bitstring(name) do
+    import Ecto.Query
+
+    queryable
+    |> where([t], t.name == ^name)
+    |> all(criteria)
+  end
+
+  def all(queryable, [{:locale, locale} | criteria]) when is_bitstring(locale) do
+    import Ecto.Query
+
+    queryable
+    |> where([t], t.locale == ^locale)
+    |> all(criteria)
+  end
+
+  def all(queryable, [{:locale, locale} | criteria]) when is_nil(locale) do
+    import Ecto.Query
+
+    queryable
+    |> limit([t], 1)
+    |> all(criteria)
+  end
+
+  def compile(t = %EmailTemplate{subject: subject, html: html, text: text}) do
+    %{
+      t
+      | compiled: %{
+          subject: compile_string(subject),
+          html: compile_string(html),
+          text: compile_string(text)
+        }
+    }
+  end
+
+  def compile_string(nil), do: nil
+  def compile_string(m), do: :bbmustache.parse_binary(m)
+
+  # when end is_tuple(m) do
+  def render_string(m, vars) do
+    :bbmustache.compile(m, vars, key_type: :binary)
+  end
+
+  @spec render(Email, EmailTemplate) :: Email
+  def render(
+        email = %Email{},
+        %EmailTemplate{
+          compiled: %{
+            subject: ts,
+            html: th,
+            text: tt
+          }
+        }
+      ) do
+    vars = camel_case_keys(email.assigns)
+
+    %Email{
+      email
+      | subject: render_string(ts, vars),
+        html_body: render_string(th, vars),
+        text_body: if(is_nil(tt), do: nil, else: render_string(tt, vars))
+    }
+  end
+
+  def render(email, tmpl = %EmailTemplate{compiled: nil}) do
+    render(email, compile(tmpl))
+  end
 
   @doc """
   Validate the template set in changeset is valid for owning Org.
@@ -16,7 +127,7 @@ defmodule Proca.Service.EmailTemplate do
   def validate_exists(%Ecto.Changeset{} = changeset, field) do
     alias Proca.Service.EmailTemplateDirectory
     alias Ecto.Changeset
-    alias Proca.{Org, ActionPage, MTT, Campaign}
+    alias Proca.{Org, ActionPage, MTT}
 
     Changeset.validate_change(changeset, field, fn f, template ->
       org =
@@ -27,9 +138,8 @@ defmodule Proca.Service.EmailTemplate do
           %MTT{} = mtt -> Proca.Repo.preload(mtt, campaign: :org).campaign.org
         end
 
-      case EmailTemplateDirectory.ref_by_name_reload(org, template) do
+      case EmailTemplateDirectory.by_name_reload(org, template) do
         {:ok, _} -> []
-        :not_configured -> []
         :not_found -> [{f, "Template not found"}]
       end
     end)
