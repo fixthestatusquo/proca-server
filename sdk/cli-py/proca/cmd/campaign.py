@@ -193,5 +193,5 @@ def format(c):
     if 'org' in c:
         by_org = attr(0) + f" by|{c['org']['name']}"
 
-    info = w(f"{ids:<4}") + rainbow(f"!{title}{by_org}|⬢ {name}|{ex_id}|{cs}|!{trgts}|!{mtt}")
+    info = bold(f"{ids:<4}") + rainbow(f"!{title}{by_org}|⬢ {name}|{ex_id}|{cs}|!{trgts}|!{mtt}")
     return info
