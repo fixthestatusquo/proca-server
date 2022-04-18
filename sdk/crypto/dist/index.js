@@ -28,7 +28,7 @@ function addKeysToKeyStore(keys, ks) {
 }
 exports.addKeysToKeyStore = addKeysToKeyStore;
 function decodeBase64url(s) {
-    return tweetnacl_util_1.decodeBase64(base64url_1.default.toBase64(s));
+    return (0, tweetnacl_util_1.decodeBase64)(base64url_1.default.toBase64(s));
 }
 exports.decodeBase64url = decodeBase64url;
 function decryptPersonalInfo(pii, keyStore) {
@@ -58,7 +58,7 @@ function decrypt(ciphertext, nonce, encPriv, signPub) {
         throw new Error(`decrypting ciphertext returned null (ciphertext ${ciphertext})`);
     }
     else {
-        return tweetnacl_util_1.encodeUTF8(clear);
+        return (0, tweetnacl_util_1.encodeUTF8)(clear);
     }
 }
 exports.decrypt = decrypt;
