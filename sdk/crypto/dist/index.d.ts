@@ -1,5 +1,5 @@
 import { KeyStore, PersonalInfo } from './types';
-export { KeyStore, PersonalInfo } from './types';
+export { PublicKey, KeyStore, PersonalInfo } from './types';
 export declare function addKeysToKeyStore(keys: any, ks: KeyStore): true;
 export declare function decodeBase64url(s: string): Uint8Array;
 export declare function decryptPersonalInfo(pii: PersonalInfo | undefined, keyStore: KeyStore): any;
