@@ -4,27 +4,54 @@ from gql import gql
 import click
 from proca.config import make_client
 from proca.friendly import explain_error
+from proca.query import *
+from proca.theme import *
 import json
+from random import randint
 
 @click.command("action")
 @click.option("-i", "--id", type=int, help="Action Page Id")
+@click.option("-e", "--email", help="email", default=f"test+{randint(1, 100000)}@proca.app")
+@click.option("-f", "--first", help="first name", default="Curious")
+@click.option("-l", "--last", help="last name", default="Tester")
+@click.option("-a", "--action-type", help="action type", default="register")
+@click.option("-t", "--testing", is_flag=True, help="action type", default=False)
+@click.option("-c", "--country", help="country", default='PL')
+@click.option("-p", "--postcode", help="postcoude", default='01-234')
+@click.option("-o", "--optin", help="opt in", is_flag=True, default=False)
 @click.pass_obj
-def action(ctx, id):
+def add(ctx, id, email, first, last, action_type, testing, country, postcode, optin):
     client = ctx.client
 
-    add_action_contact(client, id)
+    contact ={
+        'firstName': first, 'lastName': last, 'email': email,
+        'address': {
+            'country': country, 'postcode': postcode
+        }
+    }
+
+    action = {
+        'actionType': action_type,
+        'testing': testing
+    }
+
+    #print(action)
+    #print(contact)
+    supporter = add_action_contact(client, id, contact, action, optin)
+
+    print(rainbow(supporter['contactRef']))
 
 
 @explain_error("adding test action")
-def add_action_contact(client, id):
+def add_action_contact(client, id, contact, action, optIn):
     "Callas addActionContact mutation"
 
 
-    query_str = """mutation AddActionContact($id: Int!) {
+    query_str = """mutation AddActionContact($id: Int!, $contact: ContactInput!, $action: ActionInput!, $optIn: Boolean!) {
     addActionContact(actionPageId: $id,
-        contact: {firstName: "Friedrich", email: "hegel@gmail.com"},
-        action: {actionType: "test"},
-        privacy: {optIn:false}
+        contact: $contact,
+        action: $action,
+        privacy: {optIn: $optIn}
     ) {
     contactRef
     }
@@ -32,7 +59,6 @@ def add_action_contact(client, id):
     """
     query=gql(query_str)
 
-    vars = {'id': id}
 
     # payload = {
     #     'operationName': 'AddActionContact',
@@ -40,6 +66,5 @@ def add_action_contact(client, id):
     # }
 
 
-    data = client.execute(query, variable_values=vars) #, extra_args={'json': payload})
-
-    print(data)
+    data = client.execute(query, **vars(id=id, contact=contact, action=action, optIn=optIn))
+    return data['addActionContact']

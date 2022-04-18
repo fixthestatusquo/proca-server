@@ -1,4 +1,4 @@
-import {PublicKey, PersonalInfo, KeyStore, decryptPersonalInfo} from '@proca/crypto'
+import {PersonalInfo} from '@proca/crypto'
 
 export type ProcessStage = "confirm" | "deliver"
 
@@ -17,13 +17,6 @@ type ContactV2 = {
   firstName: string,
   contactRef: string
 } & { [key: string]: any };
-
-type PersonalInfo = {
-  payload: string,
-  nonce: string, 
-  encryptKey: PublicKey,
-  signKey: PublicKey 
-}
 
 type Campaign = {
   title: string,
@@ -108,9 +101,9 @@ export type ActionMessageV2 = {
 
 export const actionMessageV1to2 = (a1 : ActionMessageV1) : ActionMessageV2 => {
   let pii = {}
-  let personalInfo : PersonalInfo = null;
+  let personalInfo : PersonalInfo | null = null;
 
-  if (a1.contact.nonce) {
+  if (a1.contact.nonce && a1.contact.publicKey && a1.contact.signKey) {
     personalInfo = {
       payload: a1.contact.payload,
       nonce: a1.contact.nonce,
