@@ -55,9 +55,9 @@ export async function syncQueue(
 
   const finalizeShutdown = async () => {
     if (status.stopping) 
-      console.log(`Shutting down the processing. Wating for ${status.running} threads running.`)
+      console.log(`🛬 Shutting down the processing. Wating for ${status.running} threads running.`)
     if (status.stopping && status.running === 0) {
-      console.log("All finished, closing channel!")
+      console.log("🏁 All finished, closing channel!")
       await ch.close()
       await conn.close()
     }
