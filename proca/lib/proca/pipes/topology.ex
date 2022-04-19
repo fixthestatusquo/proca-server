@@ -61,7 +61,7 @@ defmodule Proca.Pipes.Topology do
   - Worker queues, are enabled by flags on Org (boolean columns):
     - `system_sqs_deliver` sends to SQS (SQS service must be configured)
     - `email.supporter` sends double-opt-in email when: `supporter_confirm` is `true`. Org must have email/template backends set. The email will be set if `email_supporter_template` is set on org or action page.
-    - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_tempalte_ref refers to template identifier in the backend.
+    - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_template refers to template identifier in the backend.
 
 
   """
