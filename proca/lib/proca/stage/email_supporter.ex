@@ -17,8 +17,8 @@ defmodule Proca.Stage.EmailSupporter do
   alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate, EmailTemplateDirectory}
   alias Swoosh.Email
 
-  def start_for?(%Org{email_backend_id: ebid, template_backend_id: tbid})
-      when is_number(ebid) and is_number(tbid) do
+  def start_for?(%Org{email_backend_id: ebid})
+      when is_number(ebid) do
     true
   end
 
@@ -54,7 +54,7 @@ defmodule Proca.Stage.EmailSupporter do
   @doc """
   Not all actions generate thank you emails.
 
-  1. Email and template backend must be configured for the org (Org, AP, )
+  1. Email backend must be configured for the org (Org, AP, )
   2. ActionPage's email template must be set [present in JSON]. (XXX Or fallback to org one?)
   """
 
@@ -108,7 +108,7 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
+    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
     org = ap.org
 
     recipients =
@@ -144,7 +144,7 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:supporter_confirm, messages, %BatchInfo{batch_key: ap_id}, _)
       when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [org: [[email_backend: :org], :template_backend]])
+    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
     org = ap.org
 
     tmpl_name = ap.supporter_confirm_template || ap.org.supporter_confirm_template
@@ -195,7 +195,6 @@ defmodule Proca.Stage.EmailSupporter do
           ap.id == ^action_page_id and
           not is_nil(ap.thank_you_template) and
           not is_nil(o.email_backend_id) and
-          not is_nil(o.template_backend_id) and
           not is_nil(o.email_from) and
           (not o.doi_thank_you or c.communication_consent)
     )
@@ -217,7 +216,6 @@ defmodule Proca.Stage.EmailSupporter do
           (not is_nil(o.supporter_confirm_template) or
              not is_nil(ap.supporter_confirm_template)) and
           not is_nil(o.email_backend_id) and
-          not is_nil(o.template_backend_id) and
           not is_nil(o.email_from)
     )
     |> Repo.one() != nil

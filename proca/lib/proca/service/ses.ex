@@ -28,7 +28,7 @@ defmodule Proca.Service.SES do
   def batch_size(), do: 50
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv} = _org) do
+  def list_templates(%Org{email_backend: %Service{} = srv} = _org) do
     list_templates_page(srv)
   end
 

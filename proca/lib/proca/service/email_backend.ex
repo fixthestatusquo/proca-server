@@ -72,12 +72,12 @@ defmodule Proca.Service.EmailBackend do
     service_module(name).batch_size()
   end
 
-  def supports_templates?(org = %Org{template_backend: %Service{name: name}}) do
+  def supports_templates?(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:supports_templates?, [org])
   end
 
-  def list_templates(org = %Org{template_backend: %Service{name: name}}) do
+  def list_templates(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:list_templates, [org])
   end

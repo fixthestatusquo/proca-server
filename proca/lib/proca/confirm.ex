@@ -227,7 +227,7 @@ defmodule Proca.Confirm do
 
     opmod = Confirm.Operation.mod(cnf)
 
-    instance = Org.one([preload: [:email_backend, :template_backend]] ++ [:instance])
+    instance = Org.one([preload: [:email_backend]] ++ [:instance])
 
     recipients =
       emails

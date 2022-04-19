@@ -4,7 +4,7 @@ defmodule Proca.Users.UserNotifier do
 
   defp deliver(email, template_name, fields) do
     import Logger
-    instance = Org.one([:instance] ++ [preload: [:email_backend, :template_backend]])
+    instance = Org.one([:instance] ++ [preload: [:email_backend]])
 
     case Service.EmailTemplateDirectory.by_name_reload(instance, template_name) do
       {:ok, t} ->
