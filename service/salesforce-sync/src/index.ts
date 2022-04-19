@@ -40,6 +40,7 @@ salesforce-sync [-t] [-u -q]
  -t - test sign in to SalesForce
  -q - run sync of queue
  -u - queue url amqps://user:password@api.proca.app/proca_live
+ -c campaignName - fetch campaign info
 `)
 }
 
@@ -55,6 +56,13 @@ export const cli = (argv : string[]) => {
       console.log(`Signed in`, userInfo)
       process.exit(0)
     })
+  } else if (opt.c) {
+    makeClient().then(async ({conn}) => {
+      const camp = await campaignByName(conn, opt.c)
+      console.log(camp)
+      process.exit(0)
+    })
+
   } else if (opt.q) {
     const url = opt.u || process.env.QUEUE_URL
     if (!url) throw Error(`Provide -u or set QUEUE_URL`)
@@ -66,7 +74,7 @@ export const cli = (argv : string[]) => {
           return false
         }
 
-        let camp = await campaignByName(conn, action.campaign.title)
+        let camp = await campaignByName(conn, action.campaign.name)
 
         const record = actionToContactRecord(action);
         const contactId = await upsertContact(conn, record)

@@ -3,6 +3,9 @@ import {Connection, Record as SFRecord} from 'jsforce'
 export const makeClient = async () => {
   const conn = new Connection({loginUrl: 'https://fixthestatusquo-dev-ed.my.salesforce.com/'})
 
+  if (!process.env.AUTH_USER || !process.env.AUTH_PASSWORD || !process.env.AUTH_TOKEN)
+    throw new Error("Missing AUTH_USER/PASSWORD/TOKEN nenv variables")
+
   const u = `${process.env.AUTH_USER}`
   const p = `${process.env.AUTH_PASSWORD}${process.env.AUTH_TOKEN}`
 
@@ -18,6 +21,7 @@ export const makeClient = async () => {
 const CampaignsByName : Record<string, SFRecord> = {};
 
 export const campaignByName = async (conn : Connection, name : string, cached = false) => {
+  let campaign
   // return cached
   if (cached && name in CampaignsByName)
     return CampaignsByName[name]
@@ -26,9 +30,14 @@ export const campaignByName = async (conn : Connection, name : string, cached = 
   const r = await conn.sobject('Campaign').find({name})
 
   // fail hard on missing campaign
-  if (r.length === 0) throw Error(`No campaign name: ${name}`)
+  if (r.length === 0) {
+    const n = await conn.sobject('Campaign').create({name})
+    if (!n.success) throw Error(`Cannot create campaign ${name}: ${n.errors}`)
+    campaign = await conn.sobject('Campaign').retrieve(n.id)
+  } else {
+    campaign = r[0]
+  }
 
-  const campaign = r[0]
   CampaignsByName[name] = campaign;
   return campaign;
 }
