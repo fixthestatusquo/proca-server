@@ -1,0 +1,62 @@
+{
+  "version": "0.1.0",
+  "license": "AGPL-3.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "@proca/queue",
+  "author": "Marcin Koziej",
+  "module": "dist/queue.esm.js",
+  "size-limit": [
+    {
+      "path": "dist/queue.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/queue.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^7.0.8",
+    "@types/amqplib": "^0.8.2",
+    "@types/line-by-line": "^0.1.6",
+    "husky": "^7.0.4",
+    "size-limit": "^7.0.8",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.3.1",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "@proca/crypto": "^3.3.1",
+    "amqplib": "^0.8.0",
+    "line-by-line": "^0.1.6"
+  }
+}

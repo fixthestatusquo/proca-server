@@ -3,7 +3,7 @@ import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
 import lo from "lodash"
 import {KeyStore, PersonalInfo} from './types'
-export {KeyStore, PersonalInfo} from './types'
+export {PublicKey, KeyStore, PersonalInfo} from './types'
 
 type KeyJson = {
   private?: string

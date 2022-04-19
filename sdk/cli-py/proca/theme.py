@@ -43,6 +43,7 @@ def cc(cfun, text):
 def rainbow(text):
 
     parts = text.split('|')
+    parts = filter(lambda s: s != '', parts)
     out = []
 
     for i, p in enumerate(parts):
