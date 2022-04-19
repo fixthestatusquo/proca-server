@@ -100,7 +100,7 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing_templates(%{org: org}, _, _) do
-    org = Repo.preload(org, [:template_backend])
+    org = Repo.preload(org, [:email_backend])
 
     case Proca.Service.EmailTemplateDirectory.list_names(org) do
       lst -> {:ok, lst}
@@ -322,10 +322,4 @@ defmodule ProcaWeb.Resolvers.Org do
         e
     end
   end
-
-  #  def list_templates(_, _, %{context: %{org: org}}) do
-  #    org = Repo.preload(org, [:template_backend])
-  #    Proca.Service.EmailTemplate.EmailTemplateDirectory.list_templates(org)
-
-  #  end
 end

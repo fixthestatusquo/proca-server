@@ -44,7 +44,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     {{org_id, tmpl.name, tmpl.locale}, tmpl}
   end
 
-  def delete_remote_templates(%Org{template_backend_id: tb_id}) do
+  def delete_remote_templates(%Org{email_backend_id: tb_id}) do
     spec =
       fun do
         {{id, name}, template} when id == ^tb_id -> true
@@ -57,9 +57,9 @@ defmodule Proca.Service.EmailTemplateDirectory do
   Reload remote template cache for org
   """
   def load_templates(org) do
-    org = Repo.preload(org, [:template_backend])
+    org = Repo.preload(org, [:email_backend])
 
-    with tb when tb != nil <- org.template_backend,
+    with tb when tb != nil <- org.email_backend,
          {:ok, templates} <- EmailBackend.list_templates(org) do
       delete_remote_templates(org)
 
@@ -152,7 +152,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end
   end
 
-  def by_name_remote(%Org{template_backend_id: bid}, name, _locale)
+  def by_name_remote(%Org{email_backend_id: bid}, name, _locale)
       when is_integer(bid) and is_bitstring(name) do
     lookup = :ets.lookup(table_name(:remote), {bid, name})
 
@@ -178,7 +178,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end
   end
 
-  def by_ref(%Org{template_backend_id: bid}, ref)
+  def by_ref(%Org{email_backend_id: bid}, ref)
       when is_integer(bid) and not is_nil(ref) do
     spec =
       fun do
@@ -195,7 +195,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end
   end
 
-  def by_ref(%Org{template_backend_id: bid}, _ref) when is_nil(bid) do
+  def by_ref(%Org{email_backend_id: bid}, _ref) when is_nil(bid) do
     :not_found
   end
 
@@ -215,7 +215,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end)
   end
 
-  def list_names_remote(org = %Org{template_backend_id: bid}) when is_number(bid) do
+  def list_names_remote(org = %Org{email_backend_id: bid}) when is_number(bid) do
     load_templates_sync(org)
 
     spec =

@@ -10,7 +10,7 @@ defmodule Proca.Server.MTTWorker do
   import Logger
 
   def process_mtt_campaign(campaign) do
-    campaign = Repo.preload(campaign, [:mtt, [org: [:email_backend, :template_backend]]])
+    campaign = Repo.preload(campaign, [:mtt, [org: :email_backend]])
 
     if campaign.org.email_backend != nil and within_sending_window(campaign) do
       {cycle, all_cycles} = calculate_cycles(campaign)
@@ -38,8 +38,7 @@ defmodule Proca.Server.MTTWorker do
 
     # Group per campaign and send
     for {campaign_id, ms} <- emails do
-      campaign =
-        Campaign.one(id: campaign_id, preload: [:mtt, org: [:email_backend, :template_backend]])
+      campaign = Campaign.one(id: campaign_id, preload: [:mtt, org: :email_backend])
 
       if campaign.org.email_backend != nil and campaign.mtt.test_email != nil do
         send_emails(campaign, ms)
@@ -175,7 +174,7 @@ defmodule Proca.Server.MTTWorker do
   def send_emails(campaign, msgs) do
     alias Proca.Service.{EmailMerge, EmailTemplateDirectory}
 
-    org = Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
+    org = Org.one(id: campaign.org_id, preload: [:email_backend])
 
     # fetch action pages for email merge
     action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)

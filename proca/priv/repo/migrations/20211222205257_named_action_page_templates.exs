@@ -27,10 +27,10 @@ defmodule Proca.Repo.Migrations.NamedActionPageTemplates do
     import Ecto.Query
 
     action_pages =
-      Proca.Repo.all(from(o in Proca.ActionPage, preload: [org: [template_backend: :org]]))
+      Proca.Repo.all(from(o in Proca.ActionPage, preload: [org: [email_backend: :org]]))
 
-    for ap <- action_pages, ap.org.template_backend != nil do
-      o = ap.org.template_backend.org
+    for ap <- action_pages, ap.org.email_backend != nil do
+      o = ap.org.email_backend.org
       Proca.Service.EmailTemplateDirectory.load_templates_sync(o)
 
       case ap.thank_you_template do

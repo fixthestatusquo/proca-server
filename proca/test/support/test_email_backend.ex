@@ -19,7 +19,7 @@ defmodule Proca.TestEmailBackend do
   alias Swoosh.Email
 
   def test_email_backend(context) do
-    io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
+    io = Proca.Org.one([preload: [:services, :email_backend]] ++ [:instance])
     backend = Proca.Factory.insert(:email_backend, org: io)
 
     Ecto.Changeset.change(io, email_from: "no-reply@" <> backend.host)

@@ -163,11 +163,11 @@ defmodule Proca.StoryFactory do
         contact_schema: :basic,
         email_from: "contact@violet.org"
       )
-      |> preload([:email_backend, :template_backend])
+      |> preload([:email_backend])
 
     provider = Factory.insert(:email_backend, host: "violet.org", org: org)
 
-    org = update!(change(org, email_backend: provider, template_backend: provider))
+    org = update!(change(org, email_backend: provider))
 
     campaign =
       Factory.insert(:campaign,

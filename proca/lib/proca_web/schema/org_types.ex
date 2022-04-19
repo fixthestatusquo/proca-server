@@ -97,7 +97,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
     # field :processing, :processing
     #  field :email_from, :string
     #  field :email_backend, :string
-    #  field :template_backend, :string
     #
     #  field :custom_supporter_confirm, :boolean
     #  field :custom_action_confirm, :boolean

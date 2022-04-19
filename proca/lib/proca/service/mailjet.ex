@@ -39,7 +39,7 @@ defmodule Proca.Service.Mailjet do
   def batch_size(), do: 25
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv} = org, lst \\ []) do
+  def list_templates(%Org{email_backend: %Service{} = srv} = org, lst \\ []) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}?limit=50&offset=#{length(lst)}",
            auth: :basic
          ) do
