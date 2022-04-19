@@ -19,7 +19,7 @@ defmodule Proca.Service.EmailBackend do
 
   ## Templates
 
-  1. We use a mustache templates stored in proca (email_tempaltes table)
+  1. We use a mustache templates stored in proca (email_templates table)
   2. Or a service-provider template system (for Mailjet)
 
   ## Sender Domain/Adddress

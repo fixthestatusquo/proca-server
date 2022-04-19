@@ -8,7 +8,7 @@ defmodule Proca.Service.SES do
   batch and then remove, or we can maintain them somehow in AWS (by a hash?),
   but there is a limit of them, so some sort of GC would have to be done.
 
-  We also use the local db mustache tempaltes - then we do not use the bulk send.
+  We also use the local db mustache templates - then we do not use the bulk send.
   """
 
   @behaviour Proca.Service.EmailBackend
@@ -66,7 +66,7 @@ defmodule Proca.Service.SES do
         end
 
       other ->
-        error("UNEXPECTED AWS SES ListTempaltes reply: #{inspect(other)}")
+        error("UNEXPECTED AWS SES ListTemplates reply: #{inspect(other)}")
         {:error, "unexpected reply from AWS SES"}
     end
   end
@@ -77,13 +77,13 @@ defmodule Proca.Service.SES do
   - single sender
   - no headers (no reply-to!)
   """
-  def deliver(emails, _org) do
+  def deliver(emails, %Org{email_backend: srv}) do
     results =
       emails
       |> Enum.map(fn e ->
-        case Swoosh.Adapters.AmazonSES.deliver(e) do
+        case Swoosh.Adapters.AmazonSES.deliver(e, config(srv)) do
           {:ok, _} -> :ok
-          {:error, reason} = e -> e
+          {:error, _reason} = e -> e
         end
       end)
 
@@ -94,25 +94,8 @@ defmodule Proca.Service.SES do
     end
   end
 
-  def send_batch(supporters = [%Supporter{} | _], org, template) do
-    org = Repo.preload(org, [:services])
-
-    ExAws.SES.send_bulk_templated_email(
-      template.ref,
-      "dump@cahoots.pl",
-      supporters_to_recipients(supporters)
-    )
-    |> Service.aws_request(:ses, org)
-  end
-
-  def send_batch(actions = [%Action{} | _], org, template) do
-    actions
-    |> Enum.map(fn a -> a.supporter end)
-    |> send_batch(org, template)
-  end
-
-  def send_batch([], _, _) do
-    :ok
+  defp config(%Service{name: :ses, user: access_key, password: secret, host: region}) do
+    [region: region, access_key: access_key, secret: secret]
   end
 
   def to_destionation(%Email{to: to, assigns: assigns}) do
