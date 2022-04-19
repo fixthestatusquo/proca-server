@@ -31,7 +31,7 @@ export const campaignByName = async (conn : Connection, name : string, cached = 
 
   // fail hard on missing campaign
   if (r.length === 0) {
-    const n = await conn.sobject('Campaign').create({name})
+    const n = await conn.sobject('Campaign').create({name, Type: 'Proca online campaign'})
     if (!n.success) throw Error(`Cannot create campaign ${name}: ${n.errors}`)
     campaign = await conn.sobject('Campaign').retrieve(n.id)
   } else {
