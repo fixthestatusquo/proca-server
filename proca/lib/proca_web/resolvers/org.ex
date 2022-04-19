@@ -116,6 +116,24 @@ defmodule ProcaWeb.Resolvers.Org do
     |> Repo.update_and_notify()
   end
 
+  def upsert_template(_, %{input: params}, %{context: %{org: org}}) do
+    alias Proca.Service.EmailTemplate
+
+    tmpl =
+      EmailTemplate.one(org: org, name: params.name, locale: Map.get(params, :locale)) ||
+        %EmailTemplate{org: org}
+
+    tmpl =
+      tmpl
+      |> EmailTemplate.changeset(params)
+      |> Repo.insert_or_update()
+
+    case tmpl do
+      {:error, _} = e -> e
+      {:ok, _t} -> {:ok, :success}
+    end
+  end
+
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
     defaults = %{email_from: user.email}
 
