@@ -266,10 +266,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :upsert_template, type: :status do
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
-      allow(Proca.Permission.add([:change_campaign_settings]))
+      allow([:change_campaign_settings])
 
       arg(:org_name, non_null(:string))
       arg(:input, non_null(:email_template_input))
+
+      resolve(&Resolvers.Org.upsert_template/3)
     end
   end
 
@@ -378,8 +380,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
   input_object :email_template_input do
     field :name, non_null(:string)
     field :locale, :string
-    field :subject, non_null(:string)
-    field :html, non_null(:string)
+    field :subject, :string
+    field :html, :string
     field :text, :string
   end
 end
