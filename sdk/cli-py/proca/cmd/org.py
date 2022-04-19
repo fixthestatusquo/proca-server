@@ -195,6 +195,7 @@ def update_org(client, name, org, proc):
             $input: OrgInput!,
             $supporterConfirm: Boolean,
             $supporterConfirmTemplate: String,
+            $customActionDeliver: Boolean,
             $doiThankYou: Boolean,
             $emailBackend: ServiceName,
             $emailFrom: String
@@ -203,6 +204,7 @@ def update_org(client, name, org, proc):
             name: $name,
             supporterConfirm: $supporterConfirm,
             supporterConfirmTemplate: $supporterConfirmTemplate,
+            customActionDeliver: $customActionDeliver,
             doiThankYou: $doiThankYou,
             emailBackend: $emailBackend,
             emailFrom: $emailFrom

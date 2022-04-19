@@ -71,7 +71,7 @@ def add(ctx, locale, name, org, campaign):
 @click.pass_obj
 def delete(ctx, identifier, id, name):
     """
-    Add new action page.
+    Delete the action page. It is impossible to detele an Action Page with action/personal data collected.
     """
     id, name = guess_identifier(id, name, identifier)
 
@@ -229,10 +229,10 @@ def format(page, show_campaign=True, show_org=True):
 
     name_prefix=''
     if show_org and 'org' in page:
-        name_prefix = f"!{page['org']['name']}"
+        name_prefix = f"|!{page['org']['name']}"
 
     if show_campaign:
-        name_prefix += f"!{page['campaign']['name']}"
+        name_prefix += f"|!{page['campaign']['name']}"
 
     if name_prefix:
         name = f"{name_prefix}|!⬣ {page['name']}"
@@ -256,4 +256,4 @@ def format(page, show_campaign=True, show_org=True):
         if page['extraSupporters']:
             details += '|extra: ' + str(page['extraSupporters'])
 
-    return w(f"{ids:<4} ") + rainbow(f"{name}|{locale}|{details}")
+    return bold(f"{ids:<4} ") + rainbow(f"{name}|{locale}|{details}")
