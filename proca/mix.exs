@@ -66,6 +66,8 @@ defmodule Proca.MixProject do
       {:amqp, "~> 2.0"},
       # until support for amqp 2.0 is released
       {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"},
+      {:swoosh, "~> 1.5"},
+      {:gen_smtp, "~> 1.2.0"},
       {:ex_aws, "~> 2.2"},
       {:ex_aws_ses, "~> 2.4"},
       {:ex_aws_sqs, "~> 3.3"},
@@ -74,7 +76,7 @@ defmodule Proca.MixProject do
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:joken, "~> 2.4"},
-      {:supabase, "~> 0.2.2"},
+      {:bbmustache, "~> 1.12"},
       # XXX migrate to jason
       {:json, "~> 1.4.1"},
       {:poison, "~> 4.0"},
@@ -89,8 +91,7 @@ defmodule Proca.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:swoosh, "~> 1.5"}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]
   end
 

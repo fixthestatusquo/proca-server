@@ -2,22 +2,37 @@
 
 import {ActionMessageV2} from '@proca/queue'
 
-export type ContactAttributes = {
+
+//                                              allow custom fields vvv
+export interface ContactAttributes extends Record<string, string | undefined> {
   Email : string;
   FirstName: string;
   LastName?: string;
   Phone?: string;
   MailingCountry?: string;
   MailingPostalCode?: string;
-  Languages__c?: string;
 }
 
+
+export interface LeadAttributes extends Record<string,string | undefined> {
+  Email : string;
+  FirstName: string;
+  LastName?: string;
+  Phone?: string;
+  Country?: string;
+  PostalCode?: string;
+  Company: string;
+}
 
 export const isActionSyncable = (action : ActionMessageV2) => {
   return (action.privacy.withConsent && action.privacy.optIn)
 }
 
-export const actionToContactRecord = (action : ActionMessageV2) : ContactAttributes => {
+export type RecordOpts = {
+  language?: string;
+}
+
+export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpts) : ContactAttributes => {
   const c : ContactAttributes = {
     FirstName: action.contact.firstName,
     LastName: action.contact.lastName,
@@ -27,7 +42,28 @@ export const actionToContactRecord = (action : ActionMessageV2) : ContactAttribu
     MailingPostalCode: action.contact.postcode
   }
 
-  c.Languages__c = action.actionPage.locale
+  if (opts.language) {
+    c[opts.language] = action.actionPage.locale
+  }
+
+  return c
+}
+
+export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) : LeadAttributes => {
+  const c : LeadAttributes = {
+    FirstName: action.contact.firstName,
+    LastName: action.contact.lastName,
+    Email: action.contact.email,
+    Phone: action.contact.phone,
+    Country: action.contact.country,
+    PostalCode: action.contact.postcode,
+    Company: 'Proca',
+    LeadSource: action.campaign.title
+  }
+
+  if (opts.language) {
+    c[opts.language] = action.actionPage.locale
+  }
 
   return c
 }

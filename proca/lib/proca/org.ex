@@ -36,7 +36,6 @@ defmodule Proca.Org do
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
     field :email_from, :string
-    belongs_to :template_backend, Proca.Service
 
     # supporter confirm in configuration
     field :supporter_confirm, :boolean, default: false
@@ -96,20 +95,17 @@ defmodule Proca.Org do
       %{id: id} ->
         chset
         |> put_change(:email_backend_id, id)
-        |> put_change(:template_backend_id, id)
     end
   end
 
   def cast_email_backend(chset, _org, %{email_backend: %Proca.Service{id: id}}) do
     chset
     |> put_change(:email_backend_id, id)
-    |> put_change(:template_backend_id, id)
   end
 
   def cast_email_backend(chset, _org, %{email_backend: nil}) do
     chset
     |> put_change(:email_backend_id, nil)
-    |> put_change(:template_backend_id, nil)
   end
 
   def cast_email_backend(ch, _org, %{email_backend: srv_name})
@@ -188,9 +184,8 @@ defmodule Proca.Org do
   def put_service(%Org{} = org, service), do: put_service(change(org), service)
 
   def put_service(%Ecto.Changeset{} = ch, %Proca.Service{name: name} = service)
-      when name in [:mailjet, :testmail] do
+      when name in [:mailjet, :ses, :testmail] do
     ch
     |> put_assoc(:email_backend, service)
-    |> put_assoc(:template_backend, service)
   end
 end

@@ -21,7 +21,7 @@ defmodule Proca.Service.Mailjet do
 
   alias Proca.{Org, Service, Supporter, Target}
   alias Proca.Action.Message
-  alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
+  alias Proca.Service.{EmailTemplate, EmailBackend}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
@@ -39,7 +39,7 @@ defmodule Proca.Service.Mailjet do
   def batch_size(), do: 25
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv} = org, lst \\ []) do
+  def list_templates(%Org{email_backend: %Service{} = srv} = org, lst \\ []) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}?limit=50&offset=#{length(lst)}",
            auth: :basic
          ) do
@@ -68,17 +68,6 @@ defmodule Proca.Service.Mailjet do
     }
   end
 
-  @impl true
-  def upsert_template(_org, _template) do
-    {:error, "not implemneted"}
-  end
-
-  @impl true
-  def get_template(_org, _template) do
-    {:error, "not implemented"}
-  end
-
-  @impl true
   def put_template(email, nil), do: email
 
   def put_template(email, %EmailTemplate{ref: ref}) when is_integer(ref) do
@@ -86,12 +75,10 @@ defmodule Proca.Service.Mailjet do
     |> Email.put_provider_option(:template_id, ref)
   end
 
-  @impl true
   def put_template(email, tmpl = %EmailTemplate{ref: ref}) when is_bitstring(ref) do
     put_template(email, %{tmpl | ref: String.to_integer(ref)})
   end
 
-  @impl true
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text})
       when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do
     email

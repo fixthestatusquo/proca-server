@@ -171,8 +171,8 @@ defmodule Proca.Stage.MessageV1 do
   def action_page_template_ref(action_page) do
     alias Proca.Service.EmailTemplateDirectory
 
-    case EmailTemplateDirectory.ref_by_name(action_page.org, action_page.thank_you_template) do
-      {:ok, ref} -> ref
+    case EmailTemplateDirectory.by_name(action_page.org, action_page.thank_you_template) do
+      {:ok, %{ref: ref}} -> ref
       _ -> nil
     end
   end

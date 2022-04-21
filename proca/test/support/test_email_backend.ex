@@ -19,7 +19,7 @@ defmodule Proca.TestEmailBackend do
   alias Swoosh.Email
 
   def test_email_backend(context) do
-    io = Proca.Org.one([preload: [:services, :email_backend, :template_backend]] ++ [:instance])
+    io = Proca.Org.one([preload: [:services, :email_backend]] ++ [:instance])
     backend = Proca.Factory.insert(:email_backend, org: io)
 
     Ecto.Changeset.change(io, email_from: "no-reply@" <> backend.host)
@@ -167,20 +167,16 @@ defmodule Proca.TestEmailBackend do
         name: "user_change_email",
         subject: "Confirm change of email",
         html: "Click here"
+      },
+      %EmailTemplate{
+        ref: "ref:mtt",
+        name: "mtt",
+        subject: "{{subject}}",
+        html: "{{body}}"
       }
     ]
 
     {:ok, t}
-  end
-
-  @impl true
-  def upsert_template(_org, _template) do
-    {:error, "not implemneted"}
-  end
-
-  @impl true
-  def get_template(_org, _template) do
-    {:error, "not implemented"}
   end
 
   @impl true
@@ -209,5 +205,9 @@ defmodule Proca.TestEmailBackend do
 
   @impl true
   def handle_bounce(type) do
+  end
+
+  @impl true
+  def handle_event(type) do
   end
 end

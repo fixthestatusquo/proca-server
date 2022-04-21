@@ -7,16 +7,19 @@ import {
 import {
   makeClient,
   upsertContact,
+  upsertLead,
   contactByEmail,
   campaignByName,
   addCampaignContact,
-  foo
+  foo,
+  leadByEmail
 } from './client'
 
 
 import {
   isActionSyncable,
-  actionToContactRecord
+  actionToContactRecord,
+  actionToLeadRecord
 } from './contact'
 
 
@@ -41,6 +44,9 @@ salesforce-sync [-t] [-u -q]
  -q - run sync of queue
  -u - queue url amqps://user:password@api.proca.app/proca_live
  -c campaignName - fetch campaign info
+ -e email - lookup contact and lead by email
+ -l - add as leads not contacts
+ -L - language custom field
 `)
 }
 
@@ -63,6 +69,21 @@ export const cli = (argv : string[]) => {
       process.exit(0)
     })
 
+  } else if (opt.e) {
+    makeClient().then(async ({conn}) => {
+      const contact = await contactByEmail(conn, opt.e)
+      const lead = await leadByEmail(conn, opt.e)
+      console.log('contact', contact)
+      console.log('lead', lead)
+      process.exit(0)
+    })
+  } else if (opt.i) {
+    makeClient().then(async ({conn}) => {
+      console.log('contact', await conn.sobject('Contact').retrieve(opt.id))
+      console.log('lead', await conn.sobject('Lead').retrieve(opt.id))
+      process.exit(0)
+    })
+
   } else if (opt.q) {
     const url = opt.u || process.env.QUEUE_URL
     if (!url) throw Error(`Provide -u or set QUEUE_URL`)
@@ -76,12 +97,31 @@ export const cli = (argv : string[]) => {
 
         let camp = await campaignByName(conn, action.campaign.name)
 
-        const record = actionToContactRecord(action);
-        const contactId = await upsertContact(conn, record)
-        if (!contactId) return Error(`Could not upsert contact`)
-        const campaignContact = await addCampaignContact(conn, camp.Id, contactId)
+        try {
 
-        return {record, contactId, campaignContact}
+          if (opt.l) {
+            const record = actionToLeadRecord(action, {language: opt.L});
+            const LeadId = await upsertLead(conn, record)
+            if (!LeadId) return Error(`Could not upsert contact`)
+            await addCampaignContact(conn, camp.Id, {LeadId})
+
+
+          } else {
+            const record = actionToContactRecord(action, {language: opt.L});
+            const ContactId = await upsertContact(conn, record)
+            if (!ContactId) return Error(`Could not upsert contact`)
+            await addCampaignContact(conn, camp.Id, {ContactId})
+          }
+        } catch (er) {
+          if (er.errorCode === 'DUPLICATE_VALUE') {
+            // already in campaign
+            return {}
+          }
+          console.error(`tried to add ${action.contact.email} but (ignoring)`, er, JSON.stringify(er),  `CODE>${er.errorCode}<`)
+          throw er;
+        }
+
+        return {}
       })
     })
   }

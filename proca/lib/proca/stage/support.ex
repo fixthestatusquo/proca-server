@@ -153,6 +153,27 @@ defmodule Proca.Stage.Support do
     {full_key, value}
   end
 
+  @doc """
+  Convert map atom keys to strings
+  """
+  def stringify_keys(nil), do: nil
+
+  def stringify_keys(map = %{}) do
+    map
+    |> Enum.map(fn {k, v} -> {Atom.to_string(k), stringify_keys(v)} end)
+    |> Enum.into(%{})
+  end
+
+  # Walk the list and stringify the keys of
+  # of any map members
+  def stringify_keys([head | rest]) do
+    [stringify_keys(head) | stringify_keys(rest)]
+  end
+
+  def stringify_keys(not_a_map) do
+    not_a_map
+  end
+
   def ensure_string(a) when is_atom(a), do: Atom.to_string(a)
   def ensure_string(s) when is_bitstring(s), do: s
 

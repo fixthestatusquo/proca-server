@@ -100,8 +100,9 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing_templates(%{org: org}, _, _) do
+    org = Repo.preload(org, [:email_backend])
+
     case Proca.Service.EmailTemplateDirectory.list_names(org) do
-      :not_configured -> {:ok, nil}
       lst -> {:ok, lst}
     end
   end
@@ -113,6 +114,24 @@ defmodule ProcaWeb.Resolvers.Org do
 
     Org.changeset(org, args)
     |> Repo.update_and_notify()
+  end
+
+  def upsert_template(_, %{input: params}, %{context: %{org: org}}) do
+    alias Proca.Service.EmailTemplate
+
+    tmpl =
+      EmailTemplate.one(org: org, name: params.name, locale: Map.get(params, :locale)) ||
+        %EmailTemplate{org: org}
+
+    tmpl =
+      tmpl
+      |> EmailTemplate.changeset(params)
+      |> Repo.insert_or_update()
+
+    case tmpl do
+      {:error, _} = e -> e
+      {:ok, _t} -> {:ok, :success}
+    end
   end
 
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
@@ -235,15 +254,15 @@ defmodule ProcaWeb.Resolvers.Org do
            Repo.one(
              from(a in Action,
                where: a.id == ^id,
-               preload: [action_page: [org: [email_backend: :org]]]
+               preload: [action_page: [org: [email_backend: :org]], supporter: :contacts]
              )
            ),
          ad <- Proca.Stage.Support.action_data(a),
-         recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
+         recp <-
+           Proca.Service.EmailBackend.make_email({a.supporter.first_name, email}, {:action, a.id})
+           |> Proca.Service.EmailMerge.put_action_message(ad),
          %{thank_you_template: tm} <- a.action_page,
-         {:ok, tr} <-
-           Proca.Service.EmailTemplateDirectory.ref_by_name_reload(a.action_page.org, tm),
-         tmpl <- %Proca.Service.EmailTemplate{ref: tr} do
+         {:ok, tmpl} <- Proca.Service.EmailTemplateDirectory.by_name_reload(a.action_page.org, tm) do
       Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
     else
       e -> error("sample email", e)
