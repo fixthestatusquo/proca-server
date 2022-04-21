@@ -182,4 +182,19 @@ defmodule ProcaWeb.Resolvers.User do
 
     {:ok, User.all(criteria)}
   end
+
+  def api_token(user, _, %{context: %{auth: %Auth{user: user}}}) do
+    case Proca.Repo.one(Proca.Users.UserToken.user_and_contexts_query(user, ["api"])) do
+      nil ->
+        {:ok, nil}
+
+      token ->
+        {:ok,
+         %{
+           expires_at: Proca.Users.UserToken.expires_at(token)
+         }}
+    end
+  end
+
+  def api_token(_, _, _), do: {:ok, nil}
 end

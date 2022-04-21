@@ -169,9 +169,10 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
     UserAuth.assign_current_user(conn, user)
   end
 
+  # heuristic that jwt token must start with ey - base64 for {"
   defp get_token(conn, nil) do
     case Conn.get_req_header(conn, "authorization") do
-      ["Bearer " <> token] -> token
+      ["Bearer ey" <> token] -> "ey" <> token
       _ -> nil
     end
   end
