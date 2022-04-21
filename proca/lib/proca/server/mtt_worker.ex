@@ -9,6 +9,8 @@ defmodule Proca.Server.MTTWorker do
 
   import Logger
 
+  @default_locale "en"
+
   def process_mtt_campaign(campaign) do
     campaign = Repo.preload(campaign, [:mtt, [org: :email_backend]])
 
@@ -180,7 +182,7 @@ defmodule Proca.Server.MTTWorker do
     action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
     action_pages = ActionPage.all(preload: [:org], by_ids: action_pages_ids) |> Enum.into(%{})
 
-    msgs_per_locale = Enum.group_by(msgs, & &1.target.locale)
+    msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 
     target_locales = Enum.uniq(Map.keys(msgs_per_locale))
 
