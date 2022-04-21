@@ -406,6 +406,7 @@ interface Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
 }
@@ -414,6 +415,7 @@ type PrivateTarget implements Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
   emails: [TargetEmail]!
@@ -742,6 +744,8 @@ type RootMutationType {
     "Key id"
     id: Int!
   ): ActivateKeyResult!
+
+  upsertTemplate(orgName: String!, input: EmailTemplateInput!): Status
 
   upsertService(orgName: String!, id: Int, input: ServiceInput!): Service!
 
@@ -1199,6 +1203,7 @@ type PublicTarget implements Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
 }
@@ -1300,10 +1305,19 @@ type CustomField {
 
 input TargetInput {
   name: String
-  area: String
   externalId: String!
+  locale: String
+  area: String
   fields: Json
   emails: [TargetEmailInput!]
+}
+
+input EmailTemplateInput {
+  name: String!
+  locale: String
+  subject: String
+  html: String
+  text: String
 }
 
 "Contact information"
