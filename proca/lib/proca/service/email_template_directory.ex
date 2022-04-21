@@ -126,12 +126,12 @@ defmodule Proca.Service.EmailTemplateDirectory do
   @doc """
   return {:ok, nil} when given name is nil.
   """
-  def by_name(org, name, locale \\ nil)
-  def by_name(_, nil, _), do: {:ok, nil}
+  def by_name(org, name, locale \\ nil, reload \\ false)
+  def by_name(_, nil, _, _), do: {:ok, nil}
 
-  def by_name(org = %Org{}, name, locale) do
+  def by_name(org = %Org{}, name, locale, reload) do
     with r1 when is_nil(r1) <- by_name_local(org, name, locale),
-         r2 when is_nil(r2) <- by_name_remote(org, name, locale) do
+         r2 when is_nil(r2) <- by_name_remote(org, name, locale, reload) do
       :not_found
     else
       %EmailTemplate{} = tmpl -> {:ok, tmpl}
@@ -152,13 +152,21 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end
   end
 
-  def by_name_remote(%Org{email_backend_id: bid}, name, _locale)
+  def by_name_remote(org = %Org{email_backend_id: bid}, name, locale, reload)
       when is_integer(bid) and is_bitstring(name) do
     lookup = :ets.lookup(table_name(:remote), {bid, name})
 
     case lookup do
-      [{_key, tmpl}] -> tmpl
-      [] -> nil
+      [{_key, tmpl}] ->
+        tmpl
+
+      [] ->
+        if reload do
+          load_templates_sync(org)
+          by_name_remote(org, name, locale, false)
+        else
+          nil
+        end
     end
   end
 
@@ -168,14 +176,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
   Lookup but if not found, reload the templates
   """
   def by_name_reload(org, name, locale \\ nil) do
-    case by_name(org, name, locale) do
-      {:ok, tpl} ->
-        {:ok, tpl}
-
-      :not_found ->
-        load_templates_sync(org)
-        by_name(org, name, locale)
-    end
+    by_name(org, name, locale, true)
   end
 
   def by_ref(%Org{email_backend_id: bid}, ref)
