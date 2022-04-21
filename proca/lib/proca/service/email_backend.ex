@@ -5,27 +5,22 @@ defmodule Proca.Service.EmailBackend do
   However, we also need to be able to work with templates and Swoosh does not have this.
 
   ## Recipients
-  Recipients of transaction emails are Supporters or Targets
+  Recipients of transaction emails are Supporters, Targets, Users (in case of notifications)
 
-  Previoudly we used EmailRecipient to carry envelope data, but now we want to
-  just use Swoosh.Email because it is one abstraction layer less and it can hold
-  all the information we need.
+  We use Swoosh.Email for passing email data.
 
   We make use of Email fields:
-  - assigns - to hold EmailRecipient.fields
+  - assigns - to hold merge tag values
   - private[:template] - template
   - private[:custom_id] - custom_id
 
-  1. We prefer to use a template system, for sending emails in batch.
-  2. If this is not available, send them one by one
+  1. We use local email templates with single-sending
+  2. We support batch sending for Mailjet, SES bulk api is not good.
 
   ## Templates
 
-  We want to avoid having an email template editor in Proca.
-
-  1. We prefer using template if there is web editor for templates
-  2. We can also pull the content from a CMS, push as template
-  3. We can use email template from `ActionPage.config`
+  1. We use a mustache templates stored in proca (email_templates table)
+  2. Or a service-provider template system (for Mailjet)
 
   ## Sender Domain/Adddress
 
@@ -50,7 +45,7 @@ defmodule Proca.Service.EmailBackend do
   """
 
   alias Proca.{Org, Service}
-  alias Proca.Service.{EmailTemplate, EmailRecipient}
+  alias Proca.Service.{EmailTemplate, EmailMerge}
   alias Swoosh.Email
   import Proca.Stage.Support, only: [flatten_keys: 2]
 
@@ -58,12 +53,6 @@ defmodule Proca.Service.EmailBackend do
   @callback supports_templates?(org :: %Org{}) :: true | false
   @callback list_templates(org :: %Org{}) ::
               {:ok, [%EmailTemplate{}]} | {:error, reason :: String.t()}
-  @callback upsert_template(org :: %Org{}, template :: %EmailTemplate{}) ::
-              :ok | {:error, reason :: String.t()}
-  @callback get_template(org :: %Org{}, ref :: String.t()) ::
-              {:ok, %EmailTemplate{}} | {:error, reason :: String.t()}
-
-  @callback put_template(email :: %Email{}, template :: %EmailTemplate{}) :: %Email{}
 
   @callback deliver([%Email{}], %Org{}) :: any()
 
@@ -75,28 +64,29 @@ defmodule Proca.Service.EmailBackend do
 
   def service_module(:mailjet), do: Proca.Service.Mailjet
 
+  def service_module(:ses), do: Proca.Service.SES
+
   def service_module(:testmail), do: Proca.TestEmailBackend
 
-  def batch_size(org = %Org{email_backend: %Service{name: name}}) do
+  def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
   end
 
-  def supports_templates?(org = %Org{template_backend: %Service{name: name}}) do
+  def supports_templates?(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:supports_templates?, [org])
   end
 
-  def list_templates(org = %Org{template_backend: %Service{name: name}}) do
+  def list_templates(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:list_templates, [org])
   end
 
   @doc """
-  Delivers an email using EmailTemplate to a list of EmailRecipients. Uses Org's email service.
-  Can throw EmailBackend.NotDelivered which wraps service error.
+  Delivers list of Email-s using EmailTemplate. Uses Org's email service.
   """
-  @spec deliver([%Email{}] | [%EmailRecipient{}], %Org{}, %EmailTemplate{} | nil) ::
-          :ok | {:error | [:ok | {:error | String.t()}]}
+  @spec deliver([%Email{}], %Org{}, %EmailTemplate{} | nil) ::
+          :ok | {:error, [:ok | {:error, String.t()}]}
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template \\ nil) do
     backend = service_module(name)
 
@@ -104,8 +94,6 @@ defmodule Proca.Service.EmailBackend do
       recipients
       |> Enum.map(fn e ->
         e
-        |> from_recipient()
-        |> prepare_fields()
         |> determine_sender(org)
         |> prepare_template(email_template)
       end)
@@ -113,37 +101,34 @@ defmodule Proca.Service.EmailBackend do
     apply(backend, :deliver, [emails, org])
   end
 
-  def from_recipient(%EmailRecipient{
-        email: to,
-        first_name: fname,
-        ref: ref,
-        fields: fld,
-        custom_id: cid
-      }) do
-    Email.new(to: to, assigns: %{first_name: fname, ref: ref} |> Map.merge(fld))
-    |> from_recipient_custom_id(cid)
+  def make_email({name, email}, custom_id) do
+    Email.new(to: {name, email})
+    |> Email.put_private(
+      :custom_id,
+      case custom_id do
+        {type, id} -> format_custom_id(type, id)
+        s when is_bitstring(s) -> s
+      end
+    )
   end
-
-  def from_recipient(email = %Email{}), do: email
-
-  defp from_recipient_custom_id(email, nil), do: email
-  defp from_recipient_custom_id(email, cid), do: Email.put_private(email, :custom_id, cid)
 
   defp prepare_template(email, nil), do: email
 
-  defp prepare_template(email, tmpl = %EmailTemplate{}),
-    do: Email.put_private(email, :template, tmpl)
-
-  @deprecated "Use Email.header(\"Reply-To\", addr)directly"
-  def put_reply_to(email, reply_to_email) do
+  defp prepare_template(email, tmpl = %EmailTemplate{id: id}) when is_number(id) do
     email
-    |> Email.header("Reply-To", reply_to_email)
+    |> EmailTemplate.render(tmpl)
   end
 
-  @deprecated "Use Email.to directly"
-  def put_recipient(email, %EmailRecipient{} = recipient) do
+  # a remote template
+  defp prepare_template(email, tmpl = %EmailTemplate{ref: ref}) when not is_nil(ref) do
     email
-    |> Email.to({recipient.first_name, recipient.email})
+    |> Email.put_private(:template, tmpl)
+    |> prepare_fields()
+  end
+
+  # template renderers of Mailjet and friends are happier with a flat list of vars
+  defp prepare_fields(%Email{assigns: a} = email) do
+    %{email | assigns: flatten_keys(a, "")}
   end
 
   @doc """
@@ -196,20 +181,20 @@ defmodule Proca.Service.EmailBackend do
     end
   end
 
-  # template renderers of Mailjet and friends are happier with a flat list of vars
-  defp prepare_fields(%Email{assigns: fields} = email) do
-    %{email | assigns: flatten_keys(fields, "")}
-  end
-
   def parse_custom_id(custom_id) when is_bitstring(custom_id) do
     case String.split(custom_id, ":", trim: true) do
       ["action", id | _] -> {:action, String.to_integer(id)}
       ["mtt", id | _] -> {:mtt, String.to_integer(id)}
+      ["user", email | _] -> {:user, email}
       _other -> {nil, nil}
     end
   end
 
   def format_custom_id(type, id)
       when type in [:action, :mtt] and is_integer(id),
+      do: "#{type}:#{id}"
+
+  def format_custom_id(type, id)
+      when type in [:user] and is_bitstring(id),
       do: "#{type}:#{id}"
 end

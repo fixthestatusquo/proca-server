@@ -17,6 +17,7 @@ defmodule Proca.Target do
     field :name, :string
     field :external_id, :string
     field :area, :string
+    field :locale, :string
     field :fields, :map, default: %{}
 
     belongs_to :campaign, Proca.Campaign
@@ -29,10 +30,11 @@ defmodule Proca.Target do
   @doc false
   def changeset(target, attrs) do
     target
-    |> cast(attrs, [:name, :campaign_id, :fields, :area, :external_id])
+    |> cast(attrs, [:name, :locale, :campaign_id, :fields, :area, :external_id])
     |> validate_required([:name, :external_id])
     |> validate_flat_map(:fields)
     |> unique_constraint(:external_id)
+    |> validate_format(:locale, ~r/^[a-z]{2}(_[A-Z]{2})?$/)
     |> check_constraint(:fields, name: :max_fields_size)
   end
 

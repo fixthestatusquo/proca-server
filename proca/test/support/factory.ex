@@ -13,8 +13,7 @@ defmodule Proca.Factory do
       name: org_name,
       title: "Org with name #{org_name}",
       services: [email_service],
-      email_backend_id: email_service.id,
-      template_backend_id: email_service.id
+      email_backend_id: email_service.id
     }
   end
 

@@ -19,9 +19,10 @@ defmodule ProcaWeb.Schema.TargetTypes do
 
   input_object :target_input do
     field :name, :string
-    field :area, :string, default_value: ""
     field :external_id, non_null(:string)
-    field :fields, :json, default_value: %{}
+    field :locale, :string
+    field :area, :string
+    field :fields, :json
     field :emails, list_of(non_null(:target_email_input))
   end
 
@@ -29,6 +30,7 @@ defmodule ProcaWeb.Schema.TargetTypes do
     field :id, non_null(:string)
     field :name, non_null(:string)
     field :external_id, non_null(:string)
+    field :locale, :string
     field :area, :string, default_value: ""
     field :fields, :json, default_value: %{}
 
