@@ -9,6 +9,7 @@ defmodule Proca.Users do
   alias Proca.Users.{User, UserToken, UserNotifier}
   import Proca.Validations, only: [peek_unique_error: 1]
 
+  import Logger
   ## Database getters
 
   @doc """
@@ -374,6 +375,15 @@ defmodule Proca.Users do
     end
   end
 
+  def get_user_by_api_token(token) do
+    with {:ok, query} <- UserToken.verify_user_token_query(token, "api"),
+         %User{} = user <- Repo.one(query) do
+      user
+    else
+      _ -> nil
+    end
+  end
+
   @doc """
   Resets the user password.
 
@@ -394,6 +404,23 @@ defmodule Proca.Users do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  def reset_api_token(user) do
+    {token, token_record} = UserToken.build_api_token(user)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["api"]))
+    |> Ecto.Multi.insert(:api, token_record)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        {:ok, token}
+
+      {:error, _, errors, _} ->
+        error("Problem reseting API #{errors}")
+        {:error, errors}
     end
   end
 end
