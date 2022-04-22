@@ -16,6 +16,7 @@ defenum(ExternalService,
   mailjet: "mailjet",
   wordpress: "wordpress",
   stripe: "stripe",
+  test_stripe: "test_stripe",
   testmail: "testmail",
   webhook: "webhook"
 )

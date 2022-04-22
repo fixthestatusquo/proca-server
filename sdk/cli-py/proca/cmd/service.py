@@ -9,7 +9,7 @@ from proca.query import *
 import proca.cmd.org
 import json
 
-SERVICE_NAMES = ['MAILJET', 'SES']
+SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE']
 SERVICE_NAMES_CHOICE = click.Choice(SERVICE_NAMES, case_sensitive=False)
 
 @click.command("service")
