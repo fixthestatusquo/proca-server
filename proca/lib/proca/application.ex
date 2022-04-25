@@ -70,8 +70,9 @@ defmodule Proca.Application do
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
       {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
       {Proca.ActionPage.Status, []},
-      {Proca.Server.Jwks, Application.get_env(:proca, Proca.Server.Jwks)[:url]},
-      {Proca.Server.MTT, []}
+      {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
+      {Proca.Server.MTT, []},
+      {Proca.Users.Status, [interval: 30_000]}
     ]
   end
 end

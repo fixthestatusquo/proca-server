@@ -15,11 +15,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
       @desc "Name of organisation"
       arg(:name, non_null(:string))
 
-      load(:org, by: [:name])
+      load(:org, by: [:name], preload: [:action_pages, campaigns: :org])
       determine_auth(for: :org)
       allow(:staffer)
 
-      resolve(&Resolvers.Org.get_by_name/3)
+      resolve(&Resolvers.Org.return_from_context/3)
     end
   end
 
@@ -90,10 +90,13 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
+    # field :templates, non_null(list_of(non_null(:email_template))) do
+    #   resolve(&Resolvers.Org.list_templates/3)
+    # end
+
     # field :processing, :processing
     #  field :email_from, :string
     #  field :email_backend, :string
-    #  field :template_backend, :string
     #
     #  field :custom_supporter_confirm, :boolean
     #  field :custom_action_confirm, :boolean
@@ -122,6 +125,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, :string)
 
       load(:action_page, by: [:id, :name], preload: [:org, campaign: :org])
+      middleware(ProcaWeb.Resolvers.NormalizeError)
+
       resolve(&Resolvers.Org.action_page/3)
     end
 
@@ -143,6 +148,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Schema for contact personal information"
     field :contact_schema, :contact_schema
 
+    # field that are duplicated under personal_data
     @desc "Email opt in enabled"
     field :supporter_confirm, :boolean
 
@@ -196,6 +202,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       arg(:supporter_confirm, :boolean)
       arg(:supporter_confirm_template, :string)
+      arg(:doi_thank_you, :boolean)
 
       arg(:custom_supporter_confirm, :boolean)
       arg(:custom_action_confirm, :boolean)
@@ -254,6 +261,17 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:id, non_null(:integer))
 
       resolve(&Resolvers.Org.activate_key/3)
+    end
+
+    field :upsert_template, type: :status do
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:change_campaign_settings])
+
+      arg(:org_name, non_null(:string))
+      arg(:input, non_null(:email_template_input))
+
+      resolve(&Resolvers.Org.upsert_template/3)
     end
   end
 
@@ -339,6 +357,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     field :supporter_confirm, non_null(:boolean)
     field :supporter_confirm_template, :string
+    field :doi_thank_you, non_null(:boolean)
 
     field :custom_supporter_confirm, non_null(:boolean)
     field :custom_action_confirm, non_null(:boolean)
@@ -351,5 +370,18 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
     end
+  end
+
+  object :email_template do
+    field :name, non_null(:string)
+    field :locales, list_of(non_null(:string))
+  end
+
+  input_object :email_template_input do
+    field :name, non_null(:string)
+    field :locale, :string
+    field :subject, :string
+    field :html, :string
+    field :text, :string
   end
 end

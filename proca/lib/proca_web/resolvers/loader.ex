@@ -50,7 +50,6 @@ defmodule ProcaWeb.Resolvers.Loader do
            message: "Provide exactly one identifier argument"
          }}
       )
-      |> IO.inspect(label: "why?")
     end
   end
 

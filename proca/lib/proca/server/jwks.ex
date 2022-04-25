@@ -49,10 +49,12 @@ defmodule Proca.Server.Jwks do
   end
 
   def jwks_to_keys(jwks) do
-    case Map.get(JOSE.JWK.from(jwks), :keys) do
-      {:jose_jwk_set, keys} ->
+    jwks = Jason.decode!(jwks)
+
+    case Map.get(jwks, "keys") do
+      keys when is_list(keys) ->
         keys
-        |> Enum.map(fn k = {_, _, _, key} -> {key["kid"], k} end)
+        |> Enum.map(fn key -> {key["kid"], key} end)
         |> Map.new()
 
       _ ->
@@ -78,23 +80,5 @@ defmodule Proca.Server.Jwks do
 
   def key(kid) do
     GenServer.call(__MODULE__, {:key, kid})
-  end
-
-  def verify(token) do
-    try do
-      sig = JOSE.JWT.peek_protected(token)
-
-      with %JOSE.JWS{fields: %{"kid" => kid}} <- sig,
-           key when not is_nil(key) <- key(kid) do
-        JOSE.JWT.verify(key, token)
-      else
-        nil -> {false, JOSE.JWT.peek(token), sig}
-        _ -> {false, nil, nil}
-      end
-    rescue
-      # JOSE will raise different errors if token is not a proper string,
-      # and also we can get an error because Jwks is not running
-      _ -> {false, nil, nil}
-    end
   end
 end

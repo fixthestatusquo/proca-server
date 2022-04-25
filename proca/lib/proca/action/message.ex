@@ -11,6 +11,7 @@ defmodule Proca.Action.Message do
     field :delivered, :boolean, default: false
     field :opened, :boolean, default: false
     field :clicked, :boolean, default: false
+    field :dupe_rank, :integer
     # XXX add dupe rank?
 
     belongs_to :action, Proca.Action
@@ -37,11 +38,11 @@ defmodule Proca.Action.Message do
       :opened,
       :clicked
     ])
+    |> change(assocs)
     |> foreign_key_constraint(:target,
       name: :messages_target_id_fkey,
       message: "target to messages association violated"
     )
-    |> change(assocs)
   end
 
   def put_messages(action, %{targets: targets} = attrs, %ActionPage{} = action_page) do
@@ -83,7 +84,15 @@ defmodule Proca.Action.Message do
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
-        where: a.processing_status == :delivered and a.testing == ^testing and m.sent in ^sent
+        # processed
+        # and testing status we want
+        # and with that sent status
+        # and either testing or only non-dupe if not testing
+        where:
+          a.processing_status == :delivered and
+            a.testing == ^testing and
+            m.sent in ^sent and
+            (a.testing == true or m.dupe_rank == 0)
       )
 
     case target_ids do
@@ -99,7 +108,11 @@ defmodule Proca.Action.Message do
   def mark_all(messages, field) when field in [:sent, :delivered, :opened, :clicked] do
     import Ecto.Query
     ids = Enum.map(messages, & &1.id)
-    Repo.update_all(from(m in Message, where: m.id in ^ids), set: [{field, true}])
+
+    Repo.update_all(from(m in Message, where: m.id in ^ids),
+      set: [{field, true}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
     :ok
   end
 
@@ -112,10 +125,10 @@ defmodule Proca.Action.Message do
           Repo.update!(change(message, delivered: true))
 
         :open ->
-          Repo.update!(change(message, opened: true))
+          Repo.update!(change(message, opened: true, delivered: true))
 
         :click ->
-          Repo.update!(change(message, clicked: true))
+          Repo.update!(change(message, clicked: true, opened: true, delivered: true))
       end
     end
   end

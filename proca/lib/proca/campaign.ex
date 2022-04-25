@@ -34,10 +34,10 @@ defmodule Proca.Campaign do
 
     campaign
     |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
+    |> change(assocs)
     |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
-    |> change(assocs)
-    |> validate_format(:name, ~r/^([\w\d_-]+$)/)
+    |> validate_format(:name, ~r/^[\w\d_-]+$/)
     |> unique_constraint(:name)
   end
 

@@ -20,22 +20,25 @@ url = "..."
 
 import proca.client
 
+import click
 import appdirs
-from os import path
-from configparser import ConfigParser, DuplicateSectionError, DuplicateOptionError
+from os import path, mkdir
+from configparser import RawConfigParser, DuplicateSectionError, DuplicateOptionError
 
 from proca.friendly import explain_error
 
-Config = ConfigParser()
+Config = RawConfigParser()
 
 config_dirname = appdirs.user_config_dir(appname="proca")
 config_filename = path.join(config_dirname, "proca.conf")
 
 def server_section(name=None):
     if name is None:
-       return "server"
+       return "server:DEFAULT"
     return "server:" + name
 
+def server_name(section):
+    return section.split(":")[1]
 
 @explain_error("adding server configuration")
 def add_server_section(name):
@@ -45,8 +48,14 @@ def add_server_section(name):
 def initialize():
     "Initialize the Config"
 
+    if not path.exists(config_dirname):
+        mkdir(config_dirname, mode=0o700)
+    elif not path.isdir(config_dirname):
+        raise click.FileError(f"{config_dirname} exists but is not a directory to store proca config files - please check")
+
+
     def default_server():
-        sn = server_section()
+        sn = server_section("DEFAULT")
         try:
             add_server_section(sn)
         except DuplicateSectionError:

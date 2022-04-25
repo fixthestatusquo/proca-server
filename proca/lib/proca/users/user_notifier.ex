@@ -4,18 +4,20 @@ defmodule Proca.Users.UserNotifier do
 
   defp deliver(email, template_name, fields) do
     import Logger
-    instance = Org.one([:instance] ++ [preload: [:email_backend, :template_backend]])
+    instance = Org.one([:instance] ++ [preload: [:email_backend]])
 
-    case Service.EmailTemplateDirectory.ref_by_name_reload(instance, template_name) do
-      {:ok, ref} ->
-        t = %Service.EmailTemplate{ref: ref}
-        r = %Service.EmailRecipient{first_name: "Proca User", email: email, fields: fields}
+    case Service.EmailTemplateDirectory.by_name_reload(instance, template_name) do
+      {:ok, t} ->
+        r =
+          Service.EmailBackend.make_email({"Proca User", email}, {:user, email})
+          |> Service.EmailMerge.put_assigns(fields)
+
         result = Service.EmailBackend.deliver([r], instance, t)
         info("Email #{template_name} to #{email} delivery: #{inspect(result)}}")
         result
 
       _ ->
-        # IO.inspect({instance, template_name}, label: "Failed to send user notification with tempalte")
+        # IO.inspect({instance, template_name}, label: "Failed to send user notification with template")
         info("User notification: #{template_name} for <#{email}>: #{inspect(fields)}")
     end
   end

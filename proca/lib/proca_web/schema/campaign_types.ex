@@ -42,8 +42,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:name, :string)
       arg(:external_id, :integer)
 
-      resolve(&Resolvers.Campaign.get/3)
-      determine_auth(for: :result)
+      load(:campaign, by: [:id, :name, :external_id], preload: [:org, :targets])
+      determine_auth(for: :campaign)
+      resolve(&Resolvers.Campaign.return_from_context/3)
     end
   end
 
@@ -86,6 +87,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       %{org_id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
         :private_campaign
 
+      _org, %{context: %{auth: auth}} ->
+        if Proca.Permission.can?(auth, [:instance_owner]) do
+          :private_campaign
+        else
+          :public_campaign
+        end
+
       _, _ ->
         :public_campaign
     end)
@@ -127,6 +135,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     field :launch_requests, non_null(list_of(non_null(:confirm))) do
       resolve(&Resolvers.Campaign.partnership_launch_requests/3)
+    end
+
+    field :launch_requesters, non_null(list_of(non_null(:user))) do
+      resolve(&Resolvers.Campaign.partnership_requesters/3)
     end
   end
 

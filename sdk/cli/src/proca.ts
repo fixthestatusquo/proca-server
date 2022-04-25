@@ -72,6 +72,8 @@ export type ActionInput = {
   donation?: Maybe<DonationActionInput>;
   /** MTT payload */
   mtt?: Maybe<MttActionInput>;
+  /** Test mode */
+  testing?: Maybe<Scalars['Boolean']>;
 };
 
 export type ActionPage = {
@@ -118,6 +120,8 @@ export type ActionPageInput = {
   extraSupporters?: Maybe<Scalars['Int']>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
+  /** Collected PII is processed even with no opt-in */
+  delivery?: Maybe<Scalars['Boolean']>;
 };
 
 export enum ActionPageStatus {
@@ -289,6 +293,7 @@ export type Consent = {
   givenAt: Scalars['NaiveDateTime'];
   emailStatus: EmailStatus;
   emailStatusChanged: Maybe<Scalars['NaiveDateTime']>;
+  withConsent: Scalars['Boolean'];
 };
 
 /** GDPR consent data structure */
@@ -503,6 +508,8 @@ export type OrgInput = {
   supporterConfirm?: Maybe<Scalars['Boolean']>;
   /** Email opt in template name */
   supporterConfirmTemplate?: Maybe<Scalars['String']>;
+  /** Only send thank you emails to opt-ins */
+  doiThankYou?: Maybe<Scalars['Boolean']>;
   /** Config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -530,6 +537,7 @@ export type Partnership = {
   org: Org;
   actionPages: Array<ActionPage>;
   launchRequests: Array<Confirm>;
+  launchRequesters: Array<User>;
 };
 
 export type PersonalData = {
@@ -542,6 +550,8 @@ export type PersonalData = {
   supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** High data security enabled */
   highSecurity: Scalars['Boolean'];
+  /** Only send thank you emails to opt-ins */
+  doiThankYou: Scalars['Boolean'];
 };
 
 export type PrivateActionPage = ActionPage & {
@@ -691,6 +701,7 @@ export type Processing = {
   emailBackend: Maybe<ServiceName>;
   supporterConfirm: Scalars['Boolean'];
   supporterConfirmTemplate: Maybe<Scalars['String']>;
+  doiThankYou: Scalars['Boolean'];
   customSupporterConfirm: Scalars['Boolean'];
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
@@ -879,7 +890,8 @@ export type RootMutationTypeDeleteCampaignArgs = {
 
 
 export type RootMutationTypeUpdateActionPageArgs = {
-  id: Scalars['Int'];
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
   input: ActionPageInput;
 };
 
@@ -996,6 +1008,7 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   emailFrom?: Maybe<Scalars['String']>;
   supporterConfirm?: Maybe<Scalars['Boolean']>;
   supporterConfirmTemplate?: Maybe<Scalars['String']>;
+  doiThankYou?: Maybe<Scalars['Boolean']>;
   customSupporterConfirm?: Maybe<Scalars['Boolean']>;
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
@@ -1133,6 +1146,7 @@ export type RootQueryTypeExportActionsArgs = {
   limit?: Maybe<Scalars['Int']>;
   onlyOptIn?: Maybe<Scalars['Boolean']>;
   onlyDoubleOptIn?: Maybe<Scalars['Boolean']>;
+  includeTesting?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1242,6 +1256,7 @@ export type TargetEmail = {
   __typename?: 'TargetEmail';
   email: Scalars['String'];
   emailStatus: EmailStatus;
+  error: Maybe<Scalars['String']>;
 };
 
 export type TargetEmailInput = {
@@ -1249,7 +1264,7 @@ export type TargetEmailInput = {
 };
 
 export type TargetInput = {
-  name: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
   area?: Maybe<Scalars['String']>;
   externalId: Scalars['String'];
   fields?: Maybe<Scalars['Json']>;
@@ -1345,6 +1360,8 @@ export const GetOrgAttrsDocument = {"kind":"Document","definitions":[{"kind":"Op
 export const LaunchActionPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"launchActionPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"launchActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<LaunchActionPage, LaunchActionPageVariables>;
 export const AcceptLaunchRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"acceptLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"acceptOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"actionPageFields"}}]}}]}}]}},...ActionPageFields.definitions]} as unknown as DocumentNode<AcceptLaunchRequest, AcceptLaunchRequestVariables>;
 export const RejectLaunchRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"rejectLaunchRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"org"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectOrgConfirm"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"org"}}},{"kind":"Argument","name":{"kind":"Name","value":"confirm"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirm"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<RejectLaunchRequest, RejectLaunchRequestVariables>;
+export const ActionPageExtraDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ActionPageExtra"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"extraSupporters"}}]}}]}}]}}]} as unknown as DocumentNode<ActionPageExtra, ActionPageExtraVariables>;
+export const ActionPageSetExtraDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ActionPageSetExtra"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extra"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateActionPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"extraSupporters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extra"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PrivateActionPage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"extraSupporters"}}]}}]}}]}}]} as unknown as DocumentNode<ActionPageSetExtra, ActionPageSetExtraVariables>;
 export type CampaignOverview = (
   { __typename?: 'PrivateCampaign' }
   & { org: (
@@ -2313,6 +2330,33 @@ export type ActionExport = (
   ) }
 );
 
+export type ActionPageExtraVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type ActionPageExtra = (
+  { __typename?: 'RootQueryType' }
+  & { actionPage: (
+    { __typename?: 'PrivateActionPage' }
+    & Pick<PrivateActionPage, 'extraSupporters'>
+  ) | { __typename?: 'PublicActionPage' } }
+);
+
+export type ActionPageSetExtraVariables = Exact<{
+  id: Scalars['Int'];
+  extra: Scalars['Int'];
+}>;
+
+
+export type ActionPageSetExtra = (
+  { __typename?: 'RootMutationType' }
+  & { updateActionPage: (
+    { __typename: 'PrivateActionPage' }
+    & Pick<PrivateActionPage, 'extraSupporters'>
+  ) | { __typename: 'PublicActionPage' } }
+);
+
 
 export type ObjectFieldTypes = {
     [key: string]: { [key: string]: string | string[] }
@@ -2431,7 +2475,8 @@ export const scalarLocations : ScalarLocations = {
         "PrivateActionPage",
         "PublicActionPage"
       ],
-      "launchRequests": "Confirm"
+      "launchRequests": "Confirm",
+      "launchRequesters": "User"
     },
     "PrivateActionPage": {
       "config": "Json",

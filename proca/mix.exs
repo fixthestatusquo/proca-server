@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.2.0",
+      version: "3.3.1",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -66,14 +66,17 @@ defmodule Proca.MixProject do
       {:amqp, "~> 2.0"},
       # until support for amqp 2.0 is released
       {:broadway_rabbitmq, github: "dashbitco/broadway_rabbitmq", branch: "master"},
-      {:ex_aws, "~> 2.1"},
-      {:ex_aws_ses, "~> 2.1"},
-      {:ex_aws_sqs, "~> 3.2"},
+      {:swoosh, "~> 1.5"},
+      {:gen_smtp, "~> 1.2.0"},
+      {:ex_aws, "~> 2.2"},
+      {:ex_aws_ses, "~> 2.4"},
+      {:ex_aws_sqs, "~> 3.3"},
       {:stripity_stripe, "~> 2.9.0"},
-      {:hackney, "~> 1.18.0"},
+      {:hackney, "~> 1.17.0"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
-      {:jose, "~> 1.11.1"},
+      {:joken, "~> 2.4"},
+      {:bbmustache, "~> 1.12"},
       # XXX migrate to jason
       {:json, "~> 1.4.1"},
       {:poison, "~> 4.0"},
@@ -88,8 +91,7 @@ defmodule Proca.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:swoosh, "~> 1.5"}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]
   end
 

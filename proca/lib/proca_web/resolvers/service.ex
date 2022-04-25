@@ -18,12 +18,17 @@ defmodule ProcaWeb.Resolvers.Service do
     end
   end
 
+  defp stripe_service(org, testing) do
+    name = if testing, do: :test_stripe, else: :stripe
+    Service.one([name: name, org: org] ++ [:latest])
+  end
+
   def add_stripe_payment_intent(
         _parent,
         params = %{input: input},
         context = %{context: %{action_page: ap}}
       ) do
-    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+    with stripe = %Service{} <- stripe_service(ap.org, Map.get(params, :testing, false)) do
       pi = input
 
       meta =
@@ -46,7 +51,7 @@ defmodule ProcaWeb.Resolvers.Service do
         params = %{input: input},
         context = %{context: %{action_page: ap}}
       ) do
-    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+    with stripe = %Service{} <- stripe_service(ap.org, Map.get(params, :testing, false)) do
       sbscr = input
 
       meta =
@@ -55,6 +60,7 @@ defmodule ProcaWeb.Resolvers.Service do
         |> put_contact_ref(params)
 
       case Service.Stripe.create_subscription(stripe, sbscr, meta) do
+        # XXX warning because stripe lib type incomplete
         {:ok, result} -> {:ok, result}
         {:error, %Stripe.Error{} = e} -> Service.Stripe.error_to_graphql(e)
         {:error, %Ecto.Changeset{} = ch} -> {:error, ProcaWeb.Helper.format_errors(ch)}
@@ -69,7 +75,7 @@ defmodule ProcaWeb.Resolvers.Service do
         params,
         %{context: %{action_page: ap}}
       ) do
-    with stripe = %Service{} <- Service.one([name: :stripe, org: ap.org] ++ [:latest]) do
+    with stripe = %Service{} <- stripe_service(ap.org, Map.get(params, :testing, false)) do
       case assemble_stripe_objects(params, stripe) do
         {:ok, object} -> {:ok, object}
         {:error, e} -> Service.Stripe.error_to_graphql(e)

@@ -27,10 +27,10 @@ defmodule Proca.Repo.Migrations.NamedActionPageTemplates do
     import Ecto.Query
 
     action_pages =
-      Proca.Repo.all(from(o in Proca.ActionPage, preload: [org: [template_backend: :org]]))
+      Proca.Repo.all(from(o in Proca.ActionPage, preload: [org: [email_backend: :org]]))
 
-    for ap <- action_pages, ap.org.template_backend != nil do
-      o = ap.org.template_backend.org
+    for ap <- action_pages, ap.org.email_backend != nil do
+      o = ap.org.email_backend.org
       Proca.Service.EmailTemplateDirectory.load_templates_sync(o)
 
       case ap.thank_you_template do
@@ -38,9 +38,12 @@ defmodule Proca.Repo.Migrations.NamedActionPageTemplates do
           nil
 
         ref ->
-          case Proca.Service.EmailTemplateDirectory.name_by_ref(o, String.to_integer(ref)) do
-            {:ok, name} -> Proca.Repo.update!(Ecto.Changeset.change(ap, thank_you_template: name))
-            _ -> throw("Action Page #{ap.name} (#{ap.id}): cannot find template name for #{ref}")
+          case Proca.Service.EmailTemplateDirectory.by_ref(o, String.to_integer(ref)) do
+            {:ok, %{name: name}} ->
+              Proca.Repo.update!(Ecto.Changeset.change(ap, thank_you_template: name))
+
+            _ ->
+              throw("Action Page #{ap.name} (#{ap.id}): cannot find template name for #{ref}")
           end
       end
     end

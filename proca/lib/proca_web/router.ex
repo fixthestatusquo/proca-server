@@ -29,6 +29,7 @@ defmodule ProcaWeb.Router do
     plug CORSPlug
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
     plug ProcaWeb.Plugs.BasicAuthPlug
+    plug ProcaWeb.Plugs.TokenAuthPlug
     plug ProcaWeb.Plugs.JwtAuthPlug
   end
 

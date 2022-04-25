@@ -18,6 +18,7 @@ defmodule Proca.Contact.BasicData do
     field :phone, :string
     field :country, :string
     field :postcode, :string
+    field :address, :map
     field :area, :string
   end
 
@@ -35,7 +36,8 @@ defmodule Proca.Contact.BasicData do
       d = apply_changes(ch)
       a = Map.get(d, :address) || %Input.Address{}
 
-      change(%BasicData{}, %{
+      %BasicData{}
+      |> change(%{
         name: d.name,
         first_name: d.first_name,
         last_name: d.last_name,
@@ -43,14 +45,26 @@ defmodule Proca.Contact.BasicData do
         phone: d.phone,
         country: a.country,
         postcode: a.postcode,
+
         # XXX we can have some logic here to use some other area type
         area: a.country
       })
+      |> maybe_add_address(a)
       |> validate_length(:area, max: 5)
     else
       ch
     end
   end
+
+  def maybe_add_address(
+        changeset,
+        address = %Input.Address{region: r, locality: l, street: s, street_number: sn}
+      )
+      when r != nil or l != nil or s != nil or sn != nil do
+    change(changeset, address: Map.take(address, [:region, :locality, :street, :street_number]))
+  end
+
+  def maybe_add_address(changeset, _), do: changeset
 end
 
 defimpl Proca.Contact.Data, for: Proca.Contact.BasicData do

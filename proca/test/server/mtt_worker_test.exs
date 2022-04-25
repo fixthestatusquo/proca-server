@@ -29,9 +29,19 @@ defmodule Proca.Server.MTTWorkerTest do
   describe "selecting targets to send" do
     setup %{campaign: c, ap: ap, targets: ts} do
       action1 =
-        Factory.insert(:action, action_page: ap, processing_status: :delivered, testing: true)
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted,
+          testing: true
+        )
 
-      action2 = Factory.insert(:action, action_page: ap, processing_status: :delivered)
+      action2 =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
 
       {t1, t2} = Enum.split(ts, 3)
 
@@ -53,6 +63,12 @@ defmodule Proca.Server.MTTWorkerTest do
 
       emails = MTTWorker.get_test_emails_to_send()
       assert length(emails) == 3
+
+      # Before dupe rank was run:
+      emails = MTTWorker.get_emails_to_send(tids, {700, 700})
+      assert length(emails) == 0
+
+      assert {:ok, _} = Proca.Server.MTT.dupe_rank()
 
       emails = MTTWorker.get_emails_to_send(tids, {1, 700})
       assert length(emails) == 0
@@ -84,8 +100,16 @@ defmodule Proca.Server.MTTWorkerTest do
 
   describe "scheduling messages for one target" do
     setup %{campaign: c, ap: ap, targets: [t1 | _]} do
-      actions = Factory.insert_list(20, :action, action_page: ap, processing_status: :delivered)
+      actions =
+        Factory.insert_list(20, :action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
+
       msgs = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
+
+      Proca.Server.MTT.dupe_rank()
 
       %{
         actions: actions,
@@ -158,6 +182,8 @@ defmodule Proca.Server.MTTWorkerTest do
   end
 
   test "preserving email and last name for MTTs", %{campaign: c, org: org} do
+    assert Proca.Pipes.Connection.is_connected?()
+
     preview_ap = Factory.insert(:action_page, campaign: c, org: org, live: false)
     live_ap = Factory.insert(:action_page, campaign: c, org: org, live: true)
 
@@ -181,5 +207,53 @@ defmodule Proca.Server.MTTWorkerTest do
 
     test_for.(preview_ap)
     test_for.(live_ap)
+  end
+
+  test "sending without template", %{campaign: c, targets: [t | _]} do
+    msg = Factory.insert(:message, target: t)
+
+    MTTWorker.send_emails(c, [msg])
+
+    [%{email: target_email}] = t.emails
+
+    [email] = TestEmailBackend.mailbox(target_email)
+
+    assert String.starts_with?(email.html_body, "<p>MTT text body")
+    assert String.starts_with?(email.subject, "MTT Subject")
+  end
+
+  test "sending with local template", %{org: org, campaign: c, ap: page, targets: [t | _]} do
+    import Proca.Repo
+
+    msg = Factory.insert(:message, target: t)
+
+    template =
+      insert!(
+        Proca.Service.EmailTemplate.changeset(%{
+          org: org,
+          name: "local_mtt",
+          locale: "en",
+          subject: "{{subject}}",
+          html: """
+          {{{body}}}
+
+          <p>Sent in {{campaign.title}} campaign</p>
+          """
+        })
+      )
+
+    update!(Proca.MTT.changeset(c.mtt, %{message_template: template.name}))
+
+    c = Proca.Campaign.one(id: c.id, preload: [:mtt, :org])
+
+    MTTWorker.send_emails(c, [msg])
+
+    [%{email: target_email}] = t.emails
+
+    [email] = TestEmailBackend.mailbox(target_email)
+
+    assert email.subject == msg.message_content.subject
+    assert String.contains?(email.html_body, "Sent in Petition about")
+    assert email.private[:custom_id] == "mtt:#{msg.id}"
   end
 end

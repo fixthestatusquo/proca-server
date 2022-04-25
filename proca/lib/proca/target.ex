@@ -9,6 +9,7 @@ defmodule Proca.Target do
   import Ecto.Changeset
   import Ecto.Query
   import Proca.Validations, only: [validate_flat_map: 2]
+  import Logger
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
 
@@ -16,6 +17,7 @@ defmodule Proca.Target do
     field :name, :string
     field :external_id, :string
     field :area, :string
+    field :locale, :string
     field :fields, :map, default: %{}
 
     belongs_to :campaign, Proca.Campaign
@@ -28,10 +30,11 @@ defmodule Proca.Target do
   @doc false
   def changeset(target, attrs) do
     target
-    |> cast(attrs, [:name, :campaign_id, :fields, :area, :external_id])
+    |> cast(attrs, [:name, :locale, :campaign_id, :fields, :area, :external_id])
     |> validate_required([:name, :external_id])
     |> validate_flat_map(:fields)
     |> unique_constraint(:external_id)
+    |> validate_format(:locale, ~r/^[a-z]{2}(_[A-Z]{2})?$/)
     |> check_constraint(:fields, name: :max_fields_size)
   end
 
@@ -51,10 +54,10 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
-  def all(q, [{:campaign, c} | kw]) do
+  def all(query, [{:campaign, c} | kw]) do
     import Ecto.Query
 
-    q
+    query
     |> where([t], t.campaign_id == ^c.id)
     |> all(kw)
   end
@@ -75,7 +78,7 @@ defmodule Proca.Target do
           for input <- emails do
             case Enum.find(record.emails, fn %{email: e} -> e == input.email end) do
               %TargetEmail{} = te -> TargetEmail.changeset(te, input)
-              nil -> struct(TargetEmail, input)
+              nil -> TargetEmail.changeset(%TargetEmail{}, input)
             end
           end
 
@@ -83,18 +86,15 @@ defmodule Proca.Target do
     end
   end
 
-  def handle_bounce(args) do
-    case get_target_email(args.id, args.email) do
+  def handle_bounce(%{id: id, email: email, reason: reason} = params) do
+    case TargetEmail.one(message_id: id, email: email) do
       # ignore a bounce when not found
       nil ->
+        warn("Could not find target email #{email} for message id #{id}")
         {:ok, %TargetEmail{}}
 
       target_email ->
-        Repo.update!(change(target_email, email_status: args.reason))
+        Repo.update!(change(target_email, email_status: reason, error: params[:error]))
     end
-  end
-
-  def get_target_email(id, email) do
-    TargetEmail.one(target_id: id, email: email)
   end
 end

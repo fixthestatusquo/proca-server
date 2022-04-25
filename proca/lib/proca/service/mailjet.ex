@@ -2,6 +2,8 @@ defmodule Proca.Service.Mailjet do
   @moduledoc """
   Mailjet Email Backend
 
+  Template ids (refs) are integers
+
   Templates:
   - Use transactional templates (not campaign)
   - Test thoroughly with their preview - MJ provides no debugging otherwise (just HTTP500 on send)
@@ -12,13 +14,14 @@ defmodule Proca.Service.Mailjet do
   - The links prohibit use of default "" - so you must provide or hide it.
   - Use {% if var:givenname:"" %} and {% endif %} for conditional block
 
+
   """
 
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.{Org, Service, Supporter, Target}
   alias Proca.Action.Message
-  alias Proca.Service.{EmailTemplate, EmailBackend, EmailRecipient}
+  alias Proca.Service.{EmailTemplate, EmailBackend}
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
@@ -36,7 +39,7 @@ defmodule Proca.Service.Mailjet do
   def batch_size(), do: 25
 
   @impl true
-  def list_templates(%Org{template_backend: %Service{} = srv} = org, lst \\ []) do
+  def list_templates(%Org{email_backend: %Service{} = srv} = org, lst \\ []) do
     case Service.json_request(srv, "#{@api_url}#{@template_path}?limit=50&offset=#{length(lst)}",
            auth: :basic
          ) do
@@ -65,17 +68,6 @@ defmodule Proca.Service.Mailjet do
     }
   end
 
-  @impl true
-  def upsert_template(_org, _template) do
-    {:error, "not implemneted"}
-  end
-
-  @impl true
-  def get_template(_org, _template) do
-    {:error, "not implemented"}
-  end
-
-  @impl true
   def put_template(email, nil), do: email
 
   def put_template(email, %EmailTemplate{ref: ref}) when is_integer(ref) do
@@ -83,12 +75,10 @@ defmodule Proca.Service.Mailjet do
     |> Email.put_provider_option(:template_id, ref)
   end
 
-  @impl true
   def put_template(email, tmpl = %EmailTemplate{ref: ref}) when is_bitstring(ref) do
     put_template(email, %{tmpl | ref: String.to_integer(ref)})
   end
 
-  @impl true
   def put_template(email, %EmailTemplate{subject: subject, html: html, text: text})
       when is_bitstring(subject) and (is_bitstring(html) or is_bitstring(text)) do
     email
@@ -136,34 +126,56 @@ defmodule Proca.Service.Mailjet do
   defp put_custom(email), do: email
 
   @impl true
-  def handle_bounce(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
+  def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason} = event) do
+    {type, id} = parse_custom_id(cid)
+
+    error =
+      ~w"error_related_to error comment"
+      |> Enum.map(&event[&1])
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.join(": ")
+
+    # IO.inspect(event, label: "BOUNCE EVENT")
 
     bounce_params = %{
       id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
+      email: email,
+      reason: String.to_existing_atom(reason),
+      error: error
     }
 
     case type do
       :action -> Supporter.handle_bounce(bounce_params)
       :mtt -> Target.handle_bounce(bounce_params)
+      _ -> {:error, :invalid_custom_id}
+    end
+  end
+
+  @impl true
+  def handle_bounce(params) do
+    warn("Malformed Mailjet bounce event: #{inspect(params)}")
+  end
+
+  @impl true
+  def handle_event(%{"CustomID" => cid, "email" => email, "event" => reason}) do
+    {type, id} = parse_custom_id(cid)
+
+    event_params = %{
+      id: id,
+      email: email,
+      reason: String.to_existing_atom(reason)
+    }
+
+    case type do
+      :mtt -> Message.handle_event(event_params)
+      _ -> {:error, :invalid_custom_id}
     end
   end
 
   @impl true
   def handle_event(params) do
-    {type, id} = parse_custom_id(Map.get(params, "CustomID"))
-
-    event_params = %{
-      id: id,
-      email: Map.get(params, "email"),
-      reason: String.to_existing_atom(Map.get(params, "event"))
-    }
-
-    case type do
-      :mtt -> Message.handle_event(event_params)
-    end
+    warn("Malformed Mailjet event: #{inspect(params)}")
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do

@@ -57,6 +57,7 @@ defmodule Proca.ActionPage do
       :org_id,
       :campaign_id
     ])
+    |> change(assocs)
     |> validate_required([:name, :locale, :extra_supporters])
     |> unique_constraint(:name)
     |> validate_format(
@@ -69,7 +70,6 @@ defmodule Proca.ActionPage do
     )
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
-    |> change(assocs)
   end
 
   def changeset(attrs) do
@@ -251,8 +251,8 @@ defmodule Proca.ActionPage do
   def thank_you_template_ref(%ActionPage{} = ap) do
     ap = Repo.preload(ap, [:org])
 
-    case Proca.Service.EmailTemplateDirectory.ref_by_name(ap.org, ap.thank_you_template) do
-      {:ok, ref} -> ref
+    case Proca.Service.EmailTemplateDirectory.by_name(ap.org, ap.thank_you_template) do
+      {:ok, %{ref: ref}} -> ref
       _ -> nil
     end
   end
