@@ -75,27 +75,51 @@ def list_org_users(client, org):
     return data['org']['users']
 
 @explain_error("fetching your user information")
-def current_user(client):
+def current_user(client, roles=True):
+
+    if roles:
+        query_roles = """
+        roles {
+            role
+            org { name title }
+        }
+        """
+    else:
+        query_roles = ""
+
     query = gql("""
     query user {
         currentUser {
             email
+            apiToken { expiresAt }
             isAdmin
-            roles {
-                role
-                org { name title }
-            }
+            %(roles)s
         }
     }
-    """)
+    """ % {"roles": query_roles})
+
     data = client.execute(query)
     return data['currentUser']
 
-@click.command("me:token")
-@click.pass_obj
-def token(ctx):
+
+@explain_error("resetting API token")
+def reset_token(client):
+    query = """
+    mutation ResetToken {
+        resetApiToken
+    }
     """
-    Display Authorization token (copy to GraphiQL)
+
+    query = gql(query)
+
+    data = client.execute(query)
+    return data['resetApiToken']
+
+@click.command("me:basictoken")
+@click.pass_obj
+def basictoken(ctx):
+    """
+    Display Basic auth token (discouraged! Use the API token)
     """
     conf = Config[ctx.server_section]
 
@@ -105,3 +129,24 @@ def token(ctx):
         print(rainbow(f"Basic|{t}"))
     except KeyError:
         print(R("basic auth not configured"))
+
+
+@click.command(":token")
+@click.pass_obj
+def token(ctx):
+    """
+    Display Basic auth token (discouraged! Use the API token)
+    """
+    conf = Config[ctx.server_section]
+    try:
+        print(rainbow(f'Bearer| {conf["token"]}'))
+    except KeyError:
+        print(R("Token auth not configured"))
+
+@click.command("token:reset")
+@click.pass_obj
+def token(ctx):
+    """
+    Display Basic auth token (discouraged! Use the API token)
+    """
+    setup_token_auth(ctx.server_section, None, None, None)

@@ -92,10 +92,12 @@ def make_client(sn, ws=False):
     endpoint = proca.client.Endpoint(server['url'], server.get('ws_url', None))
 
     auth = {}
-    try:
+    if 'token' in server:
+        auth['token'] = server['token']
+    elif 'user' in server and 'password' in server:
         auth['user'] = server['user']
         auth['password'] = server['password']
-    except KeyError:
+    else:
         auth = None
 
     if ws:
