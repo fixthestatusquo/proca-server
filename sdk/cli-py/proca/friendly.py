@@ -12,7 +12,8 @@ import configparser
 import re
 import pprint
 from gql.transport.exceptions import TransportQueryError
-
+from asyncio.exceptions import TimeoutError
+from aiohttp.client_exceptions import ClientOSError
 
 def explain_error(intent, **fmt_params):
     """
@@ -39,6 +40,12 @@ def explain_error(intent, **fmt_params):
                 log.debug("GraphQL Errors:", pprint.pformat(e.errors))
                 msgs  = ", ".join([api_error_explanation(m) for m in e.errors])
                 fail(f"😵 Tried {intent}, but {msgs}")
+            except TimeoutError as e:
+                log.debug("Timeout error", e)
+                fail(f"👎 Connection to server timed out when {intent}")
+            except ClientOSError as e:
+                log.debug("Network error", pprint.pformat(e))
+                fail(f"👎 Connection to server broke while {intent}")
 
         return explainer_wrap
     return decor
@@ -46,15 +53,20 @@ def explain_error(intent, **fmt_params):
 
 def api_error_explanation(msg):
     ex = msg.get('extensions', {})
-    path = '.'.join(msg['path'])
+    if 'path' in msg:
+        path = 'at ' + '.'.join(msg['path'])
+    else:
+        path = ''
 
     if 'code' in ex:
         if ex['code'] == 'unauthorized':
-            return f"you have not provided correct user and password at {path}"
+            return f"you have not provided correct user and password {path}"
+        elif ex['code'] == 'bad_arg':
+            return f"you have given wrong arguments for {path}: {msg['message']}"
         else:
-            return f"server said: {ex['code']} at {path}"
+            return f"server said: {ex['code']} - {msg['message']} {path}"
 
-    return msg['message']
+    return f"{path}: {msg['message']}"
 
 def fail(message, usage=False, exit_code=1):
     if usage:
@@ -82,13 +94,25 @@ def validate_email(ctx, param, value):
 
     return value
 
+LOCALE_PATTERN = re.compile(r"^[a-z]{2}(_[A-Z]{2})?$")
+def validate_locale(ctx, param, value):
+    if value is None:
+        return value
+
+    m = LOCALE_PATTERN.match(value)
+    if m is None:
+        raise click.BadParameter("locale must be language code (en) or language+region code (en_IE)")
+
+    return value
+
+
+
 
 def id_options(fn):
     """
     Adds options to pass different id/name/external ids to the command.
     XXX - add uuid later
     """
-
 
     fn = click.option("-n", "--name", type=str, help="short name")(fn)
     fn = click.option("-i", "--id", type=int, help="numerical id")(fn)

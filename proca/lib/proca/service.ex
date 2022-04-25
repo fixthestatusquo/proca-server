@@ -52,7 +52,19 @@ defmodule Proca.Service do
     end
   end
 
-  def aws_request(req, %Service{user: access_key_id, password: secret_access_key, host: region}) do
+  def aws_request(req = %ExAws.Operation.Query{}, srv) do
+    json_req = ExAws.Operation.JSON.new(req.service, Map.from_struct(req))
+    aws_request(json_req, srv)
+  end
+
+  def aws_request(req = %ExAws.Operation.JSON{}, %Service{
+        user: access_key_id,
+        password: secret_access_key,
+        host: region
+      }) do
+    # Get JSON not XML
+    req = %{req | headers: [{"Accept", "application/json"} | req.headers]}
+
     req
     |> ExAws.request(
       access_key_id: access_key_id,
@@ -76,6 +88,9 @@ defmodule Proca.Service do
     case :hackney.request(req.method, url, req.headers, req.body) do
       {:ok, code, hdrs, ref} when code in [200, 201] ->
         json_request_read_body(hdrs, ref)
+
+      {:ok, code, _hdrs, _ref} when code in 500..599 ->
+        {:error, "HTTP#{code}"}
 
       {:ok, code, _hdrs, _ref} ->
         {:ok, code}

@@ -10,6 +10,7 @@ defmodule Proca.Users.User do
   @derive {Inspect, except: [:password]}
   schema "users" do
     field :email, :string
+    field :external_id, :string
     field :password, :string, virtual: true
     field :hashed_password, :string
     field :confirmed_at, :naive_datetime
@@ -45,14 +46,14 @@ defmodule Proca.Users.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :external_id])
     |> validate_email()
     |> validate_password(opts)
   end
 
   def registration_from_sso_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email])
+    |> cast(attrs, [:email, :external_id])
     |> change(password: StrongPassword.generate())
     |> validate_email()
     |> validate_password(opts)
@@ -215,6 +216,10 @@ defmodule Proca.Users.User do
 
   def all(q, [{:email, email} | kw]) do
     q |> where([u], u.email == ^email) |> all(kw)
+  end
+
+  def all(q, [{:external_id, eid} | kw]) do
+    q |> where([u], u.external_id == ^eid) |> all(kw)
   end
 
   def all(q, [{:email_like, email} | kw]) do

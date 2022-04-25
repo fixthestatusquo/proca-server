@@ -24,6 +24,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg(:action_page_id, non_null(:integer))
       arg(:input, non_null(:stripe_payment_intent_input))
       arg(:contact_ref, :id)
+      @desc "Use test stripe api keys"
+      arg(:testing, :boolean)
 
       load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_payment_intent/3)
@@ -33,6 +35,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg(:action_page_id, non_null(:integer))
       arg(:input, non_null(:stripe_subscription_input))
       arg(:contact_ref, :id)
+      @desc "Use test stripe api keys"
+      arg(:testing, :boolean)
 
       load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_subscription/3)
@@ -55,6 +59,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
       arg(:customer, :json)
       @desc "Parameters for Stripe Price creation"
       arg(:price, :json)
+      @desc "Use test stripe api keys"
+      arg(:testing, :boolean)
 
       load(:action_page, by: [id: :action_page_id], preload: [:org, :campaign])
       resolve(&Resolvers.Service.add_stripe_object/3)
@@ -80,6 +86,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:mailjet)
     value(:wordpress)
     value(:stripe)
+    value(:test_stripe)
     value(:webhook)
   end
 

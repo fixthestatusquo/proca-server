@@ -15,11 +15,8 @@ defmodule ProcaWeb.Resolvers.Org do
   alias Proca.Repo
   import Logger
 
-  def get_by_name(_, _, %{context: %{org: org}}) do
-    {
-      :ok,
-      Repo.preload(org, [[campaigns: :org], :action_pages])
-    }
+  def return_from_context(_, _, %{context: %{org: org}}) do
+    {:ok, org}
   end
 
   def campaign_by_id(org, %{id: camp_id}, _) do
@@ -85,25 +82,27 @@ defmodule ProcaWeb.Resolvers.Org do
       end
 
     # Refactor to use Map.take - watch out sqs name is different
-    {:ok,
-     %{
-       org: org,
-       email_from: org.email_from,
-       email_backend: email_service,
-       supporter_confirm: org.supporter_confirm,
-       supporter_confirm_template: org.supporter_confirm_template,
-       custom_supporter_confirm: org.custom_supporter_confirm,
-       custom_action_confirm: org.custom_action_confirm,
-       custom_action_deliver: org.custom_action_deliver,
-       sqs_deliver: org.system_sqs_deliver,
-       event_processing: org.event_processing,
-       event_backend: event_service
-     }}
+    r =
+      %{
+        org: org,
+        email_backend: email_service,
+        event_backend: event_service
+      }
+      |> Map.merge(
+        Map.take(
+          org,
+          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver system_sqs_deliver event_processing)a
+        )
+      )
+      |> Helper.rename_key(:system_sqs_deliver, :sqs_deliver)
+
+    {:ok, r}
   end
 
   def org_processing_templates(%{org: org}, _, _) do
+    org = Repo.preload(org, [:email_backend])
+
     case Proca.Service.EmailTemplateDirectory.list_names(org) do
-      :not_configured -> {:ok, nil}
       lst -> {:ok, lst}
     end
   end
@@ -115,6 +114,24 @@ defmodule ProcaWeb.Resolvers.Org do
 
     Org.changeset(org, args)
     |> Repo.update_and_notify()
+  end
+
+  def upsert_template(_, %{input: params}, %{context: %{org: org}}) do
+    alias Proca.Service.EmailTemplate
+
+    tmpl =
+      EmailTemplate.one(org: org, name: params.name, locale: Map.get(params, :locale)) ||
+        %EmailTemplate{org: org}
+
+    tmpl =
+      tmpl
+      |> EmailTemplate.changeset(params)
+      |> Repo.insert_or_update()
+
+    case tmpl do
+      {:error, _} = e -> e
+      {:ok, _t} -> {:ok, :success}
+    end
   end
 
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
@@ -237,15 +254,15 @@ defmodule ProcaWeb.Resolvers.Org do
            Repo.one(
              from(a in Action,
                where: a.id == ^id,
-               preload: [action_page: [org: [email_backend: :org]]]
+               preload: [action_page: [org: [email_backend: :org]], supporter: :contacts]
              )
            ),
          ad <- Proca.Stage.Support.action_data(a),
-         recp <- %{Proca.Service.EmailRecipient.from_action_data(ad) | email: email},
+         recp <-
+           Proca.Service.EmailBackend.make_email({a.supporter.first_name, email}, {:action, a.id})
+           |> Proca.Service.EmailMerge.put_action_message(ad),
          %{thank_you_template: tm} <- a.action_page,
-         {:ok, tr} <-
-           Proca.Service.EmailTemplateDirectory.ref_by_name_reload(a.action_page.org, tm),
-         tmpl <- %Proca.Service.EmailTemplate{ref: tr} do
+         {:ok, tmpl} <- Proca.Service.EmailTemplateDirectory.by_name_reload(a.action_page.org, tm) do
       Proca.Service.EmailBackend.deliver([recp], a.action_page.org, tmpl)
     else
       e -> error("sample email", e)
@@ -309,12 +326,12 @@ defmodule ProcaWeb.Resolvers.Org do
 
   def join_org(_, _, %{context: %{org: org, auth: %Auth{user: user}}}) do
     joining =
-      case Staffer.one(user: user, org: org) do
-        nil -> Staffer.changeset(%{user: user, org: org, role: :org_owner})
+      case Staffer.one(user: user, org: org, preload: [:org, :user]) do
+        nil -> Staffer.changeset(%{user: user, org: org, role: :owner})
         st = %Staffer{} -> Staffer.changeset(st, %{role: :owner})
       end
 
-    case Repo.insert(joining) do
+    case Repo.insert_or_update(joining) do
       {:ok, joined} ->
         %Auth{user: user, staffer: joined}
         |> ChangeAuth.return({:ok, %{status: :success, org: org}})

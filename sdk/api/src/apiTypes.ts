@@ -69,6 +69,8 @@ export type ActionInput = {
   donation?: Maybe<DonationActionInput>;
   /** MTT payload */
   mtt?: Maybe<MttActionInput>;
+  /** Test mode */
+  testing?: Maybe<Scalars['Boolean']>;
 };
 
 export type ActionPage = {
@@ -115,6 +117,8 @@ export type ActionPageInput = {
   extraSupporters?: Maybe<Scalars['Int']>;
   /** JSON string containing Action Page config */
   config?: Maybe<Scalars['Json']>;
+  /** Collected PII is processed even with no opt-in */
+  delivery?: Maybe<Scalars['Boolean']>;
 };
 
 export enum ActionPageStatus {
@@ -277,6 +281,7 @@ export type Consent = {
   givenAt: Scalars['NaiveDateTime'];
   emailStatus: EmailStatus;
   emailStatusChanged: Maybe<Scalars['NaiveDateTime']>;
+  withConsent: Scalars['Boolean'];
 };
 
 /** GDPR consent data structure */
@@ -480,6 +485,8 @@ export type OrgInput = {
   supporterConfirm?: Maybe<Scalars['Boolean']>;
   /** Email opt in template name */
   supporterConfirmTemplate?: Maybe<Scalars['String']>;
+  /** Only send thank you emails to opt-ins */
+  doiThankYou?: Maybe<Scalars['Boolean']>;
   /** Config */
   config?: Maybe<Scalars['Json']>;
 };
@@ -505,6 +512,7 @@ export type Partnership = {
   org: Org;
   actionPages: Array<ActionPage>;
   launchRequests: Array<Confirm>;
+  launchRequesters: Array<User>;
 };
 
 export type PersonalData = {
@@ -516,6 +524,8 @@ export type PersonalData = {
   supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** High data security enabled */
   highSecurity: Scalars['Boolean'];
+  /** Only send thank you emails to opt-ins */
+  doiThankYou: Scalars['Boolean'];
 };
 
 export type PrivateActionPage = ActionPage & {
@@ -660,6 +670,7 @@ export type Processing = {
   emailBackend: Maybe<ServiceName>;
   supporterConfirm: Scalars['Boolean'];
   supporterConfirmTemplate: Maybe<Scalars['String']>;
+  doiThankYou: Scalars['Boolean'];
   customSupporterConfirm: Scalars['Boolean'];
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
@@ -842,7 +853,8 @@ export type RootMutationTypeDeleteCampaignArgs = {
 
 
 export type RootMutationTypeUpdateActionPageArgs = {
-  id: Scalars['Int'];
+  id?: Maybe<Scalars['Int']>;
+  name?: Maybe<Scalars['String']>;
   input: ActionPageInput;
 };
 
@@ -959,6 +971,7 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   emailFrom?: Maybe<Scalars['String']>;
   supporterConfirm?: Maybe<Scalars['Boolean']>;
   supporterConfirmTemplate?: Maybe<Scalars['String']>;
+  doiThankYou?: Maybe<Scalars['Boolean']>;
   customSupporterConfirm?: Maybe<Scalars['Boolean']>;
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
@@ -1095,6 +1108,7 @@ export type RootQueryTypeExportActionsArgs = {
   limit?: Maybe<Scalars['Int']>;
   onlyOptIn?: Maybe<Scalars['Boolean']>;
   onlyDoubleOptIn?: Maybe<Scalars['Boolean']>;
+  includeTesting?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1201,6 +1215,7 @@ export type Target = {
 export type TargetEmail = {
   email: Scalars['String'];
   emailStatus: EmailStatus;
+  error: Maybe<Scalars['String']>;
 };
 
 export type TargetEmailInput = {
@@ -1208,7 +1223,7 @@ export type TargetEmailInput = {
 };
 
 export type TargetInput = {
-  name: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
   area?: Maybe<Scalars['String']>;
   externalId: Scalars['String'];
   fields?: Maybe<Scalars['Json']>;

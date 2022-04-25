@@ -26,6 +26,10 @@ defmodule ProcaWeb.Schema.UserTypes do
     field :picture_url, :string
     field :job_title, :string
 
+    field :api_token, :api_token do
+      resolve(&Resolvers.User.api_token/3)
+    end
+
     field :is_admin, non_null(:boolean) do
       resolve(fn u, _, _ -> {:ok, can?(u, :instance_owner)} end)
     end
@@ -112,6 +116,14 @@ defmodule ProcaWeb.Schema.UserTypes do
       allow(:user)
       resolve(&Resolvers.User.update_user/3)
     end
+
+    field :reset_api_token, type: non_null(:string) do
+      allow(:user)
+
+      resolve(fn _, _, %{context: %{auth: %{user: user}}} ->
+        Proca.Users.reset_api_token(user)
+      end)
+    end
   end
 
   input_object :org_user_input do
@@ -146,5 +158,10 @@ defmodule ProcaWeb.Schema.UserTypes do
 
     @desc "Exact org name"
     field :org_name, :string
+  end
+
+  @desc "Api token metadata"
+  object :api_token do
+    field :expires_at, non_null(:naive_datetime)
   end
 end

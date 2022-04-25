@@ -13,8 +13,7 @@ defmodule Proca.Factory do
       name: org_name,
       title: "Org with name #{org_name}",
       services: [email_service],
-      email_backend_id: email_service.id,
-      template_backend_id: email_service.id
+      email_backend_id: email_service.id
     }
   end
 
@@ -158,12 +157,16 @@ defmodule Proca.Factory do
   end
 
   def action_factory(attrs) do
-    # NOTE: insert here so AP is reused in both action and supporter
+    # NOTE: insert(:action_page) here so AP is reused in both action and supporter
     # if I used build it would try to insert both (copies) of AP and result in name conflict
+
+    {sup_ps, attrs} = Map.pop(attrs, :supporter_processing_status, :new)
+
     s =
       Map.get(attrs, :supporter) ||
         build(:basic_data_pl_supporter_with_contact, %{
-          action_page: Map.get(attrs, :action_page) || insert(:action_page)
+          action_page: Map.get(attrs, :action_page) || insert(:action_page),
+          processing_status: sup_ps
         })
 
     %Proca.Action{

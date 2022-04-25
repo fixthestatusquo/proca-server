@@ -1,0 +1,3 @@
+#!/usr/bin/node
+
+require("../dist/index").cli(process.argv.slice(2))

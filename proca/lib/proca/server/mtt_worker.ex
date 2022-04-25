@@ -3,14 +3,16 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign}
+  alias Proca.{Action, Campaign, ActionPage, Org}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
 
   import Logger
 
+  @default_locale "en"
+
   def process_mtt_campaign(campaign) do
-    campaign = Repo.preload(campaign, [:mtt, [org: [:email_backend, :template_backend]]])
+    campaign = Repo.preload(campaign, [:mtt, [org: :email_backend]])
 
     if campaign.org.email_backend != nil and within_sending_window(campaign) do
       {cycle, all_cycles} = calculate_cycles(campaign)
@@ -38,8 +40,7 @@ defmodule Proca.Server.MTTWorker do
 
     # Group per campaign and send
     for {campaign_id, ms} <- emails do
-      campaign =
-        Campaign.one(id: campaign_id, preload: [:mtt, org: [:email_backend, :template_backend]])
+      campaign = Campaign.one(id: campaign_id, preload: [:mtt, org: :email_backend])
 
       if campaign.org.email_backend != nil and campaign.mtt.test_email != nil do
         send_emails(campaign, ms)
@@ -62,6 +63,9 @@ defmodule Proca.Server.MTTWorker do
     |> Repo.all()
   end
 
+  @doc """
+  Query for test emails which were sent, and were created day ago.
+  """
   def query_test_emails_to_delete() do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
@@ -69,6 +73,10 @@ defmodule Proca.Server.MTTWorker do
     |> where([m, t, a], a.inserted_at < ^recent)
   end
 
+  @doc """
+  Queries for targets with at least one email that is sendable (status none)
+  Returns list of ids
+  """
   def get_sendable_target_ids(%Campaign{id: id}) do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
@@ -165,41 +173,63 @@ defmodule Proca.Server.MTTWorker do
     )
   end
 
-  def send_emails(campaign, emails) do
-    org = Proca.Org.one(id: campaign.org_id, preload: [:email_backend, :template_backend])
+  def send_emails(campaign, msgs) do
+    alias Proca.Service.{EmailMerge, EmailTemplateDirectory}
 
-    for chunk <- Enum.chunk_every(emails, EmailBackend.batch_size(org)) do
-      batch =
-        for e <- chunk do
-          e
-          |> prepare_recipient(campaign.mtt.test_email)
-          |> put_content(e.message_content, campaign.mtt.message_template)
-          |> put_custom(e.id)
+    org = Org.one(id: campaign.org_id, preload: [:email_backend])
+
+    # fetch action pages for email merge
+    action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
+    action_pages = ActionPage.all(preload: [:org], by_ids: action_pages_ids) |> Enum.into(%{})
+
+    msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
+
+    target_locales = Enum.uniq(Map.keys(msgs_per_locale))
+
+    templates =
+      Enum.map(target_locales, fn locale ->
+        case EmailTemplateDirectory.by_name_reload(org, campaign.mtt.message_template, locale) do
+          {:ok, t} -> {locale, t}
+          err when err in [:not_found] -> {locale, nil}
         end
+      end)
+      |> Enum.into(%{})
 
-      case EmailBackend.deliver(batch, org) do
-        :ok ->
-          Message.mark_all(chunk, :sent)
+    for {locale, msgs} <- msgs_per_locale do
+      for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(org)) do
+        batch =
+          for e <- chunk do
+            e
+            |> make_email(campaign.mtt.test_email)
+            |> put_message_content(e.message_content, templates[locale])
+            |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
+            |> EmailMerge.put_campaign(campaign)
+            |> EmailMerge.put_action(e.action)
+          end
 
-        {:error, statuses} ->
-          Enum.zip(chunk, statuses)
-          |> Enum.filter(fn
-            {_, :ok} -> true
-            _ -> false
-          end)
-          |> Enum.map(fn {m, _} -> m end)
-          |> Message.mark_all(:sent)
+        case EmailBackend.deliver(batch, org, templates[locale]) do
+          :ok ->
+            Message.mark_all(chunk, :sent)
+
+          {:error, statuses} ->
+            Enum.zip(chunk, statuses)
+            |> Enum.filter(fn
+              {_, :ok} -> true
+              _ -> false
+            end)
+            |> Enum.map(fn {m, _} -> m end)
+            |> Message.mark_all(:sent)
+        end
       end
     end
   end
 
-  def prepare_recipient(
-        message = %{action: %{supporter: supporter}},
+  def make_email(
+        message = %{id: message_id, action: %{supporter: supporter, testing: is_test}},
         test_email \\ nil
       ) do
-    # if override_to_email do # XXX temporary because live APs are all over the place
     email_to =
-      if test_email != nil do
+      if is_test do
         %Proca.TargetEmail{email: test_email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
@@ -211,38 +241,35 @@ defmodule Proca.Server.MTTWorker do
     supporter_name =
       Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
 
-    Email.new(
-      from: {supporter_name, supporter.email},
-      to: {message.target.name, email_to.email}
+    Proca.Service.EmailBackend.make_email(
+      {message.target.name, email_to.email},
+      {:mtt, message_id}
     )
+    |> Email.from({supporter_name, supporter.email})
   end
 
-  # Lets handle both: 1.send with a mtt template 2. raw send the message content into subject + body
-  def put_content(
+  def put_message_content(
         email = %Email{},
         %Action.MessageContent{subject: subject, body: body},
-        template_ref
-      )
-      when is_bitstring(template_ref) do
+        _template = nil
+      ) do
+    html_body = Proca.Service.EmailMerge.plain_to_html(body)
+
     email
-    |> Email.put_private(:template, %EmailTemplate{ref: template_ref})
+    |> Email.html_body(html_body)
+    |> Email.text_body(body)
+    |> Email.subject(subject)
+  end
+
+  def put_message_content(
+        email = %Email{},
+        %Action.MessageContent{subject: subject, body: body},
+        _template
+      ) do
+    html_body = Proca.Service.EmailMerge.plain_to_html(body)
+
+    email
+    |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
-    |> Email.assign(:body, body)
-  end
-
-  def put_content(email = %Email{}, %Action.MessageContent{subject: subject, body: body}, nil) do
-    # XXX should be elsewhere?
-    html_body = EmailTemplate.html_from_text(body)
-
-    Email.put_private(email, :template, %EmailTemplate{
-      subject: subject,
-      text: body,
-      html: html_body
-    })
-  end
-
-  def put_custom(email, message_id) do
-    email
-    |> Email.put_private(:custom_id, EmailBackend.format_custom_id(:mtt, message_id))
   end
 end

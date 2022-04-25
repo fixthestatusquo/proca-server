@@ -61,7 +61,7 @@ defmodule Proca.Pipes.Topology do
   - Worker queues, are enabled by flags on Org (boolean columns):
     - `system_sqs_deliver` sends to SQS (SQS service must be configured)
     - `email.supporter` sends double-opt-in email when: `supporter_confirm` is `true`. Org must have email/template backends set. The email will be set if `email_supporter_template` is set on org or action page.
-    - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_tempalte_ref refers to template identifier in the backend.
+    - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_template refers to template identifier in the backend.
 
 
   """
@@ -232,17 +232,17 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "event"),
         wqn(instance, "sqs"),
-        bind: config[:event_forward_to_instance_sqs], route: "#"
+        bind: config[:event_forward_to_instance_sqs], route: "system.*"
       },
       {
         xn(o, "event"),
         wqn(instance, "webhook"),
-        bind: config[:event_forward_to_instance_webhook], route: "#"
+        bind: config[:event_forward_to_instance_webhook], route: "system.*"
       },
       {
         xn(o, "event"),
         cqn(instance, "deliver"),
-        bind: config[:event_forward_to_instance_custom], route: "#"
+        bind: config[:event_forward_to_instance_custom], route: "system.*"
       }
     ]
     |> Enum.each(fn x -> bind_queue(chan, x) end)

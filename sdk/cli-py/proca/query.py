@@ -6,17 +6,39 @@ from gql import gql
 campaignData =  """
     fragment campaignData on Campaign {
     __typename
-    id name title
+    id name title externalId
     config
     contactSchema
     }
     """
 
+campaignDataStatus = """
+    fragmen campaignDataStatus on Campaign {
+       stats {
+          supporterCount
+          actionCount { actionType count }
+       }
+    }
+"""
+
+mttData = """
+  fragment mttData on Campaign {
+  ... on PrivateCampaign {
+    mtt {
+       startAt endAt testEmail messageTemplate
+    }
+  }
+}
+"""
+
+
+
 actionPageData = """
     fragment actionPageData on ActionPage {
-    __typename
-    id name locale config
-    thankYouTemplate
+        __typename
+        id name locale config
+        thankYouTemplate
+        org { name title }
     }
     """
 
@@ -29,3 +51,75 @@ actionPageStatus = """
     }
     }
     """
+
+orgData = """
+    fragment orgData on PrivateOrg {
+        id
+        name
+        title
+        config
+
+        personalData {
+            contactSchema
+            doiThankYou  #  only send thank you if comconsent
+            supporterConfirm
+            supporterConfirmTemplate
+        }
+
+        processing {
+            emailBackend emailFrom
+            eventProcessing eventBackend
+            sqsDeliver
+
+            supporterConfirm
+            supporterConfirmTemplate
+            customActionDeliver customSupporterConfirm
+        }
+    }
+"""
+
+serviceData = """
+  fragment serviceData on Service {
+    id name host path user
+  }
+"""
+
+
+class Null:
+    "A Null value passed to GQL. A None value will not send the variable."
+    pass
+
+def vars(**kv):
+    """
+    A shorthand to product variable_values for gql.client.query - it will filter out nil values
+    """
+
+    def allow_null(z):
+        if z == Null:
+            return None
+        else:
+            return z
+
+    x = {k: allow_null(v) for k, v in kv.items() if v is not None}
+    return {"variable_values": x}
+
+
+def make_input(local_vars, allow_list):
+    """
+    Util to quickly pass arguments from click (which are variables) into an
+    input object. Accepts an object and a list of field names. Will not add None
+    values, but will convert any empty string '' to None (useful to reset a
+    field to null)
+
+    use:
+
+    input = make_input(locals(), ['user', 'password', 'locale'])
+    """
+    def empty_to_null(x):
+        if x == '':
+            return None
+        else:
+            return x
+
+    v1 = {v: empty_to_null(local_vars[v]) for v in allow_list if local_vars[v] is not None}
+    return v1

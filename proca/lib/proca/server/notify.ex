@@ -48,14 +48,14 @@ defmodule Proca.Server.Notify do
     end
   end
 
-  def created(_, __opts), do: :ok
+  def created(_, _opts), do: :ok
 
   @doc """
   Notifications on update of record
   """
   def updated(record, opts \\ [])
 
-  def updated(org = %Org{}, __opts) do
+  def updated(org = %Org{}, _opts) do
     restart_org_pipes(org)
 
     if org.name == Org.instance_org_name() do
@@ -66,7 +66,7 @@ defmodule Proca.Server.Notify do
     end
   end
 
-  def updated(%ActionPage{} = action_page, __opts) do
+  def updated(%ActionPage{} = action_page, _opts) do
     action_page = Repo.preload(action_page, [:org, :campaign])
     publish_subscription_event(action_page, action_page_upserted: "$instance")
 
@@ -77,21 +77,25 @@ defmodule Proca.Server.Notify do
     :ok
   end
 
-  def updated(%PublicKey{active: true} = key, __opts) do
+  def updated(%PublicKey{active: true} = key, _opts) do
     key_activated(key)
   end
 
-  def updated(%Supporter{processing_status: processing_status} = supporter, opts)
-      when processing_status in [:accepted, :rejected] do
+  def updated(%Supporter{email_status: email_status} = supporter, opts)
+      when email_status != nil do
     supporter = Repo.preload(supporter, [:contacts])
 
     for c <- supporter.contacts do
-      Event.emit(:supporter_updated, supporter, c.org_id, opts)
+      Event.emit(:email_status, supporter, c.org_id, opts)
     end
   end
 
   def updated(%Campaign{org_id: org_id} = campaign, opts) when is_number(org_id) do
     Event.emit(:campaign_updated, campaign, org_id, opts)
+  end
+
+  def updated(%Proca.Service.EmailTemplate{} = tmpl, opts) do
+    Proca.Service.EmailTemplateDirectory.bust_cache_template(tmpl)
   end
 
   def updated(_, _opts), do: :ok

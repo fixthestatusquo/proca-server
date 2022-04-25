@@ -9,7 +9,23 @@ defmodule Proca.Service.Webhook do
   alias Proca.Service
 
   def push(service = %Service{}, data) do
-    Service.json_request(service, service.host, post: data, auth: auth_type(service))
+    payload = Jason.encode!(data)
+    url = merge_url_tags(service.host, data)
+
+    Service.json_request(service, url, post: payload, auth: auth_type(service))
+  end
+
+  @doc """
+  Merge tags like: {{foo}} by value from data["foo"]
+  """
+  def merge_url_tags(url, data) do
+    String.replace(url, ~r/{{\w_}}/, fn s ->
+      case Map.get(data, s) do
+        r when is_bitstring(r) -> r
+        r when is_integer(r) -> Integer.to_string(r)
+        _ -> s
+      end
+    end)
   end
 
   def auth_type(%{user: u, password: p})

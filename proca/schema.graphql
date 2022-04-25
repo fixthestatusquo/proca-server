@@ -80,6 +80,7 @@ type PublicCampaign implements Campaign {
 type TargetEmail {
   email: String!
   emailStatus: EmailStatus!
+  error: String
 }
 
 "Tracking codes"
@@ -147,6 +148,7 @@ type Consent {
   givenAt: NaiveDateTime!
   emailStatus: EmailStatus!
   emailStatusChanged: NaiveDateTime
+  withConsent: Boolean!
 }
 
 "Tracking codes"
@@ -204,6 +206,7 @@ type Partnership {
   org: Org!
   actionPages: [ActionPage!]!
   launchRequests: [Confirm!]!
+  launchRequesters: [User!]!
 }
 
 type RootSubscriptionType {
@@ -371,6 +374,9 @@ input ActionInput {
 
   "MTT payload"
   mtt: MttActionInput
+
+  "Test mode"
+  testing: Boolean
 }
 
 type ConfirmResult {
@@ -400,6 +406,7 @@ interface Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
 }
@@ -408,6 +415,7 @@ type PrivateTarget implements Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
   emails: [TargetEmail]!
@@ -532,7 +540,9 @@ type RootMutationType {
   "Update an Action Page"
   updateActionPage(
     "Action Page id"
-    id: Int!
+    id: Int
+
+    name: String
 
     input: ActionPageInput!
   ): ActionPage!
@@ -696,6 +706,8 @@ type RootMutationType {
 
     supporterConfirmTemplate: String
 
+    doiThankYou: Boolean
+
     customSupporterConfirm: Boolean
 
     customActionConfirm: Boolean
@@ -732,6 +744,8 @@ type RootMutationType {
     "Key id"
     id: Int!
   ): ActivateKeyResult!
+
+  upsertTemplate(orgName: String!, input: EmailTemplateInput!): Status
 
   upsertService(orgName: String!, id: Int, input: ServiceInput!): Service!
 
@@ -827,6 +841,9 @@ type RootQueryType {
 
     "Only download double opted in contacts"
     onlyDoubleOptIn: Boolean
+
+    "Also include testing actions"
+    includeTesting: Boolean
   ): [Action]!
 
   currentUser: User!
@@ -868,6 +885,7 @@ type Processing {
   emailBackend: ServiceName
   supporterConfirm: Boolean!
   supporterConfirmTemplate: String
+  doiThankYou: Boolean!
   customSupporterConfirm: Boolean!
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
@@ -1012,6 +1030,9 @@ input ActionPageInput {
 
   "JSON string containing Action Page config"
   config: Json
+
+  "Collected PII is processed even with no opt-in"
+  delivery: Boolean
 }
 
 enum DonationFrequencyUnit {
@@ -1044,6 +1065,9 @@ type PersonalData {
 
   "High data security enabled"
   highSecurity: Boolean!
+
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean!
 }
 
 enum DonationSchema {
@@ -1179,6 +1203,7 @@ type PublicTarget implements Target {
   id: String!
   name: String!
   externalId: String!
+  locale: String
   area: String
   fields: Json
 }
@@ -1265,6 +1290,9 @@ input OrgInput {
   "Email opt in template name"
   supporterConfirmTemplate: String
 
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean
+
   "Config"
   config: Json
 }
@@ -1276,11 +1304,20 @@ type CustomField {
 }
 
 input TargetInput {
-  name: String!
-  area: String
+  name: String
   externalId: String!
+  locale: String
+  area: String
   fields: Json
   emails: [TargetEmailInput!]
+}
+
+input EmailTemplateInput {
+  name: String!
+  locale: String
+  subject: String
+  html: String
+  text: String
 }
 
 "Contact information"

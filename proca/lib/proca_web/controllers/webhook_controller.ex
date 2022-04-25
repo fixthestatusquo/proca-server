@@ -6,11 +6,16 @@ defmodule ProcaWeb.WebhookController do
 
   alias Proca.Service.Mailjet
 
-  def mailjet(conn, params) do
-    if Map.get(params, "event") in ["bounce", "blocked", "spam", "unsub"] do
-      Mailjet.handle_bounce(params)
-    else
-      Mailjet.handle_event(params)
+  @doc """
+  Mailjet sends an array of events. Phoenx Plug wraps this in _json key because params is a map and array would break merging other params
+  """
+  def mailjet(conn, %{"_json" => events}) do
+    for %{"event" => et} = event <- events do
+      if et in ["bounce", "blocked", "spam", "unsub"] do
+        Mailjet.handle_bounce(event)
+      else
+        Mailjet.handle_event(event)
+      end
     end
 
     conn

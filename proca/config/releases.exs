@@ -25,14 +25,26 @@ config :proca, Proca.Pipes,
 sso_home_url = System.get_env("SSO_HOME_URL")
 local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
 
+split_env = fn var, sep ->
+  case System.get_env(var) do
+    nil -> nil
+    val when is_bitstring(val) -> String.split(val, sep)
+  end
+end
+
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: local_auth_enable],
+  require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL")),
   sso: [
     enabled: not is_nil(sso_home_url),
-    home_url: sso_home_url
+    home_url: sso_home_url,
+    jwt_secret: System.get_env("JWT_SECRET"),
+    jwks_url: System.get_env("JWKS_URL"),
+    jwt: [
+      email_path: split_env.("JWT_EMAIL", ~r/[,]/),
+      email_verified_path: split_env.("JWT_EMAIL_VERIFIED", ~r/[,]/)
+    ]
   ]
-
-config :proca, Proca.Server.Jwks, url: System.get_env("JWKS_URL")
 
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
@@ -86,8 +98,7 @@ config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
-  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
-  require_verified_email: is_nil(System.get_env("ALLOW_UNVERIFIED_EMAIL"))
+  process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000"))
 
 config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 

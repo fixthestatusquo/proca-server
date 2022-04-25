@@ -2,19 +2,54 @@
 
 
 import click
-from proca.config import make_client, load, server_section
+from proca.config import make_client, load, server_section, Config
 
-class Context:
+class CliContext:
     """
-    The context object passed into commands
+    The context's obj passed into commands (with @click.pass_obj)
+
+    Remember:
+    click.Context
+     `-> .obj = proca.context.CliContext
+
+    Sorry if confusing, lacking a better name then Context.
     """
-    def __init__(self):
+    def __init__(self, server):
         self._client = None
+        self._server_section = None
+        self._default_map = {}
 
-        self.server_section = server_section(None) # default
+        self.server_section = server_section(server)
 
-        # load config
-        load()
+    @property
+    def default_map(self):
+        return self._default_map
+
+    @default_map.setter
+    def default_map(self, new_map):
+        """
+        Update map in place because parent click.Context.default_path refers it!
+        """
+        self._default_map.update(new_map)
+
+
+    @property
+    def server_section(self):
+        return self._server_section
+
+    @server_section.setter
+    def server_section(self, v):
+        self._server_section = v
+
+        if default_org := Config.get(self._server_section, 'org', fallback=None):
+            # Put org into default argument for all commands that use it
+            cmds = ['campaign', 'campaign:add',  'page', 'page:add', 'service', 'service:set', 'service:email', 'template', 'template:set']
+            dm = {c: {'org':  default_org} for c in cmds}
+
+            cmds = ['org', 'org:set']
+            dm.update({c: {'name': default_org} for c in cmds})
+
+            self.default_map = dm
 
     @property
     def client(self):
@@ -25,4 +60,3 @@ class Context:
 
 
 
-pass_context = click.make_pass_decorator(Context, ensure=True)

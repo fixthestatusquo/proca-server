@@ -25,11 +25,16 @@ config :cors_plug,
 
 config :proca, ProcaWeb.UserAuth,
   local: [enabled: true],
+  require_verified_email: false,
   sso: [
     enabled: false,
-    home_url: "https://account.fixthestatusquo.org"
-    # login_url: ,
-    # register_url: "",
+    home_url: "https://account.fixthestatusquo.org",
+    jwt_secret: nil,
+    jwks_url: nil,
+    jwt: [
+      email_path: nil,
+      email_verified_path: nil
+    ]
   ]
 
 # Willfully leaked Hcaptcha secret (used only for development)
@@ -47,7 +52,6 @@ config :proca, Proca,
   stats_sync_interval: 0,
   # XXX move to Proca.Server.Stats
   process_old_interval: 0,
-  require_verified_email: false,
   start_daemon_servers: true,
   mtt_cycle_time: 3
 
@@ -57,8 +61,6 @@ config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"
 config :proca, Proca.Pipes,
   url: "amqp://proca:proca@localhost/proca",
   ssl_options: nil
-
-config :proca, Proca.Server.Jwks, url: "https://account.fixthestatusquo.org/.well-known/jwks.json"
 
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []

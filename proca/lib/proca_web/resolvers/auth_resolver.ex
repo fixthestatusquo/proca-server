@@ -4,6 +4,7 @@ defmodule ProcaWeb.Resolvers.AuthResolver do
   to resolution result or context. Has two modes:
 
   - when option is `[from: result]`, it will take a record returned as {:ok, record} and find relevant user access
+  - when option is `[from  :org | :campaign | :action_page]` it will find auth for :org, :campaign, :action_page from context
   """
   @behaviour Absinthe.Middleware
   alias Proca.Auth

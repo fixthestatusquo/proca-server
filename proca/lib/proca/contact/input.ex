@@ -11,14 +11,14 @@ defmodule Proca.Contact.Input do
   @callback from_input(map()) :: Changeset.t()
 
   @email_format Regex.compile!(
-                  "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$"
+                  "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$"
                 )
   def validate_email(chst, field) do
     chst
     |> Changeset.validate_format(field, @email_format)
   end
 
-  @phone_format ~r{[0-9+ -]+}
+  @phone_format ~r/^[+]?[0-9 ()-]+$/
   def validate_phone(chst, field) do
     chst
     |> Changeset.validate_format(field, @phone_format)
@@ -51,7 +51,7 @@ defmodule Proca.Contact.Input do
 
   def validate_postcode(chst) do
     chst
-    |> validate_format(:postcode, ~r/^[A-Z0-9- ]{1,10}/)
+    |> validate_format(:postcode, ~r/^[A-Z0-9- ]{1,10}$/)
   end
 
   def upcase(params, field) when is_atom(field) do
@@ -62,7 +62,7 @@ defmodule Proca.Contact.Input do
   end
 
   def validate_country_format(ch = %Ecto.Changeset{}) do
-    validate_format(ch, :country, ~r/[A-Z]{2}/)
+    validate_format(ch, :country, ~r/^[A-Z]{2}$/)
   end
 
   @doc """

@@ -29,9 +29,10 @@ defmodule Proca.MTT do
 
     mtt
     |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email])
+    |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
     |> Proca.Contact.Input.validate_email(:test_email)
-    |> change(assocs)
+    |> Proca.Service.EmailTemplate.validate_exists(:message_template)
   end
 end
