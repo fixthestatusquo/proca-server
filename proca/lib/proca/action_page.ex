@@ -252,8 +252,8 @@ defmodule Proca.ActionPage do
     ap = Repo.preload(ap, [:org])
 
     case Proca.Service.EmailTemplateDirectory.by_name(ap.org, ap.thank_you_template) do
-      {:ok, %{ref: ref}} -> ref
-      _ -> nil
+      {:ok, %{ref: ref}} when not is_nil(ref) -> ref
+      _ -> ap.thank_you_template
     end
   end
 end
