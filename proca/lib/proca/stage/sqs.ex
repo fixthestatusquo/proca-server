@@ -86,9 +86,17 @@ defmodule Proca.Stage.SQS do
     ]
   end
 
-  def mark_failed(messages, %{body: %{failures: fails}}) do
+  def mark_failed(messages, %{
+        "SendMessageBatchResponse" => %{"SendMessageBatchResult" => %{"Failed" => nil}}
+      }) do
+    messages
+  end
+
+  def mark_failed(messages, %{
+        "SendMessageBatchResponse" => %{"SendMessageBatchResult" => %{"Failed" => fails}}
+      }) do
     reasons =
-      Enum.reduce(fails, %{}, fn %{id: id, message: msg}, acc ->
+      Enum.reduce(fails, %{}, fn %{"Id" => id, "Message" => msg}, acc ->
         Map.put(acc, String.to_integer(id), msg)
       end)
 

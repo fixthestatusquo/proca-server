@@ -170,7 +170,7 @@ defmodule Proca.Service.EmailTemplateDirectory do
     end
   end
 
-  def by_name_remote(_, _, _), do: nil
+  def by_name_remote(_, _, _, _), do: nil
 
   @doc """
   Lookup but if not found, reload the templates
