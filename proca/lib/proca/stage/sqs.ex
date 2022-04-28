@@ -9,8 +9,13 @@ defmodule Proca.Stage.SQS do
   alias Proca.{Org, Service}
   require Logger
 
+  @doc "Get SQS service"
+  def get_service(org) do
+    Service.one(org: org, name: :sqs)
+  end
+
   def start_for?(org = %Org{}) do
-    org.system_sqs_deliver
+    org.system_sqs_deliver and not is_nil(get_service(org))
   end
 
   def start_link(org = %Org{id: org_id}) do
@@ -96,7 +101,7 @@ defmodule Proca.Stage.SQS do
         "SendMessageBatchResponse" => %{"SendMessageBatchResult" => %{"Failed" => fails}}
       }) do
     reasons =
-      Enum.reduce(fails, %{}, fn %{"Id" => id, "Message" => msg}, acc ->
+      Enum.reduce(fails, %{}, fn %{"pId" => id, "Message" => msg}, acc ->
         Map.put(acc, String.to_integer(id), msg)
       end)
 
