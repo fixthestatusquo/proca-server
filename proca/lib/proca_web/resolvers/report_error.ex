@@ -4,21 +4,34 @@ defmodule ProcaWeb.Resolvers.ReportError do
   def call(
         %Absinthe.Resolution{
           state: :resolved,
-          errors: [_ | _]
+          errors: [_ | _],
+          context: context
         } = resolution,
         _
       ) do
-    if enabled?() do
+    if enabled?() and enabled_for_context?(context) do
       try do
         info = %{
-          path: Enum.map(resolution.path, &Map.get(&1, :name)),
+          path: Enum.reverse(Enum.map(resolution.path, &Map.get(&1, :name))),
           extensions: resolution.extensions,
           errors: resolution.errors,
-          user: get_in(resolution.context, [:user, :email]),
-          org: get_in(resolution.context, [:org, :name]),
-          campaign: get_in(resolution.context, [:campaign, :name]),
-          name: get_in(resolution.arguments, [:name]),
-          id: get_in(resolution.arguments, [:id])
+          user:
+            case resolution.context do
+              %{user: %{email: email}} -> email
+              _ -> nil
+            end,
+          org:
+            case resolution.context do
+              %{org: %{name: name}} -> name
+              _ -> nil
+            end,
+          campaign:
+            case resolution.context do
+              %{campaign: %{name: name}} -> name
+              _ -> nil
+            end,
+          name: resolution.arguments[:name],
+          id: resolution.arguments[:id]
         }
 
         event =
@@ -27,6 +40,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
             " " <> (Enum.map(info.errors, &error_message/1) |> Enum.join(", "))
 
         Sentry.capture_message(event, extra: info)
+        |> IO.inspect(label: "SENTRY")
       rescue
         e in RuntimeError ->
           Sentry.capture_message("Other user error",
@@ -63,6 +77,14 @@ defmodule ProcaWeb.Resolvers.ReportError do
 
   def enabled? do
     Application.get_env(:proca, __MODULE__)[:enable] and not is_nil(Sentry.Config.dsn())
+  end
+
+  def enabled_for_context?(context) do
+    if Application.get_env(:proca, __MODULE__)[:auth_only] do
+      Map.has_key?(context, :auth)
+    else
+      true
+    end
   end
 
   def scrub_params(conn) do

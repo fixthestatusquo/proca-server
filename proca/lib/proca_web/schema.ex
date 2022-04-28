@@ -48,7 +48,9 @@ defmodule ProcaWeb.Schema do
 
   def middleware(middleware, _field, %{identifier: type})
       when type in [:query, :mutation] do
-    middleware ++ [ProcaWeb.Resolvers.NormalizeError]
+    alias ProcaWeb.Resolvers.ReportError
+    report_error = if ReportError.enabled?(), do: [ReportError], else: []
+    middleware ++ [ProcaWeb.Resolvers.NormalizeError] ++ report_error
   end
 
   def middleware(middleware, _field, _object) do
