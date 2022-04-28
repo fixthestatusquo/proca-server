@@ -91,7 +91,7 @@ defmodule ProcaWeb.Resolvers.Org do
       |> Map.merge(
         Map.take(
           org,
-          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver system_sqs_deliver event_processing)a
+          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver custom_event_deliver system_sqs_deliver event_processing)a
         )
       )
       |> Helper.rename_key(:system_sqs_deliver, :sqs_deliver)
