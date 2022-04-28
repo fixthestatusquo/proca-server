@@ -73,7 +73,7 @@ orgData = """
 
             supporterConfirm
             supporterConfirmTemplate
-            customActionDeliver customSupporterConfirm
+            customActionDeliver customEventDeliver customSupporterConfirm
         }
     }
 """

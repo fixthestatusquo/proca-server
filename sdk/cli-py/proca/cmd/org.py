@@ -196,6 +196,7 @@ def update_org(client, name, org, proc):
             $supporterConfirm: Boolean,
             $supporterConfirmTemplate: String,
             $customActionDeliver: Boolean,
+            $customEventDeliver: Boolean,
             $doiThankYou: Boolean,
             $emailBackend: ServiceName,
             $emailFrom: String
@@ -205,6 +206,7 @@ def update_org(client, name, org, proc):
             supporterConfirm: $supporterConfirm,
             supporterConfirmTemplate: $supporterConfirmTemplate,
             customActionDeliver: $customActionDeliver,
+            customEventDeliver: $customEventDeliver,
             doiThankYou: $doiThankYou,
             emailBackend: $emailBackend,
             emailFrom: $emailFrom
@@ -260,12 +262,19 @@ def format(org):
     delivery = []
     if proc['emailBackend']:
         delivery.append(f"EMAIL (from {proc['emailFrom']})")
-    if proc['eventProcessing']:
-        delivery.append(f"EVENT")
+
     if proc['sqsDeliver']:
-        delivery.append(f"SQS")
+        if proc['eventProcessing']:
+            delivery.append(f"SQS[+event]")
+        else:
+            delivery.append(f"SQS")
+
     if proc['customActionDeliver']:
-        delivery.append(f"QUEUE[cus.{id}.deliver]")
+        if proc['customEventDeliver']:
+            label = f"QUEUE[+event,cus.{id}.deliver]"
+        else:
+            label = f"QUEUE[cus.{id}.deliver]"
+        delivery.append(label)
 
 
     if delivery != []:
