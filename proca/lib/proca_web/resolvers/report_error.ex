@@ -39,7 +39,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
             (info.path |> Enum.join(".")) <>
             " " <> (Enum.map(info.errors, &error_message/1) |> Enum.join(", "))
 
-        Sentry.capture_message(event, extra: info)
+        Sentry.capture_message(event, extra: info, level: "warning")
       rescue
         e in RuntimeError ->
           Sentry.capture_message("Other user error",
