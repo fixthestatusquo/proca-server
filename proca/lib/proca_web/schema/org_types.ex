@@ -207,6 +207,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:custom_supporter_confirm, :boolean)
       arg(:custom_action_confirm, :boolean)
       arg(:custom_action_deliver, :boolean)
+      arg(:custom_event_deliver, :boolean)
       arg(:sqs_deliver, :boolean)
 
       arg(:event_backend, :service_name)
@@ -362,6 +363,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :custom_supporter_confirm, non_null(:boolean)
     field :custom_action_confirm, non_null(:boolean)
     field :custom_action_deliver, non_null(:boolean)
+    field :custom_event_deliver, non_null(:boolean)
     field :sqs_deliver, non_null(:boolean)
 
     field :event_backend, :service_name
