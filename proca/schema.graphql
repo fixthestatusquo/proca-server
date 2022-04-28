@@ -483,6 +483,11 @@ type OrgUser {
   lastSigninAt: NaiveDateTime
 }
 
+"Api token metadata"
+type ApiToken {
+  expiresAt: NaiveDateTime!
+}
+
 type Action {
   actionId: Int!
 
@@ -679,6 +684,8 @@ type RootMutationType {
     email: String
   ): User!
 
+  resetApiToken: String!
+
   addOrg(input: OrgInput!): Org!
 
   deleteOrg(
@@ -713,6 +720,8 @@ type RootMutationType {
     customActionConfirm: Boolean
 
     customActionDeliver: Boolean
+
+    customEventDeliver: Boolean
 
     sqsDeliver: Boolean
 
@@ -749,9 +758,27 @@ type RootMutationType {
 
   upsertService(orgName: String!, id: Int, input: ServiceInput!): Service!
 
-  addStripePaymentIntent(actionPageId: Int!, input: StripePaymentIntentInput!, contactRef: ID): Json!
+  addStripePaymentIntent(
+    actionPageId: Int!
 
-  addStripeSubscription(actionPageId: Int!, input: StripeSubscriptionInput!, contactRef: ID): Json!
+    input: StripePaymentIntentInput!
+
+    contactRef: ID
+
+    "Use test stripe api keys"
+    testing: Boolean
+  ): Json!
+
+  addStripeSubscription(
+    actionPageId: Int!
+
+    input: StripeSubscriptionInput!
+
+    contactRef: ID
+
+    "Use test stripe api keys"
+    testing: Boolean
+  ): Json!
 
   """
   Create stripe object using Stripe key associated with action page owning org.
@@ -772,6 +799,9 @@ type RootMutationType {
 
     "Parameters for Stripe Price creation"
     price: Json
+
+    "Use test stripe api keys"
+    testing: Boolean
   ): Json!
 
   "Accept a confirm on behalf of organisation."
@@ -889,6 +919,7 @@ type Processing {
   customSupporterConfirm: Boolean!
   customActionConfirm: Boolean!
   customActionDeliver: Boolean!
+  customEventDeliver: Boolean!
   sqsDeliver: Boolean!
   eventBackend: ServiceName
   eventProcessing: Boolean!
@@ -1188,6 +1219,7 @@ enum ServiceName {
   MAILJET
   WORDPRESS
   STRIPE
+  TEST_STRIPE
   WEBHOOK
 }
 
@@ -1376,6 +1408,7 @@ type User {
   phone: String
   pictureUrl: String
   jobTitle: String
+  apiToken: ApiToken
   isAdmin: Boolean!
   roles: [UserRole!]!
 }
