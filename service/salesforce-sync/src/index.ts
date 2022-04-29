@@ -111,7 +111,7 @@ export const cli = (argv : string[]) => {
             if (opt.l) {
               const record = actionToLeadRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O});
               const LeadId = await upsertLead(conn, record)
-              if (!LeadId) return Error(`Could not upsert contact`)
+              if (!LeadId) return Error(`Could not upsert lead`)
               const r = await addCampaignContact(conn, camp.Id, {LeadId}, action)
               console.log(`Added lead to campaign ${JSON.stringify(r)}`)
 
@@ -128,7 +128,7 @@ export const cli = (argv : string[]) => {
               // already in campaign
               return {}
             }
-            console.error(`tried to add ${action.contact.email} but (ignoring)`, er, JSON.stringify(er),  `CODE>${er.errorCode}<`)
+            console.error(`tried to add ${action.contact.email} but error happened`, er, JSON.stringify(er),  `CODE>${er.errorCode}<`)
             throw er;
           }
         } else if (action.schema === "proca:event:2" && action.eventType === 'email_status') {
