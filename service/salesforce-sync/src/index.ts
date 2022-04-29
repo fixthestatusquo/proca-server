@@ -1,7 +1,7 @@
 import {Connection} from 'jsforce'
 
 import {
-  syncQueue, ActionMessageV2
+  syncQueue, ActionMessageV2, EventMessageV2
 } from '@proca/queue'
 
 import {
@@ -19,7 +19,8 @@ import {
 import {
   isActionSyncable,
   actionToContactRecord,
-  actionToLeadRecord
+  actionToLeadRecord,
+  emailChangedToContactRecord
 } from './contact'
 
 
@@ -38,22 +39,30 @@ export function p2(o : any) {
 
 function help () {
   console.log(`Help:
-salesforce-sync [-t] [-u -q]
+salesforce-sync
 
+ -h - show this help
+
+ Diagnostics:
  -t - test sign in to SalesForce
- -q - run sync of queue
- -u - queue url amqps://user:password@api.proca.app/proca_live
  -c campaignName - fetch campaign info
  -e email - lookup contact and lead by email
+
+
+ Syncing:
+ -q - run sync of queue, with these options:
+ -u - queue url amqps://user:password@api.proca.app/proca_live (or QUEUE_URL env)
  -l - add as leads not contacts
  -L - language custom field
+ -O - Opt in custom field (eg Email_Opt_In__c)
+ -D - double opt in
 `)
 }
 
 export const cli = (argv : string[]) => {
   const opt = parseArg(argv)
 
-  if (opt.h) {
+  if (opt.h || opt.help) {
     // HELP
     help()
   } else if (opt.t) {
@@ -89,36 +98,55 @@ export const cli = (argv : string[]) => {
     if (!url) throw Error(`Provide -u or set QUEUE_URL`)
     // SYNC
     makeClient().then(async ({conn}) => {
-      return syncQueue(url, opt.q, async (action : ActionMessageV2)=>{
-        if (!isActionSyncable(action)) {
-          console.info(`Not syncing action id ${action.actionId} (no consent/opt in)`)
-          return false
-        }
+      return syncQueue(url, opt.q, async (action : ActionMessageV2 | EventMessageV2)=>{
+        if (action.schema === 'proca:action:2') {
+          if (!isActionSyncable(action)) {
+            console.info(`Not syncing action id ${action.actionId} (no consent/opt in)`)
+            return false
+          }
 
-        let camp = await campaignByName(conn, action.campaign.name)
+          let camp = await campaignByName(conn, action.campaign.name)
 
-        try {
+          try {
+            if (opt.l) {
+              const record = actionToLeadRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O});
+              const LeadId = await upsertLead(conn, record)
+              if (!LeadId) return Error(`Could not upsert contact`)
+              const r = await addCampaignContact(conn, camp.Id, {LeadId}, action)
+              console.log(`Added lead to campaign ${JSON.stringify(r)}`)
+
+
+            } else {
+              const record = actionToContactRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O});
+              const ContactId = await upsertContact(conn, record)
+              if (!ContactId) return Error(`Could not upsert contact`)
+              const r = await addCampaignContact(conn, camp.Id, {ContactId}, action)
+              console.log(`Added contact to campaign ${JSON.stringify(r)}`)
+            }
+          } catch (er) {
+            if (er.errorCode === 'DUPLICATE_VALUE') {
+              // already in campaign
+              return {}
+            }
+            console.error(`tried to add ${action.contact.email} but (ignoring)`, er, JSON.stringify(er),  `CODE>${er.errorCode}<`)
+            throw er;
+          }
+        } else if (action.schema === "proca:event:2" && action.eventType === 'email_status') {
+          // update opt in
+          if (!opt.O)  throw Error('please provide custom field for opt in with -O Opt_In__c')
+
+          const record = emailChangedToContactRecord(action, opt.O)
+          if (record === null)
+            return {}
 
           if (opt.l) {
-            const record = actionToLeadRecord(action, {language: opt.L});
             const LeadId = await upsertLead(conn, record)
-            if (!LeadId) return Error(`Could not upsert contact`)
-            await addCampaignContact(conn, camp.Id, {LeadId})
-
-
+            console.log(`Updated Lead id ${LeadId} with ${JSON.stringify(record)}`)
           } else {
-            const record = actionToContactRecord(action, {language: opt.L});
             const ContactId = await upsertContact(conn, record)
-            if (!ContactId) return Error(`Could not upsert contact`)
-            await addCampaignContact(conn, camp.Id, {ContactId})
+            console.log(`Updated Contact id ${ContactId} with ${JSON.stringify(record)}`)
           }
-        } catch (er) {
-          if (er.errorCode === 'DUPLICATE_VALUE') {
-            // already in campaign
-            return {}
-          }
-          console.error(`tried to add ${action.contact.email} but (ignoring)`, er, JSON.stringify(er),  `CODE>${er.errorCode}<`)
-          throw er;
+
         }
 
         return {}
