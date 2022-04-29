@@ -1,10 +1,10 @@
 
 
-import {ActionMessageV2} from '@proca/queue'
+import {ActionMessageV2, EventMessageV2} from '@proca/queue'
 
 
 //                                              allow custom fields vvv
-export interface ContactAttributes extends Record<string, string | undefined> {
+export interface ContactAttributes extends Record<string, string | boolean | undefined> {
   Email : string;
   FirstName: string;
   LastName?: string;
@@ -14,7 +14,7 @@ export interface ContactAttributes extends Record<string, string | undefined> {
 }
 
 
-export interface LeadAttributes extends Record<string,string | undefined> {
+export interface LeadAttributes extends Record<string,string | boolean | undefined> {
   Email : string;
   FirstName: string;
   LastName?: string;
@@ -30,6 +30,8 @@ export const isActionSyncable = (action : ActionMessageV2) => {
 
 export type RecordOpts = {
   language?: string;
+  doubleOptIn?: boolean
+  optInField?: string
 }
 
 export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpts) : ContactAttributes => {
@@ -40,6 +42,15 @@ export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpt
     Phone: action.contact.phone,
     MailingCountry: action.contact.country,
     MailingPostalCode: action.contact.postcode
+  }
+
+  if (opts.optInField) {
+    if (opts.doubleOptIn) {
+    // we ignore the optIn and wait for double opt in
+      c[opts.optInField] = false
+    } else {
+      c[opts.optInField] = action.privacy.optIn
+    }
   }
 
   if (opts.language) {
@@ -57,8 +68,17 @@ export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) 
     Phone: action.contact.phone,
     Country: action.contact.country,
     PostalCode: action.contact.postcode,
-    Company: 'Proca',
+    Company: '[not provided]',
     LeadSource: action.campaign.title
+  }
+
+  if (opts.optInField) {
+    if (opts.doubleOptIn) {
+    // we ignore the optIn and wait for double opt in
+      c[opts.optInField] = false
+    } else {
+      c[opts.optInField] = action.privacy.optIn
+    }
   }
 
   if (opts.language) {
@@ -66,4 +86,32 @@ export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) 
   }
 
   return c
+}
+
+export interface EmailStatusAttributes {
+  Email: string;
+  EmailBouncedReason?: string
+  EmailBouncedDate?: string
+}
+
+export const emailChangedToContactRecord = (event : EventMessageV2, optInField:string) : EmailStatusAttributes & Record<string, string| boolean> | null => {
+  const emailStatus = event.supporter.privacy.emailStatus
+  const emailStatusChanged = event.supporter.privacy.emailStatusChanged
+  if (emailStatus === 'double_opt_in' && emailStatusChanged) {
+    const r : EmailStatusAttributes & Record<string,string|boolean> = {
+      Email: event.supporter.contact.email
+    }
+    r[optInField] = true
+    return r
+
+  } else if (emailStatusChanged && (emailStatus === 'bounce' || emailStatus === 'blocked' || emailStatus === 'unsub' || emailStatus === 'spam')) {
+    const r = {
+      Email: event.supporter.contact.email,
+      EmailBouncedReason: emailStatus,
+      EmailBouncedDate: emailStatusChanged
+    }
+    return r
+  }
+
+  return null
 }

@@ -1,7 +1,8 @@
 import {Connection, Record as SFRecord} from 'jsforce'
+import {ActionMessageV2} from '@proca/queue'
 
 export const makeClient = async () => {
-  const conn = new Connection({loginUrl: 'https://fixthestatusquo-dev-ed.my.salesforce.com/'})
+  const conn = new Connection({loginUrl: process.env.SALESFORCE_URL})
 
   if (!process.env.AUTH_USER || !process.env.AUTH_PASSWORD || !process.env.AUTH_TOKEN)
     throw new Error("Missing AUTH_USER/PASSWORD/TOKEN nenv variables")
@@ -48,7 +49,9 @@ type MemberID = {
 }
 
 
-export const addCampaignContact = async (conn : Connection, CampaignId: string, memberId : MemberID) => {
+export const addCampaignContact = async (conn : Connection, CampaignId: string, memberId : MemberID, _action : ActionMessageV2) => {
+  // const _addedDate = action.action.createdAt.split("T")[0]
+
   return new Promise((ok) => {
     // for chained call promise api does not work any more :/
     conn.sobject('CampaignMember').find(Object.assign({CampaignId}, memberId)).update({Status: 'Responded'}, (err, resp) => {
