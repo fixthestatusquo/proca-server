@@ -11,6 +11,8 @@ export interface ContactAttributes extends Record<string, string | boolean | und
   Phone?: string;
   MailingCountry?: string;
   MailingPostalCode?: string;
+  EmailBouncedReason?: string;
+  EmailBouncedDate?: string;
 }
 
 
@@ -22,6 +24,8 @@ export interface LeadAttributes extends Record<string,string | boolean | undefin
   Country?: string;
   PostalCode?: string;
   Company: string;
+  EmailBouncedReason?: string;
+  EmailBouncedDate?: string;
 }
 
 export const isActionSyncable = (action : ActionMessageV2) => {
@@ -44,14 +48,7 @@ export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpt
     MailingPostalCode: action.contact.postcode
   }
 
-  if (opts.optInField) {
-    if (opts.doubleOptIn) {
-    // we ignore the optIn and wait for double opt in
-      c[opts.optInField] = false
-    } else {
-      c[opts.optInField] = action.privacy.optIn
-    }
-  }
+  determineOptIn(c, action.privacy, opts)
 
   if (opts.language) {
     c[opts.language] = action.actionPage.locale
@@ -72,20 +69,45 @@ export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) 
     LeadSource: action.campaign.title
   }
 
-  if (opts.optInField) {
-    if (opts.doubleOptIn) {
-    // we ignore the optIn and wait for double opt in
-      c[opts.optInField] = false
-    } else {
-      c[opts.optInField] = action.privacy.optIn
-    }
-  }
+  determineOptIn(c, action.privacy, opts)
 
   if (opts.language) {
     c[opts.language] = action.actionPage.locale
   }
 
   return c
+}
+
+export const determineOptIn = (r : LeadAttributes | ContactAttributes, privacy : ActionMessageV2['privacy'], opts : RecordOpts) => {
+  // consents
+  // explicit DOI = must be subscribe
+  let optIn = false
+  if (privacy.emailStatus === "double_opt_in") {
+    optIn = true
+  // bouncing - cleaned / banned
+  } else if (privacy.emailStatus !== null) {
+    optIn = false
+    r.EmailBouncedReason = privacy.emailStatus
+    if (privacy.emailStatusChanged) r.EmailBouncedDate = privacy.emailStatusChanged
+  } else {
+    // else, lets infer:
+    if (privacy.optIn) {
+      // we have some opt in
+      if (opts.doubleOptIn) {
+        // id DOI, wait
+        optIn = false
+      } else {
+        // otherwise it's ok
+        optIn = true
+      }
+    } else {
+      optIn = false
+    }
+  }
+
+  if (opts.optInField) {
+    r[opts.optInField] = optIn
+  }
 }
 
 export interface EmailStatusAttributes {
