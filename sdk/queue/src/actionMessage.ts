@@ -2,7 +2,7 @@ import {PersonalInfo} from '@proca/crypto'
 
 export type ProcessStage = "confirm" | "deliver"
 
-type ContactV1 = {
+export type ContactV1 = {
   email: string,
   firstName: string,
   ref: string,
@@ -12,7 +12,7 @@ type ContactV1 = {
   nonce?: string,
 }
 
-type ContactV2 = {
+export type ContactV2 = {
   email: string,
   firstName: string,
   contactRef: string
@@ -52,13 +52,12 @@ type Tracking = {
   campaign: string,
   content: string
 }
-
-type PrivacyV1 = {
+export type PrivacyV1 = {
   communication: boolean,
   givenAt: string
 }
 
-type PrivacyV2 = {
+export type PrivacyV2 = {
   withConsent: boolean;
   optIn?: boolean;
   givenAt?: string;
