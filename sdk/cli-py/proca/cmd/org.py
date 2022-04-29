@@ -51,12 +51,13 @@ def add(ctx, name, title, default):
 @click.option('-N', '--rename')
 @click.option('-t', '--title')
 @click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE, help="Personal data schema/category")
-@click.option('-C', '--supporter-confirm/--no-supporter-confirm', is_flag=True, help="Confirm contact data by email?")
-@click.option('--custom-supporter-confirm/--no-custom-supporter-confirm', is_flag=True, help="Put actions for supporter confirm on custom queue")
+@click.option('-C', '--supporter-confirm/--no-supporter-confirm', is_flag=True, default=None, help="Confirm contact data by email?")
+@click.option('--custom-supporter-confirm/--no-custom-supporter-confirm', is_flag=True, default=None, help="Put actions for supporter confirm on custom queue")
 @click.option('-T', '--supporter-confirm-template', help="Contact confirmation email template")
-@click.option('-D', '--doi/--no-doi', help="Send thenk you email only to do DOI")
+@click.option('-D', '--doi/--no-doi', default=None, help="Send thenk you email only to do DOI")
 @click.option('-f', '--config', type=click.File('r'))
-@click.option('--custom-deliver/--no-custom-deliver', is_flag=True, help="Deliver actions to custom queue")
+@click.option('--custom-deliver/--no-custom-deliver', is_flag=True, default=None, help="Deliver actions to custom queue")
+@click.option('--custom-event-deliver/--no-custom-event-deliver', is_flag=True, default=None, help="Deliver events to custom delivery queue")
 @click.pass_obj
 def set(ctx,
         name,
@@ -68,7 +69,8 @@ def set(ctx,
         supporter_confirm_template,
         doi,
         config,
-        custom_deliver
+        custom_deliver,
+        custom_event_deliver
         ):
     """
     Update org settings.
@@ -94,8 +96,12 @@ def set(ctx,
         proc_input['supporterConfirmTemplate'] = supporter_confirm_template
     if doi is not None:
         proc_input['doiThankYou'] = doi
+
     if custom_deliver is not None:
         proc_input['customActionDeliver'] = custom_deliver
+
+    if custom_event_deliver is not None:
+        proc_input['customEventDeliver'] = custom_event_deliver
 
     org = update_org(ctx.client, name, input, proc_input)
     print(format(org))
