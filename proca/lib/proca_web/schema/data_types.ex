@@ -10,7 +10,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     parse(fn
       %{value: value} when is_bitstring(value) ->
         case Jason.decode(value) do
-          {:ok, object} ->
+          {:ok, object} when is_map(object) ->
             {:ok, object}
 
           x ->
