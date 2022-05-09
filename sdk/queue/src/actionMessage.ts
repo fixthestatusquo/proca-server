@@ -35,7 +35,8 @@ type ActionV1 = {
   fields: {
     [key: string]: string
   },
-  createdAt: string
+  createdAt: string,
+  testing: boolean
 }
 
 type ActionV2 = {
@@ -43,7 +44,8 @@ type ActionV2 = {
   customFields: {
     [key: string]: string | number | string[] | number[]
   },
-  createdAt: string
+  createdAt: string,
+  testing: boolean
 }
 
 type Tracking = {
@@ -130,7 +132,8 @@ export const actionMessageV1to2 = (a1 : ActionMessageV1) : ActionMessageV2 => {
     action: {
       actionType: a1.action.actionType,
       createdAt: a1.action.createdAt,
-      customFields: a1.action.fields
+      customFields: a1.action.fields,
+      testing: false
     },
     contact: {
       contactRef: a1.contact.ref,
