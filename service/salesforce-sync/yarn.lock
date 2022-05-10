@@ -1171,10 +1171,10 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@proca/queue@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@proca/queue/-/queue-0.1.0.tgz#09b66a1c9f97a6f63b03409d54e2085e0a19f0b5"
-  integrity sha512-yDOzacb4tUUMRNbub1bflyc2rixlosChcftPnSqRtU9bib2Q/efmct82xaBqPjSie5h4D0t2fHqin9WEK8+xiQ==
+"@proca/queue@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@proca/queue/-/queue-0.2.0.tgz#6d5ca0d87db115dae5e3fc4ca52d4e35302a10f3"
+  integrity sha512-o6/03FdZZpxjwDqk/ca+dlYc56Eq0x50L2y9MtLliOWHgRnpXD0VGnLFxtnrYgLuOP2E5JomQXVITL6FEcj71A==
   dependencies:
     "@proca/crypto" "^3.3.1"
     amqplib "^0.8.0"
