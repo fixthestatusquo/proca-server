@@ -56,6 +56,7 @@ salesforce-sync
  -L - language custom field
  -O - Opt in custom field (eg Email_Opt_In__c)
  -D - double opt in
+ -T - use campaign title instead of name
 `)
 }
 
@@ -105,7 +106,7 @@ export const cli = (argv : string[]) => {
             return false
           }
 
-          let camp = await campaignByName(conn, action.campaign.name)
+          let camp = await campaignByName(conn, opt.T ? action.campaign.title : action.campaign.name)
 
           try {
             if (opt.l) {
@@ -151,6 +152,6 @@ export const cli = (argv : string[]) => {
 
         return {}
       })
-    })
+    }).catch(() => process.exit(1))
   }
 }
