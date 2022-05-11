@@ -117,7 +117,7 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_doi_link()
       end)
 
-    case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template) do
+    case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok -> messages
@@ -155,7 +155,7 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_supporter_confirm()
       end)
 
-    case EmailTemplateDirectory.by_name_reload(org, tmpl_name) do
+    case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok -> messages
