@@ -77,6 +77,8 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:supports_templates?, [org])
   end
 
+  def supports_templates?(org = %Org{email_backend: nil}), do: false
+
   def list_templates(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
     |> apply(:list_templates, [org])
