@@ -61,17 +61,26 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
 @click.option("-o", "--org", required=True, help="Org name")
 #@click.option("-i", "--id", type=int, help="Service ID")
 @click.option("-f", "--from", 'frm', help="Sender email (SMTP From header)")
-@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE, required=True)
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
 @click.pass_obj
 def email(ctx, org, frm, name):
     """
     Configure email-related options for org.
     """
-    ip = {
-        "emailBackend": name,
-        "emailFrom": frm
-    }
-    proca.cmd.org.update_org(ctx.client, org, {}, ip)
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["emailBackend"] or "NO BACKEND"}|FROM: {p["emailFrom"]}'))
+
+    if not name and not frm:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {
+            "emailBackend": name,
+            "emailFrom": frm
+        }
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
 
 @explain_error("getting service list")
 def org_services(client, org):
