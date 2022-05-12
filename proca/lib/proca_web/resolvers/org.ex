@@ -129,8 +129,12 @@ defmodule ProcaWeb.Resolvers.Org do
       |> Repo.insert_or_update()
 
     case tmpl do
-      {:error, _} = e -> e
-      {:ok, _t} -> {:ok, :success}
+      {:error, _} = e ->
+        e
+
+      {:ok, t} ->
+        Proca.Server.Notify.updated(t, [])
+        {:ok, :success}
     end
   end
 
