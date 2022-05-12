@@ -2,6 +2,7 @@
 
 
 from gql import gql
+import os
 import click
 from proca.config import make_client
 from proca.friendly import *
@@ -37,7 +38,10 @@ def set(ctx, org, name, locale, subject, html, text):
         'name': name, 'locale': locale
     }
     if subject:
-        template['subject'] = subject
+        if os.path.isfile(subject):
+            template["subject"] = open(subject).read()
+        else:
+            template['subject'] = subject
     if html:
         template['html'] = html.read()
     if text:
