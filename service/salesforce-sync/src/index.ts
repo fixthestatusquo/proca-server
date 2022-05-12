@@ -62,6 +62,7 @@ salesforce-sync
 
 export const cli = (argv : string[]) => {
   const opt = parseArg(argv)
+  let campaignRTI : string | undefined;
 
   if (opt.h || opt.help) {
     // HELP
@@ -74,7 +75,7 @@ export const cli = (argv : string[]) => {
     })
   } else if (opt.c) {
     makeClient().then(async ({conn}) => {
-      const camp = await campaignByName(conn, opt.c)
+      const camp = await campaignByName(conn, opt.c, false)
       console.log(camp)
       process.exit(0)
     })
@@ -106,7 +107,7 @@ export const cli = (argv : string[]) => {
             return false
           }
 
-          let camp = await campaignByName(conn, opt.T ? action.campaign.title : action.campaign.name)
+          let camp = await campaignByName(conn, opt.T ? action.campaign.title : action.campaign.name, false)
 
           try {
             if (opt.l) {
@@ -152,6 +153,6 @@ export const cli = (argv : string[]) => {
 
         return {}
       })
-    }).catch(() => process.exit(1))
+    }).catch((e) => { console.error(e);  process.exit(1); })
   }
 }
