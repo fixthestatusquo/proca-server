@@ -8,12 +8,12 @@ defmodule Proca.Service.EmailMerge do
 
   - firstName - first name of supporter
   - ref - reference to supporter
-  - orgName
-  - orgTitle
-  - campaignName
-  - campaignTitle
-  - actionPageName
-  - actionPageLocale
+  - org.name
+  - org.title
+  - campaign.name
+  - campaign.title
+  - actionPage.name
+  - actionPage.locale
   - actionId
   - trackingCampaign - the utm_campaign of action
   - trackingMedium - the utm_medium
@@ -57,16 +57,16 @@ defmodule Proca.Service.EmailMerge do
 
   def put_campaign(email, _), do: email
 
-  def put_org(%Email{} = email, %Org{name: n, title: t}) do
+  def put_org(%Email{} = email, %Org{name: n, title: t, config: c}) do
     email
-    |> assign(:org, %{name: n, title: t})
+    |> assign(:org, %{name: n, title: t, config: c})
   end
 
   def put_org(e, _), do: e
 
-  def put_action_page(%Email{} = email, %ActionPage{name: n, locale: l, org: org}) do
+  def put_action_page(%Email{} = email, %ActionPage{id: id, name: n, locale: l, org: org}) do
     email
-    |> assign(:action_page, %{name: n, locale: l})
+    |> assign(:action_page, %{name: n, locale: l, id: id})
     |> put_org(org)
   end
 
@@ -106,7 +106,7 @@ defmodule Proca.Service.EmailMerge do
         locale: get_in(action_data, ["actionPage", "locale"])
       },
       action_id: get_in(action_data, ["actionId"]),
-      tracking: get_in(action_data, ["tracking"]),
+      tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
       privacy: get_in(action_data, ["privacy"])
     })
   end
@@ -130,5 +130,19 @@ defmodule Proca.Service.EmailMerge do
 
   def plain_to_html(text) do
     "<p>" <> String.replace(text, "\n", "</p><p>") <> "</p>"
+  end
+
+  def also_encode(nil, _), do: nil
+
+  def also_encode(map, key) when is_bitstring(key) or is_atom(key) do
+    key2 = "encoded_" <> if is_atom(key), do: Atom.to_string(key), else: key
+
+    case Map.get(map, key, nil) do
+      nil ->
+        map
+
+      val when is_bitstring(val) ->
+        Map.put(map, key2, URI.encode(val, &URI.char_unreserved?/1))
+    end
   end
 end
