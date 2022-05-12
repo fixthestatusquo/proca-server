@@ -21,18 +21,27 @@ export const makeClient = async () => {
 
 const CampaignsByName : Record<string, SFRecord> = {};
 
+
 export const campaignByName = async (conn : Connection, name : string, cached = false) => {
   let campaign
   // return cached
   if (cached && name in CampaignsByName)
     return CampaignsByName[name]
 
+  const campaignTypeId = process.env.CAMPAIGN_RECORD_TYPE
+
   // fetch
   const r = await conn.sobject('Campaign').find({name})
 
   // fail hard on missing campaign
   if (r.length === 0) {
-    const n = await conn.sobject('Campaign').create({name, Type: 'Proca online campaign'})
+    console.log('will try to create ' + name)
+    const cattr : Record<string,string> = {name, Type: 'Proca'}
+
+    if (campaignTypeId)
+      cattr['RecordTypeId'] = campaignTypeId
+
+    const n = await conn.sobject('Campaign').create(cattr) //  'Proca online campaign'
     if (!n.success) throw Error(`Cannot create campaign ${name}: ${n.errors}`)
     campaign = await conn.sobject('Campaign').retrieve(n.id)
   } else {

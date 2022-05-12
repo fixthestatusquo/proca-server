@@ -2,6 +2,10 @@
 
 import {ActionMessageV2, EventMessageV2} from '@proca/queue'
 
+import countries from 'i18n-iso-countries'
+import enCountries from 'i18n-iso-countries/langs/en.json'
+
+countries.registerLocale(enCountries)
 
 //                                              allow custom fields vvv
 export interface ContactAttributes extends Record<string, string | boolean | undefined> {
@@ -38,13 +42,20 @@ export type RecordOpts = {
   optInField?: string
 }
 
+export const countryName = (code : string | undefined) => {
+  if (code) {
+    return countries.getName(code.toUpperCase(), "en")
+  }
+  return code
+}
+
 export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpts) : ContactAttributes => {
   const c : ContactAttributes = {
     FirstName: action.contact.firstName,
     LastName: action.contact.lastName,
     Email: action.contact.email,
     Phone: action.contact.phone,
-    MailingCountry: action.contact.country,
+    MailingCountry: countryName(action.contact.country),
     MailingPostalCode: action.contact.postcode
   }
 
@@ -60,10 +71,10 @@ export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpt
 export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) : LeadAttributes => {
   const c : LeadAttributes = {
     FirstName: action.contact.firstName,
-    LastName: action.contact.lastName,
+    LastName: action.contact.lastName || '',
     Email: action.contact.email,
     Phone: action.contact.phone,
-    Country: action.contact.country,
+    Country: countryName(action.contact.country),
     PostalCode: action.contact.postcode,
     Company: '[not provided]',
     LeadSource: action.campaign.title

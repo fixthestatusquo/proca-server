@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@proca/queue": "^0.2.0",
+    "i18n-iso-countries": "^7.4.0",
     "jsforce": "^1.11.0",
     "minimist": "^1.2.6"
   }
