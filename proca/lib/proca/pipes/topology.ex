@@ -218,11 +218,6 @@ defmodule Proca.Pipes.Topology do
         xn(o, "event"),
         wqn(o, "webhook"),
         bind: config[:event_processing] and config[:webhook], route: "#"
-      },
-      {
-        xn(o, "event"),
-        cqn(instance, "deliver"),
-        bind: config[:custom_event_deliver], route: "#"
       }
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
