@@ -252,7 +252,7 @@ def format(org):
 
     if org['personalData']['supporterConfirm']:
         sup_con_t = org['personalData']['supporterConfirmTemplate']
-        pii_out += f"|ACTION DOI|[tmpl:{sup_con_t}]"
+        pii_out += f"|SUPPORTER DOI|[tmpl:{sup_con_t}]"
 
     out += rainbow(pii_out + "\n")
 
