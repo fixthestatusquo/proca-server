@@ -169,7 +169,7 @@ defmodule ProcaWeb.ConfirmController do
   # Change the supporter email_status
   defp handle_double_opt_in(action = %Action{supporter: sup}, doi)
        when doi in ["1", "yes", "true"] do
-    case update(Supporter.changeset(sup, %{email_status: :double_opt_in})) do
+    case update_and_notify(Supporter.changeset(sup, %{email_status: :double_opt_in})) do
       {:ok, sup2} -> {:ok, %{action | supporter: sup2}}
       {:error, _ch} -> {:error, 400, "cannot double opt in"}
     end
