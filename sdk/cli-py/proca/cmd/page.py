@@ -97,10 +97,11 @@ def delete(ctx, identifier, id, name):
 @click.option('-l', '--locale')
 @click.option('-x', '--extra', type=int)
 @click.option('-d/-D', '--deliver/--no-deliver', default=None)
-@click.option('-t', '--template')
+@click.option('-t', '--template', help="enable thank you email with this template")
+@click.option('-T', '--no-thankyou', help="disable thank you emal", is_flag=True)
 @click.option('-f', '--config', type=click.File('r'))
 @click.pass_obj
-def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, config):
+def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, no_thankyou, config):
     """
     Update settings of action page
     """
@@ -119,6 +120,8 @@ def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, con
         input["delivery"] = deliver
     if template:
         input["thankYouTemplate"] = template
+    if no_thankyou:
+        input["thankYouTemplate"] = None
     if config:
         config_json = config.read()
         input["config"] = config_json
