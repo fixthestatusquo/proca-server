@@ -82,7 +82,7 @@ defmodule Proca.Server.Notify do
   end
 
   def updated(%Supporter{email_status: email_status} = supporter, opts)
-      when email_status != nil do
+      when email_status != 0 do
     supporter = Repo.preload(supporter, [:contacts])
 
     for c <- supporter.contacts do
