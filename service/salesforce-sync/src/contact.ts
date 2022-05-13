@@ -38,8 +38,9 @@ export const isActionSyncable = (action : ActionMessageV2) => {
 
 export type RecordOpts = {
   language?: string;
-  doubleOptIn?: boolean
-  optInField?: string
+  doubleOptIn?: boolean;
+  optInField?: string;
+  defaultLastName?: string;
 }
 
 export const countryName = (code : string | undefined) => {
@@ -52,7 +53,7 @@ export const countryName = (code : string | undefined) => {
 export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpts) : ContactAttributes => {
   const c : ContactAttributes = {
     FirstName: action.contact.firstName,
-    LastName: action.contact.lastName,
+    LastName: action.contact.lastName || opts.defaultLastName,
     Email: action.contact.email,
     Phone: action.contact.phone,
     MailingCountry: countryName(action.contact.country),
@@ -71,7 +72,7 @@ export const actionToContactRecord = (action : ActionMessageV2, opts : RecordOpt
 export const actionToLeadRecord = (action : ActionMessageV2, opts : RecordOpts) : LeadAttributes => {
   const c : LeadAttributes = {
     FirstName: action.contact.firstName,
-    LastName: action.contact.lastName || '',
+    LastName: action.contact.lastName || opts.defaultLastName,
     Email: action.contact.email,
     Phone: action.contact.phone,
     Country: countryName(action.contact.country),
