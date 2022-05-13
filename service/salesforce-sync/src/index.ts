@@ -111,7 +111,7 @@ export const cli = (argv : string[]) => {
 
           try {
             if (opt.l) {
-              const record = actionToLeadRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O});
+              const record = actionToLeadRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O, defaultLastName: opt.lastname});
               const LeadId = await upsertLead(conn, record)
               if (!LeadId) return Error(`Could not upsert lead`)
               const r = await addCampaignContact(conn, camp.Id, {LeadId}, action)
@@ -119,7 +119,7 @@ export const cli = (argv : string[]) => {
 
 
             } else {
-              const record = actionToContactRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O});
+              const record = actionToContactRecord(action, {language: opt.L, doubleOptIn: Boolean(opt.D), optInField: opt.O, defaultLastName: opt.lastname});
               const ContactId = await upsertContact(conn, record)
               if (!ContactId) return Error(`Could not upsert contact`)
               const r = await addCampaignContact(conn, camp.Id, {ContactId}, action)
