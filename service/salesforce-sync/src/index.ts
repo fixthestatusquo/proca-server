@@ -27,16 +27,6 @@ import {
 import parseArg from 'minimist'
 
 
-export function p(o : any) {
-  console.log(JSON.stringify(o, null, 2));
-  return o
-}
-export function p2(o : any) {
-  console.log(o)
-  return o
-}
-
-
 function help () {
   console.log(`Help:
 salesforce-sync
