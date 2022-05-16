@@ -18,8 +18,8 @@ export const listName = (action : ActionMessageV2, listPerLang : boolean) => {
 
 export interface Contact {
   email_address: string;
-  status_if_new?: 'pending' | 'subscribed' | 'unsubscribed' | 'transactional';
-  status?: 'pending' | 'subscribed' | 'unsubscribed' | 'transactional';
+  status_if_new?: 'pending' | 'subscribed' | 'unsubscribed' | 'transactional' | 'cleaned';
+  status?: 'pending' | 'subscribed' | 'unsubscribed' | 'transactional' | 'cleaned';
   language: string;
   timestamp_signup: string;
   timestamp_opt?: string;
@@ -38,7 +38,7 @@ export interface Contact {
 
 export interface ContactSubscription {
   email_address: string;
-  status:  'subscribed' | 'unsubscribed' | 'transactional' | 'cleaned';
+  status:  'pending' | 'subscribed' | 'unsubscribed' | 'transactional' | 'cleaned';
   timestamp_opt?: string
 }
 

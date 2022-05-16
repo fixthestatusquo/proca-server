@@ -22,7 +22,7 @@ export const cli = async (argv : string[]) => {
   const opt = parseArg(argv)
   const client = makeClient()
 
-  if (opt.h) {
+  if (opt.h || opt.help) {
     console.log(`mailchimp-sync [-psl]
 -t test sign-in (ping API)
 -s list senders
@@ -33,7 +33,8 @@ export const cli = async (argv : string[]) => {
 -U upsert list (-c listname)
 -D subcribe after DOI
 -O opt out as transactional
-
+-S skip campaigns
+-P amqp prefetch count
     `)
   }
 
@@ -65,13 +66,19 @@ export const cli = async (argv : string[]) => {
     const url = opt.u || process.env.QUEUE_URL
     const templateList = opt.T || process.env.TEMPLATE_LIST
     const listPerLang = Boolean(opt.L)
+    const skipCampaigns = opt.S ? opt.S.split(",") : []
 
     if (!templateList)
-      throw Error("Please provide tempalte audience/list with -T")
+      throw Error("Please provide template audience/list with -T")
 
     if (!url) throw Error(`Provide -u or set QUEUE_URL`)
     syncQueue(url, opt.q, async (action : ActionMessageV2 | EventMessageV2) => {
       if (action.schema === 'proca:action:2') {
+        if (action.campaign.name in skipCampaigns) {
+          console.info(`Not syncing action because ${action.campaign.name} is skipped`)
+          return false;
+        }
+
         if (!isActionSyncable(action)) {
           console.info(`Not syncing action id ${action.actionId} (no consent/opt in)`)
           return false
@@ -81,7 +88,7 @@ export const cli = async (argv : string[]) => {
         const member = actionToContactRecord(action, Boolean(opt.D), Boolean(opt.O))
         const r = await addContactToList(client, list.id, member)
         console.log(`added ${member.email_address} (status ${member.status_if_new}) to list ${list.name} (id ${list.id})`)
-        console.log(r)
+        // console.log(r)
 
         return r
       }
@@ -115,7 +122,7 @@ export const cli = async (argv : string[]) => {
         // XXX handle clear and double opt in
         return false
       }
-    }).catch(e => console.error(e))
+    }, {prefetch: opt.P || 10}).catch(e => console.error(e))
 
 
   }
