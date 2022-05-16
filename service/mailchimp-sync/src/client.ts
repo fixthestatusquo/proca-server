@@ -16,7 +16,7 @@ export const makeClient = () => {
     });
     return mailchimp
   }
-  throw Error('Defing AUTH_TOKEN')
+  throw Error('Define AUTH_TOKEN')
 }
 
 export const ping = async (client : any) => {
