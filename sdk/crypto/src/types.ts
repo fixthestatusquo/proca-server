@@ -1,13 +1,13 @@
-
-// keys ------
+//
+// NaCL keys, always base64url encoded
 export interface KeyPair {
   public: string,
   private?: string
 }
 
 export type PublicKey = {
-  id: number,
-  public: string
+  id: number,    // Proca id
+  public: string // public key part, base64url encoded
 }
 
 // used for key store json file
@@ -25,8 +25,8 @@ export type KeyStoreFile = {
 
 // contact payload
 export interface PersonalInfo {
-  payload: string,
-  nonce: string, 
+  payload: string, // encrypted payload, encoded base64url
+  nonce: string,   // nonce bytes, encoded base64url
   encryptKey: PublicKey,
   signKey: PublicKey 
 }

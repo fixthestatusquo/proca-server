@@ -1,33 +1,46 @@
 import {PersonalInfo} from '@proca/crypto'
 
+/**
+ * The format of action + contact data stored as JSON in the processing queue.
+ * Current format is: V2 - see MessageV2 below
+ * (V1 is only used by older users) - see MessageV1
+ *
+ * */
+
+// confirm only if we are confirming the email
+// deliver means action is ready for delivery (to CRM, etc)
 export type ProcessStage = "confirm" | "deliver"
 
 export type ContactV1 = {
   email: string,
   firstName: string,
   ref: string,
-  payload: string,
-  signKey?: string,
-  publicKey?: string,
-  nonce?: string,
+  payload: string, // JSON of other PII data, or base64url of encrypted JSON of PII
+  signKey?: string, // signinig key id, not given when no encryption
+  publicKey?: string, // encryption key id
+  nonce?: string, // nonce, base64url
 }
 
 export type ContactV2 = {
   email: string,
   firstName: string,
   contactRef: string
-} & { [key: string]: any };
+} & { [key: string]: any }; // other keys, usually:
+                            // lastName, phone, country, postcode, area,
+                            // address: {region, locality, street, streetNumber}
+                            // but it can differ for different PII schema
 
 type Campaign = {
-  title: string,
-  name: string,
-  externalId: number
+  title: string,    // long name
+  name: string,     // technical name
+  externalId: number  // can be set by owner of campaign
 }
 
 type ActionPage = {
-  locale: string,
-  name: string,
-  thankYouTemplateRef: string
+  locale: string,              // language or full locale eg: pl, de_AT
+  name: string,                // technical name
+  thankYouTemplate: string     // name of thank you template
+  thankYouTemplateRef: string  // backwards compatibility - id of tempalte resolved from Mailjet etc
 }
 
 type ActionV1 = {
@@ -43,28 +56,34 @@ type ActionV2 = {
   actionType: string,
   customFields: {
     [key: string]: string | number | string[] | number[]
-  },
+  }, // map of keys to values, or lists of values, not nested
   createdAt: string,
-  testing: boolean
+  testing: boolean // is this a test action? (to be discarded)
 }
 
 type Tracking = {
-  source: string,
+  source: string,   // utm_*
   medium: string,
   campaign: string,
-  content: string
+  content: string,
+  location: string  // what url was the form on?
 }
 export type PrivacyV1 = {
-  communication: boolean,
+  communication: boolean, // consent for communication (newsletter etc) was given on form
   givenAt: string
 }
 
 export type PrivacyV2 = {
-  withConsent: boolean;
-  optIn?: boolean;
+  withConsent: boolean;  // this action had a consent under form (visible or implicit)
+  optIn?: boolean;       // consent for communication
   givenAt?: string;
   emailStatus: null | 'double_opt_in' | 'bounce' | 'blocked' | 'spam' | 'unsub';
-  emailStatusChanged: null | string
+  // email Status describes reliability of email:
+  // - null - no knowledge
+  // - double_opt_in - confirmed that newsletter is wanted
+  // - bounce, blocked - declared by email service that is not deliverable
+  // - unsub, spam - declared by email service that user does not want to be contacted
+  emailStatusChanged: null | string  // JSON date-time format
 }
 
 export type ActionMessage = ActionMessageV1 | ActionMessageV2;
@@ -91,7 +110,7 @@ export type ActionMessageV2 = {
   // orgId: number,
   action: ActionV2,
   contact: ContactV2,
-  personalInfo: PersonalInfo | null,
+  personalInfo: PersonalInfo | null, // null if no encryption
   campaign: Campaign,
   actionPage: ActionPage,
   tracking: Tracking,
