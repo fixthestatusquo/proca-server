@@ -12,13 +12,27 @@ campaignData =  """
     }
     """
 
-campaignDataStatus = """
-    fragmen campaignDataStatus on Campaign {
+campaignStats = """
+    fragment campaignStats on Campaign {
        stats {
           supporterCount
           actionCount { actionType count }
+          supporterCountByArea {area count}
        }
     }
+"""
+
+# XXX we must query for something...
+noCampaignStats = """
+    fragment campaignStats on Campaign {__typename}
+"""
+
+campaignTargetIds = """
+    fragment campaignTargets on Campaign { targets { id }}
+"""
+
+campaignTargetAll = """
+    fragment campaignTargets on Campaign { targets { id name locale area externalId fields }}
 """
 
 mttData = """
