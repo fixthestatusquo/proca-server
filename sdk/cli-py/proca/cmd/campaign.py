@@ -114,21 +114,22 @@ def org_campaigns(client, org_name):
     return data['org']['campaigns']
 
 @explain_error("fetching a campaigh")
-def one_campaign(client, id, name, with_targets=False):
-    target_fields = ''
-    if with_targets:
-        target_fields = 'name locale area externalId fields'
-
+def one_campaign(client, id, name, with_targets=False, with_stats=False):
     query = gql("""
     query Campaign($id: Int, $name: String) {
         campaign(id: $id, name: $name) {
             ...campaignData
             ...mttData
-            targets {id %(target_fields)s}
+            ...campaignTargets
             org { name title }
+            ...campaignStats
         }
     }
-    """ % {'target_fields': target_fields} + campaignData + mttData)
+    """
+                + campaignData
+                + (with_stats and campaignStats or noCampaignStats)
+                + (with_targets and campaignTargetAll or campaignTargetIds)
+                + mttData)
 
     data = client.execute(query, **vars(id=id, name=name))
     return data['campaign']
