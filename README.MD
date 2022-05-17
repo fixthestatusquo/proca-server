@@ -21,10 +21,10 @@ the vast majority of this repo is the [elixir server](./proca). However, we have
 - Included packages:
   - proca - the core proca api server and processing engine
   - sdk/api - thin GraphQL api client
-  - sdk/cli - client and CLI tool containing more top level operations
-  - skd/crypto (planned) - code refactored out from sdk/cli concerning decrypting supporter data
-  - sdk/queue (planned) - code refactored out from sdk/cli concerning reading from AMQP and message action format (slightly differing from api action format)
-  - service/action-gw - action data decrypting gateway to decrypt actions on premises
+  - sdk/queue - TS library for working with action message queues
+  - sdk/crypto - TS library for working with encryption of personal information
+  - sdk/cli-py - CLI tool to manage the server
+  - service/*-sync - sync-to-CRM tools
 
 To add a new repository into this one, use `lerna import` tool. It will import all the commit history. Recommended way is:
 
