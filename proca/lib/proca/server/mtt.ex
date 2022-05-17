@@ -51,6 +51,12 @@ defmodule Proca.Server.MTT do
     dupe_rank()
     workers = w ++ process_mtt()
     MTTWorker.process_mtt_test_mails()
+
+    if workers == [] do
+      # all workers done already (there will be no :DOWN info)
+      schedule_work()
+    end
+
     {:noreply, %{workers: workers}}
   end
 
