@@ -112,7 +112,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       created_at: action.inserted_at,
       contact: format_contact(action.supporter, contact),
       privacy: format_privacy(action, contact),
-      trackng: action.source,
+      tracking: action.source,
       campaign: action.campaign,
       action_page: action.action_page
     }
