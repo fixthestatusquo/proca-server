@@ -87,17 +87,34 @@ export const contactByEmail = async (conn : Connection, Email : string) => {
 export const leadByEmail = async (conn : Connection, Email : string) => {
   // return await conn.query(`SELECT id, firstname, lastname, email, phone FROM Contact WHERE email =  '${email}'`)
 
-  const r = await conn.sobject('Lead').find({Email})
+  const IsConverted = false
+  const r = await conn.sobject('Lead').find({Email, IsConverted})
 
   return r[0]
 }
 
 export const upsertLead = async (conn : Connection, contact : SFRecord) => {
-  const r = await conn.sobject('Lead').upsert(contact, 'Email')
+  let r;
 
-  if (!r.success) throw Error(`Error upserting lead: ${r.errors}`)
-  if (r.id)
-    return r.id  // I just can't.... id vs Id
+  try {
+    r = await conn.sobject('Lead').upsert(contact, 'Email')
+  } catch (er) {
+    if (er.name === 'MULTIPLE_CHOICES') {
+      const idPath = er.content[er.content.length-1].split('/')
+      console.warn(`Duplicate records for ${contact.Email}:  ${er.content}, returning last one`)
+      return idPath[idPath.length-1]
+    } else if (er.name === 'CANNOT_UPDATE_CONVERTED_LEAD') {
+      r = await conn.sobject('Lead').create(contact)
+      // returns id: ... success: true
+    } else {
+      console.log(`LEAD UPSERT ERROR, unhandled er.name='${er.name}'`)
+      throw er;
+    }
+  }
+
+  // for success value, id can be there
+  if (r && 'id' in r && r.id)
+    return r.id  // I just can't.... id vs Id sometimes returned
 
   const e = await leadByEmail(conn, contact.Email)
   return e.Id
