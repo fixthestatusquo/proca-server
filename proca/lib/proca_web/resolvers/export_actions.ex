@@ -145,7 +145,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         :campaign,
         :source,
         :donation
-      ]
+      ],
+      where: s.processing_status == :accepted and a.processing_status in [:accepted, :delivered]
     )
     |> filter_start(params)
     |> filter_after(params)
