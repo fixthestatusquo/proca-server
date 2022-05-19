@@ -71,7 +71,7 @@ export const upsertList = async (client : any, name : string, templateName : str
     return LIST_CACHE[name]
 
   const template = LIST_CACHE[templateName]
-  if (!template) throw Error(`not found template list "${templateName}"`)
+  if (!template) throw Error(`audience not found "${templateName}"`)
   // add
   const newList = await client.lists.createList({
     name,
