@@ -29,7 +29,8 @@ export const cli = async (argv : string[]) => {
 -e email - search member by email
 -l get lists
 -L break-down lists by language
--T listName list name of a template list
+-T audienceName audience name used as template for new lists
+-A audienceName - just add all to that audience
 -U upsert list (-c listname)
 -D subcribe after DOI
 -O opt out as transactional
@@ -46,8 +47,8 @@ export const cli = async (argv : string[]) => {
     console.log(r)
   }
   if (opt.l) {
-    const r =  await allLists(client)
-    console.log(JSON.stringify(r, null, 2))
+    const {lists} =  await allLists(client)
+    console.log(JSON.stringify(lists, null, 2))
   }
 
   if (opt.U) {
@@ -65,11 +66,12 @@ export const cli = async (argv : string[]) => {
   if (opt.q) {
     const url = opt.u || process.env.QUEUE_URL
     const templateList = opt.T || process.env.TEMPLATE_LIST
+    const targetList = opt.A || process.env.TARGET_LIST
     const listPerLang = Boolean(opt.L)
     const skipCampaigns = opt.S ? opt.S.split(",") : []
 
-    if (!templateList)
-      throw Error("Please provide template audience/list with -T")
+    if (!targetList && !templateList)
+      throw Error("Please provide target audience with -A or template audience with -T")
 
     if (!url) throw Error(`Provide -u or set QUEUE_URL`)
     syncQueue(url, opt.q, async (action : ActionMessageV2 | EventMessageV2) => {
@@ -84,7 +86,10 @@ export const cli = async (argv : string[]) => {
           return false
         }
 
-        const list = await upsertList(client, listName(action, listPerLang), templateList)
+        const list = targetList ?
+          await upsertList(client, targetList, targetList) : // XXX use upsert to fetch
+          await upsertList(client, listName(action, listPerLang), templateList)
+
         const member = actionToContactRecord(action, Boolean(opt.D), Boolean(opt.O))
         const r = await addContactToList(client, list.id, member)
         console.log(`added ${member.email_address} (status ${member.status_if_new}) to list ${list.name} (id ${list.id})`)

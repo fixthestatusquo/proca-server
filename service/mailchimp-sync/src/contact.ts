@@ -33,7 +33,8 @@ export interface Contact {
       city: string;
       addr1: string
     }
-  }
+  };
+  tags: string[];
 }
 
 export interface ContactSubscription {
@@ -49,7 +50,8 @@ export const actionToContactRecord = (action : ActionMessageV2, doubleOptIn : bo
     timestamp_signup: action.action.createdAt,
     merge_fields: {
       FNAME: action.contact.firstName
-    }
+    },
+    tags: [action.campaign.name]
   }
 
   if (action.contact.lastName)
