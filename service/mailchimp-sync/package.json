@@ -1,5 +1,5 @@
 {
-  "version": "0.2.6",
+  "version": "0.2.8",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@mailchimp/mailchimp_marketing": "^3.0.75",
+    "@proca/crypto": "3.3.2",
     "@proca/queue": "^0.2.0",
     "minimist": "^1.2.6"
   }
