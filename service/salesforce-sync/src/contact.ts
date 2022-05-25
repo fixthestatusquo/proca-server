@@ -5,6 +5,8 @@ import {ActionMessageV2, EventMessageV2} from '@proca/queue'
 import countries from 'i18n-iso-countries'
 import enCountries from 'i18n-iso-countries/langs/en.json'
 
+enCountries.countries['US'].shift() // remove the United States of America - Salesforce does not understand it - leave United States
+
 countries.registerLocale(enCountries)
 
 //                                              allow custom fields vvv
