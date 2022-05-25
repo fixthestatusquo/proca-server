@@ -1167,6 +1167,18 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@proca/crypto@3.3.2":
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/@proca/crypto/-/crypto-3.3.2.tgz#fc32ad0989c585e0c864a13e401731a4c626ff94"
+  integrity sha512-Zg0MVEpcrUpLYLMJvr4s5cOCeXzEfGBXWCmp21SUHuEg6Ak9aCGkOHaZdmZkRH0HvBt2agOL3MnfN8fjT9wPeA==
+  dependencies:
+    "@types/lodash" "^4.14.176"
+    "@types/node" "^16.11.6"
+    base64url "^3.0.1"
+    lodash "^4.17.21"
+    tweetnacl "^1.0.3"
+    tweetnacl-util "^0.15.1"
+
 "@proca/crypto@^3.3.1":
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/@proca/crypto/-/crypto-3.3.1.tgz#82b8ed601c0c1855c151d8211d9eb84ad0b62da4"
