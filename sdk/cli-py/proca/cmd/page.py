@@ -3,6 +3,7 @@
 
 import click
 import operator
+from subprocess import Popen, PIPE
 
 from proca.config import Config, add_server_section, server_section, store, make_client
 from proca.util import log
@@ -12,6 +13,8 @@ from proca.theme import *
 from proca.query import *
 from yaspin import yaspin
 from gql import gql
+import json
+import time
 
 from termcolor import colored, cprint
 
@@ -127,6 +130,58 @@ def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, no_
         input["config"] = config_json
 
     update_action_page(ctx.client, id, name, input)
+
+
+@click.command("page:watch")
+@click.option('-o', '--org', 'org', help="List for org")
+@click.option('-A', '--all', is_flag=True, help="Watch all pages")
+@click.option('-c', '--campaign', help="Just campaign")
+@click.option('-p', '--parallel', default=1, help="How many run in parallel")
+@click.argument('cmd', nargs=-1)
+@click.pass_obj
+def watch(ctx, org, all, campaign, parallel, cmd):
+    pipes = []
+    ws = ctx.websocket_client
+    query = """
+    subscription ActionPageUpserted($org: String) {
+      actionPageUpserted(orgName: $org) {
+         ...actionPageData
+        campaign { ...campaignData }
+        org { name title }
+      }
+    }
+    """ + actionPageData + campaignData
+    query = gql(query)
+
+    def close_pipes():
+        nonlocal pipes
+        pipes = [p for p in pipes if p.poll() is None] # is none when still running
+
+    if all:
+        org = None
+
+    for page in ws.subscribe(query, **vars(org=org)):
+        page = page['actionPageUpserted']
+
+        if campaign and page['campaign']['name'] != campaign:
+            continue
+
+        page['config'] = json.loads(page['config'])
+        page['campaign']['config'] = json.loads(page['campaign']['config'])
+
+        close_pipes()
+        while len(pipes) >= parallel:
+            time.sleep(0.5)
+            close_pipes()
+
+        print(format(page))
+
+        p = Popen(cmd, stdin=PIPE, text=True)
+        json.dump(page, p.stdin)
+        p.stdin.close()
+        pipes.append(p)
+
+
 
 
 @explain_error('adding action page')

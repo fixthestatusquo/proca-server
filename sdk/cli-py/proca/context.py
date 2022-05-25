@@ -16,6 +16,7 @@ class CliContext:
     """
     def __init__(self, server):
         self._client = None
+        self._ws_client = None
         self._server_section = None
         self._default_map = {}
 
@@ -43,7 +44,17 @@ class CliContext:
 
         if default_org := Config.get(self._server_section, 'org', fallback=None):
             # Put org into default argument for all commands that use it
-            cmds = ['campaign', 'campaign:add',  'page', 'page:add', 'service', 'service:set', 'service:email', 'template', 'template:set']
+            cmds = [
+                'campaign',
+                'campaign:add',
+                'page',
+                'page:add',
+                'service',
+                'service:set',
+                'service:email',
+                'template',
+                'template:set',
+                'user']
             dm = {c: {'org':  default_org} for c in cmds}
 
             cmds = ['org', 'org:set']
@@ -58,5 +69,9 @@ class CliContext:
 
         return self._client
 
+    @property
+    def websocket_client(self):
+        if self._ws_client is None:
+            self._ws_client = make_client(self.server_section, ws=True)
 
-
+        return self._ws_client
