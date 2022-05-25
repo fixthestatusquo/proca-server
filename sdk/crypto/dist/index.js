@@ -3,11 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.decrypt = exports.decryptPersonalInfo = exports.decodeBase64url = exports.addKeysToKeyStore = void 0;
+exports.decrypt = exports.decryptPersonalInfo = exports.decodeBase64url = exports.addKeysToKeyStore = exports.loadKeyStoreFromString = exports.storeKeyStoreToFile = exports.loadKeyStoreFromFile = void 0;
 const tweetnacl_1 = __importDefault(require("tweetnacl"));
 const tweetnacl_util_1 = require("tweetnacl-util");
 const base64url_1 = __importDefault(require("base64url"));
 const lodash_1 = __importDefault(require("lodash"));
+var utils_1 = require("./utils");
+Object.defineProperty(exports, "loadKeyStoreFromFile", { enumerable: true, get: function () { return utils_1.loadKeyStoreFromFile; } });
+Object.defineProperty(exports, "storeKeyStoreToFile", { enumerable: true, get: function () { return utils_1.storeKeyStoreToFile; } });
+Object.defineProperty(exports, "loadKeyStoreFromString", { enumerable: true, get: function () { return utils_1.loadKeyStoreFromString; } });
 function addKeysToKeyStore(keys, ks) {
     if (typeof keys !== "object")
         throw new Error("key store must be object");

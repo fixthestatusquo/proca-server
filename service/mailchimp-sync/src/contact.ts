@@ -1,8 +1,8 @@
 
 import type {ActionMessageV2, EventMessageV2} from '@proca/queue'
 
-export const isActionSyncable = (action : ActionMessageV2) => {
-  return (action.privacy.withConsent)
+export const isActionSyncable = (action : ActionMessageV2, onlyOptIn : boolean) => {
+  return (action.privacy.withConsent) && (action.privacy.optIn || !onlyOptIn)
 }
 
 export const listName = (action : ActionMessageV2, listPerLang : boolean) => {
@@ -60,11 +60,11 @@ export const actionToContactRecord = (action : ActionMessageV2, doubleOptIn : bo
   // address fields
   if (action.contact.country) {
     r.merge_fields.ADDRESS = {
-      country: action.contact.country || 'N/A',
-      state: action.contact.address?.region || 'N/A',
-      zip: action.contact.postcode || 'N/A',
-      city: action.contact.address?.locality || 'N/A',
-      addr1: action.contact.address?.street || 'N/A'
+      country: action.contact.country || '',
+      state: action.contact.address?.region || '',
+      zip: action.contact.postcode || '',
+      city: action.contact.address?.locality || '',
+      addr1: action.contact.address?.street || ''
     }
 
     if (action.contact.address?.street_number)

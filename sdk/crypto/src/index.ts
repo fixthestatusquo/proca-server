@@ -4,6 +4,7 @@ import base64url from 'base64url'
 import lo from "lodash"
 import {KeyStore, PersonalInfo} from './types'
 export {PublicKey, KeyStore, PersonalInfo} from './types'
+export {loadKeyStoreFromFile, storeKeyStoreToFile, loadKeyStoreFromString} from './utils'
 
 type KeyJson = {
   private?: string

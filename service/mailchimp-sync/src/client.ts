@@ -96,7 +96,7 @@ export const memberHash = (email : string) => {
 export const addContactToList = async (client : any, list_id: string, member: Contact | ContactSubscription) => {
   const hash = memberHash(member.email_address.toLowerCase())
 
-  const result = await client.lists.setListMember(list_id, hash, member)
+  const result = await client.lists.setListMember(list_id, hash, member, {skipMergeValidation: true})
   return result
 }
 

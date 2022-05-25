@@ -1,5 +1,6 @@
 import parseArg from 'minimist'
 import {syncQueue, ActionMessageV2, EventMessageV2} from '@proca/queue'
+import {KeyStore, loadKeyStoreFromFile} from '@proca/crypto'
 
 import {
   ping,
@@ -34,8 +35,10 @@ export const cli = async (argv : string[]) => {
 -U upsert list (-c listname)
 -D subcribe after DOI
 -O opt out as transactional
+-o only opt ins
 -S skip campaigns
 -P amqp prefetch count
+-k keystore
     `)
   }
 
@@ -63,6 +66,12 @@ export const cli = async (argv : string[]) => {
       .catch(e => console.error('cont find', e))
   }
 
+  let keyStore : KeyStore | undefined;
+
+  if (opt.k) {
+    keyStore = loadKeyStoreFromFile(opt.k)
+  }
+
   if (opt.q) {
     const url = opt.u || process.env.QUEUE_URL
     const templateList = opt.T || process.env.TEMPLATE_LIST
@@ -81,7 +90,7 @@ export const cli = async (argv : string[]) => {
           return false;
         }
 
-        if (!isActionSyncable(action)) {
+        if (!isActionSyncable(action, opt.o)) {
           console.info(`Not syncing action id ${action.actionId} (no consent/opt in)`)
           return false
         }
@@ -127,7 +136,7 @@ export const cli = async (argv : string[]) => {
         // XXX handle clear and double opt in
         return false
       }
-    }, {prefetch: opt.P || 10}).catch(e => console.error(e))
+    }, {keyStore , prefetch: opt.P || 10}).catch(e => console.error(e))
 
 
   }
