@@ -14,7 +14,14 @@ defmodule ProcaWeb.ExportActionResolverTest do
     %{org: org, pages: [ap]} = blue_story()
 
     admin = Factory.insert(:staffer, org: org, perms: @export_via_api_perms)
-    actions = Factory.insert_list(3, :action, %{action_page: ap, action_type: "signature"})
+
+    actions =
+      Factory.insert_list(3, :action, %{
+        action_page: ap,
+        action_type: "signature",
+        processing_status: :delivered,
+        supporter_processing_status: :accepted
+      })
 
     %{
       org: org,
