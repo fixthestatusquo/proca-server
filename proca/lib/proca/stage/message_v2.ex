@@ -35,7 +35,8 @@ defmodule Proca.Stage.MessageV2 do
       "campaign" => %{
         "name" => action.campaign.name,
         "title" => action.campaign.title,
-        "externalId" => action.campaign.external_id
+        "externalId" => action.campaign.external_id,
+        "contactSchema" => Atom.to_string(action.campaign.contact_schema)
       },
       "org" => %{
         "name" => action.action_page.org.name,
