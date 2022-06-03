@@ -72,6 +72,7 @@ Below is the explanation for content under each key in the Action data map. Nest
   - `contactSchema` - type of collected personal data, `basic`, `eci` or others
 - `contact` - personal information of member doing the action (the content depends on campaign type and what PII is collected):
   - `contactRef` - unique personal data fingerprint, can be used to de-duplicate (always present)
+  - `dupeRank` - rank of extra occurrence of that contact taking action in this campaign (0 - first time, >0 - "duplicate")
   - `email` - email of member (always present)
   - `firstName` - first name of member (always present)
   - `lastName`
