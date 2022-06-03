@@ -33,7 +33,7 @@ defmodule Proca.PublicKey do
   end
 
   def expire(public_key) do
-    change(public_key, expired: true)
+    change(public_key, expired: true, active: false)
   end
 
   def all(q, [{:org, %Org{id: org_id}} | kw]) do

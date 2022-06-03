@@ -54,7 +54,10 @@ class CliContext:
                 'service:email',
                 'template',
                 'template:set',
-                'user']
+                'user',
+                'key',
+                'key:activate',
+                'key:gen']
             dm = {c: {'org':  default_org} for c in cmds}
 
             cmds = ['org', 'org:set']

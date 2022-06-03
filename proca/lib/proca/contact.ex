@@ -60,8 +60,11 @@ defmodule Proca.Contact do
 
   @spec add_encryption(Ecto.Changeset.t(Contact), %Proca.Org{}) :: Ecto.Changeset.t(Contact)
   def add_encryption(contact_ch, org = %Proca.Org{}) do
-    case contact_ch do
-      %{changes: %{payload: payload}} ->
+    case get_field(contact_ch, :payload) do
+      nil ->
+        add_error(contact_ch, :payload, "Contact payload required to encrypt")
+
+      payload ->
         case Proca.Server.Encrypt.encrypt(org, payload) do
           {penc, nonce, enc_id, sign_id} when is_binary(penc) and is_binary(nonce) ->
             contact_ch
@@ -76,9 +79,6 @@ defmodule Proca.Contact do
           {:error, msg} ->
             add_error(contact_ch, :payload, msg)
         end
-
-      no_payload ->
-        add_error(no_payload, :payload, "Contact payload required to encrypt")
     end
   end
 
@@ -92,6 +92,34 @@ defmodule Proca.Contact do
   def encrypt(contact_ch, [pk | public_keys]) do
     enc_ch = add_encryption(contact_ch, pk)
     [enc_ch | encrypt(contact_ch, public_keys)]
+  end
+
+  @doc "If necessary, update and unencrypted contact with active key"
+  def ensure_encrypted!(
+        %Contact{crypto_nonce: nonce, public_key_id: ei, sign_key_id: si} = contact
+      )
+      when not is_nil(nonce) and not is_nil(ei) and not is_nil(si) do
+    contact
+  end
+
+  def ensure_encrypted!(
+        %Contact{
+          crypto_nonce: nil,
+          public_key_id: nil,
+          sign_key_id: nil,
+          org_id: org_id
+        } = contact
+      ) do
+    org = Proca.Org.one(id: org_id)
+    encrypted = add_encryption(change(contact), org)
+
+    case get_change(encrypted, :payload) do
+      nil ->
+        raise "Contact #{contact.id} cannot be encrypted (no active keys)"
+
+      _payload ->
+        Proca.Repo.update!(encrypted)
+    end
   end
 
   def base_encode(data) when is_bitstring(data) do
