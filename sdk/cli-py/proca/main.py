@@ -13,6 +13,7 @@ import proca.cmd.campaign
 import proca.cmd.service
 import proca.cmd.org
 import proca.cmd.template
+import proca.cmd.key
 
 
 
@@ -72,3 +73,6 @@ cli.add_command(proca.cmd.org.leave)
 cli.add_command(proca.cmd.org.set)
 cli.add_command(proca.cmd.template.list)
 cli.add_command(proca.cmd.template.set)
+cli.add_command(proca.cmd.key.list)
+cli.add_command(proca.cmd.key.gen)
+cli.add_command(proca.cmd.key.activate)

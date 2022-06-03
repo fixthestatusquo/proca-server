@@ -98,6 +98,22 @@ serviceData = """
   }
 """
 
+keyData = """
+  fragment keyData on Key {
+    id name
+    public
+    active expired expiredAt
+  }
+"""
+
+keyPrivData = """
+  fragment keyPrivData on KeyWithPrivate {
+    id name
+    public private
+    active expired expiredAt
+  }
+"""
+
 
 class Null:
     "A Null value passed to GQL. A None value will not send the variable."
