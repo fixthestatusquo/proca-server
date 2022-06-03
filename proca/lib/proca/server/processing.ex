@@ -45,18 +45,8 @@ defmodule Proca.Server.Processing do
   This mechanism is supposed to be able to run many times with same result if
   action and supporter bits do not change.
 
-  We need:
-  - supporter.confirming
-  - supporter.confirmed
-  - action.confirming
-  - action.confirmed
-  - action.delivered
-
-  XXX for MVP, we assume:
-
-  ActionPage does not require Supporter confirmation, supporter :new -> :accepted
-  ActionPage does not require Action confirmation, goes from :new -> :accepted
-  But it is pushed to delivery queue and chnaged to :delivered (after processing in Broadway?)
+  At the moment we do not support custom action confirmation - fully - we do not send actions to this queue and there is not routes in API to confirm or reject an action.
+  This is a missing piece albeit for now did not proove necessary.
   """
 
   @impl true
@@ -153,8 +143,7 @@ defmodule Proca.Server.Processing do
         %ActionPage{}
       )
       when action_status in [:new, :accepted] do
-    # do the moderation (via email?) XXX need the thank_you handler
-    # go strainght to delivered
+    # Send action to confirm_action queue
     {
       change_status(action, :delivered, :accepted),
       :action,
@@ -162,18 +151,18 @@ defmodule Proca.Server.Processing do
     }
   end
 
-  # Needs double opt-in 
   def transition(
         action = %{
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
-        %ActionPage{org: %{supporter_confirm: opt_in}}
+        %ActionPage{
+          org: %{supporter_confirm: system_confirm, custom_supporter_confirm: custom_confirm}
+        }
       ) do
-    # we should handle confirmation if required, but before it's implemented let's accept supporter
-    # and instantly go to delivery
+    # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
 
-    if opt_in do
+    if system_confirm or custom_confirm do
       {
         change_status(action, :new, :confirming),
         :supporter,
@@ -199,7 +188,10 @@ defmodule Proca.Server.Processing do
   end
 
   def change_status(action, action_status, supporter_status) do
-    sup = change(action.supporter, processing_status: supporter_status)
+    sup =
+      change(action.supporter, processing_status: supporter_status)
+      |> maybe_rank_supporter(action_status, supporter_status)
+
     act = change(action, processing_status: action_status)
 
     if act.changes == %{} do
@@ -212,6 +204,21 @@ defmodule Proca.Server.Processing do
       end
     end
   end
+
+  @doc """
+  Rank supporter when entering:
+  1. supporter confirm stage
+  2. action delivery stage
+  """
+  def maybe_rank_supporter(changeset, :new, :confirming) do
+    Supporter.naive_rank(changeset)
+  end
+
+  def maybe_rank_supporter(changeset, :delivered, :accepted) do
+    Supporter.naive_rank(changeset)
+  end
+
+  def maybe_rank_supporter(changeset, _, _), do: changeset
 
   @doc """
   This method emits an effect on transition.

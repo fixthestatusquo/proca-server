@@ -63,14 +63,16 @@ defmodule Proca.Stage.MessageV2 do
         %Supporter{
           first_name: first_name,
           email: email,
-          fingerprint: ref
+          fingerprint: ref,
+          dupe_rank: dupe_rank
         },
         contact
       ) do
     %{
       "firstName" => first_name,
       "email" => email,
-      "contactRef" => Contact.base_encode(ref)
+      "contactRef" => Contact.base_encode(ref),
+      "dupeRank" => dupe_rank
     }
     |> contact_data_cleartext(contact)
   end

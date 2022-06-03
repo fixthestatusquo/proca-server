@@ -32,6 +32,7 @@ defmodule Proca.Supporter do
     field :processing_status, ProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
     field :email_status_changed, :utc_datetime
+    field :dupe_rank, :integer
 
     timestamps()
   end
@@ -48,6 +49,31 @@ defmodule Proca.Supporter do
       _ ->
         ch
     end
+  end
+
+  @doc """
+  A naive ranker - not good for ranking existing data!
+  Good for: checking for number of accepted supporters already in the campaign, use before confirm and at storing the accepted action.
+  A race condition is limited (excluded?) because the Proca.Server.Processing server is single process.
+  """
+  def naive_rank(%Ecto.Changeset{} = ch) do
+    import Ecto.Query
+
+    fingerprint = get_field(ch, :fingerprint)
+    campaign_id = get_field(ch, :campaign_id)
+
+    rank =
+      Repo.one(
+        from(s in Supporter,
+          select: count(s.id),
+          where:
+            s.processing_status == :accepted and
+              s.fingerprint == ^fingerprint and
+              s.campaign_id == ^campaign_id
+        )
+      )
+
+    change(ch, dupe_rank: rank)
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do
