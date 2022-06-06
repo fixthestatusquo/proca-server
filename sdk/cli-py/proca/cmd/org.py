@@ -200,6 +200,7 @@ def update_org(client, name, org, proc):
             $name: String!,
             $input: OrgInput!,
             $supporterConfirm: Boolean,
+            $customSupporterConfirm: Boolean,
             $supporterConfirmTemplate: String,
             $customActionDeliver: Boolean,
             $customEventDeliver: Boolean,
@@ -210,6 +211,7 @@ def update_org(client, name, org, proc):
         updateOrgProcessing(
             name: $name,
             supporterConfirm: $supporterConfirm,
+            customSupporterConfirm: $customSupporterConfirm,
             supporterConfirmTemplate: $supporterConfirmTemplate,
             customActionDeliver: $customActionDeliver,
             customEventDeliver: $customEventDeliver,
