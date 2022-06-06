@@ -2,10 +2,10 @@
   "query": "mutation addActionContact(\n  $action: ActionInput!,\n  $contact:ContactInput!,\n  $privacy:ConsentInput!,\n  $contactRef:ID,\n  $actionPage:Int!,\n  $tracking:TrackingInput\n){\n  addActionContact(\n    actionPageId: $actionPage, \n    action: $action,\n    contactRef:$contactRef,\n    contact:$contact,\n    privacy:$privacy,\n    tracking:$tracking\n  ){contactRef,firstName}\n  }\n",
   "extensions": {"captcha": "captcha-response-1234567"},
   "variables": {
-    "actionPage": 49,
+    "actionPage": 3,
     "action": {
       "actionType": "test",
-      "fields": [{ "key": "test", "value": "test" }]
+      "customFields": {"foo": "Bar"}
     },
     "contact": {
     "birthDate": "1970-01-01",
