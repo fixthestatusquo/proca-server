@@ -27,7 +27,7 @@ defmodule Proca.MixProject do
   def application do
     [
       mod: {Proca.Application, []},
-      extra_applications: [:logger, :runtime_tools, :absinthe_plug, :sentry]
+      extra_applications: [:logger, :runtime_tools, :absinthe_plug, :sentry, :ecto_trail]
     ]
   end
 
@@ -50,6 +50,7 @@ defmodule Proca.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},
+      {:ecto_trail, "~> 0.4"},
       {:money, "~> 1.4"},
       {:ex2ms, "~> 1.0"},
       {:phoenix_html, "~> 2.11"},
