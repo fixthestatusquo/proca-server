@@ -92,6 +92,9 @@ defmodule ProcaWeb.Resolvers.Captcha do
           :ok ->
             resolution
 
+          {:ok, meta} ->
+            %{resolution | private: Map.put(resolution.private, :captcha_meta, meta)}
+
           {:error, msg} ->
             resolution
             |> Resolution.put_result({:error, msg_ext(msg, "bad_captcha")})

@@ -4,6 +4,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
   import Ecto.Query
   import Ecto.Changeset
   alias Proca.Factory
+  alias Absinthe.Resolution
 
   use Proca.TestEmailBackend
 
@@ -190,7 +191,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
           contact: contact,
           privacy: %{opt_in: opt_in}
         },
-        %{context: %{}, extensions: %{}}
+        %Resolution{context: %{}, extensions: %{}}
       )
 
     Proca.Server.Processing.sync()

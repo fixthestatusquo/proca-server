@@ -11,8 +11,11 @@ defmodule Proca.Service.Procaptcha do
 
   def verify(code) do
     case Proca.Service.json_request(nil, url(), form: [response: code]) do
-      {:ok, 200, %{"success" => true}} ->
-        :ok
+      {:ok, 200, ret = %{"success" => true}} ->
+        case ret do
+          %{"method" => method} -> {:ok, %{method: method}}
+          _ -> :ok
+        end
 
       {:ok, 200, %{"success" => false, "reason" => reason}} ->
         {:error, error_message(reason)}

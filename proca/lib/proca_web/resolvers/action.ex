@@ -119,15 +119,7 @@ defmodule ProcaWeb.Resolvers.Action do
          |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
            Helper.validate(ActionPage.new_data(contact, action_page))
          end)
-         |> Multi.run(:captcha, fn _repo, _ ->
-           case ProcaWeb.Resolvers.Captcha.verify(resolution) do
-             resolution = %{state: :resolved} ->
-               {:error, resolution.errors}
-
-             _ ->
-               {:ok, Map.has_key?(resolution.extensions, :captcha)}
-           end
-         end)
+         |> check_captcha(resolution)
          |> Multi.run(:source, fn _repo, _ ->
            get_tracking(params, get_in(context, [:headers, "referer"]))
          end)
@@ -157,7 +149,8 @@ defmodule ProcaWeb.Resolvers.Action do
            {:ok, link_references(supporter, params)}
          end)
          |> Repo.transaction_and_notify(:add_action_contact, all_error: true) do
-      {:ok, %{supporter: supporter, action: action}} ->
+      {:ok, result = %{supporter: supporter}} ->
+        audit_captcha(result)
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
@@ -219,4 +212,32 @@ defmodule ProcaWeb.Resolvers.Action do
       _ -> {:error, "ActionPage or contact not found"}
     end
   end
+
+  defp check_captcha(multi, resolution) do
+    multi
+    |> Multi.run(:captcha, fn _repo, _ ->
+      case ProcaWeb.Resolvers.Captcha.verify(resolution) do
+        resolution = %{state: :resolved} ->
+          {:error, resolution.errors}
+
+        resolution ->
+          {:ok, Map.get(resolution.private, :captcha_meta)}
+      end
+    end)
+  end
+
+  defp audit_captcha(%{
+         captcha_meta: meta,
+         supporter: %{id: sid, fingerprint: fpr},
+         action: %{id: aid}
+       }) do
+    Repo.insert(%EctoTrail.Changelog{
+      actor_id: Integer.to_string(sid),
+      resource: "captcha_actions",
+      resource_id: Integer.to_string(aid),
+      changeset: meta
+    })
+  end
+
+  defp audit_captcha(_meta), do: nil
 end

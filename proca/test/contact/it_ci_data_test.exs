@@ -101,7 +101,7 @@ defmodule ItCiDataTest do
             lead_opt_in: false
           }
         },
-        %{context: %{}, extensions: %{}}
+        %Absinthe.Resolution{context: %{}, extensions: %{}}
       )
   end
 
