@@ -12,7 +12,9 @@ defmodule Proca.Action.Message do
     field :opened, :boolean, default: false
     field :clicked, :boolean, default: false
     field :dupe_rank, :integer
-    # XXX add dupe rank?
+
+    # files in storage service
+    field :files, {:array, :string}, default: []
 
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
@@ -36,9 +38,11 @@ defmodule Proca.Action.Message do
       :sent,
       :delivered,
       :opened,
-      :clicked
+      :clicked,
+      :files
     ])
     |> change(assocs)
+    |> validate_format_many(:files, ~r/^[-0-9a-zA-Z!_.*'()']$/)
     |> foreign_key_constraint(:target,
       name: :messages_target_id_fkey,
       message: "target to messages association violated"
@@ -56,7 +60,8 @@ defmodule Proca.Action.Message do
         Enum.map(targets, fn t ->
           %{
             target_id: t,
-            message_content: message_content
+            message_content: message_content,
+            files: Map.get(attrs, :files, [])
           }
         end)
 
@@ -130,6 +135,26 @@ defmodule Proca.Action.Message do
         :click ->
           Repo.update!(change(message, clicked: true, opened: true, delivered: true))
       end
+    end
+  end
+
+  def validate_format_many(changeset, field, format) do
+    case get_change(changeset, field) do
+      vals when is_list(vals) ->
+        Enum.reduce(
+          Enum.with_index(vals),
+          changeset,
+          fn {v, i}, ch ->
+            validate_change(ch, field, {:format, format}, fn _, _ ->
+              if v =~ format,
+                do: [],
+                else: [{field, {"files.#{i} has invalid format", [validation: :format]}}]
+            end)
+          end
+        )
+
+      _ ->
+        changeset
     end
   end
 end
