@@ -291,6 +291,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
     @desc "Target ids"
     field :targets, non_null(list_of(non_null(:string)))
+
+    @desc "Files to attach (images allowed)"
+    field :files, list_of(non_null(:string))
   end
 
   object :donation do
