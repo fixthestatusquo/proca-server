@@ -13,6 +13,7 @@ from proca.query import *
 from yaspin import yaspin
 from gql import gql
 from proca.cmd.org import CONTACT_SCHEMA_CHOICE
+from datetime import datetime, timedelta
 
 from termcolor import colored, cprint
 
@@ -96,6 +97,49 @@ def set(ctx, id, name, identifier, external_id, rename, title, contact_schema, c
 
     print(format(campaign))
 
+
+MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S']
+
+@click.command("campaign:mtt")
+@click.argument('identifier', default=None, required=False)
+@id_options
+@click.option('-I', '--external-id', help="External ID")
+@click.option('-s', '--start', help="start of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
+@click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
+@click.option('-t', '--test-email', help="send testing messages to this email")
+@click.option('-D', '--disable', is_flag=True, help="disable MTT")
+@click.pass_obj
+def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable):
+    """
+    Update campaign MTT settings
+    """
+    if start is None and end is None and test_email is None:
+        return
+
+    if external_id is None:
+        id, name = guess_identifier(id, name, identifier)
+
+    mtt = {}
+    if start:
+        if start.hour == 0 and start.minute == 0:
+            start += timedelta(hours=9)
+        mtt['startAt'] = start.isoformat("T", 'seconds') + 'Z'
+
+    if end:
+        if end.hour == 0 and end.minute == 0:
+            end += timedelta(hours=18)
+        mtt['endAt'] = end.isoformat("T", 'seconds') + 'Z'
+
+    if test_email:
+        mtt['testEmail'] = test_email
+
+    if disable:
+        mtt = None
+
+    campaign = update_campaign(ctx.client, id, name, external_id, {'mtt': mtt})
+
+    print(format(campaign))
+
 @explain_error("fetching org's campaigns")
 def org_campaigns(client, org_name):
     query = gql("""
@@ -156,9 +200,11 @@ def update_campaign(client, id, name, external_id, input):
     mutation UpdateCampaign($id: Int, $name: String, $externalid: Int, $input: CampaignInput!) {
       updateCampaign(id: $id, name: $name, externalId: $externalid, input: $input) {
         ...campaignData
+        ...mttData
+        org { name title }
       }
     }
-    """ + campaignData
+    """ + campaignData + mttData
     query = gql(query)
 
     data = client.execute(query, **vars(id=id, name=name, externalid=external_id, input=input))
