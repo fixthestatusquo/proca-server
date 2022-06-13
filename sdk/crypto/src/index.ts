@@ -3,20 +3,25 @@ import {decodeBase64, encodeUTF8} from 'tweetnacl-util'
 import base64url from 'base64url'
 import lo from "lodash"
 import {KeyStore, PersonalInfo} from './types'
-export {PublicKey, KeyStore, PersonalInfo} from './types'
-export {loadKeyStoreFromFile, storeKeyStoreToFile, loadKeyStoreFromString} from './utils'
+export {PublicKey, KeyPair, KeyStore, PersonalInfo} from './types'
+export {loadKeyStoreFromFile, loadKeyStoreFromString, storeKeyStoreToFile, storeKeyStoreToString} from './utils'
 
 type KeyJson = {
   private?: string
 }
 
 export function addKeysToKeyStore(keys: any, ks : KeyStore) : true  {
+  const keySet = new Set(ks.keys.map( ({public}) => public )
+
   if (typeof keys !== "object") 
     throw new Error("key store must be object")
 
   for (let [key, value] of Object.entries(keys as Record<string, KeyJson>)) {
     if (typeof key !== "string")
       throw new Error("keys must be a map keyed by public key")
+
+    if (keySet.has(key))
+      continue
 
     if (typeof value === "object" && 
         'private' in value && 

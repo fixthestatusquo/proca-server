@@ -14,13 +14,19 @@ export function loadKeyStoreFromFile(filename : string) : KeyStore {
 }
 
 export function storeKeyStoreToFile(ks : KeyStore, filename : string | undefined) {
+  const content = storeKeyStoreToString(ks)
+  writeFileSync(filename || ks.filename, content, {mode: 0o600})
+}
+
+export function storeKeyStoreToString(ks: KeyStore): string {
   const data = ks.keys.reduce((agg : KeyStoreFile, k) => {
     agg[k.public] = {private: k.private}
     return agg
   }, {})
   const content = JSON.stringify(data, null, 2)
-  writeFileSync(filename || ks.filename, content, {mode: 0o600})
-}
+  return content;
+};
+
 
 export function loadKeyStoreFromString(json : string) : KeyStore {
   const ks : KeyStore = {
