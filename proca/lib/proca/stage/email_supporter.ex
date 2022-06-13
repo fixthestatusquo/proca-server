@@ -230,13 +230,20 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   defp add_supporter_confirm(email = %Email{assigns: %{ref: ref, action_id: action_id}}) do
+    confirm_link = supporter_link(action_id, ref, :confirm)
+    reject_link = supporter_link(action_id, ref, :reject)
+
     EmailMerge.put_assigns(email,
-      confirm_link: supporter_link(action_id, ref, :confirm),
-      reject_link: supporter_link(action_id, ref, :reject)
+      confirm_link: confirm_link,
+      doi_link: confirm_link,
+      reject_link: reject_link
     )
   end
 
   defp add_doi_link(email = %Email{assigns: %{ref: ref, action_id: action_id}}) do
-    EmailMerge.put_assigns(email, doi_link: double_opt_in_link(action_id, ref))
+    doi_link = double_opt_in_link(action_id, ref)
+
+    email
+    |> EmailMerge.put_assigns(doi_link: doi_link, confirm_link: doi_link)
   end
 end
