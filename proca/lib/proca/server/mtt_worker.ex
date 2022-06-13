@@ -205,6 +205,7 @@ defmodule Proca.Server.MTTWorker do
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
             |> EmailMerge.put_campaign(campaign)
             |> EmailMerge.put_action(e.action)
+            |> EmailMerge.put_target(e.target)
           end
 
         case EmailBackend.deliver(batch, org, templates[locale]) do

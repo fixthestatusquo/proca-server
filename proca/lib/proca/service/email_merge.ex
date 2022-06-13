@@ -24,7 +24,7 @@ defmodule Proca.Service.EmailMerge do
   alias Swoosh.Email
   import Swoosh.Email, only: [assign: 3]
 
-  alias Proca.{Action, Supporter, ActionPage, Campaign, Org}
+  alias Proca.{Action, Supporter, ActionPage, Campaign, Org, Target}
 
   # action = Repo.preload(action, [:supporter, action_page: :org, campaign: :org])
 
@@ -71,6 +71,11 @@ defmodule Proca.Service.EmailMerge do
   end
 
   def put_action_page(e, _), do: e
+
+  def put_target(%Email{} = email, %Target{} = target) do
+    email
+    |> assign(:target, Map.take(target, [:name, :external_id, :area, :locale, :fields]))
+  end
 
   def put_action_message(%Email{} = email, action_data = %{"schema" => "proca:action:1"}) do
     fields = remove_nil_values(get_in(action_data, ["action", "fields"]) || %{})
