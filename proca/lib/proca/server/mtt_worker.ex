@@ -6,6 +6,7 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.{Action, Campaign, ActionPage, Org}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
+  import Proca.Stage.Support, only: [camel_case_keys: 1]
 
   import Logger
 
@@ -201,11 +202,11 @@ defmodule Proca.Server.MTTWorker do
           for e <- chunk do
             e
             |> make_email(campaign.mtt.test_email)
-            |> put_message_content(e.message_content, templates[locale])
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
             |> EmailMerge.put_campaign(campaign)
             |> EmailMerge.put_action(e.action)
             |> EmailMerge.put_target(e.target)
+            |> put_message_content(e.message_content, templates[locale])
           end
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
@@ -254,6 +255,19 @@ defmodule Proca.Server.MTTWorker do
         %Action.MessageContent{subject: subject, body: body},
         _template = nil
       ) do
+    # Render the raw body
+    target_assigns = camel_case_keys(%{target: email.assigns[:target]})
+
+    body =
+      body
+      |> EmailTemplate.compile_string()
+      |> EmailTemplate.render_string(target_assigns)
+
+    subject =
+      subject
+      |> EmailTemplate.compile_string()
+      |> EmailTemplate.render_string(target_assigns)
+
     html_body = Proca.Service.EmailMerge.plain_to_html(body)
 
     email

@@ -218,8 +218,8 @@ defmodule Proca.Factory do
 
   def message_content_factory do
     %Proca.Action.MessageContent{
-      subject: sequence("MTT Subject"),
-      body: sequence("MTT text body")
+      subject: sequence("MTT Subject to {{target.name}}"),
+      body: sequence("MTT text body to {{target.name}}")
     }
   end
 
