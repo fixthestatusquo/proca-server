@@ -15,6 +15,8 @@ export type AuthHeader = {
   authorization: string
 }
 
+export type AuthHeaderFetcher = (() => string | undefined)
+
 export function basicAuth(cred : BasicAuth) : AuthHeader {
   if (!cred.username || !cred.password) {
     throw new Error("@proca/api: missing parameters for basicAuth({username, password})")

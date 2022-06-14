@@ -6,7 +6,8 @@ export {
   tokenAuth,
   BasicAuth,
   TokenAuth,
-  AuthHeader
+  AuthHeader,
+  AuthHeaderFetcher
 } from './auth'
 
 // Api operation primitives

@@ -163,6 +163,11 @@ export type AddressInput = {
   streetNumber?: Maybe<Scalars['String']>;
 };
 
+/** Api token metadata */
+export type ApiToken = {
+  expiresAt: Scalars['NaiveDateTime'];
+};
+
 /** Count of actions for particular action type */
 export type AreaCount = {
   /** area */
@@ -396,6 +401,14 @@ export enum EmailStatus {
   Spam = 'SPAM',
   Unsub = 'UNSUB'
 }
+
+export type EmailTemplateInput = {
+  name: Scalars['String'];
+  locale?: Maybe<Scalars['String']>;
+  subject?: Maybe<Scalars['String']>;
+  html?: Maybe<Scalars['String']>;
+  text?: Maybe<Scalars['String']>;
+};
 
 export type GenKeyInput = {
   name: Scalars['String'];
@@ -660,6 +673,7 @@ export type PrivateTarget = Target & {
   id: Scalars['String'];
   name: Scalars['String'];
   externalId: Scalars['String'];
+  locale: Maybe<Scalars['String']>;
   area: Maybe<Scalars['String']>;
   fields: Maybe<Scalars['Json']>;
   emails: Array<Maybe<TargetEmail>>;
@@ -674,6 +688,7 @@ export type Processing = {
   customSupporterConfirm: Scalars['Boolean'];
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
+  customEventDeliver: Scalars['Boolean'];
   sqsDeliver: Scalars['Boolean'];
   eventBackend: Maybe<ServiceName>;
   eventProcessing: Scalars['Boolean'];
@@ -748,6 +763,7 @@ export type PublicTarget = Target & {
   id: Scalars['String'];
   name: Scalars['String'];
   externalId: Scalars['String'];
+  locale: Maybe<Scalars['String']>;
   area: Maybe<Scalars['String']>;
   fields: Maybe<Scalars['Json']>;
 };
@@ -794,6 +810,7 @@ export type RootMutationType = {
   deleteOrgUser: Maybe<DeleteUserResult>;
   /** Update (current) user details */
   updateUser: User;
+  resetApiToken: Scalars['String'];
   addOrg: Org;
   deleteOrg: Status;
   updateOrg: PrivateOrg;
@@ -804,6 +821,7 @@ export type RootMutationType = {
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  upsertTemplate: Maybe<Status>;
   upsertService: Service;
   addStripePaymentIntent: Scalars['Json'];
   addStripeSubscription: Scalars['Json'];
@@ -975,6 +993,7 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   customSupporterConfirm?: Maybe<Scalars['Boolean']>;
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
+  customEventDeliver?: Maybe<Scalars['Boolean']>;
   sqsDeliver?: Maybe<Scalars['Boolean']>;
   eventBackend?: Maybe<ServiceName>;
   eventProcessing?: Maybe<Scalars['Boolean']>;
@@ -1004,6 +1023,12 @@ export type RootMutationTypeActivateKeyArgs = {
 };
 
 
+export type RootMutationTypeUpsertTemplateArgs = {
+  orgName: Scalars['String'];
+  input: EmailTemplateInput;
+};
+
+
 export type RootMutationTypeUpsertServiceArgs = {
   orgName: Scalars['String'];
   id?: Maybe<Scalars['Int']>;
@@ -1015,6 +1040,7 @@ export type RootMutationTypeAddStripePaymentIntentArgs = {
   actionPageId: Scalars['Int'];
   input: StripePaymentIntentInput;
   contactRef?: Maybe<Scalars['ID']>;
+  testing?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1022,6 +1048,7 @@ export type RootMutationTypeAddStripeSubscriptionArgs = {
   actionPageId: Scalars['Int'];
   input: StripeSubscriptionInput;
   contactRef?: Maybe<Scalars['ID']>;
+  testing?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1031,6 +1058,7 @@ export type RootMutationTypeAddStripeObjectArgs = {
   subscription?: Maybe<Scalars['Json']>;
   customer?: Maybe<Scalars['Json']>;
   price?: Maybe<Scalars['Json']>;
+  testing?: Maybe<Scalars['Boolean']>;
 };
 
 
@@ -1180,6 +1208,7 @@ export enum ServiceName {
   Mailjet = 'MAILJET',
   Wordpress = 'WORDPRESS',
   Stripe = 'STRIPE',
+  TestStripe = 'TEST_STRIPE',
   Webhook = 'WEBHOOK'
 }
 
@@ -1208,6 +1237,7 @@ export type Target = {
   id: Scalars['String'];
   name: Scalars['String'];
   externalId: Scalars['String'];
+  locale: Maybe<Scalars['String']>;
   area: Maybe<Scalars['String']>;
   fields: Maybe<Scalars['Json']>;
 };
@@ -1224,8 +1254,9 @@ export type TargetEmailInput = {
 
 export type TargetInput = {
   name?: Maybe<Scalars['String']>;
-  area?: Maybe<Scalars['String']>;
   externalId: Scalars['String'];
+  locale?: Maybe<Scalars['String']>;
+  area?: Maybe<Scalars['String']>;
   fields?: Maybe<Scalars['Json']>;
   emails?: Maybe<Array<TargetEmailInput>>;
 };
@@ -1254,6 +1285,7 @@ export type User = {
   phone: Maybe<Scalars['String']>;
   pictureUrl: Maybe<Scalars['String']>;
   jobTitle: Maybe<Scalars['String']>;
+  apiToken: Maybe<ApiToken>;
   isAdmin: Scalars['Boolean'];
   roles: Array<UserRole>;
 };

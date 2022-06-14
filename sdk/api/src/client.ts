@@ -21,7 +21,7 @@ import createAbsintheExchange from './absintheExchange'
 import { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { DefinitionNode } from 'graphql'
 
-import {AuthHeader} from './auth'
+import { AuthHeader, AuthHeaderFetcher, tokenAuth} from './auth'
 
 type Extensions = {
   captcha?: string
@@ -87,7 +87,24 @@ function apiUrlsConfig (url: string, options?: LinkOptions) {
   
 }
 
-export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
+function fetchOptions(auth? : AuthHeader | AuthHeaderFetcher) : RequestInit | (() => RequestInit) {
+  if (!auth) return {};
+
+  if (typeof auth === 'function') {
+    return () => {
+      const token = auth();
+      if (token !== null) {
+        return {headers: tokenAuth({token})}
+      } else {
+        return {}
+      }
+    }
+  } else {
+    return {headers: auth || {}}
+  }
+}
+
+export function link(url: string, auth?: AuthHeader | AuthHeaderFetcher, options?: LinkOptions) {
   const config = apiUrlsConfig(url, options);
 
   const absintheExchange = createAbsintheExchange(config.wsUrl)
@@ -95,18 +112,18 @@ export function link(url: string, auth?: AuthHeader, options?: LinkOptions) {
   const exchanges = [ dedupExchange, fetchExchange, absintheExchange]
   if (options?.exchanges) exchanges.splice(0, 0, ...options.exchanges)
 
-  const link = createClient({url: config.url, fetchOptions: {headers: auth || {}}, exchanges})
+  const link = createClient({url: config.url, fetchOptions: fetchOptions(auth), exchanges})
 
   return link
 }
 
-export function httpLink(url: string, auth?: AuthHeader, options?: LinkOptions) {
+export function httpLink(url: string, auth?: AuthHeader | AuthHeaderFetcher, options?: LinkOptions) {
   const config = apiUrlsConfig(url, options)
 
   const exchanges = [dedupExchange, fetchExchange]
   if (options?.exchanges) exchanges.splice(0, 0, ...options.exchanges)
 
-  const httpLink = createClient({url: config.url, fetchOptions: {headers: auth || {}}, exchanges})
+  const httpLink = createClient({url: config.url, fetchOptions: fetchOptions(auth), exchanges})
   return httpLink
 }
 
