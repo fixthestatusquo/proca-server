@@ -62,6 +62,7 @@ actionPageStatus = """
     ... on PrivateActionPage {
         status
         extraSupporters
+        supporterConfirmTemplate
     }
     }
     """
