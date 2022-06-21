@@ -103,8 +103,11 @@ def delete(ctx, identifier, id, name):
 @click.option('-t', '--template', help="enable thank you email with this template")
 @click.option('-T', '--no-thankyou', help="disable thank you emal", is_flag=True)
 @click.option('-f', '--config', type=click.File('r'))
+@click.option('-C', '--supporter-confirm-template', help="supporter confirm template override")
+@click.option('--no-supporter-confirm-template', help="disable supporter confirm override", is_flag=True)
 @click.pass_obj
-def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, no_thankyou, config):
+def set(ctx, id, name, identifier, rename, locale, extra, deliver, \
+        template, no_thankyou, config, supporter_confirm_template, no_supporter_confirm_template):
     """
     Update settings of action page
     """
@@ -125,6 +128,10 @@ def set(ctx, id, name, identifier, rename, locale, extra, deliver, template, no_
         input["thankYouTemplate"] = template
     if no_thankyou:
         input["thankYouTemplate"] = None
+    if supporter_confirm_template:
+        input["supporterConfirmTemplate"] = supporter_confirm_template
+    if no_supporter_confirm_template:
+        input["supporterConfirmTemplate"] = None
     if config:
         config_json = config.read()
         input["config"] = config_json
@@ -310,6 +317,9 @@ def format(page, show_campaign=True, show_org=True):
 
         if page['thankYouTemplate']:
             details += '|tmpl: ' + page['thankYouTemplate']
+
+        if page['supporterConfirmTemplate']:
+            details += '|confirm tmpl: ' + page['supporterConfirmTemplate']
 
         if page['extraSupporters']:
             details += '|extra: ' + str(page['extraSupporters'])

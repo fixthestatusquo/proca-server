@@ -20,6 +20,7 @@ def me(ctx):
     """
     Display information about current user.
     """
+
     with yaspin(spinner, text="Who am I?"):
         user = current_user(ctx.client)
 
