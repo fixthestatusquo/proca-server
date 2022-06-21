@@ -197,6 +197,18 @@ defmodule Proca.Server.MTTWorker do
       |> Enum.into(%{})
 
     for {locale, msgs} <- msgs_per_locale do
+      # for testing, just send the first one
+      msgs =
+        case msgs do
+          [%{action: %{testing: true}} = m | rest] ->
+            {testing, real} = Enum.split_with(rest, & &1.action.testing)
+            Message.mark_all(testing, :delivered)
+            [m | real]
+
+          ms ->
+            ms
+        end
+
       for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(org)) do
         batch =
           for e <- chunk do
