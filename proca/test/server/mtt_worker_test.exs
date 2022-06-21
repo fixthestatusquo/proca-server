@@ -158,7 +158,8 @@ defmodule Proca.Server.MTTWorkerTest do
 
       mbox = Proca.TestEmailBackend.mailbox(test_email)
 
-      assert length(mbox) == 20
+      # limit to one per locale!
+      assert length(mbox) == 1
     end
 
     test "live sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
