@@ -309,12 +309,6 @@ def format(page, show_campaign=True, show_org=True):
 
     details = ''
     if '__typename' in page and page['__typename'] == 'PrivateActionPage':
-        status = page['status']
-        if status == 'ACTIVE':
-            status = R(status)
-
-        details += f"|{status}"
-
         if page['thankYouTemplate']:
             details += '|tmpl: ' + page['thankYouTemplate']
 
@@ -323,5 +317,16 @@ def format(page, show_campaign=True, show_org=True):
 
         if page['extraSupporters']:
             details += '|extra: ' + str(page['extraSupporters'])
+
+        status = page['status']
+        if status == 'ACTIVE':
+            status = R(status)
+        details += f"|{status}"
+
+        try:
+            loc = page['location']
+            details += f"|{loc}"
+        except KeyError:
+            pass
 
     return bold(f"{ids:<4} ") + rainbow(f"{name}|{locale}|{details}")
