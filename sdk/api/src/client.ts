@@ -93,7 +93,7 @@ function fetchOptions(auth? : AuthHeader | AuthHeaderFetcher) : RequestInit | ((
   if (typeof auth === 'function') {
     return () => {
       const token = auth();
-      if (token !== null) {
+      if (token) {
         return {headers: tokenAuth({token})}
       } else {
         return {}
