@@ -15,9 +15,9 @@ defmodule Proca.Service.EmailMerge do
   - actionPage.name
   - actionPage.locale
   - actionId
-  - trackingCampaign - the utm_campaign of action
-  - trackingMedium - the utm_medium
-  - trackingSource - the utm_source
+  - tracking.campaign - the utm_campaign of action
+  - tracking.medium - the utm_medium
+  - tracking.source - the utm_source
   - custom fields - custom fields (camel cased!)
   """
 
