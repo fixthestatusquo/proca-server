@@ -9,7 +9,7 @@ from proca.query import *
 import proca.cmd.org
 import json
 
-SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE']
+SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE', 'SYSTEM']
 SERVICE_NAMES_CHOICE = click.Choice(SERVICE_NAMES, case_sensitive=False)
 
 @click.command("service")
@@ -62,8 +62,9 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
 #@click.option("-i", "--id", type=int, help="Service ID")
 @click.option("-f", "--from", 'frm', help="Sender email (SMTP From header)")
 @click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable email service", is_flag=True)
 @click.pass_obj
-def email(ctx, org, frm, name):
+def email(ctx, org, frm, name, none):
     """
     Configure email-related options for org.
     """
@@ -71,14 +72,17 @@ def email(ctx, org, frm, name):
         p = data["processing"]
         print(rainbow(f'{p["emailBackend"] or "NO BACKEND"}|FROM: {p["emailFrom"]}'))
 
-    if not name and not frm:
+    if not name and not frm and not none:
         org_data = proca.cmd.org.get_org(ctx.client, org)
         display(org_data)
     else:
-        ip = {
-            "emailBackend": name,
-            "emailFrom": frm
-        }
+        ip = {}
+        if name:
+            ip['emailBackend'] = name
+        if none:
+            ip['emailBackend'] = Null
+        if frm:
+            ip['emailFrom'] = frm
         org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
         display(org_data)
 

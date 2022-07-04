@@ -100,6 +100,17 @@ defmodule Proca.Org do
     end
   end
 
+  def cast_email_backend(chset, _org, %{email_backend: :system}) do
+    case Proca.Org.one([:instance] ++ [preload: [:email_backend]]) do
+      %{email_backend: %{id: id}} ->
+        chset
+        |> put_change(:email_backend_id, id)
+
+      _e ->
+        add_error(chset, :email_backend, "cannot inherit system service")
+    end
+  end
+
   def cast_email_backend(chset, _org, %{email_backend: %Proca.Service{id: id}}) do
     chset
     |> put_change(:email_backend_id, id)
