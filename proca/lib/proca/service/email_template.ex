@@ -138,9 +138,15 @@ defmodule Proca.Service.EmailTemplate do
           %MTT{} = mtt -> Proca.Repo.preload(mtt, campaign: :org).campaign.org
         end
 
-      case EmailTemplateDirectory.by_name_reload(org, template) do
-        {:ok, _} -> []
-        :not_found -> [{f, "Template not found"}]
+      case org.email_backend_id do
+        nil ->
+          []
+
+        _id ->
+          case EmailTemplateDirectory.by_name_reload(org, template) do
+            {:ok, _} -> []
+            :not_found -> [{f, "Template not found"}]
+          end
       end
     end)
   end
