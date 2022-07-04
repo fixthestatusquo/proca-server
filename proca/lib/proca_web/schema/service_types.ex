@@ -88,6 +88,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:stripe)
     value(:test_stripe)
     value(:webhook)
+    # inherit from instance
+    value(:system)
   end
 
   object :service do

@@ -123,7 +123,7 @@ class Null:
 
 def vars(**kv):
     """
-    A shorthand to product variable_values for gql.client.query - it will filter out nil values
+    A shorthand to product variable_values for gql.client.query - it will filter out nil values. Use Null value above to pass NULL to API
     """
 
     def allow_null(z):
