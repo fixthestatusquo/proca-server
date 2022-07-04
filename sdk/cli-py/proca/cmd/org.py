@@ -53,7 +53,8 @@ def add(ctx, name, title, default):
 @click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE, help="Personal data schema/category")
 @click.option('-C', '--supporter-confirm/--no-supporter-confirm', is_flag=True, default=None, help="Confirm contact data by email?")
 @click.option('--custom-supporter-confirm/--no-custom-supporter-confirm', is_flag=True, default=None, help="Put actions for supporter confirm on custom queue")
-@click.option('-T', '--supporter-confirm-template', help="Contact confirmation email template")
+@click.option('-t', '--supporter-confirm-template', help="Contact confirmation email template")
+@click.option('-T', '--no-supporter-confirm-template', help="Disable supporter confirm template", is_flag=True)
 @click.option('-D', '--doi/--no-doi', default=None, help="Send thenk you email only to do DOI")
 @click.option('-f', '--config', type=click.File('r'))
 @click.option('--custom-deliver/--no-custom-deliver', is_flag=True, default=None, help="Deliver actions to custom queue")
@@ -67,6 +68,7 @@ def set(ctx,
         supporter_confirm,
         custom_supporter_confirm,
         supporter_confirm_template,
+        no_supporter_confirm_template,
         doi,
         config,
         custom_deliver,
@@ -92,8 +94,11 @@ def set(ctx,
         proc_input['supporterConfirm'] = supporter_confirm
     if custom_supporter_confirm is not None:
         proc_input['customSupporterConfirm'] = custom_supporter_confirm
+
     if supporter_confirm_template:
         proc_input['supporterConfirmTemplate'] = supporter_confirm_template
+    if no_supporter_confirm_template:
+        proc_input['supporterConfirmTemplate'] = Null
     if doi is not None:
         proc_input['doiThankYou'] = doi
 
