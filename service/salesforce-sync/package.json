@@ -1,5 +1,5 @@
 {
-  "version": "0.2.6",
+  "version": "0.2.7",
   "license": "AGPL3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
