@@ -101,7 +101,7 @@ def delete(ctx, identifier, id, name):
 @click.option('-x', '--extra', type=int)
 @click.option('-d/-D', '--deliver/--no-deliver', default=None)
 @click.option('-t', '--template', help="enable thank you email with this template")
-@click.option('-T', '--no-thankyou', help="disable thank you emal", is_flag=True)
+@click.option('-T', '--no-thankyou', help="disable thank you email", is_flag=True)
 @click.option('-f', '--config', type=click.File('r'))
 @click.option('-C', '--supporter-confirm-template', help="supporter confirm template override")
 @click.option('--no-supporter-confirm-template', help="disable supporter confirm override", is_flag=True)
