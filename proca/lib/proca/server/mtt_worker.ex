@@ -3,7 +3,7 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign, ActionPage, Org}
+  alias Proca.{Action, Campaign, ActionPage, Org, Users.User}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
@@ -245,7 +245,10 @@ defmodule Proca.Server.MTTWorker do
       ) do
     email_to =
       if is_test do
-        %Proca.TargetEmail{email: test_email, email_status: :none}
+        case User.one(email: supporter.email) do
+          nil -> %Proca.TargetEmail{email: test_email, email_status: :none}
+          %User{} -> %Proca.TargetEmail{email: supporter.email, email_status: :none}
+        end
       else
         Enum.find(message.target.emails, fn email_to ->
           email_to.email_status == :none
