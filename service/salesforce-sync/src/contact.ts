@@ -6,7 +6,7 @@ import countries from 'i18n-iso-countries'
 import enCountries from 'i18n-iso-countries/langs/en.json'
 
 enCountries.countries['US'].shift() // remove the United States of America - Salesforce does not understand it - leave United States
-
+enCountries.countries['VE'] = 'Venezuela, Bolivarian Republic of' // srsly Salesforce....
 countries.registerLocale(enCountries)
 
 //                                              allow custom fields vvv
