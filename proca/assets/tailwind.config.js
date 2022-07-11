@@ -1,9 +1,9 @@
 module.exports = {
-  purge: [
+  content: [
     './js/**/*.js',
+    '../lib/*_web.ex',
     '../lib/*_web/**/*.*eex'
   ],
-  darkMode: false, // or 'media' or 'class'
   theme: {
     fontFamily: {
       sans: ['Titillium Web', 'sans-serif'],
@@ -24,8 +24,6 @@ module.exports = {
       }
     }
   },
-  variants: {
-    extend: {},
-  },
-  plugins: [],
+  plugins: [
+  ],
 }

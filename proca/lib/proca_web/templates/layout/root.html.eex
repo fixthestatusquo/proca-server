@@ -7,7 +7,8 @@
     <title><%= assigns[:page_title] || "Proca" %></title>
 
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/fontawesome/all.min.css") %>">
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>"/>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/stars.css") %>"/>
 
     <%= csrf_meta_tag() %>
   </head>
@@ -22,6 +23,6 @@
 
     <%= render "_stars.html", assigns %>
 
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
   </body>
 </html>

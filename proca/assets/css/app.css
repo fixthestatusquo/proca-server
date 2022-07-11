@@ -1,5 +1,4 @@
 /* This file is for your main application css. */
-/* @import "./phoenix.css"; */
 
 @tailwind base;
 
@@ -7,10 +6,7 @@
 
 @tailwind utilities;
 
-@import "./stars.scss";
-@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,900;1,200;1,300;1,400&display=swap');
-
-@layer components { 
+@layer components {
   .btn {
     @apply text-white px-3 py-2 rounded-md text-sm font-normal;
   }

@@ -81,7 +81,9 @@ config :sentry,
   root_source_code_paths: [File.cwd!()],
   capture_log_messages: true
 
-config :proca, ProcaWeb.Resolvers.ReportError, enable: false
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: false,
+  cleartext: []
 
 config :logger,
   level: :info
@@ -91,6 +93,27 @@ config :money,
 
 config :ecto_trail,
   table_name: "audit_log"
+
+# ASSETS
+# Configure esbuild (the version is required)
+config :esbuild,
+  version: "0.12.18",
+  default: [
+    args: ~w(js/app.js --bundle --target=es2016 --outdir=../priv/static/assets),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+
+config :tailwind,
+  version: "3.1.4",
+  default: [
+    args: ~w(
+    --config=tailwind.config.js
+    --input=css/app.css
+    --output=../priv/static/assets/app.css
+  ),
+    cd: Path.expand("../assets", __DIR__)
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
