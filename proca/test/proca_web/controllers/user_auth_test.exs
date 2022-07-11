@@ -72,10 +72,7 @@ defmodule ProcaWeb.UserAuthTest do
       |> put_session(:live_socket_id, live_socket_id)
       |> UserAuth.log_out_user()
 
-      assert_receive %Phoenix.Socket.Broadcast{
-        event: "disconnect",
-        topic: "users_sessions:abcdef-token"
-      }
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect", topic: ^live_socket_id}
     end
 
     test "works even if user is already logged out", %{conn: conn} do
@@ -157,7 +154,7 @@ defmodule ProcaWeb.UserAuthTest do
       assert get_session(halted_conn, :user_return_to) == "/foo?bar=baz"
 
       halted_conn =
-        %{conn | request_path: ["foo"], query_string: "bar", method: "POST"}
+        %{conn | path_info: ["foo"], query_string: "bar", method: "POST"}
         |> fetch_flash()
         |> UserAuth.require_authenticated_user([])
 
