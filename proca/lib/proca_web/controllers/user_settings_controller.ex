@@ -2,6 +2,7 @@ defmodule ProcaWeb.UserSettingsController do
   use ProcaWeb, :controller
   plug :put_layout, "entry.html"
 
+  alias ProcaWeb.UserAuth
   alias Proca.Users
 
   plug :assign_email_and_password_changesets
@@ -43,7 +44,7 @@ defmodule ProcaWeb.UserSettingsController do
         conn
         |> put_flash(:info, "Password updated successfully.")
         |> put_session(:user_return_to, Routes.user_settings_path(conn, :edit))
-        |> log_in_user(user)
+        |> UserAuth.log_in_user(user)
 
       {:error, changeset} ->
         render(conn, "edit.html", password_changeset: changeset)

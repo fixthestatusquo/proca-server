@@ -13,11 +13,10 @@ defmodule ProcaWeb.UserConfirmationController do
     if user = Users.get_user_by_email(email) do
       Users.deliver_user_confirmation_instructions(
         user,
-        &Routes.user_confirmation_url(conn, :confirm, &1)
+        &Routes.user_confirmation_url(conn, :edit, &1)
       )
     end
 
-    # Regardless of the outcome, show an impartial success/error message.
     conn
     |> put_flash(
       :info,
@@ -27,9 +26,13 @@ defmodule ProcaWeb.UserConfirmationController do
     |> redirect(to: "/")
   end
 
+  def edit(conn, %{"token" => token}) do
+    render(conn, "edit.html", token: token)
+  end
+
   # Do not log in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
-  def confirm(conn, %{"token" => token}) do
+  def update(conn, %{"token" => token}) do
     case Users.confirm_user(token) do
       {:ok, _} ->
         conn

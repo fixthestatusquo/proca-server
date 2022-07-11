@@ -17,7 +17,7 @@ defmodule ProcaWeb.UserRegistrationController do
         :ok =
           Users.deliver_user_confirmation_instructions(
             user,
-            &Routes.user_confirmation_url(conn, :confirm, &1)
+            &Routes.user_confirmation_url(conn, :edit, &1)
           )
 
         conn

@@ -31,9 +31,9 @@ defmodule ProcaWeb.UserAuth do
     conn
     |> renew_session()
     |> put_session(:user_token, token)
-    # |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
     |> maybe_write_remember_me_cookie(token, params)
-    |> redirect(external: user_return_to || home_url(conn))
+    |> redirect(to: user_return_to || home_url(conn))
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -81,7 +81,7 @@ defmodule ProcaWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(external: "/")
+    |> redirect(to: "/")
   end
 
   @doc """
@@ -148,7 +148,7 @@ defmodule ProcaWeb.UserAuth do
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(external: sign_in_url(conn))
+      |> redirect(to: Routes.user_session_path(conn, :new))
       |> halt()
     end
   end

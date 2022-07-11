@@ -7,12 +7,11 @@ defmodule Proca.Users.User do
 
   import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4]
 
-  @derive {Inspect, except: [:password]}
   schema "users" do
     field :email, :string
     field :external_id, :string
-    field :password, :string, virtual: true
-    field :hashed_password, :string
+    field :password, :string, virtual: true, redact: true
+    field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
 
     # auth

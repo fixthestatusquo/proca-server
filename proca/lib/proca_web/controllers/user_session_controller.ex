@@ -2,6 +2,7 @@ defmodule ProcaWeb.UserSessionController do
   use ProcaWeb, :controller
   plug :put_layout, "entry.html"
 
+  alias ProcaWeb.UserAuth
   alias Proca.Users
 
   def new(conn, _params) do
@@ -14,6 +15,7 @@ defmodule ProcaWeb.UserSessionController do
     if user = Users.get_user_by_email_and_password(email, password) do
       UserAuth.log_in_user(conn, user, user_params)
     else
+      # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       render(conn, "new.html", error_message: "Invalid email or password")
     end
   end
@@ -21,6 +23,6 @@ defmodule ProcaWeb.UserSessionController do
   def delete(conn, _params) do
     conn
     |> put_flash(:info, "Logged out successfully.")
-    |> log_out_user()
+    |> UserAuth.log_out_user()
   end
 end
