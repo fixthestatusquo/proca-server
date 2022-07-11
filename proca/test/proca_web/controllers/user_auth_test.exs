@@ -141,7 +141,7 @@ defmodule ProcaWeb.UserAuthTest do
 
     test "stores the path to redirect to on GET", %{conn: conn} do
       halted_conn =
-        %{conn | request_path: "/foo", query_string: ""}
+        %{conn | path_info: ["foo"], query_string: ""}
         |> fetch_flash()
         |> UserAuth.require_authenticated_user([])
 
@@ -149,7 +149,7 @@ defmodule ProcaWeb.UserAuthTest do
       assert get_session(halted_conn, :user_return_to) == "/foo"
 
       halted_conn =
-        %{conn | request_path: "/foo", query_string: "bar=baz"}
+        %{conn | path_info: ["foo"], query_string: "bar=baz"}
         |> fetch_flash()
         |> UserAuth.require_authenticated_user([])
 
@@ -157,7 +157,7 @@ defmodule ProcaWeb.UserAuthTest do
       assert get_session(halted_conn, :user_return_to) == "/foo?bar=baz"
 
       halted_conn =
-        %{conn | request_path: "/foo?bar", method: "POST"}
+        %{conn | request_path: ["foo"], query_string: "bar", method: "POST"}
         |> fetch_flash()
         |> UserAuth.require_authenticated_user([])
 
