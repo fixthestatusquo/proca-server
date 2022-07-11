@@ -103,7 +103,7 @@ defmodule ProcaWeb.Resolvers.ReportError do
 
   def censor_bars(a) when is_map(a) do
     for {k, v} <- a, into: %{} do
-      if Enum.member?(["country", "documentType"], k) do
+      if Enum.member?(Application.get_env(:proca, __MODULE__)[:cleartext], k) do
         {k, v}
       else
         {k, censor_bars(v)}
