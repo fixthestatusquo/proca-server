@@ -27,7 +27,7 @@ defmodule ProcaWeb.Endpoint do
     at: "/",
     from: :proca,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(assets css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

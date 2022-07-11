@@ -40,27 +40,27 @@ defmodule Proca.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.5.0"},
+      {:phoenix, "~> 1.6.0"},
       # See below
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_ecto, "~> 4.0"},
-      {:phx_gen_auth, "~> 0.7.0"},
+      {:phoenix_ecto, "~> 4.4.0"},
+      # {:phx_gen_auth, "~> 0.7.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:pbkdf2_elixir, "~> 1.4"},
       {:ecto_sql, "~> 3.1"},
       {:postgrex, "~> 0.15.9"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_trail, "~> 0.4"},
-      {:money, "~> 1.4"},
+      {:money, "~> 1.10"},
       {:ex2ms, "~> 1.0"},
-      {:phoenix_html, "~> 2.11"},
+      {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.2"},
       {:sentry, "~> 8.0"},
       {:plug_cowboy, "~> 2.3"},
       {:absinthe, "1.7.0"},
-      {:absinthe_phoenix, "~> 2.0.1"},
+      {:absinthe_phoenix, "~> 2.0.2"},
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
       {:kcl, "~> 1.3.0"},
@@ -82,9 +82,10 @@ defmodule Proca.MixProject do
       {:json, "~> 1.4.1"},
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
-      {:phoenix_live_view, "~> 0.15.7"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.1.6", runtime: Mix.env() == :dev},
       # TODO: evaluate if we need this
       {:logger_file_backend, "~> 0.0.11"},
       {:mix_systemd, "~> 0.7.3"},
@@ -123,7 +124,13 @@ defmodule Proca.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema"
+      "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema",
+      "assets.deploy": [
+        "cp -r assets/static/* priv/static",
+        "tailwind default --minify",
+        "esbuild default --minify",
+        "phx.digest"
+      ]
     ]
   end
 
