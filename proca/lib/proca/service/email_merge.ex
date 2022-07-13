@@ -1,5 +1,5 @@
 defmodule Proca.Service.EmailMerge do
-  @defmodule """
+  @moduledoc """
   Logic needed to do personalization / merge tags in Proca email system (to supporter, to target).
 
   Partially replace the EmailRecipient logic
@@ -18,6 +18,8 @@ defmodule Proca.Service.EmailMerge do
   - tracking.campaign - the utm_campaign of action
   - tracking.medium - the utm_medium
   - tracking.source - the utm_source
+  - tracking.location - the location of widget
+  - tracking.encodedLocation - url encoded location of widget (can use in query param)
   - custom fields - custom fields (camel cased!)
   """
 
@@ -149,5 +151,31 @@ defmodule Proca.Service.EmailMerge do
       val when is_bitstring(val) ->
         Map.put(map, key2, URI.encode(val, &URI.char_unreserved?/1))
     end
+  end
+
+
+  @doc """
+  Usage:
+
+  put_partial_map(assigns, :locales, "locales.{locale}.emails")
+  """
+  def put_partial_map(map, key, from_map, path, _replacements \\ [])
+
+  def put_partial_map(map, _key, _from_map, nil, _replacements) do
+    map
+  end
+
+  def put_partial_map(map, key, from_map, path, replacements) do
+    path = for {k, v} <- replacements, reduce: path do
+      p -> Enum.map(p, fn s ->
+        if s == "{#{k}}" do
+          v
+        else
+          s
+        end
+      end)
+    end
+
+    Map.put(map, key, get_in(from_map, path))
   end
 end

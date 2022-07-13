@@ -108,6 +108,10 @@ config :proca, Proca,
 
 config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 
+config :proca, Proca.Service.EmailMerge,
+  org_config_locales: split_env.("EMAIL_MERGE_ORG_CONFIG", ~r/[.]/),
+  campaign_config_locales: split_env.("EMAIL_MERGE_CAMPAIGN_CONFIG", ~r/[.]/)
+
 # Configures Elixir's Logger
 config :logger,
   backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],

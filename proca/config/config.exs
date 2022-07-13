@@ -62,6 +62,10 @@ config :proca, Proca.Pipes,
   url: "amqp://proca:proca@localhost/proca",
   ssl_options: nil
 
+config :proca, Proca.Service.EmailMerge,
+  org_config_locales: nil
+  campaign_config_locales: nil
+
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []
 
