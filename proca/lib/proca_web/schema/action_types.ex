@@ -254,9 +254,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   @desc "Tracking codes"
   input_object :tracking_input do
-    field :source, non_null(:string)
-    field :medium, non_null(:string)
-    field :campaign, non_null(:string)
+    field :source, non_null(:string), default_value: "unknown"
+    field :medium, non_null(:string), default_value: "unknown"
+    field :campaign, non_null(:string), default_value: "unknown"
     field :content, :string
 
     @desc "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
