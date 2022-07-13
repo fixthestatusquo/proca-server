@@ -126,7 +126,7 @@ defmodule Proca.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
       "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema",
       "assets.deploy": [
-        "cp -r assets/static/* priv/static",
+        "cmd cp -r assets/static/* priv/static",
         "tailwind default --minify",
         "esbuild default --minify",
         "phx.digest"
