@@ -42,7 +42,7 @@ defmodule Proca.Action.Message do
       :files
     ])
     |> change(assocs)
-    |> validate_format_many(:files, ~r/^[-0-9a-zA-Z!_.*'()']$/)
+    |> validate_format_many(:files, ~r/^[-0-9a-zA-Z!_.*'()'\/]$/)
     |> foreign_key_constraint(:target,
       name: :messages_target_id_fkey,
       message: "target to messages association violated"

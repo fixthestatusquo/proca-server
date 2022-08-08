@@ -18,7 +18,8 @@ defenum(ExternalService,
   stripe: "stripe",
   test_stripe: "test_stripe",
   testmail: "testmail",
-  webhook: "webhook"
+  webhook: "webhook",
+  supabase: "supabase"
 )
 
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)

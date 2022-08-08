@@ -90,6 +90,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:webhook)
     # inherit from instance
     value(:system)
+    value(:supabase)
   end
 
   object :service do

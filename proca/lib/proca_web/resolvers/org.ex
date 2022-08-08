@@ -67,7 +67,7 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing(org, _args, _ctx) do
-    org = Repo.preload(org, [:email_backend, :event_backend])
+    org = Repo.preload(org, [:email_backend, :event_backend, :storage_backend])
 
     email_service =
       case org do
@@ -81,12 +81,19 @@ defmodule ProcaWeb.Resolvers.Org do
         _ -> nil
       end
 
+    storage_service =
+      case org do
+        %Org{storage_backend: %{name: name}} -> name
+        _ -> nil
+      end
+
     # Refactor to use Map.take - watch out sqs name is different
     r =
       %{
         org: org,
         email_backend: email_service,
-        event_backend: event_service
+        event_backend: event_service,
+        storage_backend: storage_service
       }
       |> Map.merge(
         Map.take(

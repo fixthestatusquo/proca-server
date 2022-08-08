@@ -174,4 +174,28 @@ defmodule Proca.Service do
     }
     |> json_request_opts(rest, srv)
   end
+
+  def fetch_file(%Org{storage_backend_id: nil}, _key), do: {:error, :not_supported}
+
+  def fetch_file(%Org{storage_backend: srv}, key), do: fetch_file(srv, key)
+
+  def fetch_file(%Service{name: :supabase} = service, filename) do
+    Service.Supabase.fetch(service, filename)
+  end
+
+  def fetch_files(storage, keys) do
+    for k <- keys, reduce: {:ok, []} do
+      acc ->
+        case acc do
+          {:ok, result} ->
+            case fetch_file(storage, k) do
+              {:ok, bytes} -> {:ok, result ++ [{k, bytes}]}
+              {:error, reason} -> {:error, result ++ [{k, reason}]}
+            end
+
+          {:error, _result} = e ->
+            e
+        end
+    end
+  end
 end

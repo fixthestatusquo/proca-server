@@ -21,7 +21,7 @@ defmodule Proca.Service.EmailMerge do
   - custom fields - custom fields (camel cased!)
   """
 
-  alias Swoosh.Email
+  alias Swoosh.{Email, Attachment}
   import Swoosh.Email, only: [assign: 3]
 
   alias Proca.{Action, Supporter, ActionPage, Campaign, Org, Target}
@@ -131,6 +131,30 @@ defmodule Proca.Service.EmailMerge do
   def put_assigns(eml = %Email{assigns: fields}, [{key, val} | rest]) do
     %{eml | assigns: Map.put(fields, Atom.to_string(key), val)}
     |> put_assigns(rest)
+  end
+
+  def put_files(eml = %Email{}, files) do
+    eml
+    |> Enum.reduce(Enum.with_index(files, 1), fn e, {{filename, data}, ordinal} ->
+      mime_type =
+        case Path.extname(filename) do
+          "." <> ext -> [content_type: "image/" <> String.downcase(ext)]
+          _ -> []
+        end
+
+      Email.attachment(
+        e,
+        Attachment.new(
+          {:data, data},
+          mime_type ++
+            [
+              filename: Path.basename(filename),
+              type: :attachment,
+              cid: "file#{ordinal}"
+            ]
+        )
+      )
+    end)
   end
 
   def plain_to_html(text) do
