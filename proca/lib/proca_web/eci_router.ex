@@ -14,6 +14,7 @@ defmodule ProcaWeb.EciRouter do
 
   pipeline :auth_api do
     plug ProcaWeb.Plugs.BasicAuthPlug
+    plug ProcaWeb.Plugs.TokenAuthPlug
   end
 
   scope "/api" do
