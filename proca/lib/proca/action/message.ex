@@ -14,7 +14,7 @@ defmodule Proca.Action.Message do
     field :dupe_rank, :integer
 
     # files in storage service
-    #field :files, {:array, :string}, default: []
+    field :files, {:array, :string}, default: []
 
     belongs_to :action, Proca.Action
     belongs_to :target, Proca.Target, type: Ecto.UUID
