@@ -35,6 +35,7 @@ defmodule Proca.Org do
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
+    belongs_to :storage_backend, Proca.Service
     field :email_from, :string
 
     # supporter confirm in configuration
@@ -81,6 +82,7 @@ defmodule Proca.Org do
     ])
     |> cast_email_backend(org, attrs)
     |> cast_event_backend(org, attrs)
+    |> cast_storage_backend(org, attrs)
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
@@ -146,6 +148,25 @@ defmodule Proca.Org do
   end
 
   def cast_event_backend(ch, _org, _a), do: ch
+
+  def cast_storage_backend(chset, org, %{storage_backend: srv_name})
+      when srv_name in [:supabase] do
+    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
+      nil ->
+        add_error(chset, :storage_backend, "no such service")
+
+      %{id: id} ->
+        chset
+        |> put_change(:storage_backend_id, id)
+    end
+  end
+
+  def cast_storage_backend(ch, _org, %{storage_backend: srv_name})
+      when is_atom(srv_name) do
+    add_error(ch, :storage_backend, "service does not support events")
+  end
+
+  def cast_storage_backend(ch, _org, _a), do: ch
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw)
   def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw])
