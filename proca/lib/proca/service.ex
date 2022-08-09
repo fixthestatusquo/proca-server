@@ -183,17 +183,17 @@ defmodule Proca.Service do
     Service.Supabase.fetch(service, filename)
   end
 
-  def fetch_files(storage, keys) do
+  def fetch_files(org, keys) do
     for k <- keys, reduce: {:ok, []} do
       acc ->
         case acc do
           {:ok, result} ->
-            case fetch_file(storage, k) do
+            case fetch_file(org, k) do
               {:ok, bytes} -> {:ok, result ++ [{k, bytes}]}
-              {:error, reason} -> {:error, result ++ [{k, reason}]}
+              {:error, reason} -> {:error, reason, result}
             end
 
-          {:error, _result} = e ->
+          {:error, _reason, _result} = e ->
             e
         end
     end

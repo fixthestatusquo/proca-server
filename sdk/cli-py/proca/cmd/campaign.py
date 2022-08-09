@@ -108,13 +108,15 @@ MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:
 @click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
 @click.option('-t', '--test-email', help="send testing messages to this email")
 @click.option('-D', '--disable', is_flag=True, help="disable MTT")
+@click.option('-t', '--template', help="Template name")
+@click.option('-T', '--raw', is_flag=True, help="Do not use template (send raw)")
 @click.pass_obj
-def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable):
+def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable, template, raw):
     """
     Update campaign MTT settings
     """
-    if start is None and end is None and test_email is None:
-        return
+    #if start is None and end is None and test_email is None:
+    #    return
 
     if external_id is None:
         id, name = guess_identifier(id, name, identifier)
@@ -132,6 +134,12 @@ def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable)
 
     if test_email:
         mtt['testEmail'] = test_email
+
+    if template:
+        mtt['messageTemplate'] = template
+
+    if raw:
+        mtt['messageTemplate'] = Null
 
     if disable:
         mtt = None
