@@ -211,7 +211,9 @@ def update_org(client, name, org, proc):
             $customEventDeliver: Boolean,
             $doiThankYou: Boolean,
             $emailBackend: ServiceName,
-            $emailFrom: String
+            $emailFrom: String,
+            $storageBackend: ServiceName,
+            $eventBackend: ServiceName
     ) {
         updateOrgProcessing(
             name: $name,
@@ -222,7 +224,9 @@ def update_org(client, name, org, proc):
             customEventDeliver: $customEventDeliver,
             doiThankYou: $doiThankYou,
             emailBackend: $emailBackend,
-            emailFrom: $emailFrom
+            emailFrom: $emailFrom,
+            storageBackend: $storageBackend,
+            eventBackend: $eventBackend
         ) {name}
 
         updateOrg(
@@ -254,6 +258,7 @@ def format(org):
 
     doi = org['personalData']['doiThankYou']
 
+
     if doi:
         pii_out += f"|MAILING DOI"
 
@@ -261,12 +266,15 @@ def format(org):
         sup_con_t = org['personalData']['supporterConfirmTemplate']
         pii_out += f"|SUPPORTER DOI|[tmpl:{sup_con_t}]"
 
+    proc = org['processing']
+    if proc['customSupporterConfirm']:
+        pii_out += f"|SUPPORTER DOI"
+
     out += rainbow(pii_out + "\n")
 
-    proc = org['processing']
 
     proc_out = f"Action:"
-    if org['personalData']['supporterConfirm']:
+    if org['personalData']['supporterConfirm'] or proc['customSupporterConfirm']:
         proc_out += f"|▷ confirm"
         if proc['customSupporterConfirm']:
             proc_out += f" QUEUE[cus.{id}.confirm.supporter]"

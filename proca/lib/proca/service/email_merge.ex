@@ -134,26 +134,25 @@ defmodule Proca.Service.EmailMerge do
   end
 
   def put_files(eml = %Email{}, files) do
-    eml
-    |> Enum.reduce(Enum.with_index(files, 1), fn e, {{filename, data}, ordinal} ->
+    IO.inspect(files, label: "put_files")
+
+    Enum.reduce(Enum.with_index(files, 1), eml, fn {{filepath, data}, ordinal}, e ->
       mime_type =
-        case Path.extname(filename) do
+        case Path.extname(filepath) do
           "." <> ext -> [content_type: "image/" <> String.downcase(ext)]
           _ -> []
         end
+
+      filename = Path.basename(filepath)
 
       Email.attachment(
         e,
         Attachment.new(
           {:data, data},
-          mime_type ++
-            [
-              filename: Path.basename(filename),
-              type: :attachment,
-              cid: "file#{ordinal}"
-            ]
+          mime_type ++ [filename: filename, type: :inline, cid: "file#{ordinal}"]
         )
       )
+      |> Email.assign(:files, Access.get(e.assigns, :files, []) ++ [filename])
     end)
   end
 

@@ -177,7 +177,7 @@ defmodule Proca.Server.MTTWorker do
   def send_emails(campaign, msgs) do
     alias Proca.Service.{EmailMerge, EmailTemplateDirectory}
 
-    org = Org.one(id: campaign.org_id, preload: [:email_backend])
+    org = Org.one(id: campaign.org_id, preload: [:email_backend, :storage_backend])
 
     # fetch action pages for email merge
     action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
@@ -219,6 +219,7 @@ defmodule Proca.Server.MTTWorker do
             |> EmailMerge.put_campaign(campaign)
             |> EmailMerge.put_action(e.action)
             |> EmailMerge.put_target(e.target)
+            |> EmailMerge.put_files(resolve_files(org, e.files))
             |> put_message_content(e.message_content, templates[locale])
           end
 
@@ -264,6 +265,13 @@ defmodule Proca.Server.MTTWorker do
       {:mtt, message_id}
     )
     |> Email.from({supporter_name, supporter.email})
+  end
+
+  def resolve_files(org, file_keys) do
+    case Proca.Service.fetch_files(org, file_keys) do
+      {:ok, files} -> files
+      {:error, _reason, partial} -> partial
+    end
   end
 
   def put_message_content(

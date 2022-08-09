@@ -9,7 +9,7 @@ from proca.query import *
 import proca.cmd.org
 import json
 
-SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE', 'SYSTEM']
+SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE', 'SYSTEM', 'SUPABASE']
 SERVICE_NAMES_CHOICE = click.Choice(SERVICE_NAMES, case_sensitive=False)
 
 @click.command("service")
@@ -57,6 +57,7 @@ def set(ctx, org, name, user, password, password_prompt, host, path):
 
     print(format(service))
 
+
 @click.command("service:email")
 @click.option("-o", "--org", required=True, help="Org name")
 #@click.option("-i", "--id", type=int, help="Service ID")
@@ -85,6 +86,42 @@ def email(ctx, org, frm, name, none):
             ip['emailFrom'] = frm
         org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
         display(org_data)
+
+@click.command("service:storage")
+@click.option("-o", "--org", required=True, help="Org name")
+#@click.option("-i", "--id", type=int, help="Service ID")
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable storage service", is_flag=True)
+@click.pass_obj
+def storage(ctx, org, name, none):
+    """
+    Configure email-related options for org.
+    """
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["storageBackend"] or "NO BACKEND"}'))
+
+    if not name and not none:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {}
+        if name:
+            ip['storageBackend'] = name
+        if none:
+            ip['storageBackend'] = Null
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
+
+
+@click.command("service:event")
+@click.option("-o", "--org", required=True, help="Org name")
+#@click.option("-i", "--id", type=int, help="Service ID")
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable storage service", is_flag=True)
+@click.pass_obj
+def event(ctx, org, name, none):
+    pass
 
 @explain_error("getting service list")
 def org_services(client, org):
