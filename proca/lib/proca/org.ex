@@ -49,6 +49,7 @@ defmodule Proca.Org do
     field :custom_event_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
+    belongs_to :detail_backend, Proca.Service
 
     # for processing system events from Proca.Server.Notify
     field :event_processing, :boolean, default: false
@@ -82,6 +83,7 @@ defmodule Proca.Org do
     ])
     |> cast_email_backend(org, attrs)
     |> cast_event_backend(org, attrs)
+    |> cast_detail_backend(org, attrs)
     |> cast_storage_backend(org, attrs)
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
@@ -144,7 +146,7 @@ defmodule Proca.Org do
 
   def cast_event_backend(ch, _org, %{event_backend: srv_name})
       when is_atom(srv_name) do
-    add_error(ch, :event_backend, "service does not support events")
+    add_error(ch, :event_backend, "service does not support pushing events")
   end
 
   def cast_event_backend(ch, _org, _a), do: ch
@@ -163,10 +165,29 @@ defmodule Proca.Org do
 
   def cast_storage_backend(ch, _org, %{storage_backend: srv_name})
       when is_atom(srv_name) do
-    add_error(ch, :storage_backend, "service does not support events")
+    add_error(ch, :storage_backend, "service does not support storage")
   end
 
   def cast_storage_backend(ch, _org, _a), do: ch
+
+  def cast_detail_backend(chset, org, %{detail_backend: srv_name})
+      when srv_name in [:webhook] do
+    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
+      nil ->
+        add_error(chset, :detail_backend, "no such service")
+
+      %{id: id} ->
+        chset
+        |> put_change(:detail_backend_id, id)
+    end
+  end
+
+  def cast_detail_backend(ch, _org, %{detail_backend: srv_name})
+      when is_atom(srv_name) do
+    add_error(ch, :detail_backend, "service does not support supporter detail lookup")
+  end
+
+  def cast_detail_backend(ch, _org, _a), do: ch
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw)
   def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw])

@@ -213,7 +213,8 @@ def update_org(client, name, org, proc):
             $emailBackend: ServiceName,
             $emailFrom: String,
             $storageBackend: ServiceName,
-            $eventBackend: ServiceName
+            $eventBackend: ServiceName,
+            $detailBackend: ServiceName,
     ) {
         updateOrgProcessing(
             name: $name,
@@ -227,6 +228,7 @@ def update_org(client, name, org, proc):
             emailFrom: $emailFrom,
             storageBackend: $storageBackend,
             eventBackend: $eventBackend
+            detailBackend: $detailBackend
         ) {name}
 
         updateOrg(
@@ -257,16 +259,17 @@ def format(org):
     pii_out = f"Contact:|{cs}"
 
     doi = org['personalData']['doiThankYou']
+    proc = org['processing']
 
 
     if doi:
         pii_out += f"|MAILING DOI"
 
+
     if org['personalData']['supporterConfirm']:
         sup_con_t = org['personalData']['supporterConfirmTemplate']
         pii_out += f"|SUPPORTER DOI|[tmpl:{sup_con_t}]"
 
-    proc = org['processing']
     if proc['customSupporterConfirm']:
         pii_out += f"|SUPPORTER DOI"
 
@@ -274,6 +277,10 @@ def format(org):
 
 
     proc_out = f"Action:"
+
+    if proc['detailBackend']:
+        proc_out += f"|▷ DETAIL"
+
     if org['personalData']['supporterConfirm'] or proc['customSupporterConfirm']:
         proc_out += f"|▷ confirm"
         if proc['customSupporterConfirm']:

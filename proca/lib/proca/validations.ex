@@ -57,6 +57,20 @@ defmodule Proca.Validations do
     end
   end
 
+  def validate_not_changed(%{errors: errors} = changeset, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      _ ->
+        %{
+          changeset
+          | errors: errors ++ [{field, {"cannot be changed", [validation: :not_changed]}}],
+            valid?: false
+        }
+    end
+  end
+
   def peek_unique_error({:ok, record} = x), do: x
 
   def peek_unique_error({:error, error}) do
