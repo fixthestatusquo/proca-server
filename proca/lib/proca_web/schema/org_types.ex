@@ -214,6 +214,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:event_processing, :boolean)
 
       arg(:storage_backend, :service_name)
+      arg(:detail_backend, :service_name)
 
       load(:org, by: [:name])
       determine_auth(for: :org)
@@ -376,6 +377,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     end
 
     field :storage_backend, :service_name
+    field :detail_backend, :service_name
   end
 
   object :email_template do

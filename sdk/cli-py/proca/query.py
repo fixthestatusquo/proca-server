@@ -87,6 +87,7 @@ orgData = """
             eventProcessing eventBackend
             storageBackend
             sqsDeliver
+            detailBackend
 
             supporterConfirm
             supporterConfirmTemplate
@@ -150,7 +151,7 @@ def make_input(local_vars, allow_list):
     """
     def empty_to_null(x):
         if x == '':
-            return None
+            return Null
         else:
             return x
 
