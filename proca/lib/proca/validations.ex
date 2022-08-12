@@ -71,6 +71,15 @@ defmodule Proca.Validations do
     end
   end
 
+  def validate_iso8601_format(changeset, field) do
+    validate_change(changeset, field, fn f, datetime ->
+      case DateTime.from_iso8601(datetime) do
+        {:ok, _, _} -> []
+        {:error, reason} -> [{f, "Not a ISO8601 formatted timestamp: #{reason}"}]
+      end
+    end)
+  end
+
   def peek_unique_error({:ok, record} = x), do: x
 
   def peek_unique_error({:error, error}) do
