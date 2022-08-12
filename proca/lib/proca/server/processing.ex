@@ -81,12 +81,16 @@ defmodule Proca.Server.Processing do
   end
 
   @doc """
-  This function implements the state machine for Action. It returns a changeset to update action/supporter (state) and atoms telling where to route action.
+  This function implements the state machine for Action.
+  It returns a new states for action and supporter, as well a queue stage where to emit the action.
+  {action_state, supporter_state, queue_stage}
+
+  returns :ok if nothing needs to be done
   """
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
-          | {Ecto.Changeset.t(%Action{}), :action | :supporter, :confirm | :deliver}
-          | {Ecto.Changeset.t(%Action{}), nil, nil}
+          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
+             :supporter_confirm | :action_confirm | :deliver | nil}
   def transition(
         %{
           processing_status: :new,
@@ -95,6 +99,43 @@ defmodule Proca.Server.Processing do
         _ap
       ) do
     # Action without any supporter associated: not processing.
+    :ok
+  end
+
+  def transition(
+        action = %{
+          processing_status: :new,
+          supporter: %{processing_status: :new}
+        },
+        %ActionPage{
+          org: %{
+            supporter_confirm: system_confirm,
+            custom_supporter_confirm: custom_confirm,
+            custom_action_confirm: action_confirm
+          }
+        }
+      ) do
+    # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
+    cond do
+      system_confirm or custom_confirm ->
+        {:new, :confirming, :supporter_confirm}
+
+      action_confirm ->
+        {:confirming, :accepted, :action_confirm}
+
+      true ->
+        {:delivered, :accepted, :deliver}
+    end
+  end
+
+  def transition(
+        %{
+          processing_status: :new,
+          supporter: %{processing_status: :confirming}
+        },
+        _ap
+      ) do
+    # Supporter is being confirmed, so this action has to wait
     :ok
   end
 
@@ -110,31 +151,55 @@ defmodule Proca.Server.Processing do
   end
 
   def transition(
-        %{
+        action = %{
+          processing_status: action_status,
+          supporter: %{processing_status: :rejected}
+        },
+        _ap
+      )
+      when action_status in [:new, :rejected] do
+    #
+    # Supporter was rejected, reject also the actions
+    {:rejected, :rejected, nil}
+  end
+
+  # Supporter is accepted, and we do not confirm action, lets move to delivery
+  def transition(
+        action = %{
           processing_status: :new,
-          supporter: %{processing_status: :confirming}
+          supporter: %{processing_status: :accepted}
+        },
+        %ActionPage{
+          org: %{custom_action_confirm: true}
+        }
+      ) do
+    # Send action to action_confirm queue
+    {:confirming, :accepted, :action_confirm}
+  end
+
+  def transition(
+        %{
+          processing_status: :confirming,
+          supporter: %{processing_status: :accepted}
         },
         _ap
       ) do
-    # Supporter is being confirmed, so this action has to wait
+    # Action is being confirmed, no action
     :ok
   end
 
   def transition(
-        action = %{
-          processing_status: :new,
-          supporter: %{processing_status: :rejected}
+        %{
+          processing_status: :rejected,
+          supporter: %{processing_status: :accepted}
         },
         _ap
       ) do
-    # Supporter was rejected, reject also the actions
-    {
-      change_status(action, :rejected, :rejected),
-      nil,
-      nil
-    }
+    # Action has ben rejected, no action
+    :ok
   end
 
+  # Supporter is accepted, action got accepted or we did not need action confirm -> deliver
   def transition(
         action = %{
           processing_status: action_status,
@@ -144,37 +209,7 @@ defmodule Proca.Server.Processing do
       )
       when action_status in [:new, :accepted] do
     # Send action to confirm_action queue
-    {
-      change_status(action, :delivered, :accepted),
-      :action,
-      :deliver
-    }
-  end
-
-  def transition(
-        action = %{
-          processing_status: :new,
-          supporter: %{processing_status: :new}
-        },
-        %ActionPage{
-          org: %{supporter_confirm: system_confirm, custom_supporter_confirm: custom_confirm}
-        }
-      ) do
-    # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
-
-    if system_confirm or custom_confirm do
-      {
-        change_status(action, :new, :confirming),
-        :supporter,
-        :confirm
-      }
-    else
-      {
-        change_status(action, :delivered, :accepted),
-        :action,
-        :deliver
-      }
-    end
+    {:delivered, :accepted, :deliver}
   end
 
   def transition(
@@ -187,38 +222,55 @@ defmodule Proca.Server.Processing do
     :ok
   end
 
-  def change_status(action, action_status, supporter_status) do
-    sup =
-      change(action.supporter, processing_status: supporter_status)
-      |> maybe_rank_supporter(action_status, supporter_status)
+  ## Processing pipeline steps!
 
-    act = change(action, processing_status: action_status)
-
-    if act.changes == %{} do
-      sup
-    else
-      if sup.changes == %{} do
-        act
-      else
-        change(act, supporter: sup)
-      end
-    end
+  def change_status({action_ch, supporter_ch}, action_status, supporter_status) do
+    {
+      change(action_ch, processing_status: action_status),
+      change(supporter_ch, processing_status: supporter_status)
+    }
   end
 
   @doc """
   Rank supporter when entering:
   1. supporter confirm stage
-  2. action delivery stage
+  2. action confirm stage
+  3. action delivery stage
   """
-  def maybe_rank_supporter(changeset, :new, :confirming) do
-    Supporter.naive_rank(changeset)
+  def maybe_rank_supporter({a, changeset}, queue_stage) when queue_stage != nil do
+    {a, Supporter.naive_rank(changeset)}
   end
 
-  def maybe_rank_supporter(changeset, :delivered, :accepted) do
-    Supporter.naive_rank(changeset)
+  def maybe_rank_supporter(changesets, nil), do: changesets
+
+  @doc """
+  If we are emitting to queue, do the lookup and modify supporter and/or action
+  """
+  def lookup_detail({action_ch, supporter_ch}, queue_stage, org) when queue_stage != nil do
+    alias Proca.Service.Detail
+
+    case Detail.lookup(org, supporter_ch.data) do
+      {:ok, details} ->
+        {s, a} = Detail.update(supporter_ch, action_ch)
+        # in Processing action goes first..
+        {a, s}
+
+      {:error, reason} ->
+        {action_ch, supporter_ch}
+    end
   end
 
-  def maybe_rank_supporter(changeset, _, _), do: changeset
+  def lookup_details(changesets, nil, _), do: changesets
+
+  # XXX operate on a changeset!!!! and do not run a nested tx
+  def clear_transient({action_ch, supporter_ch}, :deliver) do
+    {
+      Action.clear_transient_fields(action_ch),
+      Supporter.clear_transient_fields(supporter_ch)
+    }
+  end
+
+  def clear_transient(changesets, _), do: changesets
 
   @doc """
   This method emits an effect on transition.
@@ -227,8 +279,8 @@ defmodule Proca.Server.Processing do
    from rabbitmq.
 
   """
-  @spec emit(action :: %Action{}, :action | :supporter, :confirm | :deliver) :: :ok | :error
-  def emit(action, :action, :deliver) when not is_nil(action) do
+  @spec emit(action :: %Action{}, :action_confirm | :supporter_confirm | :deliver) :: :ok | :error
+  def emit(action, :deliver) when not is_nil(action) do
     publish_for = fn %Proca.Contact{org_id: org_id} ->
       routing = routing_for(action)
       exchange = exchange_for(%Proca.Org{id: org_id}, :action, :deliver)
@@ -244,11 +296,9 @@ defmodule Proca.Server.Processing do
     end
   end
 
-  def emit(action, entity, :confirm) when not is_nil(action) do
+  def emit(action, entity, stage) when not is_nil(action) do
     routing = routing_for(action)
-    exchange = exchange_for(action.action_page.org, entity, :confirm)
-
-    stage = if entity == :action, do: :action_confirm, else: :supporter_confirm
+    exchange = exchange_for(action.action_page.org, stage)
 
     data = action_data(action, stage)
 
@@ -269,11 +319,11 @@ defmodule Proca.Server.Processing do
     at <> "." <> cname
   end
 
-  def exchange_for(org, :supporter, :confirm) do
+  def exchange_for(org, :supporter_confirm) do
     Proca.Pipes.Topology.xn(org, "confirm.supporter")
   end
 
-  def exchange_for(org, :action, :confirm) do
+  def exchange_for(org, :action_confirm) do
     Proca.Pipes.Topology.xn(org, "confirm.action")
   end
 
@@ -283,49 +333,42 @@ defmodule Proca.Server.Processing do
 
   @spec process(action :: %Action{}) :: :ok
   def process(action = %Action{}) do
+    # Make sure we have all necessary associated data.
+    # In usual case, this action is already preloaded, so there is no database access here.
     action =
       Repo.preload(action,
         action_page: [:org, :campaign],
         supporter: [:action_page, [contacts: :org]]
       )
 
-    case transition(action, action.action_page) do
-      {state_change, thing, stage} ->
-        Repo.transaction(fn ->
-          case emit(action, thing, stage) do
-            :ok ->
-              Repo.update!(state_change)
+    action_ch = change(action)
+    supporter_ch = change(action.supporter)
 
-            :error ->
-              error("Failed to publish #{thing} #{stage}")
-              Repo.rollback(:publish_failed)
-          end
-        end)
+    emit_and_save = fn ->
+      case emit(action, thing, stage) do
+        :ok ->
+          Repo.update!(state_change)
+
+        :error ->
+          error("Failed to publish #{thing} #{stage}")
+          Repo.rollback(:publish_failed)
+      end
+    end
+
+    case transition(action, action.action_page) do
+      {action_state, supporter_state, stage} ->
+        {action_ch, supporter_ch} =
+          change_state(action, action_state, supporter_state)
+          |> maybe_rank_supporter(stage)
+          |> lookup_detail(stage, action.action_page.org)
+
+      {state_change, thing, stage} ->
+        Repo.transaction()
 
         :ok
 
       :ok ->
         :ok
     end
-  end
-
-  def clear_transient(action) do
-    tx = Ecto.Multi.new()
-
-    tx =
-      case Supporter.clear_transient_fields_query(action.supporter) do
-        :noop -> tx
-        query -> Ecto.Multi.update_all(tx, :supporter, query, [])
-      end
-
-    tx =
-      case Action.clear_transient_fields_query(action) do
-        :noop -> tx
-        q -> Ecto.Multi.update_all(tx, :action, q, [])
-      end
-
-    {:ok, _} = Repo.transaction(tx)
-
-    :ok
   end
 end

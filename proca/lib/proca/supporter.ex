@@ -19,6 +19,7 @@ defmodule Proca.Supporter do
     belongs_to :action_page, Proca.ActionPage
     belongs_to :source, Proca.Source
 
+    # AKA contact_ref - one day they could be split and contact_ref be made random-ish
     field :fingerprint, :binary
     has_many :actions, Proca.Action
 
@@ -202,6 +203,7 @@ defmodule Proca.Supporter do
   end
 
   # XXX rename this to something like "clear_transient_fields"
+  # XXX operate on a changes set
   def clear_transient_fields_query(supporter) do
     import Ecto.Query
 

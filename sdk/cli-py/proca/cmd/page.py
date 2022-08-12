@@ -63,9 +63,8 @@ def add(ctx, locale, name, org, campaign):
     """
     Add new action page.
     """
-    print(rainbow(f"{locale}|!{name}|{campaign}"))
-
     ap = add_action_page(ctx.client, name=name, locale=locale, org=org, campaign=campaign)
+    print("Added " + format(ap))
 
 
 @click.command("page:delete")
@@ -197,9 +196,11 @@ def add_action_page(client, **attrs):
     mutation add($org: String!, $campaign: String!, $input: ActionPageInput!) {
         addActionPage(orgName: $org,  campaignName:$campaign, input: $input) {
             ...actionPageData
+            campaign { ...campaignData }
+            ...actionPageStatus
         }
     }
-    """ + actionPageData
+    """ + actionPageData + campaignData + actionPageStatus
 
     query = gql(query)
 
