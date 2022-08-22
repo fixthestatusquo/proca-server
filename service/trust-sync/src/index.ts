@@ -26,18 +26,18 @@ dotenv.config();
 //   }
 // }
 
-// base64_encode(hash_hmac('sha256', $stamp, $key));
 
 
 const key = process.env['TRUST_KEY'];
 console.log("key", key)
-const stamp = (Math.round(Date.now() / 1000)/30).toString();
+const stamp = Math.floor(Math.floor(Date.now() / 1000)/30).toString();
 
-let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('base64');
+let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
 
 const headers = {
   headers: {
-    'Authorization': `Bearer proca-test:${token}`
+    'Authorization': `Token token="proca-test:${token}"`,
+    'Content-Type': 'application/json'
   }
 }
 const url = "https://lc-trust-stage.palasthotel.de/api/v1/ping"
@@ -46,6 +46,7 @@ async function getPing() {
   try {
     const { data, status } = await axios.post(
       url,
+      {},
       headers,
     );
 
@@ -62,5 +63,7 @@ async function getPing() {
     }
   }
 }
+
+console.log(crypto.createHmac('sha256', 'secret').update('data').digest().toString('hex'))
 
 getPing();
