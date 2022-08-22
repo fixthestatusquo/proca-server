@@ -37,7 +37,7 @@ let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('ba
 
 const headers = {
   headers: {
-    'Authorization': `Token token=proca-test:"${token}"`
+    'Authorization': `Bearer proca-test:${token}`
   }
 }
 const url = "https://lc-trust-stage.palasthotel.de/api/v1/ping"
@@ -49,13 +49,13 @@ async function getPing() {
       headers,
     );
 
-    console.log(data);
+    console.log(JSON.stringify(data));
     console.log('Status: ', status);
     return data;
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      console.log('error: ', error.code, error.config.data, error.message);
-      return error;
+      console.log('error: ', error.code, error.config.data, error.message, error.response.status, error.response.statusText);
+      return error.message;
     } else {
       console.log('unexpected error: ', error);
       return 'An unexpected error occurred';
