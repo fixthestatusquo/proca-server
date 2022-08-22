@@ -50,8 +50,8 @@ defmodule Proca.Supporter.Privacy do
   alias Proca.Supporter.{Privacy, Consent}
   alias Proca.{ActionPage, Org, Campaign, Action}
 
-  defstruct opt_in: false,
-            lead_opt_in: false
+  defstruct opt_in: nil,
+            lead_opt_in: nil
 
   @default_communication_scopes ["email"]
 
@@ -87,12 +87,12 @@ defmodule Proca.Supporter.Privacy do
       delivery_consent: lead_delivery
     }
 
-    if action_page.live do
+    if is_split do
       [collector_consent, lead_consent]
     else
       [collector_consent]
     end
-    |> Enum.filter(fn %{delivery_consent: dc, communication_consent: cc} -> dc or cc end)
+    |> Enum.filter(fn %{delivery_consent: dc, communication_consent: cc} -> dc || cc end)
   end
 
   @doc "Which contact fields are stored in cleartext supporter record"

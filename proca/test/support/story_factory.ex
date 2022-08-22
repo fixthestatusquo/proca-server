@@ -199,4 +199,43 @@ defmodule Proca.StoryFactory do
       ap: ap
     }
   end
+
+  @teal_website "teal.org"
+
+  @doc """
+  Teal runs a coalition campaign
+  """
+  def teal_story(opts \\ []) do
+    teal_org = Factory.insert(:org, name: sequence("teal_org"), custom_action_deliver: true)
+
+    teal_camp =
+      Factory.insert(:campaign,
+        name: sequence("teal-teams"),
+        title: "Lets make corporations more horizontal",
+        org: teal_org
+      )
+
+    teal_ap =
+      Factory.insert(:action_page,
+        campaign: teal_camp,
+        org: teal_org,
+        name: @teal_website <> "/lead"
+      )
+
+    num_partners = opts[:partner_count] || 10
+
+    partners = Factory.insert_list(num_partners, :org, custom_action_deliver: true)
+
+    partner_aps =
+      Enum.map(partners, fn po ->
+        Factory.insert(:action_page, campaign: teal_camp, org: po, name: po.name <> "/partner")
+      end)
+
+    %{
+      org: teal_org,
+      page: teal_ap,
+      campaign: teal_camp,
+      partners: Enum.zip(partners, partner_aps) |> Enum.map(fn {p, ap} -> %{org: p, page: ap} end)
+    }
+  end
 end

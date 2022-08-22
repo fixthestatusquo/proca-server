@@ -55,7 +55,7 @@ defmodule Proca.Supporter do
   @doc """
   A naive ranker - not good for ranking existing data!
   Good for: checking for number of accepted supporters already in the campaign, use before confirm and at storing the accepted action.
-  A race condition is limited (excluded?) because the Proca.Server.Processing server is single process.
+  A race condition is limited (excluded?) because the Proca.Stage.Processing server is single process.
   """
   def naive_rank(%Ecto.Changeset{} = ch) do
     import Ecto.Query
@@ -202,10 +202,10 @@ defmodule Proca.Supporter do
     one(action_id: action_id)
   end
 
-  # XXX rename this to something like "clear_transient_fields"
-  # XXX operate on a changes set
-  def clear_transient_fields_query(supporter) do
+  def clear_transient_fields(supporter_change) do
     import Ecto.Query
+
+    supporter = supporter_change.data
 
     fields =
       Supporter.Privacy.transient_supporter_fields(supporter.action_page)
@@ -213,13 +213,10 @@ defmodule Proca.Supporter do
 
     case fields do
       [] ->
-        :noop
+        supporter_change
 
       clear_fields ->
-        from(s in Supporter,
-          where: s.id == ^supporter.id,
-          update: [set: ^clear_fields]
-        )
+        change(supporter_change, clear_fields)
     end
   end
 end

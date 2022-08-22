@@ -26,7 +26,7 @@ Proca provides a versatile system for processing action data, which supports:
 
 ## Queues
 
-Supporter and action data is based on AMQP queues (we use Rabbitmq). `Proca.Pipes.Topology` server is responsible to set up and maintain the queue setup. The stages of processing data is implemented by `Proca.Server.Processing` server.
+Supporter and action data is based on AMQP queues (we use Rabbitmq). `Proca.Pipes.Topology` server is responsible to set up and maintain the queue setup. The stages of processing data is implemented by `Proca.Stage.Processing` server.
 
 For each stages of processing, actions can land in custom queues. If you enable the custom queues for some stages, you are responsible to do something with the messages in the respective queue, otherwise they will be stuck at that stage.
 

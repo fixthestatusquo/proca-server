@@ -95,7 +95,7 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert action.testing
     assert action.processing_status == :new
-    Proca.Server.Processing.process(action)
+    Proca.Stage.Processing.process(action)
 
     action = Repo.reload(action)
     assert action.processing_status == :delivered
@@ -203,5 +203,36 @@ defmodule ProcaWeb.Api.ActionTest do
     action = Repo.one(from(a in Action, order_by: [desc: a.id], limit: 1))
 
     assert action.source_id != nil
+  end
+
+  test "create action with null optIn", %{org: org, pages: [ap]} do
+    params = %{
+      action_page_id: ap.id,
+      contact: %{first_name: "Jan", email: "j@a.n"},
+      action: %{action_type: "signup"},
+      privacy: %{opt_in: nil, lead_opt_in: nil}
+    }
+
+    result =
+      ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{
+        context: %{}
+      })
+
+    IO.inspect(struct!(Proca.Supporter.Privacy, %{}))
+
+    assert {:ok, %{contact_ref: _ref}} = result
+    result
+
+    action =
+      Repo.one(
+        from(a in Action,
+          order_by: [desc: a.id],
+          preload: [supporter: :contacts],
+          limit: 1
+        )
+      )
+
+    assert is_nil(hd(action.supporter.contacts).communication_consent)
+    IO.inspect(action.supporter.contacts)
   end
 end

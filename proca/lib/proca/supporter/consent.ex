@@ -6,7 +6,7 @@ defmodule Proca.Supporter.Consent do
   XXX move to Proca.Contact.Consent
   """
   defstruct org: nil,
-            communication_consent: false,
+            communication_consent: nil,
             communication_scopes: ["email"],
             delivery_consent: false
 end

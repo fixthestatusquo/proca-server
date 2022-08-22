@@ -196,7 +196,7 @@ defmodule Proca.Server.MTTWorkerTest do
 
       action = Factory.insert(:action, supporter: supporter)
 
-      Proca.Server.Processing.process(action)
+      Proca.Stage.Processing.process(action)
 
       action = Proca.Repo.reload(action)
       assert action.processing_status == :delivered

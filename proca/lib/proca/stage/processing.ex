@@ -1,11 +1,11 @@
-defmodule Proca.Server.Processing do
-  use GenServer
+defmodule Proca.Stage.Processing do
   alias Proca.Repo
-  alias Proca.{Action, ActionPage, Supporter, Field}
+  alias Proca.{Action, ActionPage, Supporter}
   alias Proca.Pipes.Connection
   import Proca.Stage.Support, only: [action_data: 2, action_data: 3]
   import Ecto.Changeset
   import Logger
+  alias __MODULE__
 
   @moduledoc """
   For these cases:
@@ -49,36 +49,67 @@ defmodule Proca.Server.Processing do
   This is a missing piece albeit for now did not proove necessary.
   """
 
-  @impl true
-  def init([]) do
-    {:ok, []}
-  end
-
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
-  end
-
-  @impl true
-  def handle_cast({:action, action}, state) do
-    process(action)
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_call(:sync, _from, state) do
-    {:reply, :ok, state}
-  end
-
-  def process_async(action) do
-    GenServer.cast(__MODULE__, {:action, action})
-  end
+  defstruct action_change: nil,
+            supporter_change: nil,
+            details: nil,
+            new_state: {:new, :new},
+            stage: nil
 
   @doc """
-  A noop sync method that lets you make sure all previous async messages were processed (used in testing)
+  Prepare the action associated data - arg can be single action or a list.
+  In usual case, this action is already preloaded, so there is no database access here.
   """
-  def sync do
-    GenServer.call(__MODULE__, :sync)
+  def preload(actions) do
+    Repo.preload(actions,
+      action_page: [:org, :campaign],
+      supporter: [:action_page, [contacts: :org]]
+    )
   end
+
+  def processing_org_id(%Processing{action_change: %{data: %{action_page: %{org_id: id}}}}),
+    do: id
+
+  @doc """
+  Wrap Action in a Processing state
+
+  2. Check which stage we are at
+  2. Check if we need detail lookup.
+  3. If so, run the lookup task and exit -> a continuation will come via handle_info() and we continue in process_pipeline
+  4. Else run straight process_pipeline
+  """
+  @spec wrap(%Action{}) :: :noop | {:lookup_detail, %Processing{}} | {:process, %Processing{}}
+  def wrap(action = %Action{}) do
+    case transition(action, action.action_page) do
+      :ok ->
+        :noop
+
+      {action_state, supporter_state, stage} ->
+        p = %Processing{
+          action_change: change(action),
+          supporter_change: change(action.supporter),
+          new_state: {action_state, supporter_state},
+          stage: stage
+        }
+
+        if needs_lookup?(action, stage) do
+          {:lookup_detail, p}
+        else
+          {:process, p}
+        end
+    end
+  end
+
+  def process_pipeline(%Processing{} = p) do
+    p
+    |> change_status()
+    |> rank_supporter()
+  end
+
+  def needs_lookup?(%Action{action_page: %{org: %{detail_backend_id: srv_id}}}, stage)
+      when is_number(srv_id) and stage != nil,
+      do: true
+
+  def needs_lookup?(_, _), do: false
 
   @doc """
   This function implements the state machine for Action.
@@ -103,7 +134,7 @@ defmodule Proca.Server.Processing do
   end
 
   def transition(
-        action = %{
+        %{
           processing_status: :new,
           supporter: %{processing_status: :new}
         },
@@ -151,7 +182,7 @@ defmodule Proca.Server.Processing do
   end
 
   def transition(
-        action = %{
+        %{
           processing_status: action_status,
           supporter: %{processing_status: :rejected}
         },
@@ -165,7 +196,7 @@ defmodule Proca.Server.Processing do
 
   # Supporter is accepted, and we do not confirm action, lets move to delivery
   def transition(
-        action = %{
+        %{
           processing_status: :new,
           supporter: %{processing_status: :accepted}
         },
@@ -201,7 +232,7 @@ defmodule Proca.Server.Processing do
 
   # Supporter is accepted, action got accepted or we did not need action confirm -> deliver
   def transition(
-        action = %{
+        %{
           processing_status: action_status,
           supporter: %{processing_status: :accepted}
         },
@@ -224,10 +255,13 @@ defmodule Proca.Server.Processing do
 
   ## Processing pipeline steps!
 
-  def change_status({action_ch, supporter_ch}, action_status, supporter_status) do
-    {
-      change(action_ch, processing_status: action_status),
-      change(supporter_ch, processing_status: supporter_status)
+  def change_status(
+        p = %{action_change: a, supporter_change: s, new_state: {action_status, supporter_status}}
+      ) do
+    %{
+      p
+      | action_change: change(a, processing_status: action_status),
+        supporter_change: change(s, processing_status: supporter_status)
     }
   end
 
@@ -237,40 +271,52 @@ defmodule Proca.Server.Processing do
   2. action confirm stage
   3. action delivery stage
   """
-  def maybe_rank_supporter({a, changeset}, queue_stage) when queue_stage != nil do
-    {a, Supporter.naive_rank(changeset)}
+  def rank_supporter(p = %Processing{supporter_change: changeset, stage: queue_stage})
+      when queue_stage != nil do
+    %{p | supporter_change: Supporter.naive_rank(changeset)}
   end
 
-  def maybe_rank_supporter(changesets, nil), do: changesets
+  def rank_supporter(p), do: p
 
   @doc """
   If we are emitting to queue, do the lookup and modify supporter and/or action
   """
-  def lookup_detail({action_ch, supporter_ch}, queue_stage, org) when queue_stage != nil do
+  @spec lookup_detail(%Processing{}) :: {:ok, %Processing{}} | {:error, term()}
+  def lookup_detail(p = %{action_change: action_ch, supporter_change: supporter_ch, stage: stage})
+      when stage != nil do
     alias Proca.Service.Detail
+
+    org = action_ch.data.action_page.org
 
     case Detail.lookup(org, supporter_ch.data) do
       {:ok, details} ->
-        {s, a} = Detail.update(supporter_ch, action_ch)
-        # in Processing action goes first..
-        {a, s}
+        {s, a} = Detail.update(supporter_ch, action_ch, details)
+        {:ok, %{p | action_change: a, supporter_change: s, details: details}}
 
-      {:error, reason} ->
-        {action_ch, supporter_ch}
+      {:error, _reason} = e ->
+        e
     end
   end
 
-  def lookup_details(changesets, nil, _), do: changesets
+  def lookup_detail(p = %Processing{stage: stage}) when is_nil(stage) do
+    {:ok, p}
+  end
 
-  # XXX operate on a changeset!!!! and do not run a nested tx
-  def clear_transient({action_ch, supporter_ch}, :deliver) do
-    {
-      Action.clear_transient_fields(action_ch),
-      Supporter.clear_transient_fields(supporter_ch)
+  def clear_transient(
+        %{
+          action_change: action_ch,
+          supporter_change: supporter_ch,
+          stage: :deliver
+        } = p
+      ) do
+    %{
+      p
+      | action_change: Action.clear_transient_fields(action_ch),
+        supporter_change: Supporter.clear_transient_fields(supporter_ch)
     }
   end
 
-  def clear_transient(changesets, _), do: changesets
+  def clear_transient(p), do: p
 
   @doc """
   This method emits an effect on transition.
@@ -279,37 +325,38 @@ defmodule Proca.Server.Processing do
    from rabbitmq.
 
   """
-  @spec emit(action :: %Action{}, :action_confirm | :supporter_confirm | :deliver) :: :ok | :error
-  def emit(action, :deliver) when not is_nil(action) do
+  @spec emit(Processing, AMQP.Channel | nil) :: :ok | :error
+  def emit(%Processing{action_change: action_ch, stage: :deliver}, chan) do
+    action = action_ch.data
+
     publish_for = fn %Proca.Contact{org_id: org_id} ->
       routing = routing_for(action)
-      exchange = exchange_for(%Proca.Org{id: org_id}, :action, :deliver)
+      exchange = exchange_for(%Proca.Org{id: org_id}, :deliver)
       data = action_data(action, :deliver, org_id)
-      Connection.publish(exchange, routing, data)
+      Connection.publish(data, exchange, routing, chan)
     end
 
-    with true <- Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)),
-         :ok <- clear_transient(action) do
+    if Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
       :ok
     else
-      _ -> :error
+      :error
     end
   end
 
-  def emit(action, entity, stage) when not is_nil(action) do
+  def emit(%Processing{action_change: action_ch, stage: stage}, chan) when stage != nil do
+    action = action_ch.data
     routing = routing_for(action)
     exchange = exchange_for(action.action_page.org, stage)
 
     data = action_data(action, stage)
 
-    with :ok <- Connection.publish(exchange, routing, data) do
-      :ok
-    else
+    case Connection.publish(data, exchange, routing, chan) do
+      :ok -> :ok
       _ -> :error
     end
   end
 
-  def emit(_action, nil, nil), do: :ok
+  def emit(_procesing, _chan), do: :ok
 
   def routing_for(%{action_type: at, campaign: %{name: cname}}) do
     at <> "." <> cname
@@ -327,48 +374,24 @@ defmodule Proca.Server.Processing do
     Proca.Pipes.Topology.xn(org, "confirm.action")
   end
 
-  def exchange_for(org, :action, :deliver) do
+  def exchange_for(org, :deliver) do
     Proca.Pipes.Topology.xn(org, "deliver")
   end
 
-  @spec process(action :: %Action{}) :: :ok
-  def process(action = %Action{}) do
-    # Make sure we have all necessary associated data.
-    # In usual case, this action is already preloaded, so there is no database access here.
-    action =
-      Repo.preload(action,
-        action_page: [:org, :campaign],
-        supporter: [:action_page, [contacts: :org]]
-      )
-
-    action_ch = change(action)
-    supporter_ch = change(action.supporter)
-
-    emit_and_save = fn ->
-      case emit(action, thing, stage) do
-        :ok ->
-          Repo.update!(state_change)
-
-        :error ->
-          error("Failed to publish #{thing} #{stage}")
-          Repo.rollback(:publish_failed)
+  def store!(%{action_change: a_ch, supporter_change: s_ch}) do
+    ch =
+      if a_ch.changes == %{} do
+        s_ch
+      else
+        change(a_ch, supporter: s_ch)
       end
-    end
 
-    case transition(action, action.action_page) do
-      {action_state, supporter_state, stage} ->
-        {action_ch, supporter_ch} =
-          change_state(action, action_state, supporter_state)
-          |> maybe_rank_supporter(stage)
-          |> lookup_detail(stage, action.action_page.org)
+    debug(
+      "Processing final changeset: #{inspect(a_ch)}+#{inspect(s_ch)}-> #{inspect(ch.changes)}"
+    )
 
-      {state_change, thing, stage} ->
-        Repo.transaction()
-
-        :ok
-
-      :ok ->
-        :ok
-    end
+    Repo.transaction(fn _r ->
+      Repo.update!(ch)
+    end)
   end
 end
