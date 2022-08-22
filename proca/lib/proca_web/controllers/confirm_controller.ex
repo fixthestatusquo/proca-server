@@ -10,7 +10,7 @@ defmodule ProcaWeb.ConfirmController do
   import Ecto.Query
   import Proca.Repo
   alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage, Auth}
-  alias Proca.Server.Processing
+  alias Proca.Stage.Processing
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
   @doc """

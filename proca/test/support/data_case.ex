@@ -37,7 +37,7 @@ defmodule Proca.DataCase do
     end
 
     if tags[:start] do
-      if :processing in tags[:start], do: Proca.Server.Processing.start_link([])
+      if :processing in tags[:start], do: Proca.Stage.Processing.start_link([])
     end
 
     :ok

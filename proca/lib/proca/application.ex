@@ -66,7 +66,6 @@ defmodule Proca.Application do
   defp daemon_servers() do
     [
       # Async processing systems
-      {Proca.Server.Processing, []},
       {Task.Supervisor, name: Proca.Service.DetailProcessing},
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
       {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},

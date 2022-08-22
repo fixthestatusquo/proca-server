@@ -66,7 +66,7 @@ defmodule Proca.Stage.ProcessOld do
           )
         )
 
-      Proca.Server.Processing.process(action)
+      Proca.Stage.Action.process(action)
     end
 
     length(action_ids)

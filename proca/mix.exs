@@ -100,22 +100,6 @@ defmodule Proca.MixProject do
     ]
   end
 
-  # Phoenix 1.5 update
-  #
-  # At the time of writing absinthe is still at 1.5-RC.X stage, and it did not
-  # start using upgraded phoenix_pubsub (still requires 1.x, Phx 1.5 needs 2.x)
-  # Here's a relevant PR:
-  # https://github.com/absinthe-graphql/absinthe_phoenix/pull/68
-  #
-  # I am adding override: true because we do not use subscriptions in Absinthe
-  # and even now the Pubsub subsystem of Absinthe was not started.
-  #
-  # TODO: Keep track of absinthe dev to remove the -rc.0 postfix from versions
-  # when it's ready
-  #
-  # absinthe_ecto was deprecated by Dataloader.Ecto from the dataloader package
-  # instead.
-
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to create, migrate and run the seeds file at once:
   #

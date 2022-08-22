@@ -16,7 +16,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     assert Proca.Pipes.Connection.is_connected?()
 
     %{
-      proc: Proca.Server.Processing.start_link([])
+      proc: Proca.Stage.Processing.start_link([])
     }
   end
 
@@ -123,7 +123,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
       a = check_action(s, status: :new)
 
       # after process old kicks in...
-      Proca.Server.Processing.process(a)
+      Proca.Stage.Processing.process(a)
       s = check_supporter(ref, status: :rejected, email_status: :none, consent: {true, false})
       a = check_action(s, status: :rejected)
     end
@@ -159,7 +159,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     link = "/link/d/#{action.id}/#{refbase}"
     link = link <> "?redir=https://landingpage.com"
     res = get(conn, link, %{})
-    Proca.Server.Processing.sync()
+    Proca.Stage.Processing.sync()
   end
 
   def click_supporter_link(conn, action, verb, qa \\ nil) do
@@ -172,7 +172,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
 
     link = link <> if qa == nil, do: "", else: "&" <> qa
     res = get(conn, link, %{})
-    Proca.Server.Processing.sync()
+    Proca.Stage.Processing.sync()
   end
 
   def add_action_contact(ap, opt_in) do
@@ -194,7 +194,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
         %Resolution{context: %{}, extensions: %{}}
       )
 
-    Proca.Server.Processing.sync()
+    Proca.Stage.Processing.sync()
 
     {:ok, ref2} = Supporter.base_decode(ref)
     {ref2, contact.email}

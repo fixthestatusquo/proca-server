@@ -198,7 +198,7 @@ defmodule Proca.Server.Notify do
   end
 
   defp process_action(action) do
-    Proca.Server.Processing.process_async(action)
+    Proca.Stage.Action.process(action)
   end
 
   defp update_action_page_status(action) do

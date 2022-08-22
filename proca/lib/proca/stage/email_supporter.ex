@@ -171,7 +171,7 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   defp confirm_supporter(action_id) do
-    alias Proca.Server.Processing
+    alias Proca.Stage.Processing
     action = Action.one(id: action_id, preload: [:supporter])
 
     case Supporter.confirm(action.supporter) do

@@ -229,15 +229,15 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   @desc "GDPR consent data structure"
   input_object :consent_input do
-    @desc "Has contact consented to receiving communication from widget owner?"
-    field :opt_in, non_null(:boolean)
+    @desc "Has contact consented to receiving communication from widget owner? Null: not asked"
+    field :opt_in, :boolean
     @desc "Opt in to the campaign leader"
     field :lead_opt_in, :boolean
   end
 
   @desc "GDPR consent data for this org"
   object :consent do
-    field :opt_in, non_null(:boolean)
+    field :opt_in, :boolean
     field :given_at, non_null(:naive_datetime)
     field :email_status, non_null(:email_status)
     field :email_status_changed, :naive_datetime

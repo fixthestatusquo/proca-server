@@ -33,6 +33,7 @@ defmodule Proca.Service.Detail do
 
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ecto.Changeset
   alias __MODULE__
 
   defmodule Privacy do
@@ -75,6 +76,7 @@ defmodule Proca.Service.Detail do
     embeds_one :action, Detail.Action
   end
 
+  @spec changeset(Details | Changeset.t(Details), map()) :: Changeset.t(Details)
   def changeset(ch, params) do
     ch
     |> cast(params, [])
@@ -84,9 +86,12 @@ defmodule Proca.Service.Detail do
 
   def changeset(params), do: changeset(%Detail{}, params)
 
-  def lookup(%Org{detail_backend: nil}, s, a), do: {s, a}
+  @spec lookup(Org, Supporter) :: {:ok, Detail} | {:error, any()}
 
-  def lookup(%Org{detail_backend: srv}, %Supporter{email: email, fingerprint: ref} = supporter) do
+  def lookup(
+        %Org{detail_backend: %{name: :webhook} = srv},
+        %Supporter{email: email, fingerprint: ref}
+      ) do
     payload =
       Jason.encode!(%{
         "email" => email,
@@ -116,8 +121,14 @@ defmodule Proca.Service.Detail do
     end
   end
 
-  @spec update(Ecto.Changeset.t(Supporter), Ecto.Changeset.t(Action), Details) ::
-          {Ecto.Changeset.t(Supporter), Ecto.Changeset.t(Action)}
+  def lookup(%Org{detail_backend: %{name: :testdetail}}, supporter) do
+    Proca.TestDetailBackend.lookup(supporter)
+  end
+
+  def lookup(_org, _sup), do: {:error, :not_supported}
+
+  @spec update(Changeset.t(Supporter), Changeset.t(Action), Details) ::
+          {Changeset.t(Supporter), Changeset.t(Action)}
   def update(supporter, action, details) do
     s =
       supporter
@@ -131,13 +142,14 @@ defmodule Proca.Service.Detail do
     {s, a}
   end
 
-  def update_opt_in(ch, %Detail.Privacy{opt_in: opt_in}, org) do
+  # XXX here we should only chnge opt_in if nil (not given?). This is not yet possible
+  def update_opt_in(ch, %Detail.Privacy{opt_in: true}, org) do
     change(ch,
       contacts:
         Proca.Contact.change_for_org(
           get_field(ch, :contacts),
           org,
-          %{communication_consent: opt_in}
+          %{communication_consent: true}
         )
     )
   end
