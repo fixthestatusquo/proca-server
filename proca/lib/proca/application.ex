@@ -68,7 +68,7 @@ defmodule Proca.Application do
       # Async processing systems
       {Task.Supervisor, name: Proca.Service.DetailProcessing},
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
-      {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
+      # {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
       {Proca.ActionPage.Status, []},
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
       {Proca.Server.MTT, []},

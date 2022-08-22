@@ -12,82 +12,101 @@ defmodule Proca.Stage.ProcessOld do
   - @time_margin - (1 minute default) - do not process actions more recent then
     one minute - they might be actually still processed by async-after-add processing.
 
-  - interval (given as argument to ProcessOld.start_link, 30 sec default) - how often should we check for old actions
 
-  - @batch_interval (1 second default) - how long to wait between processing of 1000 actions batch.
+  - @sweep_interval (1 second default) - how long to wait between processing of all history (we don't want to start from beginning straight away)
 
   """
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
   import Logger
-  use GenServer
+  use GenStage
 
-  # @interval 30 * 1000
-  @batch_interval 1000
-
-  @time_margin "1 minute"
-  @batch_size 1000
+  # Seconds
+  @sweep_interval 60
+  @time_margin 60
 
   @impl true
-  def init(interval) when is_integer(interval) do
-    if interval > 0 do
-      process_in(interval)
-    end
+  def init(opts) do
+    s = %{
+      demand: 0,
+      last_id: 0,
+      sweep_interval: opts[:sweep_interval] || @sweep_interval,
+      sweep_sleep: false,
+      time_margin: opts[:time_margin] || @time_margin
+    }
 
-    {:ok, %{interval: interval}}
+    {:producer, s}
   end
 
-  def start_link(interval) do
-    GenServer.start_link(__MODULE__, interval, name: __MODULE__)
+  @doc """
+  Poll for actions and update demand accordingly
+  """
+  def return_actions(
+        %{demand: demand, last_id: last_id, time_margin: margin, sweep_interval: sweep} = st
+      ) do
+    actions = unprocessed_actions(demand, last_id, margin)
+    actions_count = length(actions)
+
+    st =
+      if demand > actions_count and not st.sweep_sleep do
+        # Special case: we finished the sweep, lets schedule another one
+        # We check the sweep_sleep as GenStage might ask us one or two times at the end of actions.
+        Process.send_after(self(), :restart, sweep * 1_000)
+        %{st | sweep_sleep: true}
+      else
+        st
+      end
+
+    last_id =
+      case List.last(actions) do
+        %{id: id} -> id
+        nil -> last_id
+      end
+
+    {:noreply, actions, %{st | demand: demand - actions_count, last_id: last_id}}
   end
 
   @impl true
-  def handle_info(:process, st) do
-    if Proca.Pipes.Connection.is_connected?() do
-      processed_no = process_batch()
-      process_in(if processed_no == 0, do: st[:interval], else: @batch_interval)
-    else
-      process_in(st[:interval])
-    end
+  def handle_demand(demand, %{demand: d} = st) do
+    st = %{st | demand: d + demand}
 
-    {:noreply, st}
+    return_actions(st)
   end
 
-  def process_batch() do
-    action_ids = unprocessed_ids()
-    debug("Stage.ProcessOld: #{length(action_ids)} unprocessed actions to process")
+  @impl true
+  def handle_info(:restart, st) do
+    st = %{st | last_id: 0, sweep_sleep: false}
 
-    for a_id <- action_ids do
-      action =
-        one(
-          from(a in Proca.Action,
-            where: a.id == ^a_id,
-            preload: [action_page: [:org, :campaign], supporter: :contacts]
-          )
-        )
-
-      Proca.Stage.Action.process(action)
-    end
-
-    length(action_ids)
+    return_actions(st)
   end
 
-  def unprocessed_ids do
+  def unprocessed_actions(0, _), do: []
+
+  def unprocessed_actions(demand, last_id, margin) do
     from(a in Proca.Action,
       join: s in Proca.Supporter,
       on: a.supporter_id == s.id,
       where:
-        a.inserted_at < fragment("NOW() - INTERVAL ?", @time_margin) and
+        a.id > ^last_id and
+          a.inserted_at < ago(^margin, "second") and
           ((a.processing_status == :new and s.processing_status == :new) or
              (a.processing_status == :new and s.processing_status == :accepted) or
              (a.processing_status == :accepted and s.processing_status == :accepted)),
-      limit: @batch_size,
-      select: a.id
+      limit: ^demand,
+      order_by: [asc: a.id]
     )
     |> all()
   end
-
-  defp process_in(interval) do
-    Process.send_after(self(), :process, interval)
-  end
 end
+
+# defmodule TestConsumer do
+#   use GenStage
+
+#   @impl true
+#   def init(_), do: {:consumer, []}
+
+#   @impl true
+#   def handle_events(ev, _, st) do
+#     {:noreply, [], st}
+#   end
+# end
