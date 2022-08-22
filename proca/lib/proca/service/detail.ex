@@ -76,7 +76,7 @@ defmodule Proca.Service.Detail do
     embeds_one :action, Detail.Action
   end
 
-  @spec changeset(Details | Changeset.t(Details), map()) :: Changeset.t(Details)
+  @spec changeset(%Detail{} | Changeset.t(%Detail{}), map()) :: Changeset.t(%Detail{})
   def changeset(ch, params) do
     ch
     |> cast(params, [])
@@ -122,13 +122,13 @@ defmodule Proca.Service.Detail do
   end
 
   def lookup(%Org{detail_backend: %{name: :testdetail}}, supporter) do
-    Proca.TestDetailBackend.lookup(supporter)
+    apply(Proca.TestDetailBackend, :lookup, [supporter])
   end
 
   def lookup(_org, _sup), do: {:error, :not_supported}
 
-  @spec update(Changeset.t(Supporter), Changeset.t(Action), Details) ::
-          {Changeset.t(Supporter), Changeset.t(Action)}
+  @spec update(Changeset.t(%Supporter{}), Changeset.t(%Action{}), %Detail{}) ::
+          {Changeset.t(%Supporter{}), Changeset.t(%Action{})}
   def update(supporter, action, details) do
     s =
       supporter
