@@ -1,10 +1,8 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
-import { Signature, formatAction } from "./data";
-import { postAction } from "./client";
+import { formatAction } from "./data";
+import { postAction, verification } from "./client";
 const dotenv = require('dotenv');
 dotenv.config();
-
-
 
 const user = process.env.RABBIT_USER;
 const pass = process.env.RABBIT_PASSWORD;
@@ -12,7 +10,10 @@ const queueDeliver = "cus.172.deliver";
 
 syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliver, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2') {
-    await postAction(formatAction(action));
+    const data = await postAction(formatAction(action));
+    if (data.petition_signature?.verification_token) {
+      await verification(data.petition_signature.verification_token)
+    }
   }
 }, {}
 )
