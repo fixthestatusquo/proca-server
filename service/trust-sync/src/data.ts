@@ -14,14 +14,14 @@ export interface TrustAction {
   message?: string | null;
   subscribe_newsletter: boolean | undefined;
   move_code: string;
-  origin: string;
+  origin: string | null;
 }
 
 export interface Signature {
   "petition_signature": TrustAction;
 }
 
-export const formatAction = (queueAction : ActionMessageV2) => {
+export const formatAction = (queueAction: ActionMessageV2) => {
   let action: TrustAction = {
     first_name: queueAction.contact.firstName,
     last_name: queueAction.contact.lastName,
@@ -37,7 +37,7 @@ export const formatAction = (queueAction : ActionMessageV2) => {
     message: queueAction.contact.comment,
     subscribe_newsletter: queueAction.privacy.optIn,
     move_code: queueAction.actionPage.name,
-    origin: queueAction.tracking.location
+    origin: queueAction.tracking?.location
   }
 
   const signature: Signature = { "petition_signature": _.omitBy(action, _.isNil) };

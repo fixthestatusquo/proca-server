@@ -26,14 +26,35 @@ export const postAction = async (body: Signature) => {
       body,
       headers
     );
-    console.log('Status: ', status, data);
+    console.log('Post status: ', status, data);
     return data;
     } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      console.log('error: ', error.code, error.config.data, error.message, error.response.status, error.response.statusText);
+      console.log('post error: ', error.code, error.config.data, error.message, error.response.status, error.response.statusText);
       return error.message;
     } else {
-      console.log('unexpected error: ', error);
+      console.log('post unexpected error: ', error);
+      return 'An unexpected error occurred';
+    }
+  }
+}
+
+export const verification = async (verificationToken: string) => {
+  const verificationUrl = `/api/v1/petition_signatures/${verificationToken}/verify`;
+  try {
+    const { data, status } = await axios.post(
+      verificationUrl,
+      {},
+      headers
+    );
+    console.log('Verification status: ', status, data);
+    return data;
+    } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      console.log('verification error: ', error.message, error);
+      return error.message;
+    } else {
+      console.log('verification unexpected error: ', error);
       return 'An unexpected error occurred';
     }
   }
