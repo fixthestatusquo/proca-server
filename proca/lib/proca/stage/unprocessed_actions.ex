@@ -1,8 +1,8 @@
-defmodule Proca.Stage.ProcessOld do
+defmodule Proca.Stage.UnprocessedActions do
   @moduledoc """
 
-  Server which processes older actions, which might be unprocessed because of
-  not queue was available, or processing failed.
+  Stage which produces unproduced actions, which might be unprocessed because of
+  no queue was available, or because processing failed.
 
   We process the actions one by one synchronously because the processing will
   update the associated supporter.
@@ -22,8 +22,8 @@ defmodule Proca.Stage.ProcessOld do
   use GenStage
 
   # Seconds
-  @sweep_interval 60
-  @time_margin 60
+  @sweep_interval 60 * 10
+  @time_margin 60 * 2
 
   @impl true
   def init(opts) do
