@@ -12,7 +12,6 @@ const queueDeliver = "cus.172.deliver";
 
 syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliver, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2') {
-    console.log("ooooooo", formatAction(action))
     await postAction(formatAction(action));
   }
 }, {}
