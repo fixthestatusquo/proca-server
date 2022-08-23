@@ -1,7 +1,8 @@
 export {
   testQueue,
   syncQueue,
-  syncFile
+  syncFile,
+  connect
 } from './queue'
 
 export {
