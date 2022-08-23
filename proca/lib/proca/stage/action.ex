@@ -36,7 +36,7 @@ defmodule Proca.Stage.Action do
 
   @behaviour Broadway.Acknowledger
 
-  def start_link(_opts) do
+  def start_link(opts) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
@@ -150,13 +150,26 @@ defmodule Proca.Stage.Action do
     %Message{data: action, acknowledger: {__MODULE__, :store, nil}}
   end
 
-  @spec partition_id(%{:__struct__ => Proca.Action | Proca.Stage.Processing, optional(any) => any}) ::
+  @spec action_page_id(%{
+          :__struct__ => Proca.Action | Proca.Stage.Processing,
+          optional(any) => any
+        }) ::
           any
-  def partition_id(%Action{action_page: %{org_id: org_id}}) do
+  def action_page_id(%Action{action_page: %{org_id: org_id}}) do
     org_id
   end
 
-  def partition_id(%Processing{action_change: %{data: %Action{action_page: %{org_id: org_id}}}}) do
+  def action_page_id(%Processing{action_change: %{data: %Action{action_page: %{org_id: org_id}}}}) do
+    org_id
+  end
+
+  @spec supporter_id(%{:__struct__ => Proca.Action | Proca.Stage.Processing, optional(any) => any}) ::
+          any
+  def supporter_id(%Action{supporter_id: id}) do
+    id
+  end
+
+  def supporter_id(%Processing{action_change: %{data: %Action{supporter_id: id}}}) do
     org_id
   end
 
