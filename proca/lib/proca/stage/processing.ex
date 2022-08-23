@@ -194,10 +194,24 @@ defmodule Proca.Stage.Processing do
     {:rejected, :rejected, nil}
   end
 
+  # Action without consent, when supporter is new -> leave it, the with_consent: true should trigger processing the supporter, otherwise we have a race
+  def transition(
+        action = %{
+          processing_status: :new,
+          with_consent: false,
+          supporter: %{processing_status: :new}
+        },
+        %ActionPage{}
+      ) do
+    :ok
+  end
+
+  # The only emitting transition at the moment!
   # Supporter is accepted, and we do not confirm action, lets move to delivery
   def transition(
         %{
           processing_status: :new,
+          with_consent: true,
           supporter: %{processing_status: :accepted}
         },
         %ActionPage{

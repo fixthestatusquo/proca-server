@@ -37,10 +37,12 @@ defmodule Proca.Stage.Action do
   @behaviour Broadway.Acknowledger
 
   def start_link(opts) do
+    prod_mod = Keyword.get(opts, :producer, {Proca.Stage.Queue, []})
+
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
-        module: {Proca.Stage.Queue, []},
+        module: prod_mod,
         concurrency: 1,
         transformer: {__MODULE__, :to_message, []}
       ],
