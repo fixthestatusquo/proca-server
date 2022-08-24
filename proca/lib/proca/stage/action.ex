@@ -37,17 +37,15 @@ defmodule Proca.Stage.Action do
   @behaviour Broadway.Acknowledger
 
   def start_link(opts) do
-    prod_mod = Keyword.get(opts, :producer, {Proca.Stage.Queue, []})
-
     Broadway.start_link(__MODULE__,
-      name: __MODULE__,
+      name: opts[:name] || __MODULE__,
       producer: [
-        module: prod_mod,
+        module: opts[:producer] || {Proca.Stage.Queue, []},
         concurrency: 1,
         transformer: {__MODULE__, :to_message, []}
       ],
       processors: [
-        default: [concurrency: 40]
+        default: [concurrency: opts[:processors_concurrency] || 40]
       ],
       batchers: [
         default: [
@@ -131,20 +129,22 @@ defmodule Proca.Stage.Action do
   Can fail due to some AMQP publish failure
   """
   def emit_all(msgs) do
-    case Connection.with_chan(fn channel ->
-           map_only_ok(msgs, &Processing.emit(&1.data, channel))
-         end) do
+    result =
+      Connection.with_chan(fn channel ->
+        map_only_ok(msgs, fn %{data: data} = m ->
+          case Processing.emit(data, channel) do
+            :ok -> m
+            :error -> Message.failed(m, :publish_error)
+          end
+        end)
+      end)
+
+    case result do
       {:error, reason} ->
         Enum.map(msgs, &Message.failed(&1, inspect(reason)))
 
       res when is_list(res) ->
-        Enum.zip(msgs, res)
-        |> Enum.map(fn {m, r} ->
-          case r do
-            :ok -> m
-            :error -> Message.failed(m, "publish error")
-          end
-        end)
+        res
     end
   end
 
@@ -172,7 +172,7 @@ defmodule Proca.Stage.Action do
   end
 
   def supporter_id(%Processing{action_change: %{data: %Action{supporter_id: id}}}) do
-    org_id
+    id
   end
 
   @doc """

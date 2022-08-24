@@ -95,7 +95,7 @@ defmodule Proca.Service.Detail do
     payload =
       Jason.encode!(%{
         "email" => email,
-        "contactRef" => ref
+        "contactRef" => Supporter.base_encode(ref)
       })
 
     case Service.json_request(srv, srv.host, post: payload, auth: Service.Webhook.auth_type(srv)) do
@@ -112,12 +112,15 @@ defmodule Proca.Service.Detail do
             ProcaWeb.Helper.format_result(error)
         end
 
+      {:ok, 404} ->
+        {:error, :not_found}
+
       other ->
         warn(
-          "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{other}"
+          "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{inspect(other)}"
         )
 
-        {:error, :other}
+        {:error, :unknown}
     end
   end
 
@@ -125,7 +128,11 @@ defmodule Proca.Service.Detail do
     apply(Proca.TestDetailBackend, :lookup, [supporter])
   end
 
-  def lookup(_org, _sup), do: {:error, :not_supported}
+  def lookup(org, _sup) do
+    error("Asked to do unsupported lookup for org #{inspect(org)}")
+
+    {:error, :not_supported}
+  end
 
   @spec update(Changeset.t(%Supporter{}), Changeset.t(%Action{}), %Detail{}) ::
           {Changeset.t(%Supporter{}), Changeset.t(%Action{})}

@@ -66,12 +66,40 @@ defmodule Proca.Application do
   defp daemon_servers() do
     [
       # Async processing systems
-      {Task.Supervisor, name: Proca.Service.DetailProcessing},
+      %{
+        id: Proca.Stage.CurrentActions,
+        start: {
+          Proca.Stage.Action,
+          :start_link,
+          [[producer: {Proca.Stage.Queue, []}]]
+        }
+      },
+      %{
+        id: Proca.Stage.OldActions,
+        start: {
+          Proca.Stage.Action,
+          :start_link,
+          [
+            [
+              name: Proca.Stage.OldActions,
+              producer: {
+                Proca.Stage.UnprocessedActions,
+                [sweep_interval: 600, time_margin: 60]
+              },
+              processors_concurrency: 1
+            ]
+          ]
+        }
+      },
+
+      # Stats
       {Proca.Server.Stats, Application.get_env(:proca, Proca)[:stats_sync_interval]},
-      # {Proca.Stage.ProcessOld, Application.get_env(:proca, Proca)[:process_old_interval]},
       {Proca.ActionPage.Status, []},
+      # JWT keys dict
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
+      # MTT cron job
       {Proca.Server.MTT, []},
+      # User status
       {Proca.Users.Status, [interval: 30_000]}
     ]
   end
