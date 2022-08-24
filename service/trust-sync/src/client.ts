@@ -20,6 +20,7 @@ const headers = {
 const postUrl = "https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures"
 
 export const postAction = async (body: Signature) => {
+  console.log("post headers:", headers, "post url:", postUrl)
   try {
     const { data, status } = await axios.post(
       postUrl,
@@ -41,6 +42,7 @@ export const postAction = async (body: Signature) => {
 
 export const verification = async (verificationToken: string) => {
   const verificationUrl = `https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures/${verificationToken}/verify`;
+  console.log("verification headers:", headers, "verification url:",verificationUrl)
   try {
     const { data, status } = await axios.post(
       verificationUrl,
@@ -55,6 +57,24 @@ export const verification = async (verificationToken: string) => {
       return error.message;
     } else {
       console.log('verification unexpected error: ', error);
+      return 'An unexpected error occurred';
+    }
+  }
+}
+
+export const lookup = async (email: string) => {
+  const url = `https://lc-trust-stage.palasthotel.de/api/v1/lookup/newsletter_subscribers?email=${email}`;
+  console.log("lookup headers:", headers, "lookup url:", url)
+  try {
+    const { data, status } = await axios.get(url, headers);
+    console.log('Lookup status: ',  data, status);
+    return data;
+    } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      console.log('Lookup error: ',  error.message, error.response.status, error.response.statusText);
+      return error.message;
+    } else {
+      console.log('Lookup unexpected error: ', error);
       return 'An unexpected error occurred';
     }
   }

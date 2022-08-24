@@ -1,6 +1,6 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
 import { formatAction } from "./data";
-import { postAction, verification } from "./client";
+import { postAction, verification, lookup } from "./client";
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -14,6 +14,7 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliver, asyn
     if (data.petition_signature?.verification_token) {
       await verification(data.petition_signature.verification_token)
     }
+    lookup(formatAction(action).petition_signature.email);
   }
 }, {}
 )
