@@ -61,7 +61,7 @@ defmodule Proca.Stage.Processing do
   """
   def preload(actions) do
     Repo.preload(actions,
-      action_page: [:org, :campaign],
+      action_page: [[org: :detail_backend], :campaign],
       supporter: [:action_page, [contacts: :org]]
     )
   end
@@ -111,6 +111,10 @@ defmodule Proca.Stage.Processing do
 
   def needs_lookup?(_, _), do: false
 
+  @spec transition(%Action{}, %ActionPage{}) ::
+          :ok
+          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
+             :supporter_confirm | :action_confirm | :deliver | nil}
   @doc """
   This function implements the state machine for Action.
   It returns a new states for action and supporter, as well a queue stage where to emit the action.
@@ -118,10 +122,29 @@ defmodule Proca.Stage.Processing do
 
   returns :ok if nothing needs to be done
   """
-  @spec transition(%Action{}, %ActionPage{}) ::
-          :ok
-          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
-             :supporter_confirm | :action_confirm | :deliver | nil}
+  # Is it already delivered?
+  def transition(
+        %{
+          processing_status: :delivered,
+          supporter: %{processing_status: :accepted}
+        },
+        _ap
+      ) do
+    # Action already delivered: not processing.
+    :ok
+  end
+
+  # does it have supporter.email removed already, but still processing? Weird, reject
+  def transition(
+        %{
+          supporter: %{email: nil}
+        },
+        _ap
+      ) do
+    # Action already delivered: not processing.
+    {:rejected, :rejected, nil}
+  end
+
   def transition(
         %{
           processing_status: :new,
@@ -167,17 +190,6 @@ defmodule Proca.Stage.Processing do
         _ap
       ) do
     # Supporter is being confirmed, so this action has to wait
-    :ok
-  end
-
-  def transition(
-        %{
-          processing_status: :delivered,
-          supporter: %{processing_status: :accepted}
-        },
-        _ap
-      ) do
-    # Action already delivered: not processing.
     :ok
   end
 

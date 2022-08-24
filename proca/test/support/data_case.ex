@@ -37,7 +37,16 @@ defmodule Proca.DataCase do
     end
 
     if tags[:start] do
-      if :processing in tags[:start], do: Proca.Stage.Processing.start_link([])
+      if :processing in tags[:start] do
+        Proca.Stage.Action.start_link(producer: {Proca.Stage.Queue, []})
+      end
+
+      if :old_processing in tags[:start] do
+        Proca.Stage.Action.start_link(
+          name: Proca.Stage.OldActions,
+          producer: {Proca.Stage.UnprocessedActions, [sweep_interal: 60, time_margine: 5]}
+        )
+      end
     end
 
     :ok

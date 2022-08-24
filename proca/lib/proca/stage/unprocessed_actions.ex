@@ -45,6 +45,7 @@ defmodule Proca.Stage.UnprocessedActions do
         %{demand: demand, last_id: last_id, time_margin: margin, sweep_interval: sweep} = st
       ) do
     actions = unprocessed_actions(demand, last_id, margin)
+
     actions_count = length(actions)
 
     st =
