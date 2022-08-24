@@ -40,7 +40,7 @@ export const postAction = async (body: Signature) => {
 }
 
 export const verification = async (verificationToken: string) => {
-  const verificationUrl = `/api/v1/petition_signatures/${verificationToken}/verify`;
+  const verificationUrl = `https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures/${verificationToken}/verify`;
   try {
     const { data, status } = await axios.post(
       verificationUrl,
