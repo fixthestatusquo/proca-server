@@ -13,6 +13,7 @@ export interface TrustAction {
   country?: string | null;
   message?: string | null;
   subscribe_newsletter: boolean | undefined;
+  data_handling_consent: boolean;
   move_code: string;
   origin: string | null;
 }
@@ -36,6 +37,7 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     country: queueAction.contact.country,
     message: queueAction.contact.comment,
     subscribe_newsletter: queueAction.privacy.optIn,
+    data_handling_consent: true,
     move_code: queueAction.actionPage.name,
     origin: queueAction.tracking?.location
   }
