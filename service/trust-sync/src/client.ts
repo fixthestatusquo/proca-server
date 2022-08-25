@@ -5,27 +5,30 @@ dotenv.config();
 
 import { Signature } from "./data";
 
-const key = process.env['TRUST_KEY'];
-const stamp = Math.floor(Math.floor(Date.now() / 1000)/30).toString();
+const makeHeaders = () => {
 
-let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
+  const key = process.env['TRUST_KEY'];
+  const stamp = Math.floor(Math.floor(Date.now() / 1000) / 30).toString();
 
-const headers = {
-  headers: {
-    'Authorization': `Token token="proca-test:${token}"`,
-    'Content-Type': 'application/json'
+  let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
+
+  return {
+    headers: {
+      'Authorization': `Token token="proca-test:${token}"`,
+      'Content-Type': 'application/json'
+    }
   }
-}
 
+}
 const postUrl = "https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures"
 
 export const postAction = async (body: Signature) => {
-  console.log("post headers:", headers, "post url:", postUrl)
+
   try {
     const { data, status } = await axios.post(
       postUrl,
       body,
-      headers
+      makeHeaders()
     );
     console.log('Post status: ', status, data);
     return data;
@@ -42,12 +45,12 @@ export const postAction = async (body: Signature) => {
 
 export const verification = async (verificationToken: string) => {
   const verificationUrl = `https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures/${verificationToken}/verify`;
-  console.log("verification headers:", headers, "verification url:",verificationUrl)
+
   try {
     const { data, status } = await axios.post(
       verificationUrl,
       {},
-      headers
+      makeHeaders()
     );
     console.log('Verification status: ', status, data);
     return data;
@@ -64,11 +67,11 @@ export const verification = async (verificationToken: string) => {
 
 export const lookup = async (email: string) => {
   const url = `https://lc-trust-stage.palasthotel.de/api/v1/lookup/newsletter_subscribers?email=${email}`;
-  console.log("lookup headers:", headers, "lookup url:", url)
+
   try {
-    const { data, status } = await axios.get(url, headers);
-    console.log('Lookup status: ',  data, status);
-    return data;
+    const { data, status } = await axios.get(url, makeHeaders());
+    console.log("lookup: ", data, status);
+    return status;
     } catch (error: any) {
     if (axios.isAxiosError(error)) {
       console.log('Lookup error: ',  error.message, error.response.status, error.response.statusText);
