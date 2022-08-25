@@ -10,11 +10,14 @@ const queueDeliver = "cus.172.deliver";
 
 syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliver, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2') {
-    const data = await postAction(formatAction(action));
+    const isSubscribe = { action: { customFields: { subscribeNewsletter: true } } }
+    const status = await lookup(action.contact.email);
+    if (status === 200) {
+      isSubscribe.action.customFields.subscribeNewsletter = false
+    }
+    const data = await postAction(formatAction(action, isSubscribe));
     if (data.petition_signature?.verification_token) {
       await verification(data.petition_signature.verification_token)
     }
-    lookup(formatAction(action).petition_signature.email);
   }
-}, {}
-)
+})
