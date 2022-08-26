@@ -1,9 +1,6 @@
 // Require the framework and instantiate it
 const fastify = require('fastify')({ logger: true })
-const trust = require('./client.ts');
-const lookup = email => { // do the lookup
-  return { hello: email }
-}
+import { lookup } from './client';
 
 const BodyJsonSchema = {
     type: 'object',
@@ -11,7 +8,7 @@ const BodyJsonSchema = {
     properties: {
       email: { type: 'string' },
     },
-  }
+}
 
   const schema = {
     body: BodyJsonSchema,
@@ -20,7 +17,7 @@ const BodyJsonSchema = {
   fastify.post('/lookup-trust', { schema }, async (request, reply) => {
     // we can use the `request.body` object to get the data sent by the client
     console.log(request.body.email);
-    return lookup (request.query.email);
+    return lookup(request.query.email);
   })
 
 fastify.route({
@@ -33,14 +30,20 @@ fastify.route({
     response: {
       200: {
         type: 'object',
-        properties: {
-          hello: { type: 'string' }
+        properities: {
+          action: { customFields: { subscribeNewsletter: { type: 'string' } } }
         }
+
       }
     }
   },
   handler: async (request, reply) => {
-    return lookup (request.query.email);
+    const isSubscribed = { action: { customFields: { subscribeNewsletter: true } } }
+    const status = await lookup(request.query.email);
+    if (status === 200) {
+      isSubscribed.action.customFields.subscribeNewsletter = false
+    }
+    return isSubscribed;
   }
 })
 
