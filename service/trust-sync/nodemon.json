@@ -1,6 +1,9 @@
 {
-  "watch": ["src"],
+  "watch": ["*.*"],
   "ext": ".ts,.js",
   "ignore": [],
-  "exec": "ts-node ./src/index.ts"
+  "execMap": {
+    "ts": "ts-node"
+  },
+  "noexec": "ts-node ./src/index.ts"
 }
