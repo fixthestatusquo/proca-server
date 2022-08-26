@@ -1,13 +1,44 @@
 // Require the framework and instantiate it
 const fastify = require('fastify')({ logger: true })
-
+const trust = require('./src/client.ts');
 const lookup = email => { // do the lookup
   return { hello: email }
 }
 
+const BodyJsonSchema = {
+    type: 'object',
+    required: ['email'],
+    properties: {
+      email: { type: 'string' },
+    },
+  }
+
+  const schema = {
+    body: BodyJsonSchema,
+  }
+
+  fastify.post('/lookup-trust', { schema }, async (request, reply) => {
+    // we can use the `request.body` object to get the data sent by the client
+    console.log(request.body.email);
+    return lookup (request.query.email);
+  })
+
 fastify.route({
   method: 'GET',
   url: '/lookup-trust',
+    schema: {
+    querystring: {
+      email: { type: 'string' }
+    },
+    response: {
+      200: {
+        type: 'object',
+        properties: {
+          hello: { type: 'string' }
+        }
+      }
+    }
+  },
   handler: async (request, reply) => {
     return lookup (request.query.email);
   }
