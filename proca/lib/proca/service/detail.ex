@@ -28,7 +28,7 @@ defmodule Proca.Service.Detail do
   ```
   """
 
-  alias Proca.{Org, Supporter, Service}
+  alias Proca.{Org, Action, Supporter, Service}
   import Logger
 
   use Ecto.Schema
@@ -41,21 +41,34 @@ defmodule Proca.Service.Detail do
 
     embedded_schema do
       field :opt_in, :boolean
+      field :given_at, :string
       field :email_status, :string
       field :email_status_changed, :string
     end
 
     def changeset(ch, params) do
       ch =
-        cast(ch, params, [:opt_in, :email_status, :email_status_changed])
+        cast(ch, params, [:opt_in, :given_at, :email_status, :email_status_changed])
+        |> Proca.Validations.validate_iso8601_format(:given_at)
         |> Proca.Validations.validate_iso8601_format(:email_status_changed)
 
-      if get_change(ch, :email_status) do
-        ch
-        |> validate_required(:email_status_changed)
-      else
-        ch
-      end
+      ch =
+        if get_change(ch, :email_status) do
+          ch
+          |> validate_required(:email_status_changed)
+        else
+          ch
+        end
+
+      ch =
+        if get_change(ch, :opt_in) do
+          ch
+          |> validate_required(:given_at)
+        else
+          ch
+        end
+
+      ch
     end
   end
 
@@ -99,18 +112,26 @@ defmodule Proca.Service.Detail do
       })
 
     case Service.json_request(srv, srv.host, post: payload, auth: Service.Webhook.auth_type(srv)) do
-      {:ok, 200, data} ->
+      {:ok, 200, data} when is_map(data) ->
         details = Detail.changeset(ProperCase.to_snake_case(data))
 
         case details do
           %{valid?: true} ->
             {:ok, apply_changes(details)}
 
-          %{errors: e} = error ->
-            warn("Lookup service returned invalid data: (id #{srv.id}) at #{srv.host}: #{e}")
+          error ->
+            em = ProcaWeb.Helper.format_errors(error)
+
+            warn(
+              "Lookup service returned invalid data: (id #{srv.id}) at #{srv.host}: #{inspect(em)}"
+            )
+
             # XXX calling ProcaWeb module
-            ProcaWeb.Helper.format_result(error)
+            {:error, :bad_format}
         end
+
+      {:ok, 200, data} when is_bitstring(data) ->
+        {:error, :bad_content_type}
 
       {:ok, 404} ->
         {:error, :not_found}
@@ -147,16 +168,20 @@ defmodule Proca.Service.Detail do
       |> update_custom_fields(details.action)
 
     {s, a}
+    |> IO.inspect(label: "detail update")
   end
 
   # XXX here we should only chnge opt_in if nil (not given?). This is not yet possible
-  def update_opt_in(ch, %Detail.Privacy{opt_in: true}, org) do
+  def update_opt_in(ch, %Detail.Privacy{opt_in: true, given_at: given_at}, org) do
     change(ch,
       contacts:
         Proca.Contact.change_for_org(
           get_field(ch, :contacts),
           org,
-          %{communication_consent: true}
+          %{
+            communication_consent: true,
+            inserted_at: elem(DateTime.from_iso8601(given_at), 1)
+          }
         )
     )
   end
