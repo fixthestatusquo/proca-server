@@ -56,18 +56,11 @@ defmodule Proca.Stage.Webhook do
     )
   end
 
-  @doc """
-  Not all actions generate thank you emails.
-
-  1. Email and template backend must be configured for the org (Org, AP, )
-  2. ActionPage's email template must be set [present in JSON]. (XXX Or fallback to org one?)
-  """
-
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
       {:ok, event} ->
-        Message.update_data(message, fn _ -> event end)
+        Message.put_data(message, event)
 
       # ignore garbled message
       {:error, reason} ->
