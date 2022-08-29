@@ -61,6 +61,7 @@ defmodule Proca.Supporter do
 
     fingerprint = get_field(ch, :fingerprint)
     campaign_id = get_field(ch, :campaign_id)
+    inserted_at = get_field(ch, :inserted_at)
 
     rank =
       Repo.one(
@@ -69,7 +70,8 @@ defmodule Proca.Supporter do
           where:
             s.processing_status == :accepted and
               s.fingerprint == ^fingerprint and
-              s.campaign_id == ^campaign_id
+              s.campaign_id == ^campaign_id and
+              (is_nil(^inserted_at) or s.inserted_at < ^inserted_at)
         )
       )
 
