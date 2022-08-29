@@ -18,6 +18,14 @@ const makeHeaders = () => {
   }
 }
 
+export const rabbit = () => {
+  return {
+    user: process.env.RABBIT_USER,
+    pass: process.env.RABBIT_PASSWORD,
+    queueDeliver: process.env.RABBIT_QUEUE
+  }
+}
+
 export const postAction = async (body: Signature) => {
   try {
     const { data, status } = await axios.post(
@@ -60,6 +68,7 @@ export const verification = async (verificationToken: string) => {
 }
 
 export const lookup = async (email: string) => {
+  console.log("222222222222");
   const url = process.env.LOOKUP_URL + email;
   try {
     const { data, status } = await axios.get(url, makeHeaders());
