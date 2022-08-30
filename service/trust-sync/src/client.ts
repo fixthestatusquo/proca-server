@@ -68,7 +68,6 @@ export const verification = async (verificationToken: string) => {
 }
 
 export const lookup = async (email: string) => {
-  console.log("222222222222");
   const url = process.env.LOOKUP_URL + email;
   try {
     const { data, status } = await axios.get(url, makeHeaders());
