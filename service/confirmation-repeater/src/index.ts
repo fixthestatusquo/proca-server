@@ -1,4 +1,7 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
+const { Level } = require("level");
+
+const db = new Level(process.env.DB_PATH || "./db", { valueEncoding: 'json' })
 const dotenv = require('dotenv');
 dotenv.config();
 
