@@ -9,7 +9,7 @@ defmodule Proca.Org do
   import Ecto.Changeset
   import Ecto.Query, except: [update: 2]
   alias Ecto.Multi
-  alias Proca.Org
+  alias Proca.{Org, Service}
   alias Proca.Service.EmailTemplateDirectory
   import Logger
 
@@ -42,17 +42,14 @@ defmodule Proca.Org do
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
 
-    # confirming and delivery configuration
+    # confirming and delivery configuration for custom queues (cus.*)
     field :custom_supporter_confirm, :boolean, default: false
     field :custom_action_confirm, :boolean, default: false
     field :custom_action_deliver, :boolean, default: false
     field :custom_event_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
-
-    # for processing system events from Proca.Server.Notify
-    field :event_processing, :boolean, default: false
-    field :system_sqs_deliver, :boolean, default: false
+    belongs_to :push_backend, Proca.Service
 
     field :config, :map, default: %{}
 
@@ -76,13 +73,12 @@ defmodule Proca.Org do
       :custom_action_confirm,
       :custom_action_deliver,
       :custom_event_deliver,
-      :system_sqs_deliver,
-      :event_processing,
       :action_schema_version
     ])
-    |> cast_email_backend(org, attrs)
-    |> cast_event_backend(org, attrs)
-    |> cast_storage_backend(org, attrs)
+    |> cast_backend(:email_backend, [:mailjet, :ses], attrs, org)
+    |> cast_backend(:event_backend, [:sqs, :webhook], attrs, org)
+    |> cast_backend(:push_backend, [:sqs, :webhook], attrs, org)
+    |> cast_backend(:storage_backend, [:supabase], attrs, org)
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
@@ -90,83 +86,42 @@ defmodule Proca.Org do
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
   end
 
-  def cast_email_backend(chset, org, %{email_backend: srv_name})
-      when srv_name in [:mailjet, :ses] do
-    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
-      nil ->
-        add_error(chset, :email_backend, "no such service")
+  def cast_backend(chset, backend_type, allow_list, params, org) do
+    if Map.has_key?(params, backend_type) do
+      case cast_backend_service(backend_type, params[backend_type], org) do
+        nil ->
+          add_error(chset, backend_type, "no such service")
 
-      %{id: id} ->
-        chset
-        |> put_change(:email_backend_id, id)
+        %{id: id, name: name} ->
+          if Enum.member?(allow_list, name) do
+            put_change(chset, String.to_existing_atom("#{backend_type}_id"), id)
+          else
+            add_error(chset, backend_type, "service does not support such backend")
+          end
+
+        :disable ->
+          put_change(chset, String.to_existing_atom("#{backend_type}_id"), nil)
+      end
+    else
+      chset
     end
   end
 
-  def cast_email_backend(chset, _org, %{email_backend: :system}) do
-    case Proca.Org.one([:instance] ++ [preload: [:email_backend]]) do
-      %{email_backend: %{id: id}} ->
-        chset
-        |> put_change(:email_backend_id, id)
-
-      _e ->
-        add_error(chset, :email_backend, "cannot inherit system service")
-    end
+  defp cast_backend_service(_type, nil, _org) do
+    :disable
   end
 
-  def cast_email_backend(chset, _org, %{email_backend: %Proca.Service{id: id}}) do
-    chset
-    |> put_change(:email_backend_id, id)
+  defp cast_backend_service(:email_backend, :system, _org) do
+    Proca.Org.one([:instance] ++ [preload: [:email_backend]])
   end
 
-  def cast_email_backend(chset, _org, %{email_backend: nil}) do
-    chset
-    |> put_change(:email_backend_id, nil)
+  defp cast_backend_service(_type, service, org) when is_atom(service) do
+    Proca.Service.one([name: service, org: org] ++ [:latest])
   end
 
-  def cast_email_backend(ch, _org, %{email_backend: srv_name})
-      when is_atom(srv_name) do
-    add_error(ch, :email_backend, "service does not support email")
+  defp cast_backend_service(_type, %Service{} = service, _org) do
+    service
   end
-
-  def cast_email_backend(ch, _org, _a), do: ch
-
-  def cast_event_backend(chset, org, %{event_backend: srv_name})
-      when srv_name in [:webhook] do
-    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
-      nil ->
-        add_error(chset, :event_backend, "no such service")
-
-      %{id: id} ->
-        chset
-        |> put_change(:event_backend_id, id)
-    end
-  end
-
-  def cast_event_backend(ch, _org, %{event_backend: srv_name})
-      when is_atom(srv_name) do
-    add_error(ch, :event_backend, "service does not support events")
-  end
-
-  def cast_event_backend(ch, _org, _a), do: ch
-
-  def cast_storage_backend(chset, org, %{storage_backend: srv_name})
-      when srv_name in [:supabase] do
-    case Proca.Service.one([name: srv_name, org: org] ++ [:latest]) do
-      nil ->
-        add_error(chset, :storage_backend, "no such service")
-
-      %{id: id} ->
-        chset
-        |> put_change(:storage_backend_id, id)
-    end
-  end
-
-  def cast_storage_backend(ch, _org, %{storage_backend: srv_name})
-      when is_atom(srv_name) do
-    add_error(ch, :storage_backend, "service does not support events")
-  end
-
-  def cast_storage_backend(ch, _org, _a), do: ch
 
   def all(q, [{:name, name} | kw]), do: where(q, [o], o.name == ^name) |> all(kw)
   def all(q, [:instance | kw]), do: all(q, [{:name, instance_org_name()} | kw])

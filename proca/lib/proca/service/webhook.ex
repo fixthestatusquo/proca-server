@@ -15,6 +15,7 @@ defmodule Proca.Service.Webhook do
     Service.json_request(service, url, post: payload, auth: auth_type(service))
   end
 
+  @spec merge_url_tags(binary, any) :: binary
   @doc """
   Merge tags like: {{foo}} by value from data["foo"]
   """

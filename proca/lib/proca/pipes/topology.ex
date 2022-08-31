@@ -36,8 +36,9 @@ defmodule Proca.Pipes.Topology do
   x org.N.deliver
                           #     > =wrk.N.email.supporter
                           #     > =wrk.N.sqs              -> proca-gw
-                                > =wrk.N.http  [*]        -> proca-gw
-                                > =cus.N.deliver
+                          #     > =cus.N.deliver
+                          #     > =wrk.N.webhook
+                          #     > =wrk.N.sqs
 
                                     DLX:x org.N.fail fanout> org.N.fail
                                     DLX:x org.N.retry direct:$qn-> =$qn
@@ -59,7 +60,6 @@ defmodule Proca.Pipes.Topology do
     - `custom_action_deliver` enables `cus.N.deliver`
 
   - Worker queues, are enabled by flags on Org (boolean columns):
-    - `system_sqs_deliver` sends to SQS (SQS service must be configured)
     - `email.supporter` sends double-opt-in email when: `supporter_confirm` is `true`. Org must have email/template backends set. The email will be set if `email_supporter_template` is set on org or action page.
     - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_template refers to template identifier in the backend.
 
@@ -74,7 +74,9 @@ defmodule Proca.Pipes.Topology do
   import AMQP.Basic
 
   ## API for topology server lifecycle
-  def start_link(org = %Org{}), do: GenServer.start_link(__MODULE__, org, name: process_name(org))
+  def start_link(org = %Org{}) do
+    GenServer.start_link(__MODULE__, org, name: process_name(org))
+  end
 
   def stop(org = %Org{}), do: GenServer.stop(process_name(org))
 
@@ -116,24 +118,31 @@ defmodule Proca.Pipes.Topology do
     }
   end
 
+  defp push_backend(%Org{push_backend: %{name: name}}), do: name
+  defp push_backend(_), do: nil
+  defp event_backend(%Org{event_backend: %{name: name}}), do: name
+  defp event_backend(_), do: nil
+
   def configuration(o = %Org{}) do
-    instance = Org.one([:instance])
+    instance = Org.one([:instance] ++ [preload: [:push_backend, :event_backend]])
+    o = Proca.Repo.preload(o, [:push_backend, :event_backend])
 
     %{
       confirm_supporter: Stage.EmailSupporter.start_for?(o) and o.supporter_confirm,
       email_supporter: Stage.EmailSupporter.start_for?(o),
-      sqs: Stage.SQS.start_for?(o),
-      webhook: Stage.Webhook.start_for?(o),
-      event_processing: o.event_processing,
+      push_sqs: Stage.SQS.start_for?(o) and push_backend(o) == :sqs,
+      push_webhook: Stage.Webhook.start_for?(o) and push_backend(o) == :webhook,
       custom_supporter_confirm: o.custom_supporter_confirm,
       custom_action_confirm: o.custom_action_confirm,
       custom_action_deliver: o.custom_action_deliver,
       custom_event_deliver: o.custom_event_deliver,
-      event_forward_to_instance_sqs: instance.event_processing and Stage.SQS.start_for?(instance),
+      event_sqs: Stage.SQS.start_for?(o) and event_backend(o) == :sqs,
+      event_webhook: Stage.Webhook.start_for?(o) and event_backend(o) == :webhook,
+      event_forward_to_instance_sqs:
+        Stage.SQS.start_for?(instance) and event_backend(instance) == :sqs,
       event_forward_to_instance_webhook:
-        instance.event_processing and Stage.Webhook.start_for?(instance),
-      event_forward_to_instance_custom:
-        instance.event_processing and instance.custom_event_deliver,
+        Stage.Webhook.start_for?(instance) and event_backend(instance) == :webhook,
+      event_forward_to_instance_custom: instance.custom_event_deliver,
       instance_org_id: instance.id
     }
   end
@@ -207,17 +216,22 @@ defmodule Proca.Pipes.Topology do
       {
         xn(o, "deliver"),
         wqn(o, "sqs"),
-        bind: config[:sqs], route: "#"
+        bind: config[:push_sqs], route: "#"
       },
       {
         xn(o, "event"),
         wqn(o, "sqs"),
-        bind: config[:event_processing] and config[:sqs], route: "#"
+        bind: config[:event_sqs], route: "#"
+      },
+      {
+        xn(o, "deliver"),
+        wqn(o, "webhook"),
+        bind: config[:push_webhook], route: "#"
       },
       {
         xn(o, "event"),
         wqn(o, "webhook"),
-        bind: config[:event_processing] and config[:webhook], route: "#"
+        bind: config[:event_webhook], route: "#"
       }
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)

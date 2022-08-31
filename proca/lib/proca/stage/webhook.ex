@@ -17,19 +17,13 @@ defmodule Proca.Stage.Webhook do
   import Logger
   import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
 
-  @doc "Get selected webhook service"
-  def get_service(org = %{event_backend_id: id}) when is_number(id) do
-    Service.one(org: org, id: id, name: :webhook)
+  def start_for?(org = %Org{}) do
+    case Proca.Repo.preload(org, [:push_backend, :event_backend]) do
+      %{push_backend: %{name: :webhook}} -> true
+      %{event_backend: %{name: :webhook}} -> true
+      _ -> false
+    end
   end
-
-  def get_service(_), do: nil
-
-  def start_for?(org = %{event_processing: true}) do
-    webhook = get_service(org)
-    not is_nil(webhook)
-  end
-
-  def start_for?(_), do: false
 
   def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
@@ -51,7 +45,7 @@ defmodule Proca.Stage.Webhook do
         ]
       ],
       context: %{
-        org: org
+        org: Proca.Repo.preload(org, [:push_backend, :event_backend])
       }
     )
   end
@@ -70,9 +64,13 @@ defmodule Proca.Stage.Webhook do
 
   @impl true
   def handle_batch(:default, messages, _, %{org: org}) do
-    webhook = get_service(org)
-
     for msg <- messages do
+      webhook =
+        case msg.data do
+          "proca:event" <> _ -> org.event_backend
+          "proca:action" <> _ -> org.push_backend
+        end
+
       case Webhook.push(webhook, msg.data) do
         {:ok, 200} ->
           msg
