@@ -134,8 +134,6 @@ defmodule Proca.Service.EmailMerge do
   end
 
   def put_files(eml = %Email{}, files) do
-    IO.inspect(files, label: "put_files")
-
     Enum.reduce(Enum.with_index(files, 1), eml, fn {{filepath, data}, ordinal}, e ->
       mime_type =
         case Path.extname(filepath) do

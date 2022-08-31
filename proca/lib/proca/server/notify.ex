@@ -59,8 +59,7 @@ defmodule Proca.Server.Notify do
     restart_org_pipes(org)
 
     if org.name == Org.instance_org_name() do
-      instance_org_updated(org)
-
+      # Instance org listenes to some events of ALL orgs
       Org.all([])
       |> Enum.each(&Proca.Pipes.Supervisor.reload_child/1)
     end
@@ -160,9 +159,6 @@ defmodule Proca.Server.Notify do
   end
 
   ##### SIDE EFFECTS ######
-  def instance_org_updated(org) do
-    Proca.Server.Instance.update(org)
-  end
 
   def key_activated(%PublicKey{active: true, org: org} = key) do
     Proca.Server.Keys.update_key(org, key)

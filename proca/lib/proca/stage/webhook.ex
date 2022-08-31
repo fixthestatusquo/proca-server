@@ -67,8 +67,8 @@ defmodule Proca.Stage.Webhook do
     for msg <- messages do
       webhook =
         case msg.data do
-          "proca:event" <> _ -> org.event_backend
-          "proca:action" <> _ -> org.push_backend
+          %{"schema" => "proca:event" <> _} -> org.event_backend
+          %{"schema" => "proca:action" <> _} -> org.push_backend
         end
 
       case Webhook.push(webhook, msg.data) do
