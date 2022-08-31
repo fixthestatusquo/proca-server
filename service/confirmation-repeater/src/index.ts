@@ -44,6 +44,30 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
     })
 
       }
-    })
+})
+
+// to do: finish when queue awailable
+
+// syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliveryRepeater, async (action: ActionMessageV2 | EventMessageV2) => {
+//   if (action.schema === 'proca:action:2') {
+
+//     console.log(action.actionId);
+//     await db.put('done' + action.actionId, { done: true }, function (error: any) {
+//       if (error) {
+//         throw error
+//       }
+//     })
+//     await db.del('action' + action.actionId, function (error: any) {
+//       if (error) {
+//         throw error
+//       }
+//     })
+//     await db.del('retry' + action.actionId, function (error: any) {
+//       if (error) {
+//         throw error
+//       }
+//     })
+//   }
+// })
 
 
