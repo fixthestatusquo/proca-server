@@ -207,13 +207,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:custom_supporter_confirm, :boolean)
       arg(:custom_action_confirm, :boolean)
       arg(:custom_action_deliver, :boolean)
-      arg(:custom_event_deliver, :boolean)
-      arg(:sqs_deliver, :boolean)
 
+      arg(:custom_event_deliver, :boolean)
       arg(:event_backend, :service_name)
-      arg(:event_processing, :boolean)
 
       arg(:storage_backend, :service_name)
+      arg(:push_backend, :service_name)
 
       load(:org, by: [:name])
       determine_auth(for: :org)
@@ -366,16 +365,15 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :custom_action_confirm, non_null(:boolean)
     field :custom_action_deliver, non_null(:boolean)
     field :custom_event_deliver, non_null(:boolean)
-    field :sqs_deliver, non_null(:boolean)
 
     field :event_backend, :service_name
-    field :event_processing, non_null(:boolean)
+
+    field :push_backend, :service_name
+    field :storage_backend, :service_name
 
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
     end
-
-    field :storage_backend, :service_name
   end
 
   object :email_template do
