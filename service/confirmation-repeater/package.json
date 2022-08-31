@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@proca/queue": "^0.2.1"
+    "@proca/queue": "^0.2.1",
+    "level": "^8.0.0"
   }
 }
