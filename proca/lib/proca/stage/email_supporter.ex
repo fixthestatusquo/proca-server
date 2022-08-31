@@ -100,6 +100,11 @@ defmodule Proca.Stage.EmailSupporter do
           end
         end
 
+      {:ok, _} ->
+        warn("EmailSupporter wrk: Invalid message format #{data}")
+
+        ignore(message, "Invalid message format")
+
       # ignore garbled message
       {:error, reason} ->
         ignore(message, reason)
