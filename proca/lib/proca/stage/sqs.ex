@@ -9,13 +9,12 @@ defmodule Proca.Stage.SQS do
   alias Proca.{Org, Service}
   require Logger
 
-  @doc "Get SQS service"
-  def get_service(org) do
-    Service.one(org: org, name: :sqs)
-  end
-
   def start_for?(org = %Org{}) do
-    org.system_sqs_deliver and not is_nil(get_service(org))
+    case Proca.Repo.preload(org, [:push_backend, :event_backend]) do
+      %{push_backend: %{name: :sqs}} -> true
+      %{event_backend: %{name: :sqs}} -> true
+      _ -> false
+    end
   end
 
   def start_link(org = %Org{id: org_id}) do
@@ -36,17 +35,20 @@ defmodule Proca.Stage.SQS do
           batch_timeout: 1_000,
           concurrency: 1
         ]
-      ]
+      ],
+      context: %{
+        org: Proca.Repo.preload(org, [:push_backend, :event_backend])
+      }
     )
   end
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
-      {:ok, %{"orgId" => org_id} = action} ->
+      {:ok, %{"orgId" => org_id, "schema" => schema} = action} ->
         message
-        |> Message.update_data(fn _ -> action end)
-        |> Message.put_batch_key(org_id)
+        |> Message.put_data(action)
+        |> Message.put_batch_key({org_id, content_type(schema)})
         |> Message.put_batcher(:sqs)
 
       {:error, reason} ->
@@ -54,25 +56,47 @@ defmodule Proca.Stage.SQS do
     end
   end
 
+  defp content_type(schema) do
+    case schema do
+      "proca:event" <> _ -> :event
+      "proca:action" <> _ -> :action
+    end
+  end
+
   @impl true
-  def handle_batch(_sqs, msgs, %BatchInfo{batch_key: org_id}, _) do
-    with service when not is_nil(service) <-
-           Service.one([name: :sqs, org: %Org{id: org_id}] ++ [:latest]),
-         actions <- Enum.map(msgs, fn m -> m.data end) |> Enum.map(&to_message/1) do
-      case ExAws.SQS.send_message_batch(service.path, actions)
-           |> Service.aws_request(service) do
+  def handle_batch(_sqs, msgs, %BatchInfo{batch_key: {org_id, content_type}}, %{org: org}) do
+    service =
+      case content_type do
+        :event -> org.event_backend
+        :action -> org.push_backend
+      end
+
+    if service != nil do
+      actions =
+        msgs
+        |> Enum.map(& &1.data)
+        |> Enum.map(&to_message/1)
+
+      sent =
+        ExAws.SQS.send_message_batch(service.path, actions)
+        |> Service.aws_request(service)
+
+      case sent do
         {:ok, status} ->
-          msgs |> mark_failed(status)
+          mark_partial_failures(msgs, status)
 
         {:error, {:http_error, http_code, %{message: message}}} ->
           Logger.error("SQS forward: #{http_code} #{message}")
-          msgs |> Enum.map(fn m -> Message.failed(m, message) end)
+          Enum.map(msgs, &Message.failed(&1, message))
 
         _ ->
-          msgs |> Enum.map(fn m -> Message.failed(m, "Cannot call SQS.SendMessageBatch") end)
+          Enum.map(msgs, &Message.failed(&1, "Cannot call SQS.SendMessageBatch"))
       end
     else
-      _ -> {:error, "SQS service not configured for org_id #{org_id}"}
+      Enum.map(
+        msgs,
+        &Message.failed(&1, "SQS service not found for #{org_id} and #{content_type}")
+      )
     end
   end
 
@@ -91,13 +115,13 @@ defmodule Proca.Stage.SQS do
     ]
   end
 
-  def mark_failed(messages, %{
+  def mark_partial_failures(messages, %{
         "SendMessageBatchResponse" => %{"SendMessageBatchResult" => %{"Failed" => nil}}
       }) do
     messages
   end
 
-  def mark_failed(messages, %{
+  def mark_partial_failures(messages, %{
         "SendMessageBatchResponse" => %{"SendMessageBatchResult" => %{"Failed" => fails}}
       }) do
     reasons =
