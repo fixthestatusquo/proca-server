@@ -1,4 +1,5 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
+import { changeDate } from "./helpers"
 const amqplib = require('amqplib');
 const { Level } = require("level");
 const schedule = require('node-schedule');
@@ -11,18 +12,35 @@ dotenv.config();
 const user = process.env.RABBIT_USER;
 const pass = process.env.RABBIT_PASSWORD;
 const queueConfirm = process.env.CONFIRM_QUEUE || "";
+const queueConfirmed = process.env.CONFIRMED_QUEUE || "";
+const maxRetries = process.env.MAX_RETIRES || "3";
 
 const job = schedule.scheduleJob('* * * * *', async () => {
-  console.log('running every hour');
+  console.log('running every minute');
   for await (const [key, value] of db.iterator({ gt: 'retry-' })) {
-    const date = new Date(value.retry)
-    console.log(date) // 2
-
-    //TODO: uncomment if
-
-    // if (date > Date.now()) {
     const actionId = key.split("-")[1]
     console.log("actionId", actionId)
+
+   if (value.attempts >= +maxRetries) {
+    await db.put('done-' + actionId, { done: false }, function (error: any) {
+      if (error) {
+        throw error
+      }
+    })
+    await db.del('action-' + actionId, function (error: any) {
+      if (error) {
+        console.log(error);
+      }
+    })
+    await db.del('retry-' + actionId, function (error: any) {
+      if (error) {
+        console.log(error);
+      }
+    })
+   }
+
+    //TODO: UNCOMMENT
+  //   if (Date(value.retry) > Date.now() && value.attempts < maxRetries) {
 
     db.get("action-" + actionId, async function (error: any, value: any) {
       if (error) throw error;
@@ -33,18 +51,16 @@ const job = schedule.scheduleJob('* * * * *', async () => {
     })
      db.get("retry-" + actionId, async function (error: any, value: any) {
        if (error) throw error;
-
-       //     TO DO: ABSTRACT DATE CHANGE
-
-       const retried = new Date(value.retry)
-        const retry = { retry: (new Date(retried.setDate(retried.getDate() + 3))).toISOString(), attempts: value.attempts + 1 };
-       console.log("Retried", retried, retry)
+      const retry = { retry: changeDate(value.retry), attempts: value.attempts + 1 };
+       console.log("Retried", retry)
        await db.put('retry-' + actionId, retry, async function (error: any) {
         if (error) {
           throw error
         }
      })
-    })
+     })
+      //TODO: UNCOMMENT
+    // }
   }
 });
 
@@ -53,8 +69,7 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
 
     console.log(action.actionId);
     await db.get('action-' + action.actionId, async function (error: any, value: any) {
-      if (error?.status === 404 || !value?.done) {
-
+      if (error?.status === 404) {
         await db.put('action-' + action.actionId, action, async function (error: any) {
           if (error) {
             throw error
@@ -66,9 +81,7 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
           })
         })
 
-        const created = new Date(action.action.createdAt)
-        const retry = { retry: (new Date(created.setDate(created.getDate() + 3))).toISOString(), attempts: 0 };
-
+        const retry = { retry: changeDate(action.action.createdAt), attempts: 0 };
         await db.put('retry-' + action.actionId, retry, async function (error: any) {
           if (error) {
             throw error
@@ -85,27 +98,23 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
       }
 })
 
-// to do: finish when queue awailable
-
-// syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliveryRepeater, async (action: ActionMessageV2 | EventMessageV2) => {
-//   if (action.schema === 'proca:action:2') {
-//     console.log(action.actionId);
-//     await db.put('done-' + action.actionId, { done: true }, function (error: any) {
-//       if (error) {
-//         throw error
-//       }
-//     })
-//     await db.del('action-' + action.actionId, function (error: any) {
-//       if (error) {
-//         throw error
-//       }
-//     })
-//     await db.del('retry-' + action.actionId, function (error: any) {
-//       if (error) {
-//         throw error
-//       }
-//     })
-//   }
-// })
-
-
+syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirmed, async (action: ActionMessageV2 | EventMessageV2) => {
+  if (action.schema === 'proca:action:2') {
+    console.log(action.actionId);
+    await db.put('done-' + action.actionId, { done: true }, function (error: any) {
+      if (error) {
+        throw error
+      }
+    })
+    await db.del('action-' + action.actionId, function (error: any) {
+      if (error) {
+        console.log(error);
+      }
+    })
+    await db.del('retry-' + action.actionId, function (error: any) {
+      if (error) {
+        console.log(error);
+      }
+    })
+  }
+})
