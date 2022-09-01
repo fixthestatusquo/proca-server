@@ -67,29 +67,42 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing(org, _args, _ctx) do
-    org = Repo.preload(org, [:email_backend, :event_backend, :storage_backend, :detail_backend])
+    org =
+      Repo.preload(org, [
+        :email_backend,
+        :event_backend,
+        :storage_backend,
+        :push_backend,
+        :detail_backend
+      ])
 
-    email_service =
+    email_backend =
       case org do
         %Org{email_backend: %{name: name}} -> name
         _ -> nil
       end
 
-    event_service =
+    event_backend =
       case org do
         %Org{event_backend: %{name: name}} -> name
         _ -> nil
       end
 
-    storage_service =
+    storage_backend =
       case org do
         %Org{storage_backend: %{name: name}} -> name
         _ -> nil
       end
 
-    detail_service =
+    detail_backend =
       case org do
         %Org{detail_backend: %{name: name}} -> name
+        _ -> nil
+      end
+
+    push_backend =
+      case org do
+        %Org{push_backend: %{name: name}} -> name
         _ -> nil
       end
 
@@ -97,18 +110,18 @@ defmodule ProcaWeb.Resolvers.Org do
     r =
       %{
         org: org,
-        email_backend: email_service,
-        event_backend: event_service,
-        storage_backend: storage_service,
-        detail_backend: detail_service
+        email_backend: email_backend,
+        event_backend: event_backend,
+        storage_backend: storage_backend,
+        push_backend: push_backend,
+        detail_backend: detail_backend
       }
       |> Map.merge(
         Map.take(
           org,
-          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver custom_event_deliver system_sqs_deliver event_processing)a
+          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver custom_event_deliver system_sqs_deliver)a
         )
       )
-      |> Helper.rename_key(:system_sqs_deliver, :sqs_deliver)
 
     {:ok, r}
   end

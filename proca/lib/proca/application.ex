@@ -17,8 +17,6 @@ defmodule Proca.Application do
       {Absinthe.Subscription, ProcaWeb.Endpoint},
 
       # Core servers (data providers and caches)
-      # Dynamic instance configuration
-      {Proca.Server.Instance, Proca.Org.instance_org_name()},
 
       # Encryption
       {Proca.Server.Keys, Proca.Org.instance_org_name()},

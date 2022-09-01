@@ -30,12 +30,14 @@ defmodule Proca.Server.Keys do
   Pass the org name to handle_continue :get_keys to fetch all keys
   """
   def init(org_name) do
+    import Ecto.Query, only: [from: 2]
+
     :erlang.process_flag(:sensitive, true)
 
     info("Start Keys server with #{org_name} instance org")
 
-    case Org.get_by_name(org_name) do
-      %Org{id: id} ->
+    case Repo.one(from(o in Org, where: o.name == ^org_name, select: o.id)) do
+      id when is_number(id) ->
         {
           :ok,
           {id, sensitive_data_wrap(%{}), :crypto.strong_rand_bytes(24)},

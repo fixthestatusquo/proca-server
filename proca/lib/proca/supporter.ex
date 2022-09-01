@@ -62,19 +62,25 @@ defmodule Proca.Supporter do
 
     fingerprint = get_field(ch, :fingerprint)
     campaign_id = get_field(ch, :campaign_id)
-    inserted_at = get_field(ch, :inserted_at)
+    q_id = get_field(ch, :id)
 
-    rank =
-      Repo.one(
-        from(s in Supporter,
-          select: count(s.id),
-          where:
-            s.processing_status == :accepted and
-              s.fingerprint == ^fingerprint and
-              s.campaign_id == ^campaign_id and
-              (is_nil(^inserted_at) or s.inserted_at < ^inserted_at)
-        )
+    q =
+      from(s in Supporter,
+        select: count(s.id),
+        where:
+          s.processing_status == :accepted and
+            s.fingerprint == ^fingerprint and
+            s.campaign_id == ^campaign_id
       )
+
+    q =
+      if q_id != nil do
+        where(q, [s], s.id < ^q_id)
+      else
+        q
+      end
+
+    rank = Repo.one(q)
 
     change(ch, dupe_rank: rank)
   end
