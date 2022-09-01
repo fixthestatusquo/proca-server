@@ -1,4 +1,5 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
+const amqplib = require('amqplib');
 const { Level } = require("level");
 const schedule = require('node-schedule');
 //const nodeSchedule = require("@types/node-schedule")
@@ -16,11 +17,35 @@ const job = schedule.scheduleJob('* * * * *', async () => {
   for await (const [key, value] of db.iterator({ gt: 'retry-' })) {
     const date = new Date(value.retry)
     console.log(date) // 2
-    if (date > Date.now()) {
-      //reinsert to queue
-    }
-  }
 
+    //TODO: uncomment if
+
+    // if (date > Date.now()) {
+    const actionId = key.split("-")[1]
+    console.log("actionId", actionId)
+
+    db.get("action-" + actionId, async function (error: any, value: any) {
+      if (error) throw error;
+      //   todo: reinsert action to the queue
+      // amqplib.publish(
+      //   // exchange: ""
+      //   //   routing key:  "wrk.${org.id}.email.supporter"
+    })
+     db.get("retry-" + actionId, async function (error: any, value: any) {
+       if (error) throw error;
+
+       //     TO DO: ABSTRACT DATE CHANGE
+
+       const retried = new Date(value.retry)
+        const retry = { retry: (new Date(retried.setDate(retried.getDate() + 3))).toISOString(), attempts: value.attempts + 1 };
+       console.log("Retried", retried, retry)
+       await db.put('retry-' + actionId, retry, async function (error: any) {
+        if (error) {
+          throw error
+        }
+     })
+    })
+  }
 });
 
 syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
@@ -65,17 +90,17 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
 // syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliveryRepeater, async (action: ActionMessageV2 | EventMessageV2) => {
 //   if (action.schema === 'proca:action:2') {
 //     console.log(action.actionId);
-//     await db.put('done' + action.actionId, { done: true }, function (error: any) {
+//     await db.put('done-' + action.actionId, { done: true }, function (error: any) {
 //       if (error) {
 //         throw error
 //       }
 //     })
-//     await db.del('action' + action.actionId, function (error: any) {
+//     await db.del('action-' + action.actionId, function (error: any) {
 //       if (error) {
 //         throw error
 //       }
 //     })
-//     await db.del('retry' + action.actionId, function (error: any) {
+//     await db.del('retry-' + action.actionId, function (error: any) {
 //       if (error) {
 //         throw error
 //       }
