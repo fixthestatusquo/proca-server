@@ -75,6 +75,5 @@ export const lookup = async (email: string) => {
     return {success: true, status:status, data:data};
     } catch (error: any) {
       return {success:false, status:error.response.status, data: error.response};
-    return {success:false, status:418, data:"here be teapot"};
   }
 }
