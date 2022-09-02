@@ -1,9 +1,20 @@
 // Require the framework and instantiate it
 const fastify = require("fastify")({ logger: true });
 const trust = require("./client.ts");
-const lookup = (email) => {
+
+
+const lookup = async (email:string) => {
   // do the lookup
-  return { hello: email };
+  console.log("email:"+email);
+  try { 
+    const r= await trust.lookup(email);
+    console.log("result",r);
+    return r; // no idea why I have the string
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+
 };
 
 const lookupSchema = {
@@ -19,12 +30,14 @@ const lookupSchema = {
 fastify.post(
   "/lookup-trust",
   { schema: lookupSchema },
-  async (request, reply) => {
-    // we can use the `request.body` object to get the data sent by the client
+  async (request: any, reply: any) => {
+    const result = await lookup(request.body.email);
+    const code= result === true?200:404;
+    console.log("result",result);
     reply
-      .code(200)
+      .code(code)
       .header("Content-Type", "application/json; charset=utf-8")
-      .send(lookup(request.body.email));
+      .send(result);
   }
 );
 
@@ -44,7 +57,7 @@ fastify.route({
       },
     },
   },
-  handler: async (request, reply) => {
+  handler: async (request:any, reply:any) => {
     return lookup(request.query.email);
   },
 });
