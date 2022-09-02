@@ -1,12 +1,11 @@
 defmodule ProcaWeb.Api.ActionTest do
   use Proca.DataCase
+  @moduletag start: [:processing]
   import Proca.StoryFactory, only: [blue_story: 0]
   import Ecto.Query
   alias Proca.Factory
 
-  alias Proca.{Repo, Action, Supporter}
-
-  @basic_data %{}
+  alias Proca.{Repo, Action, Campaign, Supporter}
 
   setup do
     blue_story()
@@ -48,6 +47,31 @@ defmodule ProcaWeb.Api.ActionTest do
       })
 
     assert {:ok, %{contact_ref: _ref}} = result
+    result
+  end
+
+  def action_with_contact_invalid(
+        ap,
+        action_info,
+        contact_info,
+        other_params \\ %{},
+        context \\ %{}
+      ) do
+    params =
+      %{
+        action: action_info,
+        action_page_id: ap.id,
+        contact: contact_info,
+        privacy: %{opt_in: true}
+      }
+      |> Map.merge(other_params)
+
+    result =
+      ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{
+        context: context
+      })
+
+    assert {:error, _} = result
     result
   end
 
@@ -95,7 +119,7 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert action.testing
     assert action.processing_status == :new
-    Proca.Stage.Processing.process(action)
+    # XXX Proca.Stage.Processing.process(action)
 
     action = Repo.reload(action)
     assert action.processing_status == :delivered
@@ -234,5 +258,64 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert is_nil(hd(action.supporter.contacts).communication_consent)
     IO.inspect(action.supporter.contacts)
+  end
+
+  test "create mtt action", %{campaign: c, pages: [ap]} do
+    c =
+      Repo.update!(
+        Campaign.changeset(
+          Repo.preload(c, [:mtt]),
+          %{mtt: %{start_at: ~N[2022-01-01 10:00:00], end_at: ~N[2022-01-10 18:00:00]}}
+        )
+      )
+
+    mc_count_1 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    targets = Factory.insert_list(3, :target)
+
+    action_with_contact(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "frank.sender@exampl.com"}
+    )
+
+    mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+
+    assert mc_count_2 - mc_count_1 == 1
+
+    action_with_contact_invalid(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "not.an.email.exampl.com"}
+    )
+
+    action_with_contact_invalid(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "frank@email.com"}
+    )
+
+    mc_count_3 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    assert mc_count_2 == mc_count_3
   end
 end
