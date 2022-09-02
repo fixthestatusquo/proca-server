@@ -13,11 +13,11 @@ export const trust = async () => {
     const { user, pass, queueDeliver = "" } = rabbit();
     syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueDeliver, async (action: ActionMessageV2 | EventMessageV2) => {
       if (action.schema === 'proca:action:2') {
+
+
+        // TO DO: REMOVE WHEN CUSTOM FIELD AWAILABLE
         const isSubscribe = { action: { customFields: { subscribeNewsletter: true } } }
-        const status = await lookup(action.contact.email);
-        if (status === 200) {
-          isSubscribe.action.customFields.subscribeNewsletter = false
-        }
+
         const data = await postAction(formatAction(action, isSubscribe));
         if (data.petition_signature?.verification_token) {
           await verification(data.petition_signature.verification_token)
@@ -25,11 +25,12 @@ export const trust = async () => {
       }
     })
   } else if (args[0] === "trust-lookup" && args.length === 2) {
-    const isSubscribe = { action: { customFields: { subscribeNewsletter: true } } }
-    const status = await lookup(args[1]);
-        if (status === 200) {
-          isSubscribe.action.customFields.subscribeNewsletter = false
-        }
+      const isSubscribe = { action: { customFields: { subscribeNewsletter: true } } }
+      const status = await lookup(args[1]);
+          if (status.success) {
+            isSubscribe.action.customFields.subscribeNewsletter = false
+          }
+      return isSubscribe;
   } else {
     console.log("Wrong request! Enter trust-sync or tryst-lookup <email>")
   }
