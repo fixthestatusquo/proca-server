@@ -329,7 +329,7 @@ defmodule Proca.Stage.Processing do
   end
 
   def clear_transient(
-        %{
+        %Processing{
           action_change: action_ch,
           supporter_change: supporter_ch,
           stage: :deliver
@@ -342,7 +342,7 @@ defmodule Proca.Stage.Processing do
     }
   end
 
-  def clear_transient(p), do: p
+  def clear_transient(%Processing{} = p), do: p
 
   @doc """
   This method emits an effect on transition.
