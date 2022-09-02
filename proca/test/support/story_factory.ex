@@ -32,6 +32,7 @@ defmodule Proca.StoryFactory do
 
     %{
       org: blue_org,
+      campaign: camp,
       pages: [ap]
     }
   end
