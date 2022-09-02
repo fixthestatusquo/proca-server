@@ -69,18 +69,12 @@ export const verification = async (verificationToken: string) => {
 
 export const lookup = async (email: string) => {
   const url = process.env.LOOKUP_URL + email;
-  console.log("url",url);
   try {
     const { data, status } = await axios.get(url, makeHeaders());
     console.log("lookup: ", data, status);
-    return status;
+    return {success: true, status:status, data:data};
     } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      console.log('Lookup error: ',  error.message, error.response.status, error.response.statusText);
-      return error.message;
-    } else {
-      console.log('Lookup unexpected error: ', error);
-      return 'An unexpected error occurred';
-    }
+      return {success:false, status:error.response.status, data: error.response};
+    return {success:false, status:418, data:"here be teapot"};
   }
 }
