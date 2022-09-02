@@ -1,11 +1,4 @@
 {
-    "ts-node": {
-      // these options are overrides used only by ts-node
-      "compilerOptions": {
-        "module": "commonjs"
-      }
-    },
-
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 

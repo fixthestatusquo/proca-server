@@ -6,11 +6,9 @@ dotenv.config();
 import { Signature } from "./data";
 
 const makeHeaders = () => {
-
   const key = process.env['TRUST_KEY'];
   const stamp = Math.floor(Math.floor(Date.now() / 1000) / 30).toString();
-
-  let token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
+  const token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
 
   return {
     headers: {
@@ -18,15 +16,20 @@ const makeHeaders = () => {
       'Content-Type': 'application/json'
     }
   }
-
 }
-const postUrl = "https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures"
+
+export const rabbit = () => {
+  return {
+    user: process.env.RABBIT_USER,
+    pass: process.env.RABBIT_PASSWORD,
+    queueDeliver: process.env.RABBIT_QUEUE
+  }
+}
 
 export const postAction = async (body: Signature) => {
-
   try {
     const { data, status } = await axios.post(
-      postUrl,
+      process.env.POST_URL,
       body,
       makeHeaders()
     );
@@ -44,11 +47,10 @@ export const postAction = async (body: Signature) => {
 }
 
 export const verification = async (verificationToken: string) => {
-  const verificationUrl = `https://lc-trust-stage.palasthotel.de/api/v1/petition_signatures/${verificationToken}/verify`;
-
+  const url = process.env.VERIFICATION_URL + verificationToken + '/verify';
   try {
     const { data, status } = await axios.post(
-      verificationUrl,
+      url,
       {},
       makeHeaders()
     );
@@ -66,8 +68,7 @@ export const verification = async (verificationToken: string) => {
 }
 
 export const lookup = async (email: string) => {
-  const url = `https://lc-trust-stage.palasthotel.de/api/v1/lookup/newsletter_subscribers?email=${email}`;
-
+  const url = process.env.LOOKUP_URL + email;
   try {
     const { data, status } = await axios.get(url, makeHeaders());
     console.log("lookup: ", data, status);
