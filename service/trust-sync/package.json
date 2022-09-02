@@ -1,8 +1,8 @@
 {
-  "name": "trust-sync",
+  "name": "@proca/trust-sync",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "nodemon ./src/index.ts",
@@ -12,10 +12,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^18.7.9",
+    "@types/node": "^18.7.14",
     "nodemon": "^2.0.19",
     "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
+    "typescript": "^4.8.2"
   },
   "dependencies": {
     "@proca/queue": "^0.2.1",
