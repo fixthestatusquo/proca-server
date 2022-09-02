@@ -182,12 +182,16 @@ defmodule Proca.Stage.Action do
   def ack(:store, successful, failed) do
     Proca.Repo.checkout(fn ->
       successful
-      |> Enum.each(fn %{data: proc} = m ->
-        proc
-        |> Processing.clear_transient()
-        |> Processing.store!()
+      |> Enum.each(fn
+        %{data: %Processing{} = proc} = m ->
+          proc
+          |> Processing.clear_transient()
+          |> Processing.store!()
 
-        m
+          m
+
+        m ->
+          m
       end)
     end)
 
