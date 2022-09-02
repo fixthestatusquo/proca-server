@@ -214,7 +214,7 @@ def update_org(client, name, org, proc):
             $emailFrom: String,
             $storageBackend: ServiceName,
             $eventBackend: ServiceName,
-            $detailBackend: ServiceName,
+            # XXX $detailBackend: ServiceName,
     ) {
         updateOrgProcessing(
             name: $name,
@@ -228,7 +228,7 @@ def update_org(client, name, org, proc):
             emailFrom: $emailFrom,
             storageBackend: $storageBackend,
             eventBackend: $eventBackend
-            detailBackend: $detailBackend
+            # XXX detailBackend: $detailBackend
         ) {name}
 
         updateOrg(
@@ -278,7 +278,8 @@ def format(org):
 
     proc_out = f"Action:"
 
-    if proc['detailBackend']:
+    ### XXX
+    if 'detailBackend' in proc and proc['detailBackend']:
         proc_out += f"|▷ DETAIL"
 
     if org['personalData']['supporterConfirm'] or proc['customSupporterConfirm']:
@@ -291,11 +292,11 @@ def format(org):
     if proc['emailBackend']:
         delivery.append(f"EMAIL (from {proc['emailFrom']})")
 
-    if proc['sqsDeliver']:
-        if proc['eventProcessing']:
-            delivery.append(f"SQS[+event]")
-        else:
-            delivery.append(f"SQS")
+    #if proc['sqsDeliver']:
+    #    if proc['eventProcessing']:
+    #        delivery.append(f"SQS[+event]")
+    #    else:
+    #        delivery.append(f"SQS")
 
     if proc['customActionDeliver']:
         if proc['customEventDeliver']:

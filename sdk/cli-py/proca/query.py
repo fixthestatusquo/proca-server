@@ -84,10 +84,10 @@ orgData = """
 
         processing {
             emailBackend emailFrom
-            eventProcessing eventBackend
+            eventBackend
             storageBackend
-            sqsDeliver
-            detailBackend
+            # detailBackend
+            pushBackend
 
             supporterConfirm
             supporterConfirmTemplate
