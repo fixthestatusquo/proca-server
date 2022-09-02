@@ -9,7 +9,7 @@ const lookup = async (email:string) => {
   try { 
     const r= await trust.lookup(email);
     console.log("result",r);
-    return r; // no idea why I have the string
+    return r.success; // no idea why I have the string
   } catch (e) {
     console.log(e);
     return false;
