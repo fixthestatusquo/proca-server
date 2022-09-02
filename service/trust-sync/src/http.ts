@@ -1,58 +1,61 @@
 // Require the framework and instantiate it
-const fastify = require('fastify')({ logger: true })
-const trust = require('./client.ts');
-const lookup = email => { // do the lookup
-  return { hello: email }
-}
+const fastify = require("fastify")({ logger: true });
+const trust = require("./client.ts");
+const lookup = (email) => {
+  // do the lookup
+  return { hello: email };
+};
 
-const BodyJsonSchema = {
-    type: 'object',
-    required: ['email'],
+const lookupSchema = {
+  body: {
+    type: "object",
+        required: ['email'],
     properties: {
-      email: { type: 'string' },
+      email: { type: "string" },
     },
-  }
+  },
+};
 
-  const schema = {
-    body: BodyJsonSchema,
-  }
-
-  fastify.post('/lookup-trust', { schema }, async (request, reply) => {
+fastify.post(
+  "/lookup-trust",
+  { schema: lookupSchema },
+  async (request, reply) => {
     // we can use the `request.body` object to get the data sent by the client
-    console.log(request.body.email);
-    return lookup (request.query.email);
-  })
+    reply
+      .code(200)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send(lookup(request.body.email));
+  }
+);
 
 fastify.route({
-  method: 'GET',
-  url: '/lookup-trust',
-    schema: {
+  method: "GET",
+  url: "/lookup-trust",
+  schema: {
     querystring: {
-      email: { type: 'string' }
+      email: { type: "string" },
     },
     response: {
       200: {
-        type: 'object',
+        type: "object",
         properties: {
-          hello: { type: 'string' }
-        }
-      }
-    }
+          hello: { type: "string" },
+        },
+      },
+    },
   },
   handler: async (request, reply) => {
-    return lookup (request.query.email);
-  }
-})
+    return lookup(request.query.email);
+  },
+});
 
 // Run the server!
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 })
+    await fastify.listen({ port: 3000 });
   } catch (err) {
-    fastify.log.error(err)
-    process.exit(1)
+    fastify.log.error(err);
+    process.exit(1);
   }
-}
-start()
-
-
+};
+start();
