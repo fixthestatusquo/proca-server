@@ -1,61 +1,74 @@
 // Require the framework and instantiate it
-const fastify = require('fastify')({ logger: true })
-import { lookup } from './client';
+const fastify = require("fastify")({ logger: true });
+const trust = require("./client.ts");
 
-const BodyJsonSchema = {
-    type: 'object',
-    required: ['email'],
-    properties: {
-      email: { type: 'string' },
-    },
-}
 
-  const schema = {
-    body: BodyJsonSchema,
+const lookup = async (email:string) => {
+  // do the lookup
+  console.log("email:"+email);
+  try { 
+    const r= await trust.lookup(email);
+    console.log("result",r);
+    return r.success; // no idea why I have the string
+  } catch (e) {
+    console.log(e);
+    return false;
   }
 
-  fastify.post('/lookup-trust', { schema }, async (request, reply) => {
-    // we can use the `request.body` object to get the data sent by the client
-    console.log(request.body.email);
-    return lookup(request.query.email);
-  })
+};
+
+const lookupSchema = {
+  body: {
+    type: "object",
+        required: ['email'],
+    properties: {
+      email: { type: "string" },
+    },
+  },
+};
+
+fastify.post(
+  "/lookup-trust",
+  { schema: lookupSchema },
+  async (request: any, reply: any) => {
+    const result = await lookup(request.body.email);
+    const code= result === true?200:404;
+    console.log("result",result);
+    reply
+      .code(code)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send(result);
+  }
+);
 
 fastify.route({
-  method: 'GET',
-  url: '/lookup-trust',
-    schema: {
+  method: "GET",
+  url: "/lookup-trust",
+  schema: {
     querystring: {
-      email: { type: 'string' }
+      email: { type: "string" },
     },
     response: {
       200: {
-        type: 'object',
-        properities: {
-          action: { customFields: { subscribeNewsletter: { type: 'string' } } }
-        }
-
-      }
-    }
+        type: "object",
+        properties: {
+          hello: { type: "string" },
+        },
+      },
+    },
   },
-  handler: async (request, reply) => {
-    const isSubscribed = { action: { customFields: { subscribeNewsletter: true } } }
-    const status = await lookup(request.query.email);
-    if (status === 200) {
-      isSubscribed.action.customFields.subscribeNewsletter = false
-    }
-    return isSubscribed;
-  }
-})
+  handler: async (request:any, reply:any) => {
+    return lookup(request.query.email);
+  },
+});
 
 // Run the server!
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 })
+    await fastify.listen({ port: process.env.PORT || 3000 });
   } catch (err) {
-    fastify.log.error(err)
-    process.exit(1)
+    fastify.log.error(err);
+    process.exit(1);
   }
-}
-start()
-
-
+};
+start();

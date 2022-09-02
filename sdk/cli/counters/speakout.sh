@@ -1,6 +1,6 @@
 #!/bin/bash 
 # usage: ./counter/campact [slug of the campact campaign]
-# it assumes that there is an action page with the aktion.campact.de/[slug] already defined
+# it assumes that there is an action page with the speakout.url/campaigns/[slug] already defined
 # can be used in a cron for automatically updating the counter on proca for campaigns that partner with campact
 
 [ -z $1 ] && echo "slug missing" && exit 1
