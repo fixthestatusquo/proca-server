@@ -17,6 +17,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
     select_actions =
       from(a in Action,
         join: c in assoc(a, :campaign),
+        join: s in assoc(a, :supporter),
         where:
           c.id == ^campaign_id and a.action_type == ^action_type and
             a.processing_status in [:accepted, :delivered],
@@ -32,7 +33,8 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
           action_id: a.id,
           action_type: a.action_type,
           inserted_at: a.inserted_at,
-          custom_fields: Map.take(a.fields, Campaign.public_action_keys(campaign, action_type))
+          custom_fields: Map.take(a.fields, Campaign.public_action_keys(campaign, action_type)),
+          area: s.area
         }
       end)
 
