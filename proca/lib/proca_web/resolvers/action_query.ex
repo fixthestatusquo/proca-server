@@ -34,7 +34,7 @@ defmodule ProcaWeb.Resolvers.ActionQuery do
           action_type: a.action_type,
           inserted_at: a.inserted_at,
           custom_fields: Map.take(a.fields, Campaign.public_action_keys(campaign, action_type)),
-          area: s.area
+          area: a.supporter.area
         }
       end)
 
