@@ -41,18 +41,42 @@ defmodule Proca.Service.EmailMerge do
     |> put_action_page(ap)
   end
 
-  def put_supporter(%Email{} = email, %Supporter{first_name: f, last_name: l, email: e}) do
-    email
-    |> assign(:first_name, f)
-    |> assign(:last_name, l)
-    |> assign(:email, e)
+  def put_supporter(%Email{} = email, %Supporter{
+        first_name: f,
+        last_name: l,
+        email: e,
+        dupe_rank: dr
+      }) do
+    email =
+      email
+      |> assign(:first_name, f)
+      |> assign(:last_name, l)
+      |> assign(:email, e)
+
+    if dr > 0 do
+      email
+      |> assign(:dupe_rank, dr)
+    else
+      email
+    end
   end
 
   def put_supporter(email, _), do: email
 
-  def put_campaign(%Email{} = email, %Campaign{name: n, title: t}) do
+  def put_campaign(%Email{} = email, %Campaign{id: id, name: n, title: t}) do
+    stats = Proca.Server.Stats.stats(id)
+
     email
-    |> assign(:campaign, %{name: n, title: t})
+    |> assign(:campaign, %{
+      name: n,
+      title: t,
+      stats: %{
+        supporterCount: stats[:supporters],
+        actionCount: stats[:action],
+        supporterCountByArea: stats[:area],
+        supporterCountByOrg: stats[:org]
+      }
+    })
   end
 
   def put_campaign(email, _), do: email
