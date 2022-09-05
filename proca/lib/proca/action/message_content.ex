@@ -19,5 +19,16 @@ defmodule Proca.Action.MessageContent do
     |> validate_length(:subject, max: 255)
     |> validate_length(:body, max: 10 * 1024)
     |> validate_required([:subject, :body])
+    |> fix_subject()
   end
+
+  def fix_subject(chset = %{changes: %{subject: s}, valid?: true}) do
+    s =
+      s
+      |> String.replace(~r/\n+/, " ")
+
+    change(chset, subject: s)
+  end
+
+  def fix_subject(ch), do: ch
 end
