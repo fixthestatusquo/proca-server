@@ -89,7 +89,7 @@ defmodule Proca.Stage.Action do
         |> Message.put_batch_key(Processing.processing_org_id(proc))
 
       :noop ->
-        Message.ack_immediately([msg])
+        Message.ack_immediately(msg)
     end
   end
 
