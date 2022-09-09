@@ -52,13 +52,7 @@ defmodule Proca.Service.EmailMerge do
       |> assign(:first_name, f)
       |> assign(:last_name, l)
       |> assign(:email, e)
-
-    if dr > 0 do
-      email
-      |> assign(:dupe_rank, dr)
-    else
-      email
-    end
+      |> assign(:is_dupe, (dr || 0) > 0)
   end
 
   def put_supporter(email, _), do: email
@@ -115,6 +109,7 @@ defmodule Proca.Service.EmailMerge do
     %{email | assigns: Map.merge(fields, email.assigns)}
     |> assign(:ref, get_in(action_data, ["contact", "contactRef"]))
     |> put_action_message_common(action_data)
+    |> assign(:is_dupe, (get_in(action_data, ["contact", "dupeRank"]) || 0) > 0)
   end
 
   defp put_action_message_common(%Email{} = email, action_data) do
