@@ -71,7 +71,6 @@ export const lookup = async (email: string) => {
   const url = process.env.LOOKUP_URL + email;
   try {
     const { data, status } = await axios.get(url, makeHeaders());
-    console.log("lookup: ", data, status);
     return {success: true, status:status, data:data};
     } catch (error: any) {
       return {success:false, status:error.response.status, data: error.response};
