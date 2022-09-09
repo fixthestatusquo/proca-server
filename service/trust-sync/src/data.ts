@@ -22,9 +22,9 @@ export interface Signature {
   "petition_signature": TrustAction;
 }
 
-export const formatAction = (queueAction: ActionMessageV2, isSubscribe: object) => {
-   const postData = _.merge(queueAction, isSubscribe);
-  console.log("postDdata", postData);
+export const formatAction = (queueAction: ActionMessageV2) => {
+  const postData = queueAction;
+
   let action: TrustAction = {
     first_name: postData.contact.firstName,
     last_name: postData.contact.lastName,
@@ -38,7 +38,7 @@ export const formatAction = (queueAction: ActionMessageV2, isSubscribe: object) 
     phone: postData.contact.phone,
     country: postData.contact.country,
     message: postData.contact.comment,
-    subscribe_newsletter: postData.action.customFields.subscribeNewsletter,
+    subscribe_newsletter: postData.privacy.emailStatus === 'double_opt_in',
     data_handling_consent: true,
     move_code: postData.actionPage.name,
     origin: postData.tracking?.location

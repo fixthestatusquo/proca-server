@@ -7,11 +7,22 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "nodemon ./src/index.ts",
     "start@http": "npx ts-node ./src/http.ts",
-    "start@http:dev": "nodemon ./src/http.ts"
+    "start@http:dev": "nodemon ./src/http.ts",
+    "build": "tsc",
+    "prepare": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "files": [
+    "dist",
+    "src",
+    "bin"
+  ],
+  "bin": {
+    "trust-sync": "bin/trust-sync",
+    "trust-lookup": "bin/trust-lookup"
+  },
   "devDependencies": {
     "@types/node": "^18.7.14",
     "nodemon": "^2.0.19",
@@ -22,6 +33,7 @@
     "@proca/queue": "^0.2.1",
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
-    "fastify": "^4.5.3"
+    "fastify": "^4.5.3",
+    "minimist": "^1.2.6"
   }
 }

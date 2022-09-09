@@ -1,6 +1,6 @@
 // Require the framework and instantiate it
 const fastify = require("fastify")({ logger: true });
-const trust = require("./client.ts");
+const trust = require("./client");
 
 
 const lookup = async (email:string) => {
@@ -28,16 +28,33 @@ const lookupSchema = {
 };
 
 fastify.post(
-  "/lookup-trust",
+  "/lookup-trust", // XXX lets just have it at / ? We can always add a path using reverse proxy
   { schema: lookupSchema },
   async (request: any, reply: any) => {
-    const result = await lookup(request.body.email);
-    const code= result === true?200:404;
-    console.log("result",result);
+    const result = await trust.lookup(request.body.email);
+    let code = 200;
+    let details = {};
+
+    switch (result.status) {
+      case 200: // found
+        code = 200;
+        details = {action: {customFields: {isSubscribed: true}}}
+        break;
+      case 404: // not found
+        code = 200;
+        details = {};
+        break;
+      default:
+        code = result.code; // failure
+        details = {};
+    }
+
+
+    console.log(`Return ${code}:`, details);
     reply
       .code(code)
       .header("Content-Type", "application/json; charset=utf-8")
-      .send(result);
+      .send(details);
   }
 );
 
@@ -71,4 +88,5 @@ const start = async () => {
     process.exit(1);
   }
 };
-start();
+
+module.exports = {start};
