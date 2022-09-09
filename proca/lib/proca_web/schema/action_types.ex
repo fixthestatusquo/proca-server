@@ -284,10 +284,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   input_object :mtt_action_input do
     @desc "Subject line"
-    field :subject, non_null(:string)
+    field :subject, :string
 
     @desc "Body"
-    field :body, non_null(:string)
+    field :body, :string
 
     @desc "Target ids"
     field :targets, non_null(list_of(non_null(:string)))
