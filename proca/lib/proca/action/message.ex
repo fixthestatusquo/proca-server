@@ -92,6 +92,8 @@ defmodule Proca.Action.Message do
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
+        join: mc in Proca.Action.MessageContent,
+        on: mc.id == m.message_content_id,
         # processed
         # and testing status we want
         # and with that sent status
@@ -100,7 +102,8 @@ defmodule Proca.Action.Message do
           a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
-            (a.testing == true or m.dupe_rank == 0)
+            (a.testing == true or m.dupe_rank == 0) and
+            mc.subject != '' and mc.body != ''
       )
 
     case target_ids do
