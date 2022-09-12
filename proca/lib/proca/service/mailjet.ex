@@ -110,8 +110,12 @@ defmodule Proca.Service.Mailjet do
          end)}
 
       {:error, reason} ->
-        error("Dropping email batch! #{inspect(reason)} - ignoring this batch!")
-        :ok
+        Sentry.capture_exception(
+          "Mailjet: failed HTTP request to API #{inspect(reason)} - dropping emails"
+        )
+
+        error("Mailjet cannot deliver email batch! #{inspect(reason)}")
+        {:error, Enum.map(emails, fn _ -> {:error, reason} end)}
     end
   end
 
