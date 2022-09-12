@@ -57,6 +57,9 @@ defmodule Proca.Stage.Action do
           concurrency: 20,
           batch_size: 5,
           batch_timeout: 3000
+        ],
+        noop: [
+          concurrency: 1
         ]
       ]
     )
@@ -91,7 +94,7 @@ defmodule Proca.Stage.Action do
       :noop ->
         msg
         |> Message.ack_immediately()
-        |> Message.put_batcher(:none)
+        |> Message.put_batcher(:noop)
     end
   end
 
@@ -108,6 +111,11 @@ defmodule Proca.Stage.Action do
     |> lookup_all()
     |> process_all()
     |> emit_all()
+  end
+
+  @impl true
+  def handle_batch(:noop, msgs, _, _) do
+    msgs
   end
 
   @doc """
