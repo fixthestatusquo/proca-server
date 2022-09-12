@@ -130,6 +130,8 @@ defmodule Proca.Service.EmailMerge do
         locale: get_in(action_data, ["actionPage", "locale"])
       },
       action_id: get_in(action_data, ["actionId"]),
+      action_type: get_in(action_data, ["action", "actionType"]),
+      is_action_type: %{get_in(action_data, ["action", "actionType"]) => true},
       tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
       privacy: get_in(action_data, ["privacy"])
     })
