@@ -103,7 +103,7 @@ defmodule Proca.Action.Message do
             a.testing == ^testing and
             m.sent in ^sent and
             (a.testing == true or m.dupe_rank == 0) and
-            mc.subject != '' and mc.body != ''
+            mc.subject != "" and mc.body != ""
       )
 
     case target_ids do
