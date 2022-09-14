@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Action do
   import Logger
   alias Ecto.Multi
 
-  alias Proca.{Supporter, Action, ActionPage, Source}
+  alias Proca.{Supporter, Action, ActionPage, Source, Contact, Org}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
@@ -240,4 +240,36 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   defp audit_captcha(_meta), do: nil
+
+  def requeue(_, %{ids: ids, queue: dst}, %{
+        context: %{
+          org: org = %{id: org_id}
+        }
+      })
+      when is_list(ids) do
+    import Ecto.Query
+
+    actions =
+      Repo.all(
+        from(a in Action,
+          join: s in assoc(a, :supporter),
+          join: c in assoc(s, :contacts),
+          where:
+            c.org_id == ^org_id and a.id in ^ids and
+              a.processing_status in [:new, :confirming, :delivered] and
+              s.processing_status in [:confirming, :accepted]
+        )
+      )
+
+    results =
+      Enum.map(actions, fn a ->
+        Proca.Stage.Requeue.requeue(a, dst, org)
+      end)
+
+    {:ok,
+     %{
+       count: length(actions),
+       failed: length(Enum.filter(results, &(&1 != :ok)))
+     }}
+  end
 end

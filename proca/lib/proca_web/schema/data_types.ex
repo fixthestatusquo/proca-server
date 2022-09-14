@@ -73,6 +73,15 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:unsub)
   end
 
+  enum :queue do
+    value(:email_supporter)
+    value(:custom_supporter_confirm)
+    value(:custom_action_confirm)
+    value(:custom_action_deliver)
+    value(:sqs)
+    value(:webhook)
+  end
+
   # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)
