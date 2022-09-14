@@ -86,7 +86,7 @@ orgData = """
             emailBackend emailFrom
             eventBackend
             storageBackend
-            # detailBackend
+            detailBackend
             pushBackend
 
             supporterConfirm

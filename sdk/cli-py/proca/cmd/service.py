@@ -119,7 +119,7 @@ def storage(ctx, org, name, none):
 @click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
 @click.option("-N", "--none", help="Disable storage service", is_flag=True)
 @click.pass_obj
-def storage(ctx, org, name, none):
+def detail(ctx, org, name, none):
     """
     Configure detail service-related options for org.
     """
