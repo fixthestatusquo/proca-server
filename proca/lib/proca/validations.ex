@@ -80,7 +80,7 @@ defmodule Proca.Validations do
     end)
   end
 
-  def peek_unique_error({:ok, record} = x), do: x
+  def peek_unique_error({:ok, _record} = x), do: x
 
   def peek_unique_error({:error, error}) do
     case error do
