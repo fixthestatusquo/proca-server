@@ -261,6 +261,9 @@ def format(org):
     doi = org['personalData']['doiThankYou']
     proc = org['processing']
 
+    ### XXX
+    if 'detailBackend' in proc and proc['detailBackend']:
+        pii_out += f"|▷ DETAIL"
 
     if doi:
         pii_out += f"|MAILING DOI"
@@ -278,19 +281,17 @@ def format(org):
 
     proc_out = f"Action:"
 
-    ### XXX
-    if 'detailBackend' in proc and proc['detailBackend']:
-        proc_out += f"|▷ DETAIL"
-
     if org['personalData']['supporterConfirm'] or proc['customSupporterConfirm']:
         proc_out += f"|▷ confirm"
         if proc['customSupporterConfirm']:
             proc_out += f" QUEUE[cus.{id}.confirm.supporter]"
 
-
     delivery = []
     if proc['emailBackend']:
         delivery.append(f"EMAIL (from {proc['emailFrom']})")
+
+    if proc['pushBackend']:
+        delivery.append(f"PUSH {proc['pushBackend']}")
 
     #if proc['sqsDeliver']:
     #    if proc['eventProcessing']:
@@ -311,5 +312,9 @@ def format(org):
     proc_out += f"|▷ export"
 
     out += rainbow(proc_out)
+
+    if proc['storageBackend']:
+        out += "\n" + rainbow(f"Storage:|{proc['storageBackend']}")
+
 
     return out
