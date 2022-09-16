@@ -4,17 +4,22 @@ const amqplib = require('amqplib');
 const { Level } = require("level");
 const schedule = require('node-schedule');
 //const nodeSchedule = require("@types/node-schedule")
-const db = new Level(process.env.DB_PATH || "./db", { valueEncoding: 'json' })
-
-const dotenv = require('dotenv');
-dotenv.config();
+const db = new Level(process.env.DB_PATH || "./repeater.db", { valueEncoding: 'json' })
 
 const user = process.env.RABBIT_USER;
 const pass = process.env.RABBIT_PASSWORD;
 const queueConfirm = process.env.CONFIRM_QUEUE || "";
 const queueConfirmed = process.env.CONFIRMED_QUEUE || "";
-const maxRetries = process.env.MAX_RETIRES || "3";
+const maxRetries = parseInt(process.env.MAX_RETIRES || "3");
 
+const debugDayOffset = parseInt(process.env.ADD_DAYS || "0")
+
+
+type LevelError = {
+  code: string;
+  notFound: boolean;
+  status: number;
+};
 
 //TODO: run every 10 min
 
@@ -24,55 +29,23 @@ const job = schedule.scheduleJob('* * * * *', async () => {
     console.log("Job:", key, value);
     const actionId = key.split("-")[1];
 
+   if (value.attempts > maxRetries) { // attempts counts also 1st normal confirm
+     await db.put('done-' + actionId, { done: false });
+     await db.del('action-' + actionId);
+     await db.del('retry-' + actionId);
+   } else {
 
-   if (value.attempts >= +maxRetries) {
-    await db.put('done-' + actionId, { done: false }, function (error: any) {
-      if (error) {
-        console.log("Put done:", error);
-      }
-    })
-    await db.del('action-' + actionId, function (error: any) {
-      if (error) {
-        console.log("Del action in job:", error);
-      }
-    })
-    await db.del('retry-' + actionId, function (error: any) {
-      if (error) {
-        console.log("DEl retry in error:", error);
-      }
-    })
+    const today = new Date()
+    today.setDate(today.getDate() + debugDayOffset);
+    if ((new Date(value.retry)) > today && value.attempts < maxRetries) {
+
+      const action = await db.get("action-" + actionId);
+      let retry = await db.get("retry-" + actionId);
+      retry = { retry: changeDate(value.retry, value.attempts+1), attempts: value.attempts + 1 };
+      console.log("Retried", retry)
+      await db.put('retry-' + actionId, retry);
+    }
    }
-
-    //TODO: UNCOMMENT
-  // if (Date(value.retry) > Date.now() && value.attempts < maxRetries) {
-
-
-// TO DO: DELETE LINE!!!!
-    if (value.attempts < maxRetries) {
-
-    db.get("action-" + actionId, async function (error: any, value: any) {
-      if (error) console.log("Get action in job:", error)
-      //   todo: reinsert action to the queue
-      // amqplib.publish(
-      //   // exchange: ""
-      //   //   routing key:  "wrk.${org.id}.email.supporter"
-    })
-     db.get("retry-" + actionId, async function (error: any, value: any) {
-       if (error) {
-
-         console.log("Get retry in job:", error);
-       } else {
-
-         const retry = { retry: changeDate(value.retry, value.attempts+1), attempts: value.attempts + 1 };
-         console.log("Retried", retry)
-         await db.put('retry-' + actionId, retry, async function (error: any) {
-           if (error) {
-             throw error
-           }
-         })
-       }
-     })
-     }
   }
 });
 
@@ -80,51 +53,33 @@ syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, asyn
   if (action.schema === 'proca:action:2') {
 
     console.log(action.actionId);
-    await db.get('action-' + action.actionId, async function (error: any, value: any) {
-      if (error?.status === 404) {
-        await db.put('action-' + action.actionId, action, async function (error: any) {
-          if (error) {
-            throw error
-          }
-          db.get('action-' + action.actionId, function (error: any, value: any) {
-            if (error) throw error;
-            console.log("saved action:", value)
+    try {
+      const payload =  await db.get('action-' + action.actionId);
+    } catch (_error) {
+      console.error('catch', _error);
+      const error = _error as LevelError;
 
-          })
-        })
+      if (error.notFound) {
+        console.log('store payload');
+        await db.put('action-' + action.actionId, action);
+        console.log('saved:', await db.get('action-' + action.actionId))
 
         const retry = { retry: changeDate(action.action.createdAt, 1), attempts: 1 };
-        await db.put('retry-' + action.actionId, retry, async function (error: any) {
-          if (error) throw error
-          db.get('retry-' + action.actionId, function (error: any, value: any) {
-            if (error) throw error;
-            console.log("saved retry:", value)
-
-          })
-        })
+        await db.put('retry-' + action.actionId, retry);
+        console.log('retry:', await db.get('retry-' + action.actionId));
+      } else {
+        console.error(`other error:`, error);
+        throw error;
       }
-    })
-
-      }
+    }
+  }
 })
 
 syncQueue(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirmed, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2') {
     console.log("Confirmed:", action.actionId);
-    await db.put('done-' + action.actionId, { done: true }, function (error: any) {
-      if (error) {
-        throw error
-      }
-    })
-    await db.del('action-' + action.actionId, function (error: any) {
-      if (error) {
-        console.log("Del action in confirmed queue", error);
-      }
-    })
-    await db.del('retry-' + action.actionId, function (error: any) {
-      if (error) {
-        console.log("Del retry in confirmed queue", error);
-      }
-    })
+    await db.put('done-' + action.actionId, { done: true });
+    await db.del('action-' + action.actionId);
+    await db.del('retry-' + action.actionId);
   }
 })

@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon ./src/index.ts",
+    "build": "tsc",
+    "prepare": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +18,9 @@
     "amqplib": "^0.10.3",
     "level": "^8.0.0",
     "node-schedule": "^2.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1"
   }
 }
