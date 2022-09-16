@@ -140,6 +140,32 @@ def detail(ctx, org, name, none):
         display(org_data)
 
 
+@click.command("service:push")
+@click.option("-o", "--org", required=True, help="Org name")
+#@click.option("-i", "--id", type=int, help="Service ID")
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable push service", is_flag=True)
+@click.pass_obj
+def push(ctx, org, name, none):
+    """
+    Configure detail service-related options for org.
+    """
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["pushBackend"] or "NO BACKEND"}'))
+
+    if not name and not none:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {}
+        if name:
+            ip['pushBackend'] = name
+        if none:
+            ip['pushBackend'] = Null
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
+
 @click.command("service:event")
 @click.option("-o", "--org", required=True, help="Org name")
 #@click.option("-i", "--id", type=int, help="Service ID")

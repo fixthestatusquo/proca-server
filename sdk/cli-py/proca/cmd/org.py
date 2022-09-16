@@ -214,7 +214,8 @@ def update_org(client, name, org, proc):
             $emailFrom: String,
             $storageBackend: ServiceName,
             $eventBackend: ServiceName,
-            # XXX $detailBackend: ServiceName,
+            $pushBackend: ServiceName,
+            $detailBackend: ServiceName,
     ) {
         updateOrgProcessing(
             name: $name,
@@ -228,7 +229,8 @@ def update_org(client, name, org, proc):
             emailFrom: $emailFrom,
             storageBackend: $storageBackend,
             eventBackend: $eventBackend
-            # XXX detailBackend: $detailBackend
+            pushBackend: $pushBackend
+            detailBackend: $detailBackend
         ) {name}
 
         updateOrg(
