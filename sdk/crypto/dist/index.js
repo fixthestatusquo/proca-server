@@ -14,11 +14,14 @@ Object.defineProperty(exports, "loadKeyStoreFromString", { enumerable: true, get
 Object.defineProperty(exports, "storeKeyStoreToFile", { enumerable: true, get: function () { return utils_1.storeKeyStoreToFile; } });
 Object.defineProperty(exports, "storeKeyStoreToString", { enumerable: true, get: function () { return utils_1.storeKeyStoreToString; } });
 function addKeysToKeyStore(keys, ks) {
+    const keySet = new Set(ks.keys.map(k => k.public));
     if (typeof keys !== "object")
         throw new Error("key store must be object");
     for (let [key, value] of Object.entries(keys)) {
         if (typeof key !== "string")
             throw new Error("keys must be a map keyed by public key");
+        if (keySet.has(key))
+            continue;
         if (typeof value === "object" &&
             'private' in value &&
             typeof value.private === "string") {
