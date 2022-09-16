@@ -113,6 +113,8 @@ defmodule Proca.Service.EmailMerge do
   end
 
   defp put_action_message_common(%Email{} = email, action_data) do
+    {:ok, created_at, _} = get_in(action_data, ["action", "createdAt"]) |> DateTime.from_iso8601()
+
     email
     |> put_assigns(%{
       first_name: get_in(action_data, ["contact", "firstName"]),
@@ -131,6 +133,7 @@ defmodule Proca.Service.EmailMerge do
       },
       action_id: get_in(action_data, ["actionId"]),
       action_type: get_in(action_data, ["action", "actionType"]),
+      created_at: DateTime.to_string(created_at),
       is_action_type: %{get_in(action_data, ["action", "actionType"]) => true},
       tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
       privacy: get_in(action_data, ["privacy"])
