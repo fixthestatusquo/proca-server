@@ -114,7 +114,7 @@ defmodule Proca.Org do
   end
 
   defp cast_backend_service(:email_backend, :system, _org) do
-    Proca.Org.one([:instance] ++ [preload: [:email_backend]])
+    Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
   end
 
   defp cast_backend_service(_type, service, org) when is_atom(service) do
