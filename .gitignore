@@ -4,3 +4,7 @@ yarn-error.log
 .envrc
 *.vscode*
 __pycache__
+.stuff
+sdk/crypto/dist
+*.env
+*.egg-info
