@@ -1,3 +1,16 @@
 #!/usr/bin/env node
 
-require("../dist/http").start();
+const parseArg = require('minimist');
+const details = require("../dist/http");
+
+const opt = parseArg(process.argv.slice(2));
+
+
+if (opt.e) {
+  // lookup
+
+  details.lookup(opt.e)
+
+} else {
+  details.start();
+}
