@@ -7,6 +7,7 @@ import { Signature } from "./data";
 
 const makeHeaders = () => {
   const key = process.env['TRUST_KEY'];
+  if (!key) throw Error("TRUST_KEY not set");
   const stamp = Math.floor(Math.floor(Date.now() / 1000) / 30).toString();
   const token = crypto.createHmac("sha256", key).update(stamp).digest().toString('hex');
 
@@ -73,6 +74,6 @@ export const lookup = async (email: string) => {
     const { data, status } = await axios.get(url, makeHeaders());
     return {success: true, status:status, data:data};
     } catch (error: any) {
-      return {success:false, status:error.response.status, data: error.response};
+      return {success:false, status:error.response?.status, data: error.response};
   }
 }
