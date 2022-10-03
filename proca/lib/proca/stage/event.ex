@@ -70,6 +70,8 @@ defmodule Proca.Stage.Event do
 
     contact = Enum.find(supporter.contacts, contact_by_org_id)
 
+    contact = Proca.Repo.preload(contact, [:public_key, :sign_key])
+
     supporter_data = %{
       contact: MessageV2.contact_data(supporter, contact),
       privacy: MessageV2.contact_privacy(supporter, contact),
