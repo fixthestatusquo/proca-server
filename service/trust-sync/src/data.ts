@@ -16,6 +16,8 @@ export interface TrustAction {
   data_handling_consent: boolean;
   move_code: string;
   origin: string | null;
+  petition_id: string;
+  aktion: string | undefined;
 }
 
 export interface Signature {
@@ -41,7 +43,9 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     subscribe_newsletter: postData.privacy.emailStatus === 'double_opt_in',
     data_handling_consent: true,
     move_code: postData.actionPage.name,
-    origin: postData.tracking?.location
+    origin: postData.tracking?.location,
+    petition_id: postData.actionPage.name,
+    aktion: "AKT" + postData.campaign.externalId
   }
 
   const signature: Signature = { "petition_signature": _.omitBy(action, _.isNil) };
