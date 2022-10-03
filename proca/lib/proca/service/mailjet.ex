@@ -101,13 +101,13 @@ defmodule Proca.Service.Mailjet do
       {:ok, _} ->
         :ok
 
-      {:error, {_code, error_list}} when is_list(error_list) ->
+      {:error, {_code, %{"Erorrs" => error_list}}} when is_list(error_list) ->
         {:error,
          Enum.map(error_list, fn
            %{id: _} -> :ok
            # drop bad emails
-           %{"Errors" => [%{"ErrorRelatedTo" => ["To[0].Email"]} | _]} -> :ok
-           %{"Errors" => [%{"ErrorMessage" => msg} | _]} -> {:error, msg}
+           %{"ErrorRelatedTo" => ["To[0].Email"]} -> :ok
+           %{"ErrorMessage" => msg} -> {:error, msg}
            err -> {:error, inspect(err)}
          end)}
 
