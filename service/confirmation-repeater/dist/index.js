@@ -29,12 +29,6 @@ const queueConfirm = process.env.CONFIRM_QUEUE || "";
 const queueConfirmed = process.env.CONFIRMED_QUEUE || "";
 const maxRetries = parseInt(process.env.MAX_RETIRES || "3");
 const debugDayOffset = parseInt(process.env.ADD_DAYS || "0");
-const dbError = (operation) => (error) => {
-    if (error) {
-        console.error(`Could not store key in DB to ${operation}, exiting`);
-        process.exit(1);
-    }
-};
 //TODO: run every 10 min
 const job = schedule.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, void 0, function* () {
     var e_1, _a;
@@ -44,38 +38,20 @@ const job = schedule.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, vo
             const [key, value] = _c.value;
             console.log("Job:", key, value);
             const actionId = key.split("-")[1];
-            if (value.attempts >= maxRetries) {
-                yield db.put('done-' + actionId, { done: false }, dbError("mark action as failed"));
-                yield db.del('action-' + actionId, dbError("delete action payload"));
-                yield db.del('retry-' + actionId, dbError("delete action retry count"));
+            if (value.attempts > maxRetries) { // attempts counts also 1st normal confirm
+                yield db.put('done-' + actionId, { done: false });
+                yield db.del('action-' + actionId);
+                yield db.del('retry-' + actionId);
             }
             else {
                 const today = new Date();
                 today.setDate(today.getDate() + debugDayOffset);
                 if ((new Date(value.retry)) > today && value.attempts < maxRetries) {
-                    yield db.get("action-" + actionId, function (error, value) {
-                        return __awaiter(this, void 0, void 0, function* () {
-                            if (error)
-                                console.log("Get action in job:", error);
-                            //   todo: reinsert action to the queue
-                            // amqplib.publish(
-                            //   // exchange: ""
-                            //   //   routing key:  "wrk.${org.id}.email.supporter"
-                        });
-                    });
-                    yield db.get("retry-" + actionId, function (error, value) {
-                        return __awaiter(this, void 0, void 0, function* () {
-                            if (error) {
-                                console.log("Get retry in job:", error);
-                                process.exit(1);
-                            }
-                            else {
-                                const retry = { retry: (0, helpers_1.changeDate)(value.retry, value.attempts + 1), attempts: value.attempts + 1 };
-                                console.log("Retried", retry);
-                                yield db.put('retry-' + actionId, retry, dbError('store retry date'));
-                            }
-                        });
-                    });
+                    const action = yield db.get("action-" + actionId);
+                    let retry = yield db.get("retry-" + actionId);
+                    retry = { retry: (0, helpers_1.changeDate)(value.retry, value.attempts + 1), attempts: value.attempts + 1 };
+                    console.log("Retried", retry);
+                    yield db.put('retry-' + actionId, retry);
                 }
             }
         }
@@ -91,29 +67,32 @@ const job = schedule.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, vo
 (0, queue_1.syncQueue)(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirm, (action) => __awaiter(void 0, void 0, void 0, function* () {
     if (action.schema === 'proca:action:2') {
         console.log(action.actionId);
-        yield db.get('action-' + action.actionId, function (error, value) {
-            var _a;
-            return __awaiter(this, void 0, void 0, function* () {
-                console.log('db.get(action-...)', error);
-                if (((_a = error === null || error === void 0 ? void 0 : error.cause) === null || _a === void 0 ? void 0 : _a.code) === 'LEVEL_NOT_FOUND') {
-                    yield db.put('action-' + action.actionId, action, dbError('save action'));
-                    yield db.get('action-' + action.actionId, dbError('check if saved action exists'));
-                    const retry = { retry: (0, helpers_1.changeDate)(action.action.createdAt, 1), attempts: 1 };
-                    yield db.put('retry-' + action.actionId, retry, dbError('save retry'));
-                    yield db.get('retry-' + action.actionId, dbError('check if saved retry exists'));
-                }
-                else if (error) {
-                    console.error(`failed to check if action in db: ${error.cause}`);
-                }
-            });
-        });
+        try {
+            const payload = yield db.get('action-' + action.actionId);
+        }
+        catch (_error) {
+            console.error('catch', _error);
+            const error = _error;
+            if (error.notFound) {
+                console.log('store payload');
+                yield db.put('action-' + action.actionId, action);
+                console.log('saved:', yield db.get('action-' + action.actionId));
+                const retry = { retry: (0, helpers_1.changeDate)(action.action.createdAt, 1), attempts: 1 };
+                yield db.put('retry-' + action.actionId, retry);
+                console.log('retry:', yield db.get('retry-' + action.actionId));
+            }
+            else {
+                console.error(`other error:`, error);
+                throw error;
+            }
+        }
     }
 }));
 (0, queue_1.syncQueue)(`amqps://${user}:${pass}@api.proca.app/proca_live`, queueConfirmed, (action) => __awaiter(void 0, void 0, void 0, function* () {
     if (action.schema === 'proca:action:2') {
         console.log("Confirmed:", action.actionId);
-        yield db.put('done-' + action.actionId, { done: true }, dbError('save done success'));
-        yield db.del('action-' + action.actionId, dbError('remove confirmed action'));
-        yield db.del('retry-' + action.actionId, dbError('remove confirmed retry'));
+        yield db.put('done-' + action.actionId, { done: true });
+        yield db.del('action-' + action.actionId);
+        yield db.del('retry-' + action.actionId);
     }
 }));

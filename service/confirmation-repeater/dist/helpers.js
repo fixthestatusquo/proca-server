@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.changeDate = void 0;
-const dotenv = require('dotenv');
-dotenv.config();
 let retryArray = [];
 if (process.env.RETRY_INTERVAL)
     retryArray = process.env.RETRY_INTERVAL.split(",").map(x => parseInt(x)).filter(x => x > 0);
