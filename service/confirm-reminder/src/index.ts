@@ -4,7 +4,7 @@ const amqplib = require('amqplib');
 const { Level } = require("level");
 const schedule = require('node-schedule');
 //const nodeSchedule = require("@types/node-schedule")
-const db = new Level(process.env.DB_PATH || "./repeater.db", { valueEncoding: 'json' })
+const db = new Level(process.env.DB_PATH || "./reminder.db", { valueEncoding: 'json' })
 
 const user = process.env.RABBIT_USER;
 const pass = process.env.RABBIT_PASSWORD;
