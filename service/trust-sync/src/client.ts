@@ -3,7 +3,7 @@ const axios = require('axios').default;
 const dotenv = require('dotenv');
 dotenv.config();
 
-import { Signature } from "./data";
+import { Signature, Verification } from "./data";
 
 const makeHeaders = () => {
   const key = process.env['TRUST_KEY'];
@@ -47,12 +47,12 @@ export const postAction = async (body: Signature) => {
   }
 }
 
-export const verification = async (verificationToken: string) => {
+export const verification = async (verificationToken: string, body: Verification) => {
   const url = process.env.VERIFICATION_URL + verificationToken + '/verify';
   try {
     const { data, status } = await axios.post(
       url,
-      {},
+      body,
       makeHeaders()
     );
     console.log('Verification status: ', status, data);
