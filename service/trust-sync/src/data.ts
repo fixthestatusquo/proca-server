@@ -17,7 +17,7 @@ export interface TrustAction {
   phone?: string | null;
   country?: string | null;
   message?: string | null;
-  subscribe_newsletter: boolean | undefined;
+  subscribe_newsletter: boolean;
   data_handling_consent: boolean;
   move_code: string;
   origin: string | null;
@@ -26,6 +26,15 @@ export interface TrustAction {
 
 export interface Signature {
   "petition_signature": TrustAction;
+}
+
+export interface Verification {
+  "petition_signature": VerificationParams;
+}
+
+interface VerificationParams {
+  "subscribe_newsletter": boolean;
+  "data_handling_consent": boolean;
 }
 
 export const formatAction = (queueAction: ActionMessageV2) => {
