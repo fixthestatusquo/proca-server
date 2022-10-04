@@ -2,6 +2,11 @@
 import type { ActionMessageV2, EventMessageV2 } from '@proca/queue'
 const _ = require("lodash");
 
+interface AditionalAttributes {
+  petition_id: string;
+  aktion: string | undefined;
+}
+
 export interface TrustAction {
   first_name: string;
   last_name?: string | null;
@@ -16,8 +21,7 @@ export interface TrustAction {
   data_handling_consent: boolean;
   move_code: string;
   origin: string | null;
-  petition_id: string;
-  aktion: string | undefined;
+  additional_attributes_attributes: AditionalAttributes;
 }
 
 export interface Signature {
@@ -44,8 +48,10 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     data_handling_consent: true,
     move_code: postData.actionPage.name,
     origin: postData.tracking?.location,
-    petition_id: postData.actionPage.name,
-    aktion: "AKT" + postData.campaign.externalId
+    additional_attributes_attributes: {
+      petition_id: postData.actionPage.name,
+      aktion: "AKT" + postData.campaign.externalId
+    }
   }
 
   const signature: Signature = { "petition_signature": _.omitBy(action, _.isNil) };
