@@ -46,7 +46,7 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     message: postData.contact.comment,
     subscribe_newsletter: postData.privacy.emailStatus === 'double_opt_in',
     data_handling_consent: true,
-    move_code: postData.actionPage.name,
+    move_code: "AKT" + postData.campaign.externalId,
     origin: postData.tracking?.location,
     additional_attributes_attributes: {
       petition_id: postData.actionPage.name,
