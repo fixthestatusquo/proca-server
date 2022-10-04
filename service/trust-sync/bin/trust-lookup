@@ -8,9 +8,7 @@ const opt = parseArg(process.argv.slice(2));
 
 if (opt.e) {
   // lookup
-
   details.lookup(opt.e)
-
 } else {
   details.start();
 }
