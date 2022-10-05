@@ -75,4 +75,8 @@ defmodule ProcaWeb.Schema.EciSchema do
   def middleware(middleware, _field, _object) do
     middleware
   end
+
+  def plugins do
+    [MyAppWeb.Schema.Middleware.AuthorizedIntrospection | Absinthe.Plugin.defaults()]
+  end
 end
