@@ -40,9 +40,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :campaign, :campaign do
       arg(:id, :integer)
       arg(:name, :string)
-      arg(:external_id, :integer)
+      #     arg(:external_id, :integer)
 
-      load(:campaign, by: [:id, :name, :external_id], preload: [:org, :targets])
+      load(:campaign, by: [:id, :name], preload: [:org, :targets])
       determine_auth(for: :campaign)
       resolve(&Resolvers.Campaign.return_from_context/3)
     end
@@ -170,11 +170,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :update_campaign, type: non_null(:campaign) do
       arg(:id, :integer)
       arg(:name, :string)
-      arg(:external_id, :integer)
+      # arg(:external_id, :integer)
 
       arg(:input, non_null(:campaign_input))
 
-      load(:campaign, by: [:id, :name, :external_id], preload: [:mtt])
+      load(:campaign, by: [:id, :name], preload: [:mtt])
       determine_auth(for: :campaign)
       allow([:manage_campaigns, :change_campaign_settings])
 
