@@ -55,7 +55,7 @@ type ActionV1 = {
 type ActionV2 = {
   actionType: string,
   customFields: {
-    [key: string]: string | number | string[] | number[]
+    [key: string]: string | number | boolean | string[] | number[]
   }, // map of keys to values, or lists of values, not nested
   createdAt: string,
   testing: boolean // is this a test action? (to be discarded)
