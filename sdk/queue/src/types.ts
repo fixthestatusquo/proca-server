@@ -1,7 +1,7 @@
 import {KeyStore} from '@proca/crypto'
 import {ActionMessageV2} from './actionMessage'
 import {EventMessageV2} from './eventMessage'
-import {Message} from 'amqplib'
+import {Message, Channel} from 'amqplib'
 
 export type DecryptOpts = {
   decrypt?: boolean,
@@ -13,4 +13,4 @@ export type QueueOpts = {
   keyStore?: KeyStore;
 }
 
-export type SyncCallback = (action : ActionMessageV2 | EventMessageV2, msg? : Message) => Promise<any>
+export type SyncCallback = (action : ActionMessageV2 | EventMessageV2, msg? : Message, channel? : Channel) => Promise<any>
