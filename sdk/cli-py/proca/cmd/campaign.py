@@ -20,12 +20,11 @@ from termcolor import colored, cprint
 @click.command("campaign")
 @click.argument('identifier', default=None, required=False)
 @id_options
-@click.option('-I', '--external-id', help="External ID")
 @click.option('-l', '--list', 'ls', is_flag=True, help="List campaigns")
 @click.option('-o', '--org', help="Only list for org")
 @click.option('-f', '--config', type=click.File('w'))
 @click.pass_obj
-def show(ctx, id, name, identifier, external_id, ls, org, config):
+def show(ctx, id, name, identifier, ls, org, config):
     """
     Show campaign or list campaigns
     """
@@ -68,7 +67,7 @@ def add(ctx, org, name, title):
 @click.command("campaign:set")
 @click.argument('identifier', default=None, required=False)
 @id_options
-@click.option('-I', '--external-id', help="External ID")
+@click.option('-I', '--external-id', type=int, help="External ID")
 @click.option('-N', '--rename', help="rename to name")
 @click.option('-t', '--title', help="title of the campaign")
 @click.option('-S', '--contact-schema', type=CONTACT_SCHEMA_CHOICE)
@@ -78,22 +77,23 @@ def set(ctx, id, name, identifier, external_id, rename, title, contact_schema, c
     """
     Update campaign settings
     """
-    if external_id is None:
-        id, name = guess_identifier(id, name, identifier)
+    id, name = guess_identifier(id, name, identifier)
 
-    input = {}
+    attrs = {}
 
+    if external_id:
+        attrs['external_id'] = external_id
     if rename:
-        input['name'] = rename
+        attrs['name'] = rename
     if title:
-        input['title'] = title
+        attrs['title'] = title
     if contact_schema:
-        input['contact_schema'] = contact_schema
+        attrs['contact_schema'] = contact_schema
     if config:
         config_json = config.read()
-        input["config"] = config_json
+        attrs["config"] = config_json
 
-    campaign = update_campaign(ctx.client, id, name, external_id, input)
+    campaign = update_campaign(ctx.client, id, name, attrs)
 
     print(format(campaign))
 
@@ -103,7 +103,6 @@ MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:
 @click.command("campaign:mtt")
 @click.argument('identifier', default=None, required=False)
 @id_options
-@click.option('-I', '--external-id', help="External ID")
 @click.option('-s', '--start', help="start of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
 @click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
 @click.option('-t', '--test-email', help="send testing messages to this email")
@@ -111,15 +110,14 @@ MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:
 @click.option('-t', '--template', help="Template name")
 @click.option('-T', '--raw', is_flag=True, help="Do not use template (send raw)")
 @click.pass_obj
-def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable, template, raw):
+def mtt(ctx, id, name, identifier, start, end, test_email, disable, template, raw):
     """
     Update campaign MTT settings
     """
     #if start is None and end is None and test_email is None:
     #    return
 
-    if external_id is None:
-        id, name = guess_identifier(id, name, identifier)
+    id, name = guess_identifier(id, name, identifier)
 
     mtt = {}
     if start:
@@ -144,7 +142,7 @@ def mtt(ctx, id, name, identifier, external_id, start, end, test_email, disable,
     if disable:
         mtt = None
 
-    campaign = update_campaign(ctx.client, id, name, external_id, {'mtt': mtt})
+    campaign = update_campaign(ctx.client, id, name, {'mtt': mtt})
 
     print(format(campaign))
 
@@ -166,7 +164,7 @@ def org_campaigns(client, org_name):
     return data['org']['campaigns']
 
 @explain_error("fetching a campaigh")
-def one_campaign(client, id, name, with_targets=False, with_stats=False):
+def one_campaign(client, id, name,  with_targets=False, with_stats=False):
     query = gql("""
     query Campaign($id: Int, $name: String) {
         campaign(id: $id, name: $name) {
@@ -187,7 +185,7 @@ def one_campaign(client, id, name, with_targets=False, with_stats=False):
     return data['campaign']
 
 @explain_error("adding a campaign")
-def add_campaign(client, org_name, input):
+def add_campaign(client, org_name, attrs):
 
     query = """
     mutation AddCampaign($org: String! $input: CampaignInput!) {
@@ -198,15 +196,15 @@ def add_campaign(client, org_name, input):
     """ + campaignData
     query = gql(query)
 
-    data = client.execute(query, **vars(org=org_name, input=input))
+    data = client.execute(query, **vars(org=org_name, input=attrs))
     return data['addCampaign']
 
 @explain_error("updating a campaign")
-def update_campaign(client, id, name, external_id, input):
+def update_campaign(client, id, name, attrs):
 
     query = """
-    mutation UpdateCampaign($id: Int, $name: String, $externalid: Int, $input: CampaignInput!) {
-      updateCampaign(id: $id, name: $name, externalId: $externalid, input: $input) {
+    mutation UpdateCampaign($id: Int, $name: String, $input: CampaignInput!) {
+      updateCampaign(id: $id, name: $name, input: $input) {
         ...campaignData
         ...mttData
         org { name title }
@@ -215,7 +213,7 @@ def update_campaign(client, id, name, external_id, input):
     """ + campaignData + mttData
     query = gql(query)
 
-    data = client.execute(query, **vars(id=id, name=name, externalid=external_id, input=input))
+    data = client.execute(query, **vars(id=id, name=name, input=attrs))
     return data['updateCampaign']
 
 def format(c):
