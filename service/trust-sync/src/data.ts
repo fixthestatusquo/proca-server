@@ -40,6 +40,10 @@ interface VerificationParams {
 export const formatAction = (queueAction: ActionMessageV2) => {
   const postData = queueAction;
 
+  const handleConsent = postData.privacy.emailStatus !== 'double_opt_in'
+  && !postData.action.customFields.subscribe_newsletter
+  ? false : true
+
   let action: TrustAction = {
     first_name: postData.contact.firstName,
     last_name: postData.contact.lastName,
@@ -54,7 +58,7 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     country: postData.contact.country,
     message: postData.contact.comment,
     subscribe_newsletter: postData.privacy.emailStatus === 'double_opt_in',
-    data_handling_consent: true,
+    data_handling_consent: handleConsent,
     move_code: "AKT" + postData.campaign.externalId,
     origin: postData.tracking?.location,
     additional_attributes_attributes: [
