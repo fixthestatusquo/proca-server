@@ -118,7 +118,7 @@ defmodule Proca.Service.EmailMerge do
     email
     |> put_assigns(%{
       first_name: get_in(action_data, ["contact", "firstName"]),
-      last_name: get_in(action_data, ["contact", "lastName"]),
+      last_name: get_in(action_data, ["contact", "lastName"]) || "",
       email: get_in(action_data, ["contact", "email"]),
       org: %{
         name: get_in(action_data, ["org", "name"]),
