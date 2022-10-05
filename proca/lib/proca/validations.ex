@@ -5,7 +5,7 @@ defmodule Proca.Validations do
   Validate that change is a:
   - map
   - keys are strings
-  - values are strings, numbers, or lists of strings and numbers, or booleans
+  - values are strings, numbers or booleans, or lists of strings and numbers
   """
   @spec validate_flat_map(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
   def validate_flat_map(changeset, fieldname) do
