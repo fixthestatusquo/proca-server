@@ -21,14 +21,17 @@ const helpers_1 = require("./helpers");
 const amqplib = require('amqplib');
 const { Level } = require("level");
 const schedule = require('node-schedule');
+const parseArg = require('minimist');
+const args = parseArg(process.argv.slice(2));
 //const nodeSchedule = require("@types/node-schedule")
-const db = new Level(process.env.DB_PATH || "./reminder.db", { valueEncoding: 'json' });
-const user = process.env.RABBIT_USER;
-const pass = process.env.RABBIT_PASSWORD;
-const queueConfirm = process.env.CONFIRM_QUEUE || "";
-const queueConfirmed = process.env.CONFIRMED_QUEUE || "";
-const maxRetries = parseInt(process.env.MAX_RETIRES || "3");
-const debugDayOffset = parseInt(process.env.ADD_DAYS || "0");
+const db = new Level(process.env.DB_PATH || args.db || "./reminder.db", { valueEncoding: 'json' });
+const user = process.env.RABBIT_USER || args.user;
+const pass = process.env.RABBIT_PASSWORD || args.password;
+const queueConfirm = process.env.CONFIRM_QUEUE || args.qc || "";
+const queueConfirmed = process.env.CONFIRMED_QUEUE || args.qd || "";
+const emailQueue = process.env.EMAIL_QUEUE || args.qe || "";
+const maxRetries = parseInt(process.env.MAX_RETIRES || args.r || "3");
+const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
 //TODO: run every 10 min
 const job = schedule.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, void 0, function* () {
     var e_1, _a;

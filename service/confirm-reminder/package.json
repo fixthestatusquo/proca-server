@@ -1,6 +1,6 @@
 {
   "name": "@proca/confirm-reminder",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,12 @@
     "build": "tsc",
     "prepare": "tsc"
   },
+  "files": [
+    "dist", "bin", "src"
+  ],
+  "bin": [
+    "bin/confirm-reminder"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,6 +23,7 @@
     "@types/node-schedule": "2.1.0",
     "amqplib": "^0.10.3",
     "level": "^8.0.0",
+    "minimist": "^1.2.6",
     "node-schedule": "^2.1.0"
   },
   "devDependencies": {
