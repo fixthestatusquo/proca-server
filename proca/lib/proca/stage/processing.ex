@@ -344,6 +344,10 @@ defmodule Proca.Stage.Processing do
 
   def clear_transient(%Processing{} = p), do: p
 
+  def changed_action(%Processing{action_change: action_ch, supporter_change: supporter_ch}) do
+    %{apply_changes(action_ch) | supporter: apply_changes(supporter_ch)}
+  end
+
   @doc """
   This method emits an effect on transition.
 
@@ -352,8 +356,8 @@ defmodule Proca.Stage.Processing do
 
   """
   @spec emit(Processing, AMQP.Channel | nil) :: :ok | :error
-  def emit(%Processing{action_change: action_ch, stage: :deliver}, chan) do
-    action = action_ch.data
+  def emit(p = %Processing{stage: :deliver}, chan) do
+    action = changed_action(p)
 
     publish_for = fn %Proca.Contact{org_id: org_id} ->
       routing = routing_for(action)
@@ -369,8 +373,8 @@ defmodule Proca.Stage.Processing do
     end
   end
 
-  def emit(%Processing{action_change: action_ch, stage: stage}, chan) when stage != nil do
-    action = action_ch.data
+  def emit(p = %Processing{stage: stage}, chan) when stage != nil do
+    action = changed_action(p)
     routing = routing_for(action)
     exchange = exchange_for(action.action_page.org, stage)
 
