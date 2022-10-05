@@ -41,7 +41,7 @@ export const formatAction = (queueAction: ActionMessageV2) => {
   const postData = queueAction;
 
   const handleConsent = postData.privacy.emailStatus !== 'double_opt_in'
-  && !postData.action.customFields.subscribe_newsletter
+  && !postData.action.customFields.isSubscribed
   ? false : true
 
   let action: TrustAction = {
