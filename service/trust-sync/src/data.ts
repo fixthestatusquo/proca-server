@@ -10,7 +10,7 @@ interface AditionalAttributes {
 export interface TrustAction {
   first_name: string;
   last_name?: string | null;
-  address?: string | null;
+  address1?: string | null;
   zip_code?: string | null;
   location?: string | null;
   email: string;
@@ -47,12 +47,9 @@ export const formatAction = (queueAction: ActionMessageV2) => {
   let action: TrustAction = {
     first_name: postData.contact.firstName,
     last_name: postData.contact.lastName,
-    address: postData.contact.adress,
+    address1: postData.contact.address.street,
     zip_code: postData.contact.postcode,
-    location: postData.contact.city
-      || postData.contact.area
-      || postData.contact.locality
-      || postData.contact.region,
+    location: postData.contact.address.locality,
     email: postData.contact.email,
     phone: postData.contact.phone,
     country: postData.contact.country,
@@ -63,7 +60,7 @@ export const formatAction = (queueAction: ActionMessageV2) => {
     origin: postData.tracking?.location,
     additional_attributes_attributes: [
       {name: "petition_id", value: postData.actionPage.name},
-      {name: "aktion",  value: "AKT" + postData.campaign.externalId}
+      {name: "Aktion",  value: "AKT" + postData.campaign.externalId}
     ]
   }
 
