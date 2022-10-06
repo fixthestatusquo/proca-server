@@ -124,10 +124,19 @@ defmodule Proca.Service.EmailMerge do
         name: get_in(action_data, ["org", "name"]),
         title: get_in(action_data, ["org", "title"])
       },
-      campaign: %{
-        name: get_in(action_data, ["campaign", "name"]),
-        title: get_in(action_data, ["campaign", "title"])
-      },
+      campaign:
+        %{
+          name: get_in(action_data, ["campaign", "name"]),
+          title: get_in(action_data, ["campaign", "title"])
+        }
+        |> Map.put(
+          :stats,
+          campaign_stats(
+            action_data["campaignId"],
+            action_data["orgId"],
+            get_in(action_data, ["contact", "area"])
+          )
+        ),
       action_page: %{
         name: get_in(action_data, ["actionPage", "name"]),
         locale: get_in(action_data, ["actionPage", "locale"])
@@ -139,6 +148,19 @@ defmodule Proca.Service.EmailMerge do
       tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
       privacy: get_in(action_data, ["privacy"])
     })
+  end
+
+  def campaign_stats(campaign_id, org_id, area)
+      when (is_nil(area) or is_bitstring(area)) and is_number(org_id) do
+    %{supporters: sup, action: per_type, org: per_org, area: per_area} =
+      Proca.Server.Stats.stats(campaign_id)
+
+    %{
+      supporter_count: sup,
+      supporter_count_by_org: Map.get(per_org, org_id, 0),
+      supporter_count_by_area: Map.get(per_area, area, 0),
+      action_count: per_type
+    }
   end
 
   defp remove_nil_values(fields) do
