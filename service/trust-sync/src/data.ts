@@ -1,5 +1,5 @@
 
-import type { ActionMessageV2, EventMessageV2 } from '@proca/queue'
+import type { ActionMessageV2 } from '@proca/queue'
 const _ = require("lodash");
 
 interface AditionalAttributes {
@@ -10,7 +10,7 @@ interface AditionalAttributes {
 export interface TrustAction {
   first_name: string;
   last_name?: string | null;
-  address?: string | null;
+  address1?: string | null;
   zip_code?: string | null;
   location?: string | null;
   email: string;
@@ -37,33 +37,30 @@ interface VerificationParams {
   "data_handling_consent": boolean;
 }
 
+export const handleConsent = (action: ActionMessageV2) => {
+  return action.privacy.emailStatus !== 'double_opt_in' && !action.action.customFields.isSubscribed ? false : true
+}
+
 export const formatAction = (queueAction: ActionMessageV2) => {
   const postData = queueAction;
-
-  const handleConsent = postData.privacy.emailStatus !== 'double_opt_in'
-  && !postData.action.customFields.isSubscribed
-  ? false : true
 
   let action: TrustAction = {
     first_name: postData.contact.firstName,
     last_name: postData.contact.lastName,
-    address: postData.contact.adress,
+    address1: postData.contact.address.street,
     zip_code: postData.contact.postcode,
-    location: postData.contact.city
-      || postData.contact.area
-      || postData.contact.locality
-      || postData.contact.region,
+    location: postData.contact.address.locality,
     email: postData.contact.email,
     phone: postData.contact.phone,
     country: postData.contact.country,
     message: postData.contact.comment,
     subscribe_newsletter: postData.privacy.emailStatus === 'double_opt_in',
-    data_handling_consent: handleConsent,
+    data_handling_consent: handleConsent(queueAction),
     move_code: "AKT" + postData.campaign.externalId,
     origin: postData.tracking?.location,
     additional_attributes_attributes: [
       {name: "petition_id", value: postData.actionPage.name},
-      {name: "aktion",  value: "AKT" + postData.campaign.externalId}
+      {name: "Aktion",  value: "AKT" + postData.campaign.externalId}
     ]
   }
 
