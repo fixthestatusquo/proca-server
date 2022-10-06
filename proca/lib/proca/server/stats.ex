@@ -21,7 +21,7 @@ defmodule Proca.Server.Stats do
 
   use GenServer
   alias Proca.Server.Stats
-  alias Proca.{Action, Supporter, ActionPage, Contact}
+  alias Proca.{Action, Supporter, ActionPage, Campaign}
   alias Proca.Repo
   import Ecto.Query
 
@@ -154,9 +154,22 @@ defmodule Proca.Server.Stats do
       org_supporters_query
       |> Repo.all()
 
+    # create data for all campaigns so we don't have missing key below
+    campaign_ids = Repo.all(from(c in Campaign, select: c.id))
+
+    result_all =
+      campaign_ids
+      |> Enum.map(&{&1, 0})
+      |> Enum.into(%{})
+
+    result_orgs =
+      campaign_ids
+      |> Enum.map(&{&1, %{}})
+      |> Enum.into(%{})
+
     # Aggregate per-org and total supporters 
     {result_all, result_orgs} =
-      for {campaign_id, org_id, count} <- org_supporters, reduce: {%{}, %{}} do
+      for {campaign_id, org_id, count} <- org_supporters, reduce: {result_all, result_orgs} do
         # go through rows and aggregate on two levels
         {all_sup, org_sup} ->
           {
