@@ -64,7 +64,8 @@ defmodule Proca.Stage.MessageV2 do
           first_name: first_name,
           email: email,
           fingerprint: ref,
-          dupe_rank: dupe_rank
+          dupe_rank: dupe_rank,
+          area: area
         },
         contact
       ) do
@@ -72,7 +73,8 @@ defmodule Proca.Stage.MessageV2 do
       "firstName" => first_name,
       "email" => email,
       "contactRef" => Contact.base_encode(ref),
-      "dupeRank" => dupe_rank
+      "dupeRank" => dupe_rank,
+      "area" => area
     }
     |> contact_data_cleartext(contact)
   end

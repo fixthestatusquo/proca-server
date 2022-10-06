@@ -24,7 +24,8 @@ export type ContactV1 = {
 export type ContactV2 = {
   email: string,
   firstName: string,
-  contactRef: string
+  contactRef: string,
+  area: string
 } & { [key: string]: any }; // other keys, usually:
                             // lastName, phone, country, postcode, area,
                             // address: {region, locality, street, streetNumber}
