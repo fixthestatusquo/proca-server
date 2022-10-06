@@ -173,7 +173,6 @@ defmodule Proca.Service.Detail do
       |> update_custom_fields(details.action)
 
     {s, a}
-    |> IO.inspect(label: "detail update")
   end
 
   # XXX here we should only chnge opt_in if nil (not given?). This is not yet possible

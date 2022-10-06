@@ -72,7 +72,6 @@ const job = schedule.scheduleJob('* * * * *', async () => {
           const action = await db.get<string, ActionMessageV2>("action-" + actionId, {});
           action.action.customFields.reminder = true;
 
-          console.log("PUB", emailQueue, action);
           const r = await chan.publish(remindExchange,
                                        action.action.actionType + '.' + action.campaign.name,
                                        Buffer.from(JSON.stringify(action)));
