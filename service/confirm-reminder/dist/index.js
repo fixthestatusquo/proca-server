@@ -66,7 +66,6 @@ const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(voi
                         // publish
                         const action = yield db.get("action-" + actionId, {});
                         action.action.customFields.reminder = true;
-                        console.log("PUB", emailQueue, action);
                         const r = yield chan.publish(remindExchange, action.action.actionType + '.' + action.campaign.name, Buffer.from(JSON.stringify(action)));
                         console.log('publish', r);
                         let retry = yield db.get("retry-" + actionId, {});
