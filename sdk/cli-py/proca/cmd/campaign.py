@@ -105,7 +105,7 @@ MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:
 @id_options
 @click.option('-s', '--start', help="start of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
 @click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
-@click.option('-t', '--test-email', help="send testing messages to this email")
+@click.option('-E', '--test-email', help="send testing messages to this email")
 @click.option('-D', '--disable', is_flag=True, help="disable MTT")
 @click.option('-t', '--template', help="Template name")
 @click.option('-T', '--raw', is_flag=True, help="Do not use template (send raw)")
