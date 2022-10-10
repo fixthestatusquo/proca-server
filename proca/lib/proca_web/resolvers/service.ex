@@ -2,7 +2,28 @@ defmodule ProcaWeb.Resolvers.Service do
   alias Proca.ActionPage
   alias Proca.Service
   alias ProcaWeb.Helper
+  alias ProcaWeb.Error
   import Proca.Repo
+
+  def upsert_service(_p, %{id: id, input: attrs}, %{context: %{org: org}}) do
+    result =
+      case Service.one([id: id, org: org] ++ [:latest]) do
+        nil ->
+          {:error, Helper.msg_ext("Cannot find service with #{id}", :not_found)}
+
+        srv ->
+          ch =
+            Service.changeset(srv, attrs)
+            |> Proca.Validations.validate_not_changed(:name)
+            |> update()
+      end
+
+    case result do
+      {:ok, service} -> {:ok, service}
+      {:error, %Error{}} = e -> e
+      {:error, error} -> {:error, Helper.format_errors(error)}
+    end
+  end
 
   def upsert_service(_p, %{input: attrs = %{name: name}}, %{context: %{org: org}}) do
     result =

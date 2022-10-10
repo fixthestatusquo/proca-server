@@ -67,7 +67,14 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def org_processing(org, _args, _ctx) do
-    org = Repo.preload(org, [:email_backend, :event_backend, :storage_backend, :push_backend])
+    org =
+      Repo.preload(org, [
+        :email_backend,
+        :event_backend,
+        :storage_backend,
+        :push_backend,
+        :detail_backend
+      ])
 
     email_backend =
       case org do
@@ -87,6 +94,12 @@ defmodule ProcaWeb.Resolvers.Org do
         _ -> nil
       end
 
+    detail_backend =
+      case org do
+        %Org{detail_backend: %{name: name}} -> name
+        _ -> nil
+      end
+
     push_backend =
       case org do
         %Org{push_backend: %{name: name}} -> name
@@ -100,12 +113,13 @@ defmodule ProcaWeb.Resolvers.Org do
         email_backend: email_backend,
         event_backend: event_backend,
         storage_backend: storage_backend,
-        push_backend: push_backend
+        push_backend: push_backend,
+        detail_backend: detail_backend
       }
       |> Map.merge(
         Map.take(
           org,
-          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver custom_event_deliver system_sqs_deliver)
+          ~w(email_from supporter_confirm supporter_confirm_template doi_thank_you custom_supporter_confirm custom_action_confirm custom_action_deliver custom_event_deliver system_sqs_deliver)a
         )
       )
 

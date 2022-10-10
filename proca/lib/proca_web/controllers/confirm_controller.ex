@@ -10,7 +10,6 @@ defmodule ProcaWeb.ConfirmController do
   import Ecto.Query
   import Proca.Repo
   alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage, Auth}
-  alias Proca.Server.Processing
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
   @doc """
@@ -152,7 +151,7 @@ defmodule ProcaWeb.ConfirmController do
   # Change the supporter status on supporter confirm
   defp handle_supporter(action = %Action{supporter: sup}, "accept") do
     case Supporter.confirm(sup) do
-      {:ok, sup2} -> Processing.process_async(%{action | supporter: sup2})
+      {:ok, sup2} -> Proca.Stage.Action.process(%{action | supporter: sup2})
       {:noop, _} -> :ok
       {:error, msg} -> {:error, 400, msg}
     end

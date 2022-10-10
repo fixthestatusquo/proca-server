@@ -54,7 +54,10 @@ defmodule Proca.Action.Message do
     if is_nil(action_page.campaign.mtt) do
       add_error(action, :mtt, "Campaign does not support MTT")
     else
-      message_content = Action.MessageContent.changeset(%Action.MessageContent{}, attrs)
+      {_, message_content} =
+        Proca.Repo.insert(Action.MessageContent.changeset(%Action.MessageContent{}, attrs))
+
+      # which ever we have - failed changeset or good record, lets just add it once
 
       messages =
         Enum.map(targets, fn t ->
@@ -89,6 +92,8 @@ defmodule Proca.Action.Message do
         on: m.target_id == t.id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
+        join: mc in Proca.Action.MessageContent,
+        on: mc.id == m.message_content_id,
         # processed
         # and testing status we want
         # and with that sent status
@@ -97,7 +102,8 @@ defmodule Proca.Action.Message do
           a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
-            (a.testing == true or m.dupe_rank == 0)
+            (a.testing == true or m.dupe_rank == 0) and
+            mc.subject != "" and mc.body != ""
       )
 
     case target_ids do

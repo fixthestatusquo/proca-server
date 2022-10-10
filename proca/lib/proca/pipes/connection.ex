@@ -161,30 +161,40 @@ defmodule Proca.Pipes.Connection do
         try do
           apply(f, [chan])
         after
-          Channel.close(chan)
+          if Process.alive?(chan.pid) do
+            Channel.close(chan)
+          end
         end
     end
   end
 
-  @spec publish(String.t(), String.t(), map()) :: :ok | :error
-  def publish(exchange, routing_key, data) do
+  @doc """
+  Publish data to exchange with a routing key.
+
+  You can pass a channel to re-use it.
+
+  Error values:
+  {:error, :reconnectiong | other} - can come from connection() call or opening a channel (though that should not result in an error) or publishing
+  :error - any error with JSON.encode / other errors
+  """
+  @spec publish(map(), String.t(), String.t(), AMQP.Channel | nil) :: :ok | {:error, term()}
+  def publish(data, exchange, routing_key, channel \\ nil) do
     options = [
       mandatory: true,
       persistent: true
     ]
 
-    r =
-      with_chan(fn chan ->
-        case JSON.encode(data) do
-          {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
-          _e -> :error
-        end
-      end)
+    pub = fn chan ->
+      case JSON.encode(data) do
+        {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
+        _e -> {:error, :json_encode}
+      end
+    end
 
-    case r do
-      :ok -> :ok
-      {:error, _reason} -> :error
-      :error -> :error
+    if is_nil(channel) do
+      with_chan(pub)
+    else
+      pub.(channel)
     end
   end
 end

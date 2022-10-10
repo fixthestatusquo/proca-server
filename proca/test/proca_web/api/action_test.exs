@@ -1,12 +1,13 @@
 defmodule ProcaWeb.Api.ActionTest do
   use Proca.DataCase
+
   import Proca.StoryFactory, only: [blue_story: 0]
   import Ecto.Query
   alias Proca.Factory
 
-  alias Proca.{Repo, Action, Supporter}
+  alias Proca.{Repo, Action, Campaign, Supporter}
 
-  @basic_data %{}
+  use Proca.TestProcessing
 
   setup do
     blue_story()
@@ -48,6 +49,31 @@ defmodule ProcaWeb.Api.ActionTest do
       })
 
     assert {:ok, %{contact_ref: _ref}} = result
+    result
+  end
+
+  def action_with_contact_invalid(
+        ap,
+        action_info,
+        contact_info,
+        other_params \\ %{},
+        context \\ %{}
+      ) do
+    params =
+      %{
+        action: action_info,
+        action_page_id: ap.id,
+        contact: contact_info,
+        privacy: %{opt_in: true}
+      }
+      |> Map.merge(other_params)
+
+    result =
+      ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{
+        context: context
+      })
+
+    assert {:error, _} = result
     result
   end
 
@@ -95,9 +121,10 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert action.testing
     assert action.processing_status == :new
-    Proca.Server.Processing.process(action)
+    {:ok, _proc} = process(action)
 
     action = Repo.reload(action)
+
     assert action.processing_status == :delivered
     assert action.testing
   end
@@ -187,7 +214,6 @@ defmodule ProcaWeb.Api.ActionTest do
     assert last_action.donation.amount == 1099
     assert last_action.donation.currency == "USD"
     assert last_action.donation.frequency_unit == :one_off
-    # IO.inspect last_action.donation
   end
 
   test "create action with location tracking", %{org: org, pages: [ap]} do
@@ -203,5 +229,93 @@ defmodule ProcaWeb.Api.ActionTest do
     action = Repo.one(from(a in Action, order_by: [desc: a.id], limit: 1))
 
     assert action.source_id != nil
+  end
+
+  test "create action with null optIn", %{org: org, pages: [ap]} do
+    params = %{
+      action_page_id: ap.id,
+      contact: %{first_name: "Jan", email: "j@a.n"},
+      action: %{action_type: "signup"},
+      privacy: %{opt_in: nil, lead_opt_in: nil}
+    }
+
+    result =
+      ProcaWeb.Resolvers.Action.add_action_contact(:unused, params, %Absinthe.Resolution{
+        context: %{}
+      })
+
+    IO.inspect(struct!(Proca.Supporter.Privacy, %{}))
+
+    assert {:ok, %{contact_ref: _ref}} = result
+    result
+
+    action =
+      Repo.one(
+        from(a in Action,
+          order_by: [desc: a.id],
+          preload: [supporter: :contacts],
+          limit: 1
+        )
+      )
+
+    assert is_nil(hd(action.supporter.contacts).communication_consent)
+  end
+
+  test "create mtt action", %{campaign: c, pages: [ap]} do
+    c =
+      Repo.update!(
+        Campaign.changeset(
+          Repo.preload(c, [:mtt]),
+          %{mtt: %{start_at: ~N[2022-01-01 10:00:00], end_at: ~N[2022-01-10 18:00:00]}}
+        )
+      )
+
+    targets = Factory.insert_list(3, :target)
+
+    action_with_contact(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "frank.sender@exampl.com"}
+    )
+
+    mc_count = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+
+    assert mc_count == 1
+
+    action_with_contact_invalid(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "not.an.email.exampl.com"}
+    )
+
+    action_with_contact(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "",
+          body: "Our demands are: ..."
+        }
+      },
+      %{first_name: "Frank", email: "frank@email.com"}
+    )
+
+    mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    assert mc_count_2 == 2
   end
 end

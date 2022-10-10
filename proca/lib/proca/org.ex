@@ -49,6 +49,7 @@ defmodule Proca.Org do
     field :custom_event_deliver, :boolean, default: false
 
     belongs_to :event_backend, Proca.Service
+    belongs_to :detail_backend, Proca.Service
     belongs_to :push_backend, Proca.Service
 
     field :config, :map, default: %{}
@@ -75,10 +76,11 @@ defmodule Proca.Org do
       :custom_event_deliver,
       :action_schema_version
     ])
-    |> cast_backend(:email_backend, [:mailjet, :ses], attrs, org)
+    |> cast_backend(:email_backend, [:mailjet, :ses, :system, :testmail], attrs, org)
     |> cast_backend(:event_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:push_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:storage_backend, [:supabase], attrs, org)
+    |> cast_backend(:detail_backend, [:webhook], attrs, org)
     |> validate_required([:name, :title])
     |> validate_format(:name, ~r/^[[:alnum:]_-]+$/)
     |> unique_constraint(:name)
@@ -112,7 +114,7 @@ defmodule Proca.Org do
   end
 
   defp cast_backend_service(:email_backend, :system, _org) do
-    Proca.Org.one([:instance] ++ [preload: [:email_backend]])
+    Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
   end
 
   defp cast_backend_service(_type, service, org) when is_atom(service) do

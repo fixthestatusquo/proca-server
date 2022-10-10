@@ -36,9 +36,34 @@ defmodule Proca.Service.EmailTemplate do
     |> validate_required([:name, :locale, :subject, :html])
     |> validate_format(:name, ~r/^[\w\d_ -]+$/)
     |> change(related)
+    |> validate_template(:subject)
+    |> validate_template(:html)
+    |> validate_template(:text)
+    |> Proca.Action.MessageContent.fix_subject()
   end
 
   def changeset(attrs), do: changeset(%EmailTemplate{}, attrs)
+
+  def validate_template(changeset, field) do
+    validate_change(changeset, field, fn _f, tmplstr ->
+      try do
+        compile_string(tmplstr)
+        []
+      rescue
+        error ->
+          case error do
+            %{original: {:incorrect_format, reason}} ->
+              [
+                {field,
+                 {"Invalid mustache template format in #{field}: #{inspect(reason)}", [reason]}}
+              ]
+
+            e ->
+              [{field, "Invalid template in #{field}: #{inspect(e)}"}]
+          end
+      end
+    end)
+  end
 
   def all(queryable, [{:org, %Org{id: org_id}} | criteria]) do
     import Ecto.Query

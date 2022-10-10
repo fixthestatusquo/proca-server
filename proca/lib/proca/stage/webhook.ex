@@ -67,8 +67,8 @@ defmodule Proca.Stage.Webhook do
     for msg <- messages do
       webhook =
         case msg.data do
-          "proca:event" <> _ -> org.event_backend
-          "proca:action" <> _ -> org.push_backend
+          %{"schema" => "proca:event" <> _} -> org.event_backend
+          %{"schema" => "proca:action" <> _} -> org.push_backend
         end
 
       case Webhook.push(webhook, msg.data) do
@@ -83,6 +83,11 @@ defmodule Proca.Stage.Webhook do
           Message.failed(msg, "Not found")
 
         {:ok, code} ->
+          Sentry.capture_message(
+            "Webhook #{webhook.host} returned HTTP code #{code}",
+            capture: :none
+          )
+
           error("Webhook returned #{code} code: #{webhook.host}")
           Message.failed(msg, "Code #{code}")
 

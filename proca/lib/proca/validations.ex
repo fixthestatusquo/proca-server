@@ -5,7 +5,7 @@ defmodule Proca.Validations do
   Validate that change is a:
   - map
   - keys are strings
-  - values are strings, numbers, or lists of strings and numbers, or booleans
+  - values are strings, numbers or booleans, or lists of strings and numbers
   """
   @spec validate_flat_map(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
   def validate_flat_map(changeset, fieldname) do
@@ -57,7 +57,30 @@ defmodule Proca.Validations do
     end
   end
 
-  def peek_unique_error({:ok, record} = x), do: x
+  def validate_not_changed(%{errors: errors} = changeset, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      _ ->
+        %{
+          changeset
+          | errors: errors ++ [{field, {"cannot be changed", [validation: :not_changed]}}],
+            valid?: false
+        }
+    end
+  end
+
+  def validate_iso8601_format(changeset, field) do
+    validate_change(changeset, field, fn f, datetime ->
+      case DateTime.from_iso8601(datetime) do
+        {:ok, _, _} -> []
+        {:error, reason} -> [{f, "Not a ISO8601 formatted timestamp: #{reason}"}]
+      end
+    end)
+  end
+
+  def peek_unique_error({:ok, _record} = x), do: x
 
   def peek_unique_error({:error, error}) do
     case error do

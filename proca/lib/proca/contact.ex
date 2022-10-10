@@ -48,6 +48,16 @@ defmodule Proca.Contact do
     [ch | spread(new_contact, rc)]
   end
 
+  def change_for_org(contacts, %Proca.Org{id: org_id}, attrs) do
+    Enum.map(contacts, fn c ->
+      if c.org_id == org_id do
+        change(c, attrs)
+      else
+        c
+      end
+    end)
+  end
+
   def add_consent(contact_ch, %Consent{
         communication_consent: cc,
         communication_scopes: cs,

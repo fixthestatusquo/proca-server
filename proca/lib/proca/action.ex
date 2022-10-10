@@ -116,18 +116,20 @@ defmodule Proca.Action do
     |> all(kw)
   end
 
-  def clear_transient_fields_query(action = %Action{id: id, fields: fields, action_page: page}) do
+  def clear_transient_fields(action_change) do
+    action = %Action{fields: fields, action_page: page} = action_change.data
+
     keys = Supporter.Privacy.transient_action_fields(action, page)
 
     if keys == [] do
-      :noop
+      action_change
     else
       fields2 = Map.drop(fields, keys)
 
       if fields2 == fields do
-        :noop
+        action_change
       else
-        from(a in Action, where: a.id == ^id, update: [set: [fields: ^fields2]])
+        change(action_change, fields: fields2)
       end
     end
   end

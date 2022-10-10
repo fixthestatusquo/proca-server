@@ -212,6 +212,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:event_backend, :service_name)
 
       arg(:storage_backend, :service_name)
+      arg(:detail_backend, :service_name)
       arg(:push_backend, :service_name)
 
       load(:org, by: [:name])
@@ -370,6 +371,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     field :push_backend, :service_name
     field :storage_backend, :service_name
+    field :detail_backend, :service_name
 
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)

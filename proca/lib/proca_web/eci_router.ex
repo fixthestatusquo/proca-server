@@ -8,7 +8,6 @@ defmodule ProcaWeb.EciRouter do
     plug :accepts, ["json"]
     plug CORSPlug
     plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
-    plug ProcaWeb.Plugs.BlockIntrospectionPlug
     plug ProcaWeb.Plugs.ParseExtensions, schema: %{captcha: :string, captcha_service: :string}
   end
 

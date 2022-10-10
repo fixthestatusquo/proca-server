@@ -37,29 +37,49 @@ defmodule Proca.Service.EmailMerge do
     email
     |> assign(:action_id, id)
     |> put_supporter(supporter)
-    |> put_campaign(campaign)
     |> put_action_page(ap)
+    |> put_campaign(campaign)
   end
 
-  def put_supporter(%Email{} = email, %Supporter{first_name: f, last_name: l, email: e}) do
+  def put_supporter(%Email{} = email, %Supporter{
+        first_name: f,
+        last_name: l,
+        email: e,
+        area: a,
+        dupe_rank: dr
+      }) do
     email
     |> assign(:first_name, f)
-    |> assign(:last_name, l)
+    |> assign(:last_name, l || "")
     |> assign(:email, e)
+    |> assign(:area, a)
+    |> assign(:is_dupe, (dr || 0) > 0)
   end
 
   def put_supporter(email, _), do: email
 
-  def put_campaign(%Email{} = email, %Campaign{name: n, title: t}) do
+  @spec put_campaign(any, any) :: any
+  def put_campaign(%Email{} = email, %Campaign{id: id, name: n, title: t}) do
+    stats = Proca.Server.Stats.stats(id)
+
     email
-    |> assign(:campaign, %{name: n, title: t})
+    |> assign(:campaign, %{
+      name: n,
+      title: t,
+      stats: %{
+        supporterCount: stats.supporters,
+        actionCount: stats.action,
+        supporterCountByArea: Map.get(stats.area, email.assigns[:area], 0),
+        supporterCountByOrg: Map.get(stats.org, email.assigns[:org][:id], 0)
+      }
+    })
   end
 
   def put_campaign(email, _), do: email
 
-  def put_org(%Email{} = email, %Org{name: n, title: t, config: c}) do
+  def put_org(%Email{} = email, %Org{name: n, title: t, config: c, id: id}) do
     email
-    |> assign(:org, %{name: n, title: t, config: c})
+    |> assign(:org, %{name: n, title: t, config: c, id: id})
   end
 
   def put_org(e, _), do: e
@@ -91,29 +111,58 @@ defmodule Proca.Service.EmailMerge do
     %{email | assigns: Map.merge(fields, email.assigns)}
     |> assign(:ref, get_in(action_data, ["contact", "contactRef"]))
     |> put_action_message_common(action_data)
+    |> assign(:is_dupe, (get_in(action_data, ["contact", "dupeRank"]) || 0) > 0)
   end
 
   defp put_action_message_common(%Email{} = email, action_data) do
+    {:ok, created_at, _} = get_in(action_data, ["action", "createdAt"]) |> DateTime.from_iso8601()
+
     email
     |> put_assigns(%{
       first_name: get_in(action_data, ["contact", "firstName"]),
+      last_name: get_in(action_data, ["contact", "lastName"]) || "",
       email: get_in(action_data, ["contact", "email"]),
       org: %{
         name: get_in(action_data, ["org", "name"]),
         title: get_in(action_data, ["org", "title"])
       },
-      campaign: %{
-        name: get_in(action_data, ["campaign", "name"]),
-        title: get_in(action_data, ["campaign", "title"])
-      },
+      campaign:
+        %{
+          name: get_in(action_data, ["campaign", "name"]),
+          title: get_in(action_data, ["campaign", "title"])
+        }
+        |> Map.put(
+          :stats,
+          campaign_stats(
+            action_data["campaignId"],
+            action_data["orgId"],
+            get_in(action_data, ["contact", "area"])
+          )
+        ),
       action_page: %{
         name: get_in(action_data, ["actionPage", "name"]),
         locale: get_in(action_data, ["actionPage", "locale"])
       },
       action_id: get_in(action_data, ["actionId"]),
+      action_type: get_in(action_data, ["action", "actionType"]),
+      created_at: DateTime.to_string(created_at),
+      is_action_type: %{get_in(action_data, ["action", "actionType"]) => true},
       tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
       privacy: get_in(action_data, ["privacy"])
     })
+  end
+
+  def campaign_stats(campaign_id, org_id, area)
+      when (is_nil(area) or is_bitstring(area)) and is_number(org_id) do
+    %{supporters: sup, action: per_type, org: per_org, area: per_area} =
+      Proca.Server.Stats.stats(campaign_id)
+
+    %{
+      supporter_count: sup,
+      supporter_count_by_org: Map.get(per_org, org_id, 0),
+      supporter_count_by_area: Map.get(per_area, area, 0),
+      action_count: per_type
+    }
   end
 
   defp remove_nil_values(fields) do
@@ -134,8 +183,6 @@ defmodule Proca.Service.EmailMerge do
   end
 
   def put_files(eml = %Email{}, files) do
-    IO.inspect(files, label: "put_files")
-
     Enum.reduce(Enum.with_index(files, 1), eml, fn {{filepath, data}, ordinal}, e ->
       mime_type =
         case Path.extname(filepath) do

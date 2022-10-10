@@ -100,6 +100,11 @@ defmodule Proca.Stage.EmailSupporter do
           end
         end
 
+      {:ok, _} ->
+        warn("EmailSupporter wrk: Invalid message format #{data}")
+
+        ignore(message, "Invalid message format")
+
       # ignore garbled message
       {:error, reason} ->
         ignore(message, reason)
@@ -171,11 +176,10 @@ defmodule Proca.Stage.EmailSupporter do
   end
 
   defp confirm_supporter(action_id) do
-    alias Proca.Server.Processing
     action = Action.one(id: action_id, preload: [:supporter])
 
     case Supporter.confirm(action.supporter) do
-      {:ok, sup2} -> Processing.process_async(%{action | supporter: sup2})
+      {:ok, sup2} -> Proca.Stage.Action.process(%{action | supporter: sup2})
       {:noop, _} -> :ok
       {:error, msg} -> {:error, msg}
     end

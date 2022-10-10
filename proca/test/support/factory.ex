@@ -26,6 +26,14 @@ defmodule Proca.Factory do
     }
   end
 
+  def detail_backend_factory do
+    %Proca.Service{
+      name: :testdetail,
+      host: "microservi.ce",
+      password: "Bearer 123"
+    }
+  end
+
   def public_key_factory(attrs = %{org: org}) do
     name = sequence("public_key")
 
@@ -57,7 +65,7 @@ defmodule Proca.Factory do
       org: org,
       campaign: campaign,
       locale: "en",
-      delivery: false,
+      delivery: true,
       live: true,
       config: %{"journey" => ["Petition", "Share"]}
     }
@@ -118,11 +126,12 @@ defmodule Proca.Factory do
   def basic_data_pl_supporter_with_contact_factory(attrs) do
     action_page = Map.get(attrs, :action_page) || build(:action_page)
     data = Map.get(attrs, :data) || build(:basic_data_pl)
+    {opt_in, attrs} = Map.pop(attrs, :opt_in, true)
 
     contact = Proca.Contact.Data.to_contact(data, action_page)
 
     Proca.Supporter.new_supporter(data, action_page)
-    |> Proca.Supporter.add_contacts(contact, action_page, %Proca.Supporter.Privacy{opt_in: true})
+    |> Proca.Supporter.add_contacts(contact, action_page, %Proca.Supporter.Privacy{opt_in: opt_in})
     |> Ecto.Changeset.apply_changes()
     |> merge_attributes(attrs)
     |> evaluate_lazy_attributes()
@@ -161,12 +170,14 @@ defmodule Proca.Factory do
     # if I used build it would try to insert both (copies) of AP and result in name conflict
 
     {sup_ps, attrs} = Map.pop(attrs, :supporter_processing_status, :new)
+    {opt_in, attrs} = Map.pop(attrs, :opt_in, true)
 
     s =
       Map.get(attrs, :supporter) ||
         build(:basic_data_pl_supporter_with_contact, %{
           action_page: Map.get(attrs, :action_page) || insert(:action_page),
-          processing_status: sup_ps
+          processing_status: sup_ps,
+          opt_in: opt_in
         })
 
     %Proca.Action{
