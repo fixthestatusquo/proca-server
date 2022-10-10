@@ -37,8 +37,26 @@ defmodule Proca.DataCase do
     end
 
     if tags[:start] do
-      if :processing in tags[:start], do: Proca.Server.Processing.start_link([])
+      if :stats in tags[:start] do
+        case Proca.Server.Stats.start_link(1000) do
+          {:ok, pid} -> Process.unlink(pid)
+          _ -> :ok
+        end
+      end
     end
+
+    # if tags[:start] do
+    #   if :processing in tags[:start] do
+    #     Proca.Stage.Action.start_link(producer: {Proca.Stage.Queue, []})
+    #   end
+
+    #   if :old_processing in tags[:start] do
+    #     proca.stage.action.start_link(
+    #       name: proca.stage.oldactions,
+    #       producer: {proca.stage.unprocessedactions, [sweep_interal: 60, time_margine: 5]}
+    #     )
+    #   end
+    # end
 
     :ok
   end

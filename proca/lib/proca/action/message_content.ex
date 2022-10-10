@@ -16,7 +16,18 @@ defmodule Proca.Action.MessageContent do
   def changeset(ch, params) do
     cast(ch, params, [:subject, :body])
     # https://stackoverflow.com/questions/1592291/what-is-the-email-subject-length-limit
-    |> validate_length(:subject, max: 255)
+    |> validate_length(:subject, max: 5 * 256)
     |> validate_length(:body, max: 10 * 1024)
+    |> fix_subject()
   end
+
+  def fix_subject(chset = %{changes: %{subject: s}, valid?: true}) when is_bitstring(s) do
+    s =
+      s
+      |> String.replace(~r/\n+/, " ")
+
+    change(chset, subject: s)
+  end
+
+  def fix_subject(ch), do: ch
 end

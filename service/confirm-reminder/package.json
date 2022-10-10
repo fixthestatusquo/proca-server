@@ -1,0 +1,36 @@
+{
+  "name": "@proca/confirm-reminder",
+  "version": "0.9.2",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon ./src/index.ts",
+    "build": "tsc",
+    "prepare": "tsc"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "src"
+  ],
+  "bin": [
+    "bin/confirm-reminder"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@proca/queue": "^0.2.3",
+    "@types/node-schedule": "2.1.0",
+    "amqplib": "^0.10.3",
+    "level": "^8.0.0",
+    "minimist": "^1.2.6",
+    "node-schedule": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.8.2",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1"
+  }
+}

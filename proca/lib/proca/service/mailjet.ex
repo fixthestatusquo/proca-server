@@ -101,17 +101,21 @@ defmodule Proca.Service.Mailjet do
       {:ok, _} ->
         :ok
 
-      {:error, {_code, error_list}} when is_list(error_list) ->
+      {:error, {_code, %{"Erorrs" => error_list}}} when is_list(error_list) ->
         {:error,
          Enum.map(error_list, fn
            %{id: _} -> :ok
-           %{"Errors" => [%{"ErrorMessage" => msg} | _]} -> {:error, msg}
+           # drop bad emails
+           %{"ErrorRelatedTo" => ["To[0].Email"]} -> :ok
+           %{"ErrorMessage" => msg} -> {:error, msg}
            err -> {:error, inspect(err)}
          end)}
 
       {:error, reason} ->
-        error("Dropping email batch! #{inspect(reason)} - ignoring this batch!")
-        :ok
+        Sentry.capture_message("Mailjet: failed HTTP request to API #{inspect(reason)}")
+
+        error("Mailjet cannot deliver email batch! #{inspect(reason)}")
+        {:error, Enum.map(emails, fn _ -> {:error, reason} end)}
     end
   end
 

@@ -9,7 +9,7 @@ from proca.query import *
 import proca.cmd.org
 import json
 
-SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE', 'SYSTEM', 'SUPABASE']
+SERVICE_NAMES = ['MAILJET', 'SES', 'STRIPE', 'TEST_STRIPE', 'SYSTEM', 'WEBHOOK', 'SUPABASE']
 SERVICE_NAMES_CHOICE = click.Choice(SERVICE_NAMES, case_sensitive=False)
 
 @click.command("service")
@@ -36,12 +36,12 @@ def list(ctx, org):
 
 @click.option("-h", "--host", help="Hostname or region")
 @click.option("-l", "--path", help="Path or section")
+@click.option("-i", "--id", type=int, help="id to update a specific service")
 @click.pass_obj
-def set(ctx, org, name, user, password, password_prompt, host, path):
+def set(ctx, org, name, user, password, password_prompt, host, path, id):
     """
     Set service settings (create if not exists).
     """
-    id = None # unsupported atm
     if password_prompt:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
 
@@ -95,7 +95,7 @@ def email(ctx, org, frm, name, none):
 @click.pass_obj
 def storage(ctx, org, name, none):
     """
-    Configure email-related options for org.
+    Configure storage-related options for org.
     """
     def display(data):
         p = data["processing"]
@@ -113,6 +113,58 @@ def storage(ctx, org, name, none):
         org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
         display(org_data)
 
+@click.command("service:detail")
+@click.option("-o", "--org", required=True, help="Org name")
+#@click.option("-i", "--id", type=int, help="Service ID")
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable storage service", is_flag=True)
+@click.pass_obj
+def detail(ctx, org, name, none):
+    """
+    Configure detail service-related options for org.
+    """
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["detailBackend"] or "NO BACKEND"}'))
+
+    if not name and not none:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {}
+        if name:
+            ip['detailBackend'] = name
+        if none:
+            ip['detailBackend'] = Null
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
+
+
+@click.command("service:push")
+@click.option("-o", "--org", required=True, help="Org name")
+#@click.option("-i", "--id", type=int, help="Service ID")
+@click.option("-n", "--name", help="Service name", type=SERVICE_NAMES_CHOICE)
+@click.option("-N", "--none", help="Disable push service", is_flag=True)
+@click.pass_obj
+def push(ctx, org, name, none):
+    """
+    Configure detail service-related options for org.
+    """
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["pushBackend"] or "NO BACKEND"}'))
+
+    if not name and not none:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {}
+        if name:
+            ip['pushBackend'] = name
+        if none:
+            ip['pushBackend'] = Null
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
 
 @click.command("service:event")
 @click.option("-o", "--org", required=True, help="Org name")
@@ -121,7 +173,25 @@ def storage(ctx, org, name, none):
 @click.option("-N", "--none", help="Disable storage service", is_flag=True)
 @click.pass_obj
 def event(ctx, org, name, none):
-    pass
+    """
+    Configure event service-related options for org.
+    """
+    def display(data):
+        p = data["processing"]
+        print(rainbow(f'{p["eventBackend"] or "NO BACKEND"}'))
+
+    if not name and not none:
+        org_data = proca.cmd.org.get_org(ctx.client, org)
+        display(org_data)
+    else:
+        ip = {}
+        if name:
+            ip['eventBackend'] = name
+        if none:
+            ip['eventBackend'] = Null
+        org_data = proca.cmd.org.update_org(ctx.client, org, {}, ip)
+        display(org_data)
+
 
 @explain_error("getting service list")
 def org_services(client, org):

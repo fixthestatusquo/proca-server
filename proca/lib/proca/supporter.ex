@@ -19,6 +19,7 @@ defmodule Proca.Supporter do
     belongs_to :action_page, Proca.ActionPage
     belongs_to :source, Proca.Source
 
+    # AKA contact_ref - one day they could be split and contact_ref be made random-ish
     field :fingerprint, :binary
     has_many :actions, Proca.Action
 
@@ -54,26 +55,32 @@ defmodule Proca.Supporter do
   @doc """
   A naive ranker - not good for ranking existing data!
   Good for: checking for number of accepted supporters already in the campaign, use before confirm and at storing the accepted action.
-  A race condition is limited (excluded?) because the Proca.Server.Processing server is single process.
+  A race condition is limited (excluded?) because the Proca.Stage.Processing server is single process.
   """
   def naive_rank(%Ecto.Changeset{} = ch) do
     import Ecto.Query
 
     fingerprint = get_field(ch, :fingerprint)
     campaign_id = get_field(ch, :campaign_id)
-    inserted_at = get_field(ch, :inserted_at)
+    q_id = get_field(ch, :id)
 
-    rank =
-      Repo.one(
-        from(s in Supporter,
-          select: count(s.id),
-          where:
-            s.processing_status == :accepted and
-              s.fingerprint == ^fingerprint and
-              s.campaign_id == ^campaign_id and
-              (is_nil(^inserted_at) or s.inserted_at < ^inserted_at)
-        )
+    q =
+      from(s in Supporter,
+        select: count(s.id),
+        where:
+          s.processing_status == :accepted and
+            s.fingerprint == ^fingerprint and
+            s.campaign_id == ^campaign_id
       )
+
+    q =
+      if q_id != nil do
+        where(q, [s], s.id < ^q_id)
+      else
+        q
+      end
+
+    rank = Repo.one(q)
 
     change(ch, dupe_rank: rank)
   end
@@ -203,9 +210,10 @@ defmodule Proca.Supporter do
     one(action_id: action_id)
   end
 
-  # XXX rename this to something like "clear_transient_fields"
-  def clear_transient_fields_query(supporter) do
+  def clear_transient_fields(supporter_change) do
     import Ecto.Query
+
+    supporter = supporter_change.data
 
     fields =
       Supporter.Privacy.transient_supporter_fields(supporter.action_page)
@@ -213,13 +221,10 @@ defmodule Proca.Supporter do
 
     case fields do
       [] ->
-        :noop
+        supporter_change
 
       clear_fields ->
-        from(s in Supporter,
-          where: s.id == ^supporter.id,
-          update: [set: ^clear_fields]
-        )
+        change(supporter_change, clear_fields)
     end
   end
 end

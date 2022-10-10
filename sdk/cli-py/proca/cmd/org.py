@@ -213,7 +213,9 @@ def update_org(client, name, org, proc):
             $emailBackend: ServiceName,
             $emailFrom: String,
             $storageBackend: ServiceName,
-            $eventBackend: ServiceName
+            $eventBackend: ServiceName,
+            $pushBackend: ServiceName,
+            $detailBackend: ServiceName,
     ) {
         updateOrgProcessing(
             name: $name,
@@ -227,6 +229,8 @@ def update_org(client, name, org, proc):
             emailFrom: $emailFrom,
             storageBackend: $storageBackend,
             eventBackend: $eventBackend
+            pushBackend: $pushBackend
+            detailBackend: $detailBackend
         ) {name}
 
         updateOrg(
@@ -257,16 +261,20 @@ def format(org):
     pii_out = f"Contact:|{cs}"
 
     doi = org['personalData']['doiThankYou']
+    proc = org['processing']
 
+    ### XXX
+    if 'detailBackend' in proc and proc['detailBackend']:
+        pii_out += f"|▷ DETAIL"
 
     if doi:
         pii_out += f"|MAILING DOI"
+
 
     if org['personalData']['supporterConfirm']:
         sup_con_t = org['personalData']['supporterConfirmTemplate']
         pii_out += f"|SUPPORTER DOI|[tmpl:{sup_con_t}]"
 
-    proc = org['processing']
     if proc['customSupporterConfirm']:
         pii_out += f"|SUPPORTER DOI"
 
@@ -274,21 +282,24 @@ def format(org):
 
 
     proc_out = f"Action:"
+
     if org['personalData']['supporterConfirm'] or proc['customSupporterConfirm']:
         proc_out += f"|▷ confirm"
         if proc['customSupporterConfirm']:
             proc_out += f" QUEUE[cus.{id}.confirm.supporter]"
 
-
     delivery = []
     if proc['emailBackend']:
         delivery.append(f"EMAIL (from {proc['emailFrom']})")
 
-    if proc['sqsDeliver']:
-        if proc['eventProcessing']:
-            delivery.append(f"SQS[+event]")
-        else:
-            delivery.append(f"SQS")
+    if proc['pushBackend']:
+        delivery.append(f"PUSH {proc['pushBackend']}")
+
+    #if proc['sqsDeliver']:
+    #    if proc['eventProcessing']:
+    #        delivery.append(f"SQS[+event]")
+    #    else:
+    #        delivery.append(f"SQS")
 
     if proc['customActionDeliver']:
         if proc['customEventDeliver']:
@@ -303,5 +314,9 @@ def format(org):
     proc_out += f"|▷ export"
 
     out += rainbow(proc_out)
+
+    if proc['storageBackend']:
+        out += "\n" + rainbow(f"Storage:|{proc['storageBackend']}")
+
 
     return out

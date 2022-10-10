@@ -46,12 +46,10 @@ defmodule Proca.Stage.Event do
     rkey = routing_key(event, record)
     meta = metadata(event, record)
 
-    data =
-      meta
-      |> put_data(event, record, opts ++ [org_id: org_id])
-      |> camel_case_keys()
-
-    Connection.publish(exchange_for(org_id), rkey, data)
+    meta
+    |> put_data(event, record, opts ++ [org_id: org_id])
+    |> camel_case_keys()
+    |> Connection.publish(exchange_for(org_id), rkey)
   end
 
   def put_data(data, :confirm_created, %Confirm{} = confirm, _opts) do
@@ -71,6 +69,8 @@ defmodule Proca.Stage.Event do
     end
 
     contact = Enum.find(supporter.contacts, contact_by_org_id)
+
+    contact = Proca.Repo.preload(contact, [:public_key, :sign_key])
 
     supporter_data = %{
       contact: MessageV2.contact_data(supporter, contact),

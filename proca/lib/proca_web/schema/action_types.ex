@@ -92,6 +92,24 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
       resolve(&Resolvers.Action.link_actions/3)
     end
+
+    @desc "Requeue actions into one of processing destinations"
+    field :requeue_actions, type: non_null(:requeue_result) do
+      @desc "Organization name"
+      arg(:org_name, non_null(:string))
+
+      @desc "Action Ids"
+      arg(:ids, list_of(non_null(:integer)))
+
+      @desc "Destination queue"
+      arg(:queue, non_null(:queue))
+
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:export_contacts])
+
+      resolve(&Resolvers.Action.requeue/3)
+    end
   end
 
   @desc "Contact information"
@@ -229,15 +247,15 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   @desc "GDPR consent data structure"
   input_object :consent_input do
-    @desc "Has contact consented to receiving communication from widget owner?"
-    field :opt_in, non_null(:boolean)
+    @desc "Has contact consented to receiving communication from widget owner? Null: not asked"
+    field :opt_in, :boolean
     @desc "Opt in to the campaign leader"
     field :lead_opt_in, :boolean
   end
 
   @desc "GDPR consent data for this org"
   object :consent do
-    field :opt_in, non_null(:boolean)
+    field :opt_in, :boolean
     field :given_at, non_null(:naive_datetime)
     field :email_status, non_null(:email_status)
     field :email_status_changed, :naive_datetime
@@ -284,10 +302,10 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   input_object :mtt_action_input do
     @desc "Subject line"
-    field :subject, non_null(:string)
+    field :subject, :string
 
     @desc "Body"
-    field :body, non_null(:string)
+    field :body, :string
 
     @desc "Target ids"
     field :targets, non_null(list_of(non_null(:string)))
@@ -306,5 +324,11 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :payload, non_null(:json)
     @desc "Donation frequency unit"
     field :frequency_unit, non_null(:donation_frequency_unit)
+  end
+
+  object :requeue_result do
+    field :count, non_null(:integer)
+    field :failed, non_null(:integer)
+    # field :last_id, non_null(:integer)
   end
 end

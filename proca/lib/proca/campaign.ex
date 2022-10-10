@@ -38,6 +38,9 @@ defmodule Proca.Campaign do
     |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
     |> validate_format(:name, ~r/^[\w\d_-]+$/)
+    # 4 byte signed int max
+    |> validate_inclusion(:external_id, 0..(Integer.pow(2, 31) - 1))
+    |> unique_constraint(:org_id_extrenal_id)
     |> unique_constraint(:name)
   end
 

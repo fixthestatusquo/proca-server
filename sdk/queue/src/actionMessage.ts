@@ -24,7 +24,8 @@ export type ContactV1 = {
 export type ContactV2 = {
   email: string,
   firstName: string,
-  contactRef: string
+  contactRef: string,
+  area: string
 } & { [key: string]: any }; // other keys, usually:
                             // lastName, phone, country, postcode, area,
                             // address: {region, locality, street, streetNumber}
@@ -55,7 +56,7 @@ type ActionV1 = {
 type ActionV2 = {
   actionType: string,
   customFields: {
-    [key: string]: string | number | string[] | number[]
+    [key: string]: string | number | boolean | string[] | number[]
   }, // map of keys to values, or lists of values, not nested
   createdAt: string,
   testing: boolean // is this a test action? (to be discarded)

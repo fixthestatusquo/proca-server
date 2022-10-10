@@ -11,8 +11,8 @@ defmodule Proca.EmailTemplateDirectoryTest do
     t = %EmailTemplate{
       name: "test",
       locale: "en",
-      subject: "Hello {{first_name}}",
-      html: "<p>Click here {{first_name}}: {{link}}.</p>",
+      subject: "Hello {{firstName}}",
+      html: "<p>Click here {{firstName}}: {{link}}.</p>",
       org_id: org.id
     }
 
@@ -40,7 +40,7 @@ defmodule Proca.EmailTemplateDirectoryTest do
     assert t3.id == t2.id
     assert t3.compiled != nil
 
-    Ecto.Changeset.change(t3, subject: "Good day {{first_name}}")
+    Ecto.Changeset.change(t3, subject: "Good day {{firstName}}")
     |> Repo.update_and_notify!()
 
     GenServer.call(EmailTemplateDirectory, :sync)

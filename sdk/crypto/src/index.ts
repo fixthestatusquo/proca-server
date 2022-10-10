@@ -11,7 +11,7 @@ type KeyJson = {
 }
 
 export function addKeysToKeyStore(keys: any, ks : KeyStore) : true  {
-  const keySet = new Set(ks.keys.map( ({public}) => public )
+  const keySet = new Set(ks.keys.map( k => k.public ))
 
   if (typeof keys !== "object") 
     throw new Error("key store must be object")

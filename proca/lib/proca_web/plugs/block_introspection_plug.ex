@@ -1,18 +1,28 @@
 defmodule ProcaWeb.Plugs.BlockIntrospectionPlug do
-  alias ProcaWeb.Plugs.Helper
-  @behaviour Plug
+  @moduledoc """
+  Disable or restrict schema introspection to authorized requests
+  """
+  @behaviour Absinthe.Plugin
 
-  def init(opts), do: opts
-
-  def call(conn = %{params: %{"query" => query}}, _opts) do
-    if String.contains?(String.downcase(query), "__schema") do
-      Helper.error_halt(conn, 401, "unauthorized", "Introspection not authorized")
+  @impl Absinthe.Plugin
+  def before_resolution(exec) do
+    if Enum.find(exec.result.emitter.selections, fn %{name: field_name} ->
+         field_name == "__schema"
+       end) do
+      %{
+        exec
+        | validation_errors: [
+            %Absinthe.Phase.Error{message: "Unauthorized", phase: __MODULE__}
+          ]
+      }
     else
-      conn
+      exec
     end
   end
 
-  def call(conn, _opts) do
-    conn
-  end
+  @impl Absinthe.Plugin
+  def after_resolution(exec), do: exec
+
+  @impl Absinthe.Plugin
+  def pipeline(pipeline, _exec), do: pipeline
 end

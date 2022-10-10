@@ -84,9 +84,10 @@ orgData = """
 
         processing {
             emailBackend emailFrom
-            eventProcessing eventBackend
+            eventBackend
             storageBackend
-            sqsDeliver
+            detailBackend
+            pushBackend
 
             supporterConfirm
             supporterConfirmTemplate
@@ -127,13 +128,16 @@ def vars(**kv):
     A shorthand to product variable_values for gql.client.query - it will filter out nil values. Use Null value above to pass NULL to API
     """
 
-    def allow_null(z):
+    def replace_null(z):
         if z == Null:
             return None
         else:
+            if isinstance(z, dict):
+                for k,v in z.items():
+                    z[k] = replace_null(v)
             return z
 
-    x = {k: allow_null(v) for k, v in kv.items() if v is not None}
+    x = {k: replace_null(v) for k, v in kv.items() if v is not None}
     return {"variable_values": x}
 
 
@@ -150,7 +154,7 @@ def make_input(local_vars, allow_list):
     """
     def empty_to_null(x):
         if x == '':
-            return None
+            return Null
         else:
             return x
 

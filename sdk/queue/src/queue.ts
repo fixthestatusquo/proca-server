@@ -83,7 +83,7 @@ export async function syncQueue(
       }
 
       status.running += 1
-      return syncer(action, msg)
+      return syncer(action, msg, ch)
         .then((_v : any) => {
           try {
             ch.ack(msg)

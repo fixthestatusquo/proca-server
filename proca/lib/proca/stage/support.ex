@@ -13,6 +13,27 @@ defmodule Proca.Stage.Support do
 
   # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
   # the AP.delivery flag
+  #
+
+  def action_stage(%Action{
+        processing_status: :delivered,
+        supporter: %{processing_status: :accepted}
+      }) do
+    :deliver
+  end
+
+  def action_stage(%Action{processing_status: :new, supporter: %{processing_status: :confirming}}) do
+    :supporter_confirm
+  end
+
+  def action_stage(%Action{
+        processing_status: :confirming,
+        supporter: %{processing_status: :accepted}
+      }) do
+    :action_confirm
+  end
+
+  def action_stage(%Action{supporter: %Supporter{}}), do: nil
 
   def bulk_actions_data(action_ids, stage \\ :deliver, org_id \\ nil) do
     from(a in Action,

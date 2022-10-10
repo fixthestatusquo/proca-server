@@ -30,8 +30,8 @@ defmodule ProcaWeb.CampaignResolverTest do
       "operationName" => "Get",
       "variables" => vars,
       "query" => """
-      query Get($name: String, $id: Int, $externalId: Int)  {
-      campaign(name: $name, id: $id, externalId: $externalId) {
+      query Get($name: String, $id: Int)  {
+      campaign(name: $name, id: $id) {
         id, name, title, __typename
       }
       }
@@ -59,8 +59,8 @@ defmodule ProcaWeb.CampaignResolverTest do
       "operationName" => "Del",
       "variables" => ids,
       "query" => """
-      mutation Del($id: Int, $externalId: Int, $name: String)  {
-        deleteCampaign(id: $id, externalId: $externalId, name: $name)
+      mutation Del($id: Int, $name: String)  {
+        deleteCampaign(id: $id, name: $name)
       }
       """
     }
