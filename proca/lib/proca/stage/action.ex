@@ -207,7 +207,7 @@ defmodule Proca.Stage.Action do
 
     failed
     |> Enum.each(fn %{status: x} ->
-      IO.inspect(x, label: "FAILED")
+      IO.inspect(x, label: "#{__MODULE__} failed to process actions")
     end)
 
     :ok
@@ -222,8 +222,12 @@ defmodule Proca.Stage.Action do
   end
 
   def process(%Action{} = a) do
-    [queue] = Broadway.producer_names(__MODULE__)
-
-    Proca.Stage.Queue.enqueue(queue, a)
+    try do
+      [queue] = Broadway.producer_names(__MODULE__)
+      Proca.Stage.Queue.enqueue(queue, a)
+    catch
+      :exit, {:noproc, _} ->
+        :ok
+    end
   end
 end

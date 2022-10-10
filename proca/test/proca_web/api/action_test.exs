@@ -1,11 +1,13 @@
 defmodule ProcaWeb.Api.ActionTest do
   use Proca.DataCase
-  @moduletag start: [:processing]
+
   import Proca.StoryFactory, only: [blue_story: 0]
   import Ecto.Query
   alias Proca.Factory
 
   alias Proca.{Repo, Action, Campaign, Supporter}
+
+  use Proca.TestProcessing
 
   setup do
     blue_story()
@@ -119,9 +121,10 @@ defmodule ProcaWeb.Api.ActionTest do
 
     assert action.testing
     assert action.processing_status == :new
-    # XXX Proca.Stage.Processing.process(action)
+    {:ok, _proc} = process(action)
 
     action = Repo.reload(action)
+
     assert action.processing_status == :delivered
     assert action.testing
   end
@@ -211,7 +214,6 @@ defmodule ProcaWeb.Api.ActionTest do
     assert last_action.donation.amount == 1099
     assert last_action.donation.currency == "USD"
     assert last_action.donation.frequency_unit == :one_off
-    # IO.inspect last_action.donation
   end
 
   test "create action with location tracking", %{org: org, pages: [ap]} do
@@ -257,7 +259,6 @@ defmodule ProcaWeb.Api.ActionTest do
       )
 
     assert is_nil(hd(action.supporter.contacts).communication_consent)
-    IO.inspect(action.supporter.contacts)
   end
 
   test "create mtt action", %{campaign: c, pages: [ap]} do
@@ -269,7 +270,6 @@ defmodule ProcaWeb.Api.ActionTest do
         )
       )
 
-    mc_count_1 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
     targets = Factory.insert_list(3, :target)
 
     action_with_contact(
@@ -285,9 +285,9 @@ defmodule ProcaWeb.Api.ActionTest do
       %{first_name: "Frank", email: "frank.sender@exampl.com"}
     )
 
-    mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    mc_count = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
 
-    assert mc_count_2 - mc_count_1 == 1
+    assert mc_count == 1
 
     action_with_contact_invalid(
       ap,
@@ -302,7 +302,7 @@ defmodule ProcaWeb.Api.ActionTest do
       %{first_name: "Frank", email: "not.an.email.exampl.com"}
     )
 
-    action_with_contact_invalid(
+    action_with_contact(
       ap,
       %{
         action_type: "mtt",
@@ -315,7 +315,7 @@ defmodule ProcaWeb.Api.ActionTest do
       %{first_name: "Frank", email: "frank@email.com"}
     )
 
-    mc_count_3 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
-    assert mc_count_2 == mc_count_3
+    mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    assert mc_count_2 == 2
   end
 end

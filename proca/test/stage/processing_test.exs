@@ -43,8 +43,6 @@ defmodule Proca.Stage.ProcessingTest do
 
     action_opts = [processing_status: :new, supporter_processing_status: :new]
 
-    IO.inspect("lead id is #{lead.id}")
-
     1..1000
     |> Enum.map(fn i ->
       partner = Enum.at(pts, rem(i, num_pts))

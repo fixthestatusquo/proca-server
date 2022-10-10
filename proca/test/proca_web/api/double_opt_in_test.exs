@@ -7,18 +7,11 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
   alias Absinthe.Resolution
 
   use Proca.TestEmailBackend
+  use Proca.TestProcessing
 
   alias Proca.{Repo, Action, Supporter}
 
   @basic_data %{}
-
-  setup do
-    assert Proca.Pipes.Connection.is_connected?()
-
-    %{
-      proc: Proca.Stage.Processing.start_link([])
-    }
-  end
 
   describe "Double opt in" do
     setup ctx do
@@ -29,6 +22,11 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
 
     test "for action with opt_in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, true)
+
+      %{actions: [a]} =
+        check_supporter(ref, status: :new, email_status: :none, consent: {true, true})
+
+      process(a)
 
       s = check_supporter(ref, status: :accepted, email_status: :none, consent: {true, true})
       a = check_action(s, status: :delivered)
@@ -66,10 +64,20 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     test "Confirm but not double opt in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, false)
 
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
+      a = check_action(s, status: :new)
+
+      process(a)
+
       s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, false})
       a = check_action(s, status: :new)
 
       click_supporter_link(conn, %{a | supporter: s}, :confirm)
+
+      s = check_supporter(ref, status: :accepted, email_status: :none, consent: {true, false})
+      a = check_action(s, status: :new)
+
+      process(a)
 
       s = check_supporter(ref, status: :accepted, email_status: :none, consent: {true, false})
       a = check_action(s, status: :delivered)
@@ -78,10 +86,25 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     test "Confirm but do double opt in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, false)
 
-      s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, false})
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
       a = check_action(s, status: :new)
 
+      process(a)
+
+      s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, false})
+
       click_supporter_link(conn, %{a | supporter: s}, :confirm, "doi=1")
+
+      s =
+        check_supporter(ref,
+          status: :accepted,
+          email_status: :double_opt_in,
+          consent: {true, false}
+        )
+
+      a = check_action(s, status: :new)
+
+      process(a)
 
       s =
         check_supporter(ref,
@@ -96,6 +119,11 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     test "Confirm but do form opt in and double opt in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, true)
 
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
+      a = check_action(s, status: :new)
+
+      process(a)
+
       s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, true})
       a = check_action(s, status: :new)
 
@@ -108,11 +136,27 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
           consent: {true, true}
         )
 
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s =
+        check_supporter(ref,
+          status: :accepted,
+          email_status: :double_opt_in,
+          consent: {true, false}
+        )
+
       a = check_action(s, status: :delivered)
     end
 
     test "Reject and not double opt in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, false)
+
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
+      a = check_action(s, status: :new)
+
+      process(a)
 
       s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, false})
       a = check_action(s, status: :new)
@@ -122,8 +166,8 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
       s = check_supporter(ref, status: :rejected, email_status: :none, consent: {true, false})
       a = check_action(s, status: :new)
 
-      # after process old kicks in...
-      Proca.Stage.Processing.process(a)
+      process(a)
+
       s = check_supporter(ref, status: :rejected, email_status: :none, consent: {true, false})
       a = check_action(s, status: :rejected)
     end
@@ -159,7 +203,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     link = "/link/d/#{action.id}/#{refbase}"
     link = link <> "?redir=https://landingpage.com"
     res = get(conn, link, %{})
-    Proca.Stage.Processing.sync()
+    process(action)
   end
 
   def click_supporter_link(conn, action, verb, qa \\ nil) do
@@ -172,7 +216,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
 
     link = link <> if qa == nil, do: "", else: "&" <> qa
     res = get(conn, link, %{})
-    Proca.Stage.Processing.sync()
+    process(action)
   end
 
   def add_action_contact(ap, opt_in) do
@@ -194,7 +238,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
         %Resolution{context: %{}, extensions: %{}}
       )
 
-    Proca.Stage.Processing.sync()
+    # XXX process action?
 
     {:ok, ref2} = Supporter.base_decode(ref)
     {ref2, contact.email}

@@ -8,6 +8,7 @@ defmodule Proca.Server.MTTWorkerTest do
   alias Proca.Action.Message
 
   use Proca.TestEmailBackend
+  use Proca.TestProcessing
 
   setup do
     green_story()
@@ -196,7 +197,7 @@ defmodule Proca.Server.MTTWorkerTest do
 
       action = Factory.insert(:action, supporter: supporter)
 
-      Proca.Stage.Processing.process(action)
+      process(action)
 
       action = Proca.Repo.reload(action)
       assert action.processing_status == :delivered
