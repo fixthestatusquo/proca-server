@@ -47,6 +47,8 @@ defmodule Proca.Service.Detail do
     end
 
     def changeset(ch, params) do
+      params = ProperCase.to_snake_case(params)
+
       ch =
         cast(ch, params, [:opt_in, :given_at, :email_status, :email_status_changed])
         |> Proca.Validations.validate_iso8601_format(:given_at)
@@ -80,6 +82,9 @@ defmodule Proca.Service.Detail do
     end
 
     def changeset(ch, params) do
+      # we dont want to snake-case the values of custom_fields
+      params = %{"custom_fields" => params["customFields"]}
+
       cast(ch, params, [:custom_fields])
     end
   end
@@ -113,7 +118,7 @@ defmodule Proca.Service.Detail do
 
     case Service.json_request(srv, srv.host, post: payload, auth: Service.Webhook.auth_type(srv)) do
       {:ok, 200, data} when is_map(data) ->
-        details = Detail.changeset(ProperCase.to_snake_case(data))
+        details = Detail.changeset(data)
 
         case details do
           %{valid?: true} ->
@@ -176,7 +181,8 @@ defmodule Proca.Service.Detail do
   end
 
   # XXX here we should only chnge opt_in if nil (not given?). This is not yet possible
-  def update_opt_in(ch, %Detail.Privacy{opt_in: true, given_at: given_at}, org) do
+  def update_opt_in(ch, %Detail.Privacy{opt_in: true, given_at: given_at}, org)
+      when not is_nil(given_at) do
     change(ch,
       contacts:
         Proca.Contact.change_for_org(

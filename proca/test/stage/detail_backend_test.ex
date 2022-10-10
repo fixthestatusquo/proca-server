@@ -9,9 +9,10 @@ defmodule Proca.Stage.DetailBackendTest do
 
   alias Proca.{Repo, Action, Supporter}
   alias Proca.TestDetailBackend
-  alias Proca.Stage.Processing
   alias Proca.Service.Detail
   import Logger
+
+  use Proca.TestProcessing
 
   setup do
     s = blue_story()
@@ -40,7 +41,6 @@ defmodule Proca.Stage.DetailBackendTest do
   end
 
   test "process action with detail", %{pages: [ap]} do
-    assert not is_nil(Process.whereis(Proca.Stage.Processing))
     TestDetailBackend.start_link(%Detail{privacy: %{opt_in: true}})
 
     a = Factory.insert(:action, action_page: ap, opt_in: false)
@@ -49,12 +49,7 @@ defmodule Proca.Stage.DetailBackendTest do
 
     assert %{communication_consent: false} = hd(a.supporter.contacts)
 
-    Processing.process(a)
-    |> IO.inspect(label: "processing:")
-
-    TestDetailBackend.sync()
-
-    :timer.sleep(1000)
+    process(a)
 
     a = Repo.reload(a) |> Repo.preload(supporter: :contacts)
 

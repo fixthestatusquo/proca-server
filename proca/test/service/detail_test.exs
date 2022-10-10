@@ -9,7 +9,7 @@ defmodule Proca.Service.DetailTest do
   describe "update" do
     setup do
       %{pages: [ap]} = StoryFactory.blue_story()
-      action = Factory.insert(:action, %{action_page: ap})
+      action = Factory.insert(:action, %{action_page: ap, opt_in: false})
 
       %{
         supporter: action.supporter,
@@ -30,18 +30,18 @@ defmodule Proca.Service.DetailTest do
         Detail.update(
           Changeset.change(sup),
           Changeset.change(ac),
-          %Detail{privacy: %Detail.Privacy{opt_in: false}}
+          %Detail{privacy: %Detail.Privacy{opt_in: true, given_at: "2021-07-28T10:00:00Z"}}
         )
 
       s2 = Changeset.apply_changes(s)
 
-      assert hd(sup.contacts).communication_consent == true
-      assert hd(s2.contacts).communication_consent == false
+      assert hd(sup.contacts).communication_consent == false
+      assert hd(s2.contacts).communication_consent == true
       assert map_size(a.changes) == 0
     end
 
     test "double opt in", %{action: ac, supporter: sup} do
-      {s, a} =
+      {s, _a} =
         Detail.update(
           Changeset.change(sup),
           Changeset.change(ac),

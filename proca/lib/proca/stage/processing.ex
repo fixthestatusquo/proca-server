@@ -208,7 +208,7 @@ defmodule Proca.Stage.Processing do
 
   # Action without consent, when supporter is new -> leave it, the with_consent: true should trigger processing the supporter, otherwise we have a race
   def transition(
-        action = %{
+        %{
           processing_status: :new,
           with_consent: false,
           supporter: %{processing_status: :new}

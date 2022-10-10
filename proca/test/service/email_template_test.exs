@@ -1,5 +1,6 @@
 defmodule Proca.EmailTemplateTest do
   use Proca.DataCase
+  @moduletag start: [:stats]
   use Proca.TestEmailBackend
   import Ecto.Changeset
   import Proca.Repo
