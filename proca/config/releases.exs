@@ -20,7 +20,11 @@ config :proca, Proca.Pipes,
     cacertfile: System.get_env("AMQP_CACERTFILE"),
     certfile: System.get_env("AMQP_CERTFILE"),
     keyfile: System.get_env("AMQP_KEYFILE")
-  ]
+  ],
+  retry_limit: case(System.get_env("RETRY_LIMIT")) do
+  nil -> nil
+  limit -> String.to_integer(limit)
+end
 
 sso_home_url = System.get_env("SSO_HOME_URL")
 local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"

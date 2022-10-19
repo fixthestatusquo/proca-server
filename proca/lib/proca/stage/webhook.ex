@@ -15,7 +15,9 @@ defmodule Proca.Stage.Webhook do
   alias Proca.Repo
   import Ecto.Query
   import Logger
-  import Proca.Stage.Support, only: [ignore: 1, ignore: 2, supporter_link: 3]
+
+  import Proca.Stage.Support,
+    only: [ignore: 1, ignore: 2, supporter_link: 3, too_many_retries?: 1]
 
   def start_for?(org = %Org{}) do
     case Proca.Repo.preload(org, [:push_backend, :event_backend]) do
@@ -52,13 +54,17 @@ defmodule Proca.Stage.Webhook do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
-    case JSON.decode(data) do
-      {:ok, event} ->
-        Message.put_data(message, event)
+    if too_many_retries?(message) do
+      ignore(message, "too many retries")
+    else
+      case JSON.decode(data) do
+        {:ok, event} ->
+          Message.put_data(message, event)
 
-      # ignore garbled message
-      {:error, reason} ->
-        ignore(message, reason)
+        # ignore garbled message
+        {:error, reason} ->
+          ignore(message, reason)
+      end
     end
   end
 

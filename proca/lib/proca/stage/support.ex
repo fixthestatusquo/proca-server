@@ -210,4 +210,58 @@ defmodule Proca.Stage.Support do
   end
 
   def camel_case_keys(other), do: other
+
+  @doc """
+  Unpack this AMQP metadata
+   headers: [
+     {"x-death", :array,
+      [
+        table: [
+          {"count", :long, 55613},
+          {"exchange", :longstr, "org.320.deliver"},
+          {"queue", :longstr, "cus.320.deliver"},
+          {"reason", :longstr, "rejected"},
+          {"routing-keys", :array, [longstr: "register.fur_free_europe"]},
+          {"time", :timestamp, 1664450213}
+        ],
+        table: [
+          {"count", :long, 55612},
+          {"exchange", :longstr, "org.320.fail"},
+          {"queue", :longstr, "org.320.fail"},
+          {"reason", :longstr, "expired"},
+          {"routing-keys", :array, [longstr: "cus.320.deliver"]},
+          {"time", :timestamp, 1664450243}
+        ]
+      ]},
+     {"x-first-death-exchange", :longstr, "org.320.deliver"},
+     {"x-first-death-queue", :longstr, "cus.320.deliver"},
+     {"x-first-death-reason", :longstr, "rejected"}
+   ],
+
+  """
+  # XXX how is this count counted?
+  def times_retried(%Broadway.Message{metadata: %{headers: hdrs}}) do
+    case List.keyfind(hdrs, "x-death", 0) do
+      {_, _, [{:table, props} | _]} ->
+        case List.keyfind(props, "count", 0) do
+          {_, _, ct} -> ct
+          _ -> 0
+        end
+
+      _ ->
+        0
+    end
+  end
+
+  def times_retried(_), do: 0
+
+  def too_many_retries?(msg) do
+    limit = Application.get_env(:proca, Proca.Pipes)[:retry_limit] != nil
+
+    if is_number(limit) do
+      times_retried(msg) > limit
+    else
+      false
+    end
+  end
 end
