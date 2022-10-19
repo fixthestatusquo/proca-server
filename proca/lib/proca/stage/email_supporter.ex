@@ -12,7 +12,14 @@ defmodule Proca.Stage.EmailSupporter do
   import Logger
 
   import Proca.Stage.Support,
-    only: [ignore: 1, ignore: 2, failed_partially: 2, supporter_link: 3, double_opt_in_link: 2]
+    only: [
+      ignore: 1,
+      ignore: 2,
+      failed_partially: 2,
+      supporter_link: 3,
+      double_opt_in_link: 2,
+      too_many_retries?: 1
+    ]
 
   alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate, EmailTemplateDirectory}
   alias Swoosh.Email
@@ -67,7 +74,7 @@ defmodule Proca.Stage.EmailSupporter do
          "actionPageId" => action_page_id,
          "actionId" => action_id
        } = action} ->
-        if send_thank_you?(action_page_id, action_id) do
+        if send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) do
           message
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batch_key(action_page_id)
@@ -82,7 +89,7 @@ defmodule Proca.Stage.EmailSupporter do
          "actionPageId" => action_page_id,
          "actionId" => action_id
        } = action} ->
-        if send_supporter_confirm?(action_page_id, action_id) do
+        if send_supporter_confirm?(action_page_id, action_id) and not too_many_retries?(message) do
           message
           |> Message.update_data(fn _ -> action end)
           |> Message.put_batch_key(action_page_id)

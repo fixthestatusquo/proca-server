@@ -60,7 +60,8 @@ config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"
 
 config :proca, Proca.Pipes,
   url: "amqp://proca:proca@localhost/proca",
-  ssl_options: nil
+  ssl_options: nil,
+  retry_limit: 3
 
 # Disable lager logging (included by rabbitmq app)
 config :lager, handlers: []

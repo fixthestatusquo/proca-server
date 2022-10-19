@@ -9,6 +9,9 @@ defmodule Proca.Stage.SQS do
   alias Proca.{Org, Service}
   require Logger
 
+  import Proca.Stage.Support,
+    only: [ignore: 2, too_many_retries?: 1]
+
   def start_for?(org = %Org{}) do
     case Proca.Repo.preload(org, [:push_backend, :event_backend]) do
       %{push_backend: %{name: :sqs}} -> true
@@ -44,15 +47,19 @@ defmodule Proca.Stage.SQS do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
-    case JSON.decode(data) do
-      {:ok, %{"orgId" => org_id, "schema" => schema} = action} ->
-        message
-        |> Message.put_data(action)
-        |> Message.put_batch_key({org_id, content_type(schema)})
-        |> Message.put_batcher(:sqs)
+    if too_many_retries?(message) do
+      ignore(message, "too many retries")
+    else
+      case JSON.decode(data) do
+        {:ok, %{"orgId" => org_id, "schema" => schema} = action} ->
+          message
+          |> Message.put_data(action)
+          |> Message.put_batch_key({org_id, content_type(schema)})
+          |> Message.put_batcher(:sqs)
 
-      {:error, reason} ->
-        Message.failed(message, inspect(reason))
+        {:error, reason} ->
+          Message.failed(message, inspect(reason))
+      end
     end
   end
 
