@@ -109,13 +109,7 @@ defmodule Proca.Service.Mailjet do
 
            # drop bad emails
            %{"Errors" => errors = [%{"ErrorMessage" => error_msg}]} ->
-             if Enum.any?(
-                  errors,
-                  fn
-                    %{"ErrorRelatedTo" => ["To[0].Email"]} -> true
-                    _ -> false
-                  end
-                ) do
+             if Enum.any?(errors, &Map.has_key?(&1, "ErrorRelatedTo")) do
                :ok
              else
                {:error, error_msg}
