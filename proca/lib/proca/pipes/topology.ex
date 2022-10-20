@@ -172,15 +172,14 @@ defmodule Proca.Pipes.Topology do
   end
 
   def declare_retry_circuit(chan, o = %Org{}) do
-    sec = 30
     # fail queue = fail exchange
     qn = xn(o, "fail")
 
     Queue.declare(chan, qn,
       durable: true,
       arguments: [
-        {"x-dead-letter-exchange", :longstr, xn(o, "retry")},
-        {"x-message-ttl", :long, round(sec * 1000)}
+        {"x-dead-letter-exchange", :longstr, xn(o, "retry")}
+        #        {"x-message-ttl", :long, round(sec * 1000)}
       ]
     )
 

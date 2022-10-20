@@ -22,8 +22,15 @@ config :proca, Proca.Pipes,
     keyfile: System.get_env("AMQP_KEYFILE")
   ],
   retry_limit: case(System.get_env("RETRY_LIMIT")) do
-  nil -> nil
-  limit -> String.to_integer(limit)
+  nil ->
+    nil
+
+  limit ->
+    case String.to_integer(limit) do
+      # probably a typical sec vs ms confusion
+      n when n < 100 -> raise ArgumentError, "RETRY_LIMIT must be in miliseconds"
+      n -> n
+    end
 end
 
 sso_home_url = System.get_env("SSO_HOME_URL")
