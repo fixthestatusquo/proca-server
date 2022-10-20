@@ -35,6 +35,6 @@ defmodule Proca.PipesTest do
       metadata: @failed_metadata
     }
 
-    assert Proca.Pipes.times_retried(msg) == 55613
+    assert Proca.Stage.Support.times_retried(msg) == 55613
   end
 end
