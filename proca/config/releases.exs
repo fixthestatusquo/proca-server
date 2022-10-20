@@ -7,6 +7,13 @@ database_url =
     For example: ecto://USER:PASS@HOST/DATABASE
     """
 
+parse_int = fn envvar, default ->
+  case System.get_env(envvar) do
+    nil -> default
+    limit -> String.to_integer(limit)
+  end
+end
+
 config :proca, Proca.Repo,
   # ssl: true,
   url: database_url,
@@ -21,17 +28,9 @@ config :proca, Proca.Pipes,
     certfile: System.get_env("AMQP_CERTFILE"),
     keyfile: System.get_env("AMQP_KEYFILE")
   ],
-  retry_limit: case(System.get_env("RETRY_LIMIT")) do
-  nil ->
-    nil
 
-  limit ->
-    case String.to_integer(limit) do
-      # probably a typical sec vs ms confusion
-      n when n < 100 -> raise ArgumentError, "RETRY_LIMIT must be in miliseconds"
-      n -> n
-    end
-end
+  # probably a typical sec vs ms confusion
+  retry_limit: parse_int.("RETRY_LIMIT", nil)
 
 sso_home_url = System.get_env("SSO_HOME_URL")
 local_auth_enable = System.get_env("LOCAL_AUTH_ENABLE", "true") == "true"
