@@ -49,10 +49,10 @@ defmodule Proca.Service.EmailMerge do
         dupe_rank: dr
       }) do
     email
-    |> assign(:first_name, f)
-    |> assign(:last_name, l || "")
+    |> assign_maybe(:first_name, f)
+    |> assign_maybe(:last_name, l)
     |> assign(:email, e)
-    |> assign(:area, a)
+    |> assign_maybe(:area, a)
     |> assign(:is_dupe, (dr || 0) > 0)
   end
 
@@ -220,4 +220,7 @@ defmodule Proca.Service.EmailMerge do
         Map.put(map, key2, URI.encode(val, &URI.char_unreserved?/1))
     end
   end
+
+  def assign_maybe(%Email{} = e, key, nil), do: e
+  def assign_maybe(%Email{} = e, key, value), do: assign(e, key, value)
 end
