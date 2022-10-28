@@ -2,6 +2,50 @@ import EctoEnum
 # Remember to update the GraphQL enums to match these!
 # You can do this in lib/proca_web/schema/data_types.ex file
 
+defmodule Enums do
+  @moduledoc """
+  Enums used in Proca database.
+
+  ## ProcessingStatus
+  The processing status used for both action and supporter
+
+  - 0 - `new`
+  - 1 - `confirming`
+  - 2 - `rejected`
+  - 3 - `accepted`
+  - 4 - `delivered`
+
+  Possible status transitions
+
+  ```
+  new -> confirming -> rejected
+    v      v
+  accepted
+    v
+  delivered (action status only)
+  ```
+
+  ## EmailStatus ##
+
+  Status of the supporter email.
+
+  - 0 - `none` (we have no information on this email)
+  - 1 - `double_opt_in` (email wants to get newsletter)
+  - 2 - `bounce` (email bounces)
+  - 3 - `blocked` (email blocks)
+  - 4 - `spam` (email thinks you are a spammer)
+  - 5 - `unsub` (email has expressed will to not be contacted any more)
+
+
+  ## DonationFrequencyUnit ##
+
+  - 0 - `one_off`
+  - 1 - `weekly`
+  - 2 - `monthly`
+  - 3 - `daily`
+  """
+end
+
 defenum(ProcessingStatus,
   new: 0,
   confirming: 1,
