@@ -21,7 +21,7 @@ defmodule Proca.Service.SES do
 
   @impl true
   def supports_templates?(_org) do
-    false
+    true
   end
 
   @impl true
