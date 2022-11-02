@@ -60,6 +60,7 @@ defmodule Proca.Service.EmailBackend do
 
   @callback handle_event(params :: any()) :: any()
 
+  # XXX is this even used anywhere?
   @callback batch_size() :: number
 
   def service_module(:mailjet), do: Proca.Service.Mailjet
@@ -67,6 +68,8 @@ defmodule Proca.Service.EmailBackend do
   def service_module(:ses), do: Proca.Service.SES
 
   def service_module(:testmail), do: Proca.TestEmailBackend
+
+  def service_module(:smtp), do: Proca.Service.SMTP
 
   def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
