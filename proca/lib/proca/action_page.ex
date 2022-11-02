@@ -66,7 +66,7 @@ defmodule Proca.ActionPage do
     )
     |> validate_format(
       :locale,
-      ~r/^[a-z]{2}(_[A-Z]{2})?$/
+      ~r/^[a-z]{2}(_[A-Z]{2})?(@[a-z]+)?$/
     )
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
