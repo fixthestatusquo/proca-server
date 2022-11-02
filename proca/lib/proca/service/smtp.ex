@@ -18,7 +18,11 @@ defmodule Proca.Service.SMTP do
   @impl true
   def deliver(emails, %Org{email_backend: srv, name: org_name}) do
     conf = config(srv)
-    results = Enum.map(emails, &SMTP.deliver(&1, conf))
+
+    results =
+      emails
+      |> Enum.map(&put_message_id/1)
+      |> Enum.map(&SMTP.deliver(&1, conf))
 
     Enum.each(results, fn
       {:ok, _} ->
@@ -38,6 +42,10 @@ defmodule Proca.Service.SMTP do
     #       {:error, reason} -> {:error, inspect(reason)}
     #     end)}
     # end
+  end
+
+  def put_message_id(%Email{private: %{custom_id: cid}} = eml) do
+    Email.header(eml, "Message-Id", cid)
   end
 
   def config(%Service{user: u, password: p, host: url}) do
