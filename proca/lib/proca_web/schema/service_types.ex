@@ -84,6 +84,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:ses)
     value(:sqs)
     value(:mailjet)
+    value(:smtp)
     value(:wordpress)
     value(:stripe)
     value(:test_stripe)
