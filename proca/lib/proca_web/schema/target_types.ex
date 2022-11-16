@@ -74,12 +74,12 @@ defmodule ProcaWeb.Schema.TargetTypes do
     end
   end
 
-  object :target_queries do
-    # XXX perhaps better to access via campaign.targets
-    # field :targets, non_null(list_of(:target)) do
-    #   arg(:campaign_id, non_null(:integer))
+  # object :target_queries do
+  # XXX perhaps better to access via campaign.targets
+  # field :targets, non_null(list_of(:target)) do
+  #   arg(:campaign_id, non_null(:integer))
 
-    #   resolve(&Resolvers.Target.list/3)
-    # end
-  end
+  #   resolve(&Resolvers.Target.list/3)
+  # end
+  # end
 end
