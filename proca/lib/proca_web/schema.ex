@@ -28,7 +28,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:action_queries)
     import_fields(:user_queries)
     import_fields(:org_queries)
-    import_fields(:target_queries)
+    # import_fields(:target_queries)
   end
 
   mutation do
