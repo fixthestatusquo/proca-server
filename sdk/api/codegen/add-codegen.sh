@@ -13,7 +13,7 @@ else
 fi
 
 yarn add -D \
-graphql@15.3.0 \
+graphql@15.5.0 \
 @graphql-codegen/cli \
 @graphql-codegen/typed-document-node \
 @graphql-codegen/typescript \
