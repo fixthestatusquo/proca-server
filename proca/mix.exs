@@ -75,7 +75,7 @@ defmodule Proca.MixProject do
       {:ex_aws_sqs, "~> 3.3"},
       {:stripity_stripe, "~> 2.9.0"},
       # "~> 0.2.2"},
-      {:supabase, github: "marcinkoziej/supabase-elixir", branch: "fix/handle_empty_list"},
+      {:supabase, "~> 0.2.3"},
       {:hackney, "~> 1.17.1"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
