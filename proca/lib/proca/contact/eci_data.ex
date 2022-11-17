@@ -2,7 +2,7 @@ defmodule Proca.Contact.EciData do
   @moduledoc """
   Data format for ECI
   """
-  alias Proca.Contact.{EciData, EciDataRules, Input}
+  alias Proca.Contact.{EciData, EciDataRules, Input, EciBg}
   use Ecto.Schema
   # require Proca.Contact.EciDataRules
   import Ecto.Changeset
@@ -33,6 +33,18 @@ defmodule Proca.Contact.EciData do
     ch
     |> validate_required([:document_type, :document_number])
     |> validate_inclusion(:document_type, required_types)
+  end
+
+  def validate_document_number(ch = %{changes: %{document_type: "personal.number"}}, "BG") do
+    ch
+    |> validate_required([:document_number])
+    |> validate_change(:document_number, fn field, uci ->
+      if EciBg.is_valid(uci) do
+        []
+      else
+        [{field, {"has invalid format", [validation: :format]}}]
+      end
+    end)
   end
 
   def validate_document_number(ch = %{changes: %{document_type: dt}}, country_of_nationality) do

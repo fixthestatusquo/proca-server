@@ -74,6 +74,15 @@ defmodule EciDataTest do
             document_number: "00.01.01-123.45"
           }
         }
+        |> Map.merge(names),
+      bg:
+        %{
+          nationality: %{
+            country: "BG",
+            document_type: "personal.number",
+            document_number: "0409197132"
+          }
+        }
         |> Map.merge(names)
     }
   end
@@ -236,5 +245,16 @@ defmodule EciDataTest do
   test "Belgian ID", %{be: be} do
     c = EciData.from_input(be)
     assert c.valid?
+  end
+
+  test "Bulgarian ID", %{bg: bg} do
+    c = EciData.from_input(bg)
+    assert c.valid?
+
+    c2 =
+      %{bg | nationality: %{bg[:nationality] | document_number: "0248126491"}}
+      |> EciData.from_input()
+
+    assert not c2.valid?
   end
 end
