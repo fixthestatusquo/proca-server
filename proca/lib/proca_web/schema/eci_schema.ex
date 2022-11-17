@@ -77,6 +77,6 @@ defmodule ProcaWeb.Schema.EciSchema do
   end
 
   def plugins do
-    [MyAppWeb.Schema.Middleware.AuthorizedIntrospection | Absinthe.Plugin.defaults()]
+    [ProcaWeb.Plugs.BlockIntrospectionPlug | Absinthe.Plugin.defaults()]
   end
 end
