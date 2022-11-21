@@ -134,17 +134,6 @@ defmodule Proca.Stage.Processing do
     :ok
   end
 
-  # does it have supporter.email removed already, but still processing? Weird, reject
-  def transition(
-        %{
-          supporter: %{email: nil}
-        },
-        _ap
-      ) do
-    # Action already delivered: not processing.
-    {:rejected, :rejected, nil}
-  end
-
   def transition(
         %{
           processing_status: :new,
