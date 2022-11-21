@@ -31,7 +31,7 @@ def show(ctx, name, config):
 @click.command("org:add")
 @click.argument('name', required=True)
 @click.argument('title', required=True)
-@click.option('-d/-D', '--default/--no-default', is_flag=True, prompt="Set as default?")
+@click.option('-d/-D', '--default/--no-default', is_flag=True, help="Set as your default org", prompt="Set as default?")
 @click.pass_obj
 def add(ctx, name, title, default):
     """
