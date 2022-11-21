@@ -34,8 +34,18 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "config"
     field :config, non_null(:json)
 
+    ##
+    ## Resolve type second argument:
+    ## %{
+    ##    parent_type: %Type{identifier: :user_role }
+    ##    path: [ %{name: "field"}, 123, ... ]
+    ##  }
+    ##
     resolve_type(fn
       %{id: org_id}, %{context: %{auth: %Auth{staffer: %{org_id: org_id}}}} ->
+        :private_org
+
+      _, %{path: [_org, _idx, _roles, %{name: "currentUser"} | _]} ->
         :private_org
 
       _, %{context: %{auth: %Auth{} = auth}} ->
