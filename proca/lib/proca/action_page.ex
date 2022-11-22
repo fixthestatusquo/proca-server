@@ -60,6 +60,7 @@ defmodule Proca.ActionPage do
     |> change(assocs)
     |> validate_required([:name, :locale, :extra_supporters])
     |> unique_constraint(:name)
+    |> validate_inclusion(:extra_supporters, 0..100_000_000)
     |> validate_format(
       :name,
       ~r/^([[:alnum:]-_]+|[[:alnum:]-]+(?:\.[[:alnum:]\.-]+)+)(?:\/[[:alnum:]_-]+)+$/
