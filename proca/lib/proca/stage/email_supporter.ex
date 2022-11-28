@@ -95,16 +95,7 @@ defmodule Proca.Stage.EmailSupporter do
           |> Message.put_batch_key(action_page_id)
           |> Message.put_batcher(:supporter_confirm)
         else
-          case confirm_supporter(action_id) do
-            :ok ->
-              ignore(message)
-
-            {:error, e} ->
-              Message.failed(
-                message,
-                "Cannot auto-confirm supporter (action id #{action_id}): #{e}"
-              )
-          end
+          ignore(message)
         end
 
       {:ok, _} ->
