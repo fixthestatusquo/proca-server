@@ -3,6 +3,7 @@ defmodule Proca.ReleaseTasks do
   Tasks to seed and migrate the db on app start
   """
   @start_apps [
+    :ssl,
     :postgrex,
     :ecto,
     :ecto_sql
