@@ -317,6 +317,9 @@ defmodule Proca.Stage.Processing do
     {:ok, p}
   end
 
+  @doc """
+  Only clear transient personal info if we have reached delivery stage
+  """
   def clear_transient(
         %Processing{
           action_change: action_ch,
