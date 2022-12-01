@@ -97,34 +97,97 @@ defmodule Proca.Service.Mailjet do
         |> put_custom()
       end)
 
-    case Mailjet.deliver_many(emails, config(srv)) do
-      {:ok, _} ->
-        :ok
+    Mailjet.deliver_many(emails, config(srv))
+    |> handle_return(emails)
+  end
 
-      {:error, {_code, status_list}} when is_list(status_list) ->
-        {:error,
-         Enum.map(status_list, fn
-           %{id: _} ->
+  @doc """
+  Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
+
+  Sending `[one_bad_email]`
+
+  ```
+  EmailBackend.deliver([a], io)
+  {:error,
+   {400,
+    %{
+      "Errors" => [
+        %{
+          "ErrorCode" => "mj-0013",
+          "ErrorIdentifier" => "b3cd2840-18a3-44c3-97e3-45a19029902f",
+          "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
+          "ErrorRelatedTo" => ["To[0].Email"],
+          "StatusCode" => 400
+        }
+      ],
+      "Status" => "error"
+    }}}
+  ```
+
+  Sending `[one_bad_email, one_good_email]`
+
+  ```
+  {:error,
+   {400,
+    [
+      %{
+        "Errors" => [
+          %{
+            "ErrorCode" => "mj-0013",
+            "ErrorIdentifier" => "e37bcc6f-6821-414e-97df-528ec18e201e",
+            "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
+            "ErrorRelatedTo" => ["To[0].Email"],
+            "StatusCode" => 400
+          }
+        ],
+        "Status" => "error"
+      },
+      %{id: 1152921519812251571}
+    ]}}
+  ```
+  """
+  defp handle_return({:ok, _}, _) do
+    :ok
+  end
+
+  # Re-wrap the errors in a list to fix inconsistent swoosh behavior
+  defp handle_return({:error, {code, status}}, emails) when is_map(status) do
+    handle_return({:error, {code, [status]}}, emails)
+  end
+
+  defp handle_return({:error, {_code, statuses}}, _) when is_list(statuses) do
+    {:error,
+     Enum.map(
+       statuses,
+       fn
+         %{id: _} ->
+           :ok
+
+         # drop fatal emails
+         %{"Errors" => errors} ->
+           if fatal_error?(errors) do
+             Sentry.capture_message("Silently dropping email: #{error_message(errors)}")
              :ok
+           else
+             {:error, error_message(errors)}
+           end
+       end
+     )}
+  end
 
-           # drop bad emails
-           %{"Errors" => errors = [%{"ErrorMessage" => error_msg}]} ->
-             if Enum.any?(errors, &Map.has_key?(&1, "ErrorRelatedTo")) do
-               :ok
-             else
-               {:error, error_msg}
-             end
+  defp handle_return({:error, reason}, emails) do
+    Sentry.capture_message("Mailjet: failed HTTP request to API #{inspect(reason)}")
 
-           err ->
-             {:error, inspect(err)}
-         end)}
+    error("Mailjet cannot deliver email batch! #{inspect(reason)}")
+    {:error, Enum.map(emails, fn _ -> {:error, reason} end)}
+  end
 
-      {:error, reason} ->
-        Sentry.capture_message("Mailjet: failed HTTP request to API #{inspect(reason)}")
+  def fatal_error?(errors) when is_list(errors) do
+    Enum.any?(errors, &Map.has_key?(&1, "ErrorRelatedTo"))
+  end
 
-        error("Mailjet cannot deliver email batch! #{inspect(reason)}")
-        {:error, Enum.map(emails, fn _ -> {:error, reason} end)}
-    end
+  def error_message([%{"ErrorMessage" => error_msg} | _]) do
+    error_msg
   end
 
   defp put_assigns(%Email{assigns: assigns} = email) do
