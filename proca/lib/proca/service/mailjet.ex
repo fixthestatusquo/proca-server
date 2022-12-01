@@ -151,9 +151,10 @@ defmodule Proca.Service.Mailjet do
   end
 
   # Re-wrap the errors in a list to fix inconsistent swoosh behavior
-  defp handle_return({:error, {code, status}}, emails) when is_map(status) do
-    handle_return({:error, {code, [status]}}, emails)
-  end
+  # XXX fixed on 1.12.2022
+  # defp handle_return({:error, {code, status}}, emails) when is_map(status) do
+  #   handle_return({:error, {code, [status]}}, emails)
+  # end
 
   defp handle_return({:error, {_code, statuses}}, _) when is_list(statuses) do
     {:error,
