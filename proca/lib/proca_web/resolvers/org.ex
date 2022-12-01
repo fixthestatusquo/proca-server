@@ -166,11 +166,11 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def add_org(_, %{input: params}, %{context: %{auth: %Auth{user: user}}}) do
-    instance_email_backend = Org.one([:instance] ++ [preload: [:email_backend]])
+    %{email_backend: instance_email_backend} = Org.one([:instance] ++ [preload: [:email_backend]])
 
     defaults = %{
       email_from: user.email,
-      email_backend: instance_email_backend && instance_email_backend.email_backend
+      email_backend: instance_email_backend
     }
 
     result =
