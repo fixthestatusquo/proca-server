@@ -18,7 +18,7 @@ const remindExchange = process.env.REMIND_EXCHANGE || args.qe || "";
 const maxRetries = parseInt(process.env.MAX_RETIRES || args.r || "3");
 const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => parseInt(x)).filter(x => x > 0);
 // debug
-const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "4");
+const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
 
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 

@@ -110,12 +110,11 @@ const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(voi
             if (error.notFound) {
                 try {
                     const _payload2 = yield db.get('done-' + action.actionId);
-                    console.log("payload 2, done found, no requeue", _payload2);
+                    console.log("payload 2, done found, no requeue");
                 }
                 catch (_error) {
                     const error = _error;
                     if (error.notFound) {
-                        console.log("not found, requeue");
                         yield db.put('action-' + action.actionId, action, {});
                         const retry = { retry: (0, helpers_1.changeDate)(action.action.createdAt, 1, retryArray), attempts: 1 };
                         yield db.put('retry-' + action.actionId, retry, {});
