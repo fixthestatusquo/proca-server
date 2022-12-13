@@ -1,6 +1,6 @@
 {
   "name": "@proca/confirm-reminder",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -24,12 +24,14 @@
     "@proca/queue": "^0.2.3",
     "@types/node-schedule": "2.1.0",
     "amqplib": "^0.10.3",
+    "dotenv": "^16.0.3",
     "level": "^8.0.0",
     "minimist": "^1.2.6",
     "node-schedule": "^2.1.0"
   },
   "devDependencies": {
     "@types/amqplib": "^0.8.2",
+    "@types/minimist": "^1.2.2",
     "nodemon": "^2.0.20",
     "ts-node": "^10.9.1"
   }

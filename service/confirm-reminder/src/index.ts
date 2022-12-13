@@ -4,7 +4,7 @@ import amqplib from 'amqplib';
 import { Level } from "level";
 import schedule from "node-schedule";
 import parseArg from "minimist";
-
+import './env';
 
 // READ PARAMS
 const args = parseArg(process.argv.slice(2));
@@ -18,8 +18,7 @@ const remindExchange = process.env.REMIND_EXCHANGE || args.qe || "";
 const maxRetries = parseInt(process.env.MAX_RETIRES || args.r || "3");
 const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => parseInt(x)).filter(x => x > 0);
 // debug
-const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
-
+const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "4");
 
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 
@@ -102,14 +101,24 @@ syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV
       const error = _error as LevelError;
 
       if (error.notFound) {
-        await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
-        const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
-        await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
+        try {
+          const _payload2 = await db.get('done-' + action.actionId);
+          console.log( "payload 2, done found, no requeue");
+        } catch (_error) {
+          const error = _error as LevelError;
 
-        console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
-      } else {
-        console.error(`Error checking if confirm scheduled in DB`, error);
-        throw error;
+          if (error.notFound) {
+            await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
+            const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
+            await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
+
+            console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
+          } else {
+            console.error(`Error checking if confirm scheduled in DB`, error);
+            throw error;
+          }
+        }
+
       }
     }
   }
