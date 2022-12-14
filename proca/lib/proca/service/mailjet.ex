@@ -167,7 +167,10 @@ defmodule Proca.Service.Mailjet do
          # drop fatal emails
          %{"Errors" => errors} ->
            if fatal_error?(errors) do
-             Sentry.capture_message("Silently dropping email: #{error_message(errors)}")
+             Sentry.capture_message("Silently dropping email: #{error_message(errors)}",
+               result: :none
+             )
+
              :ok
            else
              {:error, error_message(errors)}

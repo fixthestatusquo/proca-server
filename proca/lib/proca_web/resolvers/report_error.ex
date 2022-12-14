@@ -43,7 +43,8 @@ defmodule ProcaWeb.Resolvers.ReportError do
       rescue
         e in RuntimeError ->
           Sentry.capture_message("Other user error",
-            extra: %{exception: Map.get(e, :message, "(no message)")}
+            extra: %{exception: Map.get(e, :message, "(no message)")},
+            result: :none
           )
       end
     end
