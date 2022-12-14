@@ -1,9 +1,10 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
-import { changeDate } from "./helpers"
+import { changeDate, nullIfNotFound } from "./helpers"
 import amqplib from 'amqplib';
 import { Level } from "level";
 import schedule from "node-schedule";
 import parseArg from "minimist";
+import { RetryRecord, DoneRecord } from './types';
 import './env';
 
 // READ PARAMS
@@ -21,23 +22,6 @@ const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => par
 const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
 
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
-
-// types
-
-type LevelError = {
-  code: string;
-  notFound: boolean;
-  status: number;
-};
-
-type RetryRecord = {
-  attempts: number;
-  retry: string;
-};
-
-type DoneRecord = {
-  done: boolean;
-}
 
 //TODO: run every 10 min
 
@@ -89,49 +73,21 @@ const job = schedule.scheduleJob('* * * * *', async () => {
   }
 });
 
-const nullIfNotFound = async <T>(promise : Promise<T>) : Promise<T | null> => {
-  try {
-    const v = await promise;
-  } catch (_error) {
-      const error = _error as LevelError;
-      if (error.notFound) {
-        return null; // convert not found to null
-      } else {
-        throw _error; // retrow
-      }
-  }
-}
-
 syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
-
     console.log(`New confirm `, action.actionId);
-    try {
-      // ignore if we have it
-      const _payload =  await db.get('action-' + action.actionId);
-    } catch (_error) {
-      console.error('catch', _error);
-      const error = _error as LevelError;
 
-      if (error.notFound) {
-        try {
-          const _payload2 = await db.get('done-' + action.actionId);
-          console.log( "payload 2, done found, no requeue");
-        } catch (_error) {
-          const error = _error as LevelError;
+    const _payload = await nullIfNotFound(db.get('action-' + action.actionId));
 
-          if (error.notFound) {
-            await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
-            const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
-            await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
+    if (_payload === null) {
+      const _payload2 = await nullIfNotFound(db.get('done-' + action.actionId));
 
-            console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
-          } else {
-            console.error(`Error checking if confirm scheduled in DB`, error);
-            throw error;
-          }
-        }
+      if (_payload2 === null) {
+        await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
+        const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
+        await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
 
+        console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
       }
     }
   }

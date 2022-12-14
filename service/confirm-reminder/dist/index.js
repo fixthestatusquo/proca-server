@@ -100,31 +100,14 @@ const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(voi
 (0, queue_1.syncQueue)(amqp_url, queueConfirm, (action) => __awaiter(void 0, void 0, void 0, function* () {
     if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
         console.log(`New confirm `, action.actionId);
-        try {
-            // ignore if we have it
-            const _payload = yield db.get('action-' + action.actionId);
-        }
-        catch (_error) {
-            console.error('catch', _error);
-            const error = _error;
-            if (error.notFound) {
-                try {
-                    const _payload2 = yield db.get('done-' + action.actionId);
-                    console.log("payload 2, done found, no requeue");
-                }
-                catch (_error) {
-                    const error = _error;
-                    if (error.notFound) {
-                        yield db.put('action-' + action.actionId, action, {});
-                        const retry = { retry: (0, helpers_1.changeDate)(action.action.createdAt, 1, retryArray), attempts: 1 };
-                        yield db.put('retry-' + action.actionId, retry, {});
-                        console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
-                    }
-                    else {
-                        console.error(`Error checking if confirm scheduled in DB`, error);
-                        throw error;
-                    }
-                }
+        const _payload = yield (0, helpers_1.nullIfNotFound)(db.get('action-' + action.actionId));
+        if (_payload === null) {
+            const _payload2 = yield (0, helpers_1.nullIfNotFound)(db.get('done-' + action.actionId));
+            if (_payload2 === null) {
+                yield db.put('action-' + action.actionId, action, {});
+                const retry = { retry: (0, helpers_1.changeDate)(action.action.createdAt, 1, retryArray), attempts: 1 };
+                yield db.put('retry-' + action.actionId, retry, {});
+                console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
             }
         }
     }
