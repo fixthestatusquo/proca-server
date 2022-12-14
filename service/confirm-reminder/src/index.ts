@@ -89,6 +89,19 @@ const job = schedule.scheduleJob('* * * * *', async () => {
   }
 });
 
+const nullIfNotFound = async <T>(promise : Promise<T>) : Promise<T | null> => {
+  try {
+    const v = await promise;
+  } catch (_error) {
+      const error = _error as LevelError;
+      if (error.notFound) {
+        return null; // convert not found to null
+      } else {
+        throw _error; // retrow
+      }
+  }
+}
+
 syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
 
