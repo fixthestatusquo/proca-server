@@ -89,6 +89,11 @@ defmodule Proca.Service.EmailBackend do
 
   @doc """
   Delivers list of Email-s using EmailTemplate. Uses Org's email service.
+
+  `:ok` - all went fine
+  `{:error, [....]}` - there was some error - could be partial!
+
+  Surprise: you can get  `{:error, [:ok, :ok, :ok]}` with there was some error but adapter decided to drop the email (fatal problem, retry will not help)
   """
   @spec deliver([%Email{}], %Org{}, %EmailTemplate{} | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
