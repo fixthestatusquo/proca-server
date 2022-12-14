@@ -144,7 +144,7 @@ defmodule Proca.Service.Detail do
       other ->
         Sentry.capture_message(
           "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{inspect(other)}",
-          capture: :none
+          result: :none
         )
 
         warn(

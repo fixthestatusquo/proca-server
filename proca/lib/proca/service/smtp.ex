@@ -29,7 +29,10 @@ defmodule Proca.Service.SMTP do
         :ok
 
       {:error, reason} ->
-        Sentry.capture_message("Failed to send email by SMTP: #{inspect(reason)}", org: org_name)
+        Sentry.capture_message("Failed to send email by SMTP: #{inspect(reason)}",
+          extra: %{org: org_name},
+          result: :none
+        )
     end)
 
     :ok

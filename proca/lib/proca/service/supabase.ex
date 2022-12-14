@@ -32,7 +32,7 @@ defmodule Proca.Service.Supabase do
   def normalize_error(%{"error" => "Invalid JWT"}), do: :not_authenticated
 
   def normalize_error(e) do
-    Sentry.capture_message("Other Supabase.Storage error: #{inspect(e)}")
+    Sentry.capture_message("Other Supabase.Storage error: #{inspect(e)}", result: :none)
 
     :other
   end
