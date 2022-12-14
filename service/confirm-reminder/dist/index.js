@@ -49,7 +49,7 @@ const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(voi
         try {
             for (var _b = __asyncValues(db.iterator({ gt: 'retry-' })), _c; _c = yield _b.next(), !_c.done;) {
                 const [key, value] = _c.value;
-                console.log("Confirm:", key, value);
+                // console.log("Confirm:", key, value);
                 const actionId = key.split("-")[1];
                 if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
                     console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
@@ -60,7 +60,7 @@ const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(voi
                 else {
                     const today = new Date();
                     today.setDate(today.getDate() + debugDayOffset);
-                    console.log(`${new Date(value.retry)} < ${today} ?`);
+                    //console.log(`${new Date(value.retry)} < ${today} ?`);
                     if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
                         console.log(`Reminding action ${actionId} (due ${value.retry})`);
                         // publish

@@ -50,7 +50,7 @@ const job = schedule.scheduleJob('* * * * *', async () => {
 
   try {
     for await (const [key, value] of db.iterator<string, RetryRecord>({ gt: 'retry-' })) {
-      console.log("Confirm:", key, value);
+      // console.log("Confirm:", key, value);
       const actionId = key.split("-")[1];
 
       if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
@@ -63,7 +63,7 @@ const job = schedule.scheduleJob('* * * * *', async () => {
         const today = new Date()
         today.setDate(today.getDate() + debugDayOffset);
 
-        console.log(`${new Date(value.retry)} < ${today} ?`);
+        //console.log(`${new Date(value.retry)} < ${today} ?`);
         if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
 
           console.log(`Reminding action ${actionId} (due ${value.retry})`);
