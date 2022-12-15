@@ -11,4 +11,5 @@ export type RetryRecord = {
 
 export type DoneRecord = {
   done: boolean;
+  reason: string;
 }

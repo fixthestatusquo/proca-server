@@ -38,7 +38,7 @@ const job = schedule.scheduleJob('* * * * *', async () => {
 
       if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
         console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
-        await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
+        await db.put<string, DoneRecord>('done-' + actionId, { done: false, reason: "expired" }, {});
         await db.del('action-' + actionId);
         await db.del('retry-' + actionId);
       } else {
@@ -52,18 +52,25 @@ const job = schedule.scheduleJob('* * * * *', async () => {
           console.log(`Reminding action ${actionId} (due ${value.retry})`);
 
           // publish
-          const action = await db.get<string, ActionMessageV2>("action-" + actionId, {});
-          action.action.customFields.reminder = true;
+          const action = await nullIfNotFound(db.get<string, ActionMessageV2>("action-" + actionId, {}));
 
-          const r = await chan.publish(remindExchange,
-                                       action.action.actionType + '.' + action.campaign.name,
-                                       Buffer.from(JSON.stringify(action)));
-          console.log('publish', r);
+          if (action) {
+            action.action.customFields.reminder = true;
 
-          let retry = await db.get<string, RetryRecord>("retry-" + actionId, {});
-          retry = { retry: changeDate(value.retry, value.attempts+1, retryArray), attempts: value.attempts + 1};
-          console.debug("Retried", retry)
-          await db.put<string, RetryRecord>('retry-' + actionId, retry, {});
+            const r = await chan.publish(remindExchange,
+              action.action.actionType + '.' + action.campaign.name,
+              Buffer.from(JSON.stringify(action)));
+            console.log('publish', r);
+
+            let retry = await db.get<string, RetryRecord>("retry-" + actionId, {});
+            retry = { retry: changeDate(value.retry, value.attempts + 1, retryArray), attempts: value.attempts + 1 };
+            console.debug("Retried", retry)
+            await db.put<string, RetryRecord>('retry-' + actionId, retry, {});
+          } else {
+            console.log(`Action ${actionId} not found`);
+            await db.put<string, DoneRecord>('done-' + actionId, { done: false, reason: "action_missing" }, {});
+            await db.del('retry-' + actionId);
+          }
         }
       }
     }
@@ -96,7 +103,7 @@ syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV
 syncQueue(amqp_url, queueConfirmed, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2') {
     console.log("Confirmed:", action.actionId);
-    await db.put<string, DoneRecord>('done-' + action.actionId, { done: true }, {});
+    await db.put<string, DoneRecord>('done-' + action.actionId, { done: true, reason: "confirmed" }, {});
     await db.del('action-' + action.actionId);
     await db.del('retry-' + action.actionId);
   }
