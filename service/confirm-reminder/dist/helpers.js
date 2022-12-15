@@ -27,6 +27,7 @@ exports.changeDate = changeDate;
 const nullIfNotFound = (promise) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const v = yield promise;
+        return v;
     }
     catch (_error) {
         const error = _error;

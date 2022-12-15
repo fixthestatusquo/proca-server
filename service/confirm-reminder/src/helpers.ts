@@ -13,9 +13,10 @@ export const changeDate = (date: string, attempts: number, retryArray : number[]
   return new Date(oldDate.setDate(oldDate.getDate() + retryInterval)).toISOString();
 };
 
-export const nullIfNotFound = async <T>(promise : Promise<T>) : Promise<T | any> => {
+export const nullIfNotFound = async <T>(promise : Promise<T>) : Promise<T | null> => {
   try {
     const v = await promise;
+    return v;
   } catch (_error) {
       const error = _error as LevelError;
       if (error.notFound) {
