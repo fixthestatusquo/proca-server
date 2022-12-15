@@ -43,7 +43,6 @@ const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 //TODO: run every 10 min
 const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, e_1, _b, _c;
-    console.log('running every minute', maxRetries);
     const conn = yield amqplib_1.default.connect(amqp_url);
     const chan = yield conn.createChannel();
     try {

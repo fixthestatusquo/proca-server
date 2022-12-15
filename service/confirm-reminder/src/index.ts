@@ -26,10 +26,8 @@ const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 //TODO: run every 10 min
 
 const job = schedule.scheduleJob('* * * * *', async () => {
-  console.log('running every minute', maxRetries);
-
   const conn = await amqplib.connect(amqp_url);
-  const chan = await conn.createChannel()
+  const chan = await conn.createChannel();
 
   try {
     for await (const [key, value] of db.iterator<string, RetryRecord>({ gt: 'retry-' })) {
