@@ -42,58 +42,51 @@ const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 //TODO: run every 10 min
 const job = node_schedule_1.default.scheduleJob('* * * * *', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, e_1, _b, _c;
+    var e_1, _a;
     const conn = yield amqplib_1.default.connect(amqp_url);
     const chan = yield conn.createChannel();
     try {
         try {
-            for (var _d = true, _e = __asyncValues(db.iterator({ gt: 'retry-' })), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
-                _c = _f.value;
-                _d = false;
-                try {
-                    const [key, value] = _c;
-                    // console.log("Confirm:", key, value);
-                    const actionId = key.split("-")[1];
-                    if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
-                        console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
-                        yield db.put('done-' + actionId, { done: false, reason: "expired" }, {});
-                        yield db.del('action-' + actionId);
-                        yield db.del('retry-' + actionId);
-                    }
-                    else {
-                        const today = new Date();
-                        today.setDate(today.getDate() + debugDayOffset);
-                        //console.log(`${new Date(value.retry)} < ${today} ?`);
-                        if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
-                            console.log(`Reminding action ${actionId} (due ${value.retry})`);
-                            // publish
-                            const action = yield (0, helpers_1.nullIfNotFound)(db.get("action-" + actionId, {}));
-                            if (action) {
-                                action.action.customFields.reminder = true;
-                                const r = yield chan.publish(remindExchange, action.action.actionType + '.' + action.campaign.name, Buffer.from(JSON.stringify(action)));
-                                console.log('publish', r);
-                                let retry = yield db.get("retry-" + actionId, {});
-                                retry = { retry: (0, helpers_1.changeDate)(value.retry, value.attempts + 1, retryArray), attempts: value.attempts + 1 };
-                                console.debug("Retried", retry);
-                                yield db.put('retry-' + actionId, retry, {});
-                            }
-                            else {
-                                console.log(`Action ${actionId} not found`);
-                                yield db.put('done-' + actionId, { done: false, reason: "action_missing" }, {});
-                                yield db.del('retry-' + actionId);
-                            }
+            for (var _b = __asyncValues(db.iterator({ gt: 'retry-' })), _c; _c = yield _b.next(), !_c.done;) {
+                const [key, value] = _c.value;
+                // console.log("Confirm:", key, value);
+                const actionId = key.split("-")[1];
+                if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
+                    console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
+                    yield db.put('done-' + actionId, { done: false, reason: "expired" }, {});
+                    yield db.del('action-' + actionId);
+                    yield db.del('retry-' + actionId);
+                }
+                else {
+                    const today = new Date();
+                    today.setDate(today.getDate() + debugDayOffset);
+                    //console.log(`${new Date(value.retry)} < ${today} ?`);
+                    if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
+                        console.log(`Reminding action ${actionId} (due ${value.retry})`);
+                        // publish
+                        const action = yield (0, helpers_1.nullIfNotFound)(db.get("action-" + actionId, {}));
+                        if (action) {
+                            action.action.customFields.reminder = true;
+                            const r = yield chan.publish(remindExchange, action.action.actionType + '.' + action.campaign.name, Buffer.from(JSON.stringify(action)));
+                            console.log('publish', r);
+                            let retry = yield db.get("retry-" + actionId, {});
+                            retry = { retry: (0, helpers_1.changeDate)(value.retry, value.attempts + 1, retryArray), attempts: value.attempts + 1 };
+                            console.debug("Retried", retry);
+                            yield db.put('retry-' + actionId, retry, {});
+                        }
+                        else {
+                            console.log(`Action ${actionId} not found`);
+                            yield db.put('done-' + actionId, { done: false, reason: "action_missing" }, {});
+                            yield db.del('retry-' + actionId);
                         }
                     }
-                }
-                finally {
-                    _d = true;
                 }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
             }
             finally { if (e_1) throw e_1.error; }
         }
