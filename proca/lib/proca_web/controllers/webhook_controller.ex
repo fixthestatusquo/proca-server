@@ -11,10 +11,16 @@ defmodule ProcaWeb.WebhookController do
   """
   def mailjet(conn, %{"_json" => events}) do
     for %{"event" => et} = event <- events do
-      if et in ["bounce", "blocked", "spam", "unsub"] do
-        Mailjet.handle_bounce(event)
-      else
-        Mailjet.handle_event(event)
+      cond do
+        et in ["blocked", "spam", "unsub"] ->
+          Mailjet.handle_bounce(event)
+
+        # Ignore temporary soft bounces
+        et == "bounce" and event["hard_bounce"] == true ->
+          Mailjet.handle_bounce(event)
+
+        true ->
+          Mailjet.handle_event(event)
       end
     end
 
