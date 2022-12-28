@@ -254,6 +254,10 @@ defmodule ProcaWeb.Resolvers.Action do
         from(a in Action,
           join: s in assoc(a, :supporter),
           join: c in assoc(s, :contacts),
+          preload: [
+            action_page: [[org: :detail_backend], :campaign],
+            supporter: [:action_page, [contacts: :org]]
+          ],
           where:
             c.org_id == ^org_id and a.id in ^ids and
               a.processing_status in [:new, :confirming, :delivered] and

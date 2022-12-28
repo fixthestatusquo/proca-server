@@ -24,7 +24,7 @@ defmodule Proca.Stage.Requeue do
 
     case routing_key(action, stage, destination) do
       rk when is_bitstring(rk) ->
-        Connection.publish(action_data(action, stage, org.id), "amq.direct", rk)
+        Connection.publish(action_data(action, stage, org.id), "", rk)
 
       :bad_stage_destination ->
         {:error,
