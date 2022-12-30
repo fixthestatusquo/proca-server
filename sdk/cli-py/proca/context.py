@@ -60,7 +60,8 @@ class CliContext:
                 'user',
                 'key',
                 'key:activate',
-                'key:gen']
+                'key:gen',
+                'action:replay']
             dm = {c: {'org':  default_org} for c in cmds}
 
             cmds = ['org', 'org:set']

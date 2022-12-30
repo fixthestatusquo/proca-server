@@ -8,4 +8,13 @@ def configure_log(logger):
     logger.addHandler(console)
     logger.setLevel(INFO)
 
+
+DATETIME_FORMATS=[
+    '%Y-%m-%d',
+    '%Y-%m-%dT%H:%M:%SZ',
+    '%Y-%m-%dT%H:%M:%S',
+    '%Y-%m-%d %H:%M',
+    '%Y-%m-%d %H:%M:%S'
+]
+
 log = getLogger("proca")

@@ -10,6 +10,7 @@ from proca.client import Endpoint
 from proca.friendly import validate_email, fail, explain_error, id_options, guess_identifier, validate_locale
 from proca.theme import *
 from proca.query import *
+from proca.util import DATETIME_FORMATS
 from yaspin import yaspin
 from gql import gql
 from proca.cmd.org import CONTACT_SCHEMA_CHOICE
@@ -98,13 +99,12 @@ def set(ctx, id, name, identifier, external_id, rename, title, contact_schema, c
     print(format(campaign))
 
 
-MTT_FORMATS=['%Y-%m-%d','%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S']
 
 @click.command("campaign:mtt")
 @click.argument('identifier', default=None, required=False)
 @id_options
-@click.option('-s', '--start', help="start of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
-@click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=MTT_FORMATS))
+@click.option('-s', '--start', help="start of the drip sending", type=click.DateTime(formats=DATETIME_FORMATS))
+@click.option('-e', '--end', help="end of the drip sending", type=click.DateTime(formats=DATETIME_FORMATS))
 @click.option('-E', '--test-email', help="send testing messages to this email")
 @click.option('-D', '--disable', is_flag=True, help="disable MTT")
 @click.option('-t', '--template', help="Template name")

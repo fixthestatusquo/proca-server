@@ -6,10 +6,20 @@ from proca.config import make_client
 from proca.friendly import explain_error
 from proca.query import *
 from proca.theme import *
+from proca.util import DATETIME_FORMATS
 import json
 from random import randint
 
-@click.command("action")
+QUEUES = [
+    'CUSTOM_ACTION_CONFIRM',
+    'CUSTOM_ACTION_DELIVER',
+    'CUSTOM_SUPPORTER_CONFIRM',
+    'EMAIL_SUPPORTER',
+    'SQS',
+    'WEBHOOK '
+]
+
+@click.command("action:add")
 @click.option("-i", "--id", type=int, help="Action Page Id")
 @click.option("-e", "--email", help="email", default=f"test+{randint(1, 100000)}@proca.app")
 @click.option("-f", "--first", help="first name", default="Curious")
@@ -40,6 +50,56 @@ def add(ctx, id, email, first, last, action_type, testing, country, postcode, op
     supporter = add_action_contact(client, id, contact, action, optin)
 
     print(rainbow(supporter['contactRef']))
+
+
+@click.command("action:replay")
+@click.option('-o', '--org', 'org', help="Org owning actions")
+@click.option('-c', '--campaign', 'campaign', help="Filter by campaign")
+@click.option('-T', '--testing', 'include_testing', type=bool, default=False, help="Include testing actions")
+@click.option('-i' '--id', 'start_id', type=int, help="Start from action id")
+@click.option('-s' '--since', 'start_datetime', type=click.DateTime(formats=DATETIME_FORMATS), help="Start from action id")
+@click.option('-q', '--queue', 'queue', type=click.Choice(QUEUES, case_sensitive=False))
+@click.pass_obj
+def requeue(ctx, org, campaign, include_testing, start_id, start_datetime, queue):
+    query_ids_str = """
+query Ids($org: String!, $campaign: String, $includeTesting: Boolean, $startId: Int, $startDatetime: DateTime) {
+  exportActions(
+    orgName: $org,
+    campaignName: $campaign,
+    includeTesting: $includeTesting,
+    start: $startId,
+    after: $startDatetime
+    ) {
+
+    actionId
+  }
+}
+    """
+
+    requeue_str = """
+        mutation Requeue($org: String!, $ids: [Int!]!, $queue: Queue!){
+            requeueActions(orgName:$org, ids: $ids, queue: $queue) {
+                count failed
+            }
+        }
+    """
+    query_ids = gql(query_ids_str)
+    requeue_mut = gql(requeue_str)
+
+    def get_ids(next_id=None):
+        results = ctx.client.execute(query_ids, **vars(org=org, campaign=campaign, includeTesting=include_testing, startId=next_id, startDatetime=start_datetime))
+
+        # Yield each ID from the results
+        results = results['exportActions']
+        if results:
+            yield list(map(lambda x: x['actionId'], results))
+            yield from get_ids(results[-1]['actionId']+1)
+
+    for id_list in get_ids(start_id):
+        if len(id_list):
+            res = ctx.client.execute(requeue_mut, **vars(org=org, ids=id_list, queue=queue))
+
+    return
 
 
 @explain_error("adding test action")
