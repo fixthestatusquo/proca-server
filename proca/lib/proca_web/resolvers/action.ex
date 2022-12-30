@@ -256,7 +256,7 @@ defmodule ProcaWeb.Resolvers.Action do
           join: c in assoc(s, :contacts),
           preload: [
             action_page: [[org: :detail_backend], :campaign],
-            supporter: [:action_page, [contacts: :org]]
+            supporter: {s, [:action_page, [contacts: {c, :org}]]}
           ],
           where:
             c.org_id == ^org_id and a.id in ^ids and
