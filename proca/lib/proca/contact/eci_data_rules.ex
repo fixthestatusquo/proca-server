@@ -331,6 +331,7 @@ defmodule Proca.Contact.EciDataRules do
     "GR" => 17,
     "MT" => 16,
     "AT" => 16,
+    "DE" => 16,
     "EE" => 16
   }
 
