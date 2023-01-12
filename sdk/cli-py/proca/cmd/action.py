@@ -56,8 +56,8 @@ def add(ctx, id, email, first, last, action_type, testing, country, postcode, op
 @click.option('-o', '--org', 'org', help="Org owning actions")
 @click.option('-c', '--campaign', 'campaign', help="Filter by campaign")
 @click.option('-T', '--testing', 'include_testing', type=bool, default=False, help="Include testing actions")
-@click.option('-i' '--id', 'start_id', type=int, help="Start from action id")
-@click.option('-s' '--since', 'start_datetime', type=click.DateTime(formats=DATETIME_FORMATS), help="Start from action id")
+@click.option('-i', '--id', 'start_id', type=int, help="Start from action id")
+@click.option('-s', '--since', 'start_datetime', type=click.DateTime(formats=DATETIME_FORMATS), help="Start from action id")
 @click.option('-q', '--queue', 'queue', type=click.Choice(QUEUES, case_sensitive=False))
 @click.pass_obj
 def requeue(ctx, org, campaign, include_testing, start_id, start_datetime, queue):
@@ -68,7 +68,8 @@ query Ids($org: String!, $campaign: String, $includeTesting: Boolean, $startId: 
     campaignName: $campaign,
     includeTesting: $includeTesting,
     start: $startId,
-    after: $startDatetime
+    after: $startDatetime,
+    onlyOptIn: false
     ) {
 
     actionId
