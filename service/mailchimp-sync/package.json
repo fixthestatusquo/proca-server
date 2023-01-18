@@ -1,5 +1,5 @@
 {
-  "version": "0.2.8",
+  "version": "3.4.0",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -23,7 +23,6 @@
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
-  "peerDependencies": {},
   "husky": {
     "hooks": {
       "pre-commit": "tsdx lint"
@@ -61,7 +60,7 @@
   "dependencies": {
     "@mailchimp/mailchimp_marketing": "^3.0.75",
     "@proca/crypto": "3.3.2",
-    "@proca/queue": "^0.2.0",
+    "@proca/queue": "^3.4.0",
     "minimist": "^1.2.6"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@proca/trust-sync",
-  "version": "1.0.8",
+  "version": "3.4.0",
   "description": "",
   "main": "src/server.ts",
   "scripts": {
@@ -30,7 +30,7 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@proca/queue": "^0.2.3",
+    "@proca/queue": "^3.4.0",
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
     "fastify": "^4.5.3",

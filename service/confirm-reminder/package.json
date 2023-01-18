@@ -1,6 +1,6 @@
 {
   "name": "@proca/confirm-reminder",
-  "version": "0.9.4",
+  "version": "3.4.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@proca/queue": "^0.2.3",
+    "@proca/queue": "^3.4.0",
     "@types/node-schedule": "2.1.0",
     "amqplib": "^0.10.3",
     "level": "^8.0.0",
