@@ -62,5 +62,6 @@
     "@proca/crypto": "3.3.2",
     "@proca/queue": "^3.4.0",
     "minimist": "^1.2.6"
-  }
+  },
+  "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }

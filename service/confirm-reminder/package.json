@@ -32,5 +32,6 @@
     "@types/amqplib": "^0.8.2",
     "nodemon": "^2.0.20",
     "ts-node": "^10.9.1"
-  }
+  },
+  "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }

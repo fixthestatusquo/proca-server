@@ -62,5 +62,6 @@
     "i18n-iso-countries": "^7.4.0",
     "jsforce": "^1.11.0",
     "minimist": "^1.2.6"
-  }
+  },
+  "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }

@@ -52,6 +52,7 @@ export type ActionCustomFields = {
   actionId: Scalars['Int'];
   actionType: Scalars['String'];
   insertedAt: Scalars['NaiveDateTime'];
+  area: Maybe<Scalars['String']>;
   customFields: Scalars['Json'];
   /** @deprecated use custom_fields */
   fields: Array<CustomField>;
@@ -282,7 +283,7 @@ export type ConfirmResult = {
 
 /** GDPR consent data for this org */
 export type Consent = {
-  optIn: Scalars['Boolean'];
+  optIn: Maybe<Scalars['Boolean']>;
   givenAt: Scalars['NaiveDateTime'];
   emailStatus: EmailStatus;
   emailStatusChanged: Maybe<Scalars['NaiveDateTime']>;
@@ -291,8 +292,8 @@ export type Consent = {
 
 /** GDPR consent data structure */
 export type ConsentInput = {
-  /** Has contact consented to receiving communication from widget owner? */
-  optIn: Scalars['Boolean'];
+  /** Has contact consented to receiving communication from widget owner? Null: not asked */
+  optIn?: Maybe<Scalars['Boolean']>;
   /** Opt in to the campaign leader */
   leadOptIn?: Maybe<Scalars['Boolean']>;
 };
@@ -453,11 +454,13 @@ export type LaunchActionPageResult = {
 
 export type MttActionInput = {
   /** Subject line */
-  subject: Scalars['String'];
+  subject?: Maybe<Scalars['String']>;
   /** Body */
-  body: Scalars['String'];
+  body?: Maybe<Scalars['String']>;
   /** Target ids */
   targets: Array<Scalars['String']>;
+  /** Files to attach (images allowed) */
+  files?: Maybe<Array<Scalars['String']>>;
 };
 
 
@@ -689,9 +692,10 @@ export type Processing = {
   customActionConfirm: Scalars['Boolean'];
   customActionDeliver: Scalars['Boolean'];
   customEventDeliver: Scalars['Boolean'];
-  sqsDeliver: Scalars['Boolean'];
   eventBackend: Maybe<ServiceName>;
-  eventProcessing: Scalars['Boolean'];
+  pushBackend: Maybe<ServiceName>;
+  storageBackend: Maybe<ServiceName>;
+  detailBackend: Maybe<ServiceName>;
   emailTemplates: Maybe<Array<Scalars['String']>>;
 };
 
@@ -768,6 +772,20 @@ export type PublicTarget = Target & {
   fields: Maybe<Scalars['Json']>;
 };
 
+export enum Queue {
+  EmailSupporter = 'EMAIL_SUPPORTER',
+  CustomSupporterConfirm = 'CUSTOM_SUPPORTER_CONFIRM',
+  CustomActionConfirm = 'CUSTOM_ACTION_CONFIRM',
+  CustomActionDeliver = 'CUSTOM_ACTION_DELIVER',
+  Sqs = 'SQS',
+  Webhook = 'WEBHOOK'
+}
+
+export type RequeueResult = {
+  count: Scalars['Int'];
+  failed: Scalars['Int'];
+};
+
 export type RootMutationType = {
   /**
    * Upserts a campaign.
@@ -802,6 +820,8 @@ export type RootMutationType = {
   addActionContact: ContactReference;
   /** Link actions with refs to contact with contact reference */
   linkActions: ContactReference;
+  /** Requeue actions into one of processing destinations */
+  requeueActions: RequeueResult;
   /** Add user to org by email */
   addOrgUser: ChangeUserStatus;
   /** Invite an user to org by email (can be not yet user!) */
@@ -852,7 +872,6 @@ export type RootMutationTypeUpsertCampaignArgs = {
 export type RootMutationTypeUpdateCampaignArgs = {
   id?: Maybe<Scalars['Int']>;
   name?: Maybe<Scalars['String']>;
-  externalId?: Maybe<Scalars['Int']>;
   input: CampaignInput;
 };
 
@@ -935,6 +954,13 @@ export type RootMutationTypeLinkActionsArgs = {
 };
 
 
+export type RootMutationTypeRequeueActionsArgs = {
+  orgName: Scalars['String'];
+  ids?: Maybe<Array<Scalars['Int']>>;
+  queue: Queue;
+};
+
+
 export type RootMutationTypeAddOrgUserArgs = {
   orgName: Scalars['String'];
   input: OrgUserInput;
@@ -994,9 +1020,10 @@ export type RootMutationTypeUpdateOrgProcessingArgs = {
   customActionConfirm?: Maybe<Scalars['Boolean']>;
   customActionDeliver?: Maybe<Scalars['Boolean']>;
   customEventDeliver?: Maybe<Scalars['Boolean']>;
-  sqsDeliver?: Maybe<Scalars['Boolean']>;
   eventBackend?: Maybe<ServiceName>;
-  eventProcessing?: Maybe<Scalars['Boolean']>;
+  storageBackend?: Maybe<ServiceName>;
+  detailBackend?: Maybe<ServiceName>;
+  pushBackend?: Maybe<ServiceName>;
 };
 
 
@@ -1116,7 +1143,6 @@ export type RootQueryTypeCampaignsArgs = {
 export type RootQueryTypeCampaignArgs = {
   id?: Maybe<Scalars['Int']>;
   name?: Maybe<Scalars['String']>;
-  externalId?: Maybe<Scalars['Int']>;
 };
 
 
@@ -1206,10 +1232,13 @@ export enum ServiceName {
   Ses = 'SES',
   Sqs = 'SQS',
   Mailjet = 'MAILJET',
+  Smtp = 'SMTP',
   Wordpress = 'WORDPRESS',
   Stripe = 'STRIPE',
   TestStripe = 'TEST_STRIPE',
-  Webhook = 'WEBHOOK'
+  Webhook = 'WEBHOOK',
+  System = 'SYSTEM',
+  Supabase = 'SUPABASE'
 }
 
 export enum Status {
@@ -1269,11 +1298,11 @@ export type Tracking = {
   content: Scalars['String'];
 };
 
-/** Tracking codes */
+/** Tracking codes, utm medium/campaign/source default to 'unknown', content to empty string */
 export type TrackingInput = {
-  source: Scalars['String'];
-  medium: Scalars['String'];
-  campaign: Scalars['String'];
+  source?: Maybe<Scalars['String']>;
+  medium?: Maybe<Scalars['String']>;
+  campaign?: Maybe<Scalars['String']>;
   content?: Maybe<Scalars['String']>;
   /** Action page location. Url from which action is added. Must contain schema, domain, (port), pathname */
   location?: Maybe<Scalars['String']>;

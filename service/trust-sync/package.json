@@ -35,5 +35,6 @@
     "dotenv": "^16.0.1",
     "fastify": "^4.5.3",
     "minimist": "^1.2.6"
-  }
+  },
+  "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }
