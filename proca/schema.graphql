@@ -1,8 +1,7 @@
-"Represents a schema"
 schema {
-  query: RootQueryType
-  mutation: RootMutationType
   subscription: RootSubscriptionType
+  mutation: RootMutationType
+  query: RootQueryType
 }
 
 interface Campaign {
@@ -91,13 +90,22 @@ type Tracking {
   content: String!
 }
 
-type UserRole {
-  org: Org!
-  role: String!
+enum Queue {
+  EMAIL_SUPPORTER
+  CUSTOM_SUPPORTER_CONFIRM
+  CUSTOM_ACTION_CONFIRM
+  CUSTOM_ACTION_DELIVER
+  SQS
+  WEBHOOK
 }
 
 input SelectActionPage {
   campaignId: Int
+}
+
+type UserRole {
+  org: Org!
+  role: String!
 }
 
 type KeyWithPrivate {
@@ -119,16 +127,11 @@ type KeyWithPrivate {
 
 "GDPR consent data structure"
 input ConsentInput {
-  "Has contact consented to receiving communication from widget owner?"
-  optIn: Boolean!
+  "Has contact consented to receiving communication from widget owner? Null: not asked"
+  optIn: Boolean
 
   "Opt in to the campaign leader"
   leadOptIn: Boolean
-}
-
-input OrgUserInput {
-  email: String!
-  role: String!
 }
 
 input NationalityInput {
@@ -142,27 +145,15 @@ input NationalityInput {
   documentNumber: String
 }
 
-"GDPR consent data for this org"
-type Consent {
-  optIn: Boolean!
-  givenAt: NaiveDateTime!
-  emailStatus: EmailStatus!
-  emailStatusChanged: NaiveDateTime
-  withConsent: Boolean!
+input OrgUserInput {
+  email: String!
+  role: String!
 }
 
-"Tracking codes"
-input TrackingInput {
-  source: String!
-
-  medium: String!
-
-  campaign: String!
-
-  content: String
-
-  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
-  location: String
+input ConfirmInput {
+  code: String!
+  email: String
+  objectId: Int
 }
 
 "Count of actions for particular action type"
@@ -174,10 +165,27 @@ type ActionTypeCount {
   count: Int!
 }
 
-input ConfirmInput {
-  code: String!
-  email: String
-  objectId: Int
+"Tracking codes, utm medium\/campaign\/source default to 'unknown', content to empty string"
+input TrackingInput {
+  source: String
+
+  medium: String
+
+  campaign: String
+
+  content: String
+
+  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
+  location: String
+}
+
+"GDPR consent data for this org"
+type Consent {
+  optIn: Boolean
+  givenAt: NaiveDateTime!
+  emailStatus: EmailStatus!
+  emailStatusChanged: NaiveDateTime
+  withConsent: Boolean!
 }
 
 type ChangeUserStatus {
@@ -209,10 +217,6 @@ type Partnership {
   launchRequesters: [User!]!
 }
 
-type RootSubscriptionType {
-  actionPageUpserted(orgName: String): ActionPage!
-}
-
 type Donation {
   schema: DonationSchema
 
@@ -229,6 +233,10 @@ type Donation {
   frequencyUnit: DonationFrequencyUnit!
 }
 
+type RootSubscriptionType {
+  actionPageUpserted(orgName: String): ActionPage!
+}
+
 type Confirm {
   code: String!
   email: String
@@ -241,14 +249,6 @@ input SelectKey {
   id: Int
   active: Boolean
   public: String
-}
-
-type Service {
-  id: Int!
-  name: ServiceName!
-  host: String
-  user: String
-  path: String
 }
 
 interface ActionPage {
@@ -327,6 +327,14 @@ type PrivateActionPage implements ActionPage {
   status: ActionPageStatus
 }
 
+type Service {
+  id: Int!
+  name: ServiceName!
+  host: String
+  user: String
+  path: String
+}
+
 """
 The `Date` scalar type represents a date. The Date appears in a JSON
 response as an ISO8601 formatted string, without a time component.
@@ -335,12 +343,6 @@ scalar Date
 
 input SelectService {
   name: ServiceName
-}
-
-input StripeSubscriptionInput {
-  amount: Int!
-  currency: String!
-  frequencyUnit: DonationFrequencyUnit!
 }
 
 "Count of actions for particular action type"
@@ -352,10 +354,18 @@ type AreaCount {
   count: Int!
 }
 
-input UserDetailsInput {
-  pictureUrl: String
-  jobTitle: String
-  phone: String
+input StripeSubscriptionInput {
+  amount: Int!
+  currency: String!
+  frequencyUnit: DonationFrequencyUnit!
+}
+
+type ConfirmResult {
+  status: Status!
+  actionPage: ActionPage
+  campaign: Campaign
+  org: Org
+  message: String
 }
 
 "Custom field added to action. For signature it can be contact, for mail it can be subject and body"
@@ -379,12 +389,20 @@ input ActionInput {
   testing: Boolean
 }
 
-type ConfirmResult {
-  status: Status!
-  actionPage: ActionPage
-  campaign: Campaign
-  org: Org
-  message: String
+input UserDetailsInput {
+  pictureUrl: String
+  jobTitle: String
+  phone: String
+}
+
+"Result of actions query"
+type PublicActionsResult {
+  fieldKeys: [String!]
+  list: [ActionCustomFields]
+}
+
+input GenKeyInput {
+  name: String!
 }
 
 input AddKeyInput {
@@ -392,14 +410,16 @@ input AddKeyInput {
   public: String!
 }
 
-input GenKeyInput {
-  name: String!
+input ServiceInput {
+  name: ServiceName!
+  host: String
+  user: String
+  password: String
+  path: String
 }
 
-"Result of actions query"
-type PublicActionsResult {
-  fieldKeys: [String!]
-  list: [ActionCustomFields]
+type ActivateKeyResult {
+  status: Status!
 }
 
 interface Target {
@@ -421,16 +441,13 @@ type PrivateTarget implements Target {
   emails: [TargetEmail]!
 }
 
-type ActivateKeyResult {
-  status: Status!
-}
-
-input ServiceInput {
-  name: ServiceName!
-  host: String
-  user: String
-  password: String
-  path: String
+enum EmailStatus {
+  NONE
+  DOUBLE_OPT_IN
+  BOUNCE
+  BLOCKED
+  SPAM
+  UNSUB
 }
 
 "Campaign statistics"
@@ -450,19 +467,11 @@ type CampaignStats {
   actionCount: [ActionTypeCount!]!
 }
 
-enum EmailStatus {
-  NONE
-  DOUBLE_OPT_IN
-  BOUNCE
-  BLOCKED
-  SPAM
-  UNSUB
-}
-
 type ActionCustomFields {
   actionId: Int!
   actionType: String!
   insertedAt: NaiveDateTime!
+  area: String
   customFields: Json!
   fields: [CustomField!]! @deprecated(reason: "use custom_fields")
 }
@@ -487,6 +496,8 @@ type OrgUser {
 type ApiToken {
   expiresAt: NaiveDateTime!
 }
+
+scalar Json
 
 type Action {
   actionId: Int!
@@ -513,8 +524,6 @@ type Action {
   donation: Donation
 }
 
-scalar Json
-
 type RootMutationType {
   """
   Upserts a campaign.
@@ -531,7 +540,7 @@ type RootMutationType {
     input: CampaignInput!
   ): Campaign!
 
-  updateCampaign(id: Int, name: String, externalId: Int, input: CampaignInput!): Campaign!
+  updateCampaign(id: Int, name: String, input: CampaignInput!): Campaign!
 
   addCampaign(
     "Org that is lead of this campaign"
@@ -655,6 +664,18 @@ type RootMutationType {
     linkRefs: [String!]
   ): ContactReference!
 
+  "Requeue actions into one of processing destinations"
+  requeueActions(
+    "Organization name"
+    orgName: String!
+
+    "Action Ids"
+    ids: [Int!]
+
+    "Destination queue"
+    queue: Queue!
+  ): RequeueResult!
+
   "Add user to org by email"
   addOrgUser(orgName: String!, input: OrgUserInput!): ChangeUserStatus!
 
@@ -723,11 +744,13 @@ type RootMutationType {
 
     customEventDeliver: Boolean
 
-    sqsDeliver: Boolean
-
     eventBackend: ServiceName
 
-    eventProcessing: Boolean
+    storageBackend: ServiceName
+
+    detailBackend: ServiceName
+
+    pushBackend: ServiceName
   ): PrivateOrg!
 
   joinOrg(name: String!): JoinOrgResult!
@@ -833,7 +856,7 @@ type RootQueryType {
   ): [Campaign!]!
 
   "Get campaign"
-  campaign(id: Int, name: String, externalId: Int): Campaign
+  campaign(id: Int, name: String): Campaign
 
   "Get action page"
   actionPage(
@@ -888,6 +911,23 @@ type RootQueryType {
   ): PrivateOrg!
 }
 
+type Processing {
+  emailFrom: String
+  emailBackend: ServiceName
+  supporterConfirm: Boolean!
+  supporterConfirmTemplate: String
+  doiThankYou: Boolean!
+  customSupporterConfirm: Boolean!
+  customActionConfirm: Boolean!
+  customActionDeliver: Boolean!
+  customEventDeliver: Boolean!
+  eventBackend: ServiceName
+  pushBackend: ServiceName
+  storageBackend: ServiceName
+  detailBackend: ServiceName
+  emailTemplates: [String!]
+}
+
 interface Org {
   "Organisation short name"
   name: String!
@@ -910,21 +950,12 @@ type PublicOrg implements Org {
   config: Json!
 }
 
-type Processing {
-  emailFrom: String
-  emailBackend: ServiceName
-  supporterConfirm: Boolean!
-  supporterConfirmTemplate: String
-  doiThankYou: Boolean!
-  customSupporterConfirm: Boolean!
-  customActionConfirm: Boolean!
-  customActionDeliver: Boolean!
-  customEventDeliver: Boolean!
-  sqsDeliver: Boolean!
-  eventBackend: ServiceName
-  eventProcessing: Boolean!
-  emailTemplates: [String!]
-}
+"""
+The `Naive DateTime` scalar type represents a naive date and time without
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string.
+"""
+scalar NaiveDateTime
 
 type PublicActionPage implements ActionPage {
   id: Int!
@@ -958,23 +989,12 @@ type PublicActionPage implements ActionPage {
 }
 
 """
-The `Naive DateTime` scalar type represents a naive date and time without
-timezone. The DateTime appears in a JSON response as an ISO8601 formatted
-string.
-"""
-scalar NaiveDateTime
-
-"""
 The `DateTime` scalar type represents a date and time in the UTC
 timezone. The DateTime appears in a JSON response as an ISO8601 formatted
 string, including UTC timezone ("Z"). The parsed date and time string will
 be converted to UTC if there is an offset.
 """
 scalar DateTime
-
-type DeleteUserResult {
-  status: Status!
-}
 
 "Count of supporters for particular org"
 type OrgCount {
@@ -983,6 +1003,10 @@ type OrgCount {
 
   "count of supporters registered by org"
   count: Int!
+}
+
+type DeleteUserResult {
+  status: Status!
 }
 
 "Campaign input"
@@ -1013,25 +1037,11 @@ type LaunchActionPageResult {
   status: Status!
 }
 
-"Address type which can hold different addres fields."
-input AddressInput {
-  "Country code (two-letter)."
-  country: String
-
-  "Postcode, in format correct for country locale"
-  postcode: String
-
-  "Locality, which can be a city\/town\/village"
-  locality: String
-
-  "Region, being province, voyevodship, county"
-  region: String
-
-  "Street name"
-  street: String
-
-  "Street number"
-  streetNumber: String
+enum DonationFrequencyUnit {
+  ONE_OFF
+  WEEKLY
+  MONTHLY
+  DAILY
 }
 
 "ActionPage input"
@@ -1066,11 +1076,25 @@ input ActionPageInput {
   delivery: Boolean
 }
 
-enum DonationFrequencyUnit {
-  ONE_OFF
-  WEEKLY
-  MONTHLY
-  DAILY
+"Address type which can hold different addres fields."
+input AddressInput {
+  "Country code (two-letter)."
+  country: String
+
+  "Postcode, in format correct for country locale"
+  postcode: String
+
+  "Locality, which can be a city\/town\/village"
+  locality: String
+
+  "Region, being province, voyevodship, county"
+  region: String
+
+  "Street name"
+  street: String
+
+  "Street number"
+  streetNumber: String
 }
 
 enum ActionPageStatus {
@@ -1217,10 +1241,13 @@ enum ServiceName {
   SES
   SQS
   MAILJET
+  SMTP
   WORDPRESS
   STRIPE
   TEST_STRIPE
   WEBHOOK
+  SYSTEM
+  SUPABASE
 }
 
 type ContactReference {
@@ -1231,19 +1258,25 @@ type ContactReference {
   firstName: String
 }
 
-type PublicTarget implements Target {
-  id: String!
-  name: String!
-  externalId: String!
-  locale: String
-  area: String
-  fields: Json
+type CampaignMtt {
+  startAt: DateTime!
+  endAt: DateTime!
+  messageTemplate: String
+  testEmail: String
 }
 
-input StripePaymentIntentInput {
-  amount: Int!
-  currency: String!
-  paymentMethodTypes: [String!]
+input MttActionInput {
+  "Subject line"
+  subject: String
+
+  "Body"
+  body: String
+
+  "Target ids"
+  targets: [String!]!
+
+  "Files to attach (images allowed)"
+  files: [String!]
 }
 
 type Contact {
@@ -1254,41 +1287,19 @@ type Contact {
   signKey: KeyIds
 }
 
-input MttActionInput {
-  "Subject line"
-  subject: String!
-
-  "Body"
-  body: String!
-
-  "Target ids"
-  targets: [String!]!
+input StripePaymentIntentInput {
+  amount: Int!
+  currency: String!
+  paymentMethodTypes: [String!]
 }
 
-type CampaignMtt {
-  startAt: DateTime!
-  endAt: DateTime!
-  messageTemplate: String
-  testEmail: String
-}
-
-input TargetEmailInput {
-  email: String!
-}
-
-type JoinOrgResult {
-  status: Status!
-  org: Org!
-}
-
-"Custom field with a key and value. Both are strings."
-input CustomFieldInput {
-  key: String!
-
-  value: String!
-
-  "Unused. To mark action_type\/key as transient, use campaign.transient_actions list"
-  transient: Boolean
+type PublicTarget implements Target {
+  id: String!
+  name: String!
+  externalId: String!
+  locale: String
+  area: String
+  fields: Json
 }
 
 input DonationActionInput {
@@ -1304,6 +1315,31 @@ input DonationActionInput {
   frequencyUnit: DonationFrequencyUnit
 
   payload: Json!
+}
+
+"Custom field with a key and value. Both are strings."
+input CustomFieldInput {
+  key: String!
+
+  value: String!
+
+  "Unused. To mark action_type\/key as transient, use campaign.transient_actions list"
+  transient: Boolean
+}
+
+type JoinOrgResult {
+  status: Status!
+  org: Org!
+}
+
+input TargetEmailInput {
+  email: String!
+}
+
+"Custom field with a key and value."
+type CustomField {
+  key: String!
+  value: String!
 }
 
 input OrgInput {
@@ -1329,27 +1365,16 @@ input OrgInput {
   config: Json
 }
 
-"Custom field with a key and value."
-type CustomField {
-  key: String!
-  value: String!
+input CampaignMttInput {
+  startAt: DateTime
+  endAt: DateTime
+  messageTemplate: String
+  testEmail: String
 }
 
-input TargetInput {
-  name: String
-  externalId: String!
-  locale: String
-  area: String
-  fields: Json
-  emails: [TargetEmailInput!]
-}
-
-input EmailTemplateInput {
-  name: String!
-  locale: String
-  subject: String
-  html: String
-  text: String
+type RequeueResult {
+  count: Int!
+  failed: Int!
 }
 
 "Contact information"
@@ -1379,16 +1404,21 @@ input ContactInput {
   nationality: NationalityInput
 }
 
-input CampaignMttInput {
-  startAt: DateTime
-  endAt: DateTime
-  messageTemplate: String
-  testEmail: String
+input EmailTemplateInput {
+  name: String!
+  locale: String
+  subject: String
+  html: String
+  text: String
 }
 
-type KeyIds {
-  id: Int!
-  public: String!
+input TargetInput {
+  name: String
+  externalId: String!
+  locale: String
+  area: String
+  fields: Json
+  emails: [TargetEmailInput!]
 }
 
 enum Status {
@@ -1400,6 +1430,11 @@ enum Status {
 
   "Operation had no effect (already done)"
   NOOP
+}
+
+type KeyIds {
+  id: Int!
+  public: String!
 }
 
 type User {

@@ -929,29 +929,6 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@proca/api@^3.2.0":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@proca/api/-/api-3.2.0.tgz#7b04084332a116a4d15c5f37e040ec91e93715b8"
-  integrity sha512-fxUwKeot8SkEPHU+zZ8WlW0YdyU4P4d23JjTH1WoNRqrH4qEodA8yj7q3WfuNbRQzFbK6iPpEDs4v0gOa2Bxfw==
-  dependencies:
-    "@graphql-typed-document-node/core" "^3.1.0"
-    "@urql/core" "2.3.6"
-    js-base64 "^3.5.2"
-    phoenix "^1.5.9"
-    ws "^7.3.1"
-
-"@proca/crypto@^3.2.0":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@proca/crypto/-/crypto-3.2.0.tgz#d700645d234c801ebc9c830b64d5f45bb52a0617"
-  integrity sha512-bbQLWMbhhO8LPqN9gz85iDR3XIW8J31iVe2/RBgTKK1LpycRHz5FukyDEJSER5UawK1IBFSmaRXLuSjUAkocxw==
-  dependencies:
-    "@types/lodash" "^4.14.176"
-    "@types/node" "^16.11.6"
-    base64url "^3.0.1"
-    lodash "^4.17.21"
-    tweetnacl "^1.0.3"
-    tweetnacl-util "^0.15.1"
-
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.1.tgz#a21117b19ee9be70c379ec1877537ef2e1c63301"
@@ -1069,7 +1046,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/lodash@^4.14.168", "@types/lodash@^4.14.176":
+"@types/lodash@^4.14.168":
   version "4.14.178"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.178.tgz#341f6d2247db528d4a13ddbb374bcdc80406f4f8"
   integrity sha512-0d5Wd09ItQWH1qFbEyQ7oTQ3GZrMfth5JkbN3EvTKLXcHLRDSXeLnlvlOn0wvxVIwK5o2M8JzP/OWz7T3NRsbw==
@@ -1084,7 +1061,7 @@
   resolved "https://registry.yarnpkg.com/@types/node-mailjet/-/node-mailjet-3.3.7.tgz#e81ac4b79ff0cd419c3bce4ae514871992ea647e"
   integrity sha512-kpXL41O0a30D5lch4Z82f1n/7ZIx2IFxaMBbcQjf3ul5H7rXA8P6NlraL4iAt8J2EPjJi3931ydshr7y89MjJA==
 
-"@types/node@*", "@types/node@^16.11.6":
+"@types/node@*":
   version "16.11.12"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.12.tgz#ac7fb693ac587ee182c3780c26eb65546a1a3c10"
   integrity sha512-+2Iggwg7PxoO5Kyhvsq9VarmPbIelXP070HMImEpbtGCoyWNINQj4wzjbQCXzdHTRXnqufutJb5KAURZANNBAw==
@@ -1125,7 +1102,7 @@
   dependencies:
     "@types/yargs-parser" "*"
 
-"@urql/core@2.3.6", "@urql/core@^2.1.2":
+"@urql/core@^2.1.2":
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/@urql/core/-/core-2.3.6.tgz#ee0a6f8fde02251e9560c5f17dce5cd90f948552"
   integrity sha512-PUxhtBh7/8167HJK6WqBv6Z0piuiaZHQGYbhwpNL9aIQmLROPEdaUYkY4wh45wPQXcTpnd11l0q3Pw+TI11pdw==
@@ -2788,11 +2765,6 @@ iterall@^1.2.1:
   resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.3.0.tgz#afcb08492e2915cbd8a0884eb93a8c94d0d72fea"
   integrity sha512-QZ9qOMdF+QLHxy1QIpUHUU1D5pS2CG2P69LF6L6CPjPYA/XMOmKV3PZpawHoAjHNyB0swdVTRxdYT4tbBbxqwg==
 
-js-base64@^3.5.2:
-  version "3.7.2"
-  resolved "https://registry.yarnpkg.com/js-base64/-/js-base64-3.7.2.tgz#816d11d81a8aff241603d19ce5761e13e41d7745"
-  integrity sha512-NnRs6dsyqUXejqk/yv2aiXlAvOs56sLkX6nUdeaNezI5LFFLlsZjOThmwnrcwh5ZZRwZlCMnVAY3CvhIhoVEKQ==
-
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -3493,11 +3465,6 @@ pct-encode@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/pct-encode/-/pct-encode-1.0.2.tgz#b99b7b044d6bd7c39e4839a7a80122ad7515caa5"
   integrity sha1-uZt7BE1r18OeSDmnqAEirXUVyqU=
-
-phoenix@^1.5.9:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/phoenix/-/phoenix-1.6.4.tgz#1bc701cc0a51ca15bc940339233a350839b75826"
-  integrity sha512-RXtt0zmz43pCr6jHqj1djSLcj4UJER2q3JXOKPqQngcmZDNhp+9/YIu/arl93Go+GquI9Lc2kKrPAt112Luwrg==
 
 picocolors@^1.0.0:
   version "1.0.0"
@@ -4392,7 +4359,7 @@ ws@7.4.5:
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.5.tgz#a484dd851e9beb6fdb420027e3885e8ce48986c1"
   integrity sha512-xzyu3hFvomRfXKH8vOFMU3OguG6oOvhXMo3xsGy3xWExqaM2dxBbVxuD99O7m3ZUFMvvscsZDqxfgMaRr/Nr1g==
 
-"ws@^5.2.0 || ^6.0.0 || ^7.0.0", ws@^7.3.1:
+"ws@^5.2.0 || ^6.0.0 || ^7.0.0":
   version "7.5.6"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.6.tgz#e59fc509fb15ddfb65487ee9765c5a51dec5fe7b"
   integrity sha512-6GLgCqo2cy2A2rjCNFlxQS6ZljG/coZfZXclldI8FB/1G3CCI36Zd8xy2HrFVACi8tfk5XrgLQEk+P0Tnz9UcA==

@@ -7,9 +7,8 @@
   "license": "AGPL3",
   "private": true,
   "scripts": {
-    "install.assets": "[ ! -d assets/node_modules ] && ( cd assets; npm install ) || true",
     "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema",
-    "install": "yarn install.assets; mix deps.get",
+    "install": "mix deps.get",
     "build": "mix compile",
     "prepublish": "yarn gen.schema",
     "prepack": "./utils/bump-version && mix compile && docker build -t $(git describe --tags) .",

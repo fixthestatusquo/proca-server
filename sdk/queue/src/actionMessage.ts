@@ -19,13 +19,14 @@ export type ContactV1 = {
   signKey?: string, // signinig key id, not given when no encryption
   publicKey?: string, // encryption key id
   nonce?: string, // nonce, base64url
+  area: string | null,
 }
 
 export type ContactV2 = {
   email: string,
   firstName: string,
   contactRef: string,
-  area: string
+  area: string | null
 } & { [key: string]: any }; // other keys, usually:
                             // lastName, phone, country, postcode, area,
                             // address: {region, locality, street, streetNumber}
@@ -159,6 +160,7 @@ export const actionMessageV1to2 = (a1 : ActionMessageV1) : ActionMessageV2 => {
       contactRef: a1.contact.ref,
       firstName:"",
       email: "",
+      area: a1.contact.area,
       ...pii
     },
     personalInfo: personalInfo,
