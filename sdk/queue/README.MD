@@ -10,11 +10,17 @@ This module provides few helpers to work with queues.
 
 ## Functions
 
-- `syncQueue(url, queueName, callback, options)` - call with a callback to bind it to message stream
-
+- `syncQueue(url, queueName, callback, options)` - Start reading actions and events from `queueName` queue from AMQP server at `url`. For each action or event, `callback` is called.
   - options is a map with:
     - `prefetch` - if set, set number of messages to prefetch from queue
     - `keyStore` - decryption key store (see `@proca/crypto` module) if PII of supporters is to be decrypted
 
+  - Callback signature is: `async callback(action : ActionMessageV2 | EventMessageV2, msg? : amqplib.Message, channel? : amqplib.Channel)`
 
-- `testQueue(url, queueName)` - return queue stats if it exists
+  - This function will gracefully shutdown consuming actions if one of the callbacks throws an exception, even if multiple callbacks are concurrently run (for prefetch > 1)
+
+- `testQueue(url, queueName)` - If queue `queueName` exists on AMQP server `url`, return its stats
+
+## AMQP authentication
+
+Use HTTP Basic Auth inlined in url to authenticate to AMQP server (eg. `amqps://username:password@example.com:1572`).
