@@ -14,8 +14,8 @@ defmodule ProcaWeb.Resolvers.Target do
     result =
       Multi.new()
       |> upsert_all(targets, campaign_id)
-      |> replace_not_given(campaign_id, replace)
-      |> Proca.Repo.transaction()
+      |> delete_rest(campaign_id, replace)
+      |> Proca.Repo.transaction(timeout: 120_000)
 
     case result do
       {:ok, records} ->
@@ -25,8 +25,8 @@ defmodule ProcaWeb.Resolvers.Target do
         target_idx = Enum.find_index(targets, fn %{external_id: eid} -> eid == ext_id end)
         {:error, Helper.format_errors(error, [target_idx, "targets"])}
 
-      {:error, :replace, error, _} ->
-        {:error, Helper.format_errors(error)}
+      {:error, :delete_rest, error, _} ->
+        {:error, Helper.format_errors(error, [get_field(error, :id), "targets"])}
     end
   end
 
@@ -38,35 +38,22 @@ defmodule ProcaWeb.Resolvers.Target do
     end)
   end
 
-  def replace_not_given(multi, _campaign_id, false), do: multi
+  def delete_rest(multi, _campaign_id, false), do: multi
 
-  def replace_not_given(multi, campaign_id, true) do
+  def delete_rest(multi, campaign_id, true) do
     multi
-    |> Multi.update(:replace, fn targets ->
-      replace =
-        Proca.Campaign.one(id: campaign_id, preload: [:targets])
-        |> change()
-        |> put_assoc(:targets, pick_targets(targets))
+    |> Multi.run(:delete_rest, fn repo, targets ->
+      ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
 
-      # For each changed replaced target changeset, we need to add a FK information
-      %{
-        replace
-        | changes:
-            Map.update(
-              replace.changes,
-              :targets,
-              [],
-              fn t ->
-                Enum.map(
-                  t,
-                  &foreign_key_constraint(&1, :messages,
-                    name: :messages_target_id_fkey,
-                    message: "has messages"
-                  )
-                )
-              end
-            )
-      }
+      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids)
+      |> repo.all()
+      |> Enum.map(&Target.deleteset/1)
+      |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
+        case repo.delete(tar) do
+          {:ok, _deleted } -> {:cont, {:ok, deleted_count + 1}}
+          {:error, errors} = e -> {:halt, e}
+        end
+       end)
     end)
   end
 
@@ -80,11 +67,18 @@ defmodule ProcaWeb.Resolvers.Target do
     {:ok, targets}
   end
 
-  defp upsert_all(multi, targets, campaign_id) do
-    Enum.reduce(targets, multi, fn target, multi ->
-      target = Map.put(target, :campaign_id, campaign_id)
+  @doc """
+  Upserts targets given in `targets` list of attributes, for `campaign_id`
 
-      Multi.insert_or_update(multi, {:target, target.external_id}, Target.upsert(target))
+  For each target calls Target.upsert()
+  """
+  defp upsert_all(multi, targets, campaign_id) do
+
+    targets
+    |> Enum.map(&Map.put(&1, :campaign_id, campaign_id))
+    |> Target.upsert()
+    |> Enum.reduce(multi, fn chset, multi ->
+      Multi.insert_or_update(multi, {:target, get_field(chset, :external_id)}, chset)
     end)
   end
 end

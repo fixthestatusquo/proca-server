@@ -21,7 +21,7 @@ defmodule Proca.Target do
     field :fields, :map, default: %{}
 
     belongs_to :campaign, Proca.Campaign
-    has_many :emails, Proca.TargetEmail, on_delete: :delete_all, on_replace: :delete
+    has_many :emails, Proca.TargetEmail, on_replace: :delete
     has_many :messages, Proca.Action.Message
 
     timestamps()
@@ -38,11 +38,29 @@ defmodule Proca.Target do
     |> check_constraint(:fields, name: :max_fields_size)
   end
 
+  def deleteset(target) do
+    target
+    |> change()
+    |> foreign_key_constraint(
+      :messages,
+      name: :messages_target_id_fkey,
+      message: "has messages"
+    )
+  end
+
   def all(query, [{:external_id, external_id} | kw]) do
     import Ecto.Query, only: [where: 3]
 
     query
     |> where([t], t.external_id == ^external_id)
+    |> all(kw)
+  end
+
+  def all(query, [{:external_ids, external_ids} | kw]) do
+    import Ecto.Query, only: [where: 3]
+
+    query
+    |> where([t], t.external_id in ^external_ids)
     |> all(kw)
   end
 
@@ -62,14 +80,31 @@ defmodule Proca.Target do
     |> all(kw)
   end
 
-  def upsert(input) do
-    record =
-      one(external_id: input.external_id, preload: [:emails, :campaign]) ||
-        %Target{emails: [], campaign: nil}
+  def upsert(input, records_by_external_id \\ nil)
+
+  def upsert(input, nil) when is_map(input) do
+    record = one(external_id: input.external_id, preload: [:emails, :campaign])
+    upsert_one(input, %{input.external_id => record})
+  end
+
+  def upsert(input, nil) when is_list(input) do
+    ids = get_in input, [Access.all, :external_id]
+    records = all(external_ids: ids, preload: [:emails, :campaign])
+
+    records_map = for rec <- records, into: %{} do
+      {rec.external_id, rec}
+    end
+
+    Enum.map(input, &upsert_one(&1, records_map))
+  end
+
+
+  def upsert_one(input, records_by_external_id) do
+    record = records_by_external_id[input[:external_id]] || %Target{emails: [], campaign: nil}
 
     change = Target.changeset(record, input)
 
-    case Map.get(input, :emails) do
+    case input[:emails] do
       nil ->
         change
 

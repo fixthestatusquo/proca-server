@@ -62,4 +62,18 @@ defmodule TargetTest do
     assert target_email.error ==
              "recipient: user unknown: Host or domain name not found. Name service error for name=lbjsnrftlsiuvbsren.com type=A: Host not found"
   end
+
+  test "Delete a target", %{target: t} do
+    import Ecto.Changeset
+    alias Proca.Repo
+
+    del_res = t
+    |> Target.deleteset()
+    |> Repo.delete()
+    |> IO.inspect()
+
+
+    assert del_res = {:error, %{errors: [messages: {"has messages",
+                                                    [constraint: :foreign, constraint_name: "messages_target_id_fkey"]}]}}
+  end
 end

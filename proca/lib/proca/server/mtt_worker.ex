@@ -70,8 +70,9 @@ defmodule Proca.Server.MTTWorker do
   def query_test_emails_to_delete() do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
-    Message.select_by_targets(:all, true, true)
-    |> where([m, t, a], a.inserted_at < ^recent)
+    from m in Message,
+      join: a in assoc(m, :action),
+      where: a.processing_status == :delivered and m.testing and m.sent and a.inserted_at < ^recent
   end
 
   @doc """
