@@ -72,7 +72,7 @@ defmodule Proca.Server.MTTWorker do
 
     from m in Message,
       join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and m.testing and m.sent and a.inserted_at < ^recent
+      where: a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
   end
 
   @doc """
