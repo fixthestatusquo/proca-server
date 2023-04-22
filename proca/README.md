@@ -33,8 +33,10 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 we recommend asdf to install erlang+elixir:
 in this repo, run 
-
+    $ sudo apt install automake libssl-dev autoconf libncurses5-dev
     $adsl install
+    $mix local.rebar 
+    $mix local.hex
 
   You'll need the following packages:
     `erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir`
