@@ -79,19 +79,22 @@ defmodule Proca.Server.MTT do
 
   def process_mtt() do
     # fetch campaigns to process here
+    # use random so when many mtts run, we compete for the connection pool in fair way
     running_mtts =
       from(c in Proca.Campaign,
         join: mtt in Proca.MTT,
         on: mtt.campaign_id == c.id,
         where: mtt.start_at <= from_now(0, "day") and mtt.end_at >= from_now(0, "day"),
-        preload: [:mtt]
+        preload: [:mtt],
+        order_by: fragment("RANDOM()")
       )
       |> Repo.all()
 
     Enum.map(running_mtts, fn campaign ->
+      # We are compeeting for connection pool with the web server here, at one point we must get the connection
       task =
         Task.async(fn ->
-          MTTWorker.process_mtt_campaign(campaign)
+          Repo.checkout(fn -> MTTWorker.process_mtt_campaign(campaign) end, timeout: :inifinity)
         end)
 
       task.ref
