@@ -71,8 +71,8 @@ export async function exportActions(argv : ExportActionsOpts & DecryptOpts & For
       vars.start = action.actionId + 1
 
       const campName = argv.campaign || (action as admin.ExportOrgActions['exportActions'][0]).campaign?.name
-      console.log('-> ', action.actionPage.id)
-      console.log('key', action.contact.publicKey)
+//      console.log('-> ', action.actionPage.id)
+//      console.log('key', action.contact.publicKey)
       const actionMsg = actionToActionMessage(action,
                                               actionPages[action.actionPage.id] || {...action.actionPage, thankYouTemplateRef: null},
                                               campaigns[campName])

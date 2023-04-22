@@ -29,15 +29,19 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 # Prerequisites
 
 - PostgreSQL >= 10
-- Elixir >= 1.10
-  [Erlang Solutions](https://www.erlang-solutions.com/downloads/) provides packages and binaries for download.
+- Elixir >= 1.14
+
+we recommend asdf to install erlang+elixir:
+in this repo, run 
+
+    $adsl install
 
   You'll need the following packages:
     `erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir`
 
 - RabbitMQ (3.x, tested on 3.8)
 
-- NodeJS (>= 10)
+- NodeJS (>= 14)
 
 # Just trying out setup 
 
