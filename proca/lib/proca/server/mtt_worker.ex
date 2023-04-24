@@ -19,9 +19,13 @@ defmodule Proca.Server.MTTWorker do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
+
       # Send via central campaign.org.email_backend
       # send_emails(campaign, get_test_emails_to_send(target_ids), true)
-      send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
+      Enum.chunk_every(target_ids, 10)
+      |> Enum.each(fn target_ids -> 
+        send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
+      end)
 
       # Alternative:
       # send via each action page owner
@@ -172,8 +176,7 @@ defmodule Proca.Server.MTTWorker do
       from(m in Message,
         where: m.id in subquery(unsent_per_target_ids),
         preload: [[target: :emails], [action: :supporter], :message_content],
-      ),
-      timeout: 30_000
+      )
     )
   end
 
