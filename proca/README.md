@@ -37,7 +37,7 @@ in this repo, run
     $ sudo apt install automake libssl-dev autoconf libncurses5-dev
     $asdf plugin add erlang
     $asdf plugin add elixir
-    $adsl install
+    $asdf install
     $mix local.rebar 
     $mix local.hex
 
