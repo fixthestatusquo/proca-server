@@ -170,8 +170,9 @@ defmodule Proca.Server.MTTWorker do
     Repo.all(
       from(m in Message,
         where: m.id in subquery(unsent_per_target_ids),
-        preload: [[target: :emails], [action: :supporter], :message_content]
-      )
+        preload: [[target: :emails], [action: :supporter], :message_content],
+      ),
+      timeout: 30_000
     )
   end
 
