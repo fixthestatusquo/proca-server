@@ -94,7 +94,7 @@ defmodule Proca.Server.MTT do
       # We are compeeting for connection pool with the web server here, at one point we must get the connection
       task =
         Task.async(fn ->
-          Repo.checkout(fn -> MTTWorker.process_mtt_campaign(campaign) end, timeout: :inifinity)
+          Repo.checkout(fn -> MTTWorker.process_mtt_campaign(campaign) end, timeout: :infinity)
         end)
 
       task.ref
