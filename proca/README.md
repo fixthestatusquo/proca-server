@@ -34,6 +34,8 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 we recommend asdf to install erlang+elixir:
 in this repo, run 
     $ sudo apt install automake libssl-dev autoconf libncurses5-dev
+    $asdf plugin add erlang
+    $asdf plugin add elixir
     $adsl install
     $mix local.rebar 
     $mix local.hex
@@ -112,6 +114,12 @@ You can then run the development server.
 `$ mix phx.server`
 
 By default, the development webserver is located at http://localhost:4000/
+
+# build
+
+    $./build
+
+should walk you through the steps to build a prod version
 
 # Configuration
 
