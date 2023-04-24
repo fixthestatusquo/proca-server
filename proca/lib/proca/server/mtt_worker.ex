@@ -165,6 +165,7 @@ defmodule Proca.Server.MTTWorker do
       # <= because rank is 1-based
       |> where([r, p], p.sent + r.rank <= p.goal)
       |> select([r, p], r.message_id)
+      |> limit(200)
 
     # Finally, fetch these messages with associations in one go
     Repo.all(
