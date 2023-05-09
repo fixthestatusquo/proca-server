@@ -44,6 +44,26 @@ defmodule Proca.Service do
     |> all(kw)
   end
 
+  @behaviour ExAws.Request.HttpClient
+
+  @doc """
+  Implement above behavuiour for ExAws library
+  """
+  @impl true
+  def request(method, url, body, headers, http_opts) do
+    client = Tesla.client([
+      {Tesla.Middleware.Headers, headers}
+    ])
+    |> IO.inspect()
+
+    case Tesla.request(client, method: method, url: url, body: body) do
+      {:ok, response} -> {
+        :ok, Map.from_struct(response) |> Map.put(:status_code, response.status)
+      }
+      {:error, reason} -> {:error, %{reason: reason}}
+    end
+  end
+
   # AWS helpers. 
   def aws_request(req, name, org = %Org{}) do
     case one(name: name, org: org) do
@@ -85,38 +105,19 @@ defmodule Proca.Service do
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
-    case :hackney.request(req.method, url, req.headers, req.body) do
-      {:ok, code, hdrs, ref} when code in [200, 201] ->
-        json_request_read_body(hdrs, ref)
+    client = Tesla.client([
+      {Tesla.Middleware.Headers, req.headers},
+      Tesla.Middleware.JSON,
+    ])
 
-      {:ok, code, _hdrs, _ref} when code in 500..599 ->
-        {:error, "HTTP#{code}"}
+    case Tesla.request(client, method: req.method, url: url, body: req.body) do
+      {:ok, response = %{status: code}} when code in [200, 201] -> {:ok, code, response.body}
 
-      {:ok, code, _hdrs, _ref} ->
-        {:ok, code}
+      {:ok, %{status: code}} when code in 500..599 -> {:error, "HTTP#{code}"}
 
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+      {:ok, response} -> {:ok, response.status}
 
-  defp json_request_read_body(hdrs, ref) do
-    content_type = :hackney_headers.get_value("content-type", :hackney_headers.new(hdrs))
-
-    case content_type do
-      "application/json" <> _ ->
-        with {:ok, body} <- :hackney.body(ref),
-             {:ok, parsed} <- Jason.decode(body) do
-          {:ok, 200, parsed}
-        else
-          x -> x
-        end
-
-      ct ->
-        case :hackney.body(ref) do
-          {:ok, raw} -> {:ok, 200, raw}
-          x -> x
-        end
+      {:error, _reason} = e -> e
     end
   end
 
@@ -124,8 +125,8 @@ defmodule Proca.Service do
   defp json_request_opts(req, opts, srv) when map_size(req) == 0 do
     %{
       method: :get,
-      body: "",
-      headers: [Accepts: "application/json", "Content-Type": "application/json"]
+      body: nil,
+      headers: [{"Accept", "application/json"}]
     }
     |> json_request_opts(opts, srv)
   end
@@ -135,7 +136,7 @@ defmodule Proca.Service do
   end
 
   defp json_request_opts(req, [{:post, body} | rest], srv) do
-    %{req | method: :post, body: body}
+    %{req | method: :post, body: body, headers: [{"Content-Type", "application/json"} | req.headers]}
     |> json_request_opts(rest, srv)
   end
 
@@ -143,13 +144,13 @@ defmodule Proca.Service do
        when is_bitstring(u) and is_bitstring(p) do
     auth = "#{u}:#{p}" |> Base.encode64()
 
-    %{req | headers: [Authorization: "Basic #{auth}"] ++ req.headers}
+    %{req | headers: [{"Authorization", "Basic #{auth}"}] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 
   defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd})
        when is_bitstring(pwd) do
-    %{req | headers: [Authorization: pwd]}
+    %{req | headers: [{"Authorization", pwd}] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 

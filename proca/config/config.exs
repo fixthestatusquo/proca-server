@@ -69,9 +69,9 @@ config :lager, handlers: []
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :ex_aws, :hackney_opts,
-  follow_redirect: true,
-  recv_timeout: 10_000
+# ExAws has dependency on hackney, nothing to do about it
+config :ex_aws,
+  http_client: Proca.Service
 
 config :ex_aws_sqs, parser: ExAws.SQS.SweetXmlParser
 

@@ -76,7 +76,7 @@ defmodule Proca.MixProject do
       {:stripity_stripe, "~> 2.9.0"},
       # "~> 0.2.2"},
       {:supabase, "~> 0.2.3"},
-      {:hackney, "~> 1.17.1"},
+      {:tesla, "~> 1.4.1"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:joken, "~> 2.4"},

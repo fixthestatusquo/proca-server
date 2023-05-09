@@ -9,10 +9,10 @@ defmodule Proca.Service.Webhook do
   alias Proca.Service
 
   def push(service = %Service{}, data) do
-    payload = Jason.encode!(data)
+    # payload = Jason.encode!(data)
     url = merge_url_tags(service.host, data)
 
-    Service.json_request(service, url, post: payload, auth: auth_type(service))
+    Service.json_request(service, url, post: data, auth: auth_type(service))
   end
 
   @spec merge_url_tags(binary, any) :: binary
@@ -30,9 +30,9 @@ defmodule Proca.Service.Webhook do
   end
 
   def auth_type(%{user: u, password: p})
-      when is_bitstring(u) and is_bitstring(p),
+      when is_bitstring(u) and is_bitstring(p) and u != "" and p != "",
       do: :basic
 
-  def auth_type(%{password: p}) when is_bitstring(p), do: :header
+  def auth_type(%{password: p}) when is_bitstring(p) and p != "", do: :header
   def auth_type(_), do: nil
 end

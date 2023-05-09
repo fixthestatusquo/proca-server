@@ -96,9 +96,6 @@ config :proca, ProcaWeb.Endpoint,
 config :sentry,
   dsn: System.get_env("SENTRY_DSN")
 
-config :hackney,
-  max_connections: String.to_integer(System.get_env("HTTP_POOL", "200"))
-
 config :proca, ProcaWeb.Resolvers.ReportError,
   enable:
     System.get_env("REPORT_USER_ERRORS") == "true" ||
