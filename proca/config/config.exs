@@ -69,6 +69,8 @@ config :lager, handlers: []
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :tesla, :adapter, Tesla.Adapter.Mint
+
 # ExAws has dependency on hackney, nothing to do about it
 config :ex_aws,
   http_client: Proca.Service

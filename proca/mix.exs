@@ -77,6 +77,8 @@ defmodule Proca.MixProject do
       # "~> 0.2.2"},
       {:supabase, "~> 0.2.3"},
       {:tesla, "~> 1.4.1"},
+      {:mint, "~> 1.0"},
+      {:castore, "~> 0.1"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:joken, "~> 2.4"},
