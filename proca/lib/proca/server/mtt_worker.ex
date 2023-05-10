@@ -19,17 +19,24 @@ defmodule Proca.Server.MTTWorker do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
+      Logger.info("MTT worker #{campaign.name}: #{length(target_ids)} targets, send cycle #{cycle}/#{all_cycles}")
 
       # Send via central campaign.org.email_backend
       # send_emails(campaign, get_test_emails_to_send(target_ids), true)
+      # send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
       Enum.chunk_every(target_ids, 10)
       |> Enum.each(fn target_ids -> 
-        send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
+        emails_to_send =  get_emails_to_send(target_ids, {cycle, all_cycles})
+        Logger.info("MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}")
+        send_emails(campaign, emails_to_send)
       end)
 
       # Alternative:
       # send via each action page owner
     else
+      if campaign.org.email_backend == nil do
+          Logger.error("MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend")
+      end
       :noop
     end
   end
@@ -169,13 +176,12 @@ defmodule Proca.Server.MTTWorker do
       # <= because rank is 1-based
       |> where([r, p], p.sent + r.rank <= p.goal)
       |> select([r, p], r.message_id)
-      |> limit(200)
 
     # Finally, fetch these messages with associations in one go
     Repo.all(
       from(m in Message,
         where: m.id in subquery(unsent_per_target_ids),
-        preload: [[target: :emails], [action: :supporter], :message_content],
+        preload: [[target: :emails], [action: :supporter], :message_content]
       )
     )
   end
@@ -234,6 +240,7 @@ defmodule Proca.Server.MTTWorker do
             Message.mark_all(chunk, :sent)
 
           {:error, statuses} ->
+            Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
             Enum.zip(chunk, statuses)
             |> Enum.filter(fn
               {_, :ok} -> true
