@@ -1,6 +1,53 @@
 defmodule Proca.Service do
   @moduledoc """
-  Service belong to Org and are hostnames, paths and credentials to external services that you can configure.
+  # Service belong to Org and are hostnames, paths and credentials to external services that you can configure.
+
+  ## Service concept in Proca Server
+
+  Every organisation can own a set of services, and each service type has a
+  name. A service record represents API access. Currently names are:
+
+  - ses - AWS SES
+  - sqs - AWS SQS
+  - mailjet - Mailjet Email
+  - smtp - SMTP Email
+  - wordpress - Wordpress site with API (unused)
+  - stripe - Stripe donation API
+  - test_stripe - Stripe donation API for test actions
+  - testmail - mock email backend used in tests
+  - webhook - a HTTP POST json API
+  - supabase - Supabase API (for storage)
+  - testdetail - mock detail service API
+
+  An org can have more then one of particular service type (same name), with
+  different ids. Warning: Proca CLI and API lets you manipulate services by name, and so
+  you cannot use it to distinguish between for example two `webhook` services.
+  Sorry! However, this was only needed for very complex setups, and we did not want to overcomplicate.
+
+  ## Using services
+
+  Each service can be *used* in a stage of processing, by a particular worker,
+  or in other internal service such as MTT sender. As a special case, an org can
+  use `SYSTEM` service which will borrow a service used by instance org, for
+  that particular function.
+
+  A service must be assigned to some usage/function, it is not enough that org owns it.
+  Here is a list of backends:
+
+  Not all services support all usages, of course.
+
+  - `emailBackend` - Send emails to supporters and MTTs through this API. Works with: ses, mailjet, smtp, testmail
+  - `detailBackend` - Fetch/lookup member details from this service. Works with: webhook
+  - `storageBackend` - Fetch files (attachments to MTT). Works with: supabase
+  - `pushBackend` - Deliver action data. Works with: sqs, webhook
+  - `eventBackend` - Deliver events data (See `Proca.Stage.Event`). Works with: sqs, webhook
+
+  Proca will dynamically start and stop workers that perform particular
+  function, when the service will be attached or removed from that function. Eg.
+  `proca service:email -N` to stop worker that sends supporter emails, do `proca
+  service:email -n mailjet` to attach mailjet service as email backend and start
+  the worker again.
+
   """
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
