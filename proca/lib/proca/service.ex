@@ -54,7 +54,6 @@ defmodule Proca.Service do
     client = Tesla.client([
       {Tesla.Middleware.Headers, headers}
     ])
-    |> IO.inspect()
 
     case Tesla.request(client, method: method, url: url, body: body) do
       {:ok, response} -> {
