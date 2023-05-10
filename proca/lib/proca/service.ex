@@ -48,6 +48,46 @@ defmodule Proca.Service do
   service:email -n mailjet` to attach mailjet service as email backend and start
   the worker again.
 
+  ## Data in service record
+
+  Service record has to represent all kinds of APIs, so it defines "generic" fields:
+
+  - name (the service type mentioned above)
+  - host - a host or url
+  - user - user name
+  - password - user pass or API key
+  - path - an extra string pointing to the resource
+
+  For each service type, these are taken as follows:
+
+  1. sqs and ses
+
+  - host - contains AWS region
+  - user - contains account id
+  - password - contains account secret
+
+  2. mailjet
+
+  - user - contains account id
+  - password - contains account secret
+
+  3. smtp
+
+  - host - smtp server in url form, eg ssl://somehost.com:527 or tls://somehost.com:993
+  - user - auth username
+  - password - auth password
+
+  4. supabase
+
+  - host - url to Supabase instance
+  - password - API key
+
+  5. webhook
+
+  - host - url of webhook
+  - user and password - use HTTP Basic Auth with these
+  - password - put this into Authorization header. (Remember to put `Beaerer 123` into `password` if you need it. The word "Bearer" will not be added)
+
   """
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
