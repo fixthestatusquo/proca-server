@@ -152,10 +152,10 @@ defmodule Proca.Server.Stats do
 
     org_supporters =
       org_supporters_query
-      |> Repo.all()
+      |> Repo.all(timeout: 30_000)
 
     # create data for all campaigns so we don't have missing key below
-    campaign_ids = Repo.all(from(c in Campaign, select: c.id))
+    campaign_ids = Repo.all(from(c in Campaign, select: c.id), timeout: 30_000)
 
     result_all =
       campaign_ids
@@ -187,7 +187,7 @@ defmodule Proca.Server.Stats do
         where: ap.extra_supporters != 0,
         select: {ap.campaign_id, ap.org_id, sum(ap.extra_supporters)}
       )
-      |> Repo.all()
+      |> Repo.all(timeout: 30_000)
 
     # warning : if org has only exras, they are not yet in the map
     {result_all, result_orgs} =
@@ -216,7 +216,7 @@ defmodule Proca.Server.Stats do
 
     area_supporters =
       area_supporters_query
-      |> Repo.all()
+      |> Repo.all(timeout: 30_000)
 
     result_area =
       for {campaign_id, area, count} <- area_supporters, reduce: %{} do
@@ -230,7 +230,7 @@ defmodule Proca.Server.Stats do
         group_by: [a.campaign_id, a.action_type],
         select: {a.campaign_id, a.action_type, count(a.id)}
       )
-      |> Repo.all()
+      |> Repo.all(timeout: 30_000)
 
     result_action =
       for {campaign_id, action_type, count} <- action_counts, reduce: %{} do
