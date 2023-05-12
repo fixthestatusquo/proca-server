@@ -204,6 +204,9 @@ defmodule Proca.Service do
       {:ok, response} -> {:ok, response.status}
 
       {:error, _reason} = e -> e
+
+      # Weird but it seems this error is sent up from Mint
+      {:error, _,  %{reason: reason}} -> {:error, reason}
     end
   end
 
