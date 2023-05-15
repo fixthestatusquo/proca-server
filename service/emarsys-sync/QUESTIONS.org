@@ -1,0 +1,67 @@
+#+title: Implementation questions
+* Contact
+** key_id?
+
+*** email? ref?
+*** keys have hardcoded ids
+ By default, the key is the email address with field identifier 3. The external identifier and the key can be the same or different fields.
+*** We want externalId - what key_id is used then?
+** What are the fields? not spec in doc
+https://help.emarsys.com/hc/en-us/articles/115004637665
+*** First Name
+*** Last Name
+*** E-Mail
+*** Address
+*** City
+*** State
+*** ZIP Code
+*** Salutation
+*** Country
+*** IETF language tag: en-US (https://en.wikipedia.org/wiki/IETF_language_tag)
+*** Opt-in 1=true 2=false
+*** Phone
+*** Contct source? (campaign name?) but its preset list
+*** Newsletter  (which?)
+*** Date of first registration
+*
+
+* Before end of year
+
+
+* Contact Lists
+** name: name vs title? - CODE NAME
+
+
+Questions
+
+*
+However, it is best practice to assign a unique identifier to your contacts for mapping between our ecosystems using a custom field named externalId
+
+
+* Permissions
+** Add Contact List
+** List Contacts in contact list
+** Add Contact
+** Add contact to contact list
+** Fetch contact by email / external Id
+**
+* Timestamp 5 mins question for contact
+* CALL 221222
+** optin value
+1. user clicks no  on the form: optin = FALSE
+2. user cliks yes on the form: optin = null (not set) - because we wait for email opt in 
+3. use clicks the link in the email: optin = TRUE
+4. proca receives info that users email bounces/user marks as as spam in Gmail etc: optin = FALSE (don't make them more angry).
+
+Does this mean that we still want to complete the DOI process for point 2 from Emarsys? Should we think of it that way?
+
+ 
+** writing the ref key
+
+optionally to some other
+*** use "identifier"
+*** write "proca" into key1
+* REPLAY
+** ACTION ID:
+2034392
+2022-12-19T00:18:38

@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+console.log(process.argv[2]);
+if (process.argv[2] === 'cli') {
+  process.argv.splice(2, 1);
+  require('../dist/cli').cli();
+} else {
+  require("../dist/index").main();
+}
