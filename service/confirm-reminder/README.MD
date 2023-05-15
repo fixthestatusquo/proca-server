@@ -5,6 +5,12 @@ This service is used to re-send the DOI if supporters ignore a previous one.
 - It can work with any org (not bound to any CRM etc)
 - It watches how Proca Server is processing actions and injects actions again if they need to send another confirm email.
 
+## Build and install
+
+- `yarn build` - builds it, use `yarn publish` to publish to npm
+- It installs a `confirm-reminder` command in the system
+
+
 ## Do you understand RabbitMQ queue vs exchange?
 
 In RabbitMQ, an exchange is a message routing agent that receives messages from producers and routes them to message queues. It's like a post office, where the exchange decides where to deliver messages based on the message's routing key. Exchanges come in several types, such as direct, topic, fanout, and headers, which determine how messages are routed.
