@@ -84,15 +84,15 @@ export async function syncQueue(
 
       status.running += 1
       return syncer(action, msg, ch)
-        .then(async (proccessed: boolean) => {
-          if (typeof proccessed !== 'boolean') {
+        .then(async (processed: boolean) => {
+          if (typeof processed !== 'boolean') {
             await ch.nack(msg, false, false)
 
             await startShutdown();
             await finalizeShutdown();
             console.error(`Returned value must be boolean. Nack action, actionId: ${action.actionId}):`)
           }
-          if (proccessed) {
+          if (processed) {
             try {
               ch.ack(msg)
               status.running -= 1
