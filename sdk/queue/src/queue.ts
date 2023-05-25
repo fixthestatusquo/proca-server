@@ -103,7 +103,8 @@ export async function syncQueue(
             }
           } else {
             await ch.nack(msg, false, false)
-            console.error("Requeued due to error! Action Id:", action.actionId)
+            console.error("Requeued due to error! Action Id:", action.actionId);
+            return finalizeShutdown();
           }
         })
         .catch(async (e : Error) => {
