@@ -54,7 +54,7 @@ export async function syncQueue(
   }
 
   const finalizeShutdown = async () => {
-    if (status.stopping) 
+    if (status.stopping)
       console.log(`🛬 Shutting down the processing. Wating for ${status.running} threads running.`)
     if (status.stopping && status.running === 0) {
       console.log("🏁 All finished, closing channel!")
@@ -84,14 +84,19 @@ export async function syncQueue(
 
       status.running += 1
       return syncer(action, msg, ch)
-        .then((_v : any) => {
-          try {
-            ch.ack(msg)
-            status.running -= 1
-            return finalizeShutdown()
-          } catch (e) {
-            console.error("Could not ack a successful message! Action Id", action.actionId, e)  
-            throw e
+        .then(async (_v: any) => {
+          if (_v) {
+            try {
+              ch.ack(msg)
+              status.running -= 1
+              return finalizeShutdown();
+            } catch (e) {
+              console.error("Could not ack a successful message! Action Id", action.actionId, e)
+              throw e
+            }
+          } else {
+            await ch.nack(msg, false, false)
+            console.error("Requeued due to error! Action Id:", action.actionId)
           }
         })
         .catch(async (e : Error) => {
@@ -104,7 +109,7 @@ export async function syncQueue(
           await finalizeShutdown();
           console.error(`failure to syncAction (actionId: ${action.actionId}):`, e)
         })
-    })    
+    })
     status.tag = ret.consumerTag
   })
 }
