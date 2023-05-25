@@ -15,9 +15,15 @@ This module provides few helpers to work with queues.
     - `prefetch` - if set, set number of messages to prefetch from queue
     - `keyStore` - decryption key store (see `@proca/crypto` module) if PII of supporters is to be decrypted
 
-  - Callback signature is: `async callback(action : ActionMessageV2 | EventMessageV2, msg? : amqplib.Message, channel? : amqplib.Channel)`
+  - Callback signature is: `async callback(action : ActionMessageV2 |
+    EventMessageV2, msg? : amqplib.Message, channel? : amqplib.Channel)`. The
+    callback returns a promise, which if successful will result in ACKing the
+    message, and if unsuccessful with NACK the message and RabbitMQ server will
+    re-queue the message.
 
-  - This function will gracefully shutdown consuming actions if one of the callbacks throws an exception, even if multiple callbacks are concurrently run (for prefetch > 1)
+  - This function will gracefully shutdown consuming actions if one of the
+    callbacks throws an exception, even if multiple callbacks are concurrently
+    run (for prefetch > 1)
 
 - `testQueue(url, queueName)` - If queue `queueName` exists on AMQP server `url`, return its stats
 
