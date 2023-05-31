@@ -16,7 +16,7 @@ QUEUES = [
     'CUSTOM_SUPPORTER_CONFIRM',
     'EMAIL_SUPPORTER',
     'SQS',
-    'WEBHOOK '
+    'WEBHOOK'
 ]
 
 @click.command("action:add")
