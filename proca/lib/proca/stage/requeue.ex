@@ -65,7 +65,7 @@ defmodule Proca.Stage.Requeue do
   end
 
   def routing_key(%{action_page: %{org: org}}, :deliver, :webhook) do
-    Proca.Pipes.Topology.cqn(org, "webhook")
+    Proca.Pipes.Topology.wqn(org, "webhook")
   end
 
   def routing_key(_action, _stage, _destination) do
