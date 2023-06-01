@@ -15,6 +15,9 @@ export function connect(queueUrl : string) {
   return amqplib.connect(queueUrl) as any
 }
 
+const pause = (time = 1) => { //by default, wait 1 sec
+    return new Promise(resolve => setTimeout(resolve, time*1000));
+}
 
 export async function testQueue(queueUrl : string, queueName : string) {
   const conn = await connect(queueUrl)
@@ -36,7 +39,8 @@ export async function syncQueue(
   opts? : QueueOpts) {
   const conn = await connect(queueUrl)
   const ch = await conn.createChannel()
-  const qn = queueName
+  const qn = queueName;
+  let errorCount = 0; //number of continuous errors
 
   let status = {
     tag: null as string | null,
@@ -94,6 +98,7 @@ export async function syncQueue(
           }
           if (processed) {
             try {
+              errorCount = 0;
               ch.ack(msg)
               status.running -= 1
               return finalizeShutdown();
@@ -101,9 +106,17 @@ export async function syncQueue(
               console.error("Could not ack a successful message! Action Id", action.actionId, e)
               throw e
             }
-          } else {
+          } else { //the CRM didn't process the message
+            const delay = 1 << errorCount;
             await ch.nack(msg, false, false)
-            console.error("Requeued due to error! Action Id:", action.actionId);
+            console.error("Requeued due to error! Action Id:", action.actionId, "pausing for ", delay,"s");
+            if (delay  > 10800) { // if we need to wait more than 3 hours, restart instead
+              console.error('restart because errorCount=', errorCount);
+              await startShutdown();
+              return finalizeShutdown();
+            }
+            await pause(delay) // exponential waiting
+            errorCount++;
             return finalizeShutdown();
           }
         })
