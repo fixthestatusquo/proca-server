@@ -87,8 +87,9 @@ export async function syncQueue(
       }
 
       status.running += 1
-      return syncer(action, msg, ch)
-        .then(async (processed: boolean) => {
+      try {
+        const processed = syncer(action, msg, ch);
+
           if (typeof processed !== 'boolean') {
             await ch.nack(msg, false, false)
 
@@ -119,8 +120,7 @@ export async function syncQueue(
             errorCount++;
             return finalizeShutdown();
           }
-        })
-        .catch(async (e : Error) => {
+        } catch (e : Error)  {
           status.running -= 1
 
           console.error(`Error thrown during sync actionId=${action.actionId}, try to nack the current message:`, e)
@@ -129,7 +129,7 @@ export async function syncQueue(
           await startShutdown();
           await finalizeShutdown();
           console.error(`failure to syncAction (actionId: ${action.actionId}):`, e)
-        })
+        }
     })
     status.tag = ret.consumerTag
   })
