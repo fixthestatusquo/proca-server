@@ -66,27 +66,12 @@ $ docker-compose up -d
 $ docker-compose logs proca 
 # note down the username and password for the user of primary "instance" organisation. 
 
-$ export API_URL=http://localhost:4000
-$ proca-cli setup 
-# in interactive session, choose "set up authentication" and then input
-# "instance", "admin@proca.app" and password you noted down:
-
-Hello!
-
-- Using current working directory: /home/marcin/Projects/proca-server/proca/utils
-- There is not .env file - I will create it after asking You some questions
-
-? What would you like to do? Set up authentication (no org set, user is not set up, password is not set)
-? What is the short name of your org? instance
-? What is your username (email)? admin@proca.app
-? password: [hidden]
-Thanks! Fetching campaign list to check the credentials
-? What would you like to do? Save current config to .env file and leave
-```
+    $ export API_URL=http://localhost:4000
+    $ proca server:add -h http://localhost -s 4000 -u {user} -p {password} localhost 
 
 Now you can:
 
-- Use proca-cli (in the directory where `.env` file was created) to talk to the server API. 
+- Use procato talk to the server API. 
 - You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
 - You can see the processing in action using [RabbitMQ management console](http://localhost:15672/) - login with user name _proca_, password _proca_.
 
