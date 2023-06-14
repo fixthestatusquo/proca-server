@@ -53,10 +53,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@proca/crypto@^3.3.1":
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/@proca/crypto/-/crypto-3.3.4.tgz#4bde26f56ad5ebbc4552619b98c4594c20038a7a"
-  integrity sha512-Xs8xM5rucU0iyiZ5EcrvHUCxJVRUF2vnfavI85VhTAXQ6Q0+ztiAj39Ohz/WCsolOvFk+RmrDkiBgyccWrR/Lg==
+"@proca/crypto@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@proca/crypto/-/crypto-3.4.0.tgz#e13576e828b8371ecf16b95a3c9cb5c71e4890d5"
+  integrity sha512-IOsfLJ6xxu9UzeYkW+PrOcusFfGOSrKO5E3Uaio53F6FmI0TC+02ZutfEgWgg1WQ7C04DjDfcdlzoXTpIOE8ww==
   dependencies:
     "@types/lodash" "^4.14.176"
     "@types/node" "^16.11.6"
@@ -65,12 +65,12 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@proca/queue@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@proca/queue/-/queue-0.2.1.tgz#139f5f5462028f8e633cfc2bbb6cf9c7ffad0b4c"
-  integrity sha512-SKaToxYfqFZ4jHdfqHLo8NT98Y5sL1HsTO/HXsblhNCGatlJ7DmA0KnWOiUJuoETyKVBbzErBXjEm7LyifWg5g==
+"@proca/queue@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@proca/queue/-/queue-3.4.0.tgz#0d0c60eb871c565787bddd870f9927b70977549d"
+  integrity sha512-XId9ZiHx9htWosyy9J4w9g8nrckBu5TATShdyqzcKkKnV+wUvw4VNswh6/ejyr39/LhtNEwQQ9tjnpas55gSlA==
   dependencies:
-    "@proca/crypto" "^3.3.1"
+    "@proca/crypto" "^3.4.0"
     amqplib "^0.8.0"
     line-by-line "^0.1.6"
 

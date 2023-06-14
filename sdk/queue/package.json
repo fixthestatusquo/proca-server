@@ -45,7 +45,6 @@
   ],
   "devDependencies": {
     "@size-limit/preset-small-lib": "^7.0.8",
-    "@types/amqplib": "^0.8.2",
     "@types/line-by-line": "^0.1.6",
     "husky": "^7.0.4",
     "size-limit": "^7.0.8",
@@ -55,8 +54,8 @@
   },
   "dependencies": {
     "@proca/crypto": "^3.4.0",
-    "amqplib": "^0.8.0",
-    "line-by-line": "^0.1.6"
+    "line-by-line": "^0.1.6",
+    "rabbitmq-client": "^3.3.2"
   },
   "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }

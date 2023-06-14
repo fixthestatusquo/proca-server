@@ -1,12 +1,7 @@
 import { decryptPersonalInfo } from '@proca/crypto'
-import amqplib from 'amqplib'
+import Connection from 'rabbitmq-client'
 import LineByLine from 'line-by-line'
 export {ActionMessage, ActionMessageV2, ProcessStage} from './actionMessage'
-
-import {
-  ActionMessage,
-  actionMessageV1to2
-} from './actionMessage'
 
 import {QueueOpts, SyncCallback} from './types'
 
@@ -20,19 +15,83 @@ const pause = (time = 1) => { //by default, wait 1 sec
 }
 
 export async function testQueue(queueUrl : string, queueName : string) {
-  const conn = await connect(queueUrl)
-  const ch = await conn.createChannel()
-  try {
-    const status = await ch.checkQueue(queueName)
-    return status
-  } finally {
-    ch.close()
-    conn.close()
-  }
+const rabbit = new Connection({
+  url: queueUrl,
+  // wait 1 to 30 seconds between connection retries
+  retryLow: 1000,
+  retryHigh: 30000,
+})
+  const ch = await rabbit.acquire()
+  const status = ch.queueDeclare({queue: queueName,passive:true});
+console.log(status);
+  await ch.close();
+  await rabbit.close();
+
+process.exit(1)
 }
 
 
-export async function syncQueue(
+const export async syncQueue = (
+  queueUrl : string,
+  queueName : string,
+  syncer : SyncCallback,
+  opts? : QueueOpts
+)=> {
+  let errorCount = 0; //number of continuous errors
+
+const rabbit = new Connection({
+  url: queueUrl,
+  // wait 1 to 30 seconds between connection retries
+  retryLow: 1000,
+  retryHigh: 30000,
+})
+
+rabbit.on('error', (err) => {
+  // connection refused, etc
+  console.error(err)
+})
+
+rabbit.on('connection', () => {
+  console.log('The connection is successfully (re)established')
+})
+
+const consumer = rabbit.createConsumer({
+  queue: queueName,
+  queueOptions: {exclusive: true}, //one consumer only?
+  // handle 2 messages at a time,
+  concurrency: 1 ,
+  qos: {prefetchCount: 2},
+}, async (msg) => {
+  console.log(msg)
+      let action : ActionMessage = JSON.parse(msg.content.toString())
+
+      // upgrade old v1 message format to v2
+      if (action.schema === "proca:action:1") {
+        action = actionMessageV1to2(action)
+      }
+
+      // optional decrypt
+      if (action.personalInfo && opts?.keyStore) {
+        const plainPII = decryptPersonalInfo(action.personalInfo, opts.keyStore)
+        action.contact = {...action.contact, ...plainPII}
+      }
+
+      const processed = await syncer(action, msg, ch);
+      if (!processed) {
+        throw new Error ("aaa");
+      }
+        throw new Error ("bb");
+
+  // msg is automatically acknowledged when this function resolves or msg is
+  // rejected (and maybe requeued, or sent to a dead-letter-exchange) if this
+  // function throws an error
+})
+
+
+}
+
+/*
+export async function NOKsyncQueue(
   queueUrl : string,
   queueName : string,
   syncer : SyncCallback,
@@ -68,7 +127,6 @@ export async function syncQueue(
   }
   console.error(`⏳ waiting for actions from ${qn}`)
 
-  return new Promise(async (_, _fail) => {
     if (typeof opts?.prefetch !== 'undefined') {
       await ch.prefetch(opts.prefetch)
     }
@@ -132,9 +190,8 @@ export async function syncQueue(
         }
     })
     status.tag = ret.consumerTag
-  })
 }
-
+*/
 export async function syncFile(filePath : string, syncer : SyncCallback, opts? : QueueOpts) {
   const lines = new LineByLine(filePath)
 
