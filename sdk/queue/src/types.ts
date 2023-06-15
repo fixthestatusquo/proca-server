@@ -1,16 +1,16 @@
 import {KeyStore} from '@proca/crypto'
 import {ActionMessageV2} from './actionMessage'
 import {EventMessageV2} from './eventMessage'
-import {Message, Channel} from 'amqplib'
 
 export type DecryptOpts = {
   decrypt?: boolean,
   ignore?: boolean
 }
 
-export type QueueOpts = {
-  prefetch?: number;
+export type ConsumerOpts = {
+  concurrency?: number; // 1 if not set
+  // prefetch? number; // 2xconcurrency
   keyStore?: KeyStore;
 }
 
-export type SyncCallback = (action : ActionMessageV2 | EventMessageV2, msg? : Message, channel? : Channel) => Promise<any>
+export type SyncCallback = (action : ActionMessageV2 | EventMessageV2) => Promise<any>
