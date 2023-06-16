@@ -10,7 +10,7 @@ with open("requirements.txt", "r") as fg:
 
 setuptools.setup(
     name="proca",
-    version="0.3.7",
+    version="0.3.8",
     author="Marcin Koziej",
     author_email="marcin@fixthestatusquo.org",
     description="Proca CLI to use with Proca service",
