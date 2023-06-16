@@ -1,7 +1,7 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
 import { formatAction, handleConsent } from "./data";
 import { postAction, verification, rabbit } from "./client";
-var argv = require('minimist')(process.argv.slice(2));
+var argv = require('minimist')(process.argv.slice(2),{boolean:['queue']});
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -16,10 +16,23 @@ const syncer = async () => {
         const verificationPayload = { "petition_signature": { "subscribe_newsletter": actionPayload.petition_signature.subscribe_newsletter, "data_handling_consent": handleConsent(action) } };
         const data = await postAction(actionPayload);
         if (data.petition_signature?.verification_token) {
-          await verification(data.petition_signature.verification_token, verificationPayload)
+          const verified = await verification(data.petition_signature.verification_token, verificationPayload)
+        } else {
+ console.log("unhandled data2", data);
+return false;
         }
+console.log("we shouldn't be here");
+return false;
+      } else {
+        console.log("unknown message");
+        return false;
       }
     })
 }
-
-module.exports = {syncer};
+if (require.main === module) {
+  if (argv.queue) {
+    syncer();
+  }
+} else {
+  module.exports = {syncer};
+}
