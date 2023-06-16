@@ -10,9 +10,10 @@ import { ConsumerOpts, SyncCallback } from './types';
 
 let connection: any = null;
 
-process.on('SIGINT', () => {
-  console.log('closing', connection);
-  if (connection) connection.close();
+process.on('SIGINT', async () => {
+  console.log('closing');
+  await connection.close();
+  process.exit();
 });
 
 export const connect = (queueUrl: string) => {
