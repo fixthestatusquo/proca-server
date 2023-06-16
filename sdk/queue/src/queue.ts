@@ -10,11 +10,29 @@ import { ConsumerOpts, SyncCallback } from './types';
 
 let connection: any = null;
 
-process.on('SIGINT', async () => {
-  console.log('closing');
-  await connection.close();
-  process.exit();
-});
+async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
+  try {
+  if (connection) {
+    console.log('closing');
+    await connection.close();
+  }
+  console.log('closed, exit now');
+  
+  process.exit(0);
+  } catch (e) {
+    console.error('EXIT HANDLER ERROR', e);
+  }
+
+  process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError);
+}
+
+[
+  'beforeExit', 'uncaughtException', 'unhandledRejection', 
+  'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 
+  'SIGABRT','SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 
+  'SIGUSR2', 'SIGTERM', 
+].forEach(evt => process.on(evt, exitHandler));
+
 
 export const connect = (queueUrl: string) => {
   const rabbit = new Connection(queueUrl);
