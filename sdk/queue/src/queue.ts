@@ -79,6 +79,7 @@ export const syncQueue = async (
   const sub = rabbit.createConsumer(
     {
       queue: queueName,
+      noAck: false,
       queueOptions: { passive: true },
       // handle 2 messages at a time
       concurrency: concurrency,
@@ -90,25 +91,24 @@ export const syncQueue = async (
       // The message is automatically acknowledged when this function ends.
       // If this function throws an error, then msg is NACK'd (rejected) and
       // possibly requeued or sent to a dead-letter exchange
-      let action: ActionMessage = JSON.parse(msg.body.toString());
-
-      // upgrade old v1 message format to v2
-      if (action.schema === 'proca:action:1') {
-        action = actionMessageV1to2(action);
-      }
-
-      // optional decrypt
-      if (action.personalInfo && opts?.keyStore) {
-        const plainPII = decryptPersonalInfo(
-          action.personalInfo,
-          opts.keyStore
-        );
-        action.contact = { ...action.contact, ...plainPII };
-      }
       try {
+        let action: ActionMessage = JSON.parse(msg.body.toString());
+
+        // upgrade old v1 message format to v2
+        if (action.schema === 'proca:action:1') {
+          action = actionMessageV1to2(action);
+        }
+
+        // optional decrypt
+        if (action.personalInfo && opts?.keyStore) {
+          const plainPII = decryptPersonalInfo(
+            action.personalInfo,
+            opts.keyStore
+          );
+          action.contact = { ...action.contact, ...plainPII };
+        }
         const processed = await syncer(action);
         // returning a false or {processed:false}-> message should be nacked
-        console.error('processed', processed);
         console.log('processed', processed);
         if (typeof processed !== 'boolean') {
           console.error(
@@ -117,12 +117,13 @@ export const syncQueue = async (
           rabbit.close(); // we need to shutdown
         }
         if (processed) {
-          return;
-        } else {
+          return; //ack
+        } else { //nack
           throw new Error(
-            'Requeued due to error! Action Id:' + action.actionId
+            'Requeued due to error! Action Id:' + action?.actionId
           );
         }
+console.log("finished");
       } catch (e) {
         //if the syncer throw an error it's a permanent problem, we need to close
         console.error('error processing', e);
