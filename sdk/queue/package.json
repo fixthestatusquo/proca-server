@@ -4,24 +4,25 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
-  "engines": {
-    "node": ">=14"
-  },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build",
+    "build": "cross-env NODE_ENV=production tsup-node",
+    "build:dev": " cross-env NODE_ENV=development tsup-node",
+    "coverage": "vitest run --coverage",
+    "dev": "node-dev dist/main.js",
+    "format": "dprint fmt",
+    "lint": "eslint src --ext .ts",
+    "noprepare": "husky install",
+    "semantic-release": "semantic-release",
+    "test": "vitest",
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "tsdx lint"
+      "pre-commit": "pnpm format && pnpm lint",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "prettier": {
@@ -46,10 +47,15 @@
   "devDependencies": {
     "@size-limit/preset-small-lib": "^7.0.8",
     "@types/line-by-line": "^0.1.6",
-    "husky": "^7.0.4",
+    "cross-env": "^7.0.3",
+    "dprint": "^0.37.1",
+    "esbuild": "^0.18.4",
+    "eslint": "^8.43.0",
+    "husky": "^8.0.3",
     "size-limit": "^7.0.8",
     "tsdx": "^0.14.1",
     "tslib": "^2.3.1",
+    "tsup": "^7.0.0",
     "typescript": "^4.6.3"
   },
   "dependencies": {

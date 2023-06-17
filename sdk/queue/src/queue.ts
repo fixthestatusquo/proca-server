@@ -1,14 +1,14 @@
-import { decryptPersonalInfo } from '@proca/crypto';
-import { Connection, AsyncMessage } from 'rabbitmq-client';
+import { decryptPersonalInfo } from "@proca/crypto";
+import { AsyncMessage, Connection } from "rabbitmq-client";
 
-import LineByLine from 'line-by-line';
-export { ActionMessage, ActionMessageV2, ProcessStage } from './actionMessage';
+import LineByLine from "line-by-line";
+export { ActionMessage, ActionMessageV2, ProcessStage } from "./actionMessage";
 
-import { ActionMessage, actionMessageV1to2 } from './actionMessage';
+import { ActionMessage, actionMessageV1to2 } from "./actionMessage";
 
-import { ConsumerOpts, SyncCallback } from './types';
+import { ConsumerOpts, SyncCallback } from "./types";
 
-const os = require('os');
+const os = require("os");
 
 let connection: any = null;
 let consumer: any = null;
@@ -16,14 +16,14 @@ let consumer: any = null;
 async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
   try {
     if (connection) {
-      console.log('closing');
+      console.log("closing, waiting for all the messages being processed");
       await consumer.close();
       await connection.close();
     }
-    console.log('closed, exit now');
+    console.log("closed, exit now");
     process.exit(0);
   } catch (e) {
-    console.error('EXIT HANDLER ERROR', e);
+    console.error("EXIT HANDLER ERROR", e);
   }
 
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError);
@@ -31,23 +31,24 @@ async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
 
 export const connect = (queueUrl: string) => {
   const rabbit = new Connection(queueUrl);
-  connection = rabbit; //global
-  rabbit.on('error', (err) => {
-    console.log('RabbitMQ connection error', err);
+  connection = rabbit; // global
+  rabbit.on("error", (err) => {
+    console.log("RabbitMQ connection error", err);
   });
-  rabbit.on('connection', () => {
-    console.log('Connection successfully (re)established');
+  rabbit.on("connection", () => {
+    console.log("Connection successfully (re)established");
   });
 
-  ['uncaughtException', 'unhandledRejection', 'SIGINT', 'SIGTERM'].forEach(
-    (evt) => process.on(evt, exitHandler)
+  process.once('SIGINT', exitHandler),
+  ["uncaughtException", "unhandledRejection", "SIGTERM"].forEach(
+    (evt) => process.on(evt, exitHandler),
   );
 
   return rabbit as any;
 };
 
 export async function testQueue(queueUrl: string, queueName: string) {
-  throw new Error("it shouldn't call testQueue " + queueUrl + ':' + queueName);
+  throw new Error("it shouldn't call testQueue " + queueUrl + ":" + queueName);
 
   /*
   const conn = await connect(queueUrl)
@@ -59,26 +60,27 @@ export async function testQueue(queueUrl: string, queueName: string) {
     ch.close()
     conn.close()
   }
-*/
+  */
 }
 
 export const syncQueue = async (
   queueUrl: string,
   queueName: string,
   syncer: SyncCallback,
-  opts?: ConsumerOpts
+  opts?: ConsumerOpts,
 ) => {
-  console.log('syncQueue options', opts);
+  console.log("syncQueue options", opts);
   const concurrency = opts?.concurrency || 1;
   const prefetch = 2 * concurrency;
   const rabbit = await connect(queueUrl);
 
   // get host name
-  const tag = os.hostname() + '.' + process.env.npm_package_name;
+  const tag = os.hostname() + "." + process.env.npm_package_name;
   console.log(tag);
   const sub = rabbit.createConsumer(
     {
       queue: queueName,
+      requeue: true,
       noAck: false,
       queueOptions: { passive: true },
       // handle 2 messages at a time
@@ -95,7 +97,7 @@ export const syncQueue = async (
         let action: ActionMessage = JSON.parse(msg.body.toString());
 
         // upgrade old v1 message format to v2
-        if (action.schema === 'proca:action:1') {
+        if (action.schema === "proca:action:1") {
           action = actionMessageV1to2(action);
         }
 
@@ -103,53 +105,52 @@ export const syncQueue = async (
         if (action.personalInfo && opts?.keyStore) {
           const plainPII = decryptPersonalInfo(
             action.personalInfo,
-            opts.keyStore
+            opts.keyStore,
           );
           action.contact = { ...action.contact, ...plainPII };
         }
         const processed = await syncer(action);
         // returning a false or {processed:false}-> message should be nacked
-        console.log('processed', processed);
-        if (typeof processed !== 'boolean') {
-          console.error(
-            `Returned value must be boolean. Nack action, actionId: ${action.actionId}):`
-          );
+        console.log("processed", processed);
+        if (typeof processed !== "boolean") {
+          console.error(`Returned value must be boolean. Nack action, actionId: ${action.actionId}):`);
           rabbit.close(); // we need to shutdown
         }
         if (processed) {
-          return; //ack
-        } else { //nack
+          return; // ack
+        } else { // nack
+console.log("we need to nack");
           throw new Error(
-            'Requeued due to error! Action Id:' + action?.actionId
+            "Requeued due to error " + (action?.actionId ? "Action Id:" + action.actionId : "!"),
           );
         }
-console.log("finished");
+        console.log("finished");
       } catch (e) {
-        //if the syncer throw an error it's a permanent problem, we need to close
-        console.error('error processing', e);
+        // if the syncer throw an error it's a permanent problem, we need to close
+        console.error("error processing", e);
         rabbit.close();
       }
-      sub.on('error', (err: any) => {
+    },
+  );
+      sub.on("error", (err: any) => {
         // Maybe the consumer was cancelled, or the connection was reset before a
         // message could be acknowledged.
-        console.log('rabbit error', err);
+        console.log("rabbit error", err);
       });
-    }
-  );
-  consumer = sub; //global
+  consumer = sub; // global
 };
 
 export const syncFile = (
   filePath: string,
   syncer: SyncCallback,
-  opts?: ConsumerOpts
+  opts?: ConsumerOpts,
 ) => {
   const lines = new LineByLine(filePath);
 
-  lines.on('line', async (l) => {
+  lines.on("line", async (l) => {
     let action: ActionMessage = JSON.parse(l);
 
-    if (action.schema === 'proca:action:1') {
+    if (action.schema === "proca:action:1") {
       action = actionMessageV1to2(action);
     }
 

@@ -44,11 +44,6 @@ const syncer = async () => {
     `amqps://${user}:${pass}@api.proca.app/proca_live`,
     queueDeliver,
     async (action: ActionMessageV2 | EventMessageV2) => {
-if (argv.pause) {
-console.log(pause);
-console.log(action);
-  await pause();
-}
       if (action.schema === "proca:action:2") {
         const actionPayload = formatAction(action);
         const verificationPayload = {
@@ -59,7 +54,9 @@ console.log(action);
           },
         };
         const data = await postAction(actionPayload);
+console.log("aaa", argv.pause);
         if (argv.pause) {
+console.log("pause");
           await pause();
         }
         if (data.petition_signature?.verification_token) {
@@ -75,7 +72,11 @@ console.log(action);
         console.log("we shouldn't be here");
         return false;
       } else {
+        if (argv.pause) {
         console.log("unknown message");
+console.log("pause");
+          await pause();
+        }
         return false;
       }
     }
