@@ -8,7 +8,7 @@ import { ActionMessage, actionMessageV1to2 } from "./actionMessage";
 
 import { ConsumerOpts, SyncCallback } from "./types";
 
-const os = require("os");
+import os from "os";
 
 let connection: any = null;
 let consumer: any = null;

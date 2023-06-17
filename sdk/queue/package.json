@@ -12,7 +12,7 @@
     "coverage": "vitest run --coverage",
     "dev": "node-dev dist/main.js",
     "format": "dprint fmt",
-    "lint": "eslint src --ext .ts",
+    "eslint": "eslint src --ext .ts",
     "noprepare": "husky install",
     "semantic-release": "semantic-release",
     "test": "vitest",
@@ -47,6 +47,8 @@
   "devDependencies": {
     "@size-limit/preset-small-lib": "^7.0.8",
     "@types/line-by-line": "^0.1.6",
+    "@typescript-eslint/eslint-plugin": "^5.59.11",
+    "@typescript-eslint/parser": "^5.59.11",
     "cross-env": "^7.0.3",
     "dprint": "^0.37.1",
     "esbuild": "^0.18.4",

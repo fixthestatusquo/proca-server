@@ -8,9 +8,13 @@ export type DecryptOpts = {
 };
 
 export type ConsumerOpts = {
-  concurrency?: number; // 1 if not set
-  // prefetch? number; // 2xconcurrency
+  concurrency?: number; // 1 by default
+  prefetch?: number; // 2x concurrency by default
   keyStore?: KeyStore;
 };
 
-export type SyncCallback = (action: ActionMessageV2 | EventMessageV2) => Promise<any>;
+export type SyncResult = {
+  processed: boolean;
+}
+
+export type SyncCallback = (action: ActionMessageV2 | EventMessageV2) => Promise<SyncResult | boolean>;
