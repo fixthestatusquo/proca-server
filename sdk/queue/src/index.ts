@@ -5,6 +5,11 @@ export {
   connect
 } from './queue'
 
+
+export {
+  pause
+} from './utils'
+
 export {
  actionMessageV1to2
 } from './actionMessage'
@@ -19,6 +24,6 @@ export type {
 
 
 export type {
-  QueueOpts,
+  ConsumerOpts,
   SyncCallback
 } from './types'

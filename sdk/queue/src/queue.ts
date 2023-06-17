@@ -8,31 +8,26 @@ import { ActionMessage, actionMessageV1to2 } from './actionMessage';
 
 import { ConsumerOpts, SyncCallback } from './types';
 
+const os = require('os');
+
 let connection: any = null;
+let consumer: any = null;
 
 async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
   try {
-  if (connection) {
-    console.log('closing');
-    await connection.close();
-  }
-  console.log('closed, exit now');
-  
-  process.exit(0);
+    if (connection) {
+      console.log('closing');
+      await consumer.close();
+      await connection.close();
+    }
+    console.log('closed, exit now');
+    process.exit(0);
   } catch (e) {
     console.error('EXIT HANDLER ERROR', e);
   }
 
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError);
 }
-
-[
-  'beforeExit', 'uncaughtException', 'unhandledRejection', 
-  'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 
-  'SIGABRT','SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 
-  'SIGUSR2', 'SIGTERM', 
-].forEach(evt => process.on(evt, exitHandler));
-
 
 export const connect = (queueUrl: string) => {
   const rabbit = new Connection(queueUrl);
@@ -44,8 +39,12 @@ export const connect = (queueUrl: string) => {
     console.log('Connection successfully (re)established');
   });
 
+  ['uncaughtException', 'unhandledRejection', 'SIGINT', 'SIGTERM'].forEach(
+    (evt) => process.on(evt, exitHandler)
+  );
+
   return rabbit as any;
-}
+};
 
 export async function testQueue(queueUrl: string, queueName: string) {
   throw new Error("it shouldn't call testQueue " + queueUrl + ':' + queueName);
@@ -74,12 +73,16 @@ export const syncQueue = async (
   const prefetch = 2 * concurrency;
   const rabbit = await connect(queueUrl);
 
+  // get host name
+  const tag = os.hostname() + '.' + process.env.npm_package_name;
+  console.log(tag);
   const sub = rabbit.createConsumer(
     {
       queue: queueName,
       queueOptions: { passive: true },
       // handle 2 messages at a time
       concurrency: concurrency,
+      consumerTag: tag,
       qos: { prefetchCount: prefetch },
       // Optionally ensure an exchange exists
     },
@@ -122,7 +125,7 @@ export const syncQueue = async (
         }
       } catch (e) {
         //if the syncer throw an error it's a permanent problem, we need to close
-        console.error('error processing',e);
+        console.error('error processing', e);
         rabbit.close();
       }
       sub.on('error', (err: any) => {
@@ -132,8 +135,8 @@ export const syncQueue = async (
       });
     }
   );
-
-}
+  consumer = sub; //global
+};
 
 export const syncFile = (
   filePath: string,
@@ -159,4 +162,4 @@ export const syncFile = (
     await syncer(action);
     lines.resume();
   });
-}
+};
