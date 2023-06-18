@@ -8,8 +8,8 @@
     "start:dev": "nodemon ./src/index.ts",
     "start@http": "npx ts-node ./src/http.ts",
     "start@http:dev": "nodemon ./src/http.ts",
-    "build": "tsc",
-    "prepare": "tsc"
+    "build": "esbuild",
+    "prepare": "esbuild"
   },
   "keywords": [],
   "author": "",
@@ -19,20 +19,15 @@
     "src",
     "bin"
   ],
-  "bin": {
-    "trust-sync": "bin/trust-sync",
-    "trust-lookup": "bin/trust-lookup"
-  },
   "devDependencies": {
     "@types/node": "^18.7.14",
-    "nodemon": "^2.0.19",
-    "ts-node": "^10.9.1",
     "typescript": "^4.8.2"
   },
   "dependencies": {
     "@proca/queue": "^5.0.2",
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
+    "esbuild": "^0.18.4",
     "fastify": "^4.5.3",
     "minimist": "^1.2.6"
   },

@@ -6,7 +6,8 @@ import {
 } from "@proca/queue";
 import { formatAction, handleConsent } from "./data";
 import { postAction, verification, rabbit } from "./client";
-const { lookup, start} = require("./http");
+import { lookup, start}  from "./http";
+import minimist, { ParsedArgs } from 'minimist';
 
 const help = (status = 0) => {
   console.log(
@@ -23,7 +24,7 @@ const help = (status = 0) => {
   process.exit(status);
 };
 
-const argv = require("minimist")(process.argv.slice(2), { 
+const argv: ParsedArgs = minimist(process.argv.slice(2), { 
   string: ["email"],
   unknown: (d: String) => {
     const allowed = ["target"]; //merge with boolean and string?
