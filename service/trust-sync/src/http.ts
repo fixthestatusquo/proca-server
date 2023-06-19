@@ -1,7 +1,11 @@
 // Require the framework and instantiate it
-const fastify = require("fastify")({ logger: true });
-const trust = require("./client");
-
+//const fastify = require("fastify")({ logger: true });
+//const trust = require("./client");
+import trust  from './client'
+import Fastify from 'fastify'
+const fastify = Fastify({
+  logger: true
+})
 
 const lookup = async (email:string) => {
   // do the lookup

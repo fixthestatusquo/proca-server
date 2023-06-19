@@ -8,6 +8,7 @@ import { formatAction, handleConsent } from "./data";
 import { postAction, verification, rabbit } from "./client";
 import { lookup, start}  from "./http";
 import minimist, { ParsedArgs } from 'minimist';
+import dotenv from 'dotenv'
 
 const help = (status = 0) => {
   console.log(
@@ -26,7 +27,7 @@ const help = (status = 0) => {
 
 const argv: ParsedArgs = minimist(process.argv.slice(2), { 
   string: ["email"],
-  unknown: (d: String) => {
+  unknown: (d: string) => {
     const allowed = ["target"]; //merge with boolean and string?
     if (d[0] !== "-") return true;
     if (allowed.includes(d.split("=")[0].slice(2))) return true;
@@ -36,7 +37,6 @@ const argv: ParsedArgs = minimist(process.argv.slice(2), {
 
 boolean: ["queue", "email", "http", "help", "pause"] });
 
-const dotenv = require("dotenv");
 dotenv.config();
 
 const syncer = async () => {

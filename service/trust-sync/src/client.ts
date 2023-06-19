@@ -1,6 +1,6 @@
-const crypto = require('crypto');
-const axios = require('axios').default;
-const dotenv = require('dotenv');
+import crypto from 'crypto';
+import axios from 'axios';
+import dotenv from 'dotenv';
 dotenv.config();
 
 import { Signature, Verification } from "./data";

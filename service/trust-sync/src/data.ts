@@ -1,6 +1,6 @@
 
 import type { ActionMessageV2 } from '@proca/queue'
-const _ = require("lodash");
+import _ from 'lodash';
 
 interface AditionalAttributes {
   name: string;
@@ -44,7 +44,7 @@ export const handleConsent = (action: ActionMessageV2) => {
 export const formatAction = (queueAction: ActionMessageV2) => {
   const postData = queueAction;
 
-  let action: TrustAction = {
+  const action: TrustAction = {
     first_name: postData.contact.firstName,
     last_name: postData.contact.lastName,
     zip_code: postData.contact.postcode,
