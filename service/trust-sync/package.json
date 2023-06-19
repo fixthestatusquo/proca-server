@@ -2,15 +2,14 @@
   "name": "@proca/trust-sync",
   "version": "3.4.0",
   "description": "",
-  "main": "src/server.ts",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "dprint fmt",
     "eslint": "eslint src --ext .ts",
     "esbuild": "NODE_ENV=production tsup-node",
-    "dev": "NODE_ENV=development etsc",
-    "start:dev": "etsc && nodemon ./src/index.ts",
-    "start@http": "etsc && nodemon ./src/http.ts",
+    "start:dev": "nodemon ./src/index.ts",
+    "start@http": "nodemon ./src/http.ts --http",
     "build": "NODE_ENV=production etsc"
   },
   "keywords": [],

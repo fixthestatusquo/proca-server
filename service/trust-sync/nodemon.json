@@ -2,6 +2,6 @@
   "watch": ["src"],
   "ignore": ["src/**/*.test.ts"],
   "ext": "ts,mjs,js,json,graphql",
-  "exec": "etsc && node ./dist/index.js",
+  "exec": "tsup-node && node ./dist/index.js",
   "legacyWatch": true
 }
