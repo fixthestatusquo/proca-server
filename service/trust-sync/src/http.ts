@@ -1,17 +1,16 @@
 // Require the framework and instantiate it
-//const fastify = require("fastify")({ logger: true });
-//const trust = require("./client");
-import trust  from './client'
+import {lookup}  from './client'
 import Fastify from 'fastify'
 const fastify = Fastify({
   logger: true
 })
 
-const lookup = async (email:string) => {
+export const lookup = async (email:string) => {
+
   // do the lookup
   console.log("email:"+email);
   try { 
-    const r= await trust.lookup(email);
+    const r= await lookup(email);
     console.log("result",r);
     return r.success; // no idea why I have the string
   } catch (e) {
@@ -35,7 +34,7 @@ fastify.post(
   "/lookup-trust", // XXX lets just have it at / ? We can always add a path using reverse proxy
   { schema: lookupSchema },
   async (request: any, reply: any) => {
-    const result = await trust.lookup(request.body.email);
+    const result = await lookup(request.body.email);
     let code = 200;
     let details = {};
 
@@ -84,7 +83,7 @@ fastify.route({
 });
 
 // Run the server!
-const start = async () => {
+export const start = async () => {
   try {
     await fastify.listen({ port: process.env.PORT || 3000 });
   } catch (err) {
@@ -93,4 +92,3 @@ const start = async () => {
   }
 };
 
-module.exports = {start, lookup};

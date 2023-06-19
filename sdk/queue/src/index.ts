@@ -1,6 +1,5 @@
 export { connect, syncFile, syncQueue, testQueue } from "./queue";
 
-console.log("yoo");
 export { pause } from "./utils";
 
 export { actionMessageV1to2 } from "./actionMessage";

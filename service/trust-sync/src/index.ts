@@ -27,12 +27,14 @@ const help = (status = 0) => {
 
 const argv: ParsedArgs = minimist(process.argv.slice(2), { 
   string: ["email"],
-  unknown: (d: string) => {
+  unknown: (d?: string) => {
     const allowed = ["target"]; //merge with boolean and string?
+    if (!d) return false;
     if (d[0] !== "-") return true;
     if (allowed.includes(d.split("=")[0].slice(2))) return true;
     console.error("unknown param", d);
     help(1);
+    return false;
   },
 
 boolean: ["queue", "email", "http", "help", "pause"] });
@@ -65,6 +67,7 @@ console.log("pause");
             data.petition_signature.verification_token,
             verificationPayload
           );
+console.log(verified);
           return false; //true
         } else {
           console.log("unhandled data2", data);
@@ -92,6 +95,7 @@ if (require.main === module) {
   }
   if (argv.email) { //
     const r = lookup(argv.email);
+console.log(r);
   }
   if (argv.queue) {
     syncer();
