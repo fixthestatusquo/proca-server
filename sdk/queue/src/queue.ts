@@ -77,7 +77,7 @@ export const syncQueue = async (
   const tag = os.hostname() + '.' + process.env.npm_package_name;
   console.log('createConsumer', {
     queue: queueName,
-    //    requeue: true,
+    requeue: false,
     noAck: false,
     queueOptions: { passive: true },
     // handle 2 messages at a time
