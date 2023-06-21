@@ -41,8 +41,7 @@ console.log("processing message");
         if (argv.pause) {
           await pause();
         }
-console.log("non fatal error");
-return false;
+        console.log("non fatal error");
         throw new Error ("don't know how to process if !proca:action:2");
       }
     }
