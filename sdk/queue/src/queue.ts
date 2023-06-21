@@ -77,7 +77,7 @@ export const syncQueue = async (
   const tag = os.hostname() + '.' + process.env.npm_package_name;
   console.log('createConsumer', {
     queue: queueName,
-    requeue: true,
+    //    requeue: true,
     noAck: false,
     queueOptions: { passive: true },
     // handle 2 messages at a time
@@ -117,29 +117,29 @@ export const syncQueue = async (
       }
       try {
         const processed = await syncer(action);
+        console.log('processed', processed);
+        if (typeof processed !== 'boolean') {
+          console.error(
+            `Returned value must be boolean. Nack action, actionId: ${action.actionId}):`
+          );
+          rabbit.close(); // we need to shutdown
+        }
+        if (processed) {
+          return; // ack
+        } else {
+          // nack
+          console.log('we need to nack');
+          throw new Error(
+            'Requeued due to error ' +
+              (action?.actionId ? 'Action Id:' + action.actionId : '!')
+          );
+        }
       } catch (e) {
         // if the syncer throw an error it's a permanent problem, we need to close
         console.error('fatal error processing, we should close?', e);
         throw e;
       }
       // returning a false or {processed:false}-> message should be nacked
-      console.log('processed', processed);
-      if (typeof processed !== 'boolean') {
-        console.error(
-          `Returned value must be boolean. Nack action, actionId: ${action.actionId}):`
-        );
-        rabbit.close(); // we need to shutdown
-      }
-      if (processed) {
-        return; // ack
-      } else {
-        // nack
-        console.log('we need to nack');
-        throw new Error(
-          'Requeued due to error ' +
-            (action?.actionId ? 'Action Id:' + action.actionId : '!')
-        );
-      }
       console.log('finished');
     }
   );
