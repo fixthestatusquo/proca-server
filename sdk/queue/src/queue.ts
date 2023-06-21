@@ -75,21 +75,10 @@ export const syncQueue = async (
 
   // get host name
   const tag = os.hostname() + '.' + process.env.npm_package_name;
-  console.log('createConsumer', {
-    queue: queueName,
-    requeue: false,
-    noAck: false,
-    queueOptions: { passive: true },
-    // handle 2 messages at a time
-    concurrency: concurrency,
-    consumerTag: tag,
-    qos: { prefetchCount: prefetch },
-    // Optionally ensure an exchange exists
-  });
   const sub = rabbit.createConsumer(
     {
       queue: queueName,
-      requeue: true,
+      requeue: false,
       noAck: false,
       queueOptions: { passive: true },
       concurrency: concurrency,
