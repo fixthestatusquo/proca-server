@@ -36,6 +36,7 @@
     "esbuild": "^0.18.4",
     "esbuild-node-tsc": "^2.0.5",
     "fastify": "^4.5.3",
+    "level": "^8.0.0",
     "minimist": "^1.2.6"
   },
   "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
