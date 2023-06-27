@@ -77,3 +77,15 @@ export const lookup = async (email: string) => {
       return {success:false, status:error.response?.status, data: error.response};
   }
 }
+
+export const fetchHashes = async () => {
+  const url = process.env.EMAILS_URL;
+  try {
+    const { data, status } = await axios.get(url, makeHeaders());
+    console.log("Status:", status);
+    console.log("data", data, typeof data);
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+}
