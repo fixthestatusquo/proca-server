@@ -1,4 +1,5 @@
-import { lookup, start}  from "./http";
+import { lookup, start } from "./http";
+import { fetch } from "./hashes";
 import { syncer }  from "./queue";
 import minimist, { ParsedArgs } from 'minimist';
 import dotenv from 'dotenv'
@@ -18,7 +19,7 @@ const help = (status = 0) => {
   process.exit(status);
 };
 
-const argv: ParsedArgs = minimist(process.argv.slice(2), { 
+const argv: ParsedArgs = minimist(process.argv.slice(2), {
   string: ["email"],
   unknown: (d?: string) => {
     const allowed = ["target"]; //merge with boolean and string?
@@ -30,13 +31,12 @@ const argv: ParsedArgs = minimist(process.argv.slice(2), {
     return false;
   },
 
-boolean: ["queue", "email", "http", "help", "pause"] });
+boolean: ["queue", "email", "http", "help", "pause", "fetch"] });
 
 dotenv.config();
 
-
   argv.help && help(0);
-  if (!(argv.queue || argv.http || argv.email)) {
+  if (!(argv.queue || argv.http || argv.email || argv.fetch)) {
     help(1);
   }
   if (argv.email) { //
@@ -50,3 +50,6 @@ console.log("syncer");
   if (argv.http) {
     start();
   }
+if (argv.fetch) {
+  fetch();
+}
