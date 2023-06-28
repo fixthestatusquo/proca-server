@@ -11,3 +11,15 @@ export const changeDate = (date: string, attempts: number, retryArray : number[]
   const oldDate = new Date(date)
   return new Date(oldDate.setDate(oldDate.getDate() + retryInterval)).toISOString();
 };
+
+export const retryExpired = (date: string, interval: number) => {
+  const today = new Date();
+  today.setDate(today.getDate() - interval);
+
+  const retryDate = new Date(date);
+
+  console.log("aa", date, today, retryDate, interval)
+
+  return retryDate < today;
+};
+
