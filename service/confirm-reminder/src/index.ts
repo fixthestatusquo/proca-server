@@ -1,10 +1,12 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
-import { changeDate } from "./helpers"
+import { changeDate, retryExpired } from "./helpers"
 import amqplib from 'amqplib';
 import { Level } from "level";
 import schedule from "node-schedule";
 import parseArg from "minimist";
+import dotenv from 'dotenv';
 
+dotenv.config();
 
 // READ PARAMS
 const args = parseArg(process.argv.slice(2));
@@ -15,11 +17,11 @@ const queueConfirm = process.env.CONFIRM_QUEUE || args.qc || "";
 const queueConfirmed = process.env.CONFIRMED_QUEUE || args.qd || "";
 const emailQueue = process.env.EMAIL_QUEUE || args.qe || "";
 const remindExchange = process.env.REMIND_EXCHANGE || args.qe || "";
-const maxRetries = parseInt(process.env.MAX_RETIRES || args.r || "3");
+const maxRetries = parseInt(process.env.MAX_RETRIES || args.r || "3");
+const maxPeriod = parseInt(process.env.MAX_RETRY_PERIOD || "6");
 const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => parseInt(x)).filter(x => x > 0);
 // debug
 const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
-
 
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 
@@ -46,15 +48,21 @@ const job = schedule.scheduleJob('* * * * *', async () => {
   console.log('running every minute', maxRetries);
 
   const conn = await amqplib.connect(amqp_url);
-  const chan = await conn.createChannel()
+  const chan = await conn.createChannel();
 
   try {
     for await (const [key, value] of db.iterator<string, RetryRecord>({ gt: 'retry-' })) {
       // console.log("Confirm:", key, value);
       const actionId = key.split("-")[1];
-
+      console.log("aa", actionId);
       if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
         console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
+        await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
+        await db.del('action-' + actionId);
+        await db.del('retry-' + actionId);
+
+      } else if (retryExpired(value.retry, maxPeriod)) {
+        console.log(`Confirm ${actionId} had expired ${value.retry}, deleting`);
         await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
         await db.del('action-' + actionId);
         await db.del('retry-' + actionId);
@@ -63,7 +71,6 @@ const job = schedule.scheduleJob('* * * * *', async () => {
         const today = new Date()
         today.setDate(today.getDate() + debugDayOffset);
 
-        //console.log(`${new Date(value.retry)} < ${today} ?`);
         if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
 
           console.log(`Reminding action ${actionId} (due ${value.retry})`);
@@ -92,7 +99,6 @@ const job = schedule.scheduleJob('* * * * *', async () => {
 
 syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
-
     console.log(`New confirm `, action.actionId);
     try {
       // ignore if we have it
