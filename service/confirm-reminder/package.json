@@ -24,6 +24,7 @@
     "@proca/queue": "^3.4.0",
     "@types/node-schedule": "2.1.0",
     "amqplib": "^0.10.3",
+    "dotenv": "^16.3.1",
     "level": "^8.0.0",
     "minimist": "^1.2.6",
     "node-schedule": "^2.1.0"
