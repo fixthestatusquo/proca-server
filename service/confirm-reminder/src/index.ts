@@ -18,7 +18,7 @@ const queueConfirmed = process.env.CONFIRMED_QUEUE || args.qd || "";
 const emailQueue = process.env.EMAIL_QUEUE || args.qe || "";
 const remindExchange = process.env.REMIND_EXCHANGE || args.qe || "";
 const maxRetries = parseInt(process.env.MAX_RETRIES || args.r || "3");
-const maxPeriod = parseInt(process.env.MAX_RETRY_PERIOD || "6");
+const maxPeriod = parseInt(process.env.MAX_RETRY_PERIOD || "5");
 const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => parseInt(x)).filter(x => x > 0);
 // debug
 const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
@@ -54,15 +54,14 @@ const job = schedule.scheduleJob('* * * * *', async () => {
     for await (const [key, value] of db.iterator<string, RetryRecord>({ gt: 'retry-' })) {
       // console.log("Confirm:", key, value);
       const actionId = key.split("-")[1];
-      console.log("aa", actionId);
+
       if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
         console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
         await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
         await db.del('action-' + actionId);
         await db.del('retry-' + actionId);
-
       } else if (retryExpired(value.retry, maxPeriod)) {
-        console.log(`Confirm ${actionId} had expired ${value.retry}, deleting`);
+        console.log(`Confirm ${actionId} expired ${value.retry}, deleting`);
         await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
         await db.del('action-' + actionId);
         await db.del('retry-' + actionId);
@@ -100,22 +99,29 @@ const job = schedule.scheduleJob('* * * * *', async () => {
 syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
     console.log(`New confirm `, action.actionId);
-    try {
-      // ignore if we have it
-      const _payload =  await db.get('action-' + action.actionId);
-    } catch (_error) {
-      console.error('catch', _error);
-      const error = _error as LevelError;
+    if (retryExpired(action.action.createdAt, maxPeriod)) {
+      console.log(`${action.actionId} created at ${action.action.createdAt} from the confirm queue expired, deleting`);
+      await db.put<string, DoneRecord>('done-' + action.actionId, { done: false}, {});
+      await db.del('action-' + action.actionId);
+      await db.del('retry-' + action.actionId);
+    } else {
+      try {
+        // ignore if we have it
+        const _payload = await db.get('action-' + action.actionId);
+      } catch (_error) {
+        console.error('catch', _error);
+        const error = _error as LevelError;
 
-      if (error.notFound) {
-        await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
-        const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
-        await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
+        if (error.notFound) {
+          await db.put<string, ActionMessageV2>('action-' + action.actionId, action, {});
+          const retry = { retry: changeDate(action.action.createdAt, 1, retryArray), attempts: 1 };
+          await db.put<string, RetryRecord>('retry-' + action.actionId, retry, {});
 
-        console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
-      } else {
-        console.error(`Error checking if confirm scheduled in DB`, error);
-        throw error;
+          console.log(`Scheduled confirm reminder: ${action.actionId}`, action);
+        } else {
+          console.error(`Error checking if confirm scheduled in DB`, error);
+          throw error;
+        }
       }
     }
   }
