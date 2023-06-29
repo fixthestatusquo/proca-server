@@ -55,13 +55,13 @@ const job = schedule.scheduleJob('* * * * *', async () => {
       // console.log("Confirm:", key, value);
       const actionId = key.split("-")[1];
 
-      if (value.attempts >= maxRetries) { // attempts counts also 1st normal confirm
-        console.log(`Confirm ${actionId} had already ${value.attempts}, deleting`);
-        await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
-        await db.del('action-' + actionId);
-        await db.del('retry-' + actionId);
-      } else if (retryExpired(value.retry, maxPeriod)) {
-        console.log(`Confirm ${actionId} expired ${value.retry}, deleting`);
+      // we already had max retries, or retry record is too old
+      if (value.attempts >= maxRetries || retryExpired(value.retry, maxPeriod) ) { // attempts counts also 1st normal confirm
+        const msg = value.attempts >= maxRetries
+          ? `Confirm ${actionId} had already ${value.attempts}, deleting`
+          : `Confirm ${actionId} expired. ${value.retry}, deleting`;
+
+        console.log(msg);
         await db.put<string, DoneRecord>('done-' + actionId, { done: false }, {});
         await db.del('action-' + actionId);
         await db.del('retry-' + actionId);
@@ -70,6 +70,7 @@ const job = schedule.scheduleJob('* * * * *', async () => {
         const today = new Date()
         today.setDate(today.getDate() + debugDayOffset);
 
+        // check if it is time for reminder
         if ((new Date(value.retry)) < today && value.attempts < maxRetries) {
 
           console.log(`Reminding action ${actionId} (due ${value.retry})`);
@@ -82,10 +83,9 @@ const job = schedule.scheduleJob('* * * * *', async () => {
                                        action.action.actionType + '.' + action.campaign.name,
                                        Buffer.from(JSON.stringify(action)));
           console.log('publish', r);
-
+            // change retry record
           let retry = await db.get<string, RetryRecord>("retry-" + actionId, {});
           retry = { retry: changeDate(value.retry, value.attempts+1, retryArray), attempts: value.attempts + 1};
-          console.debug("Retried", retry)
           await db.put<string, RetryRecord>('retry-' + actionId, retry, {});
         }
       }
@@ -99,6 +99,8 @@ const job = schedule.scheduleJob('* * * * *', async () => {
 syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV2) => {
   if (action.schema === 'proca:action:2' && action.contact.dupeRank === 0) {
     console.log(`New confirm `, action.actionId);
+
+    // Don't remind if action from the queue is too old
     if (retryExpired(action.action.createdAt, maxPeriod)) {
       console.log(`${action.actionId} created at ${action.action.createdAt} from the confirm queue expired, deleting`);
       await db.put<string, DoneRecord>('done-' + action.actionId, { done: false}, {});
