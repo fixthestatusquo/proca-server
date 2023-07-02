@@ -1,5 +1,5 @@
 import { decryptPersonalInfo } from '@proca/crypto';
-import { AsyncMessage, Connection } from 'rabbitmq-client';
+import { AsyncMessage, Connection, ConsumerStatus } from 'rabbitmq-client';
 
 import LineByLine from 'line-by-line';
 export { ActionMessage, ActionMessageV2, ProcessStage } from './actionMessage';
@@ -106,30 +106,28 @@ export const syncQueue = async (
       }
       try {
         const processed = await syncer(action);
-        console.log('processed', processed);
         if (typeof processed !== 'boolean') {
           console.error(
             `Returned value must be boolean. Nack action, actionId: ${action.actionId}):`
           );
           rabbit.close(); // we need to shutdown
+          throw new Error ("the syncer must return a boolean");
         }
-        if (processed) {
-          return; // ack
-        } else {
+        if (!processed) {
           // nack
-          console.log('we need to nack');
-          throw new Error(
-            'Requeued due to error ' +
-              (action?.actionId ? 'Action Id:' + action.actionId : '!')
-          );
+          console.error('we need to nack and requeue', action?.actionId ? 'Action Id:' + action.actionId : '!');
+          return ConsumerStatus.REQUEUE; // nack + requeue
         }
+        return ConsumerStatus.ACK;
       } catch (e) {
         // if the syncer throw an error it's a permanent problem, we need to close
         console.error('fatal error processing, we should close?', e);
-        throw e;
+        return ConsumerStatus.DROP; // no requeue
       }
       // returning a false or {processed:false}-> message should be nacked
-      console.log('finished');
+      console.error('we should not be there');
+      rabbit.close(); // we need to shutdown
+      throw new Error ("message not properly processed #" +action?.actionId);
     }
   );
   sub.on('error', (err: any) => {
