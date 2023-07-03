@@ -1,0 +1,35 @@
+{
+  "name": "@proca/emarsys-sync",
+  "version": "0.2.6",
+  "description": "Emarsys CRM sync for Proca",
+  "main": "dist/index.js",
+  "author": "Marcin Koziej",
+  "license": " AGPL-3.0-only",
+  "scripts": {
+    "build": "tsup src",
+    "watch": "tsup src --watch"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
+  "bin": {
+    "emarsys-sync": "bin/emarsys-sync"
+  },
+  "dependencies": {
+    "@proca/queue": "^0.2.3",
+    "crypto": "^1.0.1",
+    "debug": "^4.3.4",
+    "i18n-iso-countries": "^7.5.0",
+    "minimist": "^1.2.7",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.7",
+    "@types/minimist": "^1.2.2",
+    "@types/node": "^18.11.9",
+    "@types/request": "^2.48.8",
+    "tsup": "^6.7.0"
+  }
+}

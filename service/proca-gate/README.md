@@ -1,4 +1,54 @@
-# proca-gate
+# Proca Gate
+
+This is a Identity CRM syncer that can run on AWS Lambda.
+
+- It uses the old proca cli (`sdk/cli`) to push actions to Identity CRM.
+
+## Configuration
+
+Set these env variables (on AWS LAMBDA):
+
+- `QUEUE_URL` - An AMQP url with credentials eg `amqp://user:password@localhost/proca_live`
+- `AUTH_USER`, `AUTH_PASSWORD` - rabbitmq credentials
+- `IDENTITY_URL` - url to identity api 
+- `IDENTITY_API_TOKEN` - API key
+- `IDENTITY_CONSENT` - a JSON mapping for consents (see below)
+- `IDENTITY_CONTACT_FIELDS` - put these fields as contact fields (comma separated)
+- `IDENTITY_ACTION_FIELDS` - put these fields as action fields (comma separated)
+
+
+### Consent mapping
+
+Speakout/Identity use over-engineered consent system and we have to map simple proca consents into theirs.
+
+Consents in speakout/identity have levels:
+
+- `none_given`             complex way to say: opt out
+- `implicit`               complex way to say: no checkbox, opt in assumed
+- `explicit_not_opt_out`   complex way to say: prechecked opt in
+- `explicit_opt_in`        complex way to say: checked opt in
+
+They also have separate consents for data processing and newsletter (so one action creates both with possibly different levels)
+
+In Proca we have:
+
+- `opt_in`: false/true
+- `email_status`: null/double_opt_in
+
+Identity might require a few different consents (each for some different goal)
+For identity we want to configure mapping
+
+```json
+{
+ data_processing_2022: { level: 'explicit_opt_in' }
+ newsletter_v2: { level: 'communication' }  # will depend on Proca optIn ? 'explicit_opt_in' : 'none_given',
+ newsletter_v3: { level: 'double_opt_in' }  # will depend on Proca double_opt_in ? 'explicit_opt_in' : 'none_given'
+}
+```
+
+
+
+## AWS Lambda template README
 
 This project contains source code and supporting files for a serverless application that you can deploy with the AWS Serverless Application Model (AWS SAM) command line interface (CLI). It includes the following files and folders:
 

@@ -16,7 +16,7 @@ QUEUES = [
     'CUSTOM_SUPPORTER_CONFIRM',
     'EMAIL_SUPPORTER',
     'SQS',
-    'WEBHOOK '
+    'WEBHOOK'
 ]
 
 @click.command("action:add")
@@ -88,7 +88,8 @@ query Ids($org: String!, $campaign: String, $includeTesting: Boolean, $startId: 
     requeue_mut = gql(requeue_str)
 
     def get_ids(next_id=None):
-        results = ctx.client.execute(query_ids, **vars(org=org, campaign=campaign, includeTesting=include_testing, startId=next_id, startDatetime=start_datetime))
+        string_start_datetime = start_datetime.strftime("%Y-%m-%dT%H:%M:%SZ") 
+        results = ctx.client.execute(query_ids, **vars(org=org, campaign=campaign, includeTesting=include_testing, startId=next_id, startDatetime=string_start_datetime))
 
         # Yield each ID from the results
         results = results['exportActions']
