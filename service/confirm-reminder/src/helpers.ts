@@ -18,8 +18,6 @@ export const retryExpired = (date: string, interval: number) => {
 
   const retryDate = new Date(date);
 
-  console.log("aa", date, today, retryDate, interval)
-
   return retryDate < today;
 };
 
