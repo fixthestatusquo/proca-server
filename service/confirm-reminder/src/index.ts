@@ -15,18 +15,17 @@ const user = process.env.RABBIT_USER || args.user;
 const pass = process.env.RABBIT_PASSWORD || args.password;
 const queueConfirm = process.env.CONFIRM_QUEUE || args.qc || "";
 const queueConfirmed = process.env.CONFIRMED_QUEUE || args.qd || "";
-const emailQueue = process.env.EMAIL_QUEUE || args.qe || "";
 const remindExchange = process.env.REMIND_EXCHANGE || args.qe || "";
-const maxRetries = parseInt(process.env.MAX_RETRIES || args.r || "3");
-const maxPeriod = parseInt(process.env.MAX_RETRY_PERIOD || "5");
 const retryArray = (process.env.RETRY_INTERVAL || "2,3").split(",").map(x => parseInt(x)).filter(x => x > 0);
+const maxPeriod = retryArray.reduce((max, d) => (max + d), 0);
+const maxRetries = retryArray.length + 1;
+
 // debug
 const debugDayOffset = parseInt(process.env.ADD_DAYS || args.A || "0");
 
 const amqp_url = `amqps://${user}:${pass}@api.proca.app/proca_live`;
 
 // types
-
 type LevelError = {
   code: string;
   notFound: boolean;
