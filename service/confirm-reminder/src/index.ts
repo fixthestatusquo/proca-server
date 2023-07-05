@@ -1,5 +1,5 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
-import { changeDate, retryExpired } from "./helpers"
+import { changeDate, retryValid } from "./helpers"
 import amqplib from 'amqplib';
 import { Level } from "level";
 import schedule from "node-schedule";
@@ -55,7 +55,7 @@ const job = schedule.scheduleJob('* * * * *', async () => {
       const actionId = key.split("-")[1];
 
       // we already had max retries, or retry record is too old
-      if (value.attempts >= maxRetries || retryExpired(value.retry, maxPeriod) ) { // attempts counts also 1st normal confirm
+      if (value.attempts >= maxRetries || !retryValid(value.retry, maxPeriod) ) { // attempts counts also 1st normal confirm
         const msg = value.attempts >= maxRetries
           ? `Confirm ${actionId} had already ${value.attempts}, deleting`
           : `Confirm ${actionId} expired. ${value.retry}, deleting`;
@@ -100,12 +100,7 @@ syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV
     console.log(`New confirm `, action.actionId);
 
     // Don't remind if action from the queue is too old
-    if (retryExpired(action.action.createdAt, maxPeriod)) {
-      console.log(`${action.actionId} created at ${action.action.createdAt} from the confirm queue expired, deleting`);
-      await db.put<string, DoneRecord>('done-' + action.actionId, { done: false}, {});
-      await db.del('action-' + action.actionId);
-      await db.del('retry-' + action.actionId);
-    } else {
+    if (retryValid(action.action.createdAt, maxPeriod)) {
       try {
         // ignore if we have it
         const _payload = await db.get('action-' + action.actionId);
@@ -124,7 +119,12 @@ syncQueue(amqp_url, queueConfirm, async (action: ActionMessageV2 | EventMessageV
           throw error;
         }
       }
+      return;
     }
+    console.log(`${action.actionId} created at ${action.action.createdAt} from the confirm queue expired, deleting`);
+      await db.put<string, DoneRecord>('done-' + action.actionId, { done: false}, {});
+      await db.del('action-' + action.actionId);
+      await db.del('retry-' + action.actionId);
   }
 })
 
