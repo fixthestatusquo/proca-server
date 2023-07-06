@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changeDate = void 0;
+exports.retryValid = exports.changeDate = void 0;
 /*
  * Date - datetime in ISO format
  * attempts - how many previous attempts were there (for first confirmation = 1)
@@ -15,3 +15,10 @@ const changeDate = (date, attempts, retryArray) => {
     return new Date(oldDate.setDate(oldDate.getDate() + retryInterval)).toISOString();
 };
 exports.changeDate = changeDate;
+const retryValid = (date, interval) => {
+    const today = new Date();
+    today.setDate(today.getDate() - interval);
+    const retryDate = new Date(date);
+    return retryDate >= today;
+};
+exports.retryValid = retryValid;
