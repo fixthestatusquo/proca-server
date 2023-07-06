@@ -21,7 +21,7 @@ async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
       await connection.close();
     }
     console.log('closed, exit now');
-    process.exit(0);
+    process.exit(+evtOrExitCodeOrError);
   } catch (e) {
     console.error('EXIT HANDLER ERROR', e);
   }
@@ -114,6 +114,10 @@ export const syncQueue = async (
           throw new Error ("the syncer must return a boolean");
         }
         if (!processed) {
+          if (msg.redelivered) {
+            console.error('already requeued, push to dead-letter', action?.actionId ? 'Action Id:' + action.actionId : '!');
+            return ConsumerStatus.DROP;
+          }
           // nack
           console.error('we need to nack and requeue', action?.actionId ? 'Action Id:' + action.actionId : '!');
           return ConsumerStatus.REQUEUE; // nack + requeue
