@@ -18,6 +18,6 @@ export const retryValid = (date: string, interval: number) => {
 
   const retryDate = new Date(date);
 
-  return retryDate > today;
+  return retryDate >= today;
 };
 
