@@ -21,12 +21,12 @@ async function exitHandler(evtOrExitCodeOrError: number | string | Error) {
       await connection.close();
     }
     console.log('closed, exit now');
-    process.exit(+evtOrExitCodeOrError);
+    process.exit(isNaN(+evtOrExitCodeOrError) ? 0 : +evtOrExitCodeOrError);
   } catch (e) {
     console.error('EXIT HANDLER ERROR', e);
+    process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError);
   }
 
-  process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError);
 }
 
 export const connect = (queueUrl: string) => {
