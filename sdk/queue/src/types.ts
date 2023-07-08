@@ -11,6 +11,7 @@ export type ConsumerOpts = {
   concurrency?: number; // 1 by default
   prefetch?: number; // 2x concurrency by default
   keyStore?: KeyStore;
+  tag?: string; // custom name for the consumer, package name by default
 };
 
 export type SyncResult = {

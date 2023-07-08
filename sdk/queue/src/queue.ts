@@ -74,7 +74,7 @@ export const syncQueue = async (
   const rabbit = await connect(queueUrl);
 
   // get host name
-  const tag = os.hostname() + '.' + process.env.npm_package_name;
+  const tag = os.hostname() + '.' + (opts?.tag ? opts.tag : process.env.npm_package_name);
   const sub = rabbit.createConsumer(
     {
       queue: queueName,
