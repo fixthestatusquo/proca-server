@@ -47,3 +47,24 @@ Module: [Proca.ActionPage.Status](Proca.ActionPage.Status.html).
 
 Stores statuses of action pages - whether they are active or stale, and what was
 the last website url (based on `HTTP_REFERER`) where the action came in from.
+
+
+## Template directory 
+
+Module: [Proca.Service.EmailTemplateDirectory](Proca.Service.EmailTemplateDirectory.html)
+
+Stores the compiled email templates, as well as lists of template names in remote APIs (Mailjet, SES).
+
+## User API token status
+
+Module: [Proca.Users.Status](Proca.Users.Status.html)
+
+Stores `token_last_seen` timestamps to `user_tokens` table.
+
+## Queue topology
+
+Module: [Proca.Pipes.Topology](Proca.Pipes.Topology.html)
+
+Configures the queues for all the Org, and runs enabled queue workers.
+
+Reacts to RabbitMQ server availability - if it's not possible to connect, it shuts down all the workers, and checks every 5 minutes if RabbitMQ is back online - in which case workers are started again.
