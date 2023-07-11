@@ -7,7 +7,23 @@ Mix is like make in Elixir.
 Type `mix help` to see all the commands.
 
 
+### Mix tasks used in building the app
 
+```
+export MIX_ENV=prod
+
+mix clean # optional, removes _build
+mix deps.get      # fetch deps from internet
+mix deps.compile  # compile all deps
+mix compile       # compile proca app
+mix phx.digest    # generate asset manifest
+mix assets.deploy # generate assets
+mix systemd.init  # generate systemd files used on server
+mix systemd.generate #
+mix release       # package all into a release bundle under _build/prod (it's a directory, not archive)
+```
+
+proca-deploy playbook uses [Elixir deployment role](https://github.com/cogini/ansible-role-elixir-release) that runs these commands as well as copies the app to the server, sets up systemd services etc.
 
 
 ## Use Erlang debugger

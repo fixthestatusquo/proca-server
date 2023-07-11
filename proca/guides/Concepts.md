@@ -43,18 +43,15 @@ Relevant modules: [Proca.Users.User](Proca.Users.User.html), [Proca.Staffer](Pro
 
 User holds credentials to access one or more org they are part of. Staffer is a record that specifies roles and permissions of user in particular org.
 
-### XXX
-- Actions - action, contact, supporter, field, sources, Actions.Message
-- Contact - all things related to contact validation
-- Stage - all things processing actions 
-- Pipes - proca queues integration
-- Orgs - org, staffer, public_key, encryption
-- Campaign
-- ActionPage - (maybe under campaign? OTOH action page is a very central model)
-- Server - stats, health, notifications - (diff name? Monitors?)
-- Users - (POW)
-- Confirms - actions that need two actors to perform (actor + confirmer, can be same person as in double opt in)
+### Services and Backends
 
+Relevant modules: [Proca.Service](Proca.Service.html), [Proca.Org](Proca.Org.html)
+
+Services are remote SaaS/APIs that belong to particular Org and can be used by it. A service is best understood as *some API*. Eg. HTTP POST Webhook service, Mailjet service
+
+When a Service is *used* for some goal, it's a *Backend* for that goal, usually specified as `xxxxBackend`. Eg. HTTP POST Webhook *service* can be used to push actions (and then it is used as *pushBackend*) or as supporter details lookup source (and then it is used as *detailBackend*). Mailjet *Service* can be used to send emails (*emailBackend*) or fetch email template names (*templateBackend*) (recently the emailBackend and templateBackend have been merged, but for a while they were separate, so theoretically you could fetch tempalte from SES and send the email into Mailjet...).
+
+For some services, an org can use a special `SYSTEM` service for a backend, and this will use a service owned by instance org. This is a way of orgs to "borrow" a service from the instance org, and it seems to be mostly the default way orgs send emails (initially we wanted them to use their own email accounts).
 
 
 

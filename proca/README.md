@@ -124,11 +124,13 @@ You can then run the development server.
 
 By default, the development webserver is located at http://localhost:4000/
 
-# Build
+# From building to server
+
+This is a [must read on development of Phoenix apps](https://hexdocs.pm/phoenix/up_and_running.html)
+
+This is a [must read on deployment of Phoenix apps](https://hexdocs.pm/phoenix/deployment.html).
 
     $./build
-
-should walk you through the steps to build a prod version.
 
 Read more in [Developing](guides/Developing).
 

@@ -1,6 +1,16 @@
 defmodule ProcaWeb.Router do
   @moduledoc """
-  Main app router
+  Main app router.
+
+  Serves:
+
+  - GraphQL api under /api
+  - GraphiQL API playground under /graphiql
+  - Webhooks under /webhook (eg /webhook/mailjet)
+  - Minimal user UI under /users
+  - Email link click handlers under /link
+
+  Run `mix phx.routes` to see all routes.
   """
   use ProcaWeb, :router
 
