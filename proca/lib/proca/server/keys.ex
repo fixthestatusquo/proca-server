@@ -1,5 +1,7 @@
 defmodule Proca.Server.Keys do
   @moduledoc """
+  Process which contains a dictionary of encryption keys for orgs. It also generates unique `nonce` values it is guaranteed they are not re-used if multiple actions are encrypted in parallel.
+
   Stores encryption keys and nonces for each Org id
 
   State is:

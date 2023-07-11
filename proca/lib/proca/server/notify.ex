@@ -1,7 +1,58 @@
 defmodule Proca.Server.Notify do
   @moduledoc """
-  Server that decides what actions should be done after different events
+  Server that decides what actions should be done after different events.
+
+  Beside running operations in proca, two event mechanisms are used:
+
+  - GraphQL subscriptions mechanism (only for notifying about action page creation/update)
+  - Sending a special event into the delivery queue (see [Proca.Stage.Event](Proca.Stage.Event.html)).
+
+  Please note that at the time of writing, this notification event system is very partial.
+
+
+  Events and their consequences:
+
+  - Org is created
+    - create queues for the org
+
+  - Action page is created
+    - inform the `actionPageUpserted` subscription API about new page
+
+  - Request from partner to turn an action page live:
+    - send email to lead staffers
+
+  - Org is updated
+    - restart the queues (they might need reconfiguration)
+    - if Org is instance org, resstart all queues (instance org settings affect all of them)
+
+  - Action page is updated
+    - inform the `actionPageUpserted` subscription API about new page
+
+  - Public key is activated
+    - Updated the public key in [Keys](Proca.Server.Keys.html) dictionary process
+
+  - Campaign is updated
+    - Send an event to owner org (`campaign_updated` event)
+
+  - Campaign is upserted
+    - run actions for updating or creation of campaign and all of its pages
+
+  - Supporter `email_status` is updated (DOI or hard bounce, etc)
+    - Send an event to orgs event queue (so they are informed about this) (`email_status` event)
+
+  - Email tempalte is updated
+    - refresh the cashed email template
+
+  - Org is deleted
+    - Stop queue workers for the org
+
+  - Action is added
+    - Increment actions by one in [Stats](Proca.Server.Stats.html) process
+    - Start [action processing](processing.html)
+    - Store last action page status (its location and that it's active) in [Proca.ActionPage.Status](Proca.ActionPage.Status.html).
+
   """
+
   alias Proca.Repo
   alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service, ActionPage, Campaign}
   alias Proca.Stage.Event

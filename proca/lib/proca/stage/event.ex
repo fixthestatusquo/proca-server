@@ -3,6 +3,16 @@ defmodule Proca.Stage.Event do
   Define JSON format for events in proca system.
 
   These events are mostly CRUD operations that happened on different records.
+
+  If and only if the org has `custom_event_deliver` or `event_backend` set, a special message with
+  schema "proca.event.2" will be injected into deliver queue, along action data.
+
+  If instance org has events enabled, it gets events from ALL orgs.
+
+  The event backend enables you to send events to SQS or webhook, and the
+  `custom_event_deliver` means events are stored in custom delivery queue you
+  can read.
+
   """
   alias Proca.{Confirm, Org, Supporter}
   alias Proca.Pipes.Connection

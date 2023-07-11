@@ -37,6 +37,12 @@ Page belongs to a Campaign (runs that campaign), and to Org (on that org's websi
 
 Relevant modules: [Proca.ActionPage](Proca.ActionPage.html)
 
+### Users and Staffers 
+
+Relevant modules: [Proca.Users.User](Proca.Users.User.html), [Proca.Staffer](Proca.Staffer.html)
+
+User holds credentials to access one or more org they are part of. Staffer is a record that specifies roles and permissions of user in particular org.
+
 ### XXX
 - Actions - action, contact, supporter, field, sources, Actions.Message
 - Contact - all things related to contact validation

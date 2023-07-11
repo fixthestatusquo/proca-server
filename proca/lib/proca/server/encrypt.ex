@@ -1,6 +1,9 @@
 defmodule Proca.Server.Encrypt do
   @moduledoc """
-  Server which holds Home Org encryption keys and current nonce, and performs encryption and decryption of messages to other Orgs using their public keys.
+
+  Server which holds Home Org encryption keys and current nonce, and performs
+  encryption and decryption of messages to other Orgs using their public keys.
+
   """
   alias Proca.Server.Keys
   alias Proca.Org
