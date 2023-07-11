@@ -14,7 +14,7 @@
 
 ## Guarantee consistency
 
-- When given input is required for performing server side operation (in Proca server, microservice, or CMS), guarantee its consitency (data type, presence, format etc).
+- When given input is required for performing server side operation (in Proca server, microservice, or CMS), guarantee its consistency (data type, presence, format etc).
 - When input is not so required, allow passing it as "opaque" data. 
 - Even with opaque or unstructured data, care must be taken not to break/crash the action data processing pipeline (microservices, queue processors and ultimately CRM system).
 - Even with opaque or unstructured data, limits must be set not to allow trashing of unreasonable amount of data into the processing system (eg 10MB file content).
@@ -66,6 +66,6 @@
 
 - Keep member email in clear only if it is needed to send thank you email, or MTT, and remove it as soon as these actions are done
 - If member signs at partner website, but does not opt in to leader, and the partner is the delivering party, the leader will no receive members data.
-- If member signs at parnter website, does not opt in to leader, but the leader is marked as delivering party, both will get data (partner for purpose of opt-in, leader for purpose of delivery)
+- If member signs at partner website, does not opt in to leader, but the leader is marked as delivering party, both will get data (partner for purpose of opt-in, leader for purpose of delivery)
 
 

@@ -1,6 +1,4 @@
-# Proca Cookbook
-
-Recipes for unconventional campaigns to run with Proca.
+# Miscellaneous
 
 
 ## Remove the petition visit request for improved privacy
@@ -55,3 +53,5 @@ proca-cli page:update -u your@email.com -p YOUR_TOKEN -o org_name -e 10000 -i 12
 ```
 proca-cli page:update -u your@email.com -p YOUR_TOKEN -o org_name -e 10000 -i $(proca-cli page -P -n ourplanet.org/oceans |head -1 |cut -f 1 -d ' ') 
 ```
+
+

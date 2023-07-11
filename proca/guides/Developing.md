@@ -1,3 +1,16 @@
+# Developing Proca Server
+
+## Mix tasks
+
+Mix is like make in Elixir.
+
+Type `mix help` to see all the commands.
+
+
+
+
+
+## Use Erlang debugger
 
 0. Add :debugger to extra applications in mix.exs
 
@@ -33,4 +46,6 @@ iex(me@proca.node)5> :int.break(ProcaWeb.Resolvers.Action, 86)
 :ok
 iex(me@proca.node)6> 
 ```
+
+
 
