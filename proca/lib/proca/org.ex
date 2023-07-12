@@ -1,8 +1,17 @@
 defmodule Proca.Org do
   @moduledoc """
-  Represents an organisation in Proca. `Org` can have many `Staffers`, `Campaigns` and `ActionPage`'s.
+  Represents an organisation in Proca. `Org` can have many `Proca.Staffer`s, `Proca.Service`s, `Proca.Campaign`s and `Proca.ActionPage`'s.
 
   Org can have one or more `PublicKey`'s. Only one of them is active at a particular time. Others are expired.
+
+  Org fields define how services are used (as which backends):
+
+  - `event_backend` - where to send events (See `Proca.Stage.Event`)
+  - `email_backend` - where to send emails
+  - `detail_backend` - where to fetch supporter detail from
+  - `storage_backend` - where to store files (attached to actions)
+  - `push_backend` - where to push action data
+
   """
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__

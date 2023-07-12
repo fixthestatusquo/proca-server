@@ -3,7 +3,17 @@ defmodule Proca.Contact do
   Schema holding personal data (PII). Belongs to action page that collected the
   data, and to organisation which the data is sent to. Contains consent
   information. Can be encrypted. There can be many Contact records per one
-  supporter (=per one action)
+  supporter.
+
+  Fields:
+
+  - `payload` a JSON with PII or encrypted JSON with PII
+  - `crypto_nonce` the nonce of used encryption (if `NULL`, there is not encryption)
+  - public_key, sign_key - keys used for encryption (optional)
+
+  - `communication_consent` - consent to receive email (or other communication) - given on the widget
+  - `communication_scopes` - media over which the consent to communicate was given (we only use email)
+  - `delivery_consent` - consent to process the PII (sync to CRM)
   """
   use Ecto.Schema
   import Ecto.Changeset

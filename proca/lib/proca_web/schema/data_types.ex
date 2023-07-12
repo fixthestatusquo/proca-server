@@ -65,21 +65,21 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   enum :email_status do
-    value(:none)
-    value(:double_opt_in)
-    value(:bounce)
-    value(:blocked)
-    value(:spam)
-    value(:unsub)
+    value(:none, description: "An unused email. (Warning:  Or used, but we do not store the fact that emails are delivered ok)")
+    value(:double_opt_in, description: "The user has received a DOI on this email and accepted it")
+    value(:bounce, description: "This email was used and bounced")
+    value(:blocked, description: "This email was used and blocked")
+    value(:spam, description: "This email was used and marked spam")
+    value(:unsub, description: "This email was used and user unsubscribed")
   end
 
   enum :queue do
-    value(:email_supporter)
-    value(:custom_supporter_confirm)
-    value(:custom_action_confirm)
-    value(:custom_action_deliver)
-    value(:sqs)
-    value(:webhook)
+    value(:email_supporter, description: "Queue of thank you email sender worker")
+    value(:custom_supporter_confirm, description: "a custom queue of action that needs DOI")
+    value(:custom_action_confirm, description: "a custom queue of action that needs moderation")
+    value(:custom_action_deliver, description: "a custom queue of actions to sync to CRM")
+    value(:sqs, description: "Queue of SQS sync worker")
+    value(:webhook, description: "Queue of webhook sync worker")
   end
 
   # XXX should this not be moved out from here?

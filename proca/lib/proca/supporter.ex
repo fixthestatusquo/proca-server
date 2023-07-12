@@ -1,7 +1,26 @@
 defmodule Proca.Supporter do
   @moduledoc """
   Supporter is the actor that does actions.
-  Has associated contacts, which contain personal data dediacted to every receiving org
+  Has associated contacts, which contain personal data dediacted to every receiving org.
+
+  The PII is contained (and encrypted) in Contact records per each Org (each has it's own encrypted copy).
+  However, Supporter may hold copies of these PII:
+
+  - email - kept if we need to send an email to supporter (we cannot decrypt PII owned by Org)
+  - first_name, last_name - if we send an email, it's nice to use names to address a person.
+
+  These are not disclosing PII and are always kept:
+  - area - the area value given on action creation
+
+  There is also the `email_status` field which is shared by all orgs that share
+  this Supporter data. The email status is used to determine if the email is
+  good to send emails (eg :double_opt_in or nothing if we do not require DOI),
+  or bad to send emails (bounced) - see `Enums`
+
+  The supporter also has a `dupe_rank` which is 0 if this is the first supporter
+  of the campaign, or more if it is a subsequent signature. The rank is counted
+  for all coalition.
+
   """
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__

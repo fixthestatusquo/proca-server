@@ -11,6 +11,8 @@ To visually explore the API, go to [GraphQL Voyager](https://graphql-kit.com/gra
 
 ![API schema visualized](assets/graphql-voyager.png)
 
+The [API reference is available here](apischema.html) and also visible in schema inspector in GraphiQL.
+
 
 ## Authentication and security context
 

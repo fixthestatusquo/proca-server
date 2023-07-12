@@ -5,6 +5,7 @@ defmodule ProcaWeb.Schema.UserTypes do
   import Proca.Permission, only: [can?: 2]
 
   object :user_queries do
+    @desc "Get the current user, as determined by Authorization header"
     field :current_user, non_null(:user) do
       allow(:user)
       resolve(&Resolvers.User.current_user/3)
@@ -12,6 +13,7 @@ defmodule ProcaWeb.Schema.UserTypes do
 
     @desc "Select users from this instnace. Requires a manage users admin permission."
     field :users, non_null(list_of(non_null(:user))) do
+      @desc "Filter users"
       arg(:select, :select_user)
 
       allow([:manage_users])
@@ -20,27 +22,37 @@ defmodule ProcaWeb.Schema.UserTypes do
   end
 
   object :user do
+    @desc "Id of user"
     field :id, non_null(:integer)
+    @desc "Email of user"
     field :email, non_null(:string)
+    @desc "Phone"
     field :phone, :string
+    @desc "Url to profile picture"
     field :picture_url, :string
+    @desc "Job title"
     field :job_title, :string
 
+    @desc "Users API token (to check expiry)"
     field :api_token, :api_token do
       resolve(&Resolvers.User.api_token/3)
     end
 
+    @desc "Is user an admin?"
     field :is_admin, non_null(:boolean) do
       resolve(fn u, _, _ -> {:ok, can?(u, :instance_owner)} end)
     end
 
+    @desc "user's roles in orgs"
     field :roles, non_null(list_of(non_null(:user_role))) do
       resolve(&Resolvers.User.user_roles/3)
     end
   end
 
   object :user_role do
+    @desc "Org this role is in"
     field :org, non_null(:org)
+    @desc "Role name"
     field :role, non_null(:string)
   end
 
@@ -59,7 +71,9 @@ defmodule ProcaWeb.Schema.UserTypes do
   object :user_mutations do
     @desc "Add user to org by email"
     field :add_org_user, type: non_null(:change_user_status) do
+      @desc "Org name"
       arg(:org_name, non_null(:string))
+      @desc "User content"
       arg(:input, non_null(:org_user_input))
 
       load(:org, by: [name: :org_name])
@@ -70,7 +84,9 @@ defmodule ProcaWeb.Schema.UserTypes do
 
     @desc "Invite an user to org by email (can be not yet user!)"
     field :invite_org_user, type: non_null(:confirm) do
+      @desc "org name to invite to"
       arg(:org_name, non_null(:string))
+      @desc "user membership data"
       arg(:input, non_null(:org_user_input))
 
       @desc "Optional message for invited user"
@@ -83,7 +99,10 @@ defmodule ProcaWeb.Schema.UserTypes do
     end
 
     field :update_org_user, type: non_null(:change_user_status) do
+      @desc "update user membership data"
       arg(:org_name, non_null(:string))
+
+      @desc "user membership data"
       arg(:input, non_null(:org_user_input))
 
       load(:org, by: [name: :org_name])
@@ -93,7 +112,9 @@ defmodule ProcaWeb.Schema.UserTypes do
     end
 
     field :delete_org_user, type: :delete_user_result do
+      @desc "delete user from this org"
       arg(:org_name, non_null(:string))
+      @desc "users email"
       arg(:email, non_null(:string))
 
       load(:org, by: [name: :org_name])
@@ -127,13 +148,18 @@ defmodule ProcaWeb.Schema.UserTypes do
   end
 
   input_object :org_user_input do
+    @desc "Email of user"
     field :email, non_null(:string)
+    @desc "Role name of user in this org"
     field :role, non_null(:string)
   end
 
   input_object :user_details_input do
+    @desc "Users profile pic url"
     field :picture_url, :string
+    @desc "Job title"
     field :job_title, :string
+    @desc "Phone"
     field :phone, :string
   end
 

@@ -1,5 +1,10 @@
 # GraphQL API Schema
 
+<style>
+#content {
+    max-width: 1400px;
+}
+</style>
 ## Table of Contents
   * [Query](#query)
   * [Mutation](#mutation)
@@ -118,7 +123,7 @@
 <td valign="top">[<a href="#campaign">Campaign</a>!]!</td>
 <td>
 
-Get a list of campains
+Returns a public list of campaigns, filtered by title. Can be used to implement a campaign search box on a website.
 
 </td>
 </tr>
@@ -136,7 +141,7 @@ Filter campaigns by title using LIKE format (% means any sequence of characters)
 <td valign="top"><a href="#string">String</a></td>
 <td>
 
-DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list
+DEPRECATED: use campaign() to get one campaign. Filter campaigns by name (exact match). If found, returns list of 1 campaign, otherwise an empty list
 
 </td>
 </tr>
@@ -145,7 +150,7 @@ DEPRECATED: use campaign(). Filter campaigns by name (exact match). If found, re
 <td valign="top"><a href="#int">Int</a></td>
 <td>
 
-DEPRECATED: use campaign(). Select by id, Returns list of 1 result
+DEPRECATED: use campaign() to get one campaign. Select by id, Returns list of 1 result
 
 </td>
 </tr>
@@ -154,26 +159,38 @@ DEPRECATED: use campaign(). Select by id, Returns list of 1 result
 <td valign="top"><a href="#campaign">Campaign</a></td>
 <td>
 
-Get campaign
+Get one campaign. If you have access to the campaign, as lead or
+partner, you will get a private view of the campaign, otherwise, a public
+view.
 
 </td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Get by id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Get by name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionPage</strong></td>
 <td valign="top"><a href="#actionpage">ActionPage</a>!</td>
 <td>
 
-Get action page
+Get action page.
+Depending on your access (page owner, lead, instance admin),
+you will get private or public view of the page.
 
 </td>
 </tr>
@@ -207,7 +224,11 @@ Get action page by url the widget is displayed on (DEPRECATED, use name)
 <tr>
 <td colspan="2" valign="top"><strong>exportActions</strong></td>
 <td valign="top">[<a href="#action">Action</a>]!</td>
-<td></td>
+<td>
+
+Export actions collected by org, optionally filtered by campaign
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
@@ -293,7 +314,11 @@ Also include testing actions
 <tr>
 <td colspan="2" valign="top"><strong>currentUser</strong></td>
 <td valign="top"><a href="#user">User</a>!</td>
-<td></td>
+<td>
+
+Get the current user, as determined by Authorization header
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>users</strong></td>
@@ -307,7 +332,11 @@ Select users from this instnace. Requires a manage users admin permission.
 <tr>
 <td colspan="2" align="right" valign="top">select</td>
 <td valign="top"><a href="#selectuser">SelectUser</a></td>
-<td></td>
+<td>
+
+Filter users
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
@@ -367,32 +396,56 @@ Org name
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#campaigninput">CampaignInput</a>!</td>
-<td></td>
+<td>
+
+Campaign content to be upserted
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>updateCampaign</strong></td>
 <td valign="top"><a href="#campaign">Campaign</a>!</td>
-<td></td>
+<td>
+
+Updates an existing campaign.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Id of campaign to update
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Name of campaign to update (alterantive to id)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#campaigninput">CampaignInput</a>!</td>
-<td></td>
+<td>
+
+Campaign content to be updated
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>addCampaign</strong></td>
 <td valign="top"><a href="#campaign">Campaign</a>!</td>
-<td></td>
+<td>
+
+Add a new campaign
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
@@ -406,27 +459,48 @@ Org that is lead of this campaign
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#campaigninput">CampaignInput</a>!</td>
-<td></td>
+<td>
+
+Campaign content to be added
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>deleteCampaign</strong></td>
 <td valign="top"><a href="#status">Status</a>!</td>
-<td></td>
+<td>
+
+Delete a campaign.
+Deletion will be blocked if there are action pages with personal data (we never remove personal data unless via GDPR).
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+by id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+by name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">externalId</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+by external_id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>updateActionPage</strong></td>
@@ -442,19 +516,27 @@ Update an Action Page
 <td valign="top"><a href="#int">Int</a></td>
 <td>
 
-Action Page id
+id of page to update
 
 </td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+name of page to update
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#actionpageinput">ActionPageInput</a>!</td>
-<td></td>
+<td>
+
+content of page to be update
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>copyActionPage</strong></td>
@@ -565,7 +647,11 @@ Action Page attributes
 <tr>
 <td colspan="2" valign="top"><strong>launchActionPage</strong></td>
 <td valign="top"><a href="#launchactionpageresult">LaunchActionPageResult</a>!</td>
-<td></td>
+<td>
+
+Sends a request to lead to set the page to live=true
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
@@ -588,7 +674,11 @@ Optional message for approver
 <tr>
 <td colspan="2" valign="top"><strong>deleteActionPage</strong></td>
 <td valign="top"><a href="#status">Status</a>!</td>
-<td></td>
+<td>
+
+Delete an action page
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
@@ -792,12 +882,20 @@ Add user to org by email
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Org name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#orguserinput">OrgUserInput</a>!</td>
-<td></td>
+<td>
+
+User content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>inviteOrgUser</strong></td>
@@ -811,12 +909,20 @@ Invite an user to org by email (can be not yet user!)
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+org name to invite to
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#orguserinput">OrgUserInput</a>!</td>
-<td></td>
+<td>
+
+user membership data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">message</td>
@@ -835,12 +941,20 @@ Optional message for invited user
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+update user membership data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#orguserinput">OrgUserInput</a>!</td>
-<td></td>
+<td>
+
+user membership data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>deleteOrgUser</strong></td>
@@ -850,12 +964,20 @@ Optional message for invited user
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+delete user from this org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">email</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+users email
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>updateUser</strong></td>
@@ -901,31 +1023,47 @@ Admin can use user email to specify user to update
 <tr>
 <td colspan="2" valign="top"><strong>addOrg</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Add an org. Calling user  will become it's owner.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#orginput">OrgInput</a>!</td>
-<td></td>
+<td>
+
+Contet of the org to be added
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>deleteOrg</strong></td>
 <td valign="top"><a href="#status">Status</a>!</td>
-<td></td>
+<td>
+
+Delete an org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a>!</td>
 <td>
 
-Name of organisation
+Name of organisation to be deleted
 
 </td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>updateOrg</strong></td>
 <td valign="top"><a href="#privateorg">PrivateOrg</a>!</td>
-<td></td>
+<td>
+
+Update an org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
@@ -939,7 +1077,11 @@ Name of organisation, used for lookup, can't be used to change org name
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#orginput">OrgInput</a>!</td>
-<td></td>
+<td>
+
+Content of org to be updated
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>updateOrgProcessing</strong></td>
@@ -955,89 +1097,153 @@ Update org processing settings
 <td valign="top"><a href="#string">String</a>!</td>
 <td>
 
-Set email backend to
+Name of the org (to rename it)
 
 </td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">emailBackend</td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending emails
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">emailFrom</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Envelope FROM email when sending emails
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">supporterConfirm</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Is the supporter required to double opt in their action (and associated personal data)?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">supporterConfirmTemplate</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+The email template name that will be used to send the action DOI request
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">doiThankYou</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Should the thank you email be only send when email consent doi is required (and contain it)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">customSupporterConfirm</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Should proca put action in a custom queue, so an external service can do this?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">customActionConfirm</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Should proca put action in a custom queue, so an external service can do this?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">customActionDeliver</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Should proca put action in custom delivery queue, so an external service can sync it?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">customEventDeliver</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Should proca put events in custom delivery queue, so an external service can sync it?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">eventBackend</td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending events
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">storageBackend</td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for uploading files
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">detailBackend</td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for looking up supporters in CRM
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">pushBackend</td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending actions
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>joinOrg</strong></td>
 <td valign="top"><a href="#joinorgresult">JoinOrgResult</a>!</td>
-<td></td>
+<td>
+
+Try becoming a staffer of the org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Join the org of this name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>generateKey</strong></td>
 <td valign="top"><a href="#keywithprivate">KeyWithPrivate</a>!</td>
-<td></td>
+<td>
+
+Generate a new encryption key in org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
@@ -1056,7 +1262,11 @@ Name of organisation
 <tr>
 <td colspan="2" valign="top"><strong>addKey</strong></td>
 <td valign="top"><a href="#key">Key</a>!</td>
-<td></td>
+<td>
+
+Add a key to encryption keys
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
@@ -1070,7 +1280,11 @@ Name of organisation
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#addkeyinput">AddKeyInput</a>!</td>
-<td></td>
+<td>
+
+key content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>activateKey</strong></td>
@@ -1098,57 +1312,102 @@ Key id
 <tr>
 <td colspan="2" valign="top"><strong>upsertTemplate</strong></td>
 <td valign="top"><a href="#status">Status</a></td>
-<td></td>
+<td>
+
+Upsert an email tempalte to be used for sending various emails.
+It belongs to org and is identified by (name, locale), so you can have multiple "thank_you" templates for different languages.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Add email tempalte to which org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#emailtemplateinput">EmailTemplateInput</a>!</td>
-<td></td>
+<td>
+
+Email template content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>upsertService</strong></td>
 <td valign="top"><a href="#service">Service</a>!</td>
-<td></td>
+<td>
+
+Insert or update a service for an org, using id to to update a particular one
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Owner org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Id to select service to be updated
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#serviceinput">ServiceInput</a>!</td>
-<td></td>
+<td>
+
+Content of service
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>addStripePaymentIntent</strong></td>
 <td valign="top"><a href="#json">Json</a>!</td>
-<td></td>
+<td>
+
+Stripe API - add a stripe payment intent, when donating to the action page specified by id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">actionPageId</td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Donating to this page
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#stripepaymentintentinput">StripePaymentIntentInput</a>!</td>
-<td></td>
+<td>
+
+payment intent content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">contactRef</td>
 <td valign="top"><a href="#id">ID</a></td>
-<td></td>
+<td>
+
+Contact reference of donating supporter
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">testing</td>
@@ -1162,22 +1421,38 @@ Use test stripe api keys
 <tr>
 <td colspan="2" valign="top"><strong>addStripeSubscription</strong></td>
 <td valign="top"><a href="#json">Json</a>!</td>
-<td></td>
+<td>
+
+Stripe API - add a stripe subscription, when donating to the action page specified by id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">actionPageId</td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Donating to this page
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">input</td>
 <td valign="top"><a href="#stripesubscriptioninput">StripeSubscriptionInput</a>!</td>
-<td></td>
+<td>
+
+subscription intent content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">contactRef</td>
 <td valign="top"><a href="#id">ID</a></td>
-<td></td>
+<td>
+
+Contact reference of donating supporter
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">testing</td>
@@ -1261,12 +1536,20 @@ Accept a confirm on behalf of organisation.
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Org name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">confirm</td>
 <td valign="top"><a href="#confirminput">ConfirmInput</a>!</td>
-<td></td>
+<td>
+
+Confirm content
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>rejectOrgConfirm</strong></td>
@@ -1280,12 +1563,20 @@ Reject a confirm on behalf of organisation.
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Org name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">confirm</td>
 <td valign="top"><a href="#confirminput">ConfirmInput</a>!</td>
-<td></td>
+<td>
+
+Confirm data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>acceptUserConfirm</strong></td>
@@ -1299,7 +1590,11 @@ Accept a confirm by user
 <tr>
 <td colspan="2" align="right" valign="top">confirm</td>
 <td valign="top"><a href="#confirminput">ConfirmInput</a>!</td>
-<td></td>
+<td>
+
+Confirm data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>rejectUserConfirm</strong></td>
@@ -1313,27 +1608,48 @@ Reject a confirm by user
 <tr>
 <td colspan="2" align="right" valign="top">confirm</td>
 <td valign="top"><a href="#confirminput">ConfirmInput</a>!</td>
-<td></td>
+<td>
+
+Confirm data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>upsertTargets</strong></td>
 <td valign="top">[<a href="#privatetarget">PrivateTarget</a>]!</td>
-<td></td>
+<td>
+
+Upsert multiple targets at once.
+external_id is used to decide if new target record is added, or existing one is updated.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">targets</td>
 <td valign="top">[<a href="#targetinput">TargetInput</a>!]!</td>
-<td></td>
+<td>
+
+List of targets
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">campaignId</td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id of campaign these targets are added to
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">replace</td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Remove targets not existing in this upsert (if false, upsert will merge with omitted targets)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1355,27 +1671,47 @@ Reject a confirm by user
 <tr>
 <td colspan="2" valign="top"><strong>actionId</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id of action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>createdAt</strong></td>
 <td valign="top"><a href="#naivedatetime">NaiveDateTime</a>!</td>
-<td></td>
+<td>
+
+Timestamp of creation
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionType</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Action type
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>contact</strong></td>
 <td valign="top"><a href="#contact">Contact</a>!</td>
-<td></td>
+<td>
+
+supporter contact data
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customFields</strong></td>
 <td valign="top"><a href="#json">Json</a>!</td>
-<td></td>
+<td>
+
+Action custom fields (as stringified JSON)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong> ⚠️</td>
@@ -1395,27 +1731,47 @@ use custom_fields
 <tr>
 <td colspan="2" valign="top"><strong>tracking</strong></td>
 <td valign="top"><a href="#tracking">Tracking</a></td>
-<td></td>
+<td>
+
+UTM codes
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>campaign</strong></td>
 <td valign="top"><a href="#campaign">Campaign</a>!</td>
-<td></td>
+<td>
+
+Campaign this action was collected in
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionPage</strong></td>
 <td valign="top"><a href="#actionpage">ActionPage</a>!</td>
-<td></td>
+<td>
+
+Action page this action was collected at
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>privacy</strong></td>
 <td valign="top"><a href="#consent">Consent</a>!</td>
-<td></td>
+<td>
+
+Consents, privacy data of this action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>donation</strong></td>
 <td valign="top"><a href="#donation">Donation</a></td>
-<td></td>
+<td>
+
+Donation specific data
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1435,27 +1791,47 @@ use custom_fields
 <tr>
 <td colspan="2" valign="top"><strong>actionId</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+id of action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionType</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+type of action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>insertedAt</strong></td>
 <td valign="top"><a href="#naivedatetime">NaiveDateTime</a>!</td>
-<td></td>
+<td>
+
+creation timestamp
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>area</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+area of supporter that did the action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customFields</strong></td>
 <td valign="top"><a href="#json">Json</a>!</td>
-<td></td>
+<td>
+
+custom fields as stringified json
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong> ⚠️</td>
@@ -1599,22 +1975,39 @@ count of supporters in this area
 <tr>
 <td colspan="2" valign="top"><strong>startAt</strong></td>
 <td valign="top"><a href="#datetime">DateTime</a>!</td>
-<td></td>
+<td>
+
+This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>endAt</strong></td>
 <td valign="top"><a href="#datetime">DateTime</a>!</td>
-<td></td>
+<td>
+
+This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>messageTemplate</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+If email templates are used to create MTT, use this template (works like thank you email templates).
+Otherwise, the raw text that is send with MTT action will make a plain text email.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>testEmail</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+A test target email (yourself) where test mtt actions will be sent (instead to real targets)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1663,19 +2056,27 @@ Unique action takers by org
 <tr>
 <td colspan="2" valign="top"><strong>supporterCountByOthers</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Unique supporter count not including the ones collected by org_name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">orgName</td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Org name to exclude from counting supporters
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionCount</strong></td>
 <td valign="top">[<a href="#actiontypecount">ActionTypeCount</a>!]!</td>
 <td>
 
-Action counts for selected action types
+Action counts per action types (with duplicates)
 
 </td>
 </tr>
@@ -1717,27 +2118,47 @@ Action counts for selected action types
 <tr>
 <td colspan="2" valign="top"><strong>code</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Secret code/PIN of the confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Email the confirm is sent to
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>message</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Message attached to the confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>objectId</strong></td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Object id that confirmable action refers to
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>creator</strong></td>
 <td valign="top"><a href="#user">User</a></td>
-<td></td>
+<td>
+
+Who created the confirm
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1757,27 +2178,47 @@ Action counts for selected action types
 <tr>
 <td colspan="2" valign="top"><strong>status</strong></td>
 <td valign="top"><a href="#status">Status</a>!</td>
-<td></td>
+<td>
+
+Status of Confirm: Success, Confirming (waiting for confirmation), Noop
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionPage</strong></td>
 <td valign="top"><a href="#actionpage">ActionPage</a></td>
-<td></td>
+<td>
+
+Action page if its an object of confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>campaign</strong></td>
 <td valign="top"><a href="#campaign">Campaign</a></td>
-<td></td>
+<td>
+
+Campaign page if its an object of confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a></td>
-<td></td>
+<td>
+
+Org if its an object of confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>message</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+A message attached to the confirm
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1799,27 +2240,47 @@ GDPR consent data for this org
 <tr>
 <td colspan="2" valign="top"><strong>optIn</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+communication (email) opt-in
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>givenAt</strong></td>
 <td valign="top"><a href="#naivedatetime">NaiveDateTime</a>!</td>
-<td></td>
+<td>
+
+Consent timestamp
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emailStatus</strong></td>
 <td valign="top"><a href="#emailstatus">EmailStatus</a>!</td>
-<td></td>
+<td>
+
+Email status, whether it's normal, DOI, or bouncing
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emailStatusChanged</strong></td>
 <td valign="top"><a href="#naivedatetime">NaiveDateTime</a></td>
-<td></td>
+<td>
+
+When did the email status change last time
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>withConsent</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+This action contained consent (if false, it could be a share action that is attached to another action containing a consent)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -1839,27 +2300,47 @@ GDPR consent data for this org
 <tr>
 <td colspan="2" valign="top"><strong>contactRef</strong></td>
 <td valign="top"><a href="#id">ID</a>!</td>
-<td></td>
+<td>
+
+Contact ref (fingerprint) of supporter
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>payload</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Stringified json with PII optionally encrypted
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>nonce</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Encryption nonce value
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>publicKey</strong></td>
 <td valign="top"><a href="#keyids">KeyIds</a></td>
-<td></td>
+<td>
+
+Public key used to encrypt this action
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>signKey</strong></td>
 <td valign="top"><a href="#keyids">KeyIds</a></td>
-<td></td>
+<td>
+
+Signing key used to encrypt this action
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2015,12 +2496,20 @@ Donation frequency unit
 <tr>
 <td colspan="2" valign="top"><strong>status</strong></td>
 <td valign="top"><a href="#status">Status</a>!</td>
-<td></td>
+<td>
+
+Result of joining - succes or pending confirmation
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Org that was joined
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2042,27 +2531,47 @@ Encryption or sign key with integer id (database)
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Key id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>public</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Public part of the key (base64url)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of the key (human readable)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>active</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is it active?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>expired</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is it expired?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>expiredAt</strong></td>
@@ -2091,12 +2600,20 @@ When the key was expired, in UTC
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Key id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>public</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Public part of the key (base64url)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2116,32 +2633,56 @@ When the key was expired, in UTC
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Key id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>public</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Public part of the key (base64url)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>private</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Private (Secret) part of the key (base64url)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of the key (human readable)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>active</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is it active?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>expired</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is it expired?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>expiredAt</strong></td>
@@ -2281,22 +2822,38 @@ Will be removed
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Partner org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actionPages</strong></td>
 <td valign="top">[<a href="#actionpage">ActionPage</a>!]!</td>
-<td></td>
+<td>
+
+Partner's pages that are part of this campaign (can be more, eg: multiple languages)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>launchRequests</strong></td>
 <td valign="top">[<a href="#confirm">Confirm</a>!]!</td>
-<td></td>
+<td>
+
+Join/Launch requests of this partner
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>launchRequesters</strong></td>
 <td valign="top">[<a href="#user">User</a>!]!</td>
-<td></td>
+<td>
+
+The partner staffers who initiated a request
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2376,7 +2933,11 @@ Only send thank you emails to opt-ins
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
@@ -2424,12 +2985,18 @@ Is live?
 </td>
 </tr>
 <tr>
-<td colspan="2" valign="top"><strong>journey</strong></td>
+<td colspan="2" valign="top"><strong>journey</strong> ⚠️</td>
 <td valign="top">[<a href="#string">String</a>!]!</td>
 <td>
 
-List of steps in journey (DEPRECATED: moved under config)
+List of steps in journey
 
+<p>⚠️ <strong>DEPRECATED</strong></p>
+<blockquote>
+
+moved under config
+
+</blockquote>
 </td>
 </tr>
 <tr>
@@ -2462,14 +3029,19 @@ Org the action page belongs to
 <tr>
 <td colspan="2" valign="top"><strong>extraSupporters</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Extra supporters, a number added to deduplicated supporter count. Cannot be added to per-area or per-action_type counts.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>delivery</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
 <td>
 
-Action page collects also opt-out actions
+Action page collects also opt-out actions, to deliver them to authorities.
+If false, the opt-outs will fallback to lead (we never trash data with opt-outs)
 
 </td>
 </tr>
@@ -2478,7 +3050,7 @@ Action page collects also opt-out actions
 <td valign="top"><a href="#string">String</a></td>
 <td>
 
-Email template to confirm supporter
+Email template to confirm supporter (DOI)
 
 </td>
 </tr>
@@ -2496,7 +3068,7 @@ Location of the widget as last seen in HTTP REFERER header
 <td valign="top"><a href="#actionpagestatus">ActionPageStatus</a></td>
 <td>
 
-Status of action page
+Status of action page - STANDBY (ready to get actions), ACTIVE (collecting actions), STALLED (actions not coming any more)
 
 </td>
 </tr>
@@ -2574,21 +3146,28 @@ Custom config map
 <td valign="top"><a href="#campaignstats">CampaignStats</a>!</td>
 <td>
 
-Campaign statistics
+Statistics
 
 </td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Lead org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actions</strong></td>
 <td valign="top"><a href="#publicactionsresult">PublicActionsResult</a>!</td>
 <td>
 
-Fetch public actions
+Fetch public actions. Can be used to display recent comments for example.
+
+To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
 
 </td>
 </tr>
@@ -2597,7 +3176,7 @@ Fetch public actions
 <td valign="top"><a href="#string">String</a>!</td>
 <td>
 
-Return actions of this action type
+Specify action type to return
 
 </td>
 </tr>
@@ -2613,14 +3192,18 @@ Limit the number of returned actions, default is 10, max is 100)
 <tr>
 <td colspan="2" valign="top"><strong>targets</strong></td>
 <td valign="top">[<a href="#target">Target</a>]</td>
-<td></td>
+<td>
+
+List MTT targets of this campaign
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>forceDelivery</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
 <td>
 
-Campaign onwer collects opt-out actions for delivery even if campaign partner is
+Campaign onwer collects opt-out actions for delivery even if campaign partner is delivering
 
 </td>
 </tr>
@@ -2638,7 +3221,7 @@ Action Pages of this campaign that are accessible to current user
 <td valign="top">[<a href="#partnership">Partnership</a>!]</td>
 <td>
 
-List of partnerships and requests
+List of partnerships and requests to join partnership
 
 </td>
 </tr>
@@ -2714,7 +3297,11 @@ Personal data settings for this org
 <tr>
 <td colspan="2" valign="top"><strong>keys</strong></td>
 <td valign="top">[<a href="#key">Key</a>!]!</td>
-<td></td>
+<td>
+
+Encryption keys
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">select</td>
@@ -2724,32 +3311,56 @@ Personal data settings for this org
 <tr>
 <td colspan="2" valign="top"><strong>key</strong></td>
 <td valign="top"><a href="#key">Key</a>!</td>
-<td></td>
+<td>
+
+Get encryption key
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">select</td>
 <td valign="top"><a href="#selectkey">SelectKey</a>!</td>
-<td></td>
+<td>
+
+Parameters to select the key by
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>services</strong></td>
 <td valign="top">[<a href="#service">Service</a>]!</td>
-<td></td>
+<td>
+
+Services of this org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">select</td>
 <td valign="top"><a href="#selectservice">SelectService</a></td>
-<td></td>
+<td>
+
+Parameters to select the key by
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>users</strong></td>
 <td valign="top">[<a href="#orguser">OrgUser</a>]!</td>
-<td></td>
+<td>
+
+Users of this org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>processing</strong></td>
 <td valign="top"><a href="#processing">Processing</a>!</td>
-<td></td>
+<td>
+
+Action processing settings for this org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>campaigns</strong></td>
@@ -2784,19 +3395,27 @@ List action pages this org has
 <td valign="top"><a href="#actionpage">ActionPage</a>!</td>
 <td>
 
-Action Page
+Get one page belonging to this org
 
 </td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">id</td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Id of page
+
+</td>
 </tr>
 <tr>
 <td colspan="2" align="right" valign="top">name</td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Name of page
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>campaign</strong></td>
@@ -2835,32 +3454,56 @@ DEPRECATED: use campaign() in API root. Get campaign this org is leader or partn
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>externalId</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+unique external_id of target, used to upsert target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Locale of this target (in which language do they read emails?)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>area</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Area of the target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong></td>
 <td valign="top"><a href="#json">Json</a></td>
-<td></td>
+<td>
+
+Custom fields, stringified json
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emails</strong></td>
 <td valign="top">[<a href="#targetemail">TargetEmail</a>]!</td>
-<td></td>
+<td>
+
+Email list of this target
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2880,72 +3523,128 @@ DEPRECATED: use campaign() in API root. Get campaign this org is leader or partn
 <tr>
 <td colspan="2" valign="top"><strong>emailFrom</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Envelope FROM email when sending emails
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emailBackend</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending emails
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>supporterConfirm</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is the supporter required to double opt in their action (and associated personal data)?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>supporterConfirmTemplate</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+The email template name that will be used to send the action DOI request
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>doiThankYou</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Only send thank you emails to opt-ins
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customSupporterConfirm</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Should proca put action in a custom queue, so an external service can do this?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customActionConfirm</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Should proca put action in a custom queue, so an external service can do this?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customActionDeliver</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Should proca put action in custom delivery queue, so an external service can sync it?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>customEventDeliver</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Should proca put events in custom delivery queue, so an external service can sync it?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>eventBackend</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending events
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>pushBackend</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for sending actions
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>storageBackend</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for uploading files
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>detailBackend</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a></td>
-<td></td>
+<td>
+
+Use a particular owned service type for looking up supporters in CRM
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emailTemplates</strong></td>
 <td valign="top">[<a href="#string">String</a>!]</td>
-<td></td>
+<td>
+
+Email templates. (warn: contant is not available to fetch)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -2965,7 +3664,11 @@ DEPRECATED: use campaign() in API root. Get campaign this org is leader or partn
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
@@ -3013,12 +3716,18 @@ Is live?
 </td>
 </tr>
 <tr>
-<td colspan="2" valign="top"><strong>journey</strong></td>
+<td colspan="2" valign="top"><strong>journey</strong> ⚠️</td>
 <td valign="top">[<a href="#string">String</a>!]!</td>
 <td>
 
-List of steps in journey (DEPRECATED: moved under config)
+List of steps in journey
 
+<p>⚠️ <strong>DEPRECATED</strong></p>
+<blockquote>
+
+moved under config
+
+</blockquote>
 </td>
 </tr>
 <tr>
@@ -3068,12 +3777,20 @@ Result of actions query
 <tr>
 <td colspan="2" valign="top"><strong>fieldKeys</strong></td>
 <td valign="top">[<a href="#string">String</a>!]</td>
-<td></td>
+<td>
+
+Custom field keys which are public
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>list</strong></td>
 <td valign="top">[<a href="#actioncustomfields">ActionCustomFields</a>]</td>
-<td></td>
+<td>
+
+List of actions custom fields
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3149,21 +3866,28 @@ Custom config map
 <td valign="top"><a href="#campaignstats">CampaignStats</a>!</td>
 <td>
 
-Campaign statistics
+Statistics
 
 </td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Lead org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actions</strong></td>
 <td valign="top"><a href="#publicactionsresult">PublicActionsResult</a>!</td>
 <td>
 
-Fetch public actions
+Fetch public actions. Can be used to display recent comments for example.
+
+To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
 
 </td>
 </tr>
@@ -3172,7 +3896,7 @@ Fetch public actions
 <td valign="top"><a href="#string">String</a>!</td>
 <td>
 
-Return actions of this action type
+Specify action type to return
 
 </td>
 </tr>
@@ -3188,7 +3912,11 @@ Limit the number of returned actions, default is 10, max is 100)
 <tr>
 <td colspan="2" valign="top"><strong>targets</strong></td>
 <td valign="top">[<a href="#target">Target</a>]</td>
-<td></td>
+<td>
+
+List MTT targets of this campaign
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3255,27 +3983,47 @@ config
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>externalId</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+unique external_id of target, used to upsert target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Locale of this target (in which language do they read emails?)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>area</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Area of the target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong></td>
 <td valign="top"><a href="#json">Json</a></td>
-<td></td>
+<td>
+
+Custom fields, stringified json
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3295,12 +4043,20 @@ config
 <tr>
 <td colspan="2" valign="top"><strong>count</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Count of actions selected for requeueing
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>failed</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Count of actions that could not be requeued
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3345,27 +4101,47 @@ config
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a>!</td>
-<td></td>
+<td>
+
+Service name (type)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>host</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Hostname of service, but can be used as any "container" of the service. For AWS, contains a region.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>user</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+User, Account id, client id, whatever your API has
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>path</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3385,24 +4161,36 @@ config
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Email of target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emailStatus</strong></td>
 <td valign="top"><a href="#emailstatus">EmailStatus</a>!</td>
-<td></td>
+<td>
+
+The status of email (normal or bouncing etc)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>error</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+An error received when bouncing email was reported
+
+</td>
 </tr>
 </tbody>
 </table>
 
 ### Tracking
 
-Tracking codes
+Tracking codes (UTM params)
 
 <table>
 <thead>
@@ -3452,42 +4240,74 @@ Tracking codes
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id of user
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Email of user
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>phone</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Phone
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>pictureUrl</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Url to profile picture
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>jobTitle</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Job title
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>apiToken</strong></td>
 <td valign="top"><a href="#apitoken">ApiToken</a></td>
-<td></td>
+<td>
+
+Users API token (to check expiry)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>isAdmin</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a>!</td>
-<td></td>
+<td>
+
+Is user an admin?
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>roles</strong></td>
 <td valign="top">[<a href="#userrole">UserRole</a>!]!</td>
-<td></td>
+<td>
+
+user's roles in orgs
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3507,12 +4327,20 @@ Tracking codes
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Org this role is in
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>role</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Role name
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3602,7 +4430,7 @@ Unique NAME identifying ActionPage.
 
 Does not have to exist, must be unique. Can be a 'technical' identifier
 scoped to particular organization, so it does not have to change when the
-slugs/names change (eg. some.org/1234). However, frontent Widget can
+slugs/names change (eg. some.org/1234). However, frontend Widget can
 ask for ActionPage by it's current location.href (but without https://), in which case it is useful
 to make this url match the real widget location.
 
@@ -3679,12 +4507,20 @@ Collected PII is processed even with no opt-in
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of the key
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>public</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Public part of the key (base64url)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3761,7 +4597,7 @@ Street number
 
 ### CampaignInput
 
-Campaign input
+Campaign content changed in mutations
 
 <table>
 <thead>
@@ -3777,7 +4613,7 @@ Campaign input
 <td valign="top"><a href="#string">String</a></td>
 <td>
 
-Campaign unchanging identifier
+Campaign short name
 
 </td>
 </tr>
@@ -3852,22 +4688,39 @@ MTT configuration
 <tr>
 <td colspan="2" valign="top"><strong>startAt</strong></td>
 <td valign="top"><a href="#datetime">DateTime</a></td>
-<td></td>
+<td>
+
+This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>endAt</strong></td>
 <td valign="top"><a href="#datetime">DateTime</a></td>
-<td></td>
+<td>
+
+This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>messageTemplate</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+If email templates are used to create MTT, use this template (works like thank you email templates).
+Otherwise, the raw text that is send with MTT action will make a plain text email.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>testEmail</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+A test target email (yourself) where test mtt actions will be sent (instead to real targets)
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -3886,17 +4739,29 @@ MTT configuration
 <tr>
 <td colspan="2" valign="top"><strong>code</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+secret code of this confirm
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+email that confirm was assigned for
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>objectId</strong></td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+object_id that this confirm refers to
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4099,12 +4964,20 @@ Provide currency of this donation
 <tr>
 <td colspan="2" valign="top"><strong>frequencyUnit</strong></td>
 <td valign="top"><a href="#donationfrequencyunit">DonationFrequencyUnit</a></td>
-<td></td>
+<td>
+
+How often is the recurring donation collected
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>payload</strong></td>
 <td valign="top"><a href="#json">Json</a>!</td>
-<td></td>
+<td>
+
+Custom JSON data
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4123,27 +4996,47 @@ Provide currency of this donation
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+template name
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+template locale
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>subject</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Subject text
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>html</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Html part body
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>text</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Plaintext part body
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4162,7 +5055,11 @@ Provide currency of this donation
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of the key
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4349,12 +5246,20 @@ Config
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Email of user
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>role</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Role name of user in this org
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4373,7 +5278,11 @@ Config
 <tr>
 <td colspan="2" valign="top"><strong>campaignId</strong></td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Filter by campaign Id
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4416,17 +5325,29 @@ Config
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a></td>
-<td></td>
+<td>
+
+Key id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>active</strong></td>
 <td valign="top"><a href="#boolean">Boolean</a></td>
-<td></td>
+<td>
+
+Only active
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>public</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Key having this public part
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4503,27 +5424,47 @@ Exact org name
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#servicename">ServiceName</a>!</td>
-<td></td>
+<td>
+
+Service name (type)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>host</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Hostname of service, but can be used as any "container" of the service. For AWS, contains a region.
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>user</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+User, Account id, client id, whatever your API has
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>password</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Password, key, secret or whatever your API has as secret credential
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>path</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4542,17 +5483,29 @@ Exact org name
 <tr>
 <td colspan="2" valign="top"><strong>amount</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Amount of payment
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>currency</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Currency ofo payment
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>paymentMethodTypes</strong></td>
 <td valign="top">[<a href="#string">String</a>!]</td>
-<td></td>
+<td>
+
+Stripe payment method type
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4571,17 +5524,29 @@ Exact org name
 <tr>
 <td colspan="2" valign="top"><strong>amount</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Amount of payment
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>currency</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Currency ofo payment
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>frequencyUnit</strong></td>
 <td valign="top"><a href="#donationfrequencyunit">DonationFrequencyUnit</a>!</td>
-<td></td>
+<td>
+
+how often is recurrent payment made?
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4600,7 +5565,11 @@ Exact org name
 <tr>
 <td colspan="2" valign="top"><strong>email</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Email of target
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4619,32 +5588,56 @@ Exact org name
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Name of target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>externalId</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+unique external_id of target, used to upsert target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Locale of this target (in which language do they read emails?)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>area</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Area of the target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong></td>
 <td valign="top"><a href="#json">Json</a></td>
-<td></td>
+<td>
+
+Custom fields, stringified json
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>emails</strong></td>
 <td valign="top">[<a href="#targetemailinput">TargetEmailInput</a>!]</td>
-<td></td>
+<td>
+
+Email list of this target
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4708,17 +5701,29 @@ Action page location. Url from which action is added. Must contain schema, domai
 <tr>
 <td colspan="2" valign="top"><strong>pictureUrl</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Users profile pic url
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>jobTitle</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Job title
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>phone</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Phone
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4839,27 +5844,51 @@ This action page did not receive actions lately
 <tbody>
 <tr>
 <td valign="top"><strong>NONE</strong></td>
-<td></td>
+<td>
+
+An unused email. (Warning:  Or used, but we do not store the fact that emails are delivered ok)
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>DOUBLE_OPT_IN</strong></td>
-<td></td>
+<td>
+
+The user has received a DOI on this email and accepted it
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>BOUNCE</strong></td>
-<td></td>
+<td>
+
+This email was used and bounced
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>BLOCKED</strong></td>
-<td></td>
+<td>
+
+This email was used and blocked
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SPAM</strong></td>
-<td></td>
+<td>
+
+This email was used and marked spam
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>UNSUB</strong></td>
-<td></td>
+<td>
+
+This email was used and user unsubscribed
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4874,27 +5903,51 @@ This action page did not receive actions lately
 <tbody>
 <tr>
 <td valign="top"><strong>EMAIL_SUPPORTER</strong></td>
-<td></td>
+<td>
+
+Queue of thank you email sender worker
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>CUSTOM_SUPPORTER_CONFIRM</strong></td>
-<td></td>
+<td>
+
+a custom queue of action that needs DOI
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>CUSTOM_ACTION_CONFIRM</strong></td>
-<td></td>
+<td>
+
+a custom queue of action that needs moderation
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>CUSTOM_ACTION_DELIVER</strong></td>
-<td></td>
+<td>
+
+a custom queue of actions to sync to CRM
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SQS</strong></td>
-<td></td>
+<td>
+
+Queue of SQS sync worker
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>WEBHOOK</strong></td>
-<td></td>
+<td>
+
+Queue of webhook sync worker
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -4909,43 +5962,83 @@ This action page did not receive actions lately
 <tbody>
 <tr>
 <td valign="top"><strong>SES</strong></td>
-<td></td>
+<td>
+
+AWS SES to send emails
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SQS</strong></td>
-<td></td>
+<td>
+
+AWS SQS to process messages
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>MAILJET</strong></td>
-<td></td>
+<td>
+
+Mailjet to send emails
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SMTP</strong></td>
-<td></td>
+<td>
+
+SMTP to send emails
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>WORDPRESS</strong></td>
-<td></td>
+<td>
+
+Wordpress HTTP API
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>STRIPE</strong></td>
-<td></td>
+<td>
+
+Stripe to process donations
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>TEST_STRIPE</strong></td>
-<td></td>
+<td>
+
+Stripe test account to test donations
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>WEBHOOK</strong></td>
-<td></td>
+<td>
+
+HTTP POST webhook
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SYSTEM</strong></td>
-<td></td>
+<td>
+
+Use a service that instance org is using
+
+</td>
 </tr>
 <tr>
 <td valign="top"><strong>SUPABASE</strong></td>
-<td></td>
+<td>
+
+Supabase to store files
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -5042,7 +6135,11 @@ The `String` scalar type represents textual data, represented as UTF-8 character
 <tr>
 <td colspan="2" valign="top"><strong>id</strong></td>
 <td valign="top"><a href="#int">Int</a>!</td>
-<td></td>
+<td>
+
+Id
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
@@ -5090,12 +6187,18 @@ Is live?
 </td>
 </tr>
 <tr>
-<td colspan="2" valign="top"><strong>journey</strong></td>
+<td colspan="2" valign="top"><strong>journey</strong> ⚠️</td>
 <td valign="top">[<a href="#string">String</a>!]!</td>
 <td>
 
-List of steps in journey (DEPRECATED: moved under config)
+List of steps in journey
 
+<p>⚠️ <strong>DEPRECATED</strong></p>
+<blockquote>
+
+moved under config
+
+</blockquote>
 </td>
 </tr>
 <tr>
@@ -5199,21 +6302,28 @@ Custom config map
 <td valign="top"><a href="#campaignstats">CampaignStats</a>!</td>
 <td>
 
-Campaign statistics
+Statistics
 
 </td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>org</strong></td>
 <td valign="top"><a href="#org">Org</a>!</td>
-<td></td>
+<td>
+
+Lead org
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>actions</strong></td>
 <td valign="top"><a href="#publicactionsresult">PublicActionsResult</a>!</td>
 <td>
 
-Fetch public actions
+Fetch public actions. Can be used to display recent comments for example.
+
+To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
 
 </td>
 </tr>
@@ -5222,7 +6332,7 @@ Fetch public actions
 <td valign="top"><a href="#string">String</a>!</td>
 <td>
 
-Return actions of this action type
+Specify action type to return
 
 </td>
 </tr>
@@ -5238,7 +6348,11 @@ Limit the number of returned actions, default is 10, max is 100)
 <tr>
 <td colspan="2" valign="top"><strong>targets</strong></td>
 <td valign="top">[<a href="#target">Target</a>]</td>
-<td></td>
+<td>
+
+List MTT targets of this campaign
+
+</td>
 </tr>
 </tbody>
 </table>
@@ -5305,27 +6419,47 @@ config
 <tr>
 <td colspan="2" valign="top"><strong>name</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+Name of target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>externalId</strong></td>
 <td valign="top"><a href="#string">String</a>!</td>
-<td></td>
+<td>
+
+unique external_id of target, used to upsert target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>locale</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Locale of this target (in which language do they read emails?)
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>area</strong></td>
 <td valign="top"><a href="#string">String</a></td>
-<td></td>
+<td>
+
+Area of the target
+
+</td>
 </tr>
 <tr>
 <td colspan="2" valign="top"><strong>fields</strong></td>
 <td valign="top"><a href="#json">Json</a></td>
-<td></td>
+<td>
+
+Custom fields, stringified json
+
+</td>
 </tr>
 </tbody>
 </table>

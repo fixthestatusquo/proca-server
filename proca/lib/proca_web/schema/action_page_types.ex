@@ -8,7 +8,11 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
   alias ProcaWeb.Resolvers
 
   object :action_page_queries do
-    @desc "Get action page"
+    @desc """
+    Get action page.
+    Depending on your access (page owner, lead, instance admin),
+    you will get private or public view of the page.
+    """
     field :action_page, non_null(:action_page) do
       @desc "Get action page by id."
       arg(:id, :integer)
@@ -25,6 +29,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
   end
 
   interface :action_page do
+    @desc "Id"
     field :id, non_null(:integer)
     @desc "Locale for the widget, in i18n format"
     field :locale, non_null(:string)
@@ -44,8 +49,8 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     @desc "Is live?"
     field :live, non_null(:boolean)
-    @desc "List of steps in journey (DEPRECATED: moved under config)"
-    field :journey, non_null(list_of(non_null(:string))) do
+    @desc "List of steps in journey"
+    field :journey, non_null(list_of(non_null(:string))), deprecate: "moved under config" do
       resolve(fn page, _par, _ctx ->
         {:ok, Map.get(page.config, "journey", ["Petition", "Share"])}
       end)
@@ -93,12 +98,16 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     interface(:action_page)
     import_fields(:action_page)
 
+    @desc "Extra supporters, a number added to deduplicated supporter count. Cannot be added to per-area or per-action_type counts."
     field :extra_supporters, non_null(:integer)
 
-    @desc "Action page collects also opt-out actions"
+    @desc """
+    Action page collects also opt-out actions, to deliver them to authorities.
+    If false, the opt-outs will fallback to lead (we never trash data with opt-outs)
+    """
     field :delivery, non_null(:boolean)
 
-    @desc "Email template to confirm supporter"
+    @desc "Email template to confirm supporter (DOI)"
     field :supporter_confirm_template, :string
 
     @desc "Location of the widget as last seen in HTTP REFERER header"
@@ -109,7 +118,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       end)
     end
 
-    @desc "Status of action page"
+    @desc """
+    Status of action page - STANDBY (ready to get actions), ACTIVE (collecting actions), STALLED (actions not coming any more)
+    """
     # XXX ditto
     field :status, :action_page_status do
       resolve(fn page, _, _ ->
@@ -141,10 +152,12 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     """
     field :update_action_page, type: non_null(:action_page) do
       @desc """
-      Action Page id
+      id of page to update
       """
       arg(:id, :integer)
+      @desc "name of page to update"
       arg(:name, :string)
+      @desc "content of page to be update"
       arg(:input, non_null(:action_page_input))
 
       load(:action_page, by: [:id, :name])
@@ -216,6 +229,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       resolve(&Resolvers.ActionPage.add_action_page/3)
     end
 
+    @desc """
+    Sends a request to lead to set the page to live=true
+    """
     field :launch_action_page, type: non_null(:launch_action_page_result) do
       @desc "Action Page name"
       arg(:name, non_null(:string))
@@ -230,6 +246,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
       resolve(&ProcaWeb.Resolvers.ActionPage.launch_page/3)
     end
 
+    @desc """
+    Delete an action page
+    """
     field :delete_action_page, type: non_null(:status) do
       @desc "Action Page id"
       arg(:id, :integer)
@@ -252,7 +271,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     Does not have to exist, must be unique. Can be a 'technical' identifier
     scoped to particular organization, so it does not have to change when the
-    slugs/names change (eg. some.org/1234). However, frontent Widget can
+    slugs/names change (eg. some.org/1234). However, frontend Widget can
     ask for ActionPage by it's current location.href (but without https://), in which case it is useful
     to make this url match the real widget location.
     """
@@ -289,6 +308,7 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
   end
 
   input_object :select_action_page do
+    @desc "Filter by campaign Id"
     field :campaign_id, :integer
   end
 end
