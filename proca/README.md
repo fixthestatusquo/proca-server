@@ -78,7 +78,6 @@ $ docker-compose logs proca
 # note down the username and password for the user of primary "instance" organisation. 
 
 $ proca server:add local
-$ proca-cli setup 
 API url: http://localhost:4000
 🍦 API url looks ok - http://localhost:4000/api 
 API token []: (RETURN)

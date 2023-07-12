@@ -1,7 +1,9 @@
 import { syncQueue, ActionMessageV2, EventMessageV2 } from '@proca/queue';
 import { formatAction, handleConsent } from "./data";
 import { postAction, verification, rabbit } from "./client";
-var argv = require('minimist')(process.argv.slice(2));
+import minimist from 'minimist';
+
+cont argv = minimist(process.argv.slice(2));
 
 const dotenv = require('dotenv');
 dotenv.config();
