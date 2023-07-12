@@ -7,6 +7,14 @@ Mix is like make in Elixir.
 Type `mix help` to see all the commands.
 
 
+### Mix tasks to setup the db
+
+Knowledge of [Ecto](https://hexdocs.pm/ecto/getting-started.html) docs is absolutely mandatory
+
+- use `mix ecto.setup` to create and migrate the db
+- use `mix ecto.migrate` to run the migrations
+
+
 ### Mix tasks used in building the app
 
 ```

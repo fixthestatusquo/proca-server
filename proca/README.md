@@ -135,6 +135,8 @@ Read more in [Developing](guides/Developing).
 
 # Configuration
 
+This is standard [Phoenix Framework](https://hexdocs.pm/phoenix/overview.html), which knowledge is absolutely mandatory.
+
 Phoenix apps use configuration in `config/config.exs` which then is overriden by files depending on `MIX_ENV` (similar to `NODE_ENV`), respectively: dev, prod, test. The `config/releases.exs` runs in prod and will read environment variables *from the server*. The `prod.exs` will read environment variables on compile time (your dev laptop) and hardcode them inside elixir bytecode. This is a legacy of Erlang deployment strategies.
 
 See config/config.exs and config/dev.exs for configuration options.
