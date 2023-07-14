@@ -25,8 +25,19 @@ defmodule Proca.Staffer.Role do
       :manage_campaigns,
       :manage_action_pages
     ],
+    campaigner: [
+      :change_org_users,
+      :change_org_settings,
+      :change_campaign_settings,
+      :manage_campaigns,
+      :manage_action_pages
+    ],
     coordinator: [
       :change_campaign_settings
+    ],
+    translator: [
+      :change_org_users,
+      :manage_campaigns
     ]
   ]
 

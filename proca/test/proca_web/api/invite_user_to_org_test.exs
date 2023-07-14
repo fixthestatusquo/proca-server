@@ -13,18 +13,20 @@ defmodule ProcaWeb.InviteUserToOrgTest do
   test "invite user by email", %{
     conn: conn,
     yellow_org: org,
-    yellow_user: user
+    yellow_campaigner_user: user
   } do
     invite_user = insert(:user)
     %{email: invite_email} = invite_user
+    invite_role = :coordinator
 
     ## Send the invitation
 
     res =
-      auth_api_post(conn, invite_user_query(invite_email, org.name), user)
+      auth_api_post(conn, invite_user_query(invite_email, org.name, invite_role), user)
       |> json_response(200)
 
-    owner_perms = Proca.Permission.add(0, Proca.Staffer.Role.permissions(:owner))
+    owner_perms =
+      Proca.Permission.add(0, Proca.Staffer.Role.permissions(invite_role))
 
     assert %{
              "data" => %{
@@ -63,10 +65,39 @@ defmodule ProcaWeb.InviteUserToOrgTest do
     assert st.perms == owner_perms
   end
 
-  defp invite_user_query(email, orgName) do
+  test "can't invite user without proper permission", %{
+    conn: conn,
+    yellow_org: org,
+    yellow_campaigner_user: user
+  } do
+    invite_user = insert(:user)
+    %{email: invite_email} = invite_user
+    invite_role = :owner
+
+    ## Send the invitation
+
+    res =
+      auth_api_post(conn, invite_user_query(invite_email, org.name, invite_role), user)
+      |> json_response(200)
+
+    owner_perms =
+      Proca.Permission.add(0, Proca.Staffer.Role.permissions(invite_role))
+
+    assert %{
+             "errors" => [
+               %{
+                 "extensions" => %{
+                   "code" => "permission_denied"
+                 }
+               }
+             ]
+           } = res
+  end
+
+  defp invite_user_query(email, orgName, role) do
     """
     mutation {
-      inviteOrgUser(orgName: "#{orgName}", message: "Welcome to our team", input: {email: "#{email}", role: "owner"})  {
+      inviteOrgUser(orgName: "#{orgName}", message: "Welcome to our team", input: {email: "#{email}", role: "#{role}"})  {
         code email objectId message
       }
     }
