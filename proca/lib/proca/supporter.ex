@@ -12,10 +12,41 @@ defmodule Proca.Supporter do
   These are not disclosing PII and are always kept:
   - area - the area value given on action creation
 
+  ## DOI and email status
+
   There is also the `email_status` field which is shared by all orgs that share
   this Supporter data. The email status is used to determine if the email is
   good to send emails (eg :double_opt_in or nothing if we do not require DOI),
   or bad to send emails (bounced) - see `Enums`
+
+  There are two ways to set `email_status` to `double_opt_in` value:
+
+  1. After accepting an action/signature, we send out a thank you email, in
+  which we thank for the action and put a link in form
+  `/link/d/${action_id}/${contact_ref}`, with optional `redir` parameter with url.
+  After user clicks this email, the `double_opt_in` is set, and user is optionally taken to url given in `redir` param
+
+  2. As part of Action DOI, a link to confirm action can have a parameter
+  `doi=1` which will _also_ set `double_opt_in` flag when confirming action
+  itself.
+
+  This link can be sent in email
+
+  Any update to `email_status` can generate a `Proca.Event` that it changed. It
+  can be read from delivery queue if events are enabled either by
+  `customEventDeliver` flag or adding an event backend.
+
+  These events allow your CRM to know about such update to contact email consent policy.
+  Because this happens AFTER the action is synced to the CRM, a follow up event must be sent to update the CRM record.
+
+  ## Bounces and email status
+
+  When an email bounces, or is marked as spam or otherwise marked as _bad_, we
+  set `email_status` accordingly, and reject the Supporter.
+
+  Similarly, an event will be emitted
+
+  ## Duplicates
 
   The supporter also has a `dupe_rank` which is 0 if this is the first supporter
   of the campaign, or more if it is a subsequent signature. The rank is counted

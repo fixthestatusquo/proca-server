@@ -33,7 +33,6 @@ defmodule Proca.Pipes.Topology do
 
   x org.N.deliver
                           #     > =wrk.N.email.supporter
-                          #     > =wrk.N.sqs              -> proca-gw
                           #     > =cus.N.deliver
                           #     > =wrk.N.webhook
                           #     > =wrk.N.sqs

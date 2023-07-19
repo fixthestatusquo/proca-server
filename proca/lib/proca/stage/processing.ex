@@ -20,7 +20,7 @@ defmodule Proca.Stage.Processing do
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right? 
 
   State diagram below shows transitions while processing. `A` stands for Action,
-  `S` for supporter. States are enumerated in `ProcessingStatus`, and supporter
+  `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
   and action track its status separately.
 
   ```
