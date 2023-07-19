@@ -1,19 +1,41 @@
 defmodule Proca.Permission do
+  @moduledoc """
+  Permission bit that authorize users to perform operations.
+
+  There is a single list of named permission bits, split in different contexts.
+  Example: Some bits (bits 0 to 15) refer to User, are stored in `users.perms` table and are active in all opertions the user is performing.
+  Other bits are Org-related, are stored in `staffers.perms` and are active when performing operations on a particula Org (_I can delete campaign in org A but not org B_).
+  These are the only contexts we support right now.
+
+  We started talking about a _Campaign group_ scope which would be a context
+  spanning all of the partnership, and there would be a new table linking a User
+  to a Partnership, and it would have some permission bits that would allow this
+  person to perform operations on all objects in scope of a partnership (eg. all
+  action pages of the partnership).
+
+  The currently active `User` and `Staffer` is tracked in a `Proca.Auth` struct.
+
+
+  Permission bits used in proca.
+  Should be named according to a convention `verb` + `"_"` + `noun`.
+
+  Other permissions names are:
+
+  - `noun` + `"_owner"` which gives all power on instance/org/etc, and
+  - `export_contacts` - can export action data with PII
+
+  Verbs:
+
+  - manage - add/delete/update objects
+  - change - change some object's association or properties
+
+  """
+
   use Bitwise
   alias Proca.Staffer
   alias Proca.Users.User
   alias Proca.Auth
 
-  @moduledoc """
-  Permission bits used in proca.
-  Should be named with a verb_noun (_owner is an exception here).
-
-  manage - add/delete/update objects
-  change - change some object's association or properties
-
-  Right now the permissions in relation to Org are on the Staffer, and 
-  global permissions are in User. This is why this module should be moved up in module tree.
-  """
 
   @bits [
     # Admin permissions [in users.perms]
