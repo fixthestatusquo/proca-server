@@ -40,6 +40,7 @@ defmodule Proca.StoryFactory do
   @api_perms Proca.Permission.add([:manage_campaigns, :manage_action_pages])
   @owner_perms Proca.Permission.add(Proca.Staffer.Role.permissions(:owner))
   @campaigner_perms Proca.Permission.add(Proca.Staffer.Role.permissions(:campaigner))
+  @translator_perms Proca.Permission.add(Proca.Staffer.Role.permissions(:translator))
 
   @red_website "red.org"
   @yellow_website "yellow.org"
@@ -70,6 +71,7 @@ defmodule Proca.StoryFactory do
 
     yellow_owner = Factory.insert(:staffer, org: yellow_org, perms: @owner_perms)
     yellow_campaigner = Factory.insert(:staffer, org: yellow_org, perms: @campaigner_perms)
+    yellow_translator = Factory.insert(:staffer, org: yellow_org, perms: @translator_perms)
     red_owner = Factory.insert(:staffer, org: red_org, perms: @owner_perms)
     red_bot = Factory.insert(:staffer, org: red_org, perms: @api_perms)
 
@@ -100,6 +102,8 @@ defmodule Proca.StoryFactory do
       yellow_user: yellow_owner.user,
       yellow_campaigner: yellow_campaigner,
       yellow_campaigner_user: yellow_campaigner.user,
+      yellow_translator: yellow_translator,
+      yellow_translator_user: yellow_translator.user,
       red_bot: red_bot,
       yellow_owner: yellow_owner,
       red_bot_user: red_bot.user,
