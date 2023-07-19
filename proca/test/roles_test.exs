@@ -18,7 +18,7 @@ defmodule RolesTest do
     staffer = Factory.build(:staffer)
 
     {:ok, translator} = Role.change(staffer, :translator) |> Changeset.apply_action(:update)
-    assert translator |> can?([:change_org_users, :manage_campaigns])
+    assert translator |> can?([:change_org_users, :change_campaign_settings])
     refute translator |> can?(:manage_orgs)
 
     assert Role.findrole(translator) == :translator
