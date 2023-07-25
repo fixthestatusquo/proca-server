@@ -28,4 +28,14 @@ defmodule Proca.QueryFixtures do
     }
     """
   end
+
+  def export_actions(%{org_name: org_name}) do
+    """
+    query {
+      exportActions(orgName: "#{org_name}") {
+        actionId
+      }
+    }
+    """
+  end
 end
