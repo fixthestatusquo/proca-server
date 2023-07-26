@@ -20,7 +20,22 @@ defmodule ProcaWeb.PermissionsTest do
       campaigner: :succeed,
       translator: :fail
     },
-    invite_user: %{
+    change_campaign: %{
+      owner: :succeed,
+      campaigner: :succeed,
+      translator: :succeed
+    },
+    invite_owner: %{
+      owner: :succeed,
+      campaigner: :fail,
+      translator: :fail
+    },
+    invite_campaigner: %{
+      owner: :succeed,
+      campaigner: :succeed,
+      translator: :fail
+    },
+    invite_translator: %{
       owner: :succeed,
       campaigner: :succeed,
       translator: :succeed
@@ -42,6 +57,7 @@ defmodule ProcaWeb.PermissionsTest do
     test "role #{role} should #{outcome} to query #{query_fn}", %{
       conn: conn,
       yellow_org: org,
+      yellow_campaign: yellow_camp,
       yellow_ap: yellow_ap,
       yellow_user: yellow_user,
       yellow_campaigner_user: yellow_campaigner_user,
@@ -49,7 +65,8 @@ defmodule ProcaWeb.PermissionsTest do
     } do
       params = %{
         org_name: org.name,
-        action_page_id: yellow_ap.id
+        action_page_id: yellow_ap.id,
+        campaign_id: yellow_camp.id
       }
 
       query = apply(QueryFixtures, unquote(query_fn), [params])

@@ -1,5 +1,25 @@
 defmodule Proca.QueryFixtures do
-  def invite_user(%{org_name: org_name}) do
+  def invite_owner(%{org_name: org_name}) do
+    """
+    mutation {
+      inviteOrgUser(orgName: "#{org_name}", message: "Welcome to our team", input: {email: "foo@example.com", role: "owner"})  {
+        code email objectId message
+      }
+    }
+    """
+  end
+
+  def invite_campaigner(%{org_name: org_name}) do
+    """
+    mutation {
+      inviteOrgUser(orgName: "#{org_name}", message: "Welcome to our team", input: {email: "foo@example.com", role: "campaigner"})  {
+        code email objectId message
+      }
+    }
+    """
+  end
+
+  def invite_translator(%{org_name: org_name}) do
     """
     mutation {
       inviteOrgUser(orgName: "#{org_name}", message: "Welcome to our team", input: {email: "foo@example.com", role: "translator"})  {
@@ -14,6 +34,16 @@ defmodule Proca.QueryFixtures do
     mutation {
       addCampaign(orgName: "#{org_name}", input: {title: "campaign", name: "campaign"}) {
         id
+      }
+    }
+    """
+  end
+
+  def change_campaign(%{campaign_id: id}) do
+    """
+    mutation {
+      updateCampaign(id: #{id}, input: {title: "new title"}) {
+        id title
       }
     }
     """
