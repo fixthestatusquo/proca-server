@@ -14,6 +14,16 @@ defmodule RolesTest do
     refute manager |> can?(:manage_orgs)
   end
 
+  test "finds correct role" do
+    staffer = Factory.build(:staffer)
+
+    {:ok, translator} = Role.change(staffer, :translator) |> Changeset.apply_action(:update)
+    assert translator |> can?([:change_org_users, :change_campaign_settings])
+    refute translator |> can?(:manage_orgs)
+
+    assert Role.findrole(translator) == :translator
+  end
+
   #   test "When removing role, leave extra bits" do
   #     staffer = Factory.build(:staffer)
   #     |> Role.change(:owner)

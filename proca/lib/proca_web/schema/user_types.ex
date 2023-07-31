@@ -94,7 +94,7 @@ defmodule ProcaWeb.Schema.UserTypes do
 
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
-      allow([:change_org_settings])
+      allow([:change_org_users])
       resolve(&Resolvers.User.invite_org_user/3)
     end
 
