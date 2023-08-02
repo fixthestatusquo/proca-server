@@ -31,4 +31,8 @@ defmodule CampaignListTest do
 
     assert c.name == yellow_camp.name
   end
+
+  test "campaign has default status live", %{red_campaign: red_camp} do
+    assert red_camp.status == :live
+  end
 end

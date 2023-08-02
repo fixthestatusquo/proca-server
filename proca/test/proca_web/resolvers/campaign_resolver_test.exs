@@ -46,9 +46,24 @@ defmodule ProcaWeb.CampaignResolverTest do
       "query" => """
       mutation Add($orgName: String!, $input: CampaignInput!)  {
       addCampaign(orgName: $orgName, input: $input) {
-        id, name, title, __typename
+        id, name, title, status, __typename
         org { name }
       }
+      }
+      """
+    }
+  end
+
+  def update_query(id, input) do
+    %{
+      "operationName" => "Update",
+      "variables" => %{"id" => id, "input" => input},
+      "query" => """
+      mutation Update($id: Int!, $input: CampaignInput!)  {
+        updateCampaign(id: $id, input: $input) {
+          id, name, title, status, __typename
+          org { name }
+        }
       }
       """
     }
@@ -134,7 +149,8 @@ defmodule ProcaWeb.CampaignResolverTest do
                  "__typename" => "PrivateCampaign",
                  "name" => "test-adding",
                  "title" => "Testing adding of campaign",
-                 "org" => %{"name" => ^org_name}
+                 "org" => %{"name" => ^org_name},
+                 "status" => "LIVE"
                }
              }
            } = res
@@ -169,5 +185,19 @@ defmodule ProcaWeb.CampaignResolverTest do
 
     assert res["data"]["deleteCampaign"] == "SUCCESS"
     assert is_nil(Proca.ActionPage.one(id: page.id))
+  end
+
+  test "close campaign", %{
+    conn: conn,
+    red_campaign: camp,
+    red_user: user
+  } do
+    q = update_query(camp.id, %{"status" => "CLOSED"})
+
+    res =
+      auth_api_post(conn, q, user)
+      |> json_response(200)
+
+    assert res["data"]["updateCampaign"]["status"] == "CLOSED"
   end
 end
