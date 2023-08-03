@@ -6,18 +6,23 @@ defmodule Proca.Service.EmailMerge do
 
   ## Variables exposed to template
 
-  - firstName - first name of supporter
-  - ref - reference to supporter
-  - org.name
-  - org.title
-  - campaign.name
-  - campaign.title
-  - actionPage.name
-  - actionPage.locale
-  - actionId
-  - tracking.campaign - the utm_campaign of action
-  - tracking.medium - the utm_medium
-  - tracking.source - the utm_source
+  - `firstName` - first name of supporter
+  - `ref` - reference to supporter
+  - `org.name`
+  - `org.title`
+  - `campaign.name`
+  - `campaign.title`
+  - `camapign.stats.supporterCount` - total deduplicated supporter count
+  - `campaign.stats.supporterCountByOrg` - deduplicated supporter count collected by current org
+  - `campaign.stats.supporterCountByArea` - deduplicated supporter count collected in area of this supporter
+  - `campaign.stats.actionCount.someActionType` - count of actions of type `someActionType`
+  - `actionPage.name`
+  - `actionPage.locale`
+  - `actionId`
+  - `tracking.campaign` - the utm_campaign of action
+  - `tracking.medium` - the utm_medium
+  - `tracking.source` - the utm_source
+  - `isDupe` - true if supporter for this campaign is a duplicate.
   - custom fields - custom fields (camel cased!)
   """
 
