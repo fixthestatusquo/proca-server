@@ -6,6 +6,8 @@
 ▼▼▼▼▼▼▼▼\\\\\`
  ▼▼▼▼▼▼`^^``
  ```
+
+** This is a legacy tool, for 99% of the cases, you should either use the [python cli](../cli-py) or the cli tools from the widget builder](https://github.com/fixthestatusquo/proca) **
  
 # Proca CLI[ent]
 
