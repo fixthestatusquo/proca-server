@@ -214,7 +214,7 @@ defmodule Proca.Server.MTTWorker do
         case msgs do
           [%{action: %{testing: true}} = m | rest] ->
             {testing, real} = Enum.split_with(rest, & &1.action.testing)
-            Message.mark_all(testing, :sent)
+            # Message.mark_all(testing, :sent)
             Message.mark_all(testing, :delivered)
             [m | real]
 
