@@ -14,6 +14,7 @@ defmodule Proca.Service.Mailjet do
   - The links prohibit use of default "" - so you must provide or hide it.
   - Use {% if var:givenname:"" %} and {% endif %} for conditional block
 
+  The bounce endpoint is `/webhook/mailjet`.
 
   """
 

@@ -220,3 +220,7 @@ The workers will push to service designated by `pushBackend` of the org.
 The service should contain AWS SQS or HTTP POST URIs and credentials respectively.
 
 If current org is instance org, and it has `eventBackend` set, it will receive events from *all of the orgs* event exchange (`org.X.event`).
+
+### MTT emails
+
+MTT sending is not part of action processing and runs under "cron like" server, see `Proca.Server.MTT`.
