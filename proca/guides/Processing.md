@@ -207,4 +207,16 @@ It will use the `Proca.Service` set as  `emailBackend` configured for the org co
 
 
 
+### SQS and Webhook worker 
 
+These workers push actions, work in the same way, and read from queues:
+The workers will push to service designated by `pushBackend` of the org. 
+
+- Reads queue: `wrk.ORG_ID.sqs` and `wrk.ORG_ID.webhook` respectively.
+- This queue gets messages from exchange:
+  - `org.ORG_ID.deliver` - all messages to be delivered
+  - `org.ORG_ID.event` all events - enabled only if Org has an `eventBackend` set to `SQS` or `WEBHOOK`
+
+The service should contain AWS SQS or HTTP POST URIs and credentials respectively.
+
+If current org is instance org, and it has `eventBackend` set, it will receive events from *all of the orgs* event exchange (`org.X.event`).
