@@ -200,4 +200,18 @@ defmodule ProcaWeb.CampaignResolverTest do
 
     assert res["data"]["updateCampaign"]["status"] == "CLOSED"
   end
+
+  test "ignore campaign", %{
+    conn: conn,
+    red_campaign: camp,
+    red_user: user
+  } do
+    q = update_query(camp.id, %{"status" => "IGNORED"})
+
+    res =
+      auth_api_post(conn, q, user)
+      |> json_response(200)
+
+    assert res["data"]["updateCampaign"]["status"] == "IGNORED"
+  end
 end

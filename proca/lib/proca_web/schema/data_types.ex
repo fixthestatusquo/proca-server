@@ -85,6 +85,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   enum :campaign_status do
     value(:live)
     value(:closed)
+    value(:ignored)
   end
 
   # XXX should this not be moved out from here?
