@@ -23,6 +23,7 @@ defmodule Proca.Service.EmailMerge do
   - `tracking.medium` - the utm_medium
   - `tracking.source` - the utm_source
   - `isDupe` - true if supporter for this campaign is a duplicate.
+  - `privacy.optIn`
   - custom fields - custom fields (camel cased!)
   """
 

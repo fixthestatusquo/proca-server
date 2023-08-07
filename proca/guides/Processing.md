@@ -182,3 +182,29 @@ Message structure
   - `title`
   - `contactSchema`
   - `config` - custom map
+
+
+## Built-in workers
+
+### Email the supporter worker
+
+- Reads queue: `wrk.ORG_ID.email.supporter`
+- This queue gets messages from 2 exchanges:
+  - `org.ORG_ID.confirm.supporter` - actions with `stage="supporter_confirm"` and routing key `campaign.action_type`
+  - `org.ORG_ID.deliver` - actions with `stage="deliver"` and routing key `campaign.action_type`
+  
+This worker sends emails to supporters in two cases. The supporter confirmation (action doi) it will send the template set as `actionPage.supporterConfirmTemplate` or `org.supporterConfirmTemplate`, whichever is available.
+
+After supporter is accepted, or if no supporter confirm is performed, instantly, worker will send the thank you email. Template in `actionPage.thankYouTemplate` is used, if set. If `Org.doiThankYou` is set for the org, thank you emails will only be sent to supporters who have opted in to communication. This can be used to collect newsletter doi by putting `{{doiLink}}` in that thank you email. Supporters who did not give communication consent, will not get any email at all. If you just want to hide the `{{doiLink}}` from those who have not opted i, but send thank you email to everyone, use `{{#privacy.optIn}}Click this {{doiLink}}.{{/privacy.optIn}}`.
+
+The emails will only be sent for actions with supporter - added via API `addActionContact`, not `addAction`(so not for `share` action).
+
+The `Org.emailFrom` must be set for any emails to be sent.
+
+The worker will only run for orgs collecting data, not others that data is shared with.
+
+It will use the `Proca.Service` set as  `emailBackend` configured for the org collecting action.
+
+
+
+
