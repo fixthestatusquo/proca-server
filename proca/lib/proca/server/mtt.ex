@@ -1,6 +1,18 @@
 defmodule Proca.Server.MTT do
   @moduledoc """
-  Setup GenServer to run every 5 minutes to check if there are any emails to send
+  Built-in service to send MTT emails to targets.any()
+
+  This email sender works independently of queue-bound email supporter worker,
+  because it is time-bound, sends according to schedule.
+
+  This server runs every 30 seconds or more (under load).
+
+  I every run, it will:
+
+  1. Calculate `dupeRank` for the MTT messages
+  2. For every campaign for which today falls into day range of sending MTT, launch `Proca.Server.MTTWorker`
+  3. Send out all the test MTT's instantly
+  4. Wait untill all `Proca.Server.MTTWorker` finish
   """
   use GenServer
 
