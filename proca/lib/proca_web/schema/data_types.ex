@@ -82,6 +82,12 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:webhook, description: "Queue of webhook sync worker")
   end
 
+  enum :campaign_status do
+    value(:live)
+    value(:closed)
+    value(:ignored)
+  end
+
   # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)

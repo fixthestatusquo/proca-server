@@ -19,6 +19,7 @@ defmodule Proca.Campaign do
     field :transient_actions, {:array, :string}, default: []
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
+    field :status, CampaignStatus, default: :live
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -33,7 +34,7 @@ defmodule Proca.Campaign do
     assocs = Map.take(attrs, [:org])
 
     campaign
-    |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema])
+    |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema, :status])
     |> change(assocs)
     |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
