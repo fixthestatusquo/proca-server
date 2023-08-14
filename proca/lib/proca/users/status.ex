@@ -1,4 +1,8 @@
 defmodule Proca.Users.Status do
+  @moduledoc """
+  Stores `token_last_seen` timestamps to `user_tokens` table.
+  Does not store it every time a token is used, not to strain the DB. Synces every 10s
+  """
   use GenServer
 
   import Ecto.Query

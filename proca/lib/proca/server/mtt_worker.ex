@@ -1,4 +1,25 @@
 defmodule Proca.Server.MTTWorker do
+  @moduledoc """
+  MTT worker sends MTT emails for particular campaign.
+
+  It will only send emails in the time window, defined by:
+  - `campaign.mtt.startAt` {start_day, start_time}
+  - `campaign.mtt.endAt` {end_day, end_time}
+  - we are in time window only if `start_day <= today <= end_day` AND `start_time <= current_time <= end_time`.
+
+  In each cycle (when run) MTTWorker calculates how many cycles has already passed (PASSED) and how many remain until end of sending (REMAIN).
+  It then checks, if we already sent `ALL_EMAILS_FOR_TARGET*PASSED/(PASSED+REMAINED)` emails, and if not, it sends enough emails to that target to match the proportion.
+  This way the MTT sending is spread linearly throughout all sending period.
+
+  Worker will only send to targets, who have a good email (with `emailStatus`=`NONE`, not bouncing).
+
+  The test emails are sent separately and instantly, and only one email is sent
+  per supporter (so testing emails to 10 targets will just send 1 email not to
+  spam while testing).
+
+  """
+
+
   alias Proca.Repo
   import Ecto.Query
 
@@ -214,7 +235,7 @@ defmodule Proca.Server.MTTWorker do
         case msgs do
           [%{action: %{testing: true}} = m | rest] ->
             {testing, real} = Enum.split_with(rest, & &1.action.testing)
-            Message.mark_all(testing, :sent)
+            # Message.mark_all(testing, :sent)
             Message.mark_all(testing, :delivered)
             [m | real]
 

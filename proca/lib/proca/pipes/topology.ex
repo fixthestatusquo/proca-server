@@ -10,8 +10,6 @@ defmodule Proca.Pipes.Topology do
   are sent by the API layer when respective event occurs. They are not sent by
   operations on Proca.Org directly.
 
-  (previously responsibility of Proca.Server.Plumbing)
-
   ### Properties: 
 
   - 3 exchanges reflect 3 stages of processing (supporter confirms their data, moderator confirms the action, action is delivered)
@@ -35,7 +33,6 @@ defmodule Proca.Pipes.Topology do
 
   x org.N.deliver
                           #     > =wrk.N.email.supporter
-                          #     > =wrk.N.sqs              -> proca-gw
                           #     > =cus.N.deliver
                           #     > =wrk.N.webhook
                           #     > =wrk.N.sqs
@@ -62,6 +59,8 @@ defmodule Proca.Pipes.Topology do
   - Worker queues, are enabled by flags on Org (boolean columns):
     - `email.supporter` sends double-opt-in email when: `supporter_confirm` is `true`. Org must have email/template backends set. The email will be set if `email_supporter_template` is set on org or action page.
     - `email.supporter` sends thank you emails when Org has email/template backends set. The worker will send emails if ActionPage.thank_you_template refers to template identifier in the backend.
+    - `sqs` - sends action data to AWS SQS
+    - `webhook` -sends action data to Webhook backend
 
 
   """

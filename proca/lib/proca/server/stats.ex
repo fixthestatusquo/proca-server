@@ -1,21 +1,20 @@
 defmodule Proca.Server.Stats do
   @moduledoc """
   Stores campaign and action page signature counts in following structure (under campaign state key):
-  - map of campaign ids stores 2 element tuple 
-  - first element is count for whole campaign
-  - second element is a keylist mapping action_type to count
 
-  extra_supporters are included in supoorters count
+  - map of campaign ids stores a following structure:
+    - supporters - how many deduplicated supporters in total (including `extra_supporters`)
+    - action - action counts grouped by action type
+    - area - supporters grouped by area
+    - org - supporters grouped by org name
 
-  TODO: how to add extra_supporters to areas?
+  extra_supporters are not included in action counts, nor in area counts (we do not know where they belong).
 
-  ## State structure:
+  ## Process state structure:
 
-  interval: int - calculation interval in ms
-  query_runs: boolean - a flag saying calculation is running now and we shouldn't run new calculation
-  campaign:
-  campaign_id ->  (map)
-  {deduped supporters, %{action_type: count}, %{area: count}, %{org_id: count}}
+  - `interval`: int - calculation interval in ms
+  - `query_runs`: boolean - a flag saying calculation is running now and we shouldn't run new calculation
+  - `campaign`: `campaign_id -> %Stats{}` (map)
   """
   defstruct supporters: 0, action: %{}, area: %{}, org: %{}
 
@@ -126,6 +125,9 @@ defmodule Proca.Server.Stats do
     {:reply, cst, stats}
   end
 
+  @doc """
+  Run the full calculation of stats
+  """
   def calculate() do
     # Calculation of supporters:
     # We can have many supporters records for same fingerprint.
@@ -267,14 +269,24 @@ defmodule Proca.Server.Stats do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
+  @doc """
+  Get stats for this `campaign_id` from Stat process.
+  """
   def stats(campaign_id) do
     GenServer.call(__MODULE__, {:stats, campaign_id})
   end
 
+  @doc """
+  Increment by one action count for particular `action_type` collected by org with `org_id`, in campaign with `campaign_id`.
+  The `new_supporter` is true if `addActionContact` was used to create action + supporter, otherwise a supporter was re-used (`addAction`).
+  """
   def increment(campaign_id, org_id, action_type, new_supporter) do
     GenServer.cast(__MODULE__, {:increment, campaign_id, org_id, action_type, nil, new_supporter})
   end
 
+  @doc """
+  Same as increment/4 but provides `area`
+  """
   def increment(campaign_id, org_id, action_type, area, new_supporter) do
     GenServer.cast(
       __MODULE__,

@@ -77,25 +77,32 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_personal_data/3)
     end
 
+    @desc "Encryption keys"
     field :keys, non_null(list_of(non_null(:key))) do
       arg(:select, :select_key)
       resolve(&Resolvers.Org.list_keys/3)
     end
 
+    @desc "Get encryption key"
     field :key, non_null(:key) do
+      @desc "Parameters to select the key by"
       arg(:select, non_null(:select_key))
       resolve(&Resolvers.Org.get_key/3)
     end
 
+    @desc "Services of this org"
     field :services, non_null(list_of(:service)) do
+      @desc "Parameters to select the key by"
       arg(:select, :select_service)
       resolve(&Resolvers.Org.list_services/3)
     end
 
+    @desc "Users of this org"
     field :users, non_null(list_of(:org_user)) do
       resolve(&Resolvers.User.list_org_users/3)
     end
 
+    @desc "Action processing settings for this org"
     field :processing, non_null(:processing) do
       resolve(&Resolvers.Org.org_processing/3)
     end
@@ -129,9 +136,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.action_pages/3)
     end
 
-    @desc "Action Page"
+    @desc "Get one page belonging to this org"
     field :action_page, non_null(:action_page) do
+      @desc "Id of page"
       arg(:id, :integer)
+      @desc "Name of page"
       arg(:name, :string)
 
       load(:action_page, by: [:id, :name], preload: [:org, campaign: :org])
@@ -173,15 +182,18 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :org_mutations do
+    @desc "Add an org. Calling user  will become it's owner."
     field :add_org, type: non_null(:org) do
+      @desc "Contet of the org to be added"
       arg(:input, non_null(:org_input))
 
       allow(:user)
       resolve(&Resolvers.Org.add_org/3)
     end
 
+    @desc "Delete an org"
     field :delete_org, type: non_null(:status) do
-      @desc "Name of organisation"
+      @desc "Name of organisation to be deleted"
       arg(:name, non_null(:string))
 
       load(:org, by: [:name])
@@ -191,9 +203,11 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.delete_org/3)
     end
 
+    @desc "Update an org"
     field :update_org, type: non_null(:private_org) do
       @desc "Name of organisation, used for lookup, can't be used to change org name"
       arg(:name, non_null(:string))
+      @desc "Content of org to be updated"
       arg(:input, non_null(:org_input))
 
       load(:org, by: [:name])
@@ -206,23 +220,39 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :update_org_processing, type: non_null(:private_org) do
       @desc "Set email backend to"
 
+      @desc "Name of the org (to rename it)"
       arg(:name, non_null(:string))
+      @desc "Use a particular owned service type for sending emails"
       arg(:email_backend, :service_name)
+      @desc "Envelope FROM email when sending emails"
       arg(:email_from, :string)
 
+      @desc "Is the supporter required to double opt in their action (and associated personal data)?"
       arg(:supporter_confirm, :boolean)
+      @desc "The email template name that will be used to send the action DOI request"
       arg(:supporter_confirm_template, :string)
+      @desc "Should the thank you email be only send when email consent doi is required (and contain it)"
       arg(:doi_thank_you, :boolean)
 
+      @desc "Should proca put action in a custom queue, so an external service can do this?"
       arg(:custom_supporter_confirm, :boolean)
+      @desc "Should proca put action in a custom queue, so an external service can do this?"
       arg(:custom_action_confirm, :boolean)
+      @desc "Should proca put action in custom delivery queue, so an external service can sync it?"
       arg(:custom_action_deliver, :boolean)
 
+      @desc "Should proca put events in custom delivery queue, so an external service can sync it?"
       arg(:custom_event_deliver, :boolean)
+
+      @desc "Use a particular owned service type for sending events"
       arg(:event_backend, :service_name)
 
+      @desc "Use a particular owned service type for uploading files"
       arg(:storage_backend, :service_name)
+      @desc "Use a particular owned service type for looking up supporters in CRM"
       arg(:detail_backend, :service_name)
+
+      @desc "Use a particular owned service type for sending actions"
       arg(:push_backend, :service_name)
 
       load(:org, by: [:name])
@@ -231,7 +261,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.update_org_processing/3)
     end
 
+    @desc "Try becoming a staffer of the org"
     field :join_org, type: non_null(:join_org_result) do
+      @desc "Join the org of this name"
       arg(:name, non_null(:string))
 
       load(:org, by: [name: :name])
@@ -239,6 +271,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.join_org/3)
     end
 
+    @desc "Generate a new encryption key in org"
     field :generate_key, type: non_null(:key_with_private) do
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
@@ -251,6 +284,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.generate_key/3)
     end
 
+    @desc "Add a key to encryption keys"
     field :add_key, type: non_null(:key) do
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
@@ -258,6 +292,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       @desc "Name of organisation"
       arg(:org_name, non_null(:string))
+      @desc "key content"
       arg(:input, non_null(:add_key_input))
 
       resolve(&Resolvers.Org.add_key/3)
@@ -276,12 +311,19 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.activate_key/3)
     end
 
+    @desc """
+    Upsert an email tempalte to be used for sending various emails.
+    It belongs to org and is identified by (name, locale), so you can have multiple "thank_you" templates for different languages.
+    """
     field :upsert_template, type: :status do
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
       allow([:change_campaign_settings])
 
+
+      @desc "Add email tempalte to which org"
       arg(:org_name, non_null(:string))
+      @desc "Email template content"
       arg(:input, non_null(:email_template_input))
 
       resolve(&Resolvers.Org.upsert_template/3)
@@ -309,10 +351,15 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
   @desc "Encryption or sign key with integer id (database)"
   object :key do
+    @desc "Key id"
     field :id, non_null(:integer)
+    @desc "Public part of the key (base64url)"
     field :public, non_null(:string)
+    @desc "Name of the key (human readable)"
     field :name, non_null(:string)
+    @desc "Is it active?"
     field :active, non_null(:boolean)
+    @desc "Is it expired?"
     field :expired, non_null(:boolean)
 
     @desc "When the key was expired, in UTC"
@@ -320,11 +367,17 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :key_with_private do
+    @desc "Key id"
     field :id, non_null(:integer)
+    @desc "Public part of the key (base64url)"
     field :public, non_null(:string)
+    @desc "Private (Secret) part of the key (base64url)"
     field :private, non_null(:string)
+    @desc "Name of the key (human readable)"
     field :name, non_null(:string)
+    @desc "Is it active?"
     field :active, non_null(:boolean)
+    @desc "Is it expired?"
     field :expired, non_null(:boolean)
 
     @desc "When the key was expired, in UTC"
@@ -332,27 +385,37 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :key_ids do
+    @desc "Key id"
     field :id, non_null(:integer)
+    @desc "Public part of the key (base64url)"
     field :public, non_null(:string)
   end
 
   input_object :add_key_input do
+    @desc "Name of the key"
     field :name, non_null(:string)
+    @desc "Public part of the key (base64url)"
     field :public, non_null(:string)
   end
 
   input_object :gen_key_input do
+    @desc "Name of the key"
     field :name, non_null(:string)
   end
 
   input_object :select_key do
+    @desc "Key id"
     field :id, :integer
+    @desc "Only active"
     field :active, :boolean
+    @desc "Key having this public part"
     field :public, :string
   end
 
   object :join_org_result do
+    @desc "Result of joining - succes or pending confirmation"
     field :status, non_null(:status)
+    @desc "Org that was joined"
     field :org, non_null(:org)
   end
 
@@ -365,39 +428,60 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :processing do
+    @desc "Envelope FROM email when sending emails"
     field :email_from, :string
+    @desc "Use a particular owned service type for sending emails"
     field :email_backend, :service_name
 
+    @desc "Is the supporter required to double opt in their action (and associated personal data)?"
     field :supporter_confirm, non_null(:boolean)
+    @desc "The email template name that will be used to send the action DOI request"
     field :supporter_confirm_template, :string
+    @desc "Only send thank you emails to opt-ins"
     field :doi_thank_you, non_null(:boolean)
 
+    @desc "Should proca put action in a custom queue, so an external service can do this?"
     field :custom_supporter_confirm, non_null(:boolean)
+    @desc "Should proca put action in a custom queue, so an external service can do this?"
     field :custom_action_confirm, non_null(:boolean)
+    @desc "Should proca put action in custom delivery queue, so an external service can sync it?"
     field :custom_action_deliver, non_null(:boolean)
+    @desc "Should proca put events in custom delivery queue, so an external service can sync it?"
     field :custom_event_deliver, non_null(:boolean)
 
+    @desc "Use a particular owned service type for sending events"
     field :event_backend, :service_name
 
+    @desc "Use a particular owned service type for sending actions"
     field :push_backend, :service_name
+    @desc "Use a particular owned service type for uploading files"
     field :storage_backend, :service_name
+    @desc "Use a particular owned service type for looking up supporters in CRM"
     field :detail_backend, :service_name
 
+    @desc "Email templates. (warn: contant is not available to fetch)"
     field :email_templates, list_of(non_null(:string)) do
       resolve(&ProcaWeb.Resolvers.Org.org_processing_templates/3)
     end
   end
 
   object :email_template do
+    @desc "Name of the template"
     field :name, non_null(:string)
+    @desc "Locale of the template"
     field :locales, list_of(non_null(:string))
   end
 
   input_object :email_template_input do
+    @desc "template name"
     field :name, non_null(:string)
+    @desc "template locale"
     field :locale, :string
+    @desc "Subject text"
     field :subject, :string
+    @desc "Html part body"
     field :html, :string
+    @desc "Plaintext part body"
     field :text, :string
   end
 end

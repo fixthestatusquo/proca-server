@@ -6,7 +6,7 @@ defmodule Proca.Supporter.Privacy do
 
   Personal data is decoupled from actions in following way:
 
-  Each action is identitfied by Action record and can reference a supporter
+  Each action is identitfied by Action record and can reference a supporter.
 
   Supporter records an individual taking action. Can be identified uniquely by a
   fingeprint, which is calculated based on current Contact Data format. For
@@ -22,28 +22,30 @@ defmodule Proca.Supporter.Privacy do
   Contact data can be distributed to:
   - Widget Org collecting data on Action Page
   - Lead Org running the campaign (if different)
-  - 3rd Party Org (this can be any other org)
+  - Not implemented: 3rd Party Org (this can be any other org)
 
   When it is distributed, there is a consent associated with delivery and
   communication areas (and a scope, currently email, but could be email, sms etc).
 
   ### Example setups
   1. Org runs Campaign and Action page - they get contact data, with email opt in true/false
-  2a. Org runs Action Page of Org' Campaign - Org gets data for delivery and email opt in, Org' nothing
-  2b. Org gets data for delivery and email opt in, Org' gets data iff campaign opt in is true (otherwise )
-  2c. 2b but other way round. It's (central) Org' that delivers, and Org gets data only if email opt in is true
-  3. Also some extra partner org can get data
+  2a. Org (with Page `delivery=true`) runs Action Page of Lead Campaign - Org gets data for delivery and email opt in, Lead nothing
+  2b. Org (with Page `delivery=true`) gets data for delivery and email opt in, Lead gets data iff campaign `force_delivery=true` (otherwise)
+  2c. 2b but other way round. It's (central) Lead that delivers, and Org (Page `deliver=false`) gets data only if email opt in is true
+  3. Not implemented: Also some extra partner org can get data
 
-  XXX For now, lets leave out extra partner config (should they be set on action page or campaign level?)
+  ActionPage has a setting:
+  - `delivery: :boolean, defualt: true` - means, action page owner delivers signatures
 
-  XXX ActionPage should have new columns:
-  delivery: :boolean, defualt: true - means, action page owner delivers signatures
+  Campaign has a setting:
+  - `force_delivery: :boolean, default: false` - if
+  true, campaign owner delivers contact data even if action page owner does it
+  already. If false, only delivers if action page does not.
 
-  XXX Campaign should have new columns:
-  force_delivery: :boolean, default: false - if true, campaign owner delivers contact data even if action page owner does it already. If false, only delivers if action page does not.
-
-  User gives consent in a privacy object. Right now they can only decide about
-  communication consent, the delivery consent is implicit and they can't say for instance, that their signature should be included in action page owner delivery but not the campaign owner delivery. XXX Check if this is okay wrt GDPR.
+  User gives consent in a privacy object (in GraphQL). Right now they can only decide about
+  communication consent, the delivery consent is implicit and they can't say for
+  instance, that their signature should be included in action page owner
+  delivery but not the campaign owner delivery.
 
   """
 

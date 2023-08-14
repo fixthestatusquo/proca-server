@@ -4,6 +4,8 @@ An universal action tool backend for JAM stack apps.
 Elixir app that uses PostgreSQL as data store and RabbitMQ
 for data processing. It is the backend / datastore for [Proca Widget](https://github.com/FixTheStatusQuo/proca).
 
+Proca Server is a (mostly headless) [Phoenix App](https://www.phoenixframework.org/) so learn about how to work with such apps. Proca uses all standard mechanisms and practices of Phoenix Framework!
+
 It is made with love, elixir and hope we can change the world for the better.
 
 Please note that this project is released with a [Contributor Code of Conduct](code_of_conduct.md). By participating in this project you agree to abide by its terms.
@@ -28,37 +30,46 @@ Please note that this project is released with a [Contributor Code of Conduct](c
 
 # Prerequisites
 
+To develop and run proca server, these are needed:
+
 - PostgreSQL >= 10
-- Elixir >= 1.14
+  This is a db server
+
+- Elixir >= 1.14 
 
 we recommend asdf to install erlang+elixir:
 in this repo, run 
 
     $ sudo apt install automake libssl-dev autoconf libncurses5-dev
-    $asdf plugin add erlang
-    $asdf plugin add elixir
-    $asdf install
-    $mix local.rebar 
-    $mix local.hex
+    $ asdf plugin add erlang
+    $ asdf plugin add elixir
+    $ asdf install
+    $ mix local.rebar 
+    $ mix local.hex
 
   You'll need the following packages:
     `erlang-base erlang-dev erlang-parsetools erlang-xmerl elixir`
 
 - RabbitMQ (3.x, tested on 3.8)
 
-- NodeJS (>= 14)
+  This is a queue server
 
-# Just trying out setup 
+- NodeJS (>= 14)
+  Node is not needed on server where we deploy bundled assets.
+
+# Using docker to just try out Proca
+
+If you would just like to try out proca server, it's easiest with docker-compose. It will create proca, along with postgres and rabbitmq containers.
 
 **Required:**
 
 - docker
 - docker-compose 
-- proca-cli (install with: `npm i -g @proca/cli`)
+- proca cli (install with: `pip install proca`)
 
-If you would just like to try out proca server, it's easiest with docker-compose:
 
 ```
+$ pip install proca # install CLI
 $ cd proca/utils
 $ docker-compose up -d 
 # wait until the servers start 
@@ -66,19 +77,30 @@ $ docker-compose up -d
 $ docker-compose logs proca 
 # note down the username and password for the user of primary "instance" organisation. 
 
-    $ export API_URL=http://localhost:4000
-    $ proca server:add -h http://localhost -s 4000 -u {user} -p {password} localhost 
+$ proca server:add local
+API url: http://localhost:4000
+🍦 API url looks ok - http://localhost:4000/api 
+API token []: (RETURN)
+sername (email): some@example.com
+Password: 
+Repeat for confirmation: 
+(it will create a token and store in ~/.config/proca/proca.conf)
+$
+```
 
 Now you can:
 
-- Use procato talk to the server API. 
+- Use proca CLI to talk to the server API. 
 - You can also perform API calls directly using GraphQL in the [GraphQL playground](http://localhost:4000/graphiql) - it's great for exploring the API! Sign in at [http://localhost:4000](http://localhost:4000) to make authenticated API calls. 
+- To use the GraphiQL API with a token you have set up in proca CLI, type `proca token` and put the `Bearer sometoken` into `Authorization` header in GraphiQL bottom screen. 
 - You can see the processing in action using [RabbitMQ management console](http://localhost:15672/) - login with user name _proca_, password _proca_.
 
 
 # Development setup
 
 The script utils/configure-development-environment.sh will setup PostgreSQL, the Erlang / Elixir / Pheonix server, the RabbitMQ server and runs npm install in the assets directory.
+
+Make sure PostgreSQL is installed. RabbitMQ will be run using docker.
 
 The script needs a few ENV varaibles set:
 
@@ -101,12 +123,43 @@ You can then run the development server.
 
 By default, the development webserver is located at http://localhost:4000/
 
-# build
+# From building to server
+
+This is a [must read on development of Phoenix apps](https://hexdocs.pm/phoenix/up_and_running.html)
+
+This is a [must read on deployment of Phoenix apps](https://hexdocs.pm/phoenix/deployment.html).
 
     $./build
 
-should walk you through the steps to build a prod version
+Read more in [Developing](guides/Developing).
 
 # Configuration
 
+This is standard [Phoenix Framework](https://hexdocs.pm/phoenix/overview.html), which knowledge is absolutely mandatory.
+
+Phoenix apps use configuration in `config/config.exs` which then is overriden by files depending on `MIX_ENV` (similar to `NODE_ENV`), respectively: dev, prod, test. The `config/releases.exs` runs in prod and will read environment variables *from the server*. The `prod.exs` will read environment variables on compile time (your dev laptop) and hardcode them inside elixir bytecode. This is a legacy of Erlang deployment strategies.
+
 See config/config.exs and config/dev.exs for configuration options.
+
+The config files set a settings tree, read it like so:
+
+- Configures proca server, in particular the `ProcaWeb.Resolvers.ReportError` module, and sets two keys: `enable` and `cleartext`.
+
+```elixir
+config :proca, ProcaWeb.Resolvers.ReportError,
+  enable: false,
+  cleartext: []
+```
+
+- Configures other bundled apps (here: Sentry client):
+
+``` elixir
+config :sentry,
+  environment_name: Mix.env(),
+  included_environments: [:prod],
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()],
+  capture_log_messages: true
+```
+
+

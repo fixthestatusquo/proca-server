@@ -10,6 +10,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
   alias ProcaWeb.Resolvers.ReportError
 
   object :action_queries do
+    @desc """
+    Export actions collected by org, optionally filtered by campaign
+    """
     field :export_actions, non_null(list_of(:action)) do
       @desc "Organization name"
       arg(:org_name, non_null(:string))
@@ -201,10 +204,15 @@ defmodule ProcaWeb.Schema.ActionTypes do
   end
 
   object :action do
+    @desc "Id of action"
     field :action_id, non_null(:integer)
+    @desc "Timestamp of creation"
     field :created_at, non_null(:naive_datetime)
+    @desc "Action type"
     field :action_type, non_null(:string)
+    @desc "supporter contact data"
     field :contact, non_null(:contact)
+    @desc "Action custom fields (as stringified JSON)"
     field :custom_fields, non_null(:json)
 
     @desc "Deprecated, use customFields"
@@ -214,18 +222,28 @@ defmodule ProcaWeb.Schema.ActionTypes do
       end)
     end
 
+    @desc "UTM codes"
     field :tracking, :tracking
+    @desc "Campaign this action was collected in"
     field :campaign, non_null(:campaign)
+    @desc "Action page this action was collected at"
     field :action_page, non_null(:action_page)
+    @desc "Consents, privacy data of this action"
     field :privacy, non_null(:consent)
+    @desc "Donation specific data"
     field :donation, :donation
   end
 
   object :contact do
+    @desc "Contact ref (fingerprint) of supporter"
     field :contact_ref, non_null(:id)
+    @desc "Stringified json with PII optionally encrypted"
     field :payload, non_null(:string)
+    @desc "Encryption nonce value"
     field :nonce, :string
+    @desc "Public key used to encrypt this action"
     field :public_key, :key_ids
+    @desc "Signing key used to encrypt this action"
     field :sign_key, :key_ids
     #   field :optIn, non_null(:boolean) <- is in privacy already
   end
@@ -255,14 +273,19 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   @desc "GDPR consent data for this org"
   object :consent do
+    @desc "communication (email) opt-in"
     field :opt_in, :boolean
+    @desc "Consent timestamp"
     field :given_at, non_null(:naive_datetime)
+    @desc "Email status, whether it's normal, DOI, or bouncing"
     field :email_status, non_null(:email_status)
+    @desc "When did the email status change last time"
     field :email_status_changed, :naive_datetime
+    @desc "This action contained consent (if false, it could be a share action that is attached to another action containing a consent)"
     field :with_consent, non_null(:boolean)
   end
 
-  @desc "Tracking codes"
+  @desc "Tracking codes (UTM params)"
   object :tracking do
     field :source, non_null(:string)
     field :medium, non_null(:string)
@@ -296,7 +319,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :amount, :integer
     @desc "Provide currency of this donation"
     field :currency, :string
+    @desc "How often is the recurring donation collected"
     field :frequency_unit, :donation_frequency_unit
+    @desc "Custom JSON data"
     field :payload, non_null(:json)
   end
 
@@ -327,7 +352,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
   end
 
   object :requeue_result do
+    @desc "Count of actions selected for requeueing"
     field :count, non_null(:integer)
+    @desc "Count of actions that could not be requeued"
     field :failed, non_null(:integer)
     # field :last_id, non_null(:integer)
   end

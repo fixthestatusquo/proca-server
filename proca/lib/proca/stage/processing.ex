@@ -20,7 +20,7 @@ defmodule Proca.Stage.Processing do
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right? 
 
   State diagram below shows transitions while processing. `A` stands for Action,
-  `S` for supporter. States are enumerated in `ProcessingStatus`, and supporter
+  `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
   and action track its status separately.
 
   ```
@@ -47,6 +47,10 @@ defmodule Proca.Stage.Processing do
 
   At the moment we do not support custom action confirmation - fully - we do not send actions to this queue and there is not routes in API to confirm or reject an action.
   This is a missing piece albeit for now did not proove necessary.
+
+  A rejected suppoter or action will not be counted into the statistics for the campaign.
+
+  A bounce event received from email backend will mark the `Supporter` as rejected (even if they were accepted before).
   """
 
   defstruct action_change: nil,

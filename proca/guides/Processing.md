@@ -2,31 +2,71 @@
 
 Proca provides a versatile system for processing action data, which supports:
 
-1. Confirmation - whether PII needs to be confirmed by user (user
-   clicks on email link to confirm or reject their submission), or action should be
-   moderated (open letter signatory, or mail to target moderation for content),
-   Proca can put supporter and action data in _confirming_ stage, before they
-   are delivered.
+## Confirmation
+
+Confirmation - whether PII/action needs to be confirmed by user (user clicks
+on email link to confirm or reject their submission), or action should be
+moderated (open letter signatory, or mail to target moderation for content -
+in which case a campaigner approbes the action somehow, via UI or email
+link). When using confirmation, actions wait in _confirming_ stage, before
+they are delivered. Both `Proca.Action` and `Proca.Supporter` can be put into
+_confirming_ state.
+
    
-   Out of the box, Proca supports sending _supporter confirm_ emails and confirming
-   supporter data this way. However, you can _plug in_ to this mechanism and
-   provide your own Supporter or Action confirmation mechanism. For instance,
-   you could build a volunteer based, crowd-source moderation app that checks
-   content of submitted actions (like signups, or mail to targets).
+   ```
+   [ New action ] --> [ Wait: Supporter confirmed? ] --> [ Wait: Action confirmed? ] --> [ Deliver! ]
+                              (optional)                          (optional)
+   actions go to queue:          V                                   V                        V
+                                 V                                   V                        V
+   Proca internal queue:    wrk.ORG_ID.email.supporter            (none)              wrk.ORG_ID.{email.supporter,sqs,webhook}       
+   Customer queue:          cus.ORG_ID.confirm.supporter  cus.ORG_ID.confirm.action   cus.ORG_ID.deliver
+   ```
+   
+_(See `Proca.Stage.Processing` for a schema of a state machine of processing statuses on Supporter and Action)_
+   
+Out of the box, Proca supports sending _supporter confirm_ emails and
+confirming supporter data this way. This is sometimes called action DOI, but
+it boils down to proving that supporter data _is real_, because someone
+received an email and clicked on the link. After a Supporter is confirmed,
+all other actions added to that supporter (via `addAction`, eg. Share) will
+be assumed to be confirmed too.
 
+If you do not want to use the default mechanism to send an email to _confirm
+a supporter_, you can build your own mechanism (push notification). In that
+case you will want to _disable_ the email sending, and _enable_ a custom
+queue where you will read actions put into _confirming_ state. You will then
+send your push notification and if user clicks the special link, the
+supporter will be confirmed (and all actions associated with it like
+signature or share).
 
-2. Delivery - Actions can be delivered using internal and external mechanisms,
-   all running in parallel and with batching for performance.
-   The Action can be delivered by:
-   - Thank you e-mail with templated, personalized content (including
-     `firstName`, or custom field replacement)
-   - Forwarding to CRM - using a decrypting gateway under your control, you can deliver decrypted member data to CRM of choice.
-   - Forwarding to SQS - where you can do whatever SQS is used for!
-   - Stored in your Org's queue (AMQP), where you can fetch actions from and process in a custom way. 
+The special link to confirm a supporter has a form: `/link/s/${action_id}/accept/${contact_ref}`.
+
+The other special link to _reject_ a supporter can be used to mark a _confirming_ Supporter as _rejected_ ("It wasn't me!" link). The form is: `/link/s/${action_id}/reject/${contact_ref}`
+
+Proca also supports confirming of each action separately (_action confirmation_), this was not used much in real world. However, in this case we don't care if the supporter email is real, we care more about the action content, for example, custom fields, MTT body, attached file. We would put actions in a wait/confirming state until such actions are moderated/checked and accepted. **Partly unimplemented**: There is no api or link format to confirm or reject a particular action (could be easily added but needs a proper use-case).
+
+## Delivery
+
+Delivery of actions means that action is ready to be served and consumed. Actions can be delivered using internal and external mechanisms.
+   
+The Action can be delivered by:
+- Thank you e-mail with templated, personalized content (including
+    `firstName`, or custom field replacement)
+- Forwarding to CRM - using we webhook, or a custom queue + special (decrypting) gateway microservice which synces actions into CRM of choice.
+- Forwarding to SQS - where you can do whatever SQS is used for!
+
+## Email DOI or communication consent
+
+The Email DOI, which is double consenting to receiving emails, is modeled separately from this mechanism, and is described in `Proca.Supporter`.
+
+However, a bouncing email will mark Supporter as rejected (same as if they would click "It wasn't me!" link).
+
 
 ## Queues
 
 Supporter and action data is based on AMQP queues (we use Rabbitmq). `Proca.Pipes.Topology` server is responsible to set up and maintain the queue setup. The stages of processing data is implemented by `Proca.Stage.Processing` server.
+
+Queues allow us to process actions in parallel and with batching for performance, as well as provide retry mechanism if actions are not ACK-ed.
 
 For each stages of processing, actions can land in custom queues. If you enable the custom queues for some stages, you are responsible to do something with the messages in the respective queue, otherwise they will be stuck at that stage.
 
@@ -142,3 +182,45 @@ Message structure
   - `title`
   - `contactSchema`
   - `config` - custom map
+
+
+## Built-in workers
+
+### Email the supporter worker
+
+- Reads queue: `wrk.ORG_ID.email.supporter`
+- This queue gets messages from 2 exchanges:
+  - `org.ORG_ID.confirm.supporter` - actions with `stage="supporter_confirm"` and routing key `campaign.action_type`
+  - `org.ORG_ID.deliver` - actions with `stage="deliver"` and routing key `campaign.action_type`
+  
+This worker sends emails to supporters in two cases. The supporter confirmation (action doi) it will send the template set as `actionPage.supporterConfirmTemplate` or `org.supporterConfirmTemplate`, whichever is available.
+
+After supporter is accepted, or if no supporter confirm is performed, instantly, worker will send the thank you email. Template in `actionPage.thankYouTemplate` is used, if set. If `Org.doiThankYou` is set for the org, thank you emails will only be sent to supporters who have opted in to communication. This can be used to collect newsletter doi by putting `{{doiLink}}` in that thank you email. Supporters who did not give communication consent, will not get any email at all. If you just want to hide the `{{doiLink}}` from those who have not opted i, but send thank you email to everyone, use `{{#privacy.optIn}}Click this {{doiLink}}.{{/privacy.optIn}}`.
+
+The emails will only be sent for actions with supporter - added via API `addActionContact`, not `addAction`(so not for `share` action).
+
+The `Org.emailFrom` must be set for any emails to be sent.
+
+The worker will only run for orgs collecting data, not others that data is shared with.
+
+It will use the `Proca.Service` set as  `emailBackend` configured for the org collecting action.
+
+
+
+### SQS and Webhook worker 
+
+These workers push actions, work in the same way, and read from queues:
+The workers will push to service designated by `pushBackend` of the org. 
+
+- Reads queue: `wrk.ORG_ID.sqs` and `wrk.ORG_ID.webhook` respectively.
+- This queue gets messages from exchange:
+  - `org.ORG_ID.deliver` - all messages to be delivered
+  - `org.ORG_ID.event` all events - enabled only if Org has an `eventBackend` set to `SQS` or `WEBHOOK`
+
+The service should contain AWS SQS or HTTP POST URIs and credentials respectively.
+
+If current org is instance org, and it has `eventBackend` set, it will receive events from *all of the orgs* event exchange (`org.X.event`).
+
+### MTT emails
+
+MTT sending is not part of action processing and runs under "cron like" server, see `Proca.Server.MTT`.
