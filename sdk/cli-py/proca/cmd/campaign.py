@@ -64,6 +64,31 @@ def add(ctx, org, name, title):
 
     print(format(campaign))
 
+@click.command("campaign:delete")
+@click.argument('identifier', default=None, required=False)
+@id_options
+@click.pass_obj
+def delete(ctx, identifier, id, name):
+    """
+    Delete the campaign. It is impossible to delete a campaign with Action Pages(?)
+    """
+    id, name = guess_identifier(id, name, identifier)
+
+    campaign = one_campaign(ctx.client, id, name)
+
+    t = "Delete " + rainbow(format(campaign))
+    really_delete = click.confirm(t)
+
+    if really_delete:
+        status = delete_campaign(ctx.client, campaign['id'])
+        if status == 'SUCCESS':
+            print("✨ Deleted.")
+        else:
+            print(f"status {status}")
+    else:
+        print("😌 Phew!")
+
+
 
 @click.command("campaign:set")
 @click.argument('identifier', default=None, required=False)
@@ -163,7 +188,7 @@ def org_campaigns(client, org_name):
     data = client.execute(query, **vars(org=org_name))
     return data['org']['campaigns']
 
-@explain_error("fetching a campaigh")
+@explain_error("fetching a campaign")
 def one_campaign(client, id, name,  with_targets=False, with_stats=False):
     query = gql("""
     query Campaign($id: Int, $name: String) {
@@ -198,6 +223,18 @@ def add_campaign(client, org_name, attrs):
 
     data = client.execute(query, **vars(org=org_name, input=attrs))
     return data['addCampaign']
+
+@explain_error('deleting campaign')
+def delete_campaign(client, id):
+    query = """
+    mutation delete($id: Int!) {
+      deleteCampaign(id: $id)
+    }
+    """
+    query = gql(query)
+    data = client.execute(query, **vars(id=id))
+    return data['deleteCampaign']
+
 
 @explain_error("updating a campaign")
 def update_campaign(client, id, name, attrs):
