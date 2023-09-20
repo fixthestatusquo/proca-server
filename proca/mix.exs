@@ -12,6 +12,7 @@ defmodule Proca.MixProject do
       aliases: aliases(),
       deps: deps(),
       docs: docs(),
+      versioning: versioning(),
       releases: [
         proca: [
           steps: [:assemble, :tar],
@@ -99,7 +100,8 @@ defmodule Proca.MixProject do
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test]}
+      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test]},
+      {:mix_version, "~> 2.1", only: [:dev], runtime: false}
     ]
   end
 
@@ -152,5 +154,14 @@ defmodule Proca.MixProject do
     #     Broadway.DummyProducer,
     #     Broadway.TermStorage
     #   ]
+  end
+
+  defp versioning do
+    [
+      tag_prefix: "",
+      commit_msg: "new version: %s",
+      annotation: "new version: %s",
+      annotate: true
+    ]
   end
 end
