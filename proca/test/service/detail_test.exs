@@ -60,5 +60,26 @@ defmodule Proca.Service.DetailTest do
       assert s2.email_status_changed.month == 6
       assert s2.email_status_changed.day == 10
     end
+
+    test "already confirmed", %{action: ac, supporter: sup} do
+      {s, _a} =
+        Detail.update(
+          Changeset.change(sup),
+          Changeset.change(ac),
+          %Detail{
+            privacy: %Detail.Privacy{
+              email_status: "already_confirmed",
+              email_status_changed: "2022-06-10T14:20:57.619735Z"
+            }
+          }
+        )
+
+      s2 = Changeset.apply_changes(s)
+
+      assert sup.email_status == :none
+      assert s2.email_status == :already_confirmed
+      assert s2.email_status_changed.month == 6
+      assert s2.email_status_changed.day == 10
+    end
   end
 end
