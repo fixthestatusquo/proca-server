@@ -147,12 +147,7 @@ export default function cli() {
 
   const argv = yargs
     .scriptName('proca-cli')
-    .command(
-      ['setup', '$0'],
-      'configure proca CLI (generates .env, keys.json files)',
-      {},
-      cmd(setup)
-    )
+    .usage('$0 <cmd> [args]')
     .option('debug', {
       alias: 'D',
       type: 'boolean',
@@ -189,6 +184,16 @@ export default function cli() {
       default: false
     })
     .command('token', 'print basic auth token', {}, cmd(showToken))
+    .command('$0', 'missing param', () => {}, (argv) => {
+      console.log('missing params, --help. the first time you need to run setup')
+    })
+
+    .command(
+      'setup',
+      'configure proca CLI (generates .env, keys.json files)',
+      {},
+      cmd(setup)
+    )
     .command('org:add', 'add a new organisation', {
       name: {
         alias: 'n',
@@ -467,6 +472,7 @@ export default function cli() {
       }
     }, cmd(syncFile))
 
+    .help()
     .argv
         // .demandCommand().argv;
 }
