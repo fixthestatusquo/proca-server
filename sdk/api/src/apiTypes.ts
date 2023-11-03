@@ -31,28 +31,43 @@ export type Scalars = {
 };
 
 export type Action = {
+  /** Id of action */
   actionId: Scalars['Int'];
+  /** Timestamp of creation */
   createdAt: Scalars['NaiveDateTime'];
+  /** Action type */
   actionType: Scalars['String'];
+  /** supporter contact data */
   contact: Contact;
+  /** Action custom fields (as stringified JSON) */
   customFields: Scalars['Json'];
   /**
    * Deprecated, use customFields
    * @deprecated use custom_fields
    */
   fields: Array<CustomField>;
+  /** UTM codes */
   tracking: Maybe<Tracking>;
+  /** Campaign this action was collected in */
   campaign: Campaign;
+  /** Action page this action was collected at */
   actionPage: ActionPage;
+  /** Consents, privacy data of this action */
   privacy: Consent;
+  /** Donation specific data */
   donation: Maybe<Donation>;
 };
 
 export type ActionCustomFields = {
+  /** id of action */
   actionId: Scalars['Int'];
+  /** type of action */
   actionType: Scalars['String'];
+  /** creation timestamp */
   insertedAt: Scalars['NaiveDateTime'];
+  /** area of supporter that did the action */
   area: Maybe<Scalars['String']>;
+  /** custom fields as stringified json */
   customFields: Scalars['Json'];
   /** @deprecated use custom_fields */
   fields: Array<CustomField>;
@@ -75,6 +90,7 @@ export type ActionInput = {
 };
 
 export type ActionPage = {
+  /** Id */
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -86,7 +102,10 @@ export type ActionPage = {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey (DEPRECATED: moved under config) */
+  /**
+   * List of steps in journey
+   * @deprecated moved under config
+   */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -103,7 +122,7 @@ export type ActionPageInput = {
    *
    * Does not have to exist, must be unique. Can be a 'technical' identifier
    * scoped to particular organization, so it does not have to change when the
-   * slugs/names change (eg. some.org/1234). However, frontent Widget can
+   * slugs/names change (eg. some.org/1234). However, frontend Widget can
    * ask for ActionPage by it's current location.href (but without https://), in which case it is useful
    * to make this url match the real widget location.
    */
@@ -144,7 +163,9 @@ export type ActivateKeyResult = {
 };
 
 export type AddKeyInput = {
+  /** Name of the key */
   name: Scalars['String'];
+  /** Public part of the key (base64url) */
   public: Scalars['String'];
 };
 
@@ -190,11 +211,18 @@ export type Campaign = {
   contactSchema: ContactSchema;
   /** Custom config map */
   config: Scalars['Json'];
-  /** Campaign statistics */
+  /** Statistics */
   stats: CampaignStats;
+  /** Lead org */
   org: Org;
-  /** Fetch public actions */
+  /**
+   * Fetch public actions. Can be used to display recent comments for example.
+   *
+   * To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+   * action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+   */
   actions: PublicActionsResult;
+  /** List MTT targets of this campaign */
   targets: Maybe<Array<Maybe<Target>>>;
 };
 
@@ -204,9 +232,9 @@ export type CampaignActionsArgs = {
   limit: Scalars['Int'];
 };
 
-/** Campaign input */
+/** Campaign content changed in mutations */
 export type CampaignInput = {
-  /** Campaign unchanging identifier */
+  /** Campaign short name */
   name?: Maybe<Scalars['String']>;
   /** Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign */
   externalId?: Maybe<Scalars['Int']>;
@@ -223,16 +251,30 @@ export type CampaignInput = {
 };
 
 export type CampaignMtt = {
+  /** This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same. */
   startAt: Scalars['DateTime'];
+  /** This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same. */
   endAt: Scalars['DateTime'];
+  /**
+   * If email templates are used to create MTT, use this template (works like thank you email templates).
+   * Otherwise, the raw text that is send with MTT action will make a plain text email.
+   */
   messageTemplate: Maybe<Scalars['String']>;
+  /** A test target email (yourself) where test mtt actions will be sent (instead to real targets) */
   testEmail: Maybe<Scalars['String']>;
 };
 
 export type CampaignMttInput = {
+  /** This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same. */
   startAt?: Maybe<Scalars['DateTime']>;
+  /** This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same. */
   endAt?: Maybe<Scalars['DateTime']>;
+  /**
+   * If email templates are used to create MTT, use this template (works like thank you email templates).
+   * Otherwise, the raw text that is send with MTT action will make a plain text email.
+   */
   messageTemplate?: Maybe<Scalars['String']>;
+  /** A test target email (yourself) where test mtt actions will be sent (instead to real targets) */
   testEmail?: Maybe<Scalars['String']>;
 };
 
@@ -244,8 +286,9 @@ export type CampaignStats = {
   supporterCountByArea: Array<AreaCount>;
   /** Unique action takers by org */
   supporterCountByOrg: Array<OrgCount>;
+  /** Unique supporter count not including the ones collected by org_name */
   supporterCountByOthers: Scalars['Int'];
-  /** Action counts for selected action types */
+  /** Action counts per action types (with duplicates) */
   actionCount: Array<ActionTypeCount>;
 };
 
@@ -260,33 +303,51 @@ export type ChangeUserStatus = {
 };
 
 export type Confirm = {
+  /** Secret code/PIN of the confirm */
   code: Scalars['String'];
+  /** Email the confirm is sent to */
   email: Maybe<Scalars['String']>;
+  /** Message attached to the confirm */
   message: Maybe<Scalars['String']>;
+  /** Object id that confirmable action refers to */
   objectId: Maybe<Scalars['Int']>;
+  /** Who created the confirm */
   creator: Maybe<User>;
 };
 
 export type ConfirmInput = {
+  /** secret code of this confirm */
   code: Scalars['String'];
+  /** email that confirm was assigned for */
   email?: Maybe<Scalars['String']>;
+  /** object_id that this confirm refers to */
   objectId?: Maybe<Scalars['Int']>;
 };
 
 export type ConfirmResult = {
+  /** Status of Confirm: Success, Confirming (waiting for confirmation), Noop */
   status: Status;
+  /** Action page if its an object of confirm */
   actionPage: Maybe<ActionPage>;
+  /** Campaign page if its an object of confirm */
   campaign: Maybe<Campaign>;
+  /** Org if its an object of confirm */
   org: Maybe<Org>;
+  /** A message attached to the confirm */
   message: Maybe<Scalars['String']>;
 };
 
 /** GDPR consent data for this org */
 export type Consent = {
+  /** communication (email) opt-in */
   optIn: Maybe<Scalars['Boolean']>;
+  /** Consent timestamp */
   givenAt: Scalars['NaiveDateTime'];
+  /** Email status, whether it's normal, DOI, or bouncing */
   emailStatus: EmailStatus;
+  /** When did the email status change last time */
   emailStatusChanged: Maybe<Scalars['NaiveDateTime']>;
+  /** This action contained consent (if false, it could be a share action that is attached to another action containing a consent) */
   withConsent: Scalars['Boolean'];
 };
 
@@ -299,10 +360,15 @@ export type ConsentInput = {
 };
 
 export type Contact = {
+  /** Contact ref (fingerprint) of supporter */
   contactRef: Scalars['ID'];
+  /** Stringified json with PII optionally encrypted */
   payload: Scalars['String'];
+  /** Encryption nonce value */
   nonce: Maybe<Scalars['String']>;
+  /** Public key used to encrypt this action */
   publicKey: Maybe<KeyIds>;
+  /** Signing key used to encrypt this action */
   signKey: Maybe<KeyIds>;
 };
 
@@ -379,7 +445,9 @@ export type DonationActionInput = {
   amount?: Maybe<Scalars['Int']>;
   /** Provide currency of this donation */
   currency?: Maybe<Scalars['String']>;
+  /** How often is the recurring donation collected */
   frequencyUnit?: Maybe<DonationFrequencyUnit>;
+  /** Custom JSON data */
   payload: Scalars['Json'];
 };
 
@@ -395,54 +463,81 @@ export enum DonationSchema {
 }
 
 export enum EmailStatus {
+  /** An unused email. (Warning:  Or used, but we do not store the fact that emails are delivered ok) */
   None = 'NONE',
+  /** The user has received a DOI on this email and accepted it */
   DoubleOptIn = 'DOUBLE_OPT_IN',
+  /** This email was used and bounced */
   Bounce = 'BOUNCE',
+  /** This email was used and blocked */
   Blocked = 'BLOCKED',
+  /** This email was used and marked spam */
   Spam = 'SPAM',
+  /** This email was used and user unsubscribed */
   Unsub = 'UNSUB'
 }
 
 export type EmailTemplateInput = {
+  /** template name */
   name: Scalars['String'];
+  /** template locale */
   locale?: Maybe<Scalars['String']>;
+  /** Subject text */
   subject?: Maybe<Scalars['String']>;
+  /** Html part body */
   html?: Maybe<Scalars['String']>;
+  /** Plaintext part body */
   text?: Maybe<Scalars['String']>;
 };
 
 export type GenKeyInput = {
+  /** Name of the key */
   name: Scalars['String'];
 };
 
 export type JoinOrgResult = {
+  /** Result of joining - succes or pending confirmation */
   status: Status;
+  /** Org that was joined */
   org: Org;
 };
 
 
 /** Encryption or sign key with integer id (database) */
 export type Key = {
+  /** Key id */
   id: Scalars['Int'];
+  /** Public part of the key (base64url) */
   public: Scalars['String'];
+  /** Name of the key (human readable) */
   name: Scalars['String'];
+  /** Is it active? */
   active: Scalars['Boolean'];
+  /** Is it expired? */
   expired: Scalars['Boolean'];
   /** When the key was expired, in UTC */
   expiredAt: Maybe<Scalars['NaiveDateTime']>;
 };
 
 export type KeyIds = {
+  /** Key id */
   id: Scalars['Int'];
+  /** Public part of the key (base64url) */
   public: Scalars['String'];
 };
 
 export type KeyWithPrivate = {
+  /** Key id */
   id: Scalars['Int'];
+  /** Public part of the key (base64url) */
   public: Scalars['String'];
+  /** Private (Secret) part of the key (base64url) */
   private: Scalars['String'];
+  /** Name of the key (human readable) */
   name: Scalars['String'];
+  /** Is it active? */
   active: Scalars['Boolean'];
+  /** Is it expired? */
   expired: Scalars['Boolean'];
   /** When the key was expired, in UTC */
   expiredAt: Maybe<Scalars['NaiveDateTime']>;
@@ -520,14 +615,20 @@ export type OrgUser = {
 };
 
 export type OrgUserInput = {
+  /** Email of user */
   email: Scalars['String'];
+  /** Role name of user in this org */
   role: Scalars['String'];
 };
 
 export type Partnership = {
+  /** Partner org */
   org: Org;
+  /** Partner's pages that are part of this campaign (can be more, eg: multiple languages) */
   actionPages: Array<ActionPage>;
+  /** Join/Launch requests of this partner */
   launchRequests: Array<Confirm>;
+  /** The partner staffers who initiated a request */
   launchRequesters: Array<User>;
 };
 
@@ -545,6 +646,7 @@ export type PersonalData = {
 };
 
 export type PrivateActionPage = ActionPage & {
+  /** Id */
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -556,7 +658,10 @@ export type PrivateActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey (DEPRECATED: moved under config) */
+  /**
+   * List of steps in journey
+   * @deprecated moved under config
+   */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -564,14 +669,18 @@ export type PrivateActionPage = ActionPage & {
   campaign: Campaign;
   /** Org the action page belongs to */
   org: Org;
+  /** Extra supporters, a number added to deduplicated supporter count. Cannot be added to per-area or per-action_type counts. */
   extraSupporters: Scalars['Int'];
-  /** Action page collects also opt-out actions */
+  /**
+   * Action page collects also opt-out actions, to deliver them to authorities.
+   * If false, the opt-outs will fallback to lead (we never trash data with opt-outs)
+   */
   delivery: Scalars['Boolean'];
-  /** Email template to confirm supporter */
+  /** Email template to confirm supporter (DOI) */
   supporterConfirmTemplate: Maybe<Scalars['String']>;
   /** Location of the widget as last seen in HTTP REFERER header */
   location: Maybe<Scalars['String']>;
-  /** Status of action page */
+  /** Status of action page - STANDBY (ready to get actions), ACTIVE (collecting actions), STALLED (actions not coming any more) */
   status: Maybe<ActionPageStatus>;
 };
 
@@ -588,17 +697,24 @@ export type PrivateCampaign = Campaign & {
   contactSchema: ContactSchema;
   /** Custom config map */
   config: Scalars['Json'];
-  /** Campaign statistics */
+  /** Statistics */
   stats: CampaignStats;
+  /** Lead org */
   org: Org;
-  /** Fetch public actions */
+  /**
+   * Fetch public actions. Can be used to display recent comments for example.
+   *
+   * To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+   * action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+   */
   actions: PublicActionsResult;
+  /** List MTT targets of this campaign */
   targets: Maybe<Array<Maybe<Target>>>;
-  /** Campaign onwer collects opt-out actions for delivery even if campaign partner is */
+  /** Campaign onwer collects opt-out actions for delivery even if campaign partner is delivering */
   forceDelivery: Scalars['Boolean'];
   /** Action Pages of this campaign that are accessible to current user */
   actionPages: Array<PrivateActionPage>;
-  /** List of partnerships and requests */
+  /** List of partnerships and requests to join partnership */
   partnerships: Maybe<Array<Partnership>>;
   /** MTT configuration */
   mtt: Maybe<CampaignMtt>;
@@ -621,16 +737,21 @@ export type PrivateOrg = Org & {
   id: Scalars['Int'];
   /** Personal data settings for this org */
   personalData: PersonalData;
+  /** Encryption keys */
   keys: Array<Key>;
+  /** Get encryption key */
   key: Key;
+  /** Services of this org */
   services: Array<Maybe<Service>>;
+  /** Users of this org */
   users: Array<Maybe<OrgUser>>;
+  /** Action processing settings for this org */
   processing: Processing;
   /** List campaigns this org is leader or partner of */
   campaigns: Array<Campaign>;
   /** List action pages this org has */
   actionPages: Array<ActionPage>;
-  /** Action Page */
+  /** Get one page belonging to this org */
   actionPage: ActionPage;
   /** DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id */
   campaign: Campaign;
@@ -674,32 +795,53 @@ export type PrivateOrgCampaignArgs = {
 
 export type PrivateTarget = Target & {
   id: Scalars['String'];
+  /** Name of target */
   name: Scalars['String'];
+  /** unique external_id of target, used to upsert target */
   externalId: Scalars['String'];
+  /** Locale of this target (in which language do they read emails?) */
   locale: Maybe<Scalars['String']>;
+  /** Area of the target */
   area: Maybe<Scalars['String']>;
+  /** Custom fields, stringified json */
   fields: Maybe<Scalars['Json']>;
+  /** Email list of this target */
   emails: Array<Maybe<TargetEmail>>;
 };
 
 export type Processing = {
+  /** Envelope FROM email when sending emails */
   emailFrom: Maybe<Scalars['String']>;
+  /** Use a particular owned service type for sending emails */
   emailBackend: Maybe<ServiceName>;
+  /** Is the supporter required to double opt in their action (and associated personal data)? */
   supporterConfirm: Scalars['Boolean'];
+  /** The email template name that will be used to send the action DOI request */
   supporterConfirmTemplate: Maybe<Scalars['String']>;
+  /** Only send thank you emails to opt-ins */
   doiThankYou: Scalars['Boolean'];
+  /** Should proca put action in a custom queue, so an external service can do this? */
   customSupporterConfirm: Scalars['Boolean'];
+  /** Should proca put action in a custom queue, so an external service can do this? */
   customActionConfirm: Scalars['Boolean'];
+  /** Should proca put action in custom delivery queue, so an external service can sync it? */
   customActionDeliver: Scalars['Boolean'];
+  /** Should proca put events in custom delivery queue, so an external service can sync it? */
   customEventDeliver: Scalars['Boolean'];
+  /** Use a particular owned service type for sending events */
   eventBackend: Maybe<ServiceName>;
+  /** Use a particular owned service type for sending actions */
   pushBackend: Maybe<ServiceName>;
+  /** Use a particular owned service type for uploading files */
   storageBackend: Maybe<ServiceName>;
+  /** Use a particular owned service type for looking up supporters in CRM */
   detailBackend: Maybe<ServiceName>;
+  /** Email templates. (warn: contant is not available to fetch) */
   emailTemplates: Maybe<Array<Scalars['String']>>;
 };
 
 export type PublicActionPage = ActionPage & {
+  /** Id */
   id: Scalars['Int'];
   /** Locale for the widget, in i18n format */
   locale: Scalars['String'];
@@ -711,7 +853,10 @@ export type PublicActionPage = ActionPage & {
   thankYouTemplateRef: Maybe<Scalars['String']>;
   /** Is live? */
   live: Scalars['Boolean'];
-  /** List of steps in journey (DEPRECATED: moved under config) */
+  /**
+   * List of steps in journey
+   * @deprecated moved under config
+   */
   journey: Array<Scalars['String']>;
   /** Config JSON of this action page */
   config: Scalars['Json'];
@@ -723,7 +868,9 @@ export type PublicActionPage = ActionPage & {
 
 /** Result of actions query */
 export type PublicActionsResult = {
+  /** Custom field keys which are public */
   fieldKeys: Maybe<Array<Scalars['String']>>;
+  /** List of actions custom fields */
   list: Maybe<Array<Maybe<ActionCustomFields>>>;
 };
 
@@ -740,11 +887,18 @@ export type PublicCampaign = Campaign & {
   contactSchema: ContactSchema;
   /** Custom config map */
   config: Scalars['Json'];
-  /** Campaign statistics */
+  /** Statistics */
   stats: CampaignStats;
+  /** Lead org */
   org: Org;
-  /** Fetch public actions */
+  /**
+   * Fetch public actions. Can be used to display recent comments for example.
+   *
+   * To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+   * action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+   */
   actions: PublicActionsResult;
+  /** List MTT targets of this campaign */
   targets: Maybe<Array<Maybe<Target>>>;
 };
 
@@ -765,24 +919,37 @@ export type PublicOrg = Org & {
 
 export type PublicTarget = Target & {
   id: Scalars['String'];
+  /** Name of target */
   name: Scalars['String'];
+  /** unique external_id of target, used to upsert target */
   externalId: Scalars['String'];
+  /** Locale of this target (in which language do they read emails?) */
   locale: Maybe<Scalars['String']>;
+  /** Area of the target */
   area: Maybe<Scalars['String']>;
+  /** Custom fields, stringified json */
   fields: Maybe<Scalars['Json']>;
 };
 
 export enum Queue {
+  /** Queue of thank you email sender worker */
   EmailSupporter = 'EMAIL_SUPPORTER',
+  /** a custom queue of action that needs DOI */
   CustomSupporterConfirm = 'CUSTOM_SUPPORTER_CONFIRM',
+  /** a custom queue of action that needs moderation */
   CustomActionConfirm = 'CUSTOM_ACTION_CONFIRM',
+  /** a custom queue of actions to sync to CRM */
   CustomActionDeliver = 'CUSTOM_ACTION_DELIVER',
+  /** Queue of SQS sync worker */
   Sqs = 'SQS',
+  /** Queue of webhook sync worker */
   Webhook = 'WEBHOOK'
 }
 
 export type RequeueResult = {
+  /** Count of actions selected for requeueing */
   count: Scalars['Int'];
+  /** Count of actions that could not be requeued */
   failed: Scalars['Int'];
 };
 
@@ -796,8 +963,14 @@ export type RootMutationType = {
    * Action Pages will be removed (principle of not removing signature data).
    */
   upsertCampaign: Campaign;
+  /** Updates an existing campaign. */
   updateCampaign: Campaign;
+  /** Add a new campaign */
   addCampaign: Campaign;
+  /**
+   * Delete a campaign.
+   * Deletion will be blocked if there are action pages with personal data (we never remove personal data unless via GDPR).
+   */
   deleteCampaign: Status;
   /** Update an Action Page */
   updateActionPage: ActionPage;
@@ -812,7 +985,9 @@ export type RootMutationType = {
    */
   copyCampaignActionPage: ActionPage;
   addActionPage: ActionPage;
+  /** Sends a request to lead to set the page to live=true */
   launchActionPage: LaunchActionPageResult;
+  /** Delete an action page */
   deleteActionPage: Status;
   /** Adds an action referencing contact data via contactRef */
   addAction: ContactReference;
@@ -831,19 +1006,32 @@ export type RootMutationType = {
   /** Update (current) user details */
   updateUser: User;
   resetApiToken: Scalars['String'];
+  /** Add an org. Calling user  will become it's owner. */
   addOrg: Org;
+  /** Delete an org */
   deleteOrg: Status;
+  /** Update an org */
   updateOrg: PrivateOrg;
   /** Update org processing settings */
   updateOrgProcessing: PrivateOrg;
+  /** Try becoming a staffer of the org */
   joinOrg: JoinOrgResult;
+  /** Generate a new encryption key in org */
   generateKey: KeyWithPrivate;
+  /** Add a key to encryption keys */
   addKey: Key;
   /** A separate key activate operation, because you also need to add the key to receiving system before it is used */
   activateKey: ActivateKeyResult;
+  /**
+   * Upsert an email tempalte to be used for sending various emails.
+   * It belongs to org and is identified by (name, locale), so you can have multiple "thank_you" templates for different languages.
+   */
   upsertTemplate: Maybe<Status>;
+  /** Insert or update a service for an org, using id to to update a particular one */
   upsertService: Service;
+  /** Stripe API - add a stripe payment intent, when donating to the action page specified by id */
   addStripePaymentIntent: Scalars['Json'];
+  /** Stripe API - add a stripe subscription, when donating to the action page specified by id */
   addStripeSubscription: Scalars['Json'];
   /**
    * Create stripe object using Stripe key associated with action page owning org.
@@ -859,6 +1047,10 @@ export type RootMutationType = {
   acceptUserConfirm: ConfirmResult;
   /** Reject a confirm by user */
   rejectUserConfirm: ConfirmResult;
+  /**
+   * Upsert multiple targets at once.
+   * external_id is used to decide if new target record is added, or existing one is updated.
+   */
   upsertTargets: Array<Maybe<PrivateTarget>>;
 };
 
@@ -1118,13 +1310,23 @@ export type RootMutationTypeUpsertTargetsArgs = {
 };
 
 export type RootQueryType = {
-  /** Get a list of campains */
+  /** Returns a public list of campaigns, filtered by title. Can be used to implement a campaign search box on a website. */
   campaigns: Array<Campaign>;
-  /** Get campaign */
+  /**
+   * Get one campaign. If you have access to the campaign, as lead or
+   * partner, you will get a private view of the campaign, otherwise, a public
+   * view.
+   */
   campaign: Maybe<Campaign>;
-  /** Get action page */
+  /**
+   * Get action page.
+   * Depending on your access (page owner, lead, instance admin),
+   * you will get private or public view of the page.
+   */
   actionPage: ActionPage;
+  /** Export actions collected by org, optionally filtered by campaign */
   exportActions: Array<Maybe<Action>>;
+  /** Get the current user, as determined by Authorization header */
   currentUser: User;
   /** Select users from this instnace. Requires a manage users admin permission. */
   users: Array<User>;
@@ -1185,6 +1387,7 @@ export type RootSubscriptionTypeActionPageUpsertedArgs = {
 };
 
 export type SelectActionPage = {
+  /** Filter by campaign Id */
   campaignId?: Maybe<Scalars['Int']>;
 };
 
@@ -1194,8 +1397,11 @@ export type SelectCampaign = {
 };
 
 export type SelectKey = {
+  /** Key id */
   id?: Maybe<Scalars['Int']>;
+  /** Only active */
   active?: Maybe<Scalars['Boolean']>;
+  /** Key having this public part */
   public?: Maybe<Scalars['String']>;
 };
 
@@ -1213,31 +1419,51 @@ export type SelectUser = {
 };
 
 export type Service = {
+  /** Id */
   id: Scalars['Int'];
+  /** Service name (type) */
   name: ServiceName;
+  /** Hostname of service, but can be used as any "container" of the service. For AWS, contains a region. */
   host: Maybe<Scalars['String']>;
+  /** User, Account id, client id, whatever your API has */
   user: Maybe<Scalars['String']>;
+  /** A sub-selector of a resource. Can be url path, but can be something like AWS bucket name */
   path: Maybe<Scalars['String']>;
 };
 
 export type ServiceInput = {
+  /** Service name (type) */
   name: ServiceName;
+  /** Hostname of service, but can be used as any "container" of the service. For AWS, contains a region. */
   host?: Maybe<Scalars['String']>;
+  /** User, Account id, client id, whatever your API has */
   user?: Maybe<Scalars['String']>;
+  /** Password, key, secret or whatever your API has as secret credential */
   password?: Maybe<Scalars['String']>;
+  /** A sub-selector of a resource. Can be url path, but can be something like AWS bucket name */
   path?: Maybe<Scalars['String']>;
 };
 
 export enum ServiceName {
+  /** AWS SES to send emails */
   Ses = 'SES',
+  /** AWS SQS to process messages */
   Sqs = 'SQS',
+  /** Mailjet to send emails */
   Mailjet = 'MAILJET',
+  /** SMTP to send emails */
   Smtp = 'SMTP',
+  /** Wordpress HTTP API */
   Wordpress = 'WORDPRESS',
+  /** Stripe to process donations */
   Stripe = 'STRIPE',
+  /** Stripe test account to test donations */
   TestStripe = 'TEST_STRIPE',
+  /** HTTP POST webhook */
   Webhook = 'WEBHOOK',
+  /** Use a service that instance org is using */
   System = 'SYSTEM',
+  /** Supabase to store files */
   Supabase = 'SUPABASE'
 }
 
@@ -1251,46 +1477,67 @@ export enum Status {
 }
 
 export type StripePaymentIntentInput = {
+  /** Amount of payment */
   amount: Scalars['Int'];
+  /** Currency ofo payment */
   currency: Scalars['String'];
+  /** Stripe payment method type */
   paymentMethodTypes?: Maybe<Array<Scalars['String']>>;
 };
 
 export type StripeSubscriptionInput = {
+  /** Amount of payment */
   amount: Scalars['Int'];
+  /** Currency ofo payment */
   currency: Scalars['String'];
+  /** how often is recurrent payment made? */
   frequencyUnit: DonationFrequencyUnit;
 };
 
 export type Target = {
   id: Scalars['String'];
+  /** Name of target */
   name: Scalars['String'];
+  /** unique external_id of target, used to upsert target */
   externalId: Scalars['String'];
+  /** Locale of this target (in which language do they read emails?) */
   locale: Maybe<Scalars['String']>;
+  /** Area of the target */
   area: Maybe<Scalars['String']>;
+  /** Custom fields, stringified json */
   fields: Maybe<Scalars['Json']>;
 };
 
 export type TargetEmail = {
+  /** Email of target */
   email: Scalars['String'];
+  /** The status of email (normal or bouncing etc) */
   emailStatus: EmailStatus;
+  /** An error received when bouncing email was reported */
   error: Maybe<Scalars['String']>;
 };
 
 export type TargetEmailInput = {
+  /** Email of target */
   email: Scalars['String'];
 };
 
 export type TargetInput = {
+  /** Name of target */
   name?: Maybe<Scalars['String']>;
+  /** unique external_id of target, used to upsert target */
   externalId: Scalars['String'];
+  /** Locale of this target (in which language do they read emails?) */
   locale?: Maybe<Scalars['String']>;
+  /** Area of the target */
   area?: Maybe<Scalars['String']>;
+  /** Custom fields, stringified json */
   fields?: Maybe<Scalars['Json']>;
+  /** Email list of this target */
   emails?: Maybe<Array<TargetEmailInput>>;
 };
 
-/** Tracking codes */
+/** Tracking codes (UTM params) */
 export type Tracking = {
   source: Scalars['String'];
   medium: Scalars['String'];
@@ -1309,23 +1556,36 @@ export type TrackingInput = {
 };
 
 export type User = {
+  /** Id of user */
   id: Scalars['Int'];
+  /** Email of user */
   email: Scalars['String'];
+  /** Phone */
   phone: Maybe<Scalars['String']>;
+  /** Url to profile picture */
   pictureUrl: Maybe<Scalars['String']>;
+  /** Job title */
   jobTitle: Maybe<Scalars['String']>;
+  /** Users API token (to check expiry) */
   apiToken: Maybe<ApiToken>;
+  /** Is user an admin? */
   isAdmin: Scalars['Boolean'];
+  /** user's roles in orgs */
   roles: Array<UserRole>;
 };
 
 export type UserDetailsInput = {
+  /** Users profile pic url */
   pictureUrl?: Maybe<Scalars['String']>;
+  /** Job title */
   jobTitle?: Maybe<Scalars['String']>;
+  /** Phone */
   phone?: Maybe<Scalars['String']>;
 };
 
 export type UserRole = {
+  /** Org this role is in */
   org: Org;
+  /** Role name */
   role: Scalars['String'];
 };
