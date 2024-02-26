@@ -181,13 +181,11 @@ defmodule Proca.Service.EmailBackend do
       from_email == org.email_from ->
         email
         |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
-        |> Email.header("Reply-To", from_email)
 
       # Any from email - we will use the username here
       true ->
         email
         |> Email.from({from_name, "#{via_username}+#{username}@#{via_domain}"})
-        |> Email.header("Reply-To", from_email)
     end
   end
 
