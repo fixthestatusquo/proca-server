@@ -38,7 +38,15 @@ defmodule Proca.Target do
     |> check_constraint(:fields, name: :max_fields_size)
   end
 
-  def deleteset(target) do
+  def deleteset(target, ignore_messages \\ false)
+
+  def deleteset(target, true) do
+    target
+    |> Repo.preload(:messages)
+    |> change()
+  end
+
+  def deleteset(target, false) do
     target
     |> change()
     |> foreign_key_constraint(

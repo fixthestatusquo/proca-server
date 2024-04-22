@@ -10,11 +10,12 @@ defmodule ProcaWeb.Resolvers.Target do
 
   def upsert_targets(_p, params = %{targets: targets, campaign_id: campaign_id}, _) do
     replace = Map.get(params, :replace, false)
+    force_delete = Map.get(params, :force_delete, false)
 
     result =
       Multi.new()
       |> upsert_all(targets, campaign_id)
-      |> delete_rest(campaign_id, replace)
+      |> delete_rest(campaign_id, replace, force_delete)
       |> Proca.Repo.transaction(timeout: 120_000)
 
     case result do
@@ -38,22 +39,32 @@ defmodule ProcaWeb.Resolvers.Target do
     end)
   end
 
-  def delete_rest(multi, _campaign_id, false), do: multi
+  def delete_rest(multi, _campaign_id, false, _force_delete), do: multi
 
-  def delete_rest(multi, campaign_id, true) do
+  def delete_rest(multi, campaign_id, true, force_delete) do
     multi
     |> Multi.run(:delete_rest, fn repo, targets ->
       ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
 
-      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids)
+      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids, preload: [:messages])
       |> repo.all()
-      |> Enum.map(&Target.deleteset/1)
+      |> Enum.map(&Target.deleteset(&1, force_delete))
       |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
-        case repo.delete(tar) do
-          {:ok, _deleted } -> {:cont, {:ok, deleted_count + 1}}
+        delete_error =
+          if force_delete do
+            Enum.map(tar.data.messages, &repo.delete/1)
+            |> Enum.find(fn {:error, _} -> true; _ -> false end)
+          else
+            nil
+          end
+
+        with nil <- delete_error,
+             {:ok, _deleted} <- repo.delete(tar) do
+          {:cont, {:ok, deleted_count + 1}}
+        else
           {:error, errors} = e -> {:halt, e}
         end
-       end)
+      end)
     end)
   end
 

@@ -88,6 +88,8 @@ defmodule ProcaWeb.Schema.TargetTypes do
       arg(:campaign_id, non_null(:integer))
       @desc "Remove targets not existing in this upsert (if false, upsert will merge with omitted targets)"
       arg(:replace, :boolean)
+      @desc "Remove targets even if target has associated messages"
+      arg(:force_delete, :boolean)
 
       load(:campaign, by: [id: :campaign_id])
       determine_auth(for: :campaign)

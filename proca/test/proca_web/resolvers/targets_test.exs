@@ -56,6 +56,13 @@ defmodule ProcaWeb.TargetsTest do
                %{targets: targets, replace: true, campaign_id: red_campaign.id},
                nil
              )
+
+    assert {:ok, [t1, t3]} =
+             Target.upsert_targets(
+               nil,
+               %{targets: targets, replace: true, force_delete: true, campaign_id: red_campaign.id},
+               nil
+             )
   end
 
   test "adds and update targets to campaign", %{
