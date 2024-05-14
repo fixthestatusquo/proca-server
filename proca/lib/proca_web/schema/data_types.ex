@@ -88,6 +88,12 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:ignored)
   end
 
+  enum :outdated_targets do
+    value(:keep, description: "Keep outdated targets")
+    value(:disable, description: "Disable emails for outdated targets")
+    value(:delete, description: "Delete outdated targets (only possible for targets without any action)")
+  end
+
   # XXX should this not be moved out from here?
   object :delete_result do
     field :success, non_null(:boolean)

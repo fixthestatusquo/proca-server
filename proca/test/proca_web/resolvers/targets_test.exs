@@ -36,7 +36,7 @@ defmodule ProcaWeb.TargetsTest do
     assert {:ok, [t1, t3]} =
              Target.upsert_targets(
                nil,
-               %{targets: targets2, replace: true, campaign_id: red_campaign.id},
+               %{targets: targets2, outdated_targets: :delete, campaign_id: red_campaign.id},
                nil
              )
 
@@ -53,14 +53,14 @@ defmodule ProcaWeb.TargetsTest do
     assert {:error, [%{message: "has messages", path: ["targets", ^t3_id, "messages"]}]} =
              Target.upsert_targets(
                nil,
-               %{targets: targets, replace: true, campaign_id: red_campaign.id},
+               %{targets: targets, outdated_targets: :delete, campaign_id: red_campaign.id},
                nil
              )
 
     assert {:ok, [t1, t3]} =
              Target.upsert_targets(
                nil,
-               %{targets: targets, replace: true, force_delete: true, campaign_id: red_campaign.id},
+               %{targets: targets, outdated_targets: :disable, campaign_id: red_campaign.id},
                nil
              )
   end
