@@ -35,6 +35,7 @@ defmodule Enums do
   - 3 - `blocked` (email blocks)
   - 4 - `spam` (email thinks you are a spammer)
   - 5 - `unsub` (email has expressed will to not be contacted any more)
+  - 6 - `inactive` (email should not be contacted anymore)
 
 
   ## DonationFrequencyUnit ##
@@ -82,6 +83,6 @@ defenum(DonationSchema, stripe_payment_intent: 0)
 
 defenum(DonationFrequencyUnit, one_off: 0, weekly: 1, monthly: 2, daily: 16)
 
-defenum(EmailStatus, none: 0, double_opt_in: 1, bounce: 2, blocked: 3, spam: 4, unsub: 5)
+defenum(EmailStatus, none: 0, double_opt_in: 1, bounce: 2, blocked: 3, spam: 4, unsub: 5, inactive: 6)
 
 defenum(CampaignStatus, live: 0, closed: 1, ignored: 2)

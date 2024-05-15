@@ -9,12 +9,12 @@ defmodule ProcaWeb.Resolvers.Target do
   alias Proca.Repo
 
   def upsert_targets(_p, params = %{targets: targets, campaign_id: campaign_id}, _) do
-    replace = Map.get(params, :replace, false)
+    outdated_targets = Map.get(params, :outdated_targets, :keep)
 
     result =
       Multi.new()
       |> upsert_all(targets, campaign_id)
-      |> delete_rest(campaign_id, replace)
+      |> delete_rest(campaign_id, outdated_targets)
       |> Proca.Repo.transaction(timeout: 120_000)
 
     case result do
@@ -38,9 +38,28 @@ defmodule ProcaWeb.Resolvers.Target do
     end)
   end
 
-  def delete_rest(multi, _campaign_id, false), do: multi
+  def delete_rest(multi, _campaign_id, :keep), do: multi
 
-  def delete_rest(multi, campaign_id, true) do
+  def delete_rest(multi, campaign_id, :disable) do
+    multi
+    |> Multi.run(:delete_rest, fn repo, targets ->
+      ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
+
+      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids, preload: [:emails])
+      |> repo.all()
+      |> Enum.flat_map(& &1.emails)
+      |> Enum.filter(& &1.email_status == :none)
+      |> Enum.map(&TargetEmail.changeset(&1, %{email_status: :inactive}))
+      |> Enum.reduce_while({:ok, 0}, fn chset, {:ok, changed_count} ->
+        case repo.update(chset) do
+          {:ok, _changed } -> {:cont, {:ok, changed_count + 1}}
+          {:error, errors} = e -> {:halt, e}
+        end
+      end)
+    end)
+  end
+
+  def delete_rest(multi, campaign_id, :delete) do
     multi
     |> Multi.run(:delete_rest, fn repo, targets ->
       ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
@@ -53,7 +72,7 @@ defmodule ProcaWeb.Resolvers.Target do
           {:ok, _deleted } -> {:cont, {:ok, deleted_count + 1}}
           {:error, errors} = e -> {:halt, e}
         end
-       end)
+      end)
     end)
   end
 

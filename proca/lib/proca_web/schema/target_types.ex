@@ -86,8 +86,8 @@ defmodule ProcaWeb.Schema.TargetTypes do
       arg(:targets, non_null(list_of(non_null(:target_input))))
       @desc "Id of campaign these targets are added to"
       arg(:campaign_id, non_null(:integer))
-      @desc "Remove targets not existing in this upsert (if false, upsert will merge with omitted targets)"
-      arg(:replace, :boolean)
+      @desc "Action to perform on targets missing in targets list"
+      arg(:outdated_targets, :outdated_targets)
 
       load(:campaign, by: [id: :campaign_id])
       determine_auth(for: :campaign)
