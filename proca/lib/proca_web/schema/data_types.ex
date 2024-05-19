@@ -71,6 +71,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:blocked, description: "This email was used and blocked")
     value(:spam, description: "This email was used and marked spam")
     value(:unsub, description: "This email was used and user unsubscribed")
+    value(:inactive, description: "This email was disabled and should not be contacted")
   end
 
   enum :queue do
