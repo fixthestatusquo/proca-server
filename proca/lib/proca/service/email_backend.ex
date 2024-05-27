@@ -111,6 +111,11 @@ defmodule Proca.Service.EmailBackend do
     apply(backend, :deliver, [emails, org])
   end
 
+  def make_email(to, custom_id, email_id) do
+    make_email(to, custom_id)
+    |> Email.put_private(:email_id, email_id)
+  end
+
   def make_email({name, email}, custom_id) do
     Email.new(to: {name, email})
     |> Email.put_private(
