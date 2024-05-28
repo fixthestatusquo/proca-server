@@ -177,6 +177,10 @@ defmodule Proca.Server.MTTWorkerTest do
              end)
 
       MTTWorker.send_emails(c, msgs)
+
+      te = Proca.TargetEmail.one(target_id: tid)
+      assert te.email_status == :active
+
       mbox = Proca.TestEmailBackend.mailbox(email)
 
       assert length(mbox) == 20
