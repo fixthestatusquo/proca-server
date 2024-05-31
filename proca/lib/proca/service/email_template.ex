@@ -98,6 +98,12 @@ defmodule Proca.Service.EmailTemplate do
   end
 
   def compile(t = %EmailTemplate{subject: subject, html: html, text: text}) do
+    Sentry.Context.set_extra_context(%{
+      template_id: t.id,
+      template_name: t.name,
+      locale: t.locale
+    })
+
     %{
       t
       | compiled: %{
@@ -109,7 +115,17 @@ defmodule Proca.Service.EmailTemplate do
   end
 
   def compile_string(nil), do: nil
-  def compile_string(m), do: :bbmustache.parse_binary(m)
+
+  def compile_string(m) do
+    try do
+      :bbmustache.parse_binary(m)
+    rescue
+      error ->
+        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
+        # TODO: return proper error instead of reraising
+        reraise Sentry.CrashError.exception(error.original), __STACKTRACE__
+    end
+  end
 
   # when end is_tuple(m) do
   def render_string(m, vars) do
