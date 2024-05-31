@@ -220,6 +220,12 @@ defmodule Proca.Server.MTTWorker do
 
     target_locales = Enum.uniq(Map.keys(msgs_per_locale))
 
+    Sentry.Context.set_extra_context(%{
+      campaign_id: campaign.id,
+      campaign_name: campaign.name,
+      org_id: org.id
+    })
+
     templates =
       Enum.map(target_locales, fn locale ->
         case EmailTemplateDirectory.by_name_reload(org, campaign.mtt.message_template, locale) do
@@ -246,6 +252,8 @@ defmodule Proca.Server.MTTWorker do
       for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(org)) do
         batch =
           for e <- chunk do
+            Sentry.Context.set_extra_context(%{action_id: e.action_id})
+
             e
             |> make_email(campaign.mtt.test_email)
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
@@ -323,6 +331,13 @@ defmodule Proca.Server.MTTWorker do
       ) do
     # Render the raw body
     target_assigns = camel_case_keys(%{target: email.assigns[:target]})
+
+    Sentry.Context.set_extra_context(%{
+      template_id: nil,
+      template_name: nil,
+      message_subject: subject,
+      message_body: body
+    })
 
     body =
       body
