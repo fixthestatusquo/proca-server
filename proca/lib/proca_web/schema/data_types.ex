@@ -65,13 +65,14 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   enum :email_status do
-    value(:none, description: "An unused email. (Warning:  Or used, but we do not store the fact that emails are delivered ok)")
+    value(:none, description: "An unused email")
     value(:double_opt_in, description: "The user has received a DOI on this email and accepted it")
     value(:bounce, description: "This email was used and bounced")
     value(:blocked, description: "This email was used and blocked")
     value(:spam, description: "This email was used and marked spam")
     value(:unsub, description: "This email was used and user unsubscribed")
     value(:inactive, description: "This email was disabled and should not be contacted")
+    value(:active, description: "This email was contacted before")
   end
 
   enum :queue do

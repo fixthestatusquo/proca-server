@@ -7,6 +7,8 @@ defmodule Proca.TargetEmail do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
 
+  alias __MODULE__
+
   schema "target_emails" do
     field :email, :string
     field :email_status, EmailStatus, default: :none
@@ -50,5 +52,15 @@ defmodule Proca.TargetEmail do
     |> join(:inner, [e, t], m in assoc(t, :messages))
     |> where([e, t, m], m.id == ^id)
     |> all(kw)
+  end
+
+  def mark_all(ids, status) when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
+    import Ecto.Query
+
+    Repo.update_all(from(te in TargetEmail, where: te.id in ^ids),
+      set: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
+    :ok
   end
 end

@@ -24,7 +24,7 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign, ActionPage, Org, Users.User}
+  alias Proca.{Action, Campaign, ActionPage, Org, Users.User, TargetEmail}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
@@ -46,7 +46,7 @@ defmodule Proca.Server.MTTWorker do
       # send_emails(campaign, get_test_emails_to_send(target_ids), true)
       # send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
       Enum.chunk_every(target_ids, 10)
-      |> Enum.each(fn target_ids -> 
+      |> Enum.each(fn target_ids ->
         emails_to_send =  get_emails_to_send(target_ids, {cycle, all_cycles})
         Logger.info("MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}")
         send_emails(campaign, emails_to_send)
@@ -115,7 +115,7 @@ defmodule Proca.Server.MTTWorker do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
       join: te in assoc(t, :emails),
-      where: c.id == ^id and te.email_status == :none,
+      where: c.id == ^id and te.email_status in [:active, :none],
       distinct: t.id,
       select: t.id
     )
@@ -258,6 +258,14 @@ defmodule Proca.Server.MTTWorker do
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
+            batch
+            |> Enum.flat_map(fn m -> case m.private.email_id do
+              nil -> []
+              id -> [id]
+             end
+            end)
+            |> TargetEmail.mark_all(:active)
+
             Message.mark_all(chunk, :sent)
 
           {:error, statuses} ->
@@ -286,7 +294,7 @@ defmodule Proca.Server.MTTWorker do
         end
       else
         Enum.find(message.target.emails, fn email_to ->
-          email_to.email_status == :none
+          email_to.email_status in [:active, :none]
         end)
       end
 
@@ -296,7 +304,7 @@ defmodule Proca.Server.MTTWorker do
 
     Proca.Service.EmailBackend.make_email(
       {message.target.name, email_to.email},
-      {:mtt, message_id}
+      {:mtt, message_id}, email_to.id
     )
     |> Email.from({supporter_name, supporter.email})
   end
