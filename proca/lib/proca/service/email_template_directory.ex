@@ -143,6 +143,8 @@ defmodule Proca.Service.EmailTemplateDirectory do
 
     with [] <- lookup,
          record when record != nil <- EmailTemplate.one(org: org, name: name, locale: locale) do
+      Sentry.Context.set_extra_context(%{org_id: org.id})
+
       record = EmailTemplate.compile(record)
       cache_template(record, true)
       record
