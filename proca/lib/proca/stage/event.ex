@@ -16,7 +16,7 @@ defmodule Proca.Stage.Event do
   """
   alias Proca.{Confirm, Org, Supporter}
   alias Proca.Pipes.Connection
-  import Proca.Stage.Support, only: [camel_case_keys: 1, to_iso8601: 1]
+  import Proca.Stage.Support, only: [camel_case_keys: 2, to_iso8601: 1]
 
   @doc """
   Routing key for the event message is two-element topic routing key for confirms (because they have subtype), and one element key for CRUD events.
@@ -58,7 +58,7 @@ defmodule Proca.Stage.Event do
 
     meta
     |> put_data(event, record, opts ++ [org_id: org_id])
-    |> camel_case_keys()
+    |> camel_case_keys(ignore: :config)
     |> Connection.publish(exchange_for(org_id), rkey)
   end
 

@@ -5,7 +5,7 @@ defmodule Proca.Stage.Support do
   (system) or externally (custom).
   """
 
-  alias Proca.{Action, Supporter, PublicKey, Contact, Field, Confirm}
+  alias Proca.{Action, Supporter, Confirm}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Broadway.Message
@@ -181,7 +181,10 @@ defmodule Proca.Stage.Support do
 
   def stringify_keys(map = %{}) do
     map
-    |> Enum.map(fn {k, v} -> {Atom.to_string(k), stringify_keys(v)} end)
+    |> Enum.map(fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), stringify_keys(v)}
+      {k, v} when is_bitstring(k) -> {k, stringify_keys(v)}
+    end)
     |> Enum.into(%{})
   end
 
@@ -201,15 +204,23 @@ defmodule Proca.Stage.Support do
   @doc """
   Turn the case of keys in the map to camel case
   """
-  def camel_case_keys(map) when is_map(map) do
+  def camel_case_keys(map, opts \\ [])
+
+  def camel_case_keys(map, opts) when is_map(map) do
+    ignored_key = Keyword.get(opts, :ignore)
+
     map
     |> Enum.map(fn {key, val} ->
-      {ProperCase.camel_case(key), camel_case_keys(val)}
+      if key == ignored_key do
+        {ProperCase.camel_case(key), stringify_keys(val)}
+      else
+        {ProperCase.camel_case(key), camel_case_keys(val, opts)}
+      end
     end)
     |> Map.new()
   end
 
-  def camel_case_keys(other), do: other
+  def camel_case_keys(other, _opts), do: other
 
   @doc """
   Unpack this AMQP metadata
