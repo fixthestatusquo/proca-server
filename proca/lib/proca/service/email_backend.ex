@@ -186,11 +186,13 @@ defmodule Proca.Service.EmailBackend do
       from_email == org.email_from ->
         email
         |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
+        |> maybe_add_reply(from_email, org.reply_enabled)
 
       # Any from email - we will use the username here
       true ->
         email
         |> Email.from({from_name, "#{via_username}+#{username}@#{via_domain}"})
+        |> maybe_add_reply(from_email, org.reply_enabled)
     end
   end
 
@@ -210,4 +212,7 @@ defmodule Proca.Service.EmailBackend do
   def format_custom_id(type, id)
       when type in [:user] and is_bitstring(id),
       do: "#{type}:#{id}"
+
+  defp maybe_add_reply(email, from_email, true), do: Email.header(email, "Reply-To", from_email)
+  defp maybe_add_reply(email, _, _), do: email
 end

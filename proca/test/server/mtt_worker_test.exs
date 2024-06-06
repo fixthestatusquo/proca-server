@@ -184,6 +184,9 @@ defmodule Proca.Server.MTTWorkerTest do
       mbox = Proca.TestEmailBackend.mailbox(email)
 
       assert length(mbox) == 20
+
+      msg = List.first(mbox)
+      assert %{"Reply-To" => _} = msg.headers
     end
   end
 

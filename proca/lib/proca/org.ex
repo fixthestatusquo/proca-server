@@ -46,6 +46,7 @@ defmodule Proca.Org do
     belongs_to :email_backend, Proca.Service
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
+    field :reply_enabled, :boolean, default: true
 
     # supporter confirm in configuration
     field :supporter_confirm, :boolean, default: false
