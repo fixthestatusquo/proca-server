@@ -104,6 +104,7 @@ defmodule Proca.Org do
       :config,
       :high_security,
       :doi_thank_you,
+      :reply_enabled,
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,

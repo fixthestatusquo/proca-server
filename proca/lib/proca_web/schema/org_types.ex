@@ -177,6 +177,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Only send thank you emails to opt-ins"
     field :doi_thank_you, :boolean
 
+    @desc "Enable reply_to for emails"
+    field :reply_enabled, :boolean
+
     @desc "Config"
     field :config, :json
   end
@@ -347,6 +350,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Only send thank you emails to opt-ins"
     field :doi_thank_you, non_null(:boolean)
+
+    @desc "Enable reply_to for emails"
+    field :reply_enabled, :boolean
   end
 
   @desc "Encryption or sign key with integer id (database)"
