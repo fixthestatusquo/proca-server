@@ -45,7 +45,7 @@ defmodule Proca.Service.EmailBackend do
   """
 
   alias Proca.{Org, Service}
-  alias Proca.Service.{EmailTemplate, EmailMerge}
+  alias Proca.Service.EmailTemplate
   alias Swoosh.Email
   import Proca.Stage.Support, only: [flatten_keys: 2]
 
@@ -80,7 +80,7 @@ defmodule Proca.Service.EmailBackend do
     |> apply(:supports_templates?, [org])
   end
 
-  def supports_templates?(org = %Org{email_backend: nil}), do: false
+  def supports_templates?(_org = %Org{email_backend: nil}), do: false
 
   def list_templates(org = %Org{email_backend: %Service{name: name}}) do
     service_module(name)
@@ -95,7 +95,7 @@ defmodule Proca.Service.EmailBackend do
 
   Surprise: you can get  `{:error, [:ok, :ok, :ok]}` with there was some error but adapter decided to drop the email (fatal problem, retry will not help)
   """
-  @spec deliver([%Email{}], %Org{}, %EmailTemplate{} | nil) ::
+  @spec deliver([Email.t()], Org.t(), EmailTemplate.t() | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
   def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template \\ nil) do
     backend = service_module(name)
@@ -142,7 +142,7 @@ defmodule Proca.Service.EmailBackend do
   end
 
   # template renderers of Mailjet and friends are happier with a flat list of vars
-  defp prepare_fields(%Email{assigns: a} = email) do
+  defp prepare_fields(email = %Email{assigns: a}) do
     %{email | assigns: flatten_keys(a, "")}
   end
 

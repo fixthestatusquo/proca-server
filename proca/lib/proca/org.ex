@@ -17,10 +17,7 @@ defmodule Proca.Org do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query, except: [update: 2]
-  alias Ecto.Multi
   alias Proca.{Org, Service}
-  alias Proca.Service.EmailTemplateDirectory
-  import Logger
 
   schema "orgs" do
     field :name, :string
@@ -248,7 +245,6 @@ defmodule Proca.Org do
   def list(preloads \\ []) do
     all(preload: preloads)
   end
-
 
   @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
   def active_public_keys(public_keys) do
