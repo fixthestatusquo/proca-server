@@ -97,10 +97,9 @@ defmodule Proca.MixProject do
       {:mix_systemd, "~> 0.7.3"},
       {:floki, ">= 0.0.0", only: :test},
       {:ex_machina, "~> 2.7", only: :test},
-      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:mix_version, "~> 2.1", only: [:dev], runtime: false}
     ]
   end
