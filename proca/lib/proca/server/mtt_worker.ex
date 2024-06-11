@@ -179,7 +179,9 @@ defmodule Proca.Server.MTTWorker do
       Message.select_by_targets(target_ids, [false, true])
       |> select([m, t, a], %{
         target_id: t.id,
-        goal: count(m.id) * ^cycle / ^all_cycles,
+        # goal: count(m.id) * ^cycle / ^all_cycles,
+        goal:
+          fragment("LEAST(?, ?)", count(m.id) * ^cycle / ^all_cycles, ^max_messages_per_cycle()),
         sent: fragment("count(?) FILTER (WHERE sent)", m.id)
       })
       |> group_by([m, t, a], t.id)
@@ -367,5 +369,9 @@ defmodule Proca.Server.MTTWorker do
     email
     |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
+  end
+
+  defp max_messages_per_cycle() do
+    Application.get_env(:proca, __MODULE__, max_messages_per_cycle: 100)[:max_messages_per_cycle]
   end
 end
