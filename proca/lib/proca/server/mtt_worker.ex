@@ -179,7 +179,6 @@ defmodule Proca.Server.MTTWorker do
       Message.select_by_targets(target_ids, [false, true])
       |> select([m, t, a], %{
         target_id: t.id,
-        # goal: count(m.id) * ^cycle / ^all_cycles,
         goal:
           fragment("LEAST(?, ?)", count(m.id) * ^cycle / ^all_cycles, ^max_messages_per_cycle()),
         sent: fragment("count(?) FILTER (WHERE sent)", m.id)

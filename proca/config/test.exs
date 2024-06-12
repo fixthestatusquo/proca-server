@@ -11,8 +11,6 @@ config :proca, Proca.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :proca, Proca.Server.MTTWorker, max_messages: 6
-
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :proca, ProcaWeb.Endpoint,

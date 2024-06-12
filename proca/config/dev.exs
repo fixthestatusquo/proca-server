@@ -36,8 +36,6 @@ case System.get_env("ORGANISATION") do
     config :proca, Proca, org_name: org_name
 end
 
-config :proca, Proca.Server.MTTWorker, max_messages: 2
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
