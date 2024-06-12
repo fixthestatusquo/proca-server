@@ -17,10 +17,7 @@ defmodule Proca.Org do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Ecto.Query, except: [update: 2]
-  alias Ecto.Multi
   alias Proca.{Org, Service}
-  alias Proca.Service.EmailTemplateDirectory
-  import Logger
 
   schema "orgs" do
     field :name, :string
@@ -46,6 +43,7 @@ defmodule Proca.Org do
     belongs_to :email_backend, Proca.Service
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
+    field :reply_enabled, :boolean, default: true
 
     # supporter confirm in configuration
     field :supporter_confirm, :boolean, default: false
@@ -103,6 +101,7 @@ defmodule Proca.Org do
       :config,
       :high_security,
       :doi_thank_you,
+      :reply_enabled,
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
@@ -246,7 +245,6 @@ defmodule Proca.Org do
   def list(preloads \\ []) do
     all(preload: preloads)
   end
-
 
   @spec active_public_keys([Proca.PublicKey]) :: [Proca.PublicKey]
   def active_public_keys(public_keys) do
