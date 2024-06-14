@@ -75,7 +75,7 @@ defmodule Proca.Server.MTTWorker do
     for {campaign_id, ms} <- emails do
       campaign = Campaign.one(id: campaign_id, preload: [:mtt, org: :email_backend])
 
-      if campaign.org.email_backend != nil and campaign.mtt.test_email != nil do
+      if campaign.org.email_backend != nil do
         send_emails(campaign, ms)
         {campaign_id, length(ms)}
       else
@@ -315,6 +315,7 @@ defmodule Proca.Server.MTTWorker do
       {:mtt, message_id}, email_to.id
     )
     |> Email.from({supporter_name, supporter.email})
+    |> Email.cc(test_email)
   end
 
   def resolve_files(org, file_keys) do
