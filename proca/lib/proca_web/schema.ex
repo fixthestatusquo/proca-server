@@ -2,7 +2,7 @@ defmodule ProcaWeb.Schema do
   @moduledoc """
   Main API schema. See schema/ for details.
 
-  Note about date time types: 
+  Note about date time types:
   - be conservative in what you do (return data using :native_datetime)
   - be liberal about what you expect from others (accept :datetime possibly with a timezone)
   (is this principle even a progressive one?)
@@ -21,6 +21,7 @@ defmodule ProcaWeb.Schema do
   import_types(ProcaWeb.Schema.OrgTypes)
   import_types(ProcaWeb.Schema.SubscriptionTypes)
   import_types(ProcaWeb.Schema.TargetTypes)
+  import_types(ProcaWeb.Schema.ApplicationTypes)
 
   query do
     import_fields(:campaign_queries)
@@ -28,6 +29,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:action_queries)
     import_fields(:user_queries)
     import_fields(:org_queries)
+    import_fields(:application_queries)
     # import_fields(:target_queries)
   end
 
