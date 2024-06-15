@@ -265,4 +265,35 @@ defmodule Proca.Server.MTTWorkerTest do
     assert String.contains?(email.html_body, "Sent in Petition about")
     assert email.private[:custom_id] == "mtt:#{msg.id}"
   end
+
+  describe "sending more emails than limit" do
+    setup %{campaign: c, ap: ap, targets: [t1 | _]} do
+      actions =
+        Factory.insert_list(200, :action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
+
+      msgs = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
+
+      Proca.Server.MTT.dupe_rank()
+
+      %{
+        actions: actions,
+        messages: msgs,
+        target: t1
+      }
+    end
+
+    test "don't return more mtt than limit", %{
+      actions: actions,
+      campaign: c,
+      target: %{id: tid},
+      messages: msgs
+    } do
+      emails = MTTWorker.get_emails_to_send([tid], {700, 700})
+      assert length(emails) == 99
+    end
+  end
 end

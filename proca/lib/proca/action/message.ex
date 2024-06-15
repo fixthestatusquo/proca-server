@@ -80,7 +80,7 @@ defmodule Proca.Action.Message do
   Returns a query for [message, target, action] for specified target id list, or :all for all.
   Use sent and testing flags to further select (not) sent or (not) testing actions
   """
-  @spec select_by_targets([number] | :all, boolean, boolean) :: %Ecto.Query{}
+  @spec select_by_targets([number] | :all, boolean | [boolean], boolean) :: Ecto.Query.t()
   def select_by_targets(target_ids, sent \\ false, testing \\ false) do
     import Ecto.Query
 
