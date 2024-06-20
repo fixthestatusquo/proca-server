@@ -161,6 +161,11 @@ defmodule Proca.Server.MTTWorkerTest do
 
       # limit to one per locale!
       assert length(mbox) == 1
+
+      msg = mbox |> List.first()
+
+      assert String.starts_with?(msg.subject, "[TEST]")
+      assert msg.cc == [{"", test_email}]
     end
 
     test "live sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do

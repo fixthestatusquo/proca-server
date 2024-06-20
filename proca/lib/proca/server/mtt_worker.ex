@@ -253,15 +253,16 @@ defmodule Proca.Server.MTTWorker do
           for e <- chunk do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
+            message_content = change_test_subject(e.message_content, e.action.testing)
+
             e
-            |> change_test_subject()
             |> make_email(campaign.mtt.test_email)
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
             |> EmailMerge.put_campaign(campaign)
             |> EmailMerge.put_action(e.action)
             |> EmailMerge.put_target(e.target)
             |> EmailMerge.put_files(resolve_files(org, e.files))
-            |> put_message_content(e.message_content, templates[locale])
+            |> put_message_content(message_content, templates[locale])
           end
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
@@ -370,15 +371,10 @@ defmodule Proca.Server.MTTWorker do
     |> Email.assign(:subject, subject)
   end
 
-  defp change_test_subject(message = %{action: %{testing: false}}), do: message
+  defp change_test_subject(message_content, false), do: message_content
 
-  defp change_test_subject(
-         message = %{action: %{testing: true}, message_content: message_content}
-       ) do
-    Map.put(message, :message_content, %{
-      message_content
-      | subject: "[TEST] " <> message_content.subject
-    })
+  defp change_test_subject(message_content = %{subject: subject}, true) do
+    Map.put(message_content, :subject, "[TEST] " <> subject)
   end
 
   defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
