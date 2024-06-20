@@ -19,7 +19,6 @@ defmodule Proca.Server.MTTWorker do
 
   """
 
-
   alias Proca.Repo
   import Ecto.Query
 
@@ -255,6 +254,7 @@ defmodule Proca.Server.MTTWorker do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
             e
+            |> change_test_subject()
             |> make_email(campaign.mtt.test_email)
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
             |> EmailMerge.put_campaign(campaign)
@@ -315,7 +315,7 @@ defmodule Proca.Server.MTTWorker do
       {:mtt, message_id}, email_to.id
     )
     |> Email.from({supporter_name, supporter.email})
-    |> Email.cc(test_email)
+    |> maybe_add_cc(test_email, is_test)
   end
 
   def resolve_files(org, file_keys) do
@@ -369,4 +369,18 @@ defmodule Proca.Server.MTTWorker do
     |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
   end
+
+  defp change_test_subject(message = %{action: %{testing: false}}), do: message
+
+  defp change_test_subject(
+         message = %{action: %{testing: true}, message_content: message_content}
+       ) do
+    Map.put(message, :message_content, %{
+      message_content
+      | subject: "[TEST] " <> message_content.subject
+    })
+  end
+
+  defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
+  defp maybe_add_cc(email, _cc, false), do: email
 end
