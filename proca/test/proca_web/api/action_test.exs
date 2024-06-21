@@ -23,7 +23,21 @@ defmodule ProcaWeb.Api.ActionTest do
     }
 
     result = ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{})
-    assert result = {:ok, %{contact_ref: ref}}
+    assert {:ok, %{contact_ref: ref}} = result
+    result
+  end
+
+  def action_with_ref_invalid(_org, ap, action_info) do
+    ref = Supporter.base_encode("fake_reference")
+
+    params = %{
+      action: action_info,
+      action_page_id: ap.id,
+      contact_ref: ref
+    }
+
+    result = ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{})
+    assert {:error, _} = result
     result
   end
 
@@ -261,7 +275,7 @@ defmodule ProcaWeb.Api.ActionTest do
     assert is_nil(hd(action.supporter.contacts).communication_consent)
   end
 
-  test "create mtt action", %{campaign: c, pages: [ap]} do
+  test "create mtt action", %{org: org, campaign: c, pages: [ap]} do
     c =
       Repo.update!(
         Campaign.changeset(
@@ -283,6 +297,19 @@ defmodule ProcaWeb.Api.ActionTest do
         }
       },
       %{first_name: "Frank", email: "frank.sender@exampl.com"}
+    )
+
+    action_with_ref_invalid(
+      org,
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: ..."
+        }
+      }
     )
 
     mc_count = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
