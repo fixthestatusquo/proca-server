@@ -6,7 +6,7 @@ defmodule Proca.Stage.EmailSupporter do
 
   alias Broadway.Message
   alias Broadway.BatchInfo
-  alias Proca.{Org, ActionPage, Action, Supporter, Contact}
+  alias Proca.{Org, ActionPage, Action, Contact}
   alias Proca.Repo
   import Ecto.Query
   import Logger
@@ -21,7 +21,7 @@ defmodule Proca.Stage.EmailSupporter do
       too_many_retries?: 1
     ]
 
-  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate, EmailTemplateDirectory}
+  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplateDirectory}
   alias Swoosh.Email
 
   def start_for?(%Org{email_backend_id: ebid})
@@ -170,16 +170,6 @@ defmodule Proca.Stage.EmailSupporter do
           messages,
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
         )
-    end
-  end
-
-  defp confirm_supporter(action_id) do
-    action = Action.one(id: action_id, preload: [:supporter])
-
-    case Supporter.confirm(action.supporter) do
-      {:ok, sup2} -> Proca.Stage.Action.process(%{action | supporter: sup2})
-      {:noop, _} -> :ok
-      {:error, msg} -> {:error, msg}
     end
   end
 

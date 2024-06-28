@@ -8,7 +8,7 @@ defmodule Proca.Staffer do
   alias Proca.Repo
   alias Proca.Users.User
   alias Proca.Staffer
-  import Ecto.Query, only: [from: 2, join: 4, where: 3, preload: 2, distinct: 2]
+  import Ecto.Query, only: [from: 2, where: 3, preload: 2, distinct: 2]
 
   schema "staffers" do
     field :perms, :integer, default: 0

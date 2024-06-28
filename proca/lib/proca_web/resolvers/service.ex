@@ -12,10 +12,9 @@ defmodule ProcaWeb.Resolvers.Service do
           {:error, Helper.msg_ext("Cannot find service with #{id}", :not_found)}
 
         srv ->
-          ch =
-            Service.changeset(srv, attrs)
-            |> Proca.Validations.validate_not_changed(:name)
-            |> update()
+          Service.changeset(srv, attrs)
+          |> Proca.Validations.validate_not_changed(:name)
+          |> update()
       end
 
     case result do

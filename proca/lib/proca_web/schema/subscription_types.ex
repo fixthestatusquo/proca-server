@@ -5,7 +5,7 @@ defmodule ProcaWeb.Schema.SubscriptionTypes do
   use Absinthe.Schema.Notation
 
   alias Proca.Repo
-  alias Proca.{ActionPage, Org}
+  alias Proca.Org
 
   object :updates do
     field :action_page_upserted, non_null(:action_page) do

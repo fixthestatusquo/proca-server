@@ -22,7 +22,7 @@ defmodule Proca.Service.Mailjet do
 
   alias Proca.{Org, Service, Supporter, Target}
   alias Proca.Action.Message
-  alias Proca.Service.{EmailTemplate, EmailBackend}
+  alias Proca.Service.EmailTemplate
   alias Swoosh.Adapters.Mailjet
   alias Swoosh.Email
   import Logger
@@ -102,51 +102,49 @@ defmodule Proca.Service.Mailjet do
     |> handle_return(emails)
   end
 
-  @doc """
-  Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
-
-  Sending `[one_bad_email]`
-
-  ```
-  EmailBackend.deliver([a], io)
-  {:error,
-   {400,
-    %{
-      "Errors" => [
-        %{
-          "ErrorCode" => "mj-0013",
-          "ErrorIdentifier" => "b3cd2840-18a3-44c3-97e3-45a19029902f",
-          "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
-          "ErrorRelatedTo" => ["To[0].Email"],
-          "StatusCode" => 400
-        }
-      ],
-      "Status" => "error"
-    }}}
-  ```
-
-  Sending `[one_bad_email, one_good_email]`
-
-  ```
-  {:error,
-   {400,
-    [
-      %{
-        "Errors" => [
-          %{
-            "ErrorCode" => "mj-0013",
-            "ErrorIdentifier" => "e37bcc6f-6821-414e-97df-528ec18e201e",
-            "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
-            "ErrorRelatedTo" => ["To[0].Email"],
-            "StatusCode" => 400
-          }
-        ],
-        "Status" => "error"
-      },
-      %{id: 1152921519812251571}
-    ]}}
-  ```
-  """
+  # Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
+  #
+  # Sending `[one_bad_email]`
+  #
+  # ```
+  # EmailBackend.deliver([a], io)
+  # {:error,
+  #  {400,
+  #   %{
+  #     "Errors" => [
+  #       %{
+  #         "ErrorCode" => "mj-0013",
+  #         "ErrorIdentifier" => "b3cd2840-18a3-44c3-97e3-45a19029902f",
+  #         "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
+  #         "ErrorRelatedTo" => ["To[0].Email"],
+  #         "StatusCode" => 400
+  #       }
+  #     ],
+  #     "Status" => "error"
+  #   }}}
+  # ```
+  #
+  # Sending `[one_bad_email, one_good_email]`
+  #
+  # ```
+  # {:error,
+  #  {400,
+  #   [
+  #     %{
+  #       "Errors" => [
+  #         %{
+  #           "ErrorCode" => "mj-0013",
+  #           "ErrorIdentifier" => "e37bcc6f-6821-414e-97df-528ec18e201e",
+  #           "ErrorMessage" => "\"marcin.@cahoots.pl\" is an invalid email address.",
+  #           "ErrorRelatedTo" => ["To[0].Email"],
+  #           "StatusCode" => 400
+  #         }
+  #       ],
+  #       "Status" => "error"
+  #     },
+  #     %{id: 1152921519812251571}
+  #   ]}}
+  # ```
   defp handle_return({:ok, _}, _) do
     :ok
   end

@@ -28,7 +28,7 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
-  import Logger
+  require Logger
 
   @default_locale "en"
 
@@ -318,7 +318,7 @@ defmodule Proca.Server.MTTWorker do
       if is_test do
         case User.one(email: supporter.email) do
           nil ->
-            warning("Tried to send MTT test email to non-existing user #{supporter.email}")
+            Logger.warning("Tried to send MTT test email to non-existing user #{supporter.email}")
             %Proca.TargetEmail{email: nil, email_status: :none}
 
           %User{} ->

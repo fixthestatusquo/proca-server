@@ -9,7 +9,7 @@ defmodule ProcaWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_proca_key",
-    signing_salt: Application.get_env(:proca, __MODULE__)[:signing_salt],
+    signing_salt: Application.compile_env(:proca, __MODULE__)[:signing_salt],
     same_site: "Strict"
   ]
 
@@ -53,5 +53,5 @@ defmodule ProcaWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug CORSPlug
-  plug Application.get_env(:proca, ProcaWeb.Endpoint)[:router]
+  plug Application.compile_env(:proca, ProcaWeb.Endpoint)[:router]
 end

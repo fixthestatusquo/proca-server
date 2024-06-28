@@ -7,7 +7,6 @@ defmodule ProcaWeb.ConfirmController do
 
   use ProcaWeb, :controller
   import Ecto.Changeset
-  import Ecto.Query
   import Proca.Repo
   alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage, Auth}
   import ProcaWeb.Helper, only: [request_basic_auth: 2]

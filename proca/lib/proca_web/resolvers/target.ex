@@ -56,7 +56,7 @@ defmodule ProcaWeb.Resolvers.Target do
       |> Enum.reduce_while({:ok, 0}, fn chset, {:ok, changed_count} ->
         case repo.update(chset) do
           {:ok, _changed} -> {:cont, {:ok, changed_count + 1}}
-          {:error, errors} = e -> {:halt, e}
+          {:error, _errors} = e -> {:halt, e}
         end
       end)
     end)
@@ -73,7 +73,7 @@ defmodule ProcaWeb.Resolvers.Target do
       |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
         case repo.delete(tar) do
           {:ok, _deleted} -> {:cont, {:ok, deleted_count + 1}}
-          {:error, errors} = e -> {:halt, e}
+          {:error, _errors} = e -> {:halt, e}
         end
       end)
     end)
@@ -89,11 +89,8 @@ defmodule ProcaWeb.Resolvers.Target do
     {:ok, targets}
   end
 
-  @doc """
-  Upserts targets given in `targets` list of attributes, for `campaign_id`
-
-  For each target calls Target.upsert()
-  """
+  # Upserts targets given in `targets` list of attributes, for `campaign_id`
+  # For each target calls Target.upsert()
   defp upsert_all(multi, targets, campaign_id) do
     targets
     |> Enum.map(&Map.put(&1, :campaign_id, campaign_id))

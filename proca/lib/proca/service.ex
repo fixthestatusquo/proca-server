@@ -137,7 +137,7 @@ defmodule Proca.Service do
   Implement above behavuiour for ExAws library
   """
   @impl true
-  def request(method, url, body, headers, http_opts) do
+  def request(method, url, body, headers, _http_opts) do
     client =
       Tesla.client([
         {Tesla.Middleware.Headers, headers}
@@ -155,7 +155,7 @@ defmodule Proca.Service do
     end
   end
 
-  # AWS helpers. 
+  # AWS helpers.
   def aws_request(req, name, org = %Org{}) do
     case one(name: name, org: org) do
       srv = %Service{} -> aws_request(req, srv)
