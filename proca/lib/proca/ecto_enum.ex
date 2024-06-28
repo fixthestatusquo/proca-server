@@ -83,6 +83,15 @@ defenum(DonationSchema, stripe_payment_intent: 0)
 
 defenum(DonationFrequencyUnit, one_off: 0, weekly: 1, monthly: 2, daily: 16)
 
-defenum(EmailStatus, none: 0, double_opt_in: 1, bounce: 2, blocked: 3, spam: 4, unsub: 5, inactive: 6, active: 7)
+defenum(EmailStatus,
+  none: 0,
+  double_opt_in: 1,
+  bounce: 2,
+  blocked: 3,
+  spam: 4,
+  unsub: 5,
+  inactive: 6,
+  active: 7
+)
 
 defenum(CampaignStatus, live: 0, closed: 1, ignored: 2)

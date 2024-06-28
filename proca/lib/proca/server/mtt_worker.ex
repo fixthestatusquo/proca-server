@@ -54,8 +54,12 @@ defmodule Proca.Server.MTTWorker do
       # send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
       Enum.chunk_every(target_ids, 10)
       |> Enum.each(fn target_ids ->
-        emails_to_send =  get_emails_to_send(target_ids, {cycle, all_cycles})
-        Logger.info("MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}")
+        emails_to_send = get_emails_to_send(target_ids, {cycle, all_cycles})
+
+        Logger.info(
+          "MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}"
+        )
+
         send_emails(campaign, emails_to_send)
       end)
 
@@ -63,8 +67,11 @@ defmodule Proca.Server.MTTWorker do
       # send via each action page owner
     else
       if campaign.org.email_backend == nil do
-          Logger.error("MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend")
+        Logger.error(
+          "MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend"
+        )
       end
+
       :noop
     end
   end
@@ -111,7 +118,8 @@ defmodule Proca.Server.MTTWorker do
 
     from m in Message,
       join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
+      where:
+        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
   end
 
   @doc """
@@ -277,10 +285,11 @@ defmodule Proca.Server.MTTWorker do
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
             batch
-            |> Enum.flat_map(fn m -> case m.private.email_id do
-              nil -> []
-              id -> [id]
-             end
+            |> Enum.flat_map(fn m ->
+              case m.private.email_id do
+                nil -> []
+                id -> [id]
+              end
             end)
             |> TargetEmail.mark_all(:active)
 
@@ -288,6 +297,7 @@ defmodule Proca.Server.MTTWorker do
 
           {:error, statuses} ->
             Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+
             Enum.zip(chunk, statuses)
             |> Enum.filter(fn
               {_, :ok} -> true

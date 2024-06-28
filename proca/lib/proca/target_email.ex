@@ -54,7 +54,8 @@ defmodule Proca.TargetEmail do
     |> all(kw)
   end
 
-  def mark_all(ids, status) when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
+  def mark_all(ids, status)
+      when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
     import Ecto.Query
 
     Repo.update_all(from(te in TargetEmail, where: te.id in ^ids),

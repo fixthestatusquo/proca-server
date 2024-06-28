@@ -123,14 +123,17 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     field :id, non_null(:integer)
     @desc "Service name (type)"
     field :name, non_null(:service_name)
+
     @desc """
     Hostname of service, but can be used as any "container" of the service. For AWS, contains a region.
     """
     field :host, :string
+
     @desc """
     User, Account id, client id, whatever your API has
     """
     field :user, :string
+
     @desc """
     A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
     """
@@ -140,18 +143,22 @@ defmodule ProcaWeb.Schema.ServiceTypes do
   input_object :service_input do
     @desc "Service name (type)"
     field :name, non_null(:service_name)
+
     @desc """
     Hostname of service, but can be used as any "container" of the service. For AWS, contains a region.
     """
     field :host, :string
+
     @desc """
     User, Account id, client id, whatever your API has
     """
     field :user, :string
+
     @desc """
     Password, key, secret or whatever your API has as secret credential
     """
     field :password, :string
+
     @desc """
     A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
     """
