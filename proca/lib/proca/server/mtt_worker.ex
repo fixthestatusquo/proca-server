@@ -19,7 +19,6 @@ defmodule Proca.Server.MTTWorker do
 
   """
 
-
   alias Proca.Repo
   import Ecto.Query
 
@@ -75,7 +74,7 @@ defmodule Proca.Server.MTTWorker do
     for {campaign_id, ms} <- emails do
       campaign = Campaign.one(id: campaign_id, preload: [:mtt, org: :email_backend])
 
-      if campaign.org.email_backend != nil and campaign.mtt.test_email != nil do
+      if campaign.org.email_backend != nil do
         send_emails(campaign, ms)
         {campaign_id, length(ms)}
       else
@@ -255,6 +254,8 @@ defmodule Proca.Server.MTTWorker do
           for e <- chunk do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
+            message_content = change_test_subject(e.message_content, e.action.testing)
+
             e
             |> make_email(campaign.mtt.test_email)
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
@@ -262,7 +263,7 @@ defmodule Proca.Server.MTTWorker do
             |> EmailMerge.put_action(e.action)
             |> EmailMerge.put_target(e.target)
             |> EmailMerge.put_files(resolve_files(org, e.files))
-            |> put_message_content(e.message_content, templates[locale])
+            |> put_message_content(message_content, templates[locale])
           end
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
@@ -298,8 +299,12 @@ defmodule Proca.Server.MTTWorker do
     email_to =
       if is_test do
         case User.one(email: supporter.email) do
-          nil -> %Proca.TargetEmail{email: test_email, email_status: :none}
-          %User{} -> %Proca.TargetEmail{email: supporter.email, email_status: :none}
+          nil ->
+            warning("Tried to send MTT test email to non-existing user #{supporter.email}")
+            %Proca.TargetEmail{email: nil, email_status: :none}
+
+          %User{} ->
+            %Proca.TargetEmail{email: supporter.email, email_status: :none}
         end
       else
         Enum.find(message.target.emails, fn email_to ->
@@ -313,9 +318,11 @@ defmodule Proca.Server.MTTWorker do
 
     Proca.Service.EmailBackend.make_email(
       {message.target.name, email_to.email},
-      {:mtt, message_id}, email_to.id
+      {:mtt, message_id},
+      email_to.id
     )
     |> Email.from({supporter_name, supporter.email})
+    |> maybe_add_cc(test_email, is_test)
   end
 
   def resolve_files(org, file_keys) do
@@ -369,6 +376,15 @@ defmodule Proca.Server.MTTWorker do
     |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
   end
+
+  defp change_test_subject(message_content, false), do: message_content
+
+  defp change_test_subject(message_content = %{subject: subject}, true) do
+    Map.put(message_content, :subject, "[TEST] " <> subject)
+  end
+
+  defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
+  defp maybe_add_cc(email, _cc, false), do: email
 
   defp max_messages_per_cycle() do
     max_messages = Application.get_env(:proca, __MODULE__)[:max_messages_per_cycle]
