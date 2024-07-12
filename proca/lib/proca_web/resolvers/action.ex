@@ -91,7 +91,7 @@ defmodule ProcaWeb.Resolvers.Action do
   def link_references(_supporter, %{}) do
   end
 
-  # handle custom_fields as well as 
+  # handle custom_fields as well as
   defp merge_old_fields_format(action_attrs) do
     {fields_attr, attrs} = Map.pop(action_attrs, :fields, %{})
 
@@ -172,7 +172,20 @@ defmodule ProcaWeb.Resolvers.Action do
            get_action_page(params)
          end)
          |> Multi.run(:supporter, fn _repo, %{action_page: action_page} ->
-           get_supporter(action_page, params)
+           case get_supporter(action_page, params) do
+             {:ok, supporter = %Supporter{}} ->
+               {:ok, supporter}
+
+             {:ok, cref} ->
+               if Map.has_key?(params.action, :mtt) do
+                 {:error, "contact_ref: Cannot find contact for MTT action"}
+               else
+                 {:ok, cref}
+               end
+
+             other ->
+               other
+           end
          end)
          |> Multi.run(:source, fn _repo, _ ->
            get_tracking(params, get_in(context, [:headers, "referer"]))
