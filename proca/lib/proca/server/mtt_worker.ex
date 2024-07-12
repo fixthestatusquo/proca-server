@@ -373,10 +373,10 @@ defmodule Proca.Server.MTTWorker do
   defp max_messages_per_cycle() do
     max_messages = Application.get_env(:proca, __MODULE__)[:max_messages_per_cycle]
 
-    cond do
-      is_nil(max_messages) -> 99
-      max_messages < 1 -> 1
-      true -> max_messages
+    if max_messages < 1 do
+      1
+    else
+      max_messages
     end
   end
 end

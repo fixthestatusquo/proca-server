@@ -25,3 +25,5 @@ config :logger, level: :warn
 config :proca, Proca,
   org_name: "instance",
   start_daemon_servers: false
+
+config :proca, Proca.Server.MTTWorker, max_messages_per_cycle: 99
