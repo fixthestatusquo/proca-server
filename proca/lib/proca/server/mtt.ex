@@ -54,7 +54,7 @@ defmodule Proca.Server.MTT do
             WHERE m.dupe_rank is NULL
         ) AND a.processing_status = 4 AND s.processing_status = 3
     ) ranked
-    WHERE messages.id = ranked.id ;
+    WHERE messages.id = ranked.id and messages.dupe_rank is NULL;
     """
 
     Ecto.Adapters.SQL.query(Proca.Repo, sql)
