@@ -272,7 +272,7 @@ defmodule Proca.Server.MTTWorkerTest do
   end
 
   describe "sending more emails than limit" do
-    setup %{campaign: c, ap: ap, targets: [t1 | _]} do
+    setup %{campaign: c, ap: ap, targets: [t1, t2 | _]} do
       actions =
         Factory.insert_list(200, :action,
           action_page: ap,
@@ -280,24 +280,25 @@ defmodule Proca.Server.MTTWorkerTest do
           supporter_processing_status: :accepted
         )
 
-      msgs = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
+      msgs1 = Enum.map(actions, &Factory.insert(:message, action: &1, target: t1))
+      msgs2 = Enum.map(actions, &Factory.insert(:message, action: &1, target: t2))
 
       Proca.Server.MTT.dupe_rank()
 
       %{
         actions: actions,
-        messages: msgs,
-        target: t1
+        messages: List.flatten([msgs1, msgs2]),
+        targets: [t1, t2]
       }
     end
 
     test "don't return more mtt than limit", %{
       actions: actions,
       campaign: c,
-      target: %{id: tid},
+      targets: [%{id: tid1}, %{id: tid2}],
       messages: msgs
     } do
-      emails = MTTWorker.get_emails_to_send([tid], {700, 700})
+      emails = MTTWorker.get_emails_to_send([tid1, tid2], {700, 700})
       assert length(emails) == 99
     end
   end

@@ -178,8 +178,7 @@ defmodule Proca.Server.MTTWorker do
       Message.select_by_targets(target_ids, [false, true])
       |> select([m, t, a], %{
         target_id: t.id,
-        goal:
-          fragment("LEAST(?, ?)", count(m.id) * ^cycle / ^all_cycles, ^max_messages_per_cycle()),
+        goal: count(m.id) * ^cycle / ^all_cycles,
         sent: fragment("count(?) FILTER (WHERE sent)", m.id)
       })
       |> group_by([m, t, a], t.id)
@@ -197,6 +196,7 @@ defmodule Proca.Server.MTTWorker do
       # <= because rank is 1-based
       |> where([r, p], p.sent + r.rank <= p.goal)
       |> select([r, p], r.message_id)
+      |> limit(^max_messages_per_cycle())
 
     # Finally, fetch these messages with associations in one go
     Repo.all(
