@@ -3,10 +3,13 @@ defmodule ProcaWeb.Resolvers.Application do
   Resolvers for application queries
   """
 
+  require Logger
+
   def info(_, _, _) do
     spec = %{
       name: Application.spec(:proca, :description),
-      version: Application.spec(:proca, :vsn)
+      version: Application.spec(:proca, :vsn),
+      log_level: Logger.level()
     }
 
     {:ok, spec}

@@ -20,5 +20,6 @@ defmodule ProcaWeb.Schema.ApplicationTypes do
   object :application do
     field :name, :string
     field :version, :string
+    field :log_level, :string
   end
 end
