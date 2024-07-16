@@ -5,7 +5,13 @@ defmodule Proca.Application do
 
   use Application
 
+  require Logger
+
   def start(_type, _args) do
+    version = Application.spec(:proca, :vsn)
+    log_level = Logger.level()
+    Logger.error("starting proca #{version} log level #{log_level}")
+
     # Standard Phoenix processes
     children = [
       # Start the Ecto repository
