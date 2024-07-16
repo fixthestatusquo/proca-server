@@ -8,6 +8,9 @@ defmodule Proca.Application do
   def start(_type, _args) do
     # Standard Phoenix processes
     children = [
+      # Start the Telemetry supervisor
+      ProcaWeb.Telemetry,
+
       # Start the Ecto repository
       Proca.Repo,
       # Start the PubSub server
