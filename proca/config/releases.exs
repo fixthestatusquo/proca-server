@@ -125,7 +125,10 @@ config :proca, Proca.Server.MTTWorker,
 config :logger,
   backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],
   format: "$date $time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id],
+  level:
+    System.get_env("LOG_LEVEL", "error")
+    |> String.to_existing_atom()
 
 config :logger, :console,
   format: "$date $time $metadata[$level] $message\n",

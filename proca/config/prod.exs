@@ -13,13 +13,6 @@ config :proca, ProcaWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   server: true
 
-# Fetch the log level from the environment variable
-log_level =
-  System.get_env("LOG_LEVEL", "error")
-  |> String.to_existing_atom()
-
-config :logger, level: log_level
-
 # Running with Systemd
 config :mix_systemd,
   exec_start_pre: [
