@@ -39,7 +39,15 @@ defmodule Proca.Server.MTTWorker do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
-      Logger.info("MTT worker #{campaign.name}: #{length(target_ids)} targets, send cycle #{cycle}/#{all_cycles}")
+      :telemetry.execute(
+        [:proca, :mtt],
+        %{sendable_targets: length(target_ids), current_cycle: cycle, all_cycles: all_cycles},
+        %{campaign_id: campaign.id}
+      )
+
+      Logger.info(
+        "MTT worker #{campaign.name}: #{length(target_ids)} targets, send cycle #{cycle}/#{all_cycles}"
+      )
 
       # Send via central campaign.org.email_backend
       # send_emails(campaign, get_test_emails_to_send(target_ids), true)

@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.6.3",
+      version: "3.6.4",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -54,6 +54,9 @@ defmodule Proca.MixProject do
       {:ecto_trail, "~> 0.4"},
       {:money, "~> 1.10"},
       {:ex2ms, "~> 1.0"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:telemetry_metrics_prometheus, "~> 1.1.0"},
+      {:telemetry_poller, "~> 1.1"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:gettext, "~> 0.11"},
