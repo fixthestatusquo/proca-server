@@ -115,6 +115,13 @@ defmodule Proca.Action.Message do
     end
   end
 
+  def select_by_campaign(campaign_id, sent \\ false, testing \\ false) do
+    import Ecto.Query
+
+    select_by_targets(:all, sent, testing)
+    |> where([m, t, a, mc], a.campaign_id == ^campaign_id)
+  end
+
   @spec mark_all([%Message{}], :sent | :delivered | :opened | :clicked) :: :ok
   def mark_all(messages, field) when field in [:sent, :delivered, :opened, :clicked] do
     import Ecto.Query
