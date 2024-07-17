@@ -54,6 +54,8 @@ defmodule Proca.MixProject do
       {:ecto_trail, "~> 0.4"},
       {:money, "~> 1.10"},
       {:ex2ms, "~> 1.0"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:telemetry_metrics_prometheus, "~> 1.1.0"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:gettext, "~> 0.11"},
