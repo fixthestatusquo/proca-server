@@ -42,7 +42,7 @@ defmodule Proca.Server.MTTWorker do
       :telemetry.execute(
         [:proca, :mtt],
         %{sendable_targets: length(target_ids), current_cycle: cycle, all_cycles: all_cycles},
-        %{campaign_id: campaign.id}
+        %{campaign_id: campaign.id, campaign_name: campaign.name}
       )
 
       Logger.info(

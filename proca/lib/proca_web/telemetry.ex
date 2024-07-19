@@ -6,6 +6,8 @@ defmodule ProcaWeb.Telemetry do
 
   import Telemetry.Metrics
 
+  @campaign_tags [:campaign_id, :campaign_name]
+
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -58,7 +60,8 @@ defmodule ProcaWeb.Telemetry do
         |> length()
 
       :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
-        campaign_id: campaign.id
+        campaign_id: campaign.id,
+        campaign_name: campaign.name
       })
     end)
   end
@@ -66,10 +69,10 @@ defmodule ProcaWeb.Telemetry do
   defp metrics do
     [
       last_value("proca.mtt.campaigns_running"),
-      last_value("proca.mtt.sendable_messages", tags: [:campaign_id]),
-      last_value("proca.mtt.sendable_targets", tags: [:campaign_id]),
-      last_value("proca.mtt.current_cycle", tags: [:campaign_id]),
-      last_value("proca.mtt.all_cycles", tags: [:campaign_id])
+      last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
+      last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
+      last_value("proca.mtt.current_cycle", tags: @campaign_tags),
+      last_value("proca.mtt.all_cycles", tags: @campaign_tags)
     ]
   end
 
