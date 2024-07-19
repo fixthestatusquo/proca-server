@@ -72,7 +72,8 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
-      last_value("proca.mtt.all_cycles", tags: @campaign_tags)
+      last_value("proca.mtt.all_cycles", tags: @campaign_tags),
+      counter("proca.mtt.messages_sent", tags: @campaign_tags)
     ]
   end
 

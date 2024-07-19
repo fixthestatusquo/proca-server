@@ -54,8 +54,18 @@ defmodule Proca.Server.MTTWorker do
       # send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
       Enum.chunk_every(target_ids, 10)
       |> Enum.each(fn target_ids ->
-        emails_to_send =  get_emails_to_send(target_ids, {cycle, all_cycles})
-        Logger.info("MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}")
+        emails_to_send = get_emails_to_send(target_ids, {cycle, all_cycles})
+
+        Logger.info(
+          "MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}"
+        )
+
+        :telemetry.execute(
+          [:proca, :mtt],
+          %{messages_sent: length(emails_to_send)},
+          %{campaign_id: campaign.id, campaign_name: campaign.name}
+        )
+
         send_emails(campaign, emails_to_send)
       end)
 
