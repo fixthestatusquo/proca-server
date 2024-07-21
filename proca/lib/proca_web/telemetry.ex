@@ -73,8 +73,8 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
-      counter("proca.mailjet.events", tags: [:reason]),
-      counter("proca.mailjet.bounces", tags: [:reason]),
+      counter("proca.mailjet.events.count", tags: [:reason]),
+      counter("proca.mailjet.bounces.count", tags: [:reason]),
       last_value("proca.mtt.campaigns_running"),
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
