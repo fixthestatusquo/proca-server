@@ -14,13 +14,18 @@ defmodule ProcaWeb.Telemetry do
 
   @impl true
   def init(_args) do
-    children = [
-      {:telemetry_poller,
-       measurements: periodic_measurements(),
-       period: :timer.seconds(60),
-       init_delay: :timer.seconds(30)},
-      {TelemetryMetricsPrometheus, [metrics: metrics()]}
-    ]
+    children =
+      if enable_telemetry?() do
+        [
+          {:telemetry_poller,
+           measurements: periodic_measurements(),
+           period: :timer.seconds(60),
+           init_delay: :timer.seconds(30)},
+          {TelemetryMetricsPrometheus, [metrics: metrics()]}
+        ]
+      else
+        []
+      end
 
     :telemetry.attach(
       "query-time-handler",
@@ -68,6 +73,8 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
+      counter("proca.mailjet.events.count", tags: [:reason]),
+      counter("proca.mailjet.bounces.count", tags: [:reason]),
       last_value("proca.mtt.campaigns_running"),
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
@@ -83,5 +90,9 @@ defmodule ProcaWeb.Telemetry do
       # This function must call :telemetry.execute/3 and a metric must be added above.
       {ProcaWeb.Telemetry, :count_sendable_messages, []}
     ]
+  end
+
+  defp enable_telemetry? do
+    Application.get_env(:proca, __MODULE__, %{enable: true})[:enable]
   end
 end
