@@ -8,7 +8,7 @@ defmodule Proca.Confirm.AddStaffer do
   alias Proca.Confirm
   @behaviour Confirm.Operation
 
-  alias Proca.{Staffer, Org, Auth, Permission}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Auth, Error, Permission}
   import Proca.Repo
 
   def changeset(email, role, %Auth{user: user, staffer: %Staffer{org_id: org_id}}, message \\ nil)

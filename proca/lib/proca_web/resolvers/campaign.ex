@@ -5,7 +5,8 @@ defmodule ProcaWeb.Resolvers.Campaign do
   import Ecto.Query
   import Proca.Repo
   alias Proca.Auth
-  alias Proca.{Campaign, ActionPage, Org, Confirm}
+  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm, Target}
+  import Proca.Permission
   alias ProcaWeb.Helper
   alias Ecto.Multi
 
@@ -203,7 +204,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
       nil ->
         {:ok, nil}
 
-      _staffer ->
+      staffer ->
         all_partner_ids =
           from(
             ap in ActionPage,

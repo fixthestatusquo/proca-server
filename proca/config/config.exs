@@ -5,7 +5,7 @@
 # is restricted to this project.
 
 # General application configuration
-import Config
+use Mix.Config
 
 config :proca,
   ecto_repos: [Proca.Repo]

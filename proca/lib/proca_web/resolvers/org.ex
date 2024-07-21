@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Query
   import Ecto.Changeset
 
-  alias Proca.{ActionPage, Campaign, Action}
+  alias Proca.{ActionPage, Campaign, Action, Permission}
   alias Proca.{Org, Staffer, PublicKey, Service, Auth}
   alias ProcaWeb.{Error, Helper}
   alias ProcaWeb.Resolvers.ChangeAuth
@@ -353,8 +353,9 @@ defmodule ProcaWeb.Resolvers.Org do
          }}
 
       %PublicKey{} ->
-        PublicKey.activate_for(org, id)
-        |> Repo.transaction_and_notify(:key_activated)
+        pk =
+          PublicKey.activate_for(org, id)
+          |> Repo.transaction_and_notify(:key_activated)
 
         {:ok, %{status: :success}}
     end

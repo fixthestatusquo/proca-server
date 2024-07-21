@@ -18,6 +18,7 @@ defmodule Proca.Stage.UnprocessedActions do
   """
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
+  import Logger
   use GenStage
 
   # Seconds

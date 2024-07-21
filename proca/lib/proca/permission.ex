@@ -31,10 +31,11 @@ defmodule Proca.Permission do
 
   """
 
-  import Bitwise
+  use Bitwise
   alias Proca.Staffer
   alias Proca.Users.User
   alias Proca.Auth
+
 
   @bits [
     # Admin permissions [in users.perms]

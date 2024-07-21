@@ -4,7 +4,7 @@ defmodule Proca.Service.Supabase do
   """
   alias Supabase.Storage
 
-  alias Proca.Service
+  alias Proca.{Org, Service}
 
   def connect(%Service{name: :supabase, password: key, host: url}) do
     Supabase.Connection.new(url, key)
