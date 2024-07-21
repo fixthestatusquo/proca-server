@@ -76,7 +76,7 @@ defmodule Proca.Confirm do
   alias Proca.Repo
   alias Proca.{Confirm, Org}
   alias Proca.Users.User
-  alias Proca.Service.{EmailBackend, EmailMerge}
+  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate}
 
   schema "confirms" do
     field :operation, ConfirmOperation

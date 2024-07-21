@@ -1,4 +1,5 @@
 defmodule ProcaWeb.Resolvers.Confirm do
+  import Proca.Repo
   alias Proca.{ActionPage, Campaign, Org}
   alias ProcaWeb.Error
 
