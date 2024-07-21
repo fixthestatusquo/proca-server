@@ -159,9 +159,7 @@ defmodule ProcaWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: "/"
-
-  defp home_url(conn) do
+  defp home_url(_conn) do
     if not auth_enabled?(:local) and auth_enabled?(:sso) and config(:sso, :home_url) do
       config(:sso, :home_url)
     else

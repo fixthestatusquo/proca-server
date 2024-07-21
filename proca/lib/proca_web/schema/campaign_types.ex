@@ -284,13 +284,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   object :campaign_mtt do
     @desc "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
     field :start_at, non_null(:datetime)
+
     @desc "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
     field :end_at, non_null(:datetime)
+
     @desc """
     If email templates are used to create MTT, use this template (works like thank you email templates).
     Otherwise, the raw text that is send with MTT action will make a plain text email.
     """
     field :message_template, :string
+
     @desc """
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """
@@ -300,13 +303,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   input_object :campaign_mtt_input do
     @desc "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
     field :start_at, :datetime
+
     @desc "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
     field :end_at, :datetime
+
     @desc """
     If email templates are used to create MTT, use this template (works like thank you email templates).
     Otherwise, the raw text that is send with MTT action will make a plain text email.
     """
     field :message_template, :string
+
     @desc """
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """

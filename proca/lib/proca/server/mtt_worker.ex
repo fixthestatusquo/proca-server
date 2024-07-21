@@ -28,7 +28,7 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
-  import Logger
+  require Logger
 
   @default_locale "en"
 
@@ -73,8 +73,11 @@ defmodule Proca.Server.MTTWorker do
       # send via each action page owner
     else
       if campaign.org.email_backend == nil do
-          Logger.error("MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend")
+        Logger.error(
+          "MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend"
+        )
       end
+
       :noop
     end
   end
@@ -121,7 +124,8 @@ defmodule Proca.Server.MTTWorker do
 
     from m in Message,
       join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
+      where:
+        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
   end
 
   @doc """
@@ -287,10 +291,11 @@ defmodule Proca.Server.MTTWorker do
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
             batch
-            |> Enum.flat_map(fn m -> case m.private.email_id do
-              nil -> []
-              id -> [id]
-             end
+            |> Enum.flat_map(fn m ->
+              case m.private.email_id do
+                nil -> []
+                id -> [id]
+              end
             end)
             |> TargetEmail.mark_all(:active)
 
@@ -298,6 +303,7 @@ defmodule Proca.Server.MTTWorker do
 
           {:error, statuses} ->
             Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+
             Enum.zip(chunk, statuses)
             |> Enum.filter(fn
               {_, :ok} -> true
@@ -318,7 +324,7 @@ defmodule Proca.Server.MTTWorker do
       if is_test do
         case User.one(email: supporter.email) do
           nil ->
-            warning("Tried to send MTT test email to non-existing user #{supporter.email}")
+            Logger.warning("Tried to send MTT test email to non-existing user #{supporter.email}")
             %Proca.TargetEmail{email: nil, email_status: :none}
 
           %User{} ->

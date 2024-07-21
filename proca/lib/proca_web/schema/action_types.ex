@@ -7,7 +7,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   alias ProcaWeb.Resolvers
   import ProcaWeb.Resolvers.AuthNotation
-  alias ProcaWeb.Resolvers.ReportError
 
   object :action_queries do
     @desc """
@@ -281,6 +280,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     field :email_status, non_null(:email_status)
     @desc "When did the email status change last time"
     field :email_status_changed, :naive_datetime
+
     @desc "This action contained consent (if false, it could be a share action that is attached to another action containing a consent)"
     field :with_consent, non_null(:boolean)
   end

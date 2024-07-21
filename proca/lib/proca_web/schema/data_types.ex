@@ -66,7 +66,9 @@ defmodule ProcaWeb.Schema.DataTypes do
 
   enum :email_status do
     value(:none, description: "An unused email")
+
     value(:double_opt_in, description: "The user has received a DOI on this email and accepted it")
+
     value(:bounce, description: "This email was used and bounced")
     value(:blocked, description: "This email was used and blocked")
     value(:spam, description: "This email was used and marked spam")
@@ -93,7 +95,10 @@ defmodule ProcaWeb.Schema.DataTypes do
   enum :outdated_targets do
     value(:keep, description: "Keep outdated targets")
     value(:disable, description: "Disable emails for outdated targets")
-    value(:delete, description: "Delete outdated targets (only possible for targets without any action)")
+
+    value(:delete,
+      description: "Delete outdated targets (only possible for targets without any action)"
+    )
   end
 
   # XXX should this not be moved out from here?

@@ -17,7 +17,6 @@ defmodule ProcaWeb.Plugs.TokenAuthPlug do
   alias Proca.Users
   alias Proca.Users.User
   import ProcaWeb.Plugs.Helper
-  import Logger
 
   def init(opts) do
     opts

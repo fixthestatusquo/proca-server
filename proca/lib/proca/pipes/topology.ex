@@ -10,7 +10,7 @@ defmodule Proca.Pipes.Topology do
   are sent by the API layer when respective event occurs. They are not sent by
   operations on Proca.Org directly.
 
-  ### Properties: 
+  ### Properties:
 
   - 3 exchanges reflect 3 stages of processing (supporter confirms their data, moderator confirms the action, action is delivered)
   - Each exchange has build in worker queues attached, *if workers are enabled*. Worker queues are read by Proca workers.
@@ -69,8 +69,7 @@ defmodule Proca.Pipes.Topology do
   alias Proca.Org
   alias Proca.Pipes
   alias Proca.Stage
-  alias AMQP.{Channel, Queue, Exchange}
-  import AMQP.Basic
+  alias AMQP.{Queue, Exchange}
 
   ## API for topology server lifecycle
   def start_link(org = %Org{}) do

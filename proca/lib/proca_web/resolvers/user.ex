@@ -4,21 +4,16 @@ defmodule ProcaWeb.Resolvers.User do
   """
   # import Ecto.Query
   import Ecto.Query, only: [from: 2]
-  import Ecto.Changeset
-  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2, format_result: 1]
+  import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2]
 
-  alias Proca.{ActionPage, Campaign, Action}
   alias Proca.Auth
-  alias Proca.{Org, Staffer, PublicKey}
-  alias ProcaWeb.Helper
+  alias Proca.Staffer
 
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Proca.Staffer.Role
   alias Proca.Permission
   alias Proca.Users.User
-
-  import Logger
 
   def staffer_role(staffer), do: Role.findrole(staffer) || "custom"
 

@@ -3,7 +3,6 @@ defmodule Proca.MTT do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Proca.Validations
-  alias Proca.ActionPage
 
   schema "mtt" do
     field :start_at, :utc_datetime

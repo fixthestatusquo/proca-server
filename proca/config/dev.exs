@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Configure your database
 
@@ -35,6 +35,9 @@ case System.get_env("ORGANISATION") do
   org_name ->
     config :proca, Proca, org_name: org_name
 end
+
+config :proca, Proca,
+  start_daemon_servers: System.get_env("START_DAEMON_SERVERS", "true") == "true"
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

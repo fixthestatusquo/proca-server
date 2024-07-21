@@ -5,7 +5,7 @@ defmodule Proca.Users.User do
   alias Proca.Users.StrongPassword
   alias Proca.Users.User
 
-  import Ecto.Query, only: [from: 1, from: 2, preload: 3, where: 3, join: 4]
+  import Ecto.Query, only: [from: 1, preload: 3, where: 3, join: 4]
 
   schema "users" do
     field :email, :string

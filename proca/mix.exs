@@ -28,7 +28,15 @@ defmodule Proca.MixProject do
   def application do
     [
       mod: {Proca.Application, []},
-      extra_applications: [:logger, :ssl, :runtime_tools, :absinthe_plug, :sentry, :ecto_trail]
+      extra_applications: [
+        :lager,
+        :logger,
+        :ssl,
+        :runtime_tools,
+        :absinthe_plug,
+        :sentry,
+        :ecto_trail
+      ]
     ]
   end
 

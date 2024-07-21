@@ -9,15 +9,12 @@ defmodule Proca.Stage.Webhook do
   use Broadway
 
   alias Broadway.Message
-  alias Broadway.BatchInfo
-  alias Proca.{Org, ActionPage, Action, Supporter, Service}
+  alias Proca.Org
   alias Proca.Service.Webhook
-  alias Proca.Repo
-  import Ecto.Query
   import Logger
 
   import Proca.Stage.Support,
-    only: [ignore: 1, ignore: 2, supporter_link: 3, too_many_retries?: 1]
+    only: [ignore: 2, too_many_retries?: 1]
 
   def start_for?(org = %Org{}) do
     case Proca.Repo.preload(org, [:push_backend, :event_backend]) do
