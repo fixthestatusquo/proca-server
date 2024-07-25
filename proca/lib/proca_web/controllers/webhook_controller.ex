@@ -27,4 +27,9 @@ defmodule ProcaWeb.WebhookController do
     conn
     |> send_resp(:ok, "")
   end
+
+  def mailjet(conn, event) do
+    # If we receive a single event instead of list we should wrap it
+    mailjet(conn, %{"_json" => [event]})
+  end
 end
