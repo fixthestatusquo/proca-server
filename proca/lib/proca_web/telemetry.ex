@@ -40,7 +40,7 @@ defmodule ProcaWeb.Telemetry do
   def handle_event([:proca, :repo, :query], measurements, metadata, _config) do
     query_time_ms = measurements[:query_time] / (1_000 * 1_000)
 
-    if query_time_ms > 5_000 do
+    if query_time_ms > 10_000 do
       Logger.warning("Database query took #{query_time_ms}ms", metadata)
     end
   end
