@@ -162,4 +162,7 @@ config :sentry,
   capture_log_messages: true
 ```
 
+Also for development purposes you can use some env variables to change the server behaviour:
 
+- `ENABLE_TELEMETRY` if set to `true` the server will serve prometheus metrics on port 9568. Enabled by default, disable it by setting `export ENABLE_TELEMETRY=false`
+- `START_DAEMON_SERVERS` if set to `true` the server will start some processes in the background. Disable it to make the development server starts faster when you are not working on MTT. Enabled by default, disable it by setting `export START_DAEMON_SERVERS=false`
