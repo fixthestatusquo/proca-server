@@ -86,17 +86,6 @@ defmodule Proca.Repo do
   end
 
   defp notify_opts(opts) do
-    {auth, opts} = Keyword.pop(opts, :auth)
-    {id, opts} = Keyword.pop(opts, :id)
-
-    nopts =
-      []
-      |> maybe_add(:auth, auth)
-      |> maybe_add(:id, id)
-
-    {nopts, opts}
+    Keyword.split(opts, [:auth, :id])
   end
-
-  defp maybe_add(acc, _key, nil), do: acc
-  defp maybe_add(acc, key, value), do: [{key, value} | acc]
 end
