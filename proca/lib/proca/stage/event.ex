@@ -14,7 +14,7 @@ defmodule Proca.Stage.Event do
   can read.
 
   """
-  alias Proca.{Confirm, Org, Supporter}
+  alias Proca.{Action, Confirm, Org, Supporter}
   alias Proca.Pipes.Connection
   import Proca.Stage.Support, only: [camel_case_keys: 2, to_iso8601: 1]
 
@@ -68,7 +68,10 @@ defmodule Proca.Stage.Event do
   end
 
   def put_data(data, :email_status, %Supporter{} = supporter, opts) do
+    alias Proca.Stage.MessageV1
     alias Proca.Stage.MessageV2
+
+    action = Action.get_by_id(opts[:id])
 
     # Find Supporters contact data belonging to that org_id
     org_id = opts[:org_id]
@@ -88,8 +91,22 @@ defmodule Proca.Stage.Event do
       personal_info: MessageV2.personal_info_data(contact)
     }
 
+    action_data = %{
+      action_type: action.action_type,
+      custom_fields: action.fields,
+      created_at: action.inserted_at |> to_iso8601(),
+      testing: action.testing
+    }
+
     data
     |> Map.put(:supporter, supporter_data)
+    |> Map.put(:campaign, MessageV2.campaign_data(action.campaign))
+    |> Map.put(:campaign_id, action.campaign.id)
+    |> Map.put(:action_page, MessageV2.action_page_data(action.action_page))
+    |> Map.put(:action_page_id, action.action_page.id)
+    |> Map.put(:action_id, action.id)
+    |> Map.put(:action, action_data)
+    |> Map.put(:tracking, MessageV1.tracking_data(action))
   end
 
   def put_data(data, :campaign_updated, campaign, _opts) do

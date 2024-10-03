@@ -2,7 +2,7 @@ defmodule Proca.Stage.MessageV2 do
   alias Proca.Stage.MessageV1
   alias Proca.Stage.Support
   alias Proca.Repo
-  alias Proca.{Contact, Supporter, PublicKey, Action}
+  alias Proca.{Campaign, Contact, Supporter, PublicKey, Action, ActionPage}
 
   def action_data(action, stage \\ :deliver, org_id) do
     action =
@@ -22,22 +22,9 @@ defmodule Proca.Stage.MessageV2 do
     %{
       "actionId" => action.id,
       "actionPageId" => action.action_page_id,
-      "actionPage" => %{
-        "locale" => action.action_page.locale,
-        "name" => action.action_page.name,
-        "thankYouTemplate" => action.action_page.thank_you_template,
-        "thankYouTemplateRef" => MessageV1.action_page_template_ref(action.action_page),
-        "supporterConfirmTemplate" =>
-          action.action_page.supporter_confirm_template ||
-            action.action_page.org.supporter_confirm_template
-      },
+      "actionPage" => action_page_data(action.action_page),
       "campaignId" => action.campaign_id,
-      "campaign" => %{
-        "name" => action.campaign.name,
-        "title" => action.campaign.title,
-        "externalId" => action.campaign.external_id,
-        "contactSchema" => Atom.to_string(action.campaign.contact_schema)
-      },
+      "campaign" => campaign_data(action.campaign),
       "org" => %{
         "name" => action.action_page.org.name,
         "title" => action.action_page.org.title
@@ -57,6 +44,38 @@ defmodule Proca.Stage.MessageV2 do
       "tracking" => MessageV1.tracking_data(action)
     }
     |> put_action_meta(stage)
+  end
+
+  def action_page_data(
+        %ActionPage{
+          locale: locale,
+          name: name,
+          thank_you_template: thank_you_template,
+          supporter_confirm_template: supporter_confirm_template,
+          org: org
+        } = action_page
+      ) do
+    %{
+      "locale" => locale,
+      "name" => name,
+      "thankYouTemplate" => thank_you_template,
+      "thankYouTemplateRef" => MessageV1.action_page_template_ref(action_page),
+      "supporterConfirmTemplate" => supporter_confirm_template || org.supporter_confirm_template
+    }
+  end
+
+  def campaign_data(%Campaign{
+        name: name,
+        title: title,
+        external_id: external_id,
+        contact_schema: contact_schema
+      }) do
+    %{
+      "name" => name,
+      "title" => title,
+      "externalId" => external_id,
+      "contactSchema" => Atom.to_string(contact_schema)
+    }
   end
 
   def contact_data(
