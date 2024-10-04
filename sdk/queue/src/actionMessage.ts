@@ -32,13 +32,13 @@ export type ContactV2 = {
                             // address: {region, locality, street, streetNumber}
                             // but it can differ for different PII schema
 
-type Campaign = {
+export type Campaign = {
   title: string,    // long name
   name: string,     // technical name
   externalId: number  // can be set by owner of campaign
 }
 
-type ActionPage = {
+export type ActionPage = {
   locale: string,              // language or full locale eg: pl, de_AT
   name: string,                // technical name
   thankYouTemplate: string     // name of thank you template
@@ -54,7 +54,7 @@ type ActionV1 = {
   testing: boolean
 }
 
-type ActionV2 = {
+export type ActionV2 = {
   actionType: string,
   customFields: {
     [key: string]: string | number | boolean | string[] | number[]
@@ -63,7 +63,7 @@ type ActionV2 = {
   testing: boolean // is this a test action? (to be discarded)
 }
 
-type Tracking = {
+export type Tracking = {
   source: string,   // utm_*
   medium: string,
   campaign: string,
