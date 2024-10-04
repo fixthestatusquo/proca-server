@@ -2,14 +2,14 @@ import {ContactV2, PrivacyV2, Campaign, ActionV2, ActionPage, Tracking} from './
 
 export type EmailStatusEvent = {
   eventType: 'email_status';
-  action: ActionV2;
-  actionPage: ActionPage;
-  campaign: Campaign;
+  action?: ActionV2;
+  actionPage?: ActionPage;
+  campaign?: Campaign;
   supporter: {
     contact: ContactV2;
     privacy: PrivacyV2;
   },
-  tracking: Tracking;
+  tracking?: Tracking;
 }
 
 export type EventMessageV2 = {
