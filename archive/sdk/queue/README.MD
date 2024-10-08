@@ -1,3 +1,7 @@
+# The current vesion of the app is in separate repo
+
+`git@github.com:fixthestatusquo/proca-queue.git`
+
 # Proca SDK: queue helpers
 
 Proca server pushes actions through AMQP queues, to which you can plug in your microservice.
@@ -18,7 +22,7 @@ This module provides few helpers to work with queues.
     - `keyStore` - decryption key store (see `@proca/crypto` module) if PII of supporters is to be decrypted
 
   - Callback signature is: `async callback(action : ActionMessageV2 |
-    EventMessageV2, msg? : amqplib.Message, channel? : amqplib.Channel)`. The
+EventMessageV2, msg? : amqplib.Message, channel? : amqplib.Channel)`. The
     callback returns a promise, which if successful will result in ACKing the
     message, and if unsuccessful with NACK the message and RabbitMQ server will
     re-queue the message.
