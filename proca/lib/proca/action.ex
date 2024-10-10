@@ -80,7 +80,7 @@ defmodule Proca.Action do
   end
 
   def get_by_id(action_id) do
-    one(id: action_id, preload: [:campaign, [action_page: :org], [supporter: :contacts], :fields])
+    one(id: action_id, preload: [:campaign, [action_page: :org], [supporter: :contacts], :source])
   end
 
   def get_by_id_and_ref(action_id, ref) do

@@ -86,9 +86,6 @@ defmodule Proca.Repo do
   end
 
   defp notify_opts(opts) do
-    case Keyword.pop(opts, :auth) do
-      {nil, opts} -> {[], opts}
-      {auth, opts} -> {[auth: auth], opts}
-    end
+    Keyword.split(opts, [:auth, :id])
   end
 end
