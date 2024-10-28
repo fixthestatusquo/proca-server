@@ -316,14 +316,7 @@ defmodule Proca.Server.MTTWorker do
       ) do
     email_to =
       if is_test do
-        case User.one(email: supporter.email) do
-          nil ->
-            warning("Tried to send MTT test email to non-existing user #{supporter.email}")
-            %Proca.TargetEmail{email: nil, email_status: :none}
-
-          %User{} ->
-            %Proca.TargetEmail{email: supporter.email, email_status: :none}
-        end
+        %Proca.TargetEmail{email: supporter.email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
           email_to.email_status in [:active, :none]
