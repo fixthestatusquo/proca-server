@@ -133,14 +133,15 @@ defmodule Proca.Server.Stats do
     # We can have many supporters records for same fingerprint.
     # We want to use only last one per each campaign.
     # We use ORDER + SELECT DISTINCT() to make the DB select such last records
-    # When we calculate areas for campaign, we also do this, so if someone signed from two areas, only last one 
+    # When we calculate areas for campaign, we also do this, so if someone signed from two areas, only last one
     # is counted (within scope of campaign)
 
     first_supporter_query =
       from(a in Action, join: s in Supporter, on: a.supporter_id == s.id, order_by: a.inserted_at)
       |> where(
         [a, s],
-        s.processing_status in [:accepted] and a.processing_status in [:accepted, :delivered] and s.dupe_rank == 0
+        s.processing_status in [:accepted] and a.processing_status in [:accepted, :delivered] and
+          s.dupe_rank == 0
       )
       |> distinct([a, s], [a.campaign_id, s.fingerprint])
 
@@ -169,7 +170,7 @@ defmodule Proca.Server.Stats do
       |> Enum.map(&{&1, %{}})
       |> Enum.into(%{})
 
-    # Aggregate per-org and total supporters 
+    # Aggregate per-org and total supporters
     {result_all, result_orgs} =
       for {campaign_id, org_id, count} <- org_supporters, reduce: {result_all, result_orgs} do
         # go through rows and aggregate on two levels
