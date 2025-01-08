@@ -207,26 +207,6 @@ defmodule Proca.Server.Stats do
           }
       end
 
-    # count supporters per area (extra supporters do not apply here); we might add default area to 
-    # action page and then we could add them here.. - would need a campaign,area -> extra aggregate
-    area_supporters_query =
-      first_supporter_query
-      |> where([a, s], not is_nil(s.area))
-      |> subquery()
-      |> join(:inner, [a], s in Supporter, on: s.id == a.supporter_id)
-      |> group_by([a, s], [a.campaign_id, s.area])
-      |> select([a, s], {a.campaign_id, s.area, count(s.fingerprint)})
-
-    area_supporters =
-      area_supporters_query
-      |> Repo.all(timeout: 30_000)
-
-    result_area =
-      for {campaign_id, area, count} <- area_supporters, reduce: %{} do
-        area_sup ->
-          Map.update(area_sup, campaign_id, %{area => count}, &Map.put(&1, area, count))
-      end
-
     action_counts =
       from(a in Action,
         where: a.processing_status in [:accepted, :delivered] and not a.testing,
@@ -249,11 +229,6 @@ defmodule Proca.Server.Stats do
     result =
       for {campaign_id, org_stat} <- result_orgs, reduce: result do
         acc -> Map.put(acc, campaign_id, %Stats{acc[campaign_id] | org: org_stat})
-      end
-
-    result =
-      for {campaign_id, area_stat} <- result_area, reduce: result do
-        acc -> Map.put(acc, campaign_id, %Stats{acc[campaign_id] | area: area_stat})
       end
 
     result =
