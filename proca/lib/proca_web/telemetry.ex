@@ -73,6 +73,7 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
+      # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
       last_value("proca.mtt.campaigns_running"),
@@ -81,6 +82,12 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
       sum("proca.mtt.messages_sent", tags: @campaign_tags)
+      # Database Metrics
+      last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
+      last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
+      last_value("proca.repo.query.query_time", unit: {:native, :millisecond}),
+      last_value("proca.repo.query.queue_time", unit: {:native, :millisecond}),
+      last_value("proca.repo.query.idle_time", unit: {:native, :millisecond})
     ]
   end
 
