@@ -6,6 +6,8 @@ defmodule ProcaWeb.Telemetry do
 
   import Telemetry.Metrics
 
+  alias Proca.Action.Message
+
   @campaign_tags [:campaign_id, :campaign_name]
 
   def start_link(arg) do
@@ -37,13 +39,27 @@ defmodule ProcaWeb.Telemetry do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def handle_event([:proca, :repo, :query], measurements, metadata, _config) do
+  def handle_event(
+        [:proca, :repo, :query],
+        measurements,
+        %{options: %{event: :export_actions, org_id: org_id}},
+        _config
+      ) do
+    query_duration = System.convert_time_unit(measurements.total_time, :native, :millisecond)
+
+    :telemetry.execute(
+      [:proca, :exporter, :export_actions],
+      %{export_time: query_duration, count: 1},
+      %{org_id: org_id}
+    )
+  end
+
+  def handle_event([:proca, :repo, :query], measurements, _metadata, _config) do
     query_duration = System.convert_time_unit(measurements.query_time, :native, :millisecond)
 
     if query_duration > 10_000 do
       Logger.warning("""
       Slow query detected (#{query_duration}ms)
-      Query: #{metadata.query}
       """)
     end
   end
@@ -63,7 +79,7 @@ defmodule ProcaWeb.Telemetry do
 
     Enum.each(active_campaigns, fn campaign ->
       unsent_messages =
-        Proca.Action.Message.select_by_campaign(campaign.id)
+        Message.select_by_campaign(campaign.id)
         |> Proca.Repo.all()
         |> length()
 
@@ -76,6 +92,12 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
+      # API Metrics
+      last_value("proca.exporter.export_actions.export_time",
+        unit: {:native, :millisecond},
+        tags: [:org_id]
+      ),
+      sum("proxa.exporter.export_actions.count", tags: [:org_id]),
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
@@ -84,7 +106,7 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
-      sum("proca.mtt.messages_sent", tags: @campaign_tags)
+      sum("proca.mtt.messages_sent", tags: @campaign_tags),
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
       last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
