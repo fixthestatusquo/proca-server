@@ -155,7 +155,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_doubleoptin(params)
     |> filter_testing(params)
     |> order_by([a], asc: a.id)
-    |> Repo.all()
+    |> Repo.all(timeout: 30_000, telemetry_options: %{org_id: org.id, event: :export_actions})
     |> Enum.map(&format/1)
     |> ok()
   end
