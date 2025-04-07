@@ -48,12 +48,12 @@ defmodule ProcaWeb.Resolvers.Target do
       from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids, preload: [:emails])
       |> repo.all()
       |> Enum.flat_map(& &1.emails)
-      |> Enum.filter(& &1.email_status == :none)
+      |> Enum.filter(&(&1.email_status in [:none, :active]))
       |> Enum.map(&TargetEmail.changeset(&1, %{email_status: :inactive}))
       |> Enum.reduce_while({:ok, 0}, fn chset, {:ok, changed_count} ->
         case repo.update(chset) do
-          {:ok, _changed } -> {:cont, {:ok, changed_count + 1}}
-          {:error, errors} = e -> {:halt, e}
+          {:ok, _changed} -> {:cont, {:ok, changed_count + 1}}
+          {:error, _errors} = e -> {:halt, e}
         end
       end)
     end)
