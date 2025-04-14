@@ -12,16 +12,16 @@ defmodule Proca.Service.EmailTemplate do
   import Ecto.Changeset
 
   schema "email_templates" do
-    field :name, :string, null: false
-    field :locale, :string, null: false
+    field :name, :string
+    field :locale, :string
     # only for external ref (could be string)
-    field :ref, :string, null: true, virtual: true
+    field :ref, :string, virtual: true
 
-    field :subject, :string, null: false
-    field :html, :string, null: false
-    field :text, :string, null: true
+    field :subject, :string
+    field :html, :string
+    field :text, :string
 
-    field :compiled, :map, null: true, virtual: true
+    field :compiled, :map, virtual: true
 
     belongs_to :org, Proca.Org
   end
