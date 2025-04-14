@@ -147,19 +147,20 @@ config :proca, ProcaWeb.Telemetry,
 config :logger,
   backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],
   format: "$date $time $metadata[$level] $message\n",
-  metadata: [:request_id],
   level:
     System.get_env("LOG_LEVEL", "error")
     |> String.to_existing_atom()
 
 config :logger, :console,
   format: "$date $time $metadata[$level] $message\n",
-  level: :info
+  level: :info,
+  metadata: [:request_id]
 
 config :logger, :error_log,
   format: "$date $time $metadata[$level] $message\n",
   path: System.get_env("LOGS_DIR", ".") <> "/error.log",
-  level: :error
+  level: :error,
+  metadata: [:request_id]
 
 config :logger, :audit_log,
   path: System.get_env("LOGS_DIR", ".") <> "/audit.log",
