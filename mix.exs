@@ -4,8 +4,8 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.6.10",
-      elixir: "~> 1.7",
+      version: "3.7.0",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
