@@ -45,7 +45,7 @@ defmodule ProcaWeb.Resolvers.Target do
     |> Multi.run(:delete_rest, fn repo, targets ->
       ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
 
-      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids, preload: [:emails])
+      from(t in Target, where: t.campaign_id == ^campaign_id and t.external_id not in ^ext_ids, preload: [:emails])
       |> repo.all()
       |> Enum.flat_map(& &1.emails)
       |> Enum.filter(&(&1.email_status in [:none, :active]))
@@ -64,7 +64,7 @@ defmodule ProcaWeb.Resolvers.Target do
     |> Multi.run(:delete_rest, fn repo, targets ->
       ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
 
-      from(t in Target, where: t.campaign_id == ^campaign_id and not t.external_id in ^ext_ids)
+      from(t in Target, where: t.campaign_id == ^campaign_id and t.external_id not in ^ext_ids)
       |> repo.all()
       |> Enum.map(&Target.deleteset/1)
       |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
