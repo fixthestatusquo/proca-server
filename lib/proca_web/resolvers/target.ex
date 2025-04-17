@@ -74,8 +74,8 @@ defmodule ProcaWeb.Resolvers.Target do
       |> Enum.map(&Target.deleteset/1)
       |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
         case repo.delete(tar) do
-          {:ok, _deleted } -> {:cont, {:ok, deleted_count + 1}}
-          {:error, errors} = e -> {:halt, e}
+          {:ok, _deleted} -> {:cont, {:ok, deleted_count + 1}}
+          {:error, _errors} = e -> {:halt, e}
         end
       end)
     end)
