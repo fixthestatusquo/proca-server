@@ -27,7 +27,7 @@ defmodule Proca.Pipes.Connection do
   end
 
   @impl true
-  def handle_info({:DOWN, _, :process, pid, reason}, st = %{conn: %{pid: pid}}) do
+  def handle_info({:DOWN, _, :process, pid, _reason}, st = %{conn: %{pid: pid}}) do
     do_reconnecting(st, @connection_down_reconnect)
   end
 
@@ -43,7 +43,7 @@ defmodule Proca.Pipes.Connection do
   end
 
   @impl true
-  def handle_info({:basic_return, payload, meta}, st) do
+  def handle_info({:basic_return, _payload, _meta}, st) do
     {:noreply, st}
   end
 

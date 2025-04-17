@@ -227,6 +227,6 @@ defmodule Proca.Service.EmailMerge do
     end
   end
 
-  def assign_maybe(%Email{} = e, key, nil), do: e
+  def assign_maybe(%Email{} = e, _key, nil), do: e
   def assign_maybe(%Email{} = e, key, value), do: assign(e, key, value)
 end
