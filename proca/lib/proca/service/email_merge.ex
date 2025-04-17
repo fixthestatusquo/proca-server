@@ -1,5 +1,5 @@
 defmodule Proca.Service.EmailMerge do
-  @defmodule """
+  @moduledoc """
   Logic needed to do personalization / merge tags in Proca email system (to supporter, to target).
 
   Partially replace the EmailRecipient logic
