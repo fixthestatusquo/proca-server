@@ -204,7 +204,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
       nil ->
         {:ok, nil}
 
-      staffer ->
+      _staffer ->
         all_partner_ids =
           from(
             ap in ActionPage,

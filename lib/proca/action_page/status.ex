@@ -61,7 +61,7 @@ defmodule Proca.ActionPage.Status do
   def handle_cast(
         {:action,
          action = %Action{
-           id: id,
+           id: _id,
            action_page_id: ap_id,
            inserted_at: seen_at
          }},
