@@ -8,6 +8,11 @@ defmodule ProcaWeb.Resolvers.Target do
   import Ecto.Changeset
   alias Proca.Repo
 
+  @doc """
+  Upserts targets given in `targets` list of attributes, for `campaign_id`
+
+  For each target calls Target.upsert()
+  """
   def upsert_targets(_p, params = %{targets: targets, campaign_id: campaign_id}, _) do
     outdated_targets = Map.get(params, :outdated_targets, :keep)
 
@@ -86,11 +91,6 @@ defmodule ProcaWeb.Resolvers.Target do
     {:ok, targets}
   end
 
-  @doc """
-  Upserts targets given in `targets` list of attributes, for `campaign_id`
-
-  For each target calls Target.upsert()
-  """
   defp upsert_all(multi, targets, campaign_id) do
 
     targets
