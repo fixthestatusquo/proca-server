@@ -82,7 +82,7 @@ defmodule Proca.Stage.MessageV1 do
     }
   end
 
-  def contact_privacy(action = %Action{with_consent: true}, contact = %Contact{}) do
+  def contact_privacy(%Action{with_consent: true}, contact = %Contact{}) do
     %{
       "communication" => contact.communication_consent,
       "givenAt" => contact.inserted_at |> Support.to_iso8601()

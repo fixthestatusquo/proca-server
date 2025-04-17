@@ -48,7 +48,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:updates)
   end
 
-  def middleware(middleware, _field, %{identifier: type}) do
+  def middleware(middleware, _field, %{identifier: _type}) do
     alias ProcaWeb.Resolvers.ReportError
     report_error = if ReportError.enabled?(), do: [ReportError], else: []
     middleware ++ [ProcaWeb.Resolvers.NormalizeError] ++ report_error
