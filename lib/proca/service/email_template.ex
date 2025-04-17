@@ -120,7 +120,7 @@ defmodule Proca.Service.EmailTemplate do
     try do
       :bbmustache.parse_binary(m)
     rescue
-      error ->
+      error in [ErlangError] ->
         Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
         # TODO: return proper error instead of reraising
         reraise Sentry.CrashError.exception(error.original), __STACKTRACE__
