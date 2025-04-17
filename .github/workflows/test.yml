@@ -16,8 +16,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.12.0" # Define the elixir version [required]
-          otp-version: "24.3.4.17" # Define the OTP version [required]
+          elixir-version: "1.18.4" # Define the elixir version [required]
+          otp-version: "27.3.4" # Define the OTP version [required]
       - name: Install and setup PostgreSQL with PostgreSQL extensions and unprivileged user
         uses: Daniel-Marynicz/postgresql-action@1.0.0
         with:
