@@ -86,8 +86,6 @@ defmodule Proca.MixProject do
       {:sweet_xml, "~> 0.6"},
       {:joken, "~> 2.4"},
       {:bbmustache, "~> 1.12"},
-      # XXX migrate to jason
-      {:json, "~> 1.4.1"},
       {:poison, "~> 4.0"},
       {:random_password, "~> 1.0"},
       {:proper_case, "~> 1.0.2"},

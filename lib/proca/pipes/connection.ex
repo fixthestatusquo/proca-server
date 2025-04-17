@@ -185,9 +185,16 @@ defmodule Proca.Pipes.Connection do
     ]
 
     pub = fn chan ->
-      case JSON.encode(data) do
+      json =
+        try do
+          {:ok, JSON.encode!(data)}
+        rescue
+          _e -> {:error, :json_encode}
+        end
+
+      case json do
         {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
-        _e -> {:error, :json_encode}
+        {:error, e} -> {:error, e}
       end
     end
 
