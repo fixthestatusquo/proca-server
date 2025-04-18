@@ -2,6 +2,7 @@
 .idea
 *.log
 tmp/
+__pycache__/
 
 
 build
