@@ -182,16 +182,10 @@ defmodule Proca.Service.EmailBackend do
       from_email == via_org.email_from ->
         email
 
-      # Sending org uses own email, but sends from another orgs service
-      from_email == org.email_from ->
-        email
-        |> Email.from({from_name, "#{via_username}+#{domain}@#{via_domain}"})
-        |> maybe_add_reply(from_email, org.reply_enabled)
-
-      # Any from email - we will use the username here
+      # Any from email - we will use SRS here
       true ->
         email
-        |> Email.from({from_name, "#{via_username}+#{username}@#{via_domain}"})
+        |> Email.from({from_name, "#{rewrite_sender(username, domain)}@#{via_domain}"})
         |> maybe_add_reply(from_email, org.reply_enabled)
     end
   end
@@ -215,4 +209,19 @@ defmodule Proca.Service.EmailBackend do
 
   defp maybe_add_reply(email, from_email, true), do: Email.header(email, "Reply-To", from_email)
   defp maybe_add_reply(email, _, _), do: email
+
+  def rewrite_sender(username, domain, unix_time \\ System.os_time(:millisecond)) do
+    timestamp = trunc(unix_time / 1000 / (60 * 60 * 24)) |> rem(1024) |> encode_int32
+    hash = :crypto.mac(:hmac, :sha, srs_key(), timestamp <> domain <> username)
+      |> Base.encode16 |> String.slice(0..3)
+    "SRS0=#{hash}=#{timestamp}=#{domain}=#{username}"
+  end
+
+  defp srs_key, do: Application.get_env(:proca, __MODULE__)[:srs_key]
+
+  @alphabet32 "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+  defp encode_int32(0, acc), do: acc
+  defp encode_int32(n, acc), do:
+    encode_int32(Integer.floor_div(n, 32), String.at(@alphabet32, rem(n, 32)) <> acc)
+  defp encode_int32(n), do: encode_int32(n, "")
 end

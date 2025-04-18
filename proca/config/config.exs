@@ -55,6 +55,9 @@ config :proca, Proca,
   start_daemon_servers: true,
   mtt_cycle_time: 3
 
+config :proca, Proca.Service.EmailBackend,
+  srs_key: System.get_env("EMAIL_SRS_KEY") || "secret"
+
 # FPR seed only for development
 config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"
 
