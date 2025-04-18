@@ -14,10 +14,8 @@ case System.get_env("DATABASE_URL") do
 
   database_url ->
     config :proca, Proca.Repo,
-      # ssl: true,
       url: database_url,
-      pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-      ssl: true
+      pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
 end
 
 case System.get_env("AMQP_URL") do
