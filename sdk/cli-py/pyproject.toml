@@ -1,0 +1,34 @@
+[project]
+name = "proca"
+version = "0.3.9"
+authors = [
+  { name = "Marcin Koziej", email = "marcin@fixthestatusquo.org" }
+]
+license = "AGPL-3.0-only"
+description = "Proca CLI to use with Proca service"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "click",
+  "colored",
+  "yaspin",
+  "gql",
+  "aiohttp",
+  "websockets",
+  "appdirs",
+]
+
+[project.scripts]
+proca = "proca.main:cli"
+
+[project.urls]
+Homepage = "https://proca.app"
+Repository = "https://github.com/fixthestatusquo/proca-server.git"
+Issues = "https://github.com/fixthestatusquo/proca-server/issues"
+
+[tool.uv]
+package = true
