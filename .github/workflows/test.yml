@@ -9,19 +9,17 @@ on:
 jobs:
   build:
     name: Build and test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: "1.12.0" # Define the elixir version [required]
-          otp-version: "23.3.1" # Define the OTP version [required]
+          otp-version: "24.3.4.17" # Define the OTP version [required]
       - name: Install and setup PostgreSQL with PostgreSQL extensions and unprivileged user
-        # You may pin to the exact commit or the version.
-        # uses: Daniel-Marynicz/postgresql-action@0dcc196f0ddffbdf095921877c6577132ab35756
-        uses: Daniel-Marynicz/postgresql-action@0.1.0
+        uses: Daniel-Marynicz/postgresql-action@1.0.0
         with:
           # Docker postgres image tag for available image tags please see https://hub.docker.com/_/postgres
           postgres_image_tag: 12.7 # optional, default is latest
@@ -54,7 +52,7 @@ jobs:
           RABBITMQ_MNG_PORT: 15672
           RABBITMQ_TAG: 3-management-alpine # optional, default is 3-alpine
       - name: Restore dependencies cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
