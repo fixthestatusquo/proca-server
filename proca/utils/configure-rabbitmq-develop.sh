@@ -8,7 +8,7 @@ VOL=/tmp/proca-queuestart
 URL=http://localhost:15672/api
 WAIT_FOR_MANAGEMENT=y
 
-while getopts "Dv:W" arg; do
+while getopts "Dv:u:W" arg; do
   case $arg in
     D)
       START_DOCKER=n
