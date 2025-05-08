@@ -1,5 +1,6 @@
 defmodule Proca.Server.MTTWorkerTest do
   use Proca.DataCase
+  @moduletag start: [:stats]
 
   import Proca.StoryFactory, only: [green_story: 0]
   alias Proca.Factory
