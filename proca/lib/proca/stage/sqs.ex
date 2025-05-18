@@ -108,7 +108,7 @@ defmodule Proca.Stage.SQS do
   end
 
   def to_message(body) do
-    {:ok, payload} = JSON.encode(body)
+    payload = JSON.encode!(body)
     [id: body["actionId"], message_body: payload, message_attributes: to_message_attributes(body)]
   end
 
