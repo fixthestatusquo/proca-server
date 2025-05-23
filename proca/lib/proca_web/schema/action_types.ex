@@ -14,7 +14,7 @@ defmodule ProcaWeb.Schema.ActionTypes do
     Export actions collected by org, optionally filtered by campaign
     """
     field :export_actions, non_null(list_of(:action)) do
-      deprecate "Renamed to `actions`"
+      deprecate "Renamed to `actions`, use `actions` or `contacts`"
 
       @desc "Organization name"
       arg(:org_name, non_null(:string))
@@ -76,6 +76,39 @@ defmodule ProcaWeb.Schema.ActionTypes do
       allow([:export_contacts])
 
       resolve(&Resolvers.ExportActions.export_actions/3)
+    end
+
+    @desc """
+    Get contacts collected by org, optionally filtered by campaign
+    """
+    field :contacts, non_null(list_of(:action)) do
+      @desc "Organization name"
+      arg(:org_name, non_null(:string))
+      @desc "Limit results to campaign name"
+      arg(:campaign_name, :string)
+      @desc "Limit results to campaign id"
+      arg(:campaign_id, :integer)
+      @desc "return only actions with id starting from this argument (inclusive)"
+      arg(:start, :integer)
+      @desc "return only actions created at date time from this argument (inclusive)"
+      arg(:after, :datetime)
+      @desc "Limit the number of returned actions"
+      arg(:limit, :integer)
+
+      @desc "Only download opted in contacts and actions (default true)"
+      arg(:only_opt_in, :boolean)
+
+      @desc "Only download double opted in contacts"
+      arg(:only_double_opt_in, :boolean)
+
+      @desc "Also include testing actions"
+      arg(:include_testing, :boolean)
+
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:export_contacts])
+
+      resolve(&Resolvers.ExportActions.export_contacts/3)
     end
   end
 
