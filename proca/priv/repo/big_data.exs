@@ -78,11 +78,12 @@ for org_i <- 0..org_cnt-1 do
         supporter_status = Faker.Util.pick([:new, :confirming, :rejected, :accepted, :accepted, :accepted, :accepted])
         email_addr = Faker.Internet.email()
         source = Faker.Util.pick(sources)
+        fingerprint = Faker.UUID.v4()
         {:ok, supporter} = Proca.Repo.insert(%Proca.Supporter{
           first_name: supporter_first_name, email: email_addr, campaign: campaign, action_page: action_page, source: source,
-          processing_status: supporter_status, fingerprint: Faker.UUID.v4(),
+          processing_status: supporter_status, fingerprint: fingerprint,
         })
-        IO.puts("====> Created Supporter #{supporter_i}/#{supporter_cnt}: '#{supporter_first_name}' @ '#{email_addr}', #{supporter_status} -> ID #{supporter.id}")
+        IO.puts("====> Created Supporter #{supporter_i}/#{supporter_cnt}: '#{supporter_first_name}' @ '#{email_addr}' ref '#{fingerprint}', #{supporter_status} -> ID #{supporter.id}")
 
         # for {contact_i, contact_cnt} <- rand_range.(opts[:max_contacts] || 2) do # <<<< Currently, having one is hardcoded in some places like export_actions
         {:ok, contact} = Proca.Repo.insert(%Proca.Contact{
