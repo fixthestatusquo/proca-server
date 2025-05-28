@@ -38,9 +38,16 @@ defmodule ProcaWeb.ConfirmController do
          {:ok, action} <- find_action(args),
          {:ok, action} <- handle_double_opt_in(action, args[:doi]),
          :ok <- handle_supporter(action, args.verb) do
-      conn
-      |> redirect(external: redirect_url(action, args))
-      |> halt()
+      case args do
+        %{redir: uri} when is_binary(uri) ->
+          if Proca.Source.well_formed_url?(URI.parse(uri)) do
+            conn |> redirect(external: redirect_url(action, args))
+          else
+            conn |> resp(200, "SUCCESS; Could not redirect to a bad URL")
+          end
+        _ ->
+          conn |> resp(200, "SUCCESS")
+      end |> halt()
     else
       {:error, status, msg} ->
         conn |> resp(status, error_msg(msg)) |> halt()
