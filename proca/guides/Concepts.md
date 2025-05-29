@@ -34,7 +34,7 @@ Relevant modules: `Proca.Campaign`
 
 ### Action Page 
 
-Action Page or Page for short represents a website page where a campaign widget is running. Action Page does not enforce that widget is not re-used on many pages, though for analytics purposes and flexibility it should be used on just single page.
+Action Page or Widget for short represents a website page where a campaign widget is running. Action Page does not enforce that widget is not re-used on many pages, though for analytics purposes and flexibility it should be used on just single page.
 Page belongs to a Campaign (runs that campaign), and to Org (on that org's website).
 
 Relevant modules: `Proca.ActionPage`
