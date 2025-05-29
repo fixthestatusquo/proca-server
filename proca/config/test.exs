@@ -1,15 +1,32 @@
-use Mix.Config
+import Config
 
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
 # Configure your database
-config :proca, Proca.Repo,
-  username: "proca",
-  password: "proca",
-  database: "proca_test",
-  hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
+case System.get_env("TEST_DATABASE_URL") do
+  nil ->
+    config :proca, Proca.Repo,
+      username: "proca",
+      password: "proca",
+      database: "proca_test",
+      hostname: "localhost",
+      show_sensitive_data_on_connection_error: true,
+      pool: Ecto.Adapters.SQL.Sandbox
+
+  database_url ->
+    config :proca, Proca.Repo,
+      url: database_url,
+      pool: Ecto.Adapters.SQL.Sandbox
+end
+
+case System.get_env("TEST_AMQP_URL") do
+  nil ->
+    config :proca, Proca.Pipes, url: "amqp://proca:proca@localhost/proca"
+
+  amqp_url ->
+    config :proca, Proca.Pipes, url: amqp_url
+end
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
