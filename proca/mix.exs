@@ -102,6 +102,7 @@ defmodule Proca.MixProject do
       {:ex_machina, "~> 2.7", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dogma, "~> 0.1", only: [:dev]},
+      {:faker, "~> 0.18", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:mix_version, "~> 2.1", only: [:dev], runtime: false}
     ]

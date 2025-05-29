@@ -53,6 +53,10 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def filter_testing(q, %{include_testing: true}), do: q
   def filter_testing(q, _), do: where(q, [a, s, c], a.testing == false)
 
+  @doc "onlyContacts: true enables with_consent=true filtering"
+  def filter_consent(q, %{only_contacts: true}), do: where(q, [a, s, c], a.with_consent == true)
+  def filter_consent(q, _), do: q
+
   def format_contact(
         %Supporter{fingerprint: ref},
         %Contact{
@@ -154,10 +158,15 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_optin(params)
     |> filter_doubleoptin(params)
     |> filter_testing(params)
+    |> filter_consent(params)
     |> order_by([a], asc: a.id)
     |> Repo.all(timeout: 30_000, telemetry_options: %{org_id: org.id, event: :export_actions})
     |> Enum.map(&format/1)
     |> ok()
+  end
+
+  def export_contacts(parent, params, context) do
+    export_actions(parent, Map.put(params, :only_contacts, true), context)
   end
 
   defp ok(val) do
