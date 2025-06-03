@@ -55,6 +55,7 @@ config :proca, Proca,
   start_daemon_servers: true,
   mtt_cycle_time: 3
 
+# Defaults only for development
 config :proca, Proca.Service.EmailBackend,
   srs_key: System.get_env("EMAIL_SRS_KEY") || "teiy1sah8seengiem0ee2Yai",
   srs_prefix: System.get_env("EMAIL_SRS_PREFIX") || "SRS0"

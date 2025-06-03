@@ -111,6 +111,24 @@ config :proca, ProcaWeb.Resolvers.Captcha,
 
 config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 
+srs_key =
+  case System.get_env("EMAIL_SRS_KEY") do
+    nil ->
+      random_key = :crypto.strong_rand_bytes(32) |> Base.encode64(padding: false) |> binary_part(0, 32)
+      IO.puts """
+      \nWARNING ! WARNING ! WARNING !
+      environment variable EMAIL_SRS_KEY is missing.
+      You can generate one by calling: mix phx.gen.secret
+      Using temporary random value: #{random_key}
+      """
+      random_key
+    key -> key
+  end
+
+config :proca, Proca.Service.EmailBackend,
+  srs_key: srs_key,
+  srs_prefix: System.get_env("EMAIL_SRS_PREFIX", "SRS0")
+
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
@@ -120,6 +138,10 @@ config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 
 config :proca, Proca.Server.MTTWorker,
   max_messages_per_cycle: String.to_integer(System.get_env("MAX_MESSAGES_PER_CYCLE", "99"))
+
+config :proca, ProcaWeb.Telemetry,
+  enable: System.get_env("ENABLE_TELEMETRY", "true") == "true",
+  port: String.to_integer(System.get_env("METRICS_PORT", "9568"))
 
 # Configures Elixir's Logger
 config :logger,

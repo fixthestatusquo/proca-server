@@ -23,7 +23,9 @@ defmodule ProcaWeb.Telemetry do
            measurements: periodic_measurements(),
            period: :timer.seconds(60),
            init_delay: :timer.seconds(30)},
-          {TelemetryMetricsPrometheus, [metrics: metrics()]}
+          {TelemetryMetricsPrometheus, [
+           metrics: metrics(),
+           port: prometheus_port()]}
         ]
       else
         []
@@ -126,5 +128,9 @@ defmodule ProcaWeb.Telemetry do
 
   defp enable_telemetry? do
     Application.get_env(:proca, __MODULE__, %{enable: true})[:enable]
+  end
+
+  defp prometheus_port do
+    Application.get_env(:proca, __MODULE__, %{port: 9568})[:port]
   end
 end
