@@ -1,12 +1,12 @@
 overwrite: true
-schema: "schema/schema.graphql"
+schema: "file:./schema/schema.graphql"
 generates:
-  src/apiTypes.ts:
+  ./src/apiTypes.ts:
     plugins:
       - typescript
     config:
       omitOperationSuffix: true
-      avoidOptionals: &avoidOptionals
+      avoidOptionals:
         object: false
         field: true
         inputValue: false

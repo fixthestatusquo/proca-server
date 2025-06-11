@@ -17,6 +17,9 @@ interface Campaign {
   "Full, official name of the campaign"
   title: String!
 
+  "Current status of the campaign"
+  status: CampaignStatus!
+
   "Schema for contact personal information"
   contactSchema: ContactSchema!
 
@@ -59,6 +62,9 @@ type PublicCampaign implements Campaign {
 
   "Full, official name of the campaign"
   title: String!
+
+  "Current status of the campaign"
+  status: CampaignStatus!
 
   "Schema for contact personal information"
   contactSchema: ContactSchema!
@@ -275,7 +281,7 @@ input StripeSubscriptionInput {
 }
 
 enum EmailStatus {
-  "An unused email. (Warning:  Or used, but we do not store the fact that emails are delivered ok)"
+  "An unused email"
   NONE
 
   "The user has received a DOI on this email and accepted it"
@@ -292,6 +298,12 @@ enum EmailStatus {
 
   "This email was used and user unsubscribed"
   UNSUB
+
+  "This email was disabled and should not be contacted"
+  INACTIVE
+
+  "This email was contacted before"
+  ACTIVE
 }
 
 "Campaign statistics"
@@ -774,6 +786,66 @@ type RootQueryType {
 
     "Also include testing actions"
     includeTesting: Boolean
+  ): [Action]! @deprecated(reason: "Renamed to `actions`, use `actions` or `contacts`")
+
+  "Get actions collected by org, optionally filtered by campaign"
+  actions(
+    "Organization name"
+    orgName: String!
+
+    "Limit results to campaign name"
+    campaignName: String
+
+    "Limit results to campaign id"
+    campaignId: Int
+
+    "return only actions with id starting from this argument (inclusive)"
+    start: Int
+
+    "return only actions created at date time from this argument (inclusive)"
+    after: DateTime
+
+    "Limit the number of returned actions"
+    limit: Int
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
+    "Only download double opted in contacts"
+    onlyDoubleOptIn: Boolean
+
+    "Also include testing actions"
+    includeTesting: Boolean
+  ): [Action]!
+
+  "Get contacts collected by org, optionally filtered by campaign"
+  contacts(
+    "Organization name"
+    orgName: String!
+
+    "Limit results to campaign name"
+    campaignName: String
+
+    "Limit results to campaign id"
+    campaignId: Int
+
+    "return only actions with id starting from this argument (inclusive)"
+    start: Int
+
+    "return only actions created at date time from this argument (inclusive)"
+    after: DateTime
+
+    "Limit the number of returned actions"
+    limit: Int
+
+    "Only download opted in contacts and actions (default true)"
+    onlyOptIn: Boolean
+
+    "Only download double opted in contacts"
+    onlyDoubleOptIn: Boolean
+
+    "Also include testing actions"
+    includeTesting: Boolean
   ): [Action]!
 
   "Get the current user, as determined by Authorization header"
@@ -790,6 +862,9 @@ type RootQueryType {
     "Name of organisation"
     name: String!
   ): PrivateOrg!
+
+  "Get application info"
+  application: Application
 }
 
 """
@@ -813,6 +888,9 @@ input CampaignInput {
 
   "Schema for contact personal information"
   contactSchema: ContactSchema
+
+  "Current status of the campaign"
+  status: CampaignStatus
 
   "Custom config as stringified JSON map"
   config: Json
@@ -839,6 +917,9 @@ type PersonalData {
 
   "Only send thank you emails to opt-ins"
   doiThankYou: Boolean!
+
+  "Enable reply_to for emails"
+  replyEnabled: Boolean
 }
 
 input SelectCampaign {
@@ -905,6 +986,12 @@ input TargetEmailInput {
   email: String!
 }
 
+type Application {
+  name: String
+  version: String
+  logLevel: String
+}
+
 input NationalityInput {
   "Nationality \/ issuer of id document"
   country: String!
@@ -922,6 +1009,17 @@ input OrgUserInput {
 
   "Role name of user in this org"
   role: String!
+}
+
+enum OutdatedTargets {
+  "Keep outdated targets"
+  KEEP
+
+  "Disable emails for outdated targets"
+  DISABLE
+
+  "Delete outdated targets (only possible for targets without any action)"
+  DELETE
 }
 
 type ChangeUserStatus {
@@ -1029,6 +1127,9 @@ type PrivateCampaign implements Campaign {
 
   "Full, official name of the campaign"
   title: String!
+
+  "Current status of the campaign"
+  status: CampaignStatus!
 
   "Schema for contact personal information"
   contactSchema: ContactSchema!
@@ -1152,6 +1253,9 @@ input OrgInput {
 
   "Only send thank you emails to opt-ins"
   doiThankYou: Boolean
+
+  "Enable reply_to for emails"
+  replyEnabled: Boolean
 
   "Config"
   config: Json
@@ -1735,8 +1839,8 @@ type RootMutationType {
     "Id of campaign these targets are added to"
     campaignId: Int!
 
-    "Remove targets not existing in this upsert (if false, upsert will merge with omitted targets)"
-    replace: Boolean
+    "Action to perform on targets missing in targets list"
+    outdatedTargets: OutdatedTargets
   ): [PrivateTarget]!
 }
 
@@ -1953,4 +2057,10 @@ input TargetInput {
 
   "Email list of this target"
   emails: [TargetEmailInput!]
+}
+
+enum CampaignStatus {
+  LIVE
+  CLOSED
+  IGNORED
 }

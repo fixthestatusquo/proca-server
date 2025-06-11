@@ -1,6 +1,6 @@
 {
   "name": "@proca/api",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "description": "Client library for Proca API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,8 +9,9 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "generate": "cp -f ../../proca/schema.graphql schema/schema.graphql && yarn graphql-codegen",
-    "prepack": "yarn generate && yarn build",
+    "generate": "cp -f ../../proca/schema.graphql schema/schema.graphql && graphql-codegen --config codegen.yml",
+    "graphql-codegen": "graphql-codegen --config codegen.yml",
+    "prepack": "npm run generate && npm run build",
     "test": "echo No tests for proca/api"
   },
   "repository": {
@@ -32,23 +33,23 @@
     "add-codegen": "./codegen/add-codegen.sh"
   },
   "dependencies": {
-    "@graphql-typed-document-node/core": "^3.1.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@urql/core": "2.3.6",
-    "js-base64": "^3.5.2",
-    "phoenix": "^1.5.9",
-    "ws": "^7.3.1"
+    "js-base64": "^3.7.7",
+    "phoenix": "^1.7.21",
+    "ws": "^7.5.10"
   },
   "devDependencies": {
-    "@graphql-codegen/add": "^2.0.1",
-    "@graphql-codegen/cli": "1.20.1",
+    "@graphql-codegen/add": "^2.0.2",
+    "@graphql-codegen/cli": "^5.0.7",
     "@graphql-codegen/typescript": "1.20.2",
-    "@types/phoenix": "^1.5.1",
-    "@types/ws": "^7.2.7",
-    "graphql": "^15.5.0",
-    "graphql-tag": "^2.11.0"
+    "@types/phoenix": "^1.6.6",
+    "@types/ws": "^7.4.7",
+    "graphql": "^15.10.1",
+    "graphql-tag": "^2.12.6"
   },
   "peerDependencies": {
-    "typescript": "^4.1.2"
+    "typescript": "^4.9.5"
   },
   "gitHead": "635a7c1b39cd036c8d9fe111b3c9fd0c325eada6"
 }
