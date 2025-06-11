@@ -5,7 +5,10 @@ import WebSocket from 'ws'
 
 
 const createAbsintheExchange = (wsUrl: string) => {
-    const socket = new Socket(wsUrl, {transport: WebSocket as unknown as string})  
+    const socket = new Socket(wsUrl, {
+  transport: WebSocket as unknown as new (endpoint: string) => object
+})
+
     let absintheChannel : Channel
 
     const createAbsintheChannel = () : Channel => {
