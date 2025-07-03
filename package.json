@@ -1,14 +1,18 @@
 {
-  "devDependencies": {
-    "lerna": "^4.0.0",
-    "typescript": "^4.2.4"
-  },
-  "name": "proca-server",
-  "license": "AGPL-3.0",
+  "name": "@proca/server",
+  "version": "3.4.1",
+  "description": "Proca server",
+  "repository": "git@github.com:fixthestatusquo/proca-backend.git",
+  "author": "Marcin Koziej <marcin@fixthestatusquo.org>",
+  "license": "AGPL3",
+  "private": true,
   "scripts": {
-    "install": "lerna bootstrap",
-    "prepack": "lerna exec yarn prepack",
-    "test": "lerna exec --scope @proca/server yarn test"
-  },
-  "version": "0.0.3-0"
+    "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema",
+    "install": "mix deps.get",
+    "build": "mix compile",
+    "prepublish": "yarn gen.schema",
+    "prepack": "./utils/bump-version && mix compile && docker build -t $(git describe --tags) .",
+    "test": "mix test",
+    "docker-build": "docker build -t ftsq/proca-backend:latest . && echo 'Image built, now You can: cd utils; docker-compose up'"
+  }
 }
