@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -u 
+set -e 
+
+help()
+{
+  echo Create ECI entities: org campaign and one action page
+  echo $0 org_name campaign_name
+  echo -p publickey - adds the public key to the org
+  exit 1
+}
+
+PUBLIC_KEY=""
+
+while getopts "p:" arg; do
+  case $arg in
+    p)
+      PUBLIC_KEY=$OPTARG
+      ;;
+  esac
+done
+
+if [ $# -lt 2 ]; then help; fi
+
+org=$1
+camp=$2
+
+proca-live rpc "
+org = case Proca.Org.get_by_name(\"$org\") do 
+  nil -> Proca.Org.changeset(%Proca.Org{}, %{name: \"$org\", title: \"$org\"}) |> Proca.Repo.insert!()
+  o -> o
+end
+
+camp = Proca.Campaign.upsert(org, %{name: \"$camp\", title: \"$camp\", contact_schema: :eci}) 
+|> IO.inspect()
+|> Proca.Repo.insert!()
+
+ap = Proca.ActionPage.upsert(org, camp, %{name: \"$camp/eci\", locale: \"en\"}) |> Proca.Repo.insert!()
+
+pk = \"$PUBLIC_KEY\"
+
+if pk != \"\" do
+  key = Proca.PublicKey.import_public_for(org, pk, \"ECI key\") |> Proca.Repo.insert!()
+  Proca.PublicKey.activate_for(org, key.id)
+end
+
+IO.puts(\"Created org #{org.name} (id: #{org.id}), campaign #{camp.name} (id: #{camp.id}), action page: #{ap.name} (id: #{ap.id})\")
+
+"

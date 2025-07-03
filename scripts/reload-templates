@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -u 
+set -e 
+
+. /root/scripts/rpc
+
+rpc <<END
+ Proca.Service.EmailTemplateDirectory.load_templates_sync(Proca.Org.get_by_name("ftsq")|>Proca.Repo.preload([:template_backend]))
+END

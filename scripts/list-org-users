@@ -1,0 +1,38 @@
+#!/bin/bash
+set -u 
+set -e 
+
+. /root/scripts/rpc
+
+if [ $# -lt 1 ]; then
+  echo lists org users
+  echo $0 org_name
+  exit 1
+fi
+
+orgname=$1
+
+rpc <<END
+  import Ecto.Query
+  import Proca.Repo
+  alias Proca.{Permission,Staffer}
+  org = Proca.Org.get_by_name("${orgname}") || throw "no org $orgname"
+
+  q = from(st in Staffer, 
+          join: u in assoc(st, :user), 
+          where: st.org_id == ^org.id, 
+          preload: [:user])
+  q |> all
+  |> Enum.each(fn st = %{user: u} -> 
+    role = Staffer.Role.findrole(st)
+    ps = if is_nil role  do 
+            " " <> inspect(Permission.to_list(st.perms))
+    else
+      ""
+    end
+    
+    IO.puts "#{u.email} (#{role}#{ps})"
+  end)
+  
+  
+END

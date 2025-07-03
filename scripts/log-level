@@ -1,0 +1,6 @@
+#!/bin/bash
+
+proca-live rpc "
+  import Logger;
+  Logger.configure level: String.to_existing_atom(\"$1\")
+"

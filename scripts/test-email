@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -u 
+set -e 
+
+if [ $# -lt 2 ]; then
+  echo tests sending email
+  echo "$0 confirm|thankyou actionId"
+  exit 1
+fi 
+
+kind=$1
+actionid=$2
+
+if [ $kind = "confirm" ]; then
+  stage='supporter_confirm'
+elif [ $kind = "deliver" ]; then
+  stage='deliver'
+else
+  echo "no such stage $kind"
+  exit 1
+fi
+
+proca-live rpc "
+  [action] = Proca.Stage.Support.bulk_actions_data([$actionid], :$stage)
+  m1 = Proca.Stage.EmailSupporter.handle_message(nil, %Broadway.Message{data: Jason.encode!(action), acknowledger: Broadway.Acknowledger}, nil)
+  [m2] = Proca.Stage.EmailSupporter.handle_batch(m1.batcher, [m1], %Broadway.BatchInfo{batch_key: m1.batch_key}, nil)
+  IO.inspect(m2)
+"

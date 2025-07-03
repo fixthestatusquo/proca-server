@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -u 
+set -e 
+. /root/scripts/rpc
+
+if [ $# -lt 2 ]; then
+  echo removes user from org
+  echo $0 email orgname
+  exit 1
+fi 
+
+email=$1
+org=$2
+
+echo "removing $email from $org"
+rpc <<END
+  import Proca.Repo
+  alias Proca.Staffer
+  alias Proca.Users.User
+  case Proca.Org.get_by_name("$org")  do 
+   nil -> IO.puts("Org not found") 
+   org -> case get_by(User, email: "$email") do 
+     nil -> IO.puts("User not found") 
+     u -> Staffer.for_user_in_org(u, org.id) |> delete!
+   end
+  end
+END

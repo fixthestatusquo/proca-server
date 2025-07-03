@@ -1,0 +1,10 @@
+#!/bin/bash
+
+proca-live rpc "
+  import Ecto.Query
+  from(s in Proca.Service, order_by: [asc: s.id], preload: [:org], where: s.name in [:sqs, :webhook])
+  |> Proca.Repo.all()
+  |> Enum.map(fn s -> 
+    IO.puts('#{s.org.name}: #{s.name} #{s.host} (user: #{s.user}, password: #{s.password})')
+   end)
+"

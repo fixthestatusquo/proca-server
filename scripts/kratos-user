@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -u 
+set -e 
+
+cli() 
+{
+kratos -e http://kratos:4434 "$@"
+}
+
+DELETE=false
+
+while getopts "d" o; do 
+  case $o in 
+    d) 
+      DELETE=true
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+
+if [ $# -eq 0 ]; then 
+  cli identities list
+  exit 0
+fi
+
+EMAIL=$1
+record=$(cli identities list | grep "$EMAIL")
+echo $record
+
+if [ $DELETE = "true" ]; then 
+  ref=$(echo $record | cut -f 1 -d ' ')
+  cli identities delete $ref && echo "Deleted"
+fi

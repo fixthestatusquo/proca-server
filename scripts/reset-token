@@ -1,0 +1,5 @@
+prefix =  <<0, 242, 62>>
+token = prefix <> :crypto.strong_rand_bytes(32)  
+hashed_token = :crypto.hash(:sha256, token)
+IO.puts Base.url_encode64(token, padding: false)
+IO.puts Base.encode16(hashed_token)

@@ -1,0 +1,6 @@
+# source /root/scripts/rpc
+
+rpc() {
+  code=$(< /dev/stdin)
+  ${INSTANCE:-proca-live} rpc "$code"
+}

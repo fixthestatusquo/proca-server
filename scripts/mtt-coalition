@@ -1,0 +1,8 @@
+#!/bin/bash
+
+proca-live rpc "
+  import Ecto.Query;
+  from(o in Proca.Org, order_by: [asc: o.id])
+  |> Proca.Repo.all()
+  |> Enum.map(fn u -> IO.puts('#{u.inserted_at} #{u.name} (id: #{u.id}): #{u.title}') end)
+"

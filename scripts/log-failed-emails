@@ -1,0 +1,16 @@
+#!/bin/bash
+
+enable=$1
+
+if [ "$enable" = "" ]; then 
+  echo $0 on/off
+  exit 1
+fi
+
+proca-live rpc "
+  if \"$enable\" == \"on\" do
+          :telemetry.attach(\"log-failed-emails\", [:broadway, :batch_processor, :stop], fn (_,_,m,_) -> IO.inspect(m.failed_messages |> Enum.map(& &1.status)) end, nil)
+  else
+          :telemetry.detach(\"log-failed-emails\")
+  end
+"
