@@ -1,60 +1,44 @@
-#!/bin/bash
+#!/bin/sh
 
-set -e
-set -u
+sudo apt-get install curl gnupg apt-transport-https -y
 
-START_DOCKER=y
-VOL=/tmp/proca-queuestart
-URL=http://localhost:15672/api
-WAIT_FOR_MANAGEMENT=y
+## Team RabbitMQ's main signing key
+curl -1sLf "https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA" | sudo gpg --dearmor | sudo tee /usr/share/keyrings/com.rabbitmq.team.gpg > /dev/null
+## Community mirror of Cloudsmith: modern Erlang repository
+curl -1sLf https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-erlang.E495BB49CC4BBE5B.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg > /dev/null
+## Community mirror of Cloudsmith: RabbitMQ repository
+curl -1sLf https://github.com/rabbitmq/signing-keys/releases/download/3.0/cloudsmith.rabbitmq-server.9F4587F226208342.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/rabbitmq.9F4587F226208342.gpg > /dev/null
 
-while getopts "Dv:W" arg; do
-  case $arg in
-    D)
-      START_DOCKER=n
-      ;;
-    v)
-      VOL=$OPTARG
-      ;;
-    u)
-      URL=$OPTARG
-      ;;
-    W) 
-      WAIT_FOR_MANAGEMENT=n
-      ;;
-  esac
-done
+## Add apt repositories maintained by Team RabbitMQ
+sudo tee /etc/apt/sources.list.d/rabbitmq.list <<EOF
+## Provides modern Erlang/OTP releases
+##
+deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/ubuntu noble main
+deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/ubuntu noble main
 
-#
-# XXX: this is for communicating between docker containers, the container below listens on localhost:15672
-#
-# docker network create --subnet=172.19.0.0/16 proca || echo "Ok, virtual network 'proca' already exists"
-#
+# another mirror for redundancy
+deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/ubuntu noble main
+deb-src [signed-by=/usr/share/keyrings/rabbitmq.E495BB49CC4BBE5B.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-erlang/deb/ubuntu noble main
 
-if [ "$START_DOCKER" = y ]; then
-    mkdir $VOL || true
+## Provides RabbitMQ
+##
+deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-server/deb/ubuntu noble main
+deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa1.rabbitmq.com/rabbitmq/rabbitmq-server/deb/ubuntu noble main
 
-    echo "--- starting rabbitmq as docker container ------------"
-    docker run --detach -p 5672:5672 -p 15672:15672  \
-        -v $VOL:/var/lib/rabbitmq --name rabbitmq    \
-        rabbitmq:3-management || if [[ $? = 125 ]]; then echo "Already created"; docker start rabbitmq;  else exit 1; fi
-fi 
+# another mirror for redundancy
+deb [arch=amd64 signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-server/deb/ubuntu noble main
+deb-src [signed-by=/usr/share/keyrings/rabbitmq.9F4587F226208342.gpg] https://ppa2.rabbitmq.com/rabbitmq/rabbitmq-server/deb/ubuntu noble main
+EOF
 
+## Update package indices
+sudo apt-get update -y
 
-rabbitmq()
-{
-    curl -u guest:guest -H "content-type:application/json" "$@"
-}
+## Install Erlang packages
+sudo apt-get install -y erlang-base \
+                        erlang-asn1 erlang-crypto erlang-eldap erlang-ftp erlang-inets \
+                        erlang-mnesia erlang-os-mon erlang-parsetools erlang-public-key \
+                        erlang-runtime-tools erlang-snmp erlang-ssl \
+                        erlang-syntax-tools erlang-tftp erlang-tools erlang-xmerl
 
-echo "--- waiting for rabbitmq management to wake up ---"
-if [ $WAIT_FOR_MANAGEMENT = y ]; then
-  while ! rabbitmq $URL/vhosts 2>/dev/null >/dev/null; do sleep 0.5; done
-fi
-
-echo "--- creating proca user -------------------------------"
-
-rabbitmq -XPUT $URL/vhosts/proca
-rabbitmq -d '{"password":"proca", "tags":""}' -XPUT $URL/users/proca 
-rabbitmq -d '{"configure":".*","write":".*","read":".*"}' -XPUT $URL/permissions/proca/proca
-
-
+## Install rabbitmq-server and its dependencies
+sudo apt-get install rabbitmq-server -y --fix-missing
