@@ -30,7 +30,7 @@ end
 
 case System.get_env("ORGANISATION") do
   nil ->
-    nil
+    config :proca, Proca, org_name: "test"
 
   org_name ->
     config :proca, Proca, org_name: org_name
@@ -112,4 +112,4 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-config :proca, ProcaWeb.Telemetry, enable: System.get_env("ENABLE_TELEMETRY", "true") == "true"
+config :proca, ProcaWeb.Telemetry, enable: System.get_env("ENABLE_TELEMETRY", "false") == "true"
