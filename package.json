@@ -10,8 +10,9 @@
     "gen.schema": "mix absinthe.schema.sdl --schema ProcaWeb.Schema",
     "install": "mix deps.get",
     "build": "mix compile",
-    "prepublish": "yarn gen.schema",
-    "prepack": "./utils/bump-version && mix compile && docker build -t $(git describe --tags) .",
+    "prepublish": "npm run gen.schema",
+    "prepack": "./utils/bump-version && mix compile", 
+    "prepack-docker": "./utils/bump-version && mix compile && docker build -t $(git describe --tags) .",
     "test": "mix test",
     "docker-build": "docker build -t ftsq/proca-backend:latest . && echo 'Image built, now You can: cd utils; docker-compose up'"
   }
