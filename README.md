@@ -37,7 +37,8 @@ To develop and run proca server, these are needed:
 
 - Elixir >= 1.14 
 
-we recommend asdf to install erlang+elixir:
+we [recommend asdf](https://asdf-vm.com/guide/getting-started.html) to install erlang+elixir
+
 in this repo, run 
 
     $ sudo apt install automake libssl-dev autoconf libncurses5-dev
@@ -57,7 +58,44 @@ in this repo, run
 - NodeJS (>= 14)
   Node is not needed on server where we deploy bundled assets.
 
-# Using docker to just try out Proca
+# Development setup
+
+The script utils/configure-development-environment.sh will setup PostgreSQL, the Erlang / Elixir / Pheonix server, the RabbitMQ server and runs npm install in the assets directory.
+
+Make sure PostgreSQL and RabbitMQ are installed
+
+The script needs a few ENV variables set:
+
+`$ export ADMIN_EMAIL=you@example.com MIX_ENV=dev ORGANISATION='fix-the-status-quo'`
+
+You'll need sudo to run the parts of the script that configure PostgreSQL.
+
+`$ ./utils/configure-development-environment.sh`
+
+The seeds.exs command will print out your login and password:
+
+    #####
+    #####   Created Admin user email@example.com  #####
+    #####   Password: VERY_RANDOM_PASSWORD
+    #####
+
+You can then run the development server.
+
+`$ mix phx.server`
+
+By default, the development webserver is located at http://localhost:4000/
+
+# From building to server
+
+This is a [must read on development of Phoenix apps](https://hexdocs.pm/phoenix/up_and_running.html)
+
+This is a [must read on deployment of Phoenix apps](https://hexdocs.pm/phoenix/deployment.html).
+
+    $./build
+
+Read more in [Developing](guides/Developing).
+
+# Using docker to just try out Proca (NOT UP TO DATE!)
 
 If you would just like to try out proca server, it's easiest with docker-compose. It will create proca, along with postgres and rabbitmq containers.
 
@@ -95,43 +133,6 @@ Now you can:
 - To use the GraphiQL API with a token you have set up in proca CLI, type `proca token` and put the `Bearer sometoken` into `Authorization` header in GraphiQL bottom screen. 
 - You can see the processing in action using [RabbitMQ management console](http://localhost:15672/) - login with user name _proca_, password _proca_.
 
-
-# Development setup
-
-The script utils/configure-development-environment.sh will setup PostgreSQL, the Erlang / Elixir / Pheonix server, the RabbitMQ server and runs npm install in the assets directory.
-
-Make sure PostgreSQL is installed. RabbitMQ will be run using docker.
-
-The script needs a few ENV varaibles set:
-
-`$ export ADMIN_EMAIL=you@example.com MIX_ENV=dev ORGANISATION='fix-the-status-quo'`
-
-You'll need sudo to run the parts of the script that configure PostgreSQL.
-
-`$ ./utils/configure-development-environment.sh`
-
-The seeds.exs command will print out your login and password:
-
-    #####
-    #####   Created Admin user email@example.com  #####
-    #####   Password: VERY_RANDOM_PASSWORD
-    #####
-
-You can then run the development server.
-
-`$ mix phx.server`
-
-By default, the development webserver is located at http://localhost:4000/
-
-# From building to server
-
-This is a [must read on development of Phoenix apps](https://hexdocs.pm/phoenix/up_and_running.html)
-
-This is a [must read on deployment of Phoenix apps](https://hexdocs.pm/phoenix/deployment.html).
-
-    $./build
-
-Read more in [Developing](guides/Developing).
 
 # Configuration
 
