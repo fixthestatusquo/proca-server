@@ -47,9 +47,19 @@ nano ~/.bashrc
 Add these lines:
 
 ```bash
-. <(asdf completion bash)
 export PATH="$HOME/.asdf/shims:$PATH"
 ```
 
-Then reload the terminal with `source ~/.bashrc` or close/open.
-Check if it works with `asdf --version`
+Then reload the terminal with
+
+```bash
+source ~/.bashrc
+```
+
+or close/open.
+
+Check if it works with
+
+```bash
+asdf --version
+```
