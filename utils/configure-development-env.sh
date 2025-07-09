@@ -35,11 +35,16 @@ echo " ==== Configuring RabbitMQ for development user   =========== "
 
 ./utils/configure-rabbitmq.sh
 
+echo " ==== Running npm install in assets ==== "
+
+(cd assets/ && npm install)
+
 echo " ==== Setting up Elixir      =========== "
 
 mix deps.get
 mix ecto.migrate --quiet
-
+# same for test db
+env MIX_ENV=test mix ecto.migrate --quiet
 
 if [ -z "${ADMIN_EMAIL}" ]; then
     # Prompt user to input the email address
@@ -49,12 +54,7 @@ if [ -z "${ADMIN_EMAIL}" ]; then
     export ADMIN_EMAIL
     echo "ADMIN_EMAIL env set to: ${ADMIN_EMAIL}"
 fi
-mix run priv/repo/seeds.exs
 
-# same for test db
-env MIX_ENV=test mix ecto.migrate --quiet
+# Run seeds last so passwords are not lost
 env MIX_ENV=test mix run priv/repo/seeds.exs
-
-echo " ==== Running npm install in assets ==== "
-
-(cd assets/ && npm install)
+mix run priv/repo/seeds.exs

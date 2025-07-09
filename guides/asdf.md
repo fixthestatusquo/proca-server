@@ -50,6 +50,22 @@ Add these lines:
 export PATH="$HOME/.asdf/shims:$PATH"
 ```
 
+Add tool-versions in your to define global versions.
+**Example:**
+
+- Open/create file:
+
+```bash
+sudo nano /usr/local/bin/.tool-versions
+```
+
+- Paste the line:
+
+```bash
+erlang 25.2.2
+elixir 1.14.4
+```
+
 Then reload the terminal with
 
 ```bash

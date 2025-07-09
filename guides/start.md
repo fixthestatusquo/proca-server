@@ -75,10 +75,16 @@ mix local.hex
     #####   Password: VERY_RANDOM_PASSWORD
     #####
 
-##🚀 Running the Development Server
+---
+
+## 🥳 Boom! Everything's ready. Go make some impact. 💥
+
+---
+
+### 🚀 Running the Development Server
 
 ```bash
-$ mix phx.server
+mix phx.server
 ```
 
 By default, the development webserver is located at:
@@ -86,7 +92,7 @@ http://localhost:4000/
 
 ---
 
-## From building to server
+### From building to server
 
 This is a [must read on development of Phoenix apps](https://hexdocs.pm/phoenix/up_and_running.html)
 
@@ -95,7 +101,7 @@ This is a [must read on deployment of Phoenix apps](https://hexdocs.pm/phoenix/d
 To build:
 
 ```bash
-$ ./build
+./build
 ```
 
 Read more in [Developing](guides/Developing).
