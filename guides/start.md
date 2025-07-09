@@ -44,11 +44,15 @@ To develop and run the Proca server, you’ll need:
 
 1. Ensure **PostgreSQL** and **RabbitMQ** are installed and running.
 
-2. Set the environment variable:
+2. Set the environment variables:
 
    ```bash
    export MIX_ENV=dev
    ```
+
+   and
+
+   `export ADMIN_EMAIL=your_admin_email@example.com`
 
 3. Run the configuration script:
 
@@ -64,15 +68,13 @@ To develop and run the Proca server, you’ll need:
 
 > You'll be prompted for `sudo` during parts that configure PostgreSQL.
 
-?? UNCLEAR:
-The seeds.exs command will print out your login and password:
+> You'll be prompted for setting the ADMIN_EMAIL variable if you failed on reading this manual.
+> The script will print out your login and password:
 
     #####
-    #####   Created Admin user email@example.com  #####
+    #####   Created Admin user your_admin_email@example.com  #####
     #####   Password: VERY_RANDOM_PASSWORD
     #####
-
-??? Not really the output of `mix run priv/repo/seeds.exs`
 
 ##🚀 Running the Development Server
 
