@@ -30,25 +30,10 @@ To develop and run the Proca server, you’ll need:
 
 ```bash
 sudo apt install automake libssl-dev autoconf libncurses5-dev
-```
-
-```bash
 asdf plugin add erlang
-```
-
-```bash
 asdf plugin add elixir
-```
-
-```bash
 asdf install
-```
-
-```bash
 mix local.rebar
-```
-
-```bash
 mix local.hex
 ```
 
