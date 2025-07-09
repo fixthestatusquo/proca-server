@@ -17,7 +17,7 @@ To develop and run the Proca server, you’ll need:
 
 ### 🔗 Helpful resources
 
-- [Our asdf setup guide for Ubuntu](guides/asdf.md)
+- [Our asdf setup guide for Ubuntu](./asdf.md)
 - [Script for RabbitMQ installation on Ubuntu](https://www.rabbitmq.com/docs/install-debian#apt-quick-start-cloudsmith)
 
 ---
