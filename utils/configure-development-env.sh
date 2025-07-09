@@ -40,11 +40,19 @@ echo " ==== Setting up Elixir      =========== "
 mix deps.get
 mix ecto.migrate --quiet
 
+
+if [ -z "${ADMIN_EMAIL}" ]; then
+    # Prompt user to input the email address
+    read -p "ADMIN_EMAIL is not set. Please enter your admin email address: " ADMIN_EMAIL
+    # Export it to make it available to seeds.exs
+    export ADMIN_EMAIL
+    echo "export ADMIN_EMAIL=\"${ADMIN_EMAIL}\""
+fi
+mix run priv/repo/seeds.exs
+
 # same for test db
 env MIX_ENV=test mix ecto.migrate --quiet
 env MIX_ENV=test mix run priv/repo/seeds.exs
-
-mix run priv/repo/seeds.exs
 
 echo " ==== Running npm install in assets ==== "
 
