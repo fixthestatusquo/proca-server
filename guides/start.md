@@ -107,7 +107,7 @@ For development purposes, you can use the following environment variables to cus
 
 - `ENABLE_TELEMETRY`
   If set to `true`, the server will expose Prometheus metrics on port `9568`.
-  **Disabled by default.**
+  **Disabled by default in development.**
 
 - `START_DAEMON_SERVERS`
   If set to `true`, the server will start background processes.
