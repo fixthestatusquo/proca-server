@@ -27,10 +27,13 @@ GRANT ALL ON SCHEMA public TO proca;
 GRANT ALL ON SCHEMA public TO proca;
 "
 
-echo " ==== Setting up RabbitMQ    =========== "
+echo " ==== Installing up RabbitMQ  dependencies  =========== "
 
 ./utils/configure-rabbitmq-develop.sh
 
+echo " ==== Configuring RabbitMQ for development user   =========== "
+
+./utils/configure-rabbitmq.sh
 
 echo " ==== Setting up Elixir      =========== "
 
