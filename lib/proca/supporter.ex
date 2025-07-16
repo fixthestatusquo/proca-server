@@ -70,7 +70,7 @@ defmodule Proca.Supporter do
     belongs_to :source, Proca.Source
 
     # AKA contact_ref - one day they could be split and contact_ref be made random-ish
-    field :fingerprint, :binary
+    field :fingerprint, :binary, null: false
     has_many :actions, Proca.Action
 
     # Personalization fields, null if not needed, if not null, kept temporarily
