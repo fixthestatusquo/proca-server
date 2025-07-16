@@ -85,11 +85,6 @@ defmodule Proca.Action do
 
   def get_by_id_and_ref(action_id, ref) do
     one(id: action_id, contact_ref: ref)
-    # from(a in Action,
-    #   join: s in Supporter, on: s.id == a.supporter_id,
-    #   where: a.id == ^action_id and s.fingerprint == ^ref,
-    #   preload: [supporter: s])
-    # |> Repo.one()
   end
 
   def all(q, [{:contact_ref, ref} | kw]) do
