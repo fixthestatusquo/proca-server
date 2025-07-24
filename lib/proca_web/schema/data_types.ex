@@ -88,6 +88,7 @@ defmodule ProcaWeb.Schema.DataTypes do
     value(:live)
     value(:closed)
     value(:ignored)
+    value(:draft)
   end
 
   enum :outdated_targets do

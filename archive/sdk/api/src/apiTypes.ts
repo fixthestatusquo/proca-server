@@ -311,7 +311,8 @@ export type CampaignStatsSupporterCountByOthersArgs = {
 export enum CampaignStatus {
   Closed = 'CLOSED',
   Ignored = 'IGNORED',
-  Live = 'LIVE'
+  Live = 'LIVE',
+  Draft = 'DRAFT'
 }
 
 export type ChangeUserStatus = {

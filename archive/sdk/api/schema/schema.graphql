@@ -2063,4 +2063,5 @@ enum CampaignStatus {
   LIVE
   CLOSED
   IGNORED
+  DRAFT
 }
