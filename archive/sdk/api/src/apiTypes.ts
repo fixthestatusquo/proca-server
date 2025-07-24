@@ -312,7 +312,7 @@ export enum CampaignStatus {
   Closed = 'CLOSED',
   Ignored = 'IGNORED',
   Live = 'LIVE',
-  DRAFT = 'DRAFT'
+  Draft = 'DRAFT'
 }
 
 export type ChangeUserStatus = {
