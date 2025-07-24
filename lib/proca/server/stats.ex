@@ -49,7 +49,7 @@ defmodule Proca.Server.Stats do
   Every @sync_every_ms ms we send to ourselves a :sync message, to synchronize counts from DB.
   """
   def handle_info(:sync, state) do
-    if not state.query_runs do
+    unless state.query_runs do
       me = self()
       Task.start_link(fn -> GenServer.cast(me, {:update_campaigns, calculate()}) end)
     end
@@ -144,6 +144,7 @@ defmodule Proca.Server.Stats do
           s.dupe_rank == 0
       )
       |> distinct([a, s], [a.campaign_id, s.fingerprint])
+      |> select([a, s], struct(a, [:campaign_id, :supporter_id, :action_page_id]))
 
     org_supporters_query =
       first_supporter_query

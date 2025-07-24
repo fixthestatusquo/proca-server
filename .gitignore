@@ -48,3 +48,4 @@ TAGS
 .env 
 .proca-cli
 
+.DS_Store
