@@ -136,27 +136,20 @@ defmodule Proca.Server.Stats do
     # When we calculate areas for campaign, we also do this, so if someone signed from two areas, only last one
     # is counted (within scope of campaign)
 
-    first_supporter_query =
-      from(a in Action, join: s in Supporter, on: a.supporter_id == s.id, order_by: a.inserted_at)
-      |> where(
-        [a, s],
-        s.processing_status in [:accepted] and a.processing_status in [:accepted, :delivered] and
-          s.dupe_rank == 0
-      )
-      |> distinct([a, s], [a.campaign_id, s.fingerprint])
-      |> select([a, s], struct(a, [:campaign_id, :supporter_id, :action_page_id]))
-
-    org_supporters_query =
-      first_supporter_query
-      |> subquery()
-      |> join(:inner, [a], s in Supporter, on: s.id == a.supporter_id)
-      |> join(:inner, [a, s], p in ActionPage, on: a.action_page_id == p.id)
-      |> group_by([a, s, p], [a.campaign_id, p.org_id])
-      |> select([a, s, p], {a.campaign_id, p.org_id, count(s.fingerprint)})
-
     org_supporters =
-      org_supporters_query
-      |> Repo.all(timeout: 30_000)
+      from(
+        a in Action,
+        join: s in Supporter,
+        on: a.supporter_id == s.id,
+        join: ap in ActionPage,
+        on: a.action_page_id == ap.id,
+        where: s.processing_status == :accepted and
+              a.processing_status in [:accepted, :delivered] and
+              s.dupe_rank == 0,
+        group_by: [a.campaign_id, ap.org_id],
+        select: {a.campaign_id, ap.org_id, count(s.fingerprint, :distinct)}
+      )
+      |> Repo.all(timeout: 60_000)
 
     # create data for all campaigns so we don't have missing key below
     campaign_ids = Repo.all(from(c in Campaign, select: c.id), timeout: 30_000)
