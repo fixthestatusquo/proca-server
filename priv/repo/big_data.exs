@@ -2,6 +2,9 @@
 #
 #     mix run priv/repo/big_data.exs
 #
+#     or with some parameters:
+#     mix run priv/repo/big_data.exs --orgs 30 --campaigns 10 --max-supporters 3000
+#
 
 {opts, _, _} = OptionParser.parse(System.argv, strict: [
   orgs: :integer,
@@ -30,7 +33,7 @@ for org_i <- 0..org_cnt-1 do
 
   campaign_cnt = opts[:campaigns] || 1
   for campaign_i <- 0..campaign_cnt-1 do
-    campaign_name = "Stop #{Faker.Industry.industry()} and #{Faker.Industry.industry()} (By #{org_name})"
+    campaign_name = "Stop #{Faker.Industry.industry()} and #{Faker.Industry.industry()} ##{campaign_i} (By #{org_name})"
     {:ok, campaign} = Proca.Repo.insert(%Proca.Campaign{
       name: campaign_name, title: campaign_name, org: org
     })
@@ -60,15 +63,15 @@ for org_i <- 0..org_cnt-1 do
     end)
 
     for {action_page_i, action_page_cnt} <- rand_range.(opts[:max_action_pages] || 3) do
-      action_page_name = "Page #{action_page_i} to #{campaign_name}"
+      action_page_name = "Page #{action_page_i}_#{Faker.random_between(1, 1000)} to #{campaign_name}"
       {:ok, action_page} = Proca.Repo.insert(%Proca.ActionPage{
-        locale: "en_GB", name: action_page_name, org: org, campaign: campaign,
+        locale: "en_GB", name: action_page_name, org: org, campaign: campaign
       })
       IO.puts("===> Created ActionPage #{action_page_i}/#{action_page_cnt}: '#{action_page_name}' -> ID #{action_page.id}")
 
       sources = Enum.map(rand_range.(opts[:max_sources] || 3), fn {source_i, source_cnt} ->
         source_url = Faker.Internet.url()
-        {:ok, source} = Proca.Repo.insert(%Proca.Source{location: source_url})
+        {:ok, source} = Proca.Repo.insert(%Proca.Source{location: source_url, campaign: campaign_name})
         IO.puts("====> Created Source #{source_i}/#{source_cnt}: '#{source_url}' -> ID #{source.id}")
         source
       end)
