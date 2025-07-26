@@ -2060,8 +2060,8 @@ input TargetInput {
 }
 
 enum CampaignStatus {
+  DRAFT
   LIVE
   CLOSED
   IGNORED
-  DRAFT
 }
