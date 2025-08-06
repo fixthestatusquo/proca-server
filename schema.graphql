@@ -412,6 +412,9 @@ enum ServiceName {
   "AWS SQS to process messages"
   SQS
 
+  "Preview of emails (test provider)"
+  PREVIEW
+
   "Mailjet to send emails"
   MAILJET
 
