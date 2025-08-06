@@ -11,7 +11,7 @@ defmodule Proca.Service.Preview do
     |> Swoosh.Adapters.Local.deliver(config)
   end
 
-  def deliver(_email, %Org{} = org) do
+  def deliver(email, %Org{} = org) do
     Swoosh.Adapters.Local.deliver(email)
   end
 
