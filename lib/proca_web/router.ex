@@ -61,6 +61,7 @@ defmodule ProcaWeb.Router do
     get "/", ProcaWeb.HomepageController, :index
   end
 
+
   scope "/link" do
     pipe_through [:api]
 
@@ -84,6 +85,10 @@ defmodule ProcaWeb.Router do
       schema: ProcaWeb.Schema,
       socket: ProcaWeb.UserSocket
   end
+
+  # only for dev? I don't see the problem in prod
+  get "/mailbox/:org_name", ProcaWeb.MailboxPlug, :show
+  forward "/mailbox", Plug.Swoosh.MailboxPreview
 
   forward "/graphiql", Absinthe.Plug.GraphiQL,
     schema: ProcaWeb.Schema,
