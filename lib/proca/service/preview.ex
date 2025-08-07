@@ -1,23 +1,70 @@
-
-defmodule Proca.Service.Preview do
+defmodule Proca.Service.Email.Preview do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.Org
   alias Swoosh.Email
 
-  def deliver(email, %Org{name: name, email_backend: %{config: config}} = org) do
-    email
-    |> Swoosh.Email.put_private(:org_name, name)
-    |> Swoosh.Adapters.Local.deliver(config)
+  @impl true
+  def batch_size, do: 25
+  def deliver(emails, org) when is_list(emails) do
+    Enum.each(emails, fn email -> deliver(email, org) end)
   end
 
-  def deliver(email, %Org{} = org) do
-    # Provide default config when none is available from the org, it should go to the common mailbox?
-    default_config = []
-    Swoosh.Adapters.Local.deliver(default_config, email)
+def deliver(email, %Org{name: name, email_backend: %{config: config}} = _org) do
+  email = Swoosh.Email.put_private(email, :org_name, name)
+
+  log_email_preview(email)
+  Proca.Service.Preview.OrgStorage.push(email)
+
+  Swoosh.Adapters.Local.deliver(email, config)
+end
+
+def deliver(email, %Org{} = _org) do
+  default_config = []
+
+  log_email_preview(email)
+  Proca.Service.Preview.OrgStorage.push(email)
+
+  Swoosh.Adapters.Local.deliver(email, default_config)
+end
+
+defp log_email_preview(emails) when is_list(emails) do
+  Enum.each(emails, &log_email_preview/1)
+end
+
+defp log_email_preview(email) do
+  IO.puts("\n===== Email Preview =====")
+  IO.puts("From: #{format_addresses(email.from)}")
+  IO.puts("To: #{format_addresses(email.to)}")
+  IO.puts("Subject: #{email.subject}")
+  IO.puts("=========================\n")
+end
+
+
+  def format_addresses(nil), do: "(none)"
+
+  def format_addresses({name, email}) when is_binary(name) and is_binary(email) do
+    # Simple sanitization: if email contains invalid characters, just quote it or fallback to inspect
+    if String.contains?(email, [" ", ",", "<", ">"]) do
+      "#{name} <\"#{email}\">"
+    else
+      "#{name} <#{email}>"
+    end
+  end
+
+  def format_addresses(address) when is_binary(address), do: address
+
+  def format_addresses(list) when is_list(list) do
+    list
+    |> Enum.map(&format_addresses/1)
+    |> Enum.join(", ")
   end
 
   def list_templates(_org), do: {:ok, []}
-  def supports_templates?, do: false
   def name, do: "preview"
+
+  # Remove warnings with faking functions
+  def handle_bounce(_), do: :ok
+  def handle_event(_), do: :ok
+  def supports_templates?(_), do: false
 end
