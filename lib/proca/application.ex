@@ -36,7 +36,10 @@ defmodule Proca.Application do
       # Processing / queue management
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
-      {Proca.Pipes.Connection, Proca.Pipes.queue_url()}
+      {Proca.Pipes.Connection, Proca.Pipes.queue_url()},
+
+       # Start the email preview org storage
+      {Proca.Service.Preview.OrgStorage, []}
     ]
 
     # Proca SErvers
