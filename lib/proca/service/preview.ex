@@ -12,7 +12,9 @@ defmodule Proca.Service.Preview do
   end
 
   def deliver(email, %Org{} = org) do
-    Swoosh.Adapters.Local.deliver(email)
+    # Provide default config when none is available from the org, it should go to the common mailbox?
+    default_config = []
+    Swoosh.Adapters.Local.deliver(default_config, email)
   end
 
   def list_templates(_org), do: {:ok, []}
