@@ -109,6 +109,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:sqs, description: "AWS SQS to process messages")
     value(:mailjet, description: "Mailjet to send emails")
     value(:smtp, description: "SMTP to send emails")
+    value(:preview, description: "Preview emails in /mailbox")
     value(:wordpress, description: "Wordpress HTTP API")
     value(:stripe, description: "Stripe to process donations")
     value(:test_stripe, description: "Stripe test account to test donations")
