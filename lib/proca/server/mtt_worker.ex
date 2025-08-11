@@ -23,12 +23,12 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign, ActionPage, Org, Users.User, TargetEmail}
+  alias Proca.{Action, Campaign, ActionPage, Org, TargetEmail}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
-  import Logger
+  require Logger
 
   @default_locale "en"
 

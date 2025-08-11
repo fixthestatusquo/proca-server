@@ -178,7 +178,7 @@ defmodule Proca.Service.EmailBackend do
     %{org: via_org} = Proca.Repo.preload(srv, [:org])
 
     [username, domain] = Regex.split(~r/@/, from_email)
-    [via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
+    [_via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
 
     cond do
       # FROM set, but matching the sending backend

@@ -6,40 +6,41 @@ defmodule Proca.Service.Email.Preview do
 
   @impl true
   def batch_size, do: 25
+
+  @impl true
   def deliver(emails, org) when is_list(emails) do
     Enum.each(emails, fn email -> deliver(email, org) end)
   end
 
-def deliver(email, %Org{name: name, email_backend: %{config: config}} = _org) do
-  email = Swoosh.Email.put_private(email, :org_name, name)
+  def deliver(email, %Org{name: name, email_backend: %{config: config}} = _org) do
+    email = Email.put_private(email, :org_name, name)
 
-  log_email_preview(email)
-  Proca.Service.Preview.OrgStorage.push(email)
+    log_email_preview(email)
+    Proca.Service.Preview.OrgStorage.push(email)
 
-  Swoosh.Adapters.Local.deliver(email, config)
-end
+    Swoosh.Adapters.Local.deliver(email, config)
+  end
 
-def deliver(email, %Org{} = _org) do
-  default_config = []
+  def deliver(email, %Org{} = _org) do
+    default_config = []
 
-  log_email_preview(email)
-  Proca.Service.Preview.OrgStorage.push(email)
+    log_email_preview(email)
+    Proca.Service.Preview.OrgStorage.push(email)
 
-  Swoosh.Adapters.Local.deliver(email, default_config)
-end
+    Swoosh.Adapters.Local.deliver(email, default_config)
+  end
 
-defp log_email_preview(emails) when is_list(emails) do
-  Enum.each(emails, &log_email_preview/1)
-end
+  defp log_email_preview(emails) when is_list(emails) do
+    Enum.each(emails, &log_email_preview/1)
+  end
 
-defp log_email_preview(email) do
-  IO.puts("\n===== Email Preview =====")
-  IO.puts("From: #{format_addresses(email.from)}")
-  IO.puts("To: #{format_addresses(email.to)}")
-  IO.puts("Subject: #{email.subject}")
-  IO.puts("=========================\n")
-end
-
+  defp log_email_preview(email) do
+    IO.puts("\n===== Email Preview =====")
+    IO.puts("From: #{format_addresses(email.from)}")
+    IO.puts("To: #{format_addresses(email.to)}")
+    IO.puts("Subject: #{email.subject}")
+    IO.puts("=========================\n")
+  end
 
   def format_addresses(nil), do: "(none)"
 
@@ -56,15 +57,18 @@ end
 
   def format_addresses(list) when is_list(list) do
     list
-    |> Enum.map(&format_addresses/1)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", &format_addresses/1)
   end
 
+  @impl true
   def list_templates(_org), do: {:ok, []}
-  def name, do: "preview"
 
-  # Remove warnings with faking functions
+  @impl true
   def handle_bounce(_), do: :ok
+
+  @impl true
   def handle_event(_), do: :ok
+
+  @impl true
   def supports_templates?(_), do: false
 end
