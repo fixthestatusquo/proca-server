@@ -1,9 +1,6 @@
 
 defmodule Proca.Service.Preview.OrgStorage do
   use Agent
-  @behaviour Swoosh.Adapters.Local.Storage
-
-  alias Swoosh.Email
 
   def start_link(_opts) do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
