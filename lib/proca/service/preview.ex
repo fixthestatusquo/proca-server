@@ -63,8 +63,6 @@ defmodule Proca.Service.Email.Preview do
   @impl true
   def list_templates(_org), do: {:ok, []}
 
-  def name, do: "preview"
-
   @impl true
   def handle_bounce(_), do: :ok
 

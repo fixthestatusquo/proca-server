@@ -23,21 +23,19 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign, ActionPage, Org, Users.User, TargetEmail}
+  alias Proca.{Action, Campaign, ActionPage, Org, TargetEmail}
   alias Proca.Action.Message
   alias Proca.Service.{EmailBackend, EmailTemplate}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
-  import Logger
+  require Logger
 
   @default_locale "en"
 
   def process_mtt_campaign(campaign) do
-    Logger.info("----------------->!!!!!!!!!Processing MTT campaign: #{campaign.name} (#{campaign.id})!!!!!!!!<-----------------")
-
     campaign = Repo.preload(campaign, [:mtt, [org: :email_backend]])
 
-    if campaign.org.email_backend != nil and within_sending_window(campaign) |> IO.inspect() do
+    if campaign.org.email_backend != nil and within_sending_window(campaign) do
       {cycle, all_cycles} = calculate_cycles(campaign)
       target_ids = get_sendable_target_ids(campaign)
 
@@ -56,7 +54,7 @@ defmodule Proca.Server.MTTWorker do
       # send_emails(campaign, get_emails_to_send(target_ids, {cycle, all_cycles}))
       Enum.chunk_every(target_ids, 10)
       |> Enum.each(fn target_ids ->
-        emails_to_send = get_emails_to_send(target_ids, {cycle, all_cycles}) |> IO.inspect(label: "emails_to_send")
+        emails_to_send = get_emails_to_send(target_ids, {cycle, all_cycles})
 
         Logger.info(
           "MTT worker #{campaign.name}: Sending #{length(emails_to_send)} emails for chunk of targets: #{inspect(target_ids)}, cycle #{cycle}/#{all_cycles}"
