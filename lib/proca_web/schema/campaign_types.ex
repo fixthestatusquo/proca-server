@@ -72,6 +72,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "Custom config map"
     field :config, non_null(:json)
 
+    @desc "Supporter confirmation enabled"
+    field :supporter_confirm, :boolean
+
+    @desc "Supporter confirmation template name"
+    field :supporter_confirm_template, :string
+
     @desc "Statistics"
     field :stats, non_null(:campaign_stats) do
       resolve(&Resolvers.Campaign.stats/3)
@@ -205,7 +211,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:id, :integer)
       @desc "Name of campaign to update (alterantive to id)"
       arg(:name, :string)
-      # arg(:external_id, :integer)
 
       @desc "Campaign content to be updated"
       arg(:input, non_null(:campaign_input))
@@ -215,6 +220,25 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       allow([:manage_campaigns, :change_campaign_settings])
 
       resolve(&Resolvers.Campaign.update/3)
+    end
+
+    @desc """
+    Updates an existing campaign.
+    """
+    field :update_campaign_supporter_confirmation, type: non_null(:campaign) do
+      @desc "Name of campaign to update"
+      arg(:name, :string)
+
+      @desc "Enable supporter confirmation"
+      arg(:supporter_confirm, :boolean)
+      @desc "Supporter confirmation template name"
+      arg(:supporter_confirm_template, :string)
+
+      load(:campaign, by: [:name])
+      determine_auth(for: :campaign)
+      allow([:change_campaign_settings])
+
+      resolve(&Resolvers.Campaign.update_campaign_supporter_confirmation/3)
     end
 
     @desc """
@@ -279,18 +303,27 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "MTT configuration"
     field(:mtt, :campaign_mtt_input)
+
+    @desc "Supporter confirmation enabled"
+    field(:supporter_confirm, :boolean)
+
+    @desc "Supporter confirmation template name"
+    field(:supporter_confirm_template, :string)
   end
 
   object :campaign_mtt do
     @desc "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
     field :start_at, non_null(:datetime)
+
     @desc "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
     field :end_at, non_null(:datetime)
+
     @desc """
     If email templates are used to create MTT, use this template (works like thank you email templates).
     Otherwise, the raw text that is send with MTT action will make a plain text email.
     """
     field :message_template, :string
+
     @desc """
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """
@@ -300,13 +333,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
   input_object :campaign_mtt_input do
     @desc "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
     field :start_at, :datetime
+
     @desc "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
     field :end_at, :datetime
+
     @desc """
     If email templates are used to create MTT, use this template (works like thank you email templates).
     Otherwise, the raw text that is send with MTT action will make a plain text email.
     """
     field :message_template, :string
+
     @desc """
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """

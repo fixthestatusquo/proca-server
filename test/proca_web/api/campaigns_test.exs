@@ -5,7 +5,10 @@ defmodule ProcaWeb.Campaigns do
 
   describe "campaigns API" do
     setup do
-      blue_story()
+      story = blue_story()
+      owner = Factory.insert(:staffer, org: story.org, perms: Proca.Permission.add(Proca.Staffer.Role.permissions(:owner)))
+
+      Map.merge(story, %{conn: build_conn(), owner: owner})
     end
 
     test "get campaings list by", %{conn: conn, pages: [action_page]} do
@@ -51,6 +54,46 @@ defmodule ProcaWeb.Campaigns do
                "Save the whales!",
                "Donate for blue whale"
              ]
+    end
+
+    test "update campaign supporter_confirm via GraphQL", %{conn: conn, org: org, owner: owner} do
+      campaign =
+        Factory.insert(:campaign,
+          name: "supporter-camp",
+          title: "Supporter Confirm Test",
+          org: org
+        )
+
+      mutation = """
+      mutation UpdateCampaignSupporterConfirmation($name: String!, $confirm: Boolean!, $template: String!) {
+        updateCampaignSupporterConfirmation(
+          name: $name,
+          supporterConfirm: $confirm,
+          supporterConfirmTemplate: $template
+        ) {
+          id
+          name
+          supporterConfirm
+          supporterConfirmTemplate
+        }
+      }
+      """
+
+      variables = %{
+        "name" => campaign.name,
+        "confirm" => true,
+        "template" => "my_template"
+      }
+
+      res =
+        conn
+        |> auth_api_post(%{query: mutation, variables: variables}, owner.user)
+        |> json_response(200)
+
+      data = res["data"]["updateCampaignSupporterConfirmation"]
+      assert data["id"] == campaign.id
+      assert data["supporterConfirm"] == true
+      assert data["supporterConfirmTemplate"] == "my_template"
     end
   end
 end
