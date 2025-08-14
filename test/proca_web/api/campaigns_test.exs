@@ -65,16 +65,18 @@ defmodule ProcaWeb.Campaigns do
         )
 
       mutation = """
-      mutation UpdateCampaignSupporterConfirmation($name: String!, $confirm: Boolean!, $template: String!) {
-        updateCampaignSupporterConfirmation(
+      mutation UpdateCampaignProcessing($name: String!, $confirm: Boolean!, $template: String!) {
+        updateCampaignProcessing(
           name: $name,
           supporterConfirm: $confirm,
           supporterConfirmTemplate: $template
         ) {
           id
           name
-          supporterConfirm
-          supporterConfirmTemplate
+          campaignProcessing {
+            supporterConfirm
+            supporterConfirmTemplate
+          }
         }
       }
       """
@@ -82,7 +84,7 @@ defmodule ProcaWeb.Campaigns do
       variables = %{
         "name" => campaign.name,
         "confirm" => true,
-        "template" => "my_template"
+        "template" => "confirm_action"
       }
 
       res =
@@ -90,10 +92,11 @@ defmodule ProcaWeb.Campaigns do
         |> auth_api_post(%{query: mutation, variables: variables}, owner.user)
         |> json_response(200)
 
-      data = res["data"]["updateCampaignSupporterConfirmation"]
+      data = res["data"]["updateCampaignProcessing"]
       assert data["id"] == campaign.id
-      assert data["supporterConfirm"] == true
-      assert data["supporterConfirmTemplate"] == "my_template"
+      processing = data["campaignProcessing"]
+      assert processing["supporterConfirm"] == true
+      assert processing["supporterConfirmTemplate"] == "confirm_action"
     end
   end
 end

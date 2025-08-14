@@ -47,7 +47,6 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:id, :integer)
       @desc "Get by name"
       arg(:name, :string)
-      #     arg(:external_id, :integer)
 
       load(:campaign, by: [:id, :name], preload: [:org, :targets])
       determine_auth(for: :campaign)
@@ -72,11 +71,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc "Custom config map"
     field :config, non_null(:json)
 
-    @desc "Supporter confirmation enabled"
-    field :supporter_confirm, :boolean
-
-    @desc "Supporter confirmation template name"
-    field :supporter_confirm_template, :string
+    @desc "Action processing settings for this campaign"
+    field :campaign_processing, :campaign_processing do
+      resolve(fn campaign, _, _ -> {:ok, campaign} end)
+    end
 
     @desc "Statistics"
     field :stats, non_null(:campaign_stats) do
@@ -180,6 +178,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :status, non_null(:status)
   end
 
+  object :campaign_processing do
+    @desc "Enable supporter confirmation"
+    field :supporter_confirm, :boolean
+    @desc "Supporter confirmation template name"
+    field :supporter_confirm_template, :string
+  end
+
   object :campaign_mutations do
     @desc """
     Upserts a campaign.
@@ -225,7 +230,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     @desc """
     Updates an existing campaign.
     """
-    field :update_campaign_supporter_confirmation, type: non_null(:campaign) do
+    field :update_campaign_processing, type: non_null(:campaign) do
       @desc "Name of campaign to update"
       arg(:name, :string)
 
@@ -238,7 +243,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       determine_auth(for: :campaign)
       allow([:change_campaign_settings])
 
-      resolve(&Resolvers.Campaign.update_campaign_supporter_confirmation/3)
+      resolve(&Resolvers.Campaign.update_campaign_processing/3)
     end
 
     @desc """
