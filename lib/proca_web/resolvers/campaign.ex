@@ -165,7 +165,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
     |> update_and_notify()
   end
 
-  def update_campaign_supporter_confirmation(_, args, %{context: %{campaign: campaign}}) do
+  def update_campaign_processing(_, args, %{context: %{campaign: campaign}}) do
     campaign
     |> Campaign.changeset(args)
     |> update_and_notify()

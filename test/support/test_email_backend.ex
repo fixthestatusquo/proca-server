@@ -5,7 +5,7 @@ defmodule Proca.TestEmailBackend do
   Collects emails in a map:
   - map( recipient_email_string -> [Email] )
 
-  Usage: 
+  Usage:
   ```
   use Proca.TestEmailBackend
   ```
@@ -204,10 +204,10 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
-  def handle_bounce(type) do
+  def handle_bounce(_type) do
   end
 
   @impl true
-  def handle_event(type) do
+  def handle_event(_type) do
   end
 end
