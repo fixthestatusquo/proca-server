@@ -11,9 +11,8 @@ defmodule Proca.Confirm.LaunchPage do
 
   alias Proca.{Campaign, ActionPage, Staffer, Org, Auth}
   import Proca.Repo
-  import Ecto.Query, only: [from: 2]
 
-  import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
+  import ProcaWeb.Helper, only: [cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
   import Logger

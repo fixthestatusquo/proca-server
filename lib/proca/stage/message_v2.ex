@@ -2,7 +2,7 @@ defmodule Proca.Stage.MessageV2 do
   alias Proca.Stage.MessageV1
   alias Proca.Stage.Support
   alias Proca.Repo
-  alias Proca.{Campaign, Contact, Supporter, PublicKey, Action, ActionPage}
+  alias Proca.{Campaign, Contact, Supporter, PublicKey, ActionPage}
 
   def action_data(action, stage \\ :deliver, org_id) do
     action =
@@ -52,7 +52,8 @@ defmodule Proca.Stage.MessageV2 do
           name: name,
           thank_you_template: thank_you_template,
           supporter_confirm_template: supporter_confirm_template,
-          org: org
+          org: org,
+          campaign: campaign
         } = action_page
       ) do
     %{
@@ -60,7 +61,8 @@ defmodule Proca.Stage.MessageV2 do
       "name" => name,
       "thankYouTemplate" => thank_you_template,
       "thankYouTemplateRef" => MessageV1.action_page_template_ref(action_page),
-      "supporterConfirmTemplate" => supporter_confirm_template || org.supporter_confirm_template
+      "supporterConfirmTemplate" =>
+        supporter_confirm_template || campaign.supporter_confirm_template || org.supporter_confirm_template
     }
   end
 

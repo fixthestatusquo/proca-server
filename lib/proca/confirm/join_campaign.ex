@@ -11,7 +11,7 @@ defmodule Proca.Confirm.JoinCampaign do
   alias Proca.Repo
   import Ecto.Query
 
-  import ProcaWeb.Helper, only: [has_error?: 3, cant_msg: 1, msg_ext: 2]
+  import ProcaWeb.Helper, only: [cant_msg: 1, msg_ext: 2]
   import Proca.Permission, only: [can?: 2]
 
   def changeset(%Campaign{id: campaign_id}, %Auth{staffer: %Staffer{org_id: org_id}}) do
@@ -57,13 +57,13 @@ defmodule Proca.Confirm.JoinCampaign do
 
   def email_template(%Confirm{operation: :join_campaign}), do: "join_campaign"
 
-  #    latest_page = from(a in ActinPage, 
-  #      where: a.campaign_id == ^campaign_id and a.org_id ==, 
+  #    latest_page = from(a in ActinPage,
+  #      where: a.campaign_id == ^campaign_id and a.org_id ==,
   #      order_by: [desc: :id]
   #      ) |> Repo.one
   #
   #    with {:page, page = %ActionPage{}} <- {:page, latest_page},
-  #        true <- st.org_id == 
-  #        true <- can?(st, [:manage_action_pages]) 
-  #      do 
+  #        true <- st.org_id ==
+  #        true <- can?(st, [:manage_action_pages])
+  #      do
 end

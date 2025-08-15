@@ -17,7 +17,7 @@ defmodule Proca.Stage.Processing do
   1. Process supporter, then action.
   2. Process supporter.
   3. ignore. This is a case where we store action for counts (share, tweet
-  without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right? 
+  without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right?
 
   State diagram below shows transitions while processing. `A` stands for Action,
   `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
@@ -28,10 +28,10 @@ defmodule Proca.Stage.Processing do
           | linking
           v
       [ A(NEW) / S(NEW) ]            <-----.  linking new action to rejected supporter
-          | emit to supporter confirm      | 
-          v                                |  
+          | emit to supporter confirm      |
+          v                                |
       [ A(NEW) / S(CONFIRMING)] -> [ A(REJECTED) / S(REJECTED) ] --> stop (and remove the cookie?!)
-          | confirm 
+          | confirm
           v
     ,->[ A(NEW) / S(ACCEPTED)]
     |     | emit to action confirm
@@ -159,6 +159,9 @@ defmodule Proca.Stage.Processing do
             supporter_confirm: system_confirm,
             custom_supporter_confirm: custom_confirm,
             custom_action_confirm: action_confirm
+          },
+          campaign: %{
+            supporter_confirm: system_confirm
           }
         }
       ) do

@@ -14,8 +14,7 @@ defmodule Proca.Service.SES do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.Service.EmailTemplate
-  alias Proca.Repo
-  alias Proca.{Service, Supporter, Action, Org}
+  alias Proca.{Service, Org}
   alias Swoosh.Email
   import Logger
 
@@ -125,4 +124,10 @@ defmodule Proca.Service.SES do
       }
     end)
   end
+
+  @impl true
+  def handle_bounce(_), do: :ok
+
+  @impl true
+  def handle_event(_), do: :ok
 end

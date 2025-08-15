@@ -7,7 +7,6 @@ defmodule ProcaWeb.Schema.ActionTypes do
 
   alias ProcaWeb.Resolvers
   import ProcaWeb.Resolvers.AuthNotation
-  alias ProcaWeb.Resolvers.ReportError
 
   object :action_queries do
     @desc """

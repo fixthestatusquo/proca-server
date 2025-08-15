@@ -1,8 +1,6 @@
 defmodule Proca.Stage.MessageV1 do
-  alias Proca.{Action, Supporter, PublicKey, Contact, Field, Confirm}
+  alias Proca.{Action, Supporter, PublicKey, Contact}
   alias Proca.Repo
-  import Ecto.Query, only: [from: 2]
-  alias Broadway.Message
   alias Proca.Stage.Support
 
   def tracking_data(%Action{source: s}) when not is_nil(s) do
@@ -82,7 +80,7 @@ defmodule Proca.Stage.MessageV1 do
     }
   end
 
-  def contact_privacy(action = %Action{with_consent: true}, contact = %Contact{}) do
+  def contact_privacy(%Action{with_consent: true}, contact = %Contact{}) do
     %{
       "communication" => contact.communication_consent,
       "givenAt" => contact.inserted_at |> Support.to_iso8601()
