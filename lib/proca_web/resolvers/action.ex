@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Action do
   import Logger
   alias Ecto.Multi
 
-  alias Proca.{Supporter, Action, ActionPage, Source, Contact, Org}
+  alias Proca.{Supporter, Action, ActionPage, Source}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo
@@ -241,7 +241,7 @@ defmodule ProcaWeb.Resolvers.Action do
 
   defp audit_captcha(%{
          captcha_meta: meta,
-         supporter: %{id: sid, fingerprint: fpr},
+         supporter: %{id: sid, fingerprint: _fpr},
          action: %{id: aid}
        }) do
     Repo.insert(%EctoTrail.Changelog{
