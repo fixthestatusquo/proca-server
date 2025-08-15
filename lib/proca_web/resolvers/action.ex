@@ -201,7 +201,7 @@ defmodule ProcaWeb.Resolvers.Action do
            |> repo.insert()
          end)
          |> Repo.transaction_and_notify(:add_action, all_error: true) do
-      {:ok, %{supporter: supporter, action: action}} ->
+      {:ok, %{supporter: supporter, action: _action}} ->
         {:ok, output(supporter)}
 
       {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
