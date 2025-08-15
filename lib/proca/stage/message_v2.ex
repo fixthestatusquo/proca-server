@@ -2,7 +2,7 @@ defmodule Proca.Stage.MessageV2 do
   alias Proca.Stage.MessageV1
   alias Proca.Stage.Support
   alias Proca.Repo
-  alias Proca.{Campaign, Contact, Supporter, PublicKey, Action, ActionPage}
+  alias Proca.{Campaign, Contact, Supporter, PublicKey, ActionPage}
 
   def action_data(action, stage \\ :deliver, org_id) do
     action =

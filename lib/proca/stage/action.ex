@@ -32,7 +32,7 @@ defmodule Proca.Stage.Action do
   alias Proca.Action
   alias Proca.Stage.Processing
   alias Proca.Pipes.Connection
-  import Logger
+  require Logger
 
   @behaviour Broadway.Acknowledger
 
