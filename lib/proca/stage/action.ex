@@ -1,7 +1,6 @@
 defmodule Proca.Stage.Action do
   @moduledoc """
 
-
   # Processing
 
   Producers:

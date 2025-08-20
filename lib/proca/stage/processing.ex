@@ -161,13 +161,13 @@ defmodule Proca.Stage.Processing do
             custom_action_confirm: action_confirm
           },
           campaign: %{
-            supporter_confirm: system_confirm
+            supporter_confirm: campaign_confirm
           }
         }
       ) do
     # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
     cond do
-      system_confirm or custom_confirm ->
+      system_confirm or campaign_confirm or custom_confirm ->
         {:new, :confirming, :supporter_confirm}
 
       action_confirm ->

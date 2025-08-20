@@ -59,7 +59,6 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
-  alias Proca.MTT
   import Ecto.Changeset
 
   schema "supporters" do
@@ -261,8 +260,6 @@ defmodule Proca.Supporter do
   end
 
   def clear_transient_fields(supporter_change) do
-    import Ecto.Query
-
     supporter = supporter_change.data
 
     fields =

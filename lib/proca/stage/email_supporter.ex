@@ -166,8 +166,11 @@ defmodule Proca.Stage.EmailSupporter do
     case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          :ok ->
+            messages
+
+          {:error, statuses} ->
+            failed_partially(messages, statuses)
         end
 
       :not_found ->
@@ -214,8 +217,8 @@ defmodule Proca.Stage.EmailSupporter do
         ap.id == ^action_page_id and
         (
           not is_nil(o.supporter_confirm_template) or
-          not is_nil(ap.supporter_confirm_template) or
-          not is_nil(c.supporter_confirm_template)
+          not is_nil(c.supporter_confirm_template) or
+          not is_nil(ap.supporter_confirm_template)
         ) and
         not is_nil(o.email_backend_id) and
         not is_nil(o.email_from)
