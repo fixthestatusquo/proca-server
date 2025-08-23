@@ -85,4 +85,10 @@ defmodule Proca.Service.SMTP do
 
     # set if not set
   end
+
+  @impl true
+  def handle_bounce(_), do: :ok
+
+  @impl true
+  def handle_event(_), do: :ok
 end

@@ -6,7 +6,7 @@ defmodule Proca.Stage.EmailSupporter do
 
   alias Broadway.Message
   alias Broadway.BatchInfo
-  alias Proca.{Org, ActionPage, Action, Supporter, Contact}
+  alias Proca.{Org, ActionPage, Action, Contact}
   alias Proca.Repo
   import Ecto.Query
   import Logger
@@ -21,7 +21,7 @@ defmodule Proca.Stage.EmailSupporter do
       too_many_retries?: 1
     ]
 
-  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplate, EmailTemplateDirectory}
+  alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplateDirectory}
   alias Swoosh.Email
 
   def start_for?(%Org{email_backend_id: ebid})
@@ -68,12 +68,14 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
-      {:ok,
-       %{
-         "stage" => "deliver",
-         "actionPageId" => action_page_id,
-         "actionId" => action_id
-       } = action} ->
+      {
+        :ok,
+        %{
+          "stage" => "deliver",
+          "actionPageId" => action_page_id,
+          "actionId" => action_id
+        } = action
+      } ->
         if send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) do
           message
           |> Message.update_data(fn _ -> action end)
@@ -83,12 +85,14 @@ defmodule Proca.Stage.EmailSupporter do
           ignore(message)
         end
 
-      {:ok,
-       %{
-         "stage" => "supporter_confirm",
-         "actionPageId" => action_page_id,
-         "actionId" => action_id
-       } = action} ->
+      {
+        :ok,
+        %{
+          "stage" => "supporter_confirm",
+          "actionPageId" => action_page_id,
+          "actionId" => action_id
+        } = action
+      } ->
         if send_supporter_confirm?(action_page_id, action_id) and not too_many_retries?(message) do
           message
           |> Message.update_data(fn _ -> action end)
@@ -147,10 +151,11 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:supporter_confirm, messages, %BatchInfo{batch_key: ap_id}, _)
       when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
+    ap = ActionPage.one(id: ap_id, preload: [campaign: [], org: [email_backend: :org]])
     org = ap.org
 
-    tmpl_name = ap.supporter_confirm_template || ap.org.supporter_confirm_template
+    tmpl_name =
+      ap.supporter_confirm_template || ap.campaign.supporter_confirm_template || ap.org.supporter_confirm_template
 
     recipients =
       Enum.map(messages, fn m ->
@@ -161,8 +166,11 @@ defmodule Proca.Stage.EmailSupporter do
     case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          :ok ->
+            messages
+
+          {:error, statuses} ->
+            failed_partially(messages, statuses)
         end
 
       :not_found ->
@@ -170,16 +178,6 @@ defmodule Proca.Stage.EmailSupporter do
           messages,
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
         )
-    end
-  end
-
-  defp confirm_supporter(action_id) do
-    action = Action.one(id: action_id, preload: [:supporter])
-
-    case Supporter.confirm(action.supporter) do
-      {:ok, sup2} -> Proca.Stage.Action.process(%{action | supporter: sup2})
-      {:noop, _} -> :ok
-      {:error, msg} -> {:error, msg}
     end
   end
 
@@ -205,28 +203,39 @@ defmodule Proca.Stage.EmailSupporter do
 
   # The message was already queued for this optin, so lets check
   # for sending invariants, that is, template existence
-  defp send_supporter_confirm?(action_page_id, action_id) do
-    from(a in Action,
+  def send_supporter_confirm?(action_page_id, action_id) do
+    from(
+      a in Action,
       join: ap in ActionPage,
       on: a.action_page_id == ap.id,
       join: o in Org,
       on: o.id == ap.org_id,
+      join: c in assoc(ap, :campaign),
       where:
         a.id == ^action_id and
-          a.with_consent and
-          ap.id == ^action_page_id and
-          (not is_nil(o.supporter_confirm_template) or
-             not is_nil(ap.supporter_confirm_template)) and
-          not is_nil(o.email_backend_id) and
-          not is_nil(o.email_from)
+        a.with_consent and
+        ap.id == ^action_page_id and
+        (
+          not is_nil(o.supporter_confirm_template) or
+          not is_nil(c.supporter_confirm_template) or
+          not is_nil(ap.supporter_confirm_template)
+        ) and
+        not is_nil(o.email_backend_id) and
+        not is_nil(o.email_from)
     )
-    |> Repo.one() != nil
+    |> Repo.exists?()
   end
 
   def make(data) do
     EmailBackend.make_email(
-      {get_in(data, ["contact", "firstName"]), get_in(data, ["contact", "email"])},
-      {:action, get_in(data, ["actionId"])}
+      {
+        get_in(data, ["contact", "firstName"]),
+        get_in(data, ["contact", "email"])
+      },
+      {
+        :action,
+        get_in(data, ["actionId"])
+      }
     )
     |> EmailMerge.put_action_message(data)
   end
