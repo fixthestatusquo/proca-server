@@ -164,12 +164,18 @@ defmodule ProcaWeb.ConfirmController do
     end
   end
 
-  defp handle_supporter(_action = %Action{supporter: sup}, "reject") do
-    case Supporter.reject(sup) do
-      {:ok, _} -> :ok
-      {:noop, _} -> :ok
-      {:error, msg} -> {:error, 400, msg}
-    end
+  defp handle_supporter(action = %Action{supporter: sup}, "reject") do
+      case Supporter.reject(sup) do
+        {:ok, _sup2} -> :ok
+        {:noop, _} -> :ok
+        {:error, msg} -> {:error, 400, msg}
+      end
+      case Action.reject(action) do
+        {:ok, _action2} -> :ok
+        {:noop, _} -> :ok
+        {:error, msg} -> {:error, 400, msg}
+      end
+    :ok
   end
 
   # Change the supporter email_status
