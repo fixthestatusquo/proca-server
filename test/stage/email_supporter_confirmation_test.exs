@@ -88,7 +88,7 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
       assert email.from |> elem(0) == org.title
     end
 
-    test "sends email using campaign template if it is set and if campaign haven't set supporter_confirmation send with org template", %{org: org, campaign: campaign, ap: action_page} do
+    test "sends email using campaign template if it is set and if campaign haven't set supporter_confirmation send with org template", %{org: org, ap: action_page} do
       # This covers: org.confirm = true && campaign.confirm = true
       # Setup
       org = Repo.update!(Ecto.Changeset.change(org, supporter_confirm: true, supporter_confirm_template: "test_org_template"))
@@ -144,7 +144,7 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
     test "sends email using action page template if it is set", %{org: org, campaign: campaign, ap: action_page} do
       # This covers: org.confirm = false && campaign.confirm = true
       # Setup
-      campaign = Repo.update!(Ecto.Changeset.change(campaign, supporter_confirm: true, supporter_confirm_template: "test_campaign_template"))
+      Repo.update!(Ecto.Changeset.change(campaign, supporter_confirm: true, supporter_confirm_template: "test_campaign_template"))
 
       action = Factory.insert(:action, action_page: action_page, with_consent: true)
       action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
@@ -198,7 +198,7 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
       assert String.contains?(email_org.html_body, "You decided to subscribe")
     end
 
-    test "does not send email if no template is configured", %{org: org, campaign: campaign, ap: action_page} do
+    test "does not send email if no template is configured", %{org: org, ap: action_page} do
       # This covers: org.confirm = false && campaign.confirm = false
       # Setup
       action_page = Repo.update!(Proca.ActionPage.changeset(action_page, %{thank_you_template: "mustache template"}))
