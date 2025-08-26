@@ -16,7 +16,7 @@ defmodule Proca.Server.MTT do
   """
   use GenServer
 
-  import Logger
+  require Logger
   import Ecto.Query
   alias Proca.Repo
   alias Proca.Server.MTTWorker

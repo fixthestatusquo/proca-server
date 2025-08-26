@@ -135,7 +135,8 @@ defmodule Proca.StoryFactory do
         name: "panda",
         title: "The Green Panda",
         contact_schema: :basic,
-        email_backend: Proca.Service.one(name: :testmail)
+        email_backend: Proca.Service.one(name: :testmail),
+        email_from: "contact@panda.org"
       )
 
     campaign =
