@@ -12,7 +12,7 @@ defmodule Proca.ActionPage do
   alias Ecto.Multi
 
   alias Proca.Repo
-  alias Proca.{ActionPage, Campaign, Org, Action, Supporter}
+  alias Proca.{ActionPage, Campaign, Action, Supporter}
 
   schema "action_pages" do
     field :locale, :string
@@ -37,7 +37,7 @@ defmodule Proca.ActionPage do
   @doc """
   Casts and validates values to change an Action Page.
 
-  The name validation is a pattern that allows two styles of action names: 
+  The name validation is a pattern that allows two styles of action names:
   1. identifier/path1/path2/path3 - where identifiers and paths are alphanumeric + - _
   2. domain.com.pl/some/campaign - url style (very similar but _ is not allowed for domain part)
   See test/action_page_test.exs for examples of valid and invalid names
@@ -83,7 +83,7 @@ defmodule Proca.ActionPage do
         {:ok, action_page}
 
       %{live: false} ->
-        # XXX do the health checks! 
+        # XXX do the health checks!
         change(action_page, live: true) |> Repo.update_and_notify()
     end
   end
