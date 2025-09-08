@@ -8,7 +8,6 @@ defmodule Proca.Stage.Queue do
   State is: {queue, size_of_queue}
   """
   use GenStage
-  import Logger
 
   @impl true
   def init(_opts) do
