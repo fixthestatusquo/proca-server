@@ -3,12 +3,10 @@ defmodule Proca.MTT do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Proca.Validations
-  alias Proca.ActionPage
 
   schema "mtt" do
     field :start_at, :utc_datetime
     field :end_at, :utc_datetime
-    #   field :sending_rate, :integer
     field :stats, :map, default: %{}
     field :test_email, :string
 
@@ -21,6 +19,9 @@ defmodule Proca.MTT do
     # optional! must support also sending without it.
     field :message_template, :string
 
+    field :max_messages_per_hour, :integer
+    field :timezone, :string
+
     belongs_to :campaign, Proca.Campaign
   end
 
@@ -28,11 +29,12 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email])
+    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email, :max_messages_per_hour, :timezone])
     |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
     |> Proca.Contact.Input.validate_email(:test_email)
     |> Proca.Service.EmailTemplate.validate_exists(:message_template)
+    |> validate_inclusion(:timezone, Tzdata.zone_list())
   end
 end

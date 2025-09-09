@@ -104,7 +104,8 @@ defmodule Proca.MixProject do
       {:dogma, "~> 0.1", only: [:dev]},
       {:faker, "~> 0.18", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
-      {:mix_version, "~> 2.1", only: [:dev], runtime: false}
+      {:mix_version, "~> 2.1", only: [:dev], runtime: false},
+      {:tzdata, "~> 1.1"}
     ]
   end
 
