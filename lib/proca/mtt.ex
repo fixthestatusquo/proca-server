@@ -19,8 +19,8 @@ defmodule Proca.MTT do
     # optional! must support also sending without it.
     field :message_template, :string
 
-    field :max_messages_per_hour, :integer
-    field :timezone, :string
+    field :max_emails_per_hour, :integer
+    field :timezone, :string, default: "Etc/UTC"
 
     belongs_to :campaign, Proca.Campaign
   end
@@ -29,7 +29,7 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email, :max_messages_per_hour, :timezone])
+    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email, :max_emails_per_hour, :timezone])
     |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
