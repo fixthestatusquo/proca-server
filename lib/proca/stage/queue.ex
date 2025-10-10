@@ -17,7 +17,6 @@ defmodule Proca.Stage.Queue do
 
   @impl true
   def handle_demand(demand, {queue, size, prev_demand}) do
-    #    IO.inspect({demand, size, prev_demand}, label: "DEMANDE")
     possible = min(demand + prev_demand, size)
 
     {supply, rest} = :queue.split(possible, queue)

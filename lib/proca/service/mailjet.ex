@@ -102,6 +102,18 @@ defmodule Proca.Service.Mailjet do
     |> handle_return(emails)
   end
 
+  @impl true
+  def deliver(email = %Email{}, %Org{email_backend: srv}) do
+    email =
+      email
+      |> put_assigns()
+      |> put_template(Map.get(email.private, :template, nil))
+      |> put_custom()
+
+    Mailjet.deliver(email, config(srv))
+    |> handle_return([email])
+  end
+
   # Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
 
   # Sending `[one_bad_email]`
@@ -141,7 +153,7 @@ defmodule Proca.Service.Mailjet do
   #     },
   #     %{id: 1152921519812251571}
   #   ]}}
-  
+
   defp handle_return({:ok, _}, _) do
     :ok
   end
@@ -212,8 +224,6 @@ defmodule Proca.Service.Mailjet do
       |> Enum.reject(&is_nil/1)
       |> Enum.reject(&(&1 == ""))
       |> Enum.join(": ")
-
-    # IO.inspect(event, label: "BOUNCE EVENT")
 
     bounce_params = %{
       id: id,

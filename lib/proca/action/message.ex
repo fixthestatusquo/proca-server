@@ -130,6 +130,14 @@ defmodule Proca.Action.Message do
     :ok
   end
 
+  def mark_one(message, field) when field in [:sent, :delivered, :opened, :clicked] do
+    Repo.update_all(from(m in Message, where: m.id == ^message.id),
+      set: [{field, true}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
+    :ok
+  end
+
   def handle_event(event) do
     message = Repo.get_by(Message, id: event.id)
     ## If message found in DB
