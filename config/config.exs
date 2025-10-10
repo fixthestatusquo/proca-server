@@ -1,4 +1,4 @@
-import Config
+use Mix.Config
 
 config :proca,
   ecto_repos: [Proca.Repo]
