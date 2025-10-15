@@ -1,5 +1,7 @@
 defmodule Proca.StoryFactory do
   alias Proca.Factory
+  alias Proca.Repo
+
   import ExMachina, only: [sequence: 1]
 
   @moduledoc """
@@ -163,9 +165,6 @@ defmodule Proca.StoryFactory do
 
   """
   def violet_story() do
-    import Ecto.Changeset
-    import Proca.Repo
-
     org =
       Factory.insert(:org,
         name: "violet",
@@ -173,11 +172,11 @@ defmodule Proca.StoryFactory do
         contact_schema: :basic,
         email_from: "contact@violet.org"
       )
-      |> preload([:email_backend])
+      |> Repo.preload([:email_backend])
 
     provider = Factory.insert(:email_backend, host: "violet.org", org: org)
 
-    org = update!(change(org, email_backend: provider))
+    org = Repo.update!(Ecto.Changeset.change(org, email_backend: provider))
 
     campaign =
       Factory.insert(:campaign,
@@ -189,7 +188,7 @@ defmodule Proca.StoryFactory do
     ap =
       Factory.insert(:action_page, org: org, campaign: campaign, name: "violet/en", locale: "en")
 
-    insert!(
+    Repo.insert!(
       Proca.Service.EmailTemplate.changeset(%{
         org: org,
         name: "mustache template",
@@ -246,6 +245,61 @@ defmodule Proca.StoryFactory do
       page: teal_ap,
       campaign: teal_camp,
       partners: Enum.zip(partners, partner_aps) |> Enum.map(fn {p, ap} -> %{org: p, page: ap} end)
+    }
+  end
+
+  def mtt_story() do
+    org =
+      Factory.insert(:org,
+        name: "mtt_org",
+        title: "The MTT Org",
+        contact_schema: :basic,
+        email_from: "mtt_test@mtt.org"
+      )
+      |> Repo.preload([:email_backend])
+
+    provider = Factory.insert(:email_backend, host: "mtt.org", org: org)
+
+    org = Repo.update!(Repo.change(org, email_backend: provider))
+
+    campaign =
+      Factory.insert(:campaign,
+        org: org,
+        name: "mtt",
+        title: "Mail To Target",
+        mtt: Factory.build(:mtt)
+      )
+
+    action_page = Factory.insert(:action_page, org: org, campaign: campaign, name: "mtt/en", locale: "en")
+    targets = Factory.insert_list(10, :target, campaign: campaign)
+
+    action1 =
+        Factory.insert(:action,
+          action_page: action_page,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted,
+          testing: true
+        )
+
+    action2 =
+      Factory.insert(:action,
+        action_page: action_page,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted
+      )
+
+    {t1, t2} = Enum.split(targets, 3)
+
+    test_messages = Enum.map(t1, &Factory.insert(:message, action: action1, target: &1))
+    live_messages = Enum.map(t2, &Factory.insert(:message, action: action2, target: &1))
+
+    %{
+      org: org,
+      campaign: campaign,
+      action_page: action_page,
+      targets: targets,
+      test_messages: test_messages,
+      live_messages: live_messages
     }
   end
 end

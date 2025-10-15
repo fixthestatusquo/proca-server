@@ -326,7 +326,7 @@ defmodule Proca.Server.MTTWorker do
       ) do
     email_to =
       if is_test do
-        %Proca.TargetEmail{email: supporter.email, email_status: :none}
+        %Proca.TargetEmail{email: test_email || supporter.email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
           email_to.email_status in [:active, :none]
