@@ -5,29 +5,38 @@ defmodule Proca.Server.MTTHourlyCron do
   alias Proca.Server.MTTContext
   alias Proca.Server.MTTSupervisor
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true
-  def init(state) do
-    schedule_next_hour()
+  def init(opts) do
+    interval = Keyword.get(opts, :interval, 60 * 60 * 1000) # default 1 hour
 
-    {:ok, state}
+    schedule_next_hour(interval)
+
+    {:ok, %{interval: interval}}
   end
 
-  defp schedule_next_hour() do
+  defp schedule_next_hour(interval) do
     now = DateTime.utc_now()
 
-    next_hour =
-      %{now | minute: 0, second: 0, microsecond: {0, 0}}
-      |> DateTime.add(3600, :second)
+    next_run =
+      case interval >= 60 * 60 * 1000 do
+        true ->
+          %{now | minute: 0, second: 0, microsecond: {0, 0}}
 
-    interval = DateTime.diff(next_hour, now, :millisecond)
+        _ ->
+          now
 
-    Logger.info("Next MTT CRON run in #{interval}")
+      end
+      |> DateTime.add(interval, :millisecond)
 
-    Process.send_after(self(), :run_mtt, interval)
+    delay = DateTime.diff(next_run, now, :millisecond)
+
+    # Logger.info("Next MTT CRON run in #{delay} ms")
+
+    Process.send_after(self(), :run_mtt, delay)
   end
 
   @impl true
@@ -41,7 +50,7 @@ defmodule Proca.Server.MTTHourlyCron do
       MTTSupervisor.start_mtt_scheduler(target, max_emails_per_hour)
     end)
 
-    schedule_next_hour()
+    schedule_next_hour(state.interval)
 
     {:noreply, state}
   end

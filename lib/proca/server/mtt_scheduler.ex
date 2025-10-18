@@ -37,7 +37,9 @@ defmodule Proca.Server.MTTScheduler do
 
   @impl true
   def handle_info({:send_message}, %{messages: []} = state) do
-    {:stop, :normal, state}
+    Logger.info("No messages to send for #{state.target.id}, stopping scheduler")
+
+    {:stop, :normal, %{state | count: 0}}
   end
 
   @impl true
@@ -69,11 +71,11 @@ defmodule Proca.Server.MTTScheduler do
     {:noreply, state}
   end
 
-  defp calc_interval(messages_count, _, 1) when messages_count > 1 and rem(messages_count, 2) == 0 do
+  def calc_interval(messages_count, _, 1) when messages_count > 1 and rem(messages_count, 2) == 0 do
     div(@one_hour_ms, max(messages_count - 1, 1))
   end
 
-  defp calc_interval(messages_count, jitter_toggle, left_messages_count)
+  def calc_interval(messages_count, jitter_toggle, left_messages_count)
        when messages_count > 1 and left_messages_count > 0 do
     base = div(@one_hour_ms, max(messages_count - 1, 1))
 
@@ -85,5 +87,5 @@ defmodule Proca.Server.MTTScheduler do
     max(base + jitter, 1000)
   end
 
-  defp calc_interval(_, _, _), do: 10
+  def calc_interval(_, _, _), do: 10
 end

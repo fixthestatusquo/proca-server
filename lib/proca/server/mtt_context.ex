@@ -15,8 +15,7 @@ defmodule Proca.Server.MTTContext do
   require Logger
 
   @default_locale "en"
-  # 1 day ago
-  @recent_test_messages -1 * 60 * 60 * 24
+  @recent_test_messages -1 * 60 * 60 * 24 # 1 day ago
 
   def get_active_targets() do
     from(
@@ -54,15 +53,9 @@ defmodule Proca.Server.MTTContext do
   end
 
   def process_test_mails(target) do
-    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
-
     Repo.delete_all(query_test_emails_to_delete())
 
-    test_emails =
-      query_emails_to_send(target.id, false, true)
-      |> where([m, t, a], a.inserted_at >= ^recent)
-      |> order_by([m], asc: m.id)
-      |> Repo.all()
+    test_emails = get_pending_test_messages(target.id)
 
     if target.campaign.org.email_backend != nil do
       deliver_messages(target, test_emails)
@@ -70,6 +63,17 @@ defmodule Proca.Server.MTTContext do
     else
       {target.id, 0}
     end
+  end
+
+  def get_pending_test_messages(target_id) do
+    recent =
+      DateTime.utc_now()
+      |> DateTime.add(@recent_test_messages, :second)
+
+    query_emails_to_send(target_id, false, true)
+    |> where([m, t, a], a.inserted_at >= ^recent)
+    |> order_by([m], asc: m.id)
+    |> Repo.all()
   end
 
   def deliver_messages(target, msgs) do
@@ -112,6 +116,7 @@ defmodule Proca.Server.MTTContext do
       {msgs, testing} = Enum.split(msgs, 1)
 
       Message.mark_all(testing, :delivered)
+      Message.mark_all(testing, :sent)
 
       for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(target.campaign.org)) do
         batch =
@@ -211,7 +216,7 @@ defmodule Proca.Server.MTTContext do
 
   def max_emails_per_hour(%Campaign{mtt: %{max_emails_per_hour: nil, timezone: _}} = campaign) do
     limit_emails_per_hour =
-      Application.get_env(:proca, Proca.Server.MTTWorker)
+      Application.get_env(:proca, Proca.Server.MTTScheduler)
       |> Access.get(:max_emails_per_hour, 30)
 
     mtt = %{campaign.mtt | max_emails_per_hour: limit_emails_per_hour}
@@ -223,7 +228,7 @@ defmodule Proca.Server.MTTContext do
   def max_emails_per_hour(%Campaign{
         mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone}
       }) do
-    Application.get_env(:proca, Proca.Server.MTTWorker)
+    Application.get_env(:proca, Proca.Server.MTTScheduler)
     |> Access.get(:messages_ratio_per_hour)
     |> Access.get(DateTime.now!(timezone).hour)
     |> Kernel.*(max_emails_per_hour)
@@ -265,11 +270,11 @@ defmodule Proca.Server.MTTContext do
       join: mc in assoc(m, :message_content),
       where:
         m.target_id == ^target_id and
-          a.processing_status == :delivered and
-          a.testing == ^testing and
-          m.sent in ^sent and
-          m.dupe_rank == 0 and
-          mc.subject != "" and mc.body != "",
+        a.processing_status == :delivered and
+        a.testing == ^testing and
+        m.sent in ^sent and
+        m.dupe_rank == 0 and
+        mc.subject != "" and mc.body != "",
       order_by: [asc: m.id],
       distinct: m.id,
       preload: [

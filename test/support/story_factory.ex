@@ -260,9 +260,9 @@ defmodule Proca.StoryFactory do
 
     provider = Factory.insert(:email_backend, host: "mtt.org", org: org)
 
-    org = Repo.update!(Repo.change(org, email_backend: provider))
+    org = Repo.update!(Ecto.Changeset.change(org, email_backend: provider))
 
-    campaign =
+    campaign_1 =
       Factory.insert(:campaign,
         org: org,
         name: "mtt",
@@ -270,36 +270,68 @@ defmodule Proca.StoryFactory do
         mtt: Factory.build(:mtt)
       )
 
-    action_page = Factory.insert(:action_page, org: org, campaign: campaign, name: "mtt/en", locale: "en")
-    targets = Factory.insert_list(10, :target, campaign: campaign)
+    campaign_2 =
+      Factory.insert(:campaign,
+        org: org,
+        name: "mtt2",
+        title: "Mail To Target 2",
+        mtt: Factory.build(:mtt)
+      )
 
-    action1 =
-        Factory.insert(:action,
-          action_page: action_page,
-          processing_status: :delivered,
-          supporter_processing_status: :accepted,
-          testing: true
-        )
+    targets_1 = Factory.insert_list(2, :target, campaign: campaign_1)
+    targets_2 = Factory.insert_list(8, :target, campaign: campaign_2)
 
-    action2 =
-      Factory.insert(:action,
-        action_page: action_page,
+    action_page_1 = Factory.insert(:action_page, org: org, campaign: campaign_1, name: "mtt/uk", locale: "uk")
+    action_page_2 = Factory.insert(:action_page, org: org, campaign: campaign_2, name: "mtt2/en", locale: "en")
+
+    actions_1 =
+      Factory.insert_list(2, :action,
+        action_page: action_page_1,
         processing_status: :delivered,
         supporter_processing_status: :accepted
       )
 
-    {t1, t2} = Enum.split(targets, 3)
+    actions_2 =
+      Factory.insert_list(8, :action,
+        action_page: action_page_2,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted
+      )
 
-    test_messages = Enum.map(t1, &Factory.insert(:message, action: action1, target: &1))
-    live_messages = Enum.map(t2, &Factory.insert(:message, action: action2, target: &1))
+    action_test =
+      Factory.insert(:action,
+        action_page: action_page_1,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted,
+        testing: true
+      )
+
+    targets_1
+    |> Enum.map(fn target ->
+      actions_1
+      |> Enum.map(fn action ->
+        Factory.insert(:message, action: action, target: target)
+      end)
+    end)
+
+    targets_2
+    |> Enum.map(fn target ->
+      actions_2
+      |> Enum.map(fn action ->
+        Factory.insert(:message, action: action, target: target)
+      end)
+    end)
+
+    targets = targets_1 |> Enum.concat(targets_2)
+
+    target_0 = hd(targets)
+
+    messages_test =
+      Factory.insert_list(2, :message, action: action_test, target: target_0)
 
     %{
-      org: org,
-      campaign: campaign,
-      action_page: action_page,
       targets: targets,
-      test_messages: test_messages,
-      live_messages: live_messages
+      messages_test: messages_test
     }
   end
 end
