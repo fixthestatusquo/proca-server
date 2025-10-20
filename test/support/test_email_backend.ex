@@ -180,7 +180,7 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
-  def deliver(emails, _org) do
+  def deliver(emails, _org) when is_list(emails) do
     for e <- emails do
       t = e.private[:template]
 
@@ -199,6 +199,28 @@ defmodule Proca.TestEmailBackend do
       [to | _] = e.to
       send_to(to, e)
     end
+
+    :ok
+  end
+
+  @impl true
+  def deliver(email, _org) do
+    t = email.private[:template]
+
+    email =
+      if t != nil do
+        email
+        |> Email.put_provider_option(:template_ref, t.ref)
+        |> Email.put_provider_option(:custom_id, email.private[:custom_id])
+        |> Email.subject(t.subject)
+        |> Email.text_body(t.text)
+        |> Email.html_body(t.html)
+      else
+        email
+      end
+
+    [to | _] = email.to
+    send_to(to, email)
 
     :ok
   end
