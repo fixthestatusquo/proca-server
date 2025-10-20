@@ -15,23 +15,38 @@ defmodule Proca.Server.MTTSchedulerTest do
 
   setup do
     %{
-      targets: [target, _, target_live | _],
-      messages_test: messages_test
+      targets: targets,
+      messages_test: messages_test,
+      messages_live: messages_live
     } = mtt_story()
 
     MTTContext.dupe_rank()
 
-    max_emails = MTTContext.max_emails_per_hour(target.campaign)
-
-    %{target: target, target_live: target_live, max_emails: max_emails, messages_test: messages_test}
+    %{targets: targets, messages_test: messages_test, messages_live: messages_live}
   end
 
   describe "MTTScheduler" do
-    test "Check test emails properly processed", %{target: target, messages_test: messages_test} do
+    test "Check test emails properly processed", %{targets: [%{emails: [%{email: test_email}]} = target | _], messages_test: messages_test} do
+      target  =
+        target
+        |> Map.put(:campaign,
+          target.campaign
+          |> Map.put(:mtt, Repo.update!(Ecto.Changeset.change(target.campaign.mtt, %{test_email: test_email})))
+        )
+
       {target_id, count} = MTTContext.process_test_mails(target)
 
       assert target_id == target.id
       assert count == Enum.count(messages_test)
+
+      mbox = Proca.TestEmailBackend.mailbox(test_email)
+
+      # limit to one per locale!
+      assert length(mbox) == 1
+      msg = mbox |> List.first()
+
+      assert String.starts_with?(msg.subject, "[TEST]")
+      assert msg.cc == [{"", test_email}]
 
       # check for pending test messages after processing
       pending_messages = MTTContext.get_pending_test_messages(target_id)
@@ -39,21 +54,31 @@ defmodule Proca.Server.MTTSchedulerTest do
       assert Enum.count(pending_messages) == 0
     end
 
-    test "Delivering messages", %{target_live: target} do
+    test "Delivering messages", %{targets: [_, _, %{emails: [%{email: email}]} = target | _], messages_live: messages_live} do
       max_emails = MTTContext.max_emails_per_hour(target.campaign)
 
-      message =
-        MTTContext.get_pending_messages(target.id, max_emails)
-        |> List.first()
+      MTTContext.get_pending_messages(target.id, max_emails)
+      |> Enum.each(fn message ->
+        assert MTTContext.deliver_message(target, message) == :ok
 
-      assert :ok == MTTContext.deliver_message(target, message)
+        message = Repo.get(Proca.Action.Message, message.id)
+        assert message.sent == true
+      end)
 
-      message = Repo.get(Proca.Action.Message, message.id)
+      target_email = Proca.TargetEmail.one(target_id: target.id)
+      assert target_email.email_status == :active
 
-      assert true == message.sent
+      mbox = Proca.TestEmailBackend.mailbox(email)
+
+      assert Enum.count(mbox) == Enum.count(messages_live)
+
+      msg = List.first(mbox)
+      assert %{"Reply-To" => _} = msg.headers
     end
 
-    test "check that after sending there're no pending messages", %{target: target, max_emails: max_emails} do
+    test "check that after sending there're no pending messages", %{targets: [target | _]} do
+      max_emails = MTTContext.max_emails_per_hour(target.campaign)
+
       # pending_messages before sending
       pending_messages_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
 

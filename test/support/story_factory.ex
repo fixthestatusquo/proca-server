@@ -314,13 +314,14 @@ defmodule Proca.StoryFactory do
       end)
     end)
 
-    targets_2
-    |> Enum.map(fn target ->
-      actions_2
-      |> Enum.map(fn action ->
-        Factory.insert(:message, action: action, target: target)
+    messages_live =
+      targets_2
+      |> Enum.map(fn target ->
+        actions_2
+        |> Enum.map(fn action ->
+          Factory.insert(:message, action: action, target: target)
+        end)
       end)
-    end)
 
     targets = targets_1 |> Enum.concat(targets_2)
 
@@ -331,7 +332,8 @@ defmodule Proca.StoryFactory do
 
     %{
       targets: targets,
-      messages_test: messages_test
+      messages_test: messages_test,
+      messages_live: messages_live
     }
   end
 end
