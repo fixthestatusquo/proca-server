@@ -63,7 +63,7 @@ defmodule Proca.MixProject do
       {:jason, "~> 1.2"},
       {:sentry, "~> 8.0"},
       {:plug_cowboy, "~> 2.3"},
-      {:absinthe, "1.7.0", github: "marcinkoziej/absinthe", branch: "fix/1149", override: true},
+      {:absinthe, "1.7.0"},
       {:absinthe_phoenix, "~> 2.0.2"},
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
