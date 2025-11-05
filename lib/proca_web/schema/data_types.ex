@@ -85,6 +85,7 @@ defmodule ProcaWeb.Schema.DataTypes do
   end
 
   enum :campaign_status do
+    value(:draft)
     value(:live)
     value(:closed)
     value(:ignored)

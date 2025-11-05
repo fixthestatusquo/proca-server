@@ -57,6 +57,7 @@ config :proca, Proca,
 
 # Defaults only for development
 config :proca, Proca.Service.EmailBackend,
+  services: [Proca.Service.SES, Proca.Service.Mailjet, Proca.Service.SMTP, Proca.Service.Preview],
   srs_key: System.get_env("EMAIL_SRS_KEY") || "teiy1sah8seengiem0ee2Yai",
   srs_prefix: System.get_env("EMAIL_SRS_PREFIX") || "SRS0"
 
@@ -123,6 +124,8 @@ config :tailwind,
   ),
     cd: Path.expand("../assets", __DIR__)
   ]
+
+config :swoosh, storage_driver: Proca.Service.Preview.OrgStorage
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

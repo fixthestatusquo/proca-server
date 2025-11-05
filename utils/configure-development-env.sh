@@ -16,16 +16,31 @@ INTRO
 
 echo " ==== Initializing PostgreSQL =========== "
 
-sudo -u postgres psql template1 -c 'create extension if not exists citext;'
-sudo -u postgres createdb proca;
-sudo -u postgres createdb proca_test;
-sudo -u postgres psql -c "
-create role proca with login password 'proca';
-grant all privileges on database proca to proca;
-grant all privileges on database proca_test to proca;
-GRANT ALL ON SCHEMA public TO proca;
-GRANT ALL ON SCHEMA public TO proca;
-"
+sudo -u postgres psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS citext;"
+
+# Drop databases if you want a clean start (optional)
+# sudo -u postgres dropdb --if-exists proca
+# sudo -u postgres dropdb --if-exists proca_test
+
+# Create databases (will do nothing if they exist)
+sudo -u postgres createdb --if-not-exists proca
+sudo -u postgres createdb --if-not-exists proca_test
+
+# Create role if it does not exist
+sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='proca'" | grep -q 1 || \
+sudo -u postgres psql -c "CREATE ROLE proca WITH LOGIN PASSWORD 'proca';"
+
+# Grant privileges on databases
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE proca TO proca;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE proca_test TO proca;"
+
+# Grant privileges on schema public for both DBs
+for db in proca proca_test; do
+  sudo -u postgres psql -d $db -c "GRANT ALL PRIVILEGES ON SCHEMA public TO proca;"
+  sudo -u postgres psql -d $db -c "CREATE EXTENSION IF NOT EXISTS citext;"  # ensure citext in each DB
+done
+
+echo "Postgres setup completed successfully."
 
 echo " ==== Installing up RabbitMQ  dependencies  =========== "
 

@@ -23,12 +23,12 @@ defmodule Proca.Server.MTTWorker do
   import Ecto.Query
 
   alias Swoosh.Email
-  alias Proca.{Action, Campaign, ActionPage, Org, Users.User, TargetEmail}
+  alias Proca.{Action, Campaign, ActionPage, Org, TargetEmail}
   alias Proca.Action.Message
-  alias Proca.Service.{EmailBackend, EmailTemplate}
+  alias Proca.Service.{EmailBackend, EmailTemplate, EmailMerge, EmailTemplateDirectory}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
-  import Logger
+  require Logger
 
   @default_locale "en"
 
@@ -189,8 +189,6 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def get_emails_to_send(target_ids, {cycle, all_cycles}) do
-    import Ecto.Query
-
     # Subquery to count delivered/goal messages for each target
     progress_per_target =
       Message.select_by_targets(target_ids, [false, true])
@@ -226,13 +224,16 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def send_emails(campaign, msgs) do
-    alias Proca.Service.{EmailMerge, EmailTemplateDirectory}
-
     org = Org.one(id: campaign.org_id, preload: [:email_backend, :storage_backend])
 
     # fetch action pages for email merge
-    action_pages_ids = Enum.map(msgs, fn m -> m.action.action_page_id end)
-    action_pages = ActionPage.all(preload: [:org], by_ids: action_pages_ids) |> Enum.into(%{})
+    action_pages_ids =
+      msgs
+      |> Enum.map(fn m -> m.action.action_page_id end)
+
+    action_pages =
+      ActionPage.all(preload: [:org], by_ids: action_pages_ids)
+      |> Enum.into(%{})
 
     msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 
@@ -247,8 +248,11 @@ defmodule Proca.Server.MTTWorker do
     templates =
       Enum.map(target_locales, fn locale ->
         case EmailTemplateDirectory.by_name_reload(org, campaign.mtt.message_template, locale) do
-          {:ok, t} -> {locale, t}
-          err when err in [:not_found] -> {locale, nil}
+          {:ok, t} ->
+            {locale, t}
+
+          err when err in [:not_found] ->
+            {locale, nil}
         end
       end)
       |> Enum.into(%{})

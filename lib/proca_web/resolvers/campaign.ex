@@ -5,8 +5,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
   import Ecto.Query
   import Proca.Repo
   alias Proca.Auth
-  alias Proca.{Campaign, ActionPage, Staffer, Org, Confirm, Target}
-  import Proca.Permission
+  alias Proca.{Campaign, ActionPage, Org, Confirm}
   alias ProcaWeb.Helper
   alias Ecto.Multi
 
@@ -163,6 +162,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
   def update(_, %{input: params}, %{context: %{campaign: campaign}}) do
     campaign
     |> Campaign.changeset(params)
+    |> update_and_notify()
+  end
+
+  def update_campaign_processing(_, args, %{context: %{campaign: campaign}}) do
+    campaign
+    |> Campaign.changeset(args)
     |> update_and_notify()
   end
 

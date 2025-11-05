@@ -6,7 +6,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Query
   import Ecto.Changeset
 
-  alias Proca.{ActionPage, Campaign, Action, Permission}
+  alias Proca.{ActionPage, Campaign, Action}
   alias Proca.{Org, Staffer, PublicKey, Service, Auth}
   alias ProcaWeb.{Error, Helper}
   alias ProcaWeb.Resolvers.ChangeAuth

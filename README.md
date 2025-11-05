@@ -9,8 +9,6 @@
 
 # 🌍 [Proca server](https://docs.proca.app)
 
-A universal action backend for JAMstack apps.
-
 **Proca Server** is an [Elixir](https://elixir-lang.org/) application that uses **PostgreSQL** as a datastore and **RabbitMQ** for asynchronous data processing. It serves as the backend for the [Proca Widget](https://github.com/FixTheStatusQuo/proca), providing campaign infrastructure for NGO and non-profit movements.
 
 This is a (mostly headless) [Phoenix Framework](https://www.phoenixframework.org/) app, built using standard Phoenix practices. If you're new to Phoenix, we recommend reading up on its conventions to contribute effectively — see the [development guide](https://hexdocs.pm/phoenix/up_and_running.html) and [deployment guide](https://hexdocs.pm/phoenix/deployment.html).
@@ -29,7 +27,7 @@ This project is released under a [Contributor Code of Conduct](code_of_conduct.m
 
 ## ✨ Features
 
-- **Headless architecture** – Built to serve JAMstack apps via APIs.
+- **Headless architecture** – Built to serve apps via APIs.
 - **GraphQL API** – Flexible and efficient data querying.
 - **Fine-grained permission system** – Users are organized into _Organizations (Orgs)_ with specific roles and access scopes.
 - **Authentication** – Supports HTTP Basic Auth or JWT tokens (ideal for external identity providers).

@@ -1,8 +1,6 @@
 defmodule Proca.Stage.MessageV1 do
-  alias Proca.{Action, Supporter, PublicKey, Contact, Field, Confirm}
+  alias Proca.{Action, Supporter, PublicKey, Contact}
   alias Proca.Repo
-  import Ecto.Query, only: [from: 2]
-  alias Broadway.Message
   alias Proca.Stage.Support
 
   def tracking_data(%Action{source: s}) when not is_nil(s) do

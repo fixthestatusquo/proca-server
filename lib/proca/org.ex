@@ -108,7 +108,7 @@ defmodule Proca.Org do
       :custom_event_deliver,
       :action_schema_version
     ])
-    |> cast_backend(:email_backend, [:mailjet, :ses, :smtp, :system, :testmail], attrs, org)
+    |> cast_backend(:email_backend, [:mailjet, :ses, :smtp, :system, :testmail, :preview], attrs, org)
     |> cast_backend(:event_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:push_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:storage_backend, [:supabase], attrs, org)

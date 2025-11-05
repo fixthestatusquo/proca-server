@@ -123,4 +123,14 @@ defmodule ProcaWeb.Router do
     get "/users/confirm/:token", UserConfirmationController, :edit
     post "/users/confirm/:token", UserConfirmationController, :update
   end
+
+  if Mix.env == :dev do
+    scope "/mailbox" do
+      pipe_through :browser
+      
+      get "/:org_name", ProcaWeb.MailboxPlug, :show
+
+      forward "/", Plug.Swoosh.MailboxPreview
+    end
+  end
 end

@@ -54,7 +54,7 @@ defmodule Proca.Server.Notify do
   """
 
   alias Proca.Repo
-  alias Proca.{Action, Supporter, Org, PublicKey, Confirm, Service, ActionPage, Campaign}
+  alias Proca.{Action, Supporter, Org, PublicKey, Confirm, ActionPage, Campaign}
   alias Proca.Stage.Event
   alias Proca.Pipes
   import Logger

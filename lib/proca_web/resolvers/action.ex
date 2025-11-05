@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Action do
   import Logger
   alias Ecto.Multi
 
-  alias Proca.{Supporter, Action, ActionPage, Source, Contact, Org}
+  alias Proca.{Supporter, Action, ActionPage, Source}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
   alias Proca.Repo

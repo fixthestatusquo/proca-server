@@ -72,6 +72,8 @@ defmodule Proca.Service.EmailBackend do
 
   def service_module(:smtp), do: Proca.Service.SMTP
 
+  def service_module(:preview), do: Proca.Service.Email.Preview
+
   def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
   end
@@ -176,7 +178,7 @@ defmodule Proca.Service.EmailBackend do
     %{org: via_org} = Proca.Repo.preload(srv, [:org])
 
     [username, domain] = Regex.split(~r/@/, from_email)
-    [via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
+    [_via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
 
     cond do
       # FROM set, but matching the sending backend

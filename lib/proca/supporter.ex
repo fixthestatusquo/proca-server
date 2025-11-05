@@ -59,7 +59,6 @@ defmodule Proca.Supporter do
   alias Proca.{Supporter, Contact, ActionPage}
   alias Proca.Contact.Data
   alias Proca.Supporter.Privacy
-  alias Proca.MTT
   import Ecto.Changeset
 
   schema "supporters" do
@@ -169,13 +168,40 @@ defmodule Proca.Supporter do
 
   def reject(sup = %Supporter{}) do
     case sup.processing_status do
-      :new -> {:error, "not allowed"}
-      :confirming -> Repo.update(change(sup, processing_status: :rejected))
-      :rejected -> {:noop, "supporter data already rejected"}
-      :accepted -> {:noop, "supporter data already processed"}
-      :delivered -> {:error, "supporter data already processed"}
+      :new ->
+        {:error, "not allowed"}
+
+      :confirming ->
+        Repo.update(change(sup, processing_status: :rejected))
+
+      :rejected ->
+        {:noop, "supporter data already rejected"}
+
+      :accepted ->
+        update_supporter_reject(sup)
+
+      :delivered ->
+        update_supporter_reject(sup)
     end
   end
+
+    defp update_supporter_reject(sup = %Supporter{}) do
+      changeset =
+        sup
+        |> change(processing_status: :rejected)
+        |> maybe_revoke_doi()
+
+      Repo.update(changeset)
+    end
+
+    defp maybe_revoke_doi(changeset = %Ecto.Changeset{data: sup}) do
+      if sup.email_status == :double_opt_in do
+        Supporter.changeset(sup, %{email_status: :unsub})
+        |> Ecto.Changeset.merge(changeset)
+      else
+        changeset
+      end
+    end
 
   def privacy_defaults(p = %{opt_in: _opt_in, lead_opt_in: _lead_opt_in}) do
     p
@@ -261,8 +287,6 @@ defmodule Proca.Supporter do
   end
 
   def clear_transient_fields(supporter_change) do
-    import Ecto.Query
-
     supporter = supporter_change.data
 
     fields =

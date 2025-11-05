@@ -20,6 +20,8 @@ defmodule Proca.Campaign do
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
     field :status, CampaignStatus, default: :live
+    field :supporter_confirm, :boolean, default: false
+    field :supporter_confirm_template, :string
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -34,7 +36,16 @@ defmodule Proca.Campaign do
     assocs = Map.take(attrs, [:org])
 
     campaign
-    |> cast(attrs, [:name, :title, :external_id, :config, :contact_schema, :status])
+    |> cast(attrs, [
+      :name,
+      :title,
+      :external_id,
+      :config,
+      :contact_schema,
+      :status,
+      :supporter_confirm,
+      :supporter_confirm_template
+    ])
     |> change(assocs)
     |> cast_assoc(:mtt)
     |> validate_required([:name, :title, :contact_schema])
