@@ -44,11 +44,11 @@ echo "Postgres setup completed successfully."
 
 echo " ==== Installing up RabbitMQ  dependencies  =========== "
 
-./utils/configure-rabbitmq-develop.sh
+$(dirname "$0")/configure-rabbitmq-develop.sh
 
 echo " ==== Configuring RabbitMQ for development user   =========== "
 
-./utils/configure-rabbitmq.sh
+$(dirname "$0")/configure-rabbitmq.sh
 
 echo " ==== Running npm install in assets ==== "
 

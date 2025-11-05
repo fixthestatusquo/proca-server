@@ -353,7 +353,7 @@ defmodule ProcaWeb.Resolvers.Org do
          }}
 
       %PublicKey{} ->
-        pk =
+        _pk =
           PublicKey.activate_for(org, id)
           |> Repo.transaction_and_notify(:key_activated)
 

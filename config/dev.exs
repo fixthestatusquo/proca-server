@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Configure your database
 
@@ -101,7 +101,9 @@ config :proca, ProcaWeb.Endpoint,
 # config :logger, :console, format: "[$level] $message\n"
 # Configures Elixir's Logger
 config :logger,
-  backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}],
+  backends: [:console, {LoggerFileBackend, :error_log}, {LoggerFileBackend, :audit_log}]
+
+config :logger, :console,
   format: "$date $time $metadata[$level] $message\n",
   metadata: [:request_id, :user, :operation]
 

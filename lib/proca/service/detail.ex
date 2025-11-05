@@ -127,7 +127,7 @@ defmodule Proca.Service.Detail do
           error ->
             em = ProcaWeb.Helper.format_errors(error)
 
-            warn(
+            warning(
               "Lookup service returned invalid data: (id #{srv.id}) at #{srv.host}: #{inspect(em)}"
             )
 
@@ -147,7 +147,7 @@ defmodule Proca.Service.Detail do
           result: :none
         )
 
-        warn(
+        warning(
           "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{inspect(other)}"
         )
 

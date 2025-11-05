@@ -142,11 +142,11 @@ defmodule EciDataTest do
     assert not c.valid?
 
     assert [
+             %{message: "can't be blank", path: ["nationality", "documentType"]},
              %{
                message: "can't be blank",
                path: ["nationality", "documentNumber"]
-             },
-             %{message: "can't be blank", path: ["nationality", "documentType"]}
+             }
            ] = format_errors(c)
 
     wrong_type = %{d | nationality: %{n | document_type: "id.card"}}
