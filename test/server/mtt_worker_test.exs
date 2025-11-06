@@ -171,6 +171,11 @@ defmodule Proca.Server.MTTWorkerTest do
     test "live sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
       msgs = MTTWorker.get_emails_to_send([tid], {1, 1})
 
+      c =
+        Proca.Repo.update!(
+          change(c, %{cc_contacts: ["first@domain.com", "second@domain.com"], cc_sender: true})
+        )
+
       assert Enum.all?(msgs, fn %{
                                   action: %{
                                     supporter: %{
@@ -191,6 +196,7 @@ defmodule Proca.Server.MTTWorkerTest do
       assert length(mbox) == 20
 
       msg = List.first(mbox)
+      assert msg.cc == [{"", "first@domain.com"}, {"", "second@domain.com"}, _]
       assert %{"Reply-To" => _} = msg.headers
     end
   end
