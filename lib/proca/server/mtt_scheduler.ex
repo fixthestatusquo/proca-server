@@ -8,7 +8,7 @@ defmodule Proca.Server.MTTScheduler do
 
   alias Proca.Server.MTTContext
 
-  @one_hour_ms 59 * 60 * 1000
+  @one_hour_ms 55 * 60 * 1000
 
   def start_link(target, max_emails_per_hour) do
     GenServer.start_link(__MODULE__, {target, max_emails_per_hour})
@@ -19,16 +19,6 @@ defmodule Proca.Server.MTTScheduler do
     Task.start(fn -> MTTContext.process_test_mails(target) end)
 
     messages = MTTContext.get_pending_messages(target.id, max_emails_per_hour)
-
-    :telemetry.execute(
-      [:proca, :mtt],
-      %{sendable_messages: length(messages), max_emails_per_hour: max_emails_per_hour},
-      %{target_id: target.id, campaign_id: target.campaign.id, campaign_name: target.campaign.name}
-    )
-
-    Logger.info(
-      "#{Enum.count(messages)} messages for target #{target.id} with max #{max_emails_per_hour} emails/hour"
-    )
 
     send(self(), {:send_message})
 
@@ -53,11 +43,7 @@ defmodule Proca.Server.MTTScheduler do
 
     interval = calc_interval(state.count, jitter_toggle, length(rest))
 
-    :telemetry.execute(
-      [:proca, :mtt],
-      %{left_messages: length(rest), interval: interval},
-      %{target_id: target.id, campaign_id: target.campaign.id, campaign_name: target.campaign.name}
-    )
+    Logger.info("Messages interval #{interval} ms for target #{target.id}")
 
     Process.send_after(self(), {:send_message}, interval)
 
@@ -87,5 +73,5 @@ defmodule Proca.Server.MTTScheduler do
     max(base + jitter, 1000)
   end
 
-  def calc_interval(_, _, _), do: 10
+  def calc_interval(_, _, _), do: 1000
 end

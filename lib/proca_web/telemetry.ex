@@ -105,7 +105,7 @@ defmodule ProcaWeb.Telemetry do
         unit: {:native, :millisecond},
         tags: [:org_id]
       ),
-      sum("proxa.exporter.export_actions.count", tags: [:org_id]),
+      sum("proca.exporter.export_actions.count", tags: [:org_id]),
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
@@ -115,6 +115,15 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
       sum("proca.mtt.messages_sent", tags: @campaign_tags),
+
+      # MTT New Algo
+      # currently running target with max_emails_per_hour
+      counter("proca.mtt_new.target_started.count",
+        tags: [:target_id, :max_emails_per_hour]
+      ),
+      # count sent messages per target
+      counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
+
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
       last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
@@ -133,10 +142,10 @@ defmodule ProcaWeb.Telemetry do
   end
 
   defp enable_telemetry? do
-    Application.get_env(:proca, ProcaWeb.Telemetry, [enable: true])[:enable]
+    Application.get_env(:proca, ProcaWeb.Telemetry, enable: true)[:enable]
   end
 
   defp prometheus_port do
-    Application.get_env(:proca, __MODULE__, [port: 9568])[:port]
+    Application.get_env(:proca, __MODULE__, port: 9568)[:port]
   end
 end

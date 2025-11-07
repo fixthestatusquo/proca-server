@@ -18,6 +18,10 @@ defmodule Proca.Server.MTTContext do
   @recent_test_messages -1 * 60 * 60 * 24 # 1 day ago
 
   def get_active_targets() do
+    new_algo_target_ids =
+      Application.get_env(:proca, Proca.Server.MTTScheduler)
+      |> Access.get(:new_algo_target_ids)
+
     from(
       target in Proca.Target,
       join: campaign in assoc(target, :campaign),
@@ -26,29 +30,37 @@ defmodule Proca.Server.MTTContext do
       join: email_backend in assoc(org, :email_backend),
       join: te in assoc(target, :emails),
       where:
+        target.id in ^new_algo_target_ids and
         not is_nil(email_backend) and
           te.email_status in [:active, :none] and
           mtt.start_at <= from_now(0, "day") and
-          mtt.end_at > from_now(0, "day") and
+          mtt.end_at >= from_now(-1, "hour") and
           fragment(
             "CAST(? AS TIME) BETWEEN CAST(? AS TIME) AND CAST(? AS TIME)",
-            from_now(0, "day"),
+            from_now(-1, "hour"),
             mtt.start_at,
             mtt.end_at
           ),
       order_by: fragment("RANDOM()"),
       distinct: target.id,
       select: %{
-        target
-        | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
+        target | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
       }
     )
     |> Repo.all()
   end
 
   def get_pending_messages(target_id, max_emails_per_hour, sent \\ false, testing \\ false) do
-    query_emails_to_send(target_id, sent, testing)
-    |> limit(^max_emails_per_hour)
+    q = query_emails_to_send(target_id, sent, testing)
+
+    case max_emails_per_hour do
+      :all ->
+        q
+
+      _ ->
+        q
+        |> limit(^max_emails_per_hour)
+    end
     |> Repo.all()
   end
 
@@ -164,7 +176,11 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_message(target, msg) do
-    Logger.info("Delivering message #{msg.id} to target #{target.id} at #{DateTime.utc_now()}")
+    :telemetry.execute(
+      [:proca, :mtt_new, :deliver_message],
+      %{},
+      %{target_id: target.id}
+    )
 
     locale = target.locale || @default_locale
 
@@ -225,15 +241,19 @@ defmodule Proca.Server.MTTContext do
     max_emails_per_hour(campaign)
   end
 
-  def max_emails_per_hour(%Campaign{
-        mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone}
-      }) do
-    Application.get_env(:proca, Proca.Server.MTTScheduler)
-    |> Access.get(:messages_ratio_per_hour)
-    |> Access.get(DateTime.now!(timezone).hour)
-    |> Kernel.*(max_emails_per_hour)
-    |> floor()
-    |> max(1)
+  def max_emails_per_hour(%Campaign{mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone, end_at: end_at}}) do
+    now =  %{DateTime.utc_now | minute: 0, second: 0, microsecond: {0, 0}}
+
+    if DateTime.diff(end_at, now, :hour) > 1 do
+      Application.get_env(:proca, Proca.Server.MTTScheduler)
+      |> Access.get(:messages_ratio_per_hour)
+      |> Access.get(DateTime.now!(timezone).hour)
+      |> Kernel.*(max_emails_per_hour)
+      |> trunc()
+      |> max(1)
+    else
+      :all
+    end
   end
 
   def dupe_rank() do
@@ -291,7 +311,7 @@ defmodule Proca.Server.MTTContext do
     from m in Message,
       join: a in assoc(m, :action),
       where:
-        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
+        a.processing_status == :delivered and a.testing and a.inserted_at < ^recent
   end
 
   def make_email(

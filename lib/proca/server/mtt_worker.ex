@@ -133,10 +133,17 @@ defmodule Proca.Server.MTTWorker do
   Returns list of ids
   """
   def get_sendable_target_ids(%Campaign{id: id}) do
+    new_algo_target_ids =
+      Application.get_env(:proca, Proca.Server.MTTScheduler)
+      |> Access.get(:new_algo_target_ids)
+
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
       join: te in assoc(t, :emails),
-      where: c.id == ^id and te.email_status in [:active, :none],
+      where:
+        t.id not in ^new_algo_target_ids and
+        c.id == ^id and
+        te.email_status in [:active, :none],
       distinct: t.id,
       select: t.id
     )
@@ -337,12 +344,16 @@ defmodule Proca.Server.MTTWorker do
     supporter_name =
       Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
 
+    ## To test new algo in mailer preview
+    supporter_name_old_algo =
+      "#{supporter_name} old algo target_id = #{message.target.id} testing #{message.action.testing} message_id = #{message_id} DateTime = #{DateTime.utc_now()}"
+
     Proca.Service.EmailBackend.make_email(
       {message.target.name, email_to.email},
       {:mtt, message_id},
       email_to.id
     )
-    |> Email.from({supporter_name, supporter.email})
+    |> Email.from({supporter_name_old_algo, supporter.email})
     |> maybe_add_cc(test_email, is_test)
   end
 
