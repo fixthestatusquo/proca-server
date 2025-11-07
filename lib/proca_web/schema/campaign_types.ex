@@ -333,6 +333,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """
     field :test_email, :string
+
+    @desc """
+    List of additional contacts that will be added to CC.
+    """
+    field :cc_contacts, list_of(:string)
+
+    @desc """
+    If checked, the sender will be added to CC.
+    """
+    field :cc_sender, :boolean
   end
 
   input_object :campaign_mtt_input do
@@ -352,6 +362,16 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     A test target email (yourself) where test mtt actions will be sent (instead to real targets)
     """
     field :test_email, :string
+
+    @desc """
+    List of additional contacts that will be added to CC.
+    """
+    field :cc_contacts, list_of(:string)
+
+    @desc """
+    If checked, the sender will be added to CC.
+    """
+    field :cc_sender, :boolean
   end
 
   # public counters

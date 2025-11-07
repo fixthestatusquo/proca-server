@@ -30,7 +30,15 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email])
+    |> cast(attrs, [
+      :start_at,
+      :end_at,
+      :stats,
+      :message_template,
+      :test_email,
+      :cc_contacts,
+      :cc_sender
+    ])
     |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
