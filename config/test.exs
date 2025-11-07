@@ -27,3 +27,6 @@ config :proca, Proca,
   start_daemon_servers: false
 
 config :proca, Proca.Server.MTTWorker, max_messages_per_cycle: 99
+
+config :proca, Proca.Server.MTTScheduler,
+  new_algo_target_ids: nil

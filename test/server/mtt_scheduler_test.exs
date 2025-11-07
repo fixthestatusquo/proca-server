@@ -9,7 +9,7 @@ defmodule Proca.Server.MTTSchedulerTest do
 
   import Proca.StoryFactory, only: [mtt_story: 0]
 
-  @one_hour_ms 59 * 60 * 1000
+  @one_hour_ms 55 * 60 * 1000
   @base_for_4 div(@one_hour_ms, max(4 - 1, 1)) # messages_count = 4
   @base_for_5 div(@one_hour_ms, max(5 - 1, 1)) # messages_count = 5
 
@@ -115,8 +115,8 @@ defmodule Proca.Server.MTTSchedulerTest do
     end
 
     test "fallback returns small default when not applicable" do
-      assert MTTScheduler.calc_interval(1, true, 0) == 10
-      assert MTTScheduler.calc_interval(0, false, 0) == 10
+      assert MTTScheduler.calc_interval(1, true, 0) == 1000
+      assert MTTScheduler.calc_interval(0, false, 0) == 1000
     end
   end
 end

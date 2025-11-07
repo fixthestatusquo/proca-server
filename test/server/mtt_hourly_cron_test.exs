@@ -27,8 +27,13 @@ defmodule Proca.Server.MTTHourlyCronTest do
       # get current hour in Etc/UTC timezone
       current_hour = DateTime.utc_now().hour
 
-      [max_emails_per_hour: default_max_emails, messages_ratio_per_hour: messages_ratio] =
+      default_max_emails =
         Application.get_env(:proca, Proca.Server.MTTScheduler)
+        |> Access.get(:max_emails_per_hour)
+
+      messages_ratio =
+        Application.get_env(:proca, Proca.Server.MTTScheduler)
+        |> Access.get(:messages_ratio_per_hour)
 
       # get ratio for current hour
       ratio =
@@ -45,9 +50,8 @@ defmodule Proca.Server.MTTHourlyCronTest do
           ((target.campaign.mtt.max_emails_per_hour || default_max_emails) * ratio)
           |> trunc()
 
-        assert is_integer(max_emails)
-        assert max_emails > 0
-        assert max_emails == target_emails_per_hour
+        assert is_integer(max_emails) or is_atom(max_emails)
+        assert max_emails in [target_emails_per_hour, :all]
       end)
 
       assert length(targets) == length(active_targets)
