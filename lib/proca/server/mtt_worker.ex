@@ -279,10 +279,10 @@ defmodule Proca.Server.MTTWorker do
             message_content = change_test_subject(e.message_content, e.action.testing)
 
             cc_recipients =
-              if campaign.cc_sender do
-                [e.action.supporter.email | campaign.cc_contacts]
+              if campaign.mtt.cc_sender do
+                [e.action.supporter.email | campaign.mtt.cc_contacts]
               else
-                campaign.cc_contacts
+                campaign.mtt.cc_contacts
               end
 
             e

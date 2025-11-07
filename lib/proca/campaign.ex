@@ -22,8 +22,6 @@ defmodule Proca.Campaign do
     field :status, CampaignStatus, default: :live
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
-    field :cc_contacts, {:array, :string}, default: []
-    field :cc_sender, :boolean, default: false
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage

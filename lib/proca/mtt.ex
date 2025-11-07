@@ -11,6 +11,8 @@ defmodule Proca.MTT do
     #   field :sending_rate, :integer
     field :stats, :map, default: %{}
     field :test_email, :string
+    field :cc_contacts, {:array, :string}, default: []
+    field :cc_sender, :boolean, default: false
 
     # TODO:
     # field :distributed, :boolean, default: false
