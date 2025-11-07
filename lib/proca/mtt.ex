@@ -9,6 +9,8 @@ defmodule Proca.MTT do
     field :end_at, :utc_datetime
     field :stats, :map, default: %{}
     field :test_email, :string
+    field :cc_contacts, {:array, :string}, default: []
+    field :cc_sender, :boolean, default: false
 
     # TODO:
     # field :distributed, :boolean, default: false
@@ -29,7 +31,17 @@ defmodule Proca.MTT do
     assocs = Map.take(attrs, [:campaign])
 
     mtt
-    |> cast(attrs, [:start_at, :end_at, :stats, :message_template, :test_email, :max_emails_per_hour, :timezone])
+    |> cast(attrs, [
+      :start_at,
+      :end_at,
+      :stats,
+      :message_template,
+      :test_email,
+      :cc_contacts,
+      :cc_sender,
+      :max_emails_per_hour,
+      :timezone
+    ])
     |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)

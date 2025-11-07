@@ -289,8 +289,15 @@ defmodule Proca.Server.MTTWorker do
 
             message_content = change_test_subject(e.message_content, e.action.testing)
 
+            cc_recipients =
+              if campaign.mtt.cc_sender do
+                [e.action.supporter.email | campaign.mtt.cc_contacts]
+              else
+                campaign.mtt.cc_contacts
+              end
+
             e
-            |> make_email(campaign.mtt.test_email)
+            |> make_email(test_email: campaign.mtt.test_email, cc_recipients: cc_recipients)
             |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
             |> EmailMerge.put_campaign(campaign)
             |> EmailMerge.put_action(e.action)
@@ -329,8 +336,11 @@ defmodule Proca.Server.MTTWorker do
 
   def make_email(
         message = %{id: message_id, action: %{supporter: supporter, testing: is_test}},
-        test_email \\ nil
+        opts \\ []
       ) do
+    test_email = opts[:test_email] || nil
+    cc_recipients = opts[:cc_recipients] || []
+
     email_to =
       if is_test do
         %Proca.TargetEmail{email: test_email || supporter.email, email_status: :none}
@@ -344,17 +354,16 @@ defmodule Proca.Server.MTTWorker do
     supporter_name =
       Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
 
-    ## To test new algo in mailer preview
-    supporter_name_old_algo =
-      "#{supporter_name} old algo target_id = #{message.target.id} testing #{message.action.testing} message_id = #{message_id} DateTime = #{DateTime.utc_now()}"
+    email =
+      Proca.Service.EmailBackend.make_email(
+        {message.target.name, email_to.email},
+        {:mtt, message_id},
+        email_to.id
+      )
+      |> Email.from({supporter_name, supporter.email})
+      |> maybe_add_cc(test_email, is_test)
 
-    Proca.Service.EmailBackend.make_email(
-      {message.target.name, email_to.email},
-      {:mtt, message_id},
-      email_to.id
-    )
-    |> Email.from({supporter_name_old_algo, supporter.email})
-    |> maybe_add_cc(test_email, is_test)
+    Enum.reduce(cc_recipients, email, &Email.cc(&2, &1))
   end
 
   def resolve_files(org, file_keys) do

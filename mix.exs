@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.7.0",
+      version: "3.8.0",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -63,7 +63,7 @@ defmodule Proca.MixProject do
       {:jason, "~> 1.2"},
       {:sentry, "~> 8.0"},
       {:plug_cowboy, "~> 2.3"},
-      {:absinthe, "1.7.0", github: "marcinkoziej/absinthe", branch: "fix/1149", override: true},
+      {:absinthe, "~> 1.7.10"},
       {:absinthe_phoenix, "~> 2.0.2"},
       {:absinthe_plug, "~> 1.5.8"},
       {:cors_plug, "~> 2.0"},
