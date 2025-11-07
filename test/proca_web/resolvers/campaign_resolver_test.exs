@@ -63,6 +63,9 @@ defmodule ProcaWeb.CampaignResolverTest do
         updateCampaign(id: $id, input: $input) {
           id, name, title, status, __typename
           org { name }
+          ... on PrivateCampaign {
+            mtt { ccSender, ccContacts}
+          }
         }
       }
       """
@@ -213,5 +216,26 @@ defmodule ProcaWeb.CampaignResolverTest do
       |> json_response(200)
 
     assert res["data"]["updateCampaign"]["status"] == "IGNORED"
+  end
+
+  test "change cc fields", %{
+    conn: conn,
+    red_campaign: camp,
+    red_user: user
+  }  do
+    q = update_query(camp.id, %{"mtt" => %{
+      "ccSender" => true,
+      "ccContacts" => ["example@domain.com"],
+      "startAt" => "2024-04-12T16:14:14.170Z",
+      "endAt" => "2024-05-12T16:14:14.170Z"
+    }})
+
+    res =
+      auth_api_post(conn, q, user)
+      |> json_response(200)
+
+    data = res["data"]["updateCampaign"]
+    assert data["mtt"]["ccContacts"] == ["example@domain.com"]
+    assert data["mtt"]["ccSender"] == true
   end
 end
