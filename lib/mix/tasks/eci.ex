@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Eci do
 
       keys = apply_changes(Proca.PublicKey.build_for(org, "ECI initial key"))
 
-      {:ok, k} =
+      {:ok, _k} =
         keys
         |> change(private: nil)
         |> Repo.insert()
@@ -32,15 +32,14 @@ defmodule Mix.Tasks.Eci do
         Proca.Campaign.upsert(org, %{name: org_name, title: campaign_name})
         |> Repo.insert()
 
-      pages =
-        Proca.Contact.EciDataRules.countries()
-        |> Enum.map(fn ctr ->
-          {:ok, ap} =
-            Proca.ActionPage.upsert(org, camp, %{name: "#{campaign_name}/#{ctr}", locale: ctr})
-            |> Repo.insert()
+      Proca.Contact.EciDataRules.countries()
+      |> Enum.map(fn ctr ->
+        {:ok, ap} =
+          Proca.ActionPage.upsert(org, camp, %{name: "#{campaign_name}/#{ctr}", locale: ctr})
+          |> Repo.insert()
 
-          ap
-        end)
+        ap
+      end)
     end)
   end
 end

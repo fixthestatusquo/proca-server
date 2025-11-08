@@ -76,7 +76,7 @@ defmodule Proca.Service.SES do
   - single sender
   - no headers (no reply-to!)
   """
-  def deliver(emails, %Org{email_backend: srv}) do
+  def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
     results =
       emails
       |> Enum.map(fn e ->
@@ -90,6 +90,13 @@ defmodule Proca.Service.SES do
       :ok
     else
       {:error, results}
+    end
+  end
+
+  def deliver(email, %Org{email_backend: srv}) do
+    case Swoosh.Adapters.AmazonSES.deliver(email, config(srv)) do
+      {:ok, _} -> :ok
+      {:error, _reason} = error -> {:error, [error]}
     end
   end
 

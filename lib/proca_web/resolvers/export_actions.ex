@@ -4,9 +4,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   """
   import Ecto.Query
 
-  import Proca.Permission
-
-  alias Proca.{Supporter, Action, Contact, Org, Staffer, PublicKey}
+  alias Proca.{Supporter, Action, Contact, PublicKey}
   alias Proca.Repo
 
   def filter_start(q, %{start: start}) do

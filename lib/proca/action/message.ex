@@ -2,6 +2,7 @@ defmodule Proca.Action.Message do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Proca.{ActionPage, Action}
   alias __MODULE__
@@ -82,14 +83,14 @@ defmodule Proca.Action.Message do
   """
   @spec select_by_targets([number] | :all, boolean | [boolean], boolean) :: Ecto.Query.t()
   def select_by_targets(target_ids, sent \\ false, testing \\ false) do
-    import Ecto.Query
-
     sent = List.wrap(sent)
 
     q =
       from(m in Proca.Action.Message,
         join: t in Proca.Target,
         on: m.target_id == t.id,
+        join: mtt in Proca.MTT,
+        on: t.campaign_id == mtt.campaign_id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
         join: mc in Proca.Action.MessageContent,
@@ -99,6 +100,7 @@ defmodule Proca.Action.Message do
         # and with that sent status
         # and either testing or only non-dupe if not testing
         where:
+          mtt.drip_delivery == true and
           a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
@@ -116,18 +118,23 @@ defmodule Proca.Action.Message do
   end
 
   def select_by_campaign(campaign_id, sent \\ false, testing \\ false) do
-    import Ecto.Query
-
     select_by_targets(:all, sent, testing)
     |> where([m, t, a, mc], a.campaign_id == ^campaign_id)
   end
 
   @spec mark_all([%Message{}], :sent | :delivered | :opened | :clicked) :: :ok
   def mark_all(messages, field) when field in [:sent, :delivered, :opened, :clicked] do
-    import Ecto.Query
     ids = Enum.map(messages, & &1.id)
 
     Repo.update_all(from(m in Message, where: m.id in ^ids),
+      set: [{field, true}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
+    :ok
+  end
+
+  def mark_one(message, field) when field in [:sent, :delivered, :opened, :clicked] do
+    Repo.update_all(from(m in Message, where: m.id == ^message.id),
       set: [{field, true}, {:updated_at, NaiveDateTime.utc_now()}]
     )
 

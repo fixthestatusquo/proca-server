@@ -18,7 +18,9 @@ defmodule Proca.Service.Email.Preview do
     log_email_preview(email)
     Proca.Service.Preview.OrgStorage.push(email)
 
-    Swoosh.Adapters.Local.deliver(email, config)
+    {:ok, _} = Swoosh.Adapters.Local.deliver(email, config)
+
+    :ok
   end
 
   def deliver(email, %Org{} = _org) do
@@ -27,7 +29,9 @@ defmodule Proca.Service.Email.Preview do
     log_email_preview(email)
     Proca.Service.Preview.OrgStorage.push(email)
 
-    Swoosh.Adapters.Local.deliver(email, default_config)
+    {:ok, _} = Swoosh.Adapters.Local.deliver(email, default_config)
+
+    :ok
   end
 
   defp log_email_preview(emails) when is_list(emails) do

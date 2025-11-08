@@ -98,9 +98,11 @@ defmodule Proca.Service.EmailBackend do
 
   Surprise: you can get  `{:error, [:ok, :ok, :ok]}` with there was some error but adapter decided to drop the email (fatal problem, retry will not help)
   """
+  def deliver(emails, org, email_template \\ nil)
+
   @spec deliver([Email.t()], Org.t(), EmailTemplate.t() | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
-  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template \\ nil) do
+  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) when is_list(recipients) do
     backend = service_module(name)
 
     emails =
@@ -112,6 +114,19 @@ defmodule Proca.Service.EmailBackend do
       end)
 
     apply(backend, :deliver, [emails, org])
+  end
+
+  @spec deliver(Email.t(), Org.t(), EmailTemplate.t() | nil) ::
+          :ok | {:error, [:ok | {:error, String.t()}]}
+  def deliver(email = %Email{}, org = %Org{email_backend: %Service{name: name}}, email_template) do
+    backend = service_module(name)
+
+    email =
+      email
+      |> determine_sender(org)
+      |> prepare_template(email_template)
+
+    apply(backend, :deliver, [email, org])
   end
 
   def make_email(to, custom_id, email_id) do

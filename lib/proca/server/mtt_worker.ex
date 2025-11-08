@@ -73,8 +73,11 @@ defmodule Proca.Server.MTTWorker do
       # send via each action page owner
     else
       if campaign.org.email_backend == nil do
-          Logger.error("MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend")
+        Logger.error(
+          "MTT #{campaign.name} cannot send because #{campaign.org.name} org does not have an email backend"
+        )
       end
+
       :noop
     end
   end
@@ -107,9 +110,9 @@ defmodule Proca.Server.MTTWorker do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
     Message.select_by_targets(:all, false, true)
-    |> where([m, t, a], a.inserted_at >= ^recent)
-    |> order_by([m, t, a], asc: m.id)
-    |> preload([m, t, a], [[target: :emails], [action: :supporter], :message_content])
+    |> where([m, t, mtt, a], a.inserted_at >= ^recent)
+    |> order_by([m, t, mtt, a], asc: m.id)
+    |> preload([m, t, mtt, a], [[target: :emails], [action: :supporter], :message_content])
     |> Repo.all()
   end
 
@@ -121,7 +124,8 @@ defmodule Proca.Server.MTTWorker do
 
     from m in Message,
       join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
+      where:
+        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
   end
 
   @doc """
@@ -132,7 +136,9 @@ defmodule Proca.Server.MTTWorker do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
       join: te in assoc(t, :emails),
-      where: c.id == ^id and te.email_status in [:active, :none],
+      where:
+        c.id == ^id and
+        te.email_status in [:active, :none],
       distinct: t.id,
       select: t.id
     )
@@ -192,17 +198,17 @@ defmodule Proca.Server.MTTWorker do
     # Subquery to count delivered/goal messages for each target
     progress_per_target =
       Message.select_by_targets(target_ids, [false, true])
-      |> select([m, t, a], %{
+      |> select([m, t, mtt, a], %{
         target_id: t.id,
         goal: count(m.id) * ^cycle / ^all_cycles,
         sent: fragment("count(?) FILTER (WHERE sent)", m.id)
       })
-      |> group_by([m, t, a], t.id)
+      |> group_by([m, t, mtt, a], t.id)
 
     # Subquery to rank unsent message ids and select only these need to meet current goal
     unsent_per_target_ids =
       Message.select_by_targets(target_ids, false)
-      |> select([m, t, a], %{
+      |> select([m, t, mtt, a], %{
         message_id: m.id,
         target_id: t.id,
         rank: fragment("RANK() OVER (PARTITION BY ? ORDER BY ?)", t.id, m.id)
@@ -298,10 +304,11 @@ defmodule Proca.Server.MTTWorker do
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
             batch
-            |> Enum.flat_map(fn m -> case m.private.email_id do
-              nil -> []
-              id -> [id]
-             end
+            |> Enum.flat_map(fn m ->
+              case m.private.email_id do
+                nil -> []
+                id -> [id]
+              end
             end)
             |> TargetEmail.mark_all(:active)
 
@@ -309,6 +316,7 @@ defmodule Proca.Server.MTTWorker do
 
           {:error, statuses} ->
             Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+
             Enum.zip(chunk, statuses)
             |> Enum.filter(fn
               {_, :ok} -> true
@@ -330,7 +338,7 @@ defmodule Proca.Server.MTTWorker do
 
     email_to =
       if is_test do
-        %Proca.TargetEmail{email: supporter.email, email_status: :none}
+        %Proca.TargetEmail{email: test_email || supporter.email, email_status: :none}
       else
         Enum.find(message.target.emails, fn email_to ->
           email_to.email_status in [:active, :none]

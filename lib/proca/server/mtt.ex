@@ -100,7 +100,10 @@ defmodule Proca.Server.MTT do
       from(c in Proca.Campaign,
         join: mtt in Proca.MTT,
         on: mtt.campaign_id == c.id,
-        where: mtt.start_at <= from_now(0, "day") and mtt.end_at >= from_now(0, "day"),
+        where:
+            mtt.drip_delivery == true and
+            mtt.start_at <= from_now(0, "day") and
+            mtt.end_at >= from_now(0, "day"),
         preload: [:mtt],
         order_by: fragment("RANDOM()")
       )

@@ -3,8 +3,7 @@ defmodule Proca.Service.Supabase do
   Currently, a storage service
   """
   alias Supabase.Storage
-
-  alias Proca.{Org, Service}
+  alias Proca.Service
 
   def connect(%Service{name: :supabase, password: key, host: url}) do
     Supabase.Connection.new(url, key)

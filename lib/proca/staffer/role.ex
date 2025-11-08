@@ -1,7 +1,5 @@
 defmodule Proca.Staffer.Role do
-  alias Proca.{Permission, Role, Staffer, Auth}
-  alias Proca.Users.User
-  use Bitwise
+  alias Proca.{Permission, Staffer, Auth}
   alias Ecto.Changeset
 
   @moduledoc """

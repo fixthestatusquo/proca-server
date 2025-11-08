@@ -343,6 +343,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     If checked, the sender will be added to CC.
     """
     field :cc_sender, :boolean
+
+    @desc """
+    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    """
+    field :drip_delivery, :boolean
   end
 
   input_object :campaign_mtt_input do
@@ -372,6 +377,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     If checked, the sender will be added to CC.
     """
     field :cc_sender, :boolean
+
+    @desc """
+    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    """
+    field :drip_delivery, :boolean
   end
 
   # public counters
