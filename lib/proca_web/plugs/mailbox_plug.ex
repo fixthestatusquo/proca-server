@@ -17,7 +17,7 @@ defmodule ProcaWeb.MailboxPlug do
 
   defp render(email) do
     """
-    <h1>Mailbox for #{email.assigns.target.name}</h1>
+    <h1>Mailbox for target #{email.assigns.target.name}</h1>
     <ul>
       <li>
         <p><b>To:</b> #{inspect(email.to)}</p>

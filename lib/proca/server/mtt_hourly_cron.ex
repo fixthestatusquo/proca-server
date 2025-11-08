@@ -31,11 +31,7 @@ defmodule Proca.Server.MTTHourlyCron do
     |> Enum.each(fn target ->
       max_emails_per_hour = MTTContext.max_emails_per_hour(target.campaign)
 
-      :telemetry.execute(
-        [:proca, :mtt_new, :target_started],
-        %{count: 1},
-        %{target_id: target.id, max_emails_per_hour: to_string(max_emails_per_hour)}
-      )
+      Logger.info("MTT max emails per hour #{max_emails_per_hour} for target #{target.id}")
 
       MTTSupervisor.start_mtt_scheduler(target, max_emails_per_hour)
     end)

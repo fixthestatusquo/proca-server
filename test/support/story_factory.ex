@@ -267,7 +267,7 @@ defmodule Proca.StoryFactory do
         org: org,
         name: "mtt",
         title: "Mail To Target",
-        mtt: Factory.build(:mtt)
+        mtt: Factory.build(:mtt_new)
       )
 
     campaign_2 =
@@ -275,7 +275,7 @@ defmodule Proca.StoryFactory do
         org: org,
         name: "mtt2",
         title: "Mail To Target 2",
-        mtt: Factory.build(:mtt)
+        mtt: Factory.build(:mtt_new)
       )
 
     targets_1 = Factory.insert_list(2, :target, campaign: campaign_1)

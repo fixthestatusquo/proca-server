@@ -18,36 +18,30 @@ defmodule Proca.Server.MTTContext do
   @recent_test_messages -1 * 60 * 60 * 24 # 1 day ago
 
   def get_active_targets() do
-    new_algo_target_ids =
-      Application.get_env(:proca, Proca.Server.MTTScheduler)
-      |> Access.get(:new_algo_target_ids)
-
     now = DateTime.utc_now()
     one_hour_ago = DateTime.add(now, -1, :hour)
 
-    query =
-      from(
-        target in Proca.Target,
-        join: campaign in assoc(target, :campaign),
-        join: mtt in assoc(campaign, :mtt),
-        join: org in assoc(campaign, :org),
-        join: email_backend in assoc(org, :email_backend),
-        join: te in assoc(target, :emails),
-        where:
-          not is_nil(email_backend) and
-            te.email_status in [:active, :none] and
-            mtt.start_at <= ^now and
-            mtt.end_at >= ^one_hour_ago and
-            type(mtt.start_at, :time) <= type(^now, :time) and
-            type(mtt.end_at, :time) >= type(^one_hour_ago, :time),
-        order_by: fragment("RANDOM()"),
-        distinct: target.id,
-        select: %{
-          target | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
-        }
-      )
-
-    (if new_algo_target_ids, do: where(query, [target], target.id in ^new_algo_target_ids), else: query)
+    from(
+      target in Proca.Target,
+      join: campaign in assoc(target, :campaign),
+      join: mtt in assoc(campaign, :mtt),
+      join: org in assoc(campaign, :org),
+      join: email_backend in assoc(org, :email_backend),
+      join: te in assoc(target, :emails),
+      where:
+        mtt.drip_delivery == false and
+        not is_nil(email_backend) and
+          te.email_status in [:active, :none] and
+          mtt.start_at <= ^now and
+          mtt.end_at >= ^one_hour_ago and
+          type(mtt.start_at, :time) <= type(^now, :time) and
+          type(mtt.end_at, :time) >= type(^one_hour_ago, :time),
+      order_by: fragment("RANDOM()"),
+      distinct: target.id,
+      select: %{
+        target | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
+      }
+    )
     |> Repo.all()
   end
 

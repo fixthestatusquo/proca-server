@@ -83,16 +83,14 @@ defmodule Proca.Action.Message do
   """
   @spec select_by_targets([number] | :all, boolean | [boolean], boolean) :: Ecto.Query.t()
   def select_by_targets(target_ids, sent \\ false, testing \\ false) do
-    new_algo_target_ids =
-      Application.get_env(:proca, Proca.Server.MTTScheduler)
-      |> Access.get(:new_algo_target_ids)
-
     sent = List.wrap(sent)
 
     q =
       from(m in Proca.Action.Message,
         join: t in Proca.Target,
         on: m.target_id == t.id,
+        join: mtt in Proca.MTT,
+        on: t.campaign_id == mtt.campaign_id,
         join: a in Proca.Action,
         on: m.action_id == a.id,
         join: mc in Proca.Action.MessageContent,
@@ -102,7 +100,7 @@ defmodule Proca.Action.Message do
         # and with that sent status
         # and either testing or only non-dupe if not testing
         where:
-          t.id not in ^new_algo_target_ids and
+          mtt.drip_delivery == true and
           a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and

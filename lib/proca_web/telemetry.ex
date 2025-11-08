@@ -117,10 +117,6 @@ defmodule ProcaWeb.Telemetry do
       sum("proca.mtt.messages_sent", tags: @campaign_tags),
 
       # MTT New Algo
-      # currently running target with max_emails_per_hour
-      counter("proca.mtt_new.target_started.count",
-        tags: [:target_id, :max_emails_per_hour]
-      ),
       # count sent messages per target
       counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
 

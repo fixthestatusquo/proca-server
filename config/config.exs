@@ -123,7 +123,6 @@ config :swoosh, storage_driver: Proca.Service.Preview.OrgStorage
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 config :proca, Proca.Server.MTTScheduler,
-  new_algo_target_ids: ["e3c1395b-6362-48a1-884a-1f6a5c985b8c", "9dfe2d59-6636-4fb6-9ecb-e9b04905db50"],
   max_emails_per_hour: 30,
   messages_ratio_per_hour: %{
     0 => 0.02,
