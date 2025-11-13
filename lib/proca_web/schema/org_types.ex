@@ -234,6 +234,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:supporter_confirm, :boolean)
       @desc "The email template name that will be used to send the action DOI request"
       arg(:supporter_confirm_template, :string)
+
       @desc "Should the thank you email be only send when email consent doi is required (and contain it)"
       arg(:doi_thank_you, :boolean)
 
@@ -241,6 +242,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:custom_supporter_confirm, :boolean)
       @desc "Should proca put action in a custom queue, so an external service can do this?"
       arg(:custom_action_confirm, :boolean)
+
       @desc "Should proca put action in custom delivery queue, so an external service can sync it?"
       arg(:custom_action_deliver, :boolean)
 
@@ -322,7 +324,6 @@ defmodule ProcaWeb.Schema.OrgTypes do
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
       allow([:change_campaign_settings])
-
 
       @desc "Add email tempalte to which org"
       arg(:org_name, non_null(:string))

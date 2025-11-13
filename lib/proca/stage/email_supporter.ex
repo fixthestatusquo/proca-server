@@ -155,7 +155,8 @@ defmodule Proca.Stage.EmailSupporter do
     org = ap.org
 
     tmpl_name =
-      ap.supporter_confirm_template || ap.campaign.supporter_confirm_template || ap.org.supporter_confirm_template
+      ap.supporter_confirm_template || ap.campaign.supporter_confirm_template ||
+        ap.org.supporter_confirm_template
 
     recipients =
       Enum.map(messages, fn m ->
@@ -213,15 +214,13 @@ defmodule Proca.Stage.EmailSupporter do
       join: c in assoc(ap, :campaign),
       where:
         a.id == ^action_id and
-        a.with_consent and
-        ap.id == ^action_page_id and
-        (
-          not is_nil(o.supporter_confirm_template) or
-          not is_nil(c.supporter_confirm_template) or
-          not is_nil(ap.supporter_confirm_template)
-        ) and
-        not is_nil(o.email_backend_id) and
-        not is_nil(o.email_from)
+          a.with_consent and
+          ap.id == ^action_page_id and
+          (not is_nil(o.supporter_confirm_template) or
+             not is_nil(c.supporter_confirm_template) or
+             not is_nil(ap.supporter_confirm_template)) and
+          not is_nil(o.email_backend_id) and
+          not is_nil(o.email_from)
     )
     |> Repo.exists?()
   end

@@ -185,23 +185,23 @@ defmodule Proca.Supporter do
     end
   end
 
-    defp update_supporter_reject(sup = %Supporter{}) do
-      changeset =
-        sup
-        |> change(processing_status: :rejected)
-        |> maybe_revoke_doi()
+  defp update_supporter_reject(sup = %Supporter{}) do
+    changeset =
+      sup
+      |> change(processing_status: :rejected)
+      |> maybe_revoke_doi()
 
-      Repo.update(changeset)
-    end
+    Repo.update(changeset)
+  end
 
-    defp maybe_revoke_doi(changeset = %Ecto.Changeset{data: sup}) do
-      if sup.email_status == :double_opt_in do
-        Supporter.changeset(sup, %{email_status: :unsub})
-        |> Ecto.Changeset.merge(changeset)
-      else
-        changeset
-      end
+  defp maybe_revoke_doi(changeset = %Ecto.Changeset{data: sup}) do
+    if sup.email_status == :double_opt_in do
+      Supporter.changeset(sup, %{email_status: :unsub})
+      |> Ecto.Changeset.merge(changeset)
+    else
+      changeset
     end
+  end
 
   def privacy_defaults(p = %{opt_in: _opt_in, lead_opt_in: _lead_opt_in}) do
     p

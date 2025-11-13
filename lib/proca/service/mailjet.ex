@@ -141,7 +141,7 @@ defmodule Proca.Service.Mailjet do
   #     },
   #     %{id: 1152921519812251571}
   #   ]}}
-  
+
   defp handle_return({:ok, _}, _) do
     :ok
   end

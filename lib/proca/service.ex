@@ -138,15 +138,20 @@ defmodule Proca.Service do
   """
   @impl true
   def request(method, url, body, headers, http_opts) do
-    client = Tesla.client([
-      {Tesla.Middleware.Headers, headers}
-    ])
+    client =
+      Tesla.client([
+        {Tesla.Middleware.Headers, headers}
+      ])
 
     case Tesla.request(client, method: method, url: url, body: body) do
-      {:ok, response} -> {
-        :ok, Map.from_struct(response) |> Map.put(:status_code, response.status)
-      }
-      {:error, reason} -> {:error, %{reason: reason}}
+      {:ok, response} ->
+        {
+          :ok,
+          Map.from_struct(response) |> Map.put(:status_code, response.status)
+        }
+
+      {:error, reason} ->
+        {:error, %{reason: reason}}
     end
   end
 
@@ -191,22 +196,19 @@ defmodule Proca.Service do
   def json_request(srv, url, opts) do
     req = json_request_opts(%{}, opts, srv)
 
-    client = Tesla.client([
-      {Tesla.Middleware.Headers, req.headers},
-      Tesla.Middleware.JSON,
-    ])
+    client =
+      Tesla.client([
+        {Tesla.Middleware.Headers, req.headers},
+        Tesla.Middleware.JSON
+      ])
 
     case Tesla.request(client, method: req.method, url: url, body: req.body) do
       {:ok, response = %{status: code}} when code in [200, 201] -> {:ok, code, response.body}
-
       {:ok, %{status: code}} when code in 500..599 -> {:error, "HTTP#{code}"}
-
       {:ok, response} -> {:ok, response.status}
-
       {:error, _reason} = e -> e
-
       # Weird but it seems this error is sent up from Mint
-      {:error, _,  %{reason: reason}} -> {:error, reason}
+      {:error, _, %{reason: reason}} -> {:error, reason}
     end
   end
 
@@ -225,7 +227,12 @@ defmodule Proca.Service do
   end
 
   defp json_request_opts(req, [{:post, body} | rest], srv) do
-    %{req | method: :post, body: body, headers: [{"Content-Type", "application/json"} | req.headers]}
+    %{
+      req
+      | method: :post,
+        body: body,
+        headers: [{"Content-Type", "application/json"} | req.headers]
+    }
     |> json_request_opts(rest, srv)
   end
 
