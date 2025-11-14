@@ -41,16 +41,6 @@ jobs:
           #app_db: proca_test # optional, default is app
           # EXPOSED_POSTGRES_PORT - exposed postgres port
           #exposed_postgres_port: # optional, default is 5432
-      # - name: Install RabbitMQ
-      #   # You may pin to the exact commit or the version.
-      #   # uses: mer-team/rabbitmq-mng-action@8efa214ee17181617aada9d7aab74a701a6a49bb
-      #   uses: mer-team/rabbitmq-mng-action@v1.2
-      #   with:
-      #     RABBITMQ_USER: "" ## XXX GH action is broken and we need to unset these vars
-      #     RABBITMQ_PASS: "" ## as they are deprecated
-      #     RABBITMQ_PORT: 5672
-      #     RABBITMQ_MNG_PORT: 15672
-      #     RABBITMQ_TAG: 3-management-alpine # optional, default is 3-alpine
       - name: Restore dependencies cache
         uses: actions/cache@v4
         with:
@@ -59,9 +49,9 @@ jobs:
           restore-keys: ${{ runner.os }}-mix-
 
       - name: Install RabbitMQ
-        run: ./utils/configure-rabbitmq-develop.sh -D
+        run: ./utils/configure-rabbitmq-develop.sh
 
-      - name: Setup RabbitMQ
+      - name: Configure RabbitMQ
         run: ./utils/configure-rabbitmq.sh
 
       - name: Install dependencies
