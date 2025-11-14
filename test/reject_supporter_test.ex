@@ -24,11 +24,11 @@ defmodule Supporter.RejectionTest do
           end
 
         for email_status <- email_statuses_to_test do
-          test "supporter: #{supporter_status}, action: #{action_status}, email_status: #{email_status}, verb: reject", %{
-            conn: conn,
-            ap: ap
-          } do
-
+          test "supporter: #{supporter_status}, action: #{action_status}, email_status: #{email_status}, verb: reject",
+               %{
+                 conn: conn,
+                 ap: ap
+               } do
             supporter =
               Factory.insert(:basic_data_pl_supporter_with_contact,
                 action_page: ap,

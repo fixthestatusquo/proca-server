@@ -62,12 +62,20 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
   end
 
   describe "supporter confirmation emails" do
-    test "sends email using org template if campaign supporter_confirmation set to false and has no template", %{
-      org: org, ap: action_page
-    } do
+    test "sends email using org template if campaign supporter_confirmation set to false and has no template",
+         %{
+           org: org,
+           ap: action_page
+         } do
       # This covers: org.confirm = true && campaign.confirm = false
       # Setup
-      org = Repo.update!(Ecto.Changeset.change(org, supporter_confirm: true, supporter_confirm_template: "test_org_template"))
+      org =
+        Repo.update!(
+          Ecto.Changeset.change(org,
+            supporter_confirm: true,
+            supporter_confirm_template: "test_org_template"
+          )
+        )
 
       action = Factory.insert(:action, action_page: action_page, with_consent: true)
       action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
@@ -88,10 +96,17 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
       assert email.from |> elem(0) == org.title
     end
 
-    test "sends email using campaign template if it is set and if campaign haven't set supporter_confirmation send with org template", %{org: org, ap: action_page} do
+    test "sends email using campaign template if it is set and if campaign haven't set supporter_confirmation send with org template",
+         %{org: org, ap: action_page} do
       # This covers: org.confirm = true && campaign.confirm = true
       # Setup
-      org = Repo.update!(Ecto.Changeset.change(org, supporter_confirm: true, supporter_confirm_template: "test_org_template"))
+      org =
+        Repo.update!(
+          Ecto.Changeset.change(org,
+            supporter_confirm: true,
+            supporter_confirm_template: "test_org_template"
+          )
+        )
 
       action = Factory.insert(:action, action_page: action_page, with_consent: true)
       action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
@@ -103,24 +118,38 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
         nil
       )
 
-      campaign_with_supporter_confirm = Factory.insert(
-        :campaign,
-        org: org,
-        name: "violet_campaign_with_confirmation",
-        title: "Violets not Violence",
-        supporter_confirm: true,
-        supporter_confirm_template: "test_campaign_template"
-      )
+      campaign_with_supporter_confirm =
+        Factory.insert(
+          :campaign,
+          org: org,
+          name: "violet_campaign_with_confirmation",
+          title: "Violets not Violence",
+          supporter_confirm: true,
+          supporter_confirm_template: "test_campaign_template"
+        )
 
       action_page_with_confirmation =
-        Factory.insert(:action_page, org: org, campaign: campaign_with_supporter_confirm, name: "violet_campaign_with_confirmation", locale: "en")
+        Factory.insert(:action_page,
+          org: org,
+          campaign: campaign_with_supporter_confirm,
+          name: "violet_campaign_with_confirmation",
+          locale: "en"
+        )
 
-      action_with_confirmation = Factory.insert(:action, action_page: action_page_with_confirmation, with_consent: true)
-      action_data_with_confirmation = Proca.Stage.Support.action_data(action_with_confirmation, :supporter_confirm)
+      action_with_confirmation =
+        Factory.insert(:action, action_page: action_page_with_confirmation, with_consent: true)
+
+      action_data_with_confirmation =
+        Proca.Stage.Support.action_data(action_with_confirmation, :supporter_confirm)
 
       Proca.Stage.EmailSupporter.handle_batch(
         :supporter_confirm,
-        [%Broadway.Message{data: action_data_with_confirmation, acknowledger: Broadway.NoopAcknowledger}],
+        [
+          %Broadway.Message{
+            data: action_data_with_confirmation,
+            acknowledger: Broadway.NoopAcknowledger
+          }
+        ],
         %Broadway.BatchInfo{batch_key: action_page_with_confirmation.id},
         nil
       )
@@ -137,14 +166,28 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
 
       assert email_campaign.subject == "Test Campaign Confirmation"
       assert email_campaign.text_body == "Test Campaign confirmation email on campaign level"
-      assert email_campaign.to == [{action_with_confirmation.supporter.first_name, action_with_confirmation.supporter.email}]
+
+      assert email_campaign.to == [
+               {action_with_confirmation.supporter.first_name,
+                action_with_confirmation.supporter.email}
+             ]
+
       assert email_campaign.from |> elem(0) == org.title
     end
 
-    test "sends email using action page template if it is set", %{org: org, campaign: campaign, ap: action_page} do
+    test "sends email using action page template if it is set", %{
+      org: org,
+      campaign: campaign,
+      ap: action_page
+    } do
       # This covers: org.confirm = false && campaign.confirm = true
       # Setup
-      Repo.update!(Ecto.Changeset.change(campaign, supporter_confirm: true, supporter_confirm_template: "test_campaign_template"))
+      Repo.update!(
+        Ecto.Changeset.change(campaign,
+          supporter_confirm: true,
+          supporter_confirm_template: "test_campaign_template"
+        )
+      )
 
       action = Factory.insert(:action, action_page: action_page, with_consent: true)
       action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
@@ -156,12 +199,13 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
         nil
       )
 
-      campaign_org = Factory.insert(
-        :campaign,
-        org: org,
-        name: "campaign_without_confirmation",
-        title: "Without Confirmation"
-      )
+      campaign_org =
+        Factory.insert(
+          :campaign,
+          org: org,
+          name: "campaign_without_confirmation",
+          title: "Without Confirmation"
+        )
 
       action_page_org =
         Factory.insert(
@@ -201,7 +245,11 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
     test "does not send email if no template is configured", %{org: org, ap: action_page} do
       # This covers: org.confirm = false && campaign.confirm = false
       # Setup
-      action_page = Repo.update!(Proca.ActionPage.changeset(action_page, %{thank_you_template: "mustache template"}))
+      action_page =
+        Repo.update!(
+          Proca.ActionPage.changeset(action_page, %{thank_you_template: "mustache template"})
+        )
+
       action = Factory.insert(:action, action_page: action_page, with_consent: true)
       action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
 

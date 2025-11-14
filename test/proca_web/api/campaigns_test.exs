@@ -6,7 +6,12 @@ defmodule ProcaWeb.Campaigns do
   describe "campaigns API" do
     setup do
       story = blue_story()
-      owner = Factory.insert(:staffer, org: story.org, perms: Proca.Permission.add(Proca.Staffer.Role.permissions(:owner)))
+
+      owner =
+        Factory.insert(:staffer,
+          org: story.org,
+          perms: Proca.Permission.add(Proca.Staffer.Role.permissions(:owner))
+        )
 
       Map.merge(story, %{conn: build_conn(), owner: owner})
     end

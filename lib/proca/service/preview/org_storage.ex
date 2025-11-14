@@ -1,4 +1,3 @@
-
 defmodule Proca.Service.Preview.OrgStorage do
   use Agent
 
@@ -8,7 +7,12 @@ defmodule Proca.Service.Preview.OrgStorage do
 
   def push(email) do
     org_name = email.private[:org_name] || :default
-    Agent.update(__MODULE__, &Map.update(&1, org_name, [email], fn emails -> [email | emails] end))
+
+    Agent.update(
+      __MODULE__,
+      &Map.update(&1, org_name, [email], fn emails -> [email | emails] end)
+    )
+
     email
   end
 

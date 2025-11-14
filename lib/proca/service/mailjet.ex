@@ -141,7 +141,7 @@ defmodule Proca.Service.Mailjet do
   #     },
   #     %{id: 1152921519812251571}
   #   ]}}
-  
+
   defp handle_return({:ok, _}, _) do
     :ok
   end
@@ -212,8 +212,6 @@ defmodule Proca.Service.Mailjet do
       |> Enum.reject(&is_nil/1)
       |> Enum.reject(&(&1 == ""))
       |> Enum.join(": ")
-
-    # IO.inspect(event, label: "BOUNCE EVENT")
 
     bounce_params = %{
       id: id,

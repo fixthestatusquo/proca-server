@@ -1,28 +1,4 @@
 defmodule Proca.Contact.ItRegions do
-  # Vativan, San Marino removed (codes colliding with big regions)
-  @regions_codes %{
-    "Abruzzo" => ["64", "65", "66", "67"],
-    "Aosta Valley" => ["11"],
-    "Apulia" => ["70", "71", "72", "73", "74", "76"],
-    "Basilicata" => ["75", "85"],
-    "Calabria" => ["87", "88", "89"],
-    "Campania" => ["80", "81", "82", "83", "84"],
-    "Emilia-Romagna" => ["29", "40", "41", "42", "43", "44", "47", "48"],
-    "Friuli-Venezia Giulia" => ["33", "34"],
-    "Lazio" => ["00", "01", "02", "03", "04"],
-    "Liguria" => ["16", "17", "18", "19"],
-    "Lombardy" => ["20", "21", "22", "23", "24", "25", "26", "27", "46"],
-    "Marche" => ["60", "61", "62", "63"],
-    "Molise" => ["86"],
-    "Piedmont" => ["10", "12", "13", "14", "15", "28"],
-    "Sardinia" => ["07", "08", "09"],
-    "Sicily" => ["90", "91", "92", "93", "94", "95", "96", "97", "98"],
-    "Trentino-Alto Adige/Südtirol" => ["38", "39"],
-    "Tuscany" => ["50", "51", "52", "53", "54", "55", "56", "57", "58", "59"],
-    "Umbria" => ["05", "06"],
-    "Veneto" => ["30", "31", "32", "35", "36", "37", "45"]
-  }
-
   @codes_regions %{
     "00" => "Lazio",
     "01" => "Lazio",

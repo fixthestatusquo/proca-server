@@ -23,9 +23,11 @@ defmodule ProcaWeb.Telemetry do
            measurements: periodic_measurements(),
            period: :timer.seconds(60),
            init_delay: :timer.seconds(30)},
-          {TelemetryMetricsPrometheus, [
-           metrics: metrics(),
-           port: prometheus_port()]}
+          {TelemetryMetricsPrometheus,
+           [
+             metrics: metrics(),
+             port: prometheus_port()
+           ]}
         ]
       else
         []

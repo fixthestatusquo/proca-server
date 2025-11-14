@@ -128,11 +128,9 @@ defmodule Proca.Pipes.Topology do
     %{
       confirm_supporter:
         Stage.EmailSupporter.start_for?(o) and
-        (
-          o.supporter_confirm or
-          o.campaigns
-          |> Enum.any?(& &1.supporter_confirm)
-        ),
+          (o.supporter_confirm or
+             o.campaigns
+             |> Enum.any?(& &1.supporter_confirm)),
       email_supporter: Stage.EmailSupporter.start_for?(o),
       push_sqs: Stage.SQS.start_for?(o) and push_backend(o) == :sqs,
       push_webhook: Stage.Webhook.start_for?(o) and push_backend(o) == :webhook,

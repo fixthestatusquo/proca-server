@@ -36,7 +36,6 @@ defmodule Proca.Permission do
   alias Proca.Users.User
   alias Proca.Auth
 
-
   @bits [
     # Admin permissions [in users.perms]
     instance_owner: 1 <<< 0,

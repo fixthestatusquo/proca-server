@@ -45,9 +45,11 @@ defmodule ProcaWeb.ConfirmController do
           else
             conn |> resp(200, "SUCCESS; Could not redirect to a bad URL")
           end
+
         _ ->
           conn |> resp(200, "SUCCESS")
-      end |> halt()
+      end
+      |> halt()
     else
       {:error, status, msg} ->
         conn |> resp(status, error_msg(msg)) |> halt()
@@ -165,16 +167,18 @@ defmodule ProcaWeb.ConfirmController do
   end
 
   defp handle_supporter(action = %Action{supporter: sup}, "reject") do
-      case Supporter.reject(sup) do
-        {:ok, _sup2} -> :ok
-        {:noop, _} -> :ok
-        {:error, msg} -> {:error, 400, msg}
-      end
-      case Action.reject(action) do
-        {:ok, _action2} -> :ok
-        {:noop, _} -> :ok
-        {:error, msg} -> {:error, 400, msg}
-      end
+    case Supporter.reject(sup) do
+      {:ok, _sup2} -> :ok
+      {:noop, _} -> :ok
+      {:error, msg} -> {:error, 400, msg}
+    end
+
+    case Action.reject(action) do
+      {:ok, _action2} -> :ok
+      {:noop, _} -> :ok
+      {:error, msg} -> {:error, 400, msg}
+    end
+
     :ok
   end
 

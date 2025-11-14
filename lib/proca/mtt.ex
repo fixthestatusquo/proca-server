@@ -3,12 +3,10 @@ defmodule Proca.MTT do
   use Proca.Schema, module: __MODULE__
   import Ecto.Changeset
   import Proca.Validations
-  alias Proca.ActionPage
 
   schema "mtt" do
     field :start_at, :utc_datetime
     field :end_at, :utc_datetime
-    #   field :sending_rate, :integer
     field :stats, :map, default: %{}
     field :test_email, :string
     field :cc_contacts, {:array, :string}, default: []

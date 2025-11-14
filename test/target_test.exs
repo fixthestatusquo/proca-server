@@ -67,13 +67,20 @@ defmodule TargetTest do
     import Ecto.Changeset
     alias Proca.Repo
 
-    del_res = t
-    |> Target.deleteset()
-    |> Repo.delete()
-    |> IO.inspect()
+    del_res =
+      t
+      |> Target.deleteset()
+      |> Repo.delete()
+      |> IO.inspect()
 
-
-    assert del_res = {:error, %{errors: [messages: {"has messages",
-                                                    [constraint: :foreign, constraint_name: "messages_target_id_fkey"]}]}}
+    assert del_res =
+             {:error,
+              %{
+                errors: [
+                  messages:
+                    {"has messages",
+                     [constraint: :foreign, constraint_name: "messages_target_id_fkey"]}
+                ]
+              }}
   end
 end

@@ -108,7 +108,12 @@ defmodule Proca.Org do
       :custom_event_deliver,
       :action_schema_version
     ])
-    |> cast_backend(:email_backend, [:mailjet, :ses, :smtp, :system, :testmail, :preview], attrs, org)
+    |> cast_backend(
+      :email_backend,
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview],
+      attrs,
+      org
+    )
     |> cast_backend(:event_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:push_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:storage_backend, [:supabase], attrs, org)
@@ -130,7 +135,9 @@ defmodule Proca.Org do
   - If the `backend_type` key is present in the `params` map, the code proceeds to execute the `case` expression.
   - If the `backend_type` key is not present, the function simply returns the unchanged `chset` argument.
 
-  2. Inside the `case` expression, the function calls the `cast_backend_service` function with the `backend_type` key and the corresponding value from the `params` map. The `cast_backend_service` function is likely a custom function defined elsewhere and its purpose is not shown in the provided code snippet. It presumably performs some processing specific to the backend service.
+  2. Inside the `case` expression, the function calls the `cast_backend_service` function with the `backend_type` key and the corresponding value from the `params` map.
+  The `cast_backend_service` function is likely a custom function defined elsewhere and its purpose is not shown in the provided code snippet.
+  It presumably performs some processing specific to the backend service.
 
   3. Based on the result of the `cast_backend_service` function, the code executes one of three possible branches:
 

@@ -1,10 +1,3 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
 use Mix.Config
 
 config :proca,
@@ -60,7 +53,6 @@ config :proca, Proca.Service.EmailBackend,
   services: [Proca.Service.SES, Proca.Service.Mailjet, Proca.Service.SMTP, Proca.Service.Preview],
   srs_key: System.get_env("EMAIL_SRS_KEY") || "teiy1sah8seengiem0ee2Yai",
   srs_prefix: System.get_env("EMAIL_SRS_PREFIX") || "SRS0"
-
 
 # FPR seed only for development
 config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"

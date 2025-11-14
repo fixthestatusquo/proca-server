@@ -50,6 +50,7 @@ defmodule ProcaWeb.TargetsTest do
     msg = Factory.insert(:message, %{action: action, target: t3})
 
     t3_id = t3.id
+
     assert {:error, [%{message: "has messages", path: ["targets", ^t3_id, "messages"]}]} =
              Target.upsert_targets(
                nil,
