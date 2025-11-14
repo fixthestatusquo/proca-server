@@ -2,11 +2,9 @@ defmodule ProcaWeb.Resolvers.ActionPage do
   @moduledoc """
   Resolvers for action page related mutations
   """
-  import Ecto.Query
-  alias Proca.{ActionPage, Campaign, Org}
+  alias Proca.{ActionPage, Org}
   alias Proca.Repo
   alias Proca.Auth
-  alias ProcaWeb.Helper
 
   def campaign(ap, %{}, _) do
     {
