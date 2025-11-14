@@ -60,18 +60,14 @@ jobs:
 
       - name: Setup RabbitMQ
         run: ./utils/configure-rabbitmq-develop.sh -D
-        working-directory: proca
 
       - name: Install dependencies
         run: mix deps.get
-        working-directory: proca
 
       - name: Setup app db (migrate)
         run: mix ecto.setup
         env:
           MIX_ENV: test
-        working-directory: proca
 
       - name: Run tests
         run: mix test
-        working-directory: proca
