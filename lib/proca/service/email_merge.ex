@@ -1,5 +1,5 @@
 defmodule Proca.Service.EmailMerge do
-  @defmodule """
+  @moduledoc """
   Logic needed to do personalization / merge tags in Proca email system (to supporter, to target).
 
   Partially replace the EmailRecipient logic
@@ -227,6 +227,6 @@ defmodule Proca.Service.EmailMerge do
     end
   end
 
-  def assign_maybe(%Email{} = e, key, nil), do: e
+  def assign_maybe(%Email{} = e, _key, nil), do: e
   def assign_maybe(%Email{} = e, key, value), do: assign(e, key, value)
 end

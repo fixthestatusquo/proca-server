@@ -1,4 +1,3 @@
-
 defmodule ProcaWeb.MailboxPlug do
   import Plug.Conn
 
@@ -20,16 +19,16 @@ defmodule ProcaWeb.MailboxPlug do
     <h1>Mailbox for #{org_name}</h1>
     <ul>
       #{for email <- emails do
-        """
-        <li>
-          <p><b>To:</b> #{inspect(email.to)}</p>
-          <p><b>Subject:</b> #{email.subject}</p>
-          <p><b>Body:</b></p>
-          <pre>#{email.text_body}</pre>
-          <hr>
-        </li>
-        """
-      end}
+      """
+      <li>
+        <p><b>To:</b> #{inspect(email.to)}</p>
+        <p><b>Subject:</b> #{email.subject}</p>
+        <p><b>Body:</b></p>
+        <pre>#{email.text_body}</pre>
+        <hr>
+      </li>
+      """
+    end}
     </ul>
     """
   end

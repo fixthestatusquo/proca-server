@@ -143,9 +143,10 @@ defmodule Proca.Server.Stats do
         on: a.supporter_id == s.id,
         join: ap in ActionPage,
         on: a.action_page_id == ap.id,
-        where: s.processing_status == :accepted and
-              a.processing_status in [:accepted, :delivered] and
-              s.dupe_rank == 0,
+        where:
+          s.processing_status == :accepted and
+            a.processing_status in [:accepted, :delivered] and
+            s.dupe_rank == 0,
         group_by: [a.campaign_id, ap.org_id],
         select: {a.campaign_id, ap.org_id, count(s.fingerprint, :distinct)}
       )

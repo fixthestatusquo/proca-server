@@ -1,7 +1,6 @@
 defmodule Proca.Staffer.Role do
-  alias Proca.{Permission, Role, Staffer, Auth}
+  alias Proca.{Permission, Staffer, Auth}
   alias Proca.Users.User
-  use Bitwise
   alias Ecto.Changeset
 
   @moduledoc """
@@ -81,7 +80,7 @@ defmodule Proca.Staffer.Role do
   end
 
   def add_user_as(email, org, role) when is_bitstring(email) do
-    user = Proca.Users.User.one(email: email)
+    user = User.one(email: email)
 
     case user do
       nil -> {:error, :not_found}

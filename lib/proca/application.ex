@@ -38,7 +38,7 @@ defmodule Proca.Application do
       {Proca.Pipes.Supervisor, []},
       {Proca.Pipes.Connection, Proca.Pipes.queue_url()},
 
-       # Start the email preview org storage
+      # Start the email preview org storage
       {Proca.Service.Preview.OrgStorage, []}
     ]
 
