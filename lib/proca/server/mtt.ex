@@ -83,7 +83,9 @@ defmodule Proca.Server.MTT do
   def handle_info({:DOWN, ref, _, _, _reason}, %{workers: workers}) do
     workers = List.delete(workers, ref)
 
-    Logger.info("MTT Worker finished #{inspect(ref)} - remained #{length(workers)} workers running")
+    Logger.info(
+      "MTT Worker finished #{inspect(ref)} - remained #{length(workers)} workers running"
+    )
 
     if workers == [] do
       # all workers done
@@ -113,13 +115,17 @@ defmodule Proca.Server.MTT do
 
     Enum.map(running_mtts, fn campaign ->
       Logger.info("Start MTT worker for #{campaign.name} (waiting for connection pool)")
+
       # We are compeeting for connection pool with the web server here, at one point we must get the connection
       task =
         Task.async(fn ->
-          Repo.checkout(fn ->
-            Logger.info("Start MTT worker for #{campaign.name} (connection acquired)")
-            MTTWorker.process_mtt_campaign(campaign)
-          end, timeout: :infinity)
+          Repo.checkout(
+            fn ->
+              Logger.info("Start MTT worker for #{campaign.name} (connection acquired)")
+              MTTWorker.process_mtt_campaign(campaign)
+            end,
+            timeout: :infinity
+          )
         end)
 
       task.ref

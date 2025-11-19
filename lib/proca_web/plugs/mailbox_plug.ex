@@ -1,4 +1,3 @@
-
 defmodule ProcaWeb.MailboxPlug do
   import Plug.Conn
 

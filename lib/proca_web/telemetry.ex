@@ -4,7 +4,6 @@ defmodule ProcaWeb.Telemetry do
   use Supervisor
   require Logger
 
-  import Ecto.Query
   import Telemetry.Metrics
 
   alias Proca.Action.Message
@@ -74,6 +73,8 @@ defmodule ProcaWeb.Telemetry do
   end
 
   def count_sendable_messages do
+    import Ecto.Query
+
     active_campaigns =
       from(
         c in Proca.Campaign,
@@ -138,7 +139,7 @@ defmodule ProcaWeb.Telemetry do
   end
 
   defp enable_telemetry? do
-    Application.get_env(:proca, ProcaWeb.Telemetry, enable: true)[:enable]
+    Application.get_env(:proca, __MODULE__, enable: true)[:enable]
   end
 
   defp prometheus_port do

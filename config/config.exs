@@ -54,7 +54,6 @@ config :proca, Proca.Service.EmailBackend,
   srs_key: System.get_env("EMAIL_SRS_KEY") || "teiy1sah8seengiem0ee2Yai",
   srs_prefix: System.get_env("EMAIL_SRS_PREFIX") || "SRS0"
 
-
 # FPR seed only for development
 config :proca, Proca.Supporter, fpr_seed: "4xFc6MsafPEwc6ME"
 

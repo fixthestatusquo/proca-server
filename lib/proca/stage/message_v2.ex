@@ -62,7 +62,8 @@ defmodule Proca.Stage.MessageV2 do
       "thankYouTemplate" => thank_you_template,
       "thankYouTemplateRef" => MessageV1.action_page_template_ref(action_page),
       "supporterConfirmTemplate" =>
-        supporter_confirm_template || campaign.supporter_confirm_template || org.supporter_confirm_template
+        supporter_confirm_template || campaign.supporter_confirm_template ||
+          org.supporter_confirm_template
     }
   end
 

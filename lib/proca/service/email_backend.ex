@@ -229,11 +229,16 @@ defmodule Proca.Service.EmailBackend do
   defp maybe_add_reply(email, _, _), do: email
 
   def rewrite_sender(username, domain, unix_time \\ System.os_time(:millisecond)) do
-    if srs_key() == "teiy1sah8seengiem0ee2Yai", do:
-      warn("EMAIL_SRS_KEY missing, using '#{srs_key()}'")
+    if srs_key() == "teiy1sah8seengiem0ee2Yai",
+      do: warn("EMAIL_SRS_KEY missing, using '#{srs_key()}'")
+
     timestamp = trunc(unix_time / 1000 / (60 * 60 * 24)) |> rem(1024) |> encode_int32
-    hash = :crypto.mac(:hmac, :sha, srs_key(), timestamp <> domain <> username)
-      |> Base.encode16 |> String.slice(0..3)
+
+    hash =
+      :crypto.mac(:hmac, :sha, srs_key(), timestamp <> domain <> username)
+      |> Base.encode16()
+      |> String.slice(0..3)
+
     "#{srs_prefix()}=#{hash}=#{timestamp}=#{domain}=#{username}"
   end
 
@@ -242,7 +247,9 @@ defmodule Proca.Service.EmailBackend do
 
   @alphabet32 "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
   defp encode_int32(0, acc), do: acc
-  defp encode_int32(n, acc), do:
-    encode_int32(Integer.floor_div(n, 32), String.at(@alphabet32, rem(n, 32)) <> acc)
+
+  defp encode_int32(n, acc),
+    do: encode_int32(Integer.floor_div(n, 32), String.at(@alphabet32, rem(n, 32)) <> acc)
+
   defp encode_int32(n), do: encode_int32(n, "")
 end

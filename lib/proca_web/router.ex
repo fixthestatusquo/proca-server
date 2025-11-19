@@ -124,7 +124,7 @@ defmodule ProcaWeb.Router do
     post "/users/confirm/:token", UserConfirmationController, :update
   end
 
-  if Mix.env == :dev do
+  if Mix.env() == :dev do
     scope "/mailbox" do
       pipe_through :browser
 

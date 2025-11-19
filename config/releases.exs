@@ -114,15 +114,20 @@ config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 srs_key =
   case System.get_env("EMAIL_SRS_KEY") do
     nil ->
-      random_key = :crypto.strong_rand_bytes(32) |> Base.encode64(padding: false) |> binary_part(0, 32)
-      IO.puts """
+      random_key =
+        :crypto.strong_rand_bytes(32) |> Base.encode64(padding: false) |> binary_part(0, 32)
+
+      IO.puts("""
       \nWARNING ! WARNING ! WARNING !
       environment variable EMAIL_SRS_KEY is missing.
       You can generate one by calling: mix phx.gen.secret
       Using temporary random value: #{random_key}
-      """
+      """)
+
       random_key
-    key -> key
+
+    key ->
+      key
   end
 
 config :proca, Proca.Service.EmailBackend,

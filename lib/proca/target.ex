@@ -88,16 +88,16 @@ defmodule Proca.Target do
   end
 
   def upsert(input, nil) when is_list(input) do
-    ids = get_in input, [Access.all, :external_id]
+    ids = get_in(input, [Access.all(), :external_id])
     records = all(external_ids: ids, preload: [:emails, :campaign])
 
-    records_map = for rec <- records, into: %{} do
-      {rec.external_id, rec}
-    end
+    records_map =
+      for rec <- records, into: %{} do
+        {rec.external_id, rec}
+      end
 
     Enum.map(input, &upsert_one(&1, records_map))
   end
-
 
   def upsert_one(input, records_by_external_id) do
     record = records_by_external_id[input[:external_id]] || %Target{emails: [], campaign: nil}

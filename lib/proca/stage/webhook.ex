@@ -8,12 +8,10 @@ defmodule Proca.Stage.Webhook do
   """
   use Broadway
 
-  alias Proca.Repo
-
   alias Broadway.Message
-  alias Proca.{Org}
+  alias Proca.Org
   alias Proca.Service.Webhook
-
+  alias Proca.Repo
   import Logger
 
   import Proca.Stage.Support,

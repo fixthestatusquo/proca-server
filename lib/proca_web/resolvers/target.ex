@@ -45,7 +45,10 @@ defmodule ProcaWeb.Resolvers.Target do
     |> Multi.run(:delete_rest, fn repo, targets ->
       ext_ids = for {:target, ex_id} <- Map.keys(targets), do: ex_id
 
-      from(t in Target, where: t.campaign_id == ^campaign_id and t.external_id not in ^ext_ids, preload: [:emails])
+      from(t in Target,
+        where: t.campaign_id == ^campaign_id and t.external_id not in ^ext_ids,
+        preload: [:emails]
+      )
       |> repo.all()
       |> Enum.flat_map(& &1.emails)
       |> Enum.filter(&(&1.email_status in [:none, :active]))
@@ -69,7 +72,7 @@ defmodule ProcaWeb.Resolvers.Target do
       |> Enum.map(&Target.deleteset/1)
       |> Enum.reduce_while({:ok, 0}, fn tar, {:ok, deleted_count} ->
         case repo.delete(tar) do
-          {:ok, _deleted } -> {:cont, {:ok, deleted_count + 1}}
+          {:ok, _deleted} -> {:cont, {:ok, deleted_count + 1}}
           {:error, _errors} = e -> {:halt, e}
         end
       end)
@@ -89,7 +92,6 @@ defmodule ProcaWeb.Resolvers.Target do
   # Upserts targets given in `targets` list of attributes, for `campaign_id`
   # For each target calls Target.upsert()
   defp upsert_all(multi, targets, campaign_id) do
-
     targets
     |> Enum.map(&Map.put(&1, :campaign_id, campaign_id))
     |> Target.upsert()

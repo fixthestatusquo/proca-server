@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.User do
   import ProcaWeb.Helper, only: [format_errors: 1, msg_ext: 2]
 
   alias Proca.Auth
-  alias Proca.{Staffer}
+  alias Proca.Staffer
 
   import Proca.Repo
   import Ecto.Query, only: [from: 2]
