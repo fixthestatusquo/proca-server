@@ -15,7 +15,8 @@ defmodule Proca.Server.MTTContext do
   require Logger
 
   @default_locale "en"
-  @recent_test_messages -1 * 60 * 60 * 24 # 1 day ago
+  # 1 day ago
+  @recent_test_messages -1 * 60 * 60 * 24
 
   def get_active_targets() do
     now = DateTime.utc_now()
@@ -30,7 +31,7 @@ defmodule Proca.Server.MTTContext do
       join: te in assoc(target, :emails),
       where:
         mtt.drip_delivery == false and
-        not is_nil(email_backend) and
+          not is_nil(email_backend) and
           te.email_status in [:active, :none] and
           mtt.start_at <= ^now and
           mtt.end_at >= ^one_hour_ago and
@@ -39,7 +40,8 @@ defmodule Proca.Server.MTTContext do
       order_by: fragment("RANDOM()"),
       distinct: target.id,
       select: %{
-        target | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
+        target
+        | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}
       }
     )
     |> Repo.all()
@@ -236,8 +238,10 @@ defmodule Proca.Server.MTTContext do
     max_emails_per_hour(campaign)
   end
 
-  def max_emails_per_hour(%Campaign{mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone, end_at: end_at}}) do
-    now =  %{DateTime.utc_now | minute: 0, second: 0, microsecond: {0, 0}}
+  def max_emails_per_hour(%Campaign{
+        mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone, end_at: end_at}
+      }) do
+    now = %{DateTime.utc_now() | minute: 0, second: 0, microsecond: {0, 0}}
 
     if DateTime.diff(end_at, now, :hour) > 1 do
       Application.get_env(:proca, Proca.Server.MTTScheduler)
@@ -285,11 +289,11 @@ defmodule Proca.Server.MTTContext do
       join: mc in assoc(m, :message_content),
       where:
         m.target_id == ^target_id and
-        a.processing_status == :delivered and
-        a.testing == ^testing and
-        m.sent in ^sent and
-        m.dupe_rank == 0 and
-        mc.subject != "" and mc.body != "",
+          a.processing_status == :delivered and
+          a.testing == ^testing and
+          m.sent in ^sent and
+          m.dupe_rank == 0 and
+          mc.subject != "" and mc.body != "",
       order_by: [asc: m.id],
       distinct: m.id,
       preload: [
@@ -305,8 +309,7 @@ defmodule Proca.Server.MTTContext do
 
     from m in Message,
       join: a in assoc(m, :action),
-      where:
-        a.processing_status == :delivered and a.testing and a.inserted_at < ^recent
+      where: a.processing_status == :delivered and a.testing and a.inserted_at < ^recent
   end
 
   def make_email(

@@ -57,12 +57,13 @@ defmodule Proca.Server.MTTScheduler do
     {:noreply, state}
   end
 
-  def calc_interval(messages_count, _, 1) when messages_count > 1 and rem(messages_count, 2) == 0 do
+  def calc_interval(messages_count, _, 1)
+      when messages_count > 1 and rem(messages_count, 2) == 0 do
     div(@one_hour_ms, max(messages_count - 1, 1))
   end
 
   def calc_interval(messages_count, jitter_toggle, left_messages_count)
-       when messages_count > 1 and left_messages_count > 0 do
+      when messages_count > 1 and left_messages_count > 0 do
     base = div(@one_hour_ms, max(messages_count - 1, 1))
 
     # +/- 25%

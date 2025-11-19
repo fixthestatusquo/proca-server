@@ -102,7 +102,8 @@ defmodule Proca.Service.EmailBackend do
 
   @spec deliver([Email.t()], Org.t(), EmailTemplate.t() | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
-  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template) when is_list(recipients) do
+  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template)
+      when is_list(recipients) do
     backend = service_module(name)
 
     emails =

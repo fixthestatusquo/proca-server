@@ -101,7 +101,7 @@ defmodule Proca.Action.Message do
         # and either testing or only non-dupe if not testing
         where:
           mtt.drip_delivery == true and
-          a.processing_status == :delivered and
+            a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
             (a.testing == true or m.dupe_rank == 0) and

@@ -246,12 +246,15 @@ defmodule ProcaWeb.CampaignResolverTest do
     conn: conn,
     red_campaign: camp,
     red_user: user
-  }  do
-    q = update_query(camp.id, %{"mtt" => %{
-      "dripDelivery" => false,
-      "startAt" => "2026-04-12T16:14:14.170Z",
-      "endAt" => "2026-05-12T16:14:14.170Z"
-    }})
+  } do
+    q =
+      update_query(camp.id, %{
+        "mtt" => %{
+          "dripDelivery" => false,
+          "startAt" => "2026-04-12T16:14:14.170Z",
+          "endAt" => "2026-05-12T16:14:14.170Z"
+        }
+      })
 
     res =
       auth_api_post(conn, q, user)

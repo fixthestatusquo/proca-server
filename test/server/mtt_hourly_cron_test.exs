@@ -58,7 +58,11 @@ defmodule Proca.Server.MTTHourlyCronTest do
       assert {:ok, _} = MTTContext.dupe_rank()
     end
 
-    test "starts one MTT scheduler process per active target", %{cron_pid: cron_pid, sup_pid: sup_pid, targets: targets} do
+    test "starts one MTT scheduler process per active target", %{
+      cron_pid: cron_pid,
+      sup_pid: sup_pid,
+      targets: targets
+    } do
       assert Process.alive?(cron_pid)
       assert Process.alive?(sup_pid)
 

@@ -22,7 +22,9 @@ defmodule Proca.Server.MTTHourlyCron do
   def handle_info(:run_mtt, %{interval: interval} = state) do
     ref = Process.send_after(self(), :run_mtt, interval)
 
-    Logger.info("MTT CRON running at #{DateTime.utc_now()}, next in #{interval} ms (ref=#{inspect ref})")
+    Logger.info(
+      "MTT CRON running at #{DateTime.utc_now()}, next in #{interval} ms (ref=#{inspect(ref)})"
+    )
 
     MTTContext.dupe_rank()
     targets_active = MTTContext.get_active_targets()

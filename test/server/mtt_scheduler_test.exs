@@ -10,8 +10,10 @@ defmodule Proca.Server.MTTSchedulerTest do
   import Proca.StoryFactory, only: [mtt_story: 0]
 
   @one_hour_ms 55 * 60 * 1000
-  @base_for_4 div(@one_hour_ms, max(4 - 1, 1)) # messages_count = 4
-  @base_for_5 div(@one_hour_ms, max(5 - 1, 1)) # messages_count = 5
+  # messages_count = 4
+  @base_for_4 div(@one_hour_ms, max(4 - 1, 1))
+  # messages_count = 5
+  @base_for_5 div(@one_hour_ms, max(5 - 1, 1))
 
   setup do
     %{
@@ -26,12 +28,19 @@ defmodule Proca.Server.MTTSchedulerTest do
   end
 
   describe "MTTScheduler" do
-    test "Check test emails properly processed", %{targets: [%{emails: [%{email: test_email}]} = target | _], messages_test: messages_test} do
-      target  =
+    test "Check test emails properly processed", %{
+      targets: [%{emails: [%{email: test_email}]} = target | _],
+      messages_test: messages_test
+    } do
+      target =
         target
-        |> Map.put(:campaign,
+        |> Map.put(
+          :campaign,
           target.campaign
-          |> Map.put(:mtt, Repo.update!(Ecto.Changeset.change(target.campaign.mtt, %{test_email: test_email})))
+          |> Map.put(
+            :mtt,
+            Repo.update!(Ecto.Changeset.change(target.campaign.mtt, %{test_email: test_email}))
+          )
         )
 
       {target_id, count} = MTTContext.process_test_mails(target)
@@ -54,7 +63,10 @@ defmodule Proca.Server.MTTSchedulerTest do
       assert Enum.count(pending_messages) == 0
     end
 
-    test "Delivering messages", %{targets: [_, _, %{emails: [%{email: email}]} = target | _], messages_live: messages_live} do
+    test "Delivering messages", %{
+      targets: [_, _, %{emails: [%{email: email}]} = target | _],
+      messages_live: messages_live
+    } do
       max_emails = MTTContext.max_emails_per_hour(target.campaign)
 
       MTTContext.get_pending_messages(target.id, max_emails)
@@ -80,7 +92,8 @@ defmodule Proca.Server.MTTSchedulerTest do
       max_emails = MTTContext.max_emails_per_hour(target.campaign)
 
       # pending_messages before sending
-      pending_messages_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
+      pending_messages_count =
+        MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
 
       {:ok, pid} = MTTScheduler.start_link(target, max_emails)
 

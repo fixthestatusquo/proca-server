@@ -281,8 +281,11 @@ defmodule Proca.StoryFactory do
     targets_1 = Factory.insert_list(2, :target, campaign: campaign_1)
     targets_2 = Factory.insert_list(8, :target, campaign: campaign_2)
 
-    action_page_1 = Factory.insert(:action_page, org: org, campaign: campaign_1, name: "mtt/uk", locale: "uk")
-    action_page_2 = Factory.insert(:action_page, org: org, campaign: campaign_2, name: "mtt2/en", locale: "en")
+    action_page_1 =
+      Factory.insert(:action_page, org: org, campaign: campaign_1, name: "mtt/uk", locale: "uk")
+
+    action_page_2 =
+      Factory.insert(:action_page, org: org, campaign: campaign_2, name: "mtt2/en", locale: "en")
 
     actions_1 =
       Factory.insert_list(2, :action,
@@ -327,8 +330,7 @@ defmodule Proca.StoryFactory do
 
     target_0 = hd(targets)
 
-    messages_test =
-      Factory.insert_list(2, :message, action: action_test, target: target_0)
+    messages_test = Factory.insert_list(2, :message, action: action_test, target: target_0)
 
     %{
       targets: targets,

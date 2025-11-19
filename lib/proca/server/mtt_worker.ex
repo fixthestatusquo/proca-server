@@ -138,7 +138,7 @@ defmodule Proca.Server.MTTWorker do
       join: te in assoc(t, :emails),
       where:
         c.id == ^id and
-        te.email_status in [:active, :none],
+          te.email_status in [:active, :none],
       distinct: t.id,
       select: t.id
     )
