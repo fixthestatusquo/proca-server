@@ -47,21 +47,8 @@ defmodule Proca.Service.SMTP do
     # end
   end
 
-  def deliver(email, %Org{email_backend: srv, name: org_name}) do
-    conf = config(srv)
-
-    case SMTP.deliver(put_message_id(email), conf) do
-      {:ok, _} ->
-        :ok
-
-      {:error, reason} ->
-        Sentry.capture_message("Failed to send email by SMTP: #{inspect(reason)}",
-          extra: %{org: org_name},
-          result: :none
-        )
-    end
-
-    :ok
+  def deliver(email, org) do
+    deliver([email], org)
   end
 
   def put_message_id(%Email{private: %{custom_id: cid}} = eml) do

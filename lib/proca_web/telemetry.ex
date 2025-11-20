@@ -63,6 +63,7 @@ defmodule ProcaWeb.Telemetry do
   end
 
   def handle_event([:proca, :repo, :query], measurements, _metadata, _config) do
+    query_time = measurements[:query_time] || 0
     query_duration = System.convert_time_unit(measurements.query_time, :native, :millisecond)
 
     if query_duration > 10_000 do
