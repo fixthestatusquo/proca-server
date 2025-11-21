@@ -93,11 +93,8 @@ defmodule Proca.Service.SES do
     end
   end
 
-  def deliver(email, %Org{email_backend: srv}) do
-    case Swoosh.Adapters.AmazonSES.deliver(email, config(srv)) do
-      {:ok, _} -> :ok
-      {:error, _reason} = error -> {:error, [error]}
-    end
+  def deliver(email, org) do
+    deliver([email], org)
   end
 
   defp config(%Service{name: :ses, user: access_key, password: secret, host: region}) do

@@ -227,7 +227,7 @@ defmodule Proca.Server.MTTContext do
     end
   end
 
-  def max_emails_per_hour(%Campaign{mtt: %{max_emails_per_hour: nil, timezone: _}} = campaign) do
+  def max_emails_per_hour(campaign = %Campaign{mtt: %{max_emails_per_hour: nil, timezone: _}}) do
     limit_emails_per_hour =
       Application.get_env(:proca, Proca.Server.MTTScheduler)
       |> Access.get(:max_emails_per_hour, 30)
