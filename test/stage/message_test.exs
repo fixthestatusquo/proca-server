@@ -36,10 +36,6 @@ defmodule Proca.MessageTest do
       msg1: m1,
       msg2: m2
     } do
-      # IO.inspect(m1, label: "1")
-      # IO.inspect(m2, label: "2")
-      # IO.inspect(a.with_consent, label: "has consent")
-
       assert "event" in Map.keys(a.fields)
 
       assert m1["actionId"] == a.id

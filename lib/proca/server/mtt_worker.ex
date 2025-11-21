@@ -110,9 +110,9 @@ defmodule Proca.Server.MTTWorker do
     recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
     Message.select_by_targets(:all, false, true)
-    |> where([m, t, a], a.inserted_at >= ^recent)
-    |> order_by([m, t, a], asc: m.id)
-    |> preload([m, t, a], [[target: :emails], [action: :supporter], :message_content])
+    |> where([m, t, mtt, a], a.inserted_at >= ^recent)
+    |> order_by([m, t, mtt, a], asc: m.id)
+    |> preload([m, t, mtt, a], [[target: :emails], [action: :supporter], :message_content])
     |> Repo.all()
   end
 
@@ -136,7 +136,9 @@ defmodule Proca.Server.MTTWorker do
     from(t in Proca.Target,
       join: c in assoc(t, :campaign),
       join: te in assoc(t, :emails),
-      where: c.id == ^id and te.email_status in [:active, :none],
+      where:
+        c.id == ^id and
+          te.email_status in [:active, :none],
       distinct: t.id,
       select: t.id
     )
@@ -196,17 +198,17 @@ defmodule Proca.Server.MTTWorker do
     # Subquery to count delivered/goal messages for each target
     progress_per_target =
       Message.select_by_targets(target_ids, [false, true])
-      |> select([m, t, a], %{
+      |> select([m, t, mtt, a], %{
         target_id: t.id,
         goal: count(m.id) * ^cycle / ^all_cycles,
         sent: fragment("count(?) FILTER (WHERE sent)", m.id)
       })
-      |> group_by([m, t, a], t.id)
+      |> group_by([m, t, mtt, a], t.id)
 
     # Subquery to rank unsent message ids and select only these need to meet current goal
     unsent_per_target_ids =
       Message.select_by_targets(target_ids, false)
-      |> select([m, t, a], %{
+      |> select([m, t, mtt, a], %{
         message_id: m.id,
         target_id: t.id,
         rank: fragment("RANK() OVER (PARTITION BY ? ORDER BY ?)", t.id, m.id)

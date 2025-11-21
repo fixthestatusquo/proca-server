@@ -119,6 +119,37 @@ config :tailwind,
 
 config :swoosh, storage_driver: Proca.Service.Preview.OrgStorage
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
+config :proca, Proca.Server.MTTScheduler,
+  max_emails_per_hour: 30,
+  messages_ratio_per_hour: %{
+    0 => 0.02,
+    1 => 0.03,
+    2 => 0.04,
+    3 => 0.05,
+    4 => 0.06,
+    5 => 0.1,
+    6 => 0.15,
+    7 => 0.25,
+    8 => 0.5,
+    9 => 0.8,
+    10 => 1,
+    11 => 0.9,
+    12 => 0.7,
+    13 => 0.7,
+    14 => 0.9,
+    15 => 1,
+    16 => 0.9,
+    17 => 0.7,
+    18 => 0.5,
+    19 => 0.25,
+    20 => 0.2,
+    21 => 0.1,
+    22 => 0.05,
+    23 => 0.02
+  }
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

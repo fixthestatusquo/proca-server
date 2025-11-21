@@ -128,9 +128,9 @@ defmodule ProcaWeb.Router do
     scope "/mailbox" do
       pipe_through :browser
 
-      get "/:org_name", ProcaWeb.MailboxPlug, :show
+      get "/:message_id", ProcaWeb.MailboxPlug, :show
 
-      forward "/", Plug.Swoosh.MailboxPreview
+      forward "/", Plug.Swoosh.MailboxPreview, storage_driver: Proca.Service.Preview.OrgStorage
     end
   end
 end

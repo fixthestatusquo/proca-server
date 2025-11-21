@@ -19,15 +19,19 @@ defmodule ProcaWeb.Telemetry do
     children =
       if enable_telemetry?() do
         [
-          {:telemetry_poller,
-           measurements: periodic_measurements(),
-           period: :timer.seconds(60),
-           init_delay: :timer.seconds(30)},
-          {TelemetryMetricsPrometheus,
-           [
-             metrics: metrics(),
-             port: prometheus_port()
-           ]}
+          {
+            :telemetry_poller,
+            measurements: periodic_measurements(),
+            period: :timer.seconds(60),
+            init_delay: :timer.seconds(30)
+          },
+          {
+            TelemetryMetricsPrometheus,
+            [
+              metrics: metrics(),
+              port: prometheus_port()
+            ]
+          }
         ]
       else
         []
@@ -59,7 +63,8 @@ defmodule ProcaWeb.Telemetry do
   end
 
   def handle_event([:proca, :repo, :query], measurements, _metadata, _config) do
-    query_duration = System.convert_time_unit(measurements.query_time, :native, :millisecond)
+    query_time = measurements[:query_time] || 0
+    query_duration = System.convert_time_unit(query_time, :native, :millisecond)
 
     if query_duration > 10_000 do
       Logger.warning("""
@@ -72,7 +77,8 @@ defmodule ProcaWeb.Telemetry do
     import Ecto.Query
 
     active_campaigns =
-      from(c in Proca.Campaign,
+      from(
+        c in Proca.Campaign,
         join: mtt in Proca.MTT,
         on: mtt.campaign_id == c.id,
         where: mtt.start_at <= from_now(0, "day") and mtt.end_at >= from_now(0, "day"),
@@ -101,7 +107,7 @@ defmodule ProcaWeb.Telemetry do
         unit: {:native, :millisecond},
         tags: [:org_id]
       ),
-      sum("proxa.exporter.export_actions.count", tags: [:org_id]),
+      sum("proca.exporter.export_actions.count", tags: [:org_id]),
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
@@ -111,6 +117,11 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
       sum("proca.mtt.messages_sent", tags: @campaign_tags),
+
+      # MTT New Algo
+      # count sent messages per target
+      counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
+
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
       last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
@@ -129,10 +140,10 @@ defmodule ProcaWeb.Telemetry do
   end
 
   defp enable_telemetry? do
-    Application.get_env(:proca, __MODULE__, %{enable: true})[:enable]
+    Application.get_env(:proca, __MODULE__, enable: true)[:enable]
   end
 
   defp prometheus_port do
-    Application.get_env(:proca, __MODULE__, %{port: 9568})[:port]
+    Application.get_env(:proca, __MODULE__, port: 9568)[:port]
   end
 end

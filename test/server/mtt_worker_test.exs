@@ -1,7 +1,11 @@
 defmodule Proca.Server.MTTWorkerTest do
   use Proca.DataCase
+  @moduletag start: [:stats]
 
   import Proca.StoryFactory, only: [green_story: 0]
+  import Ecto.Query
+
+  alias Proca.Repo
   alias Proca.Factory
 
   alias Proca.Server.MTTWorker
@@ -84,14 +88,11 @@ defmodule Proca.Server.MTTWorkerTest do
   end
 
   def move_schedule(%{id: id}, past_mins, future_mins) do
-    import Ecto.Query
-    import Proca.Repo
-
     now = DateTime.utc_now()
     start_at = DateTime.add(now, -60 * past_mins, :second)
     end_at = DateTime.add(now, 60 * future_mins, :second)
 
-    update_all(from(mtt in Proca.MTT, where: mtt.campaign_id == ^id),
+    Repo.update_all(from(mtt in Proca.MTT, where: mtt.campaign_id == ^id),
       set: [start_at: start_at, end_at: end_at]
     )
 
@@ -148,11 +149,9 @@ defmodule Proca.Server.MTTWorkerTest do
       Message.mark_all(emails, :sent)
     end
 
-    test "test sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
-      import Ecto.Query
+    test "test sending", %{campaign: c, target: %{id: tid, emails: [%{email: test_email}]}} do
       Proca.Repo.update_all(from(a in Proca.Action), set: [testing: true])
 
-      test_email = "testemail@proca.app"
       c = %{c | mtt: Proca.Repo.update!(change(c.mtt, %{test_email: test_email}))}
 
       MTTWorker.process_mtt_test_mails()

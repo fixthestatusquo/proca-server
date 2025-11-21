@@ -21,6 +21,10 @@ defmodule Proca.MTT do
     # optional! must support also sending without it.
     field :message_template, :string
 
+    field :max_emails_per_hour, :integer
+    field :timezone, :string, default: "Etc/UTC"
+    field :drip_delivery, :boolean, default: true
+
     belongs_to :campaign, Proca.Campaign
   end
 
@@ -35,12 +39,16 @@ defmodule Proca.MTT do
       :message_template,
       :test_email,
       :cc_contacts,
-      :cc_sender
+      :cc_sender,
+      :max_emails_per_hour,
+      :timezone,
+      :drip_delivery
     ])
     |> change(assocs)
     |> validate_required([:start_at, :end_at])
     |> validate_after(:start_at, :end_at)
     |> Proca.Contact.Input.validate_email(:test_email)
     |> Proca.Service.EmailTemplate.validate_exists(:message_template)
+    |> validate_inclusion(:timezone, Tzdata.zone_list())
   end
 end

@@ -1,5 +1,7 @@
 defmodule Proca.StoryFactory do
   alias Proca.Factory
+  alias Proca.Repo
+
   import ExMachina, only: [sequence: 1]
 
   @moduledoc """
@@ -163,9 +165,6 @@ defmodule Proca.StoryFactory do
 
   """
   def violet_story() do
-    import Ecto.Changeset
-    import Proca.Repo
-
     org =
       Factory.insert(:org,
         name: "violet",
@@ -173,11 +172,11 @@ defmodule Proca.StoryFactory do
         contact_schema: :basic,
         email_from: "contact@violet.org"
       )
-      |> preload([:email_backend])
+      |> Repo.preload([:email_backend])
 
     provider = Factory.insert(:email_backend, host: "violet.org", org: org)
 
-    org = update!(change(org, email_backend: provider))
+    org = Repo.update!(Ecto.Changeset.change(org, email_backend: provider))
 
     campaign =
       Factory.insert(:campaign,
@@ -189,7 +188,7 @@ defmodule Proca.StoryFactory do
     ap =
       Factory.insert(:action_page, org: org, campaign: campaign, name: "violet/en", locale: "en")
 
-    insert!(
+    Repo.insert!(
       Proca.Service.EmailTemplate.changeset(%{
         org: org,
         name: "mustache template",
@@ -246,6 +245,97 @@ defmodule Proca.StoryFactory do
       page: teal_ap,
       campaign: teal_camp,
       partners: Enum.zip(partners, partner_aps) |> Enum.map(fn {p, ap} -> %{org: p, page: ap} end)
+    }
+  end
+
+  def mtt_story() do
+    org =
+      Factory.insert(:org,
+        name: "mtt_org",
+        title: "The MTT Org",
+        contact_schema: :basic,
+        email_from: "mtt_test@mtt.org"
+      )
+      |> Repo.preload([:email_backend])
+
+    provider = Factory.insert(:email_backend, host: "mtt.org", org: org)
+
+    org = Repo.update!(Ecto.Changeset.change(org, email_backend: provider))
+
+    campaign_1 =
+      Factory.insert(:campaign,
+        org: org,
+        name: "mtt",
+        title: "Mail To Target",
+        mtt: Factory.build(:mtt_new)
+      )
+
+    campaign_2 =
+      Factory.insert(:campaign,
+        org: org,
+        name: "mtt2",
+        title: "Mail To Target 2",
+        mtt: Factory.build(:mtt_new)
+      )
+
+    targets_1 = Factory.insert_list(2, :target, campaign: campaign_1)
+    targets_2 = Factory.insert_list(8, :target, campaign: campaign_2)
+
+    action_page_1 =
+      Factory.insert(:action_page, org: org, campaign: campaign_1, name: "mtt/uk", locale: "uk")
+
+    action_page_2 =
+      Factory.insert(:action_page, org: org, campaign: campaign_2, name: "mtt2/en", locale: "en")
+
+    actions_1 =
+      Factory.insert_list(2, :action,
+        action_page: action_page_1,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted
+      )
+
+    actions_2 =
+      Factory.insert_list(8, :action,
+        action_page: action_page_2,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted
+      )
+
+    action_test =
+      Factory.insert(:action,
+        action_page: action_page_1,
+        processing_status: :delivered,
+        supporter_processing_status: :accepted,
+        testing: true
+      )
+
+    targets_1
+    |> Enum.map(fn target ->
+      actions_1
+      |> Enum.map(fn action ->
+        Factory.insert(:message, action: action, target: target)
+      end)
+    end)
+
+    messages_live =
+      targets_2
+      |> Enum.map(fn target ->
+        actions_2
+        |> Enum.map(fn action ->
+          Factory.insert(:message, action: action, target: target)
+        end)
+      end)
+
+    targets = targets_1 |> Enum.concat(targets_2)
+
+    target_0 = hd(targets)
+
+    messages_test = Factory.insert_list(2, :message, action: action_test, target: target_0)
+
+    %{
+      targets: targets,
+      messages_test: messages_test,
+      messages_live: messages_live
     }
   end
 end

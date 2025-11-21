@@ -16,7 +16,7 @@ defmodule Proca.Service.SMTP do
   def list_templates(_org), do: {:ok, []}
 
   @impl true
-  def deliver(emails, %Org{email_backend: srv, name: org_name}) do
+  def deliver(emails, %Org{email_backend: srv, name: org_name}) when is_list(emails) do
     conf = config(srv)
 
     results =
@@ -45,6 +45,10 @@ defmodule Proca.Service.SMTP do
     #       {:error, reason} -> {:error, inspect(reason)}
     #     end)}
     # end
+  end
+
+  def deliver(email, org) do
+    deliver([email], org)
   end
 
   def put_message_id(%Email{private: %{custom_id: cid}} = eml) do

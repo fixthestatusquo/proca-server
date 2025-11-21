@@ -76,7 +76,7 @@ defmodule Proca.Service.SES do
   - single sender
   - no headers (no reply-to!)
   """
-  def deliver(emails, %Org{email_backend: srv}) do
+  def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
     results =
       emails
       |> Enum.map(fn e ->
@@ -91,6 +91,10 @@ defmodule Proca.Service.SES do
     else
       {:error, results}
     end
+  end
+
+  def deliver(email, org) do
+    deliver([email], org)
   end
 
   defp config(%Service{name: :ses, user: access_key, password: secret, host: region}) do

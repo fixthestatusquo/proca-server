@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.8.0",
+      version: "3.9.0",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -104,7 +104,8 @@ defmodule Proca.MixProject do
       {:dogma, "~> 0.1", only: [:dev]},
       {:faker, "~> 0.18", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
-      {:mix_version, "~> 2.1", only: [:dev], runtime: false}
+      {:mix_version, "~> 2.1", only: [:dev], runtime: false},
+      {:tzdata, "~> 1.1"}
     ]
   end
 

@@ -50,8 +50,27 @@ defmodule Proca.TargetEmail do
   end
 
   def mark_all(ids, status)
-      when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
+      when is_list(ids) and
+             status in [
+               :none,
+               :double_opt_in,
+               :bounce,
+               :blocked,
+               :spam,
+               :unsub,
+               :inactive,
+               :active
+             ] do
     Repo.update_all(from(te in TargetEmail, where: te.id in ^ids),
+      set: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
+    )
+
+    :ok
+  end
+
+  def mark_one(id, status)
+      when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
+    Repo.update_all(from(te in TargetEmail, where: te.id == ^id),
       set: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
     )
 

@@ -102,6 +102,18 @@ defmodule Proca.Service.Mailjet do
     |> handle_return(emails)
   end
 
+  @impl true
+  def deliver(email = %Email{}, %Org{email_backend: srv}) do
+    email =
+      email
+      |> put_assigns()
+      |> put_template(Map.get(email.private, :template, nil))
+      |> put_custom()
+
+    Mailjet.deliver(email, config(srv))
+    |> handle_return([email])
+  end
+
   # Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
 
   # Sending `[one_bad_email]`
