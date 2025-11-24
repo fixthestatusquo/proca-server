@@ -46,15 +46,21 @@ defmodule Proca.Stage.MessageV2 do
     |> put_action_meta(stage)
   end
 
+  # TODO: Check where do we use action_page_data. In every place we use it check if we need all the data.
+  def action_page_data(action_page, campaign = %Campaign{}) do
+    action_page = %{action_page | campaign: campaign}
+    action_page_data(action_page)
+  end
+
   def action_page_data(
-        %ActionPage{
+        action_page = %ActionPage{
           locale: locale,
           name: name,
           thank_you_template: thank_you_template,
           supporter_confirm_template: supporter_confirm_template,
           org: org,
           campaign: campaign
-        } = action_page
+        }
       ) do
     %{
       "locale" => locale,

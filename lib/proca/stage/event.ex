@@ -102,7 +102,7 @@ defmodule Proca.Stage.Event do
     |> Map.put(:supporter, supporter_data)
     |> Map.put(:campaign, MessageV2.campaign_data(action.campaign))
     |> Map.put(:campaign_id, action.campaign.id)
-    |> Map.put(:action_page, MessageV2.action_page_data(action.action_page))
+    |> Map.put(:action_page, MessageV2.action_page_data(action.action_page, action.campaign))
     |> Map.put(:action_page_id, action.action_page.id)
     |> Map.put(:action_id, action.id)
     |> Map.put(:action, action_data)
