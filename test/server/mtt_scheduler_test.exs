@@ -19,18 +19,25 @@ defmodule Proca.Server.MTTSchedulerTest do
     %{
       targets: targets,
       messages_test: messages_test,
-      messages_live: messages_live
+      messages_live: messages_live,
+      action: action
     } = mtt_story()
 
     MTTContext.dupe_rank()
 
-    %{targets: targets, messages_test: messages_test, messages_live: messages_live}
+    %{
+      targets: targets,
+      messages_test: messages_test,
+      messages_live: messages_live,
+      action: action
+    }
   end
 
   describe "MTTScheduler" do
     test "Check test emails properly processed", %{
       targets: [%{emails: [%{email: test_email}]} = target | _],
-      messages_test: messages_test
+      messages_test: messages_test,
+      action: action
     } do
       target =
         target
@@ -48,7 +55,7 @@ defmodule Proca.Server.MTTSchedulerTest do
       assert target_id == target.id
       assert count == Enum.count(messages_test)
 
-      mbox = Proca.TestEmailBackend.mailbox(test_email)
+      mbox = Proca.TestEmailBackend.mailbox(action.supporter.email)
 
       # limit to one per locale!
       assert length(mbox) == 1
