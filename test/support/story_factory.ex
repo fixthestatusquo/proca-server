@@ -57,12 +57,20 @@ defmodule Proca.StoryFactory do
       )
 
     red_ap =
-      Factory.insert(:action_page, campaign: red_camp, org: red_org, name: @red_website <> "/sign")
+      Factory.insert(:action_page,
+        campaign: red_camp,
+        org: red_org,
+        name: @red_website <> "/sign"
+      )
 
     yellow_org = Factory.insert(:org, name: "yellow")
 
     yellow_camp =
-      Factory.insert(:campaign, name: sequence("free-beer"), title: "Donate beer", org: yellow_org)
+      Factory.insert(:campaign,
+        name: sequence("free-beer"),
+        title: "Donate beer",
+        org: yellow_org
+      )
 
     yellow_ap =
       Factory.insert(:action_page,
@@ -335,7 +343,8 @@ defmodule Proca.StoryFactory do
     %{
       targets: targets,
       messages_test: messages_test,
-      messages_live: messages_live
+      messages_live: messages_live,
+      action: action_test
     }
   end
 end

@@ -156,13 +156,21 @@ defmodule Proca.Server.MTTWorkerTest do
 
       MTTWorker.process_mtt_test_mails()
 
-      mbox = Proca.TestEmailBackend.mailbox(test_email)
+      supporter_email =
+        Proca.Repo.one(
+          from s in Proca.Supporter,
+            join: camp in assoc(s, :campaign),
+            where: camp.id == ^c.id,
+            select: s.email,
+            limit: 1
+        )
+
+      mbox = Proca.TestEmailBackend.mailbox(supporter_email)
 
       # limit to one per locale!
       assert length(mbox) == 1
 
-      msg = mbox |> List.first()
-
+      msg = List.first(mbox)
       assert String.starts_with?(msg.subject, "[TEST]")
       assert msg.cc == [{"", test_email}]
     end
