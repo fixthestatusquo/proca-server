@@ -140,10 +140,12 @@ defmodule ProcaWeb.Telemetry do
   end
 
   defp enable_telemetry? do
-    Application.get_env(:proca, __MODULE__, enable: true)[:enable]
+    Application.get_env(:proca, __MODULE__)
+    |> Access.get(:enable, true)
   end
 
   defp prometheus_port do
-    Application.get_env(:proca, __MODULE__, port: 9568)[:port]
+    Application.get_env(:proca, __MODULE__)
+    |> Access.get(:port, 9568)
   end
 end
