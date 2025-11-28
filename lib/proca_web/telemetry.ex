@@ -5,6 +5,7 @@ defmodule ProcaWeb.Telemetry do
   require Logger
 
   import Telemetry.Metrics
+  import Ecto.Query
 
   alias Proca.Action.Message
 
@@ -74,8 +75,6 @@ defmodule ProcaWeb.Telemetry do
   end
 
   def count_sendable_messages do
-    import Ecto.Query
-
     active_campaigns =
       from(
         c in Proca.Campaign,
@@ -98,6 +97,17 @@ defmodule ProcaWeb.Telemetry do
         campaign_name: campaign.name
       })
     end)
+
+    {drip_delivery, no_drip_delivery} =
+      Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
+
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(drip_delivery)}, %{
+      drip_delivery: true
+    })
+
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(no_drip_delivery)}, %{
+      drip_delivery: false
+    })
   end
 
   defp metrics do
@@ -111,7 +121,7 @@ defmodule ProcaWeb.Telemetry do
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
-      last_value("proca.mtt.campaigns_running"),
+      last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
