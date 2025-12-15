@@ -18,9 +18,8 @@ defmodule Proca.Server.MTTContext do
   # 1 day ago
   @recent_test_messages -1 * 60 * 60 * 24
 
-  def get_active_targets() do
-    now = DateTime.utc_now()
-    one_hour_ago = DateTime.add(now, -1, :hour)
+  def get_active_targets do
+    today = Date.utc_today()
 
     from(
       target in Proca.Target,
@@ -33,10 +32,8 @@ defmodule Proca.Server.MTTContext do
         mtt.drip_delivery == false and
           not is_nil(email_backend) and
           te.email_status in [:active, :none] and
-          mtt.start_at <= ^now and
-          mtt.end_at >= ^one_hour_ago and
-          type(mtt.start_at, :time) <= type(^now, :time) and
-          type(mtt.end_at, :time) >= type(^one_hour_ago, :time),
+          fragment("?::date", mtt.start_at) <= ^today and
+          fragment("?::date", mtt.end_at) >= ^today,
       order_by: fragment("RANDOM()"),
       distinct: target.id,
       select: %{
