@@ -72,7 +72,7 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
     """
       {
         currentUser {
-          email 
+          email
           roles {
             org { name }
             role
@@ -114,7 +114,7 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       launchActionPage(name: "#{name}", message: "#{message}") {
       status
       }
-    } 
+    }
     """
   end
 
@@ -126,7 +126,7 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       },
       operationName: "Accept",
       query: """
-      mutation Accept($org: String!, $confirm: ConfirmInput!) { 
+      mutation Accept($org: String!, $confirm: ConfirmInput!) {
         acceptOrgConfirm(name: $org, confirm: $confirm) {
           status
           actionPage {
@@ -154,7 +154,9 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
       conn: conn,
       partner_user: pu,
       yellow_campaign: camp,
-      yellow_user: yu
+      yellow_user: yu,
+      yellow_campaigner_user: yc,
+      yellow_translator_user: yt
     } do
       new_org_params = %{
         name: "purple",
@@ -281,6 +283,9 @@ defmodule ProcaWeb.PartnerJoinCampaignTest do
                  }
                }
              } = res5
+
+      assert [] == mailbox(yt.email)
+      assert [] != mailbox(yc.email)
     end
   end
 end
