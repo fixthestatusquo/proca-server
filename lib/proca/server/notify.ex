@@ -55,6 +55,7 @@ defmodule Proca.Server.Notify do
 
   alias Proca.Repo
   alias Proca.{Action, Supporter, Org, PublicKey, Confirm, ActionPage, Campaign}
+  alias Proca.Staffer.Role
   alias Proca.Stage.Event
   alias Proca.Pipes
   import Logger
@@ -222,6 +223,7 @@ defmodule Proca.Server.Notify do
   def send_confirm_by_email(cnf = %Proca.Confirm{email: nil}, org = %Proca.Org{}) do
     recipients =
       Repo.preload(org, staffers: :user).staffers
+      |> Enum.filter(fn staffer -> Role.findrole(staffer) in [:owner, :campaigner] end)
       |> Enum.map(fn %{user: user} -> user.email end)
 
     cnf = Repo.preload(cnf, [:creator])
