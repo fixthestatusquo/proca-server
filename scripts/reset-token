@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -u 
+set -e 
+
+if [ $# -lt 1 ]; then
+  echo reset user token in proca-server user db
+  echo $0 email 
+  exit 1
+fi 
+
+email=$1
+
+#Proca.Repo.update!(ch)
+echo "reset token for $email"
+#proca-stg rpc "
+proca-live rpc "
+  alias Proca.Users
+  user = Users.get_user_by_email(\"$email\") || throw :no_such_user
+  {ch, token} = Users.reset_api_token(user)      
+  IO.puts(token)
+"
