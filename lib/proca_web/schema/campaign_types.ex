@@ -70,6 +70,10 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :contact_schema, non_null(:contact_schema)
     @desc "Custom config map"
     field :config, non_null(:json)
+    @desc "Campaign start date"
+    field :start_date, :date
+    @desc "Campaign end date"
+    field :end_date, :date
 
     @desc "Action processing settings for this campaign"
     field :campaign_processing, :campaign_processing do
@@ -302,6 +306,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Custom config as stringified JSON map"
     field(:config, :json)
+
+    @desc "Campaign start date"
+    field(:start_date, :date)
+
+    @desc "Campaign end date"
+    field(:end_date, :date)
 
     @desc "Action pages of this campaign"
     field(:action_pages, list_of(non_null(:action_page_input)))
