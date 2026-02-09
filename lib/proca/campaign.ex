@@ -22,8 +22,8 @@ defmodule Proca.Campaign do
     field :status, CampaignStatus, default: :live
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
-    field :start_date, :date
-    field :end_date, :date
+    field :start, :date,  source: :start_date
+    field :end, :date, source: :end_date
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -47,8 +47,8 @@ defmodule Proca.Campaign do
       :status,
       :supporter_confirm,
       :supporter_confirm_template,
-      :start_date,
-      :end_date
+      :start,
+      :end
     ])
     |> change(assocs)
     |> cast_assoc(:mtt)
@@ -62,11 +62,11 @@ defmodule Proca.Campaign do
   end
 
   defp validate_date_range(changeset) do
-    start_date = get_field(changeset, :start_date)
-    end_date = get_field(changeset, :end_date)
+    start = get_field(changeset, :start)
+    end_date = get_field(changeset, :end)
 
-    if start_date && end_date && Date.compare(start_date, end_date) != :lt do
-      add_error(changeset, :end_date, "must be after start_date")
+    if start && end_date && Date.compare(start, end_date) != :lt do
+      add_error(changeset, :end, "must be after start")
     else
       changeset
     end
