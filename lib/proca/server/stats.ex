@@ -144,7 +144,7 @@ defmodule Proca.Server.Stats do
   @doc """
   Run the full calculation of stats for all campaigns.
   """
-  def calculate(), do: do_calculate(nil)
+  def calculate(), do: do_calculate(nil, 30_000)
 
   @doc """
   Run calculation of stats for live campaigns only.
@@ -153,14 +153,14 @@ defmodule Proca.Server.Stats do
   def calculate_live() do
     campaign_ids =
       from(c in Campaign, where: c.status == :live, select: c.id)
-      |> Repo.all(timeout: 30_000)
+      |> Repo.all(timeout: 10_000)
 
-    do_calculate(campaign_ids)
+    do_calculate(campaign_ids, 10_000)
   end
 
-  defp do_calculate([]), do: %{}
+  defp do_calculate([], _timeout), do: %{}
 
-  defp do_calculate(filter_ids) do
+  defp do_calculate(filter_ids, timeout) do
     # Calculation of supporters:
     # We can have many supporters records for same fingerprint.
     # We want to use only last one per each campaign.
@@ -183,12 +183,12 @@ defmodule Proca.Server.Stats do
         select: {a.campaign_id, ap.org_id, count(s.fingerprint, :distinct)}
       )
       |> maybe_filter_campaigns(filter_ids)
-      |> Repo.all(timeout: 60_000)
+      |> Repo.all(timeout: timeout)
 
     # create data for all campaigns so we don't have missing key below
     campaign_ids =
       case filter_ids do
-        nil -> Repo.all(from(c in Campaign, select: c.id), timeout: 30_000)
+        nil -> Repo.all(from(c in Campaign, select: c.id), timeout: timeout)
         ids -> ids
       end
 
@@ -223,7 +223,7 @@ defmodule Proca.Server.Stats do
         select: {ap.campaign_id, ap.org_id, sum(ap.extra_supporters)}
       )
       |> maybe_filter_campaigns(filter_ids)
-      |> Repo.all(timeout: 30_000)
+      |> Repo.all(timeout: timeout)
 
     # warning : if org has only exras, they are not yet in the map
     {result_all, result_orgs} =
@@ -247,7 +247,7 @@ defmodule Proca.Server.Stats do
         select: {a.campaign_id, a.action_type, count(a.id)}
       )
       |> maybe_filter_campaigns(filter_ids)
-      |> Repo.all(timeout: 30_000)
+      |> Repo.all(timeout: timeout)
 
     result_action =
       for {campaign_id, action_type, count} <- action_counts, reduce: %{} do
