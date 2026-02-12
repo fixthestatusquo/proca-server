@@ -5,8 +5,11 @@ defmodule Proca.Supporter.RejectLinkTest do
   alias Proca.Supporter.RejectLink
 
   test "reject link force-rejects action/supporter, revokes DOI, and emits notify" do
+    action_page = Factory.insert(:action_page)
+
     supporter =
       Factory.insert(:basic_data_pl_supporter_with_contact,
+        action_page: action_page,
         processing_status: :accepted,
         email_status: :double_opt_in
       )
@@ -55,8 +58,11 @@ defmodule Proca.Supporter.RejectLinkTest do
   end
 
   test "reject link is idempotent and only notifies once for DOI revoke" do
+    action_page = Factory.insert(:action_page)
+
     supporter =
       Factory.insert(:basic_data_pl_supporter_with_contact,
+        action_page: action_page,
         processing_status: :accepted,
         email_status: :double_opt_in
       )
