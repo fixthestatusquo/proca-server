@@ -17,7 +17,8 @@ defmodule Proca.Supporter.RejectLink do
           {:ok, %{action: Action.t(), supporter: Supporter.t(), email_status_changed?: boolean()}}
           | {:error, term()}
   def run(action = %Action{}, notify_fun \\ &Notify.updated/2) when is_function(notify_fun, 2) do
-    supporter = Repo.preload(action, [:supporter]).supporter
+    # Force reload to avoid stale preloaded associations when reject links are retried.
+    supporter = Repo.preload(action, [:supporter], force: true).supporter
     email_status_changed? = supporter.email_status == :double_opt_in
 
     multi =
