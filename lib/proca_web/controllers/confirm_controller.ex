@@ -10,6 +10,7 @@ defmodule ProcaWeb.ConfirmController do
   import Ecto.Query
   import Proca.Repo
   alias Proca.{Supporter, Action, Confirm, Staffer, ActionPage, Auth}
+  alias Proca.Supporter.RejectLink
   import ProcaWeb.Helper, only: [request_basic_auth: 2]
 
   @doc """
@@ -167,19 +168,10 @@ defmodule ProcaWeb.ConfirmController do
   end
 
   defp handle_supporter(action = %Action{supporter: sup}, "reject") do
-    case Supporter.reject(sup) do
-      {:ok, _sup2} -> :ok
-      {:noop, _} -> :ok
+    case RejectLink.run(action) do
+      {:ok, _result} -> :ok
       {:error, msg} -> {:error, 400, msg}
     end
-
-    case Action.reject(action) do
-      {:ok, _action2} -> :ok
-      {:noop, _} -> :ok
-      {:error, msg} -> {:error, 400, msg}
-    end
-
-    :ok
   end
 
   # Change the supporter email_status
