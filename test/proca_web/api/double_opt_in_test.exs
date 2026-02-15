@@ -164,7 +164,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
       click_supporter_link(conn, %{a | supporter: s}, :reject)
 
       s = check_supporter(ref, status: :rejected, email_status: :none, consent: {true, false})
-      a = check_action(s, status: :new)
+      a = check_action(s, status: :rejected)
 
       process(a)
 

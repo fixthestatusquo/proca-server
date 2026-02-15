@@ -56,8 +56,9 @@ defmodule Proca.Supporter do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage}
+  alias Proca.{Supporter, Contact, Action, ActionPage}
   alias Proca.Contact.Data
+  alias Proca.Supporter.RejectAction
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
 
@@ -233,14 +234,17 @@ defmodule Proca.Supporter do
   end
 
   def handle_bounce(%{id: id, reason: reason}) do
-    case one(action_id: id) do
+    case Action.one(id: id, preload: [:supporter]) do
       # ignore a bounce when not found
       nil ->
         {:ok, %Supporter{}}
 
-      supporter ->
-        reject(supporter)
-        Repo.update!(changeset(supporter, %{email_status: reason}))
+      action ->
+        case RejectAction.run(action, email_status: reason) do
+          {:ok, %{supporter: supporter}} -> supporter
+          {:error, :supporter_not_found} -> {:ok, %Supporter{}}
+          {:error, _reason} = err -> err
+        end
     end
   end
 

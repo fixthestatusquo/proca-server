@@ -69,7 +69,9 @@ defmodule SupporterTest do
     Supporter.handle_bounce(params)
 
     supporter = Supporter.get_by_action_id(action.id)
+    action = Repo.get!(Action, action.id)
 
     assert supporter.processing_status == :rejected
+    assert action.processing_status == :rejected
   end
 end
