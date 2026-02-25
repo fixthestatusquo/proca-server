@@ -22,6 +22,10 @@ defmodule Proca.Service.EmailMerge do
   - `tracking.campaign` - the utm_campaign of action
   - `tracking.medium` - the utm_medium
   - `tracking.source` - the utm_source
+  - `tracking.content` - the utm_content of action
+  - `tracking.location` - the raw location URL
+  - `tracking.encodedLocation` - URL-encoded location (use in href)
+  - `tracking.encodedContent` - URL-encoded utm_content (use in href)
   - `isDupe` - true if supporter for this campaign is a duplicate.
   - `privacy.optIn`
   - custom fields - custom fields (camel cased!)
@@ -153,7 +157,7 @@ defmodule Proca.Service.EmailMerge do
       action_type: get_in(action_data, ["action", "actionType"]),
       created_at: DateTime.to_string(created_at),
       is_action_type: %{get_in(action_data, ["action", "actionType"]) => true},
-      tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
+      tracking: get_in(action_data, ["tracking"]) |> also_encode("location") |> also_encode("content"),
       privacy: get_in(action_data, ["privacy"])
     })
   end
