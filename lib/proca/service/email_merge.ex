@@ -26,7 +26,6 @@ defmodule Proca.Service.EmailMerge do
   - `tracking.location` - the raw location URL
   - `tracking.encodedLocation` - URL-encoded location (use in href)
   - `tracking.encodedContent` - URL-encoded utm_content (use in href)
-  - `variant.content` - list of `%{value: v}` maps, one per space-separated token in utm_content (e.g. {{#variant.content}}{{value}}{{/variant.content}})
   - `variant.{token}` - boolean `true` for each cleaned, space-separated token in utm_content
   - `isDupe` - true if supporter for this campaign is a duplicate.
   - `privacy.optIn`
@@ -221,19 +220,15 @@ defmodule Proca.Service.EmailMerge do
     "<p>" <> String.replace(text, "\n", "</p><p>") <> "</p>"
   end
 
-  defp make_variant(nil), do: %{content: []}
+  defp make_variant(nil), do: %{}
   defp make_variant(content) when is_bitstring(content) do
     tokens = String.split(content, ~r/\s+/, trim: true)
-    values = Enum.map(tokens, &%{value: &1})
 
-    booleans =
-      tokens
-      |> Enum.map(&Regex.replace(~r/[^a-zA-Z0-9_]/, &1, ""))
-      |> Enum.reject(&(&1 == ""))
-      |> Enum.map(&{&1, true})
-      |> Map.new()
-
-    Map.merge(%{content: values}, booleans)
+    tokens
+    |> Enum.map(&Regex.replace(~r/[^a-zA-Z0-9_]/, &1, ""))
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.map(&{&1, true})
+    |> Map.new()
   end
 
   def also_encode(nil, _), do: nil
