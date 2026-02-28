@@ -225,7 +225,11 @@ defmodule Proca.Service.EmailMerge do
     tokens = String.split(content, ~r/\s+/, trim: true)
 
     tokens
-    |> Enum.map(&Regex.replace(~r/[^a-zA-Z0-9_]/, &1, ""))
+    |> Enum.map(fn token ->
+      token
+      |> String.replace("-", "_")
+      |> String.replace(~r/[^a-zA-Z0-9_]/, "")
+    end)
     |> Enum.reject(&(&1 == ""))
     |> Enum.map(&{&1, true})
     |> Map.new()

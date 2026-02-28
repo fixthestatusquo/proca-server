@@ -8,7 +8,8 @@ defmodule Proca.Service.EmailTemplate do
   use Proca.Schema, module: __MODULE__
   alias Proca.Org
   alias Swoosh.Email
-  import Proca.Stage.Support, only: [camel_case_keys: 1]
+  import Proca.Stage.Support, only: [camel_case_keys: 2]
+  @mix_env Mix.env()
   import Ecto.Changeset
 
   schema "email_templates" do
@@ -143,7 +144,14 @@ defmodule Proca.Service.EmailTemplate do
           }
         }
       ) do
-    vars = camel_case_keys(email.assigns)
+    vars = camel_case_keys(email.assigns, ignore: :variant)
+
+    vars =
+      if @mix_env != :prod do
+        Map.put(vars, "debug", "<pre>" <> Jason.encode!(vars, pretty: true) <> "</pre>")
+      else
+        vars
+      end
 
     %Email{
       email
