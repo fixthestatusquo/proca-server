@@ -161,6 +161,7 @@ defmodule Proca.Service.EmailMerge do
       tracking:
         get_in(action_data, ["tracking"]) |> also_encode("location") |> also_encode("content"),
       variant: make_variant(get_in(action_data, ["tracking", "content"])),
+      test: get_in(action_data, ["action", "testing"]),
       privacy: get_in(action_data, ["privacy"])
     })
   end
