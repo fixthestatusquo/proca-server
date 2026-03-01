@@ -146,7 +146,11 @@ defmodule Proca.Service.EmailTemplate do
       ) do
     vars = camel_case_keys(email.assigns, ignore: :variant)
 
-    vars = Map.put(vars, "debug", "<pre>" <> Jason.encode!(vars, pretty: true) <> "</pre>")
+    vars = if is_nil(vars["test"]) or vars["test"] do
+      Map.put(vars, "debug", "<pre>" <> Jason.encode!(vars, pretty: true) <> "</pre>")
+    else
+      vars
+    end
 
     %Email{
       email
