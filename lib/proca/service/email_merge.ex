@@ -161,6 +161,7 @@ defmodule Proca.Service.EmailMerge do
       tracking:
         get_in(action_data, ["tracking"]) |> also_encode("location") |> also_encode("content"),
       variant: make_variant(get_in(action_data, ["tracking", "content"])),
+      test: get_in(action_data, ["action", "testing"]),
       privacy: get_in(action_data, ["privacy"])
     })
   end
@@ -225,7 +226,11 @@ defmodule Proca.Service.EmailMerge do
     tokens = String.split(content, ~r/\s+/, trim: true)
 
     tokens
-    |> Enum.map(&Regex.replace(~r/[^a-zA-Z0-9_]/, &1, ""))
+    |> Enum.map(fn token ->
+      token
+      |> String.replace("-", "_")
+      |> String.replace(~r/[^a-zA-Z0-9_]/, "")
+    end)
     |> Enum.reject(&(&1 == ""))
     |> Enum.map(&{&1, true})
     |> Map.new()
