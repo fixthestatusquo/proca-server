@@ -290,6 +290,23 @@ defmodule Proca.Supporter do
     one(action_id: action_id)
   end
 
+  def gdpr_erase(fingerprint) when is_binary(fingerprint) do
+    import Ecto.Query
+
+    Repo.transaction(fn ->
+      Repo.update_all(
+        from(s in Supporter,
+          where:
+            s.fingerprint == ^fingerprint and
+              s.processing_status in [:accepted, :delivered]),
+        set: [first_name: nil, last_name: nil, email: nil, address: nil]
+      )
+
+      sup_ids = from(s in Supporter, where: s.fingerprint == ^fingerprint, select: s.id)
+      Repo.delete_all(from(c in Contact, where: c.supporter_id in subquery(sup_ids)))
+    end)
+  end
+
   def clear_transient_fields(supporter_change) do
     supporter = supporter_change.data
 
