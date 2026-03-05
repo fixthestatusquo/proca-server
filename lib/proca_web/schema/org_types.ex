@@ -317,6 +317,23 @@ defmodule ProcaWeb.Schema.OrgTypes do
     end
 
     @desc """
+    Anonymize personal data (GDPR right-to-erasure).
+    Nulls PII fields on supporter and deletes all contact records.
+    Only affects fully processed (accepted/delivered) supporters.
+    """
+    field :delete_contacts, type: non_null(:status) do
+      arg(:org_name, non_null(:string))
+      @desc "contact_ref from action export (base64url fingerprint)"
+      arg(:contact_ref, non_null(:string))
+
+      load(:org, by: [:org_name])
+      determine_auth(for: :org)
+      allow([:org_owner])
+
+      resolve(&Resolvers.Org.delete_contacts/3)
+    end
+
+    @desc """
     Upsert an email tempalte to be used for sending various emails.
     It belongs to org and is identified by (name, locale), so you can have multiple "thank_you" templates for different languages.
     """
