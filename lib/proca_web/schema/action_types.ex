@@ -103,6 +103,9 @@ defmodule ProcaWeb.Schema.ActionTypes do
       @desc "Also include testing actions"
       arg(:include_testing, :boolean)
 
+      @desc "Filter by supporter email address (for GDPR lookup)"
+      arg(:email, :string)
+
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
       allow([:export_contacts])

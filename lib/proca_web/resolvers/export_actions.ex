@@ -51,6 +51,18 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def filter_testing(q, %{include_testing: true}), do: q
   def filter_testing(q, _), do: where(q, [a, s, c], a.testing == false)
 
+  def filter_email(q, %{email: email}), do: where(q, [a, s], s.email == ^email)
+  def filter_email(q, _), do: q
+
+  def filter_processing_status(q, %{email: _}), do: q
+
+  def filter_processing_status(q, _) do
+    where(q, [a, s],
+      s.processing_status == :accepted and
+        a.processing_status in [:accepted, :delivered]
+    )
+  end
+
   @doc "onlyContacts: true enables with_consent=true filtering"
   def filter_consent(q, %{only_contacts: true}), do: where(q, [a, s, c], a.with_consent == true)
   def filter_consent(q, _), do: q
@@ -148,10 +160,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         :source,
         :donation
       ],
-      where:
-        s.processing_status == :accepted and
-          a.processing_status in [:accepted, :delivered] and
-          not is_nil(s.email)
+      where: not is_nil(s.email)
     )
     |> filter_start(params)
     |> filter_after(params)
@@ -159,6 +168,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_optin(params)
     |> filter_doubleoptin(params)
     |> filter_testing(params)
+    |> filter_email(params)
+    |> filter_processing_status(params)
     |> filter_consent(params)
     |> order_by([a], asc: a.id)
     |> Repo.all(timeout: 30_000, telemetry_options: %{org_id: org.id, event: :export_actions})
