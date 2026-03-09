@@ -290,20 +290,23 @@ defmodule Proca.Supporter do
     one(action_id: action_id)
   end
 
-  def gdpr_erase(fingerprint) when is_binary(fingerprint) do
+  def gdpr_erase(fingerprint, org_id) when is_binary(fingerprint) do
     import Ecto.Query
 
     Repo.transaction(fn ->
       Repo.update_all(
         from(s in Supporter,
+          join: ap in Proca.ActionPage, on: s.action_page_id == ap.id,
+          join: c in Proca.Campaign, on: ap.campaign_id == c.id,
           where:
             s.fingerprint == ^fingerprint and
+              c.org_id == ^org_id and
               s.processing_status in [:accepted, :delivered]),
         set: [first_name: nil, last_name: nil, email: nil, address: nil]
       )
 
       sup_ids = from(s in Supporter, where: s.fingerprint == ^fingerprint, select: s.id)
-      Repo.delete_all(from(c in Contact, where: c.supporter_id in subquery(sup_ids)))
+      Repo.delete_all(from(c in Contact, where: c.supporter_id in subquery(sup_ids) and c.org_id == ^org_id))
     end)
   end
 

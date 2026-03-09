@@ -360,10 +360,10 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
-  def delete_contacts(_parent, %{contact_ref: ref_b64}, _context) do
+  def delete_contact(_parent, %{contact_ref: ref_b64}, %{context: %{org: org}}) do
     case Supporter.base_decode(ref_b64) do
       {:ok, fingerprint} ->
-        {:ok, _} = Supporter.gdpr_erase(fingerprint)
+        {:ok, _} = Supporter.gdpr_erase(fingerprint, org.id)
         {:ok, :success}
 
       :error ->

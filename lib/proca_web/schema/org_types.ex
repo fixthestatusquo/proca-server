@@ -321,7 +321,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     Nulls PII fields on supporter and deletes all contact records.
     Only affects fully processed (accepted/delivered) supporters.
     """
-    field :delete_contacts, type: non_null(:status) do
+    field :delete_contact, type: non_null(:status) do
       arg(:org_name, non_null(:string))
       @desc "contact_ref from action export (base64url fingerprint)"
       arg(:contact_ref, non_null(:string))
@@ -330,7 +330,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       determine_auth(for: :org)
       allow([:org_owner])
 
-      resolve(&Resolvers.Org.delete_contacts/3)
+      resolve(&Resolvers.Org.delete_contact/3)
     end
 
     @desc """
