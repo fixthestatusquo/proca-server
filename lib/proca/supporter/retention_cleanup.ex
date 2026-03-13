@@ -58,9 +58,10 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   defp cleanup_queries(org_id, months) do
     supporter_ids = eligible_supporter_ids_query(org_id, months)
+    supporter_ids_to_clear = supporter_ids_to_clear_query(supporter_ids, org_id)
 
     %{
-      supporters: from(s in Supporter, where: s.id in subquery(supporter_ids)),
+      supporters: from(s in Supporter, where: s.id in subquery(supporter_ids_to_clear)),
       contacts:
         from(c in Contact,
           where: c.org_id == ^org_id and c.supporter_id in subquery(supporter_ids)
@@ -69,6 +70,18 @@ defmodule Proca.Supporter.RetentionCleanup do
   end
 
   defp eligible_supporter_ids_query(org_id, months) do
+    candidate_supporters = candidate_supporters_query(org_id, months)
+    protected_fingerprints = protected_fingerprints_query(org_id, months)
+
+    from(candidate in subquery(candidate_supporters),
+      left_join: protected in subquery(protected_fingerprints),
+      on: protected.fingerprint == candidate.fingerprint,
+      where: is_nil(protected.fingerprint),
+      select: candidate.id
+    )
+  end
+
+  defp candidate_supporters_query(org_id, months) do
     from(s in Supporter,
       join: c in Contact,
       on: c.supporter_id == s.id and c.org_id == ^org_id,
@@ -77,7 +90,7 @@ defmodule Proca.Supporter.RetentionCleanup do
       join: campaign in Campaign,
       on: campaign.id == a.campaign_id,
       where: s.processing_status in ^@processed_statuses,
-      group_by: s.id,
+      group_by: [s.id, s.fingerprint],
       having:
         fragment(
           "bool_and(?)",
@@ -85,6 +98,37 @@ defmodule Proca.Supporter.RetentionCleanup do
             campaign.status == ^:closed and
             a.inserted_at < ago(^months, "month")
         ),
+      select: %{id: s.id, fingerprint: s.fingerprint}
+    )
+  end
+
+  defp protected_fingerprints_query(org_id, months) do
+    from(s in Supporter,
+      join: c in Contact,
+      on: c.supporter_id == s.id and c.org_id == ^org_id,
+      join: a in Action,
+      on: a.supporter_id == s.id,
+      join: campaign in Campaign,
+      on: campaign.id == a.campaign_id,
+      where:
+        not (
+          a.processing_status in ^@processed_statuses and
+            campaign.status == ^:closed and
+            a.inserted_at < ago(^months, "month")
+        ),
+      distinct: true,
+      select: %{fingerprint: s.fingerprint}
+    )
+  end
+
+  defp supporter_ids_to_clear_query(supporter_ids, org_id) do
+    from(s in Supporter,
+      join: eligible in subquery(supporter_ids),
+      on: eligible.id == s.id,
+      left_join: other_contacts in Contact,
+      on: other_contacts.supporter_id == s.id and other_contacts.org_id != ^org_id,
+      group_by: s.id,
+      having: count(other_contacts.id) == 0,
       select: s.id
     )
   end
