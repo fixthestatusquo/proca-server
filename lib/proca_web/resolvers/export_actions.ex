@@ -51,16 +51,24 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def filter_testing(q, %{include_testing: true}), do: q
   def filter_testing(q, _), do: where(q, [a, s, c], a.testing == false)
 
-  def filter_email(q, %{email: email}), do: where(q, [a, s], s.email == ^email)
-  def filter_email(q, _), do: q
+  def filter_email(q, params) do
+    case normalized_email(params) do
+      nil -> q
+      email -> where(q, [a, s], s.email == ^email)
+    end
+  end
 
-  def filter_processing_status(q, %{email: _}), do: q
-
-  def filter_processing_status(q, _) do
-    where(q, [a, s],
-      s.processing_status == :accepted and
-        a.processing_status in [:accepted, :delivered]
-    )
+  def filter_processing_status(q, params) do
+    if normalized_email(params) do
+      q
+    else
+      where(
+        q,
+        [a, s],
+        s.processing_status == :accepted and
+          a.processing_status in [:accepted, :delivered]
+      )
+    end
   end
 
   @doc "onlyContacts: true enables with_consent=true filtering"
@@ -180,6 +188,17 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def export_contacts(parent, params, context) do
     export_actions(parent, Map.put(params, :only_contacts, true), context)
   end
+
+  defp normalized_email(%{email: email}) when is_binary(email) do
+    case String.trim(email) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalized_email(%{email: nil}), do: nil
+  defp normalized_email(%{email: email}), do: email
+  defp normalized_email(_), do: nil
 
   defp ok(val) do
     {:ok, val}
