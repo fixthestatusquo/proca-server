@@ -135,4 +135,61 @@ defmodule ProcaWeb.ExportActionResolverTest do
 
     assert Enum.map(l, & &1.action_id) == [action.id]
   end
+
+  test "contacts export finds processed supporter by fingerprint after email cleared", %{
+    org: org,
+    action_page: ap,
+    admin: %{user: user}
+  } do
+    email = "processed@example.org"
+
+    supporter =
+      Factory.build(:basic_data_pl_supporter_with_contact,
+        action_page: ap,
+        processing_status: :accepted,
+        data: Factory.build(:basic_data_pl, email: email)
+      )
+
+    action =
+      Factory.insert(:action,
+        action_page: ap,
+        supporter: supporter,
+        processing_status: :delivered
+      )
+
+    # Simulate clear_transient_fields: clear email from supporter after processing
+    Ecto.Changeset.change(action.supporter, email: nil)
+    |> Proca.Repo.update!()
+
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_contacts(
+        nil,
+        %{email: email},
+        %{context: %{user: user, org: org}}
+      )
+
+    assert Enum.map(l, & &1.action_id) == [action.id]
+  end
+
+  test "exportAction --after returns processed supporters with cleared email", %{
+    org: org,
+    action_page: ap,
+    actions: actions,
+    admin: %{user: user}
+  } do
+    # Simulate clear_transient_fields: clear email from all supporters
+    for a <- actions do
+      Ecto.Changeset.change(a.supporter, email: nil)
+      |> Proca.Repo.update!()
+    end
+
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_actions(
+        nil,
+        %{after: ~U[2000-01-01 00:00:00Z]},
+        %{context: %{user: user, org: org}}
+      )
+
+    assert Enum.count(l) == 3
+  end
 end
