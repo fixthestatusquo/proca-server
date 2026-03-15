@@ -36,8 +36,12 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   @doc "Default to opt in only"
   def filter_optin(q, %{only_opt_in: false}), do: q
 
-  def filter_optin(q, _) do
-    where(q, [a, s, c], c.communication_consent == true)
+  def filter_optin(q, params) do
+    if normalized_email(params) do
+      q
+    else
+      where(q, [a, s, c], c.communication_consent == true)
+    end
   end
 
   @doc "Default to ignore doi"
@@ -53,8 +57,12 @@ defmodule ProcaWeb.Resolvers.ExportActions do
 
   def filter_email(q, params) do
     case normalized_email(params) do
-      nil -> q
-      email -> where(q, [a, s], s.email == ^email)
+      nil ->
+        q
+
+      email ->
+        fpr = Proca.Contact.Data.fingerprint(%Proca.Contact.BasicData{email: email})
+        where(q, [a, s], s.fingerprint == ^fpr)
     end
   end
 
@@ -72,7 +80,14 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   end
 
   @doc "onlyContacts: true enables with_consent=true filtering"
-  def filter_consent(q, %{only_contacts: true}), do: where(q, [a, s, c], a.with_consent == true)
+  def filter_consent(q, %{only_contacts: true} = params) do
+    if normalized_email(params) do
+      q
+    else
+      where(q, [a, s, c], a.with_consent == true)
+    end
+  end
+
   def filter_consent(q, _), do: q
 
   def format_contact(
@@ -167,8 +182,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         :campaign,
         :source,
         :donation
-      ],
-      where: not is_nil(s.email)
+      ]
     )
     |> filter_start(params)
     |> filter_after(params)
