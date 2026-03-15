@@ -76,4 +76,63 @@ defmodule ProcaWeb.ExportActionResolverTest do
 
     assert Enum.count(l) == 3
   end
+
+  test "contacts export ignores blank email filter", %{
+    org: org,
+    admin: %{user: user}
+  } do
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_contacts(
+        nil,
+        %{email: ""},
+        %{context: %{user: user, org: org}}
+      )
+
+    assert Enum.count(l) == 3
+  end
+
+  test "contacts export ignores whitespace email filter", %{
+    org: org,
+    admin: %{user: user}
+  } do
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_contacts(
+        nil,
+        %{email: "   "},
+        %{context: %{user: user, org: org}}
+      )
+
+    assert Enum.count(l) == 3
+  end
+
+  test "contacts export looks up unconfirmed supporters when email is present", %{
+    org: org,
+    action_page: ap,
+    admin: %{user: user}
+  } do
+    email = "lookup@example.org"
+
+    supporter =
+      Factory.build(:basic_data_pl_supporter_with_contact,
+        action_page: ap,
+        processing_status: :new,
+        data: Factory.build(:basic_data_pl, email: email)
+      )
+
+    action =
+      Factory.insert(:action,
+        action_page: ap,
+        supporter: supporter,
+        processing_status: :new
+      )
+
+    {:ok, l} =
+      ProcaWeb.Resolvers.ExportActions.export_contacts(
+        nil,
+        %{email: email},
+        %{context: %{user: user, org: org}}
+      )
+
+    assert Enum.map(l, & &1.action_id) == [action.id]
+  end
 end
