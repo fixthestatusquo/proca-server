@@ -18,6 +18,7 @@ defmodule Proca.Staffer.Role do
     owner: [
       :org_owner,
       :export_contacts,
+      :delete_contacts,
       :change_org_users,
       :change_org_settings,
       :change_campaign_settings,
