@@ -138,10 +138,9 @@ defmodule Proca.Service do
   """
   @impl true
   def request(method, url, body, headers, _http_opts) do
-    client =
-      Tesla.client([
-        {Tesla.Middleware.Headers, headers}
-      ])
+    client = Tesla.client([
+      {Tesla.Middleware.Headers, headers}
+    ])
 
     case Tesla.request(client, method: method, url: url, body: body) do
       {:ok, response} ->

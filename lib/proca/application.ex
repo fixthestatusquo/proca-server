@@ -109,8 +109,6 @@ defmodule Proca.Application do
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
       # MTT cron job
       {Proca.Server.MTT, []},
-      {Proca.Server.MTTSupervisor, []},
-      {Proca.Server.MTTHourlyCron, []},
       # User status
       {Proca.Users.Status, [interval: 30_000]}
     ]

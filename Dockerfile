@@ -1,14 +1,13 @@
 # --- Builder --------------------------------------------
 
-FROM elixir:1.12 AS builder
+FROM hexpm/elixir:1.18.4-erlang-27.3.4-alpine-3.21.3 AS builder
 
 ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -  && \
-    apt-get install -y nodejs 
+RUN apk add --no-cache build-base git nodejs npm
 
-RUN mix local.hex --force  && \
+RUN mix local.hex --force && \
     mix local.rebar --force
 
 RUN mkdir /app
@@ -28,20 +27,15 @@ RUN mix release
 
 # --- APP ----------------------------------------------
 
-FROM debian:buster AS app
+FROM alpine:3.21 AS app
 
 ENV LANG=C.UTF-8
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app/prod/rel/proca/bin
-ENV DEBIAN_FRONTEND=noninteractive
 ENV LOGS_DIR=/app/log
 
-# Install openssl
+RUN apk add --no-cache openssl ncurses-libs libstdc++ libgcc
 
-RUN apt-get update && apt-get install -y openssl libtinfo6
-
-# Copy over the build artifact from the previous step and create a non root user
-
-RUN useradd --home-dir /app app
+RUN adduser -D -h /app app
 
 WORKDIR /app
 
