@@ -49,6 +49,6 @@ defmodule Proca.MTT do
     |> validate_after(:start_at, :end_at)
     |> Proca.Contact.Input.validate_email(:test_email)
     |> Proca.Service.EmailTemplate.validate_exists(:message_template)
-    |> validate_format(:timezone, ~r/^[A-Za-z_]+\/[A-Za-z_]+$/)
+    |> validate_inclusion(:timezone, Tzdata.zone_list())
   end
 end
