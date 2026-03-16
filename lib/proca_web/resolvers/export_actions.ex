@@ -36,8 +36,12 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   @doc "Default to opt in only"
   def filter_optin(q, %{only_opt_in: false}), do: q
 
-  def filter_optin(q, _) do
-    where(q, [a, s, c], c.communication_consent == true)
+  def filter_optin(q, params) do
+    if normalized_email(params) do
+      q
+    else
+      where(q, [a, s, c], c.communication_consent == true)
+    end
   end
 
   @doc "Default to ignore doi"
@@ -51,8 +55,39 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def filter_testing(q, %{include_testing: true}), do: q
   def filter_testing(q, _), do: where(q, [a, s, c], a.testing == false)
 
+  def filter_email(q, params) do
+    case normalized_email(params) do
+      nil ->
+        q
+
+      email ->
+        fpr = Proca.Contact.Data.fingerprint(%Proca.Contact.BasicData{email: email})
+        where(q, [a, s], s.fingerprint == ^fpr)
+    end
+  end
+
+  def filter_processing_status(q, params) do
+    if normalized_email(params) do
+      q
+    else
+      where(
+        q,
+        [a, s],
+        s.processing_status == :accepted and
+          a.processing_status in [:accepted, :delivered]
+      )
+    end
+  end
+
   @doc "onlyContacts: true enables with_consent=true filtering"
-  def filter_consent(q, %{only_contacts: true}), do: where(q, [a, s, c], a.with_consent == true)
+  def filter_consent(q, %{only_contacts: true} = params) do
+    if normalized_email(params) do
+      q
+    else
+      where(q, [a, s, c], a.with_consent == true)
+    end
+  end
+
   def filter_consent(q, _), do: q
 
   def format_contact(
@@ -147,8 +182,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         :campaign,
         :source,
         :donation
-      ],
-      where: s.processing_status == :accepted and a.processing_status in [:accepted, :delivered]
+      ]
     )
     |> filter_start(params)
     |> filter_after(params)
@@ -156,6 +190,8 @@ defmodule ProcaWeb.Resolvers.ExportActions do
     |> filter_optin(params)
     |> filter_doubleoptin(params)
     |> filter_testing(params)
+    |> filter_email(params)
+    |> filter_processing_status(params)
     |> filter_consent(params)
     |> order_by([a], asc: a.id)
     |> Repo.all(timeout: 30_000, telemetry_options: %{org_id: org.id, event: :export_actions})
@@ -166,6 +202,17 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def export_contacts(parent, params, context) do
     export_actions(parent, Map.put(params, :only_contacts, true), context)
   end
+
+  defp normalized_email(%{email: email}) when is_binary(email) do
+    case String.trim(email) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalized_email(%{email: nil}), do: nil
+  defp normalized_email(%{email: email}), do: email
+  defp normalized_email(_), do: nil
 
   defp ok(val) do
     {:ok, val}

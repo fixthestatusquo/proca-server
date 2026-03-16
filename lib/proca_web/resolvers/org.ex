@@ -7,7 +7,7 @@ defmodule ProcaWeb.Resolvers.Org do
   import Ecto.Changeset
 
   alias Proca.{ActionPage, Campaign, Action}
-  alias Proca.{Org, Staffer, PublicKey, Service, Auth}
+  alias Proca.{Org, Staffer, PublicKey, Service, Auth, Supporter}
   alias ProcaWeb.{Error, Helper}
   alias ProcaWeb.Resolvers.ChangeAuth
   alias Ecto.Multi
@@ -357,6 +357,17 @@ defmodule ProcaWeb.Resolvers.Org do
         |> Repo.transaction_and_notify(:key_activated)
 
         {:ok, %{status: :success}}
+    end
+  end
+
+  def delete_contact(_parent, %{contact_ref: ref_b64}, %{context: %{org: org}}) do
+    case Supporter.base_decode(ref_b64) do
+      {:ok, fingerprint} ->
+        {:ok, _} = Supporter.gdpr_erase(fingerprint, org.id)
+        {:ok, :success}
+
+      :error ->
+        {:error, "invalid contact_ref encoding"}
     end
   end
 

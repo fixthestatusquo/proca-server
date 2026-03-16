@@ -124,8 +124,10 @@ defmodule Proca.Factory do
 
   @spec basic_data_pl_supporter_with_contact_factory(map) :: map
   def basic_data_pl_supporter_with_contact_factory(attrs) do
-    action_page = Map.get(attrs, :action_page) || build(:action_page)
-    data = Map.get(attrs, :data) || build(:basic_data_pl)
+    {action_page, attrs} = Map.pop(attrs, :action_page)
+    action_page = action_page || build(:action_page)
+    {data, attrs} = Map.pop(attrs, :data)
+    data = data || build(:basic_data_pl)
     {opt_in, attrs} = Map.pop(attrs, :opt_in, true)
 
     contact = Proca.Contact.Data.to_contact(data, action_page)

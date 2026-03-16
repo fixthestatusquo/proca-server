@@ -56,8 +56,9 @@ defmodule Proca.Supporter do
   use Ecto.Schema
   use Proca.Schema, module: __MODULE__
   alias Proca.Repo
-  alias Proca.{Supporter, Contact, ActionPage}
+  alias Proca.{Supporter, Contact, Action, ActionPage}
   alias Proca.Contact.Data
+  alias Proca.Supporter.RejectAction
   alias Proca.Supporter.Privacy
   import Ecto.Changeset
 
@@ -233,14 +234,17 @@ defmodule Proca.Supporter do
   end
 
   def handle_bounce(%{id: id, reason: reason}) do
-    case one(action_id: id) do
+    case Action.one(id: id, preload: [:supporter]) do
       # ignore a bounce when not found
       nil ->
         {:ok, %Supporter{}}
 
-      supporter ->
-        reject(supporter)
-        Repo.update!(changeset(supporter, %{email_status: reason}))
+      action ->
+        case RejectAction.run(action, email_status: reason) do
+          {:ok, %{supporter: supporter}} -> supporter
+          {:error, :supporter_not_found} -> {:ok, %Supporter{}}
+          {:error, _reason} = err -> err
+        end
     end
   end
 
@@ -284,6 +288,26 @@ defmodule Proca.Supporter do
 
   def get_by_action_id(action_id) do
     one(action_id: action_id)
+  end
+
+  def gdpr_erase(fingerprint, org_id) when is_binary(fingerprint) do
+    import Ecto.Query
+
+    Repo.transaction(fn ->
+      Repo.update_all(
+        from(s in Supporter,
+          join: ap in Proca.ActionPage, on: s.action_page_id == ap.id,
+          join: c in Proca.Campaign, on: ap.campaign_id == c.id,
+          where:
+            s.fingerprint == ^fingerprint and
+              c.org_id == ^org_id and
+              s.processing_status in [:accepted, :delivered]),
+        set: [first_name: nil, last_name: nil, email: nil, address: nil]
+      )
+
+      sup_ids = from(s in Supporter, where: s.fingerprint == ^fingerprint, select: s.id)
+      Repo.delete_all(from(c in Contact, where: c.supporter_id in subquery(sup_ids) and c.org_id == ^org_id))
+    end)
   end
 
   def clear_transient_fields(supporter_change) do

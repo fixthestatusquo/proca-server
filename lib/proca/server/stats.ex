@@ -37,21 +37,30 @@ defmodule Proca.Server.Stats do
     }
   end
 
-  # Sync counts from DB on every interval
+  # First load: calculate ALL campaigns, then schedule sync at 3x interval
 
   @impl true
   def handle_continue(:first_load, state) do
-    handle_info(:sync, state)
+    unless state.query_runs do
+      me = self()
+      Task.start_link(fn -> GenServer.cast(me, {:update_campaigns, calculate()}) end)
+    end
+
+    if state.interval > 0 do
+      Process.send_after(self(), :sync, state.interval * 3)
+    end
+
+    {:noreply, %{state | query_runs: true}}
   end
 
   @impl true
   @doc """
-  Every @sync_every_ms ms we send to ourselves a :sync message, to synchronize counts from DB.
+  Periodic sync: recalculate only live campaigns and merge into existing state.
   """
   def handle_info(:sync, state) do
     unless state.query_runs do
       me = self()
-      Task.start_link(fn -> GenServer.cast(me, {:update_campaigns, calculate()}) end)
+      Task.start_link(fn -> GenServer.cast(me, {:update_live_campaigns, calculate_live()}) end)
     end
 
     if state.interval > 0 do
@@ -66,6 +75,11 @@ defmodule Proca.Server.Stats do
   @impl true
   def handle_cast({:update_campaigns, campaign}, state) do
     {:noreply, %{state | campaign: campaign, query_runs: false}}
+  end
+
+  @impl true
+  def handle_cast({:update_live_campaigns, live_campaign}, state) do
+    {:noreply, %{state | campaign: Map.merge(state.campaign, live_campaign), query_runs: false}}
   end
 
   @impl true
@@ -125,10 +139,28 @@ defmodule Proca.Server.Stats do
     {:reply, cst, stats}
   end
 
+  # Calculation
+
   @doc """
-  Run the full calculation of stats
+  Run the full calculation of stats for all campaigns.
   """
-  def calculate() do
+  def calculate(), do: do_calculate(nil, 30_000)
+
+  @doc """
+  Run calculation of stats for live campaigns only.
+  Used by periodic sync to avoid recalculating closed/draft/ignored campaigns.
+  """
+  def calculate_live() do
+    campaign_ids =
+      from(c in Campaign, where: c.status == :live, select: c.id)
+      |> Repo.all(timeout: 10_000)
+
+    do_calculate(campaign_ids, 10_000)
+  end
+
+  defp do_calculate([], _timeout), do: %{}
+
+  defp do_calculate(filter_ids, timeout) do
     # Calculation of supporters:
     # We can have many supporters records for same fingerprint.
     # We want to use only last one per each campaign.
@@ -150,10 +182,15 @@ defmodule Proca.Server.Stats do
         group_by: [a.campaign_id, ap.org_id],
         select: {a.campaign_id, ap.org_id, count(s.fingerprint, :distinct)}
       )
-      |> Repo.all(timeout: 60_000)
+      |> maybe_filter_campaigns(filter_ids)
+      |> Repo.all(timeout: timeout)
 
     # create data for all campaigns so we don't have missing key below
-    campaign_ids = Repo.all(from(c in Campaign, select: c.id), timeout: 30_000)
+    campaign_ids =
+      case filter_ids do
+        nil -> Repo.all(from(c in Campaign, select: c.id), timeout: timeout)
+        ids -> ids
+      end
 
     result_all =
       campaign_ids
@@ -185,7 +222,8 @@ defmodule Proca.Server.Stats do
         where: ap.extra_supporters != 0,
         select: {ap.campaign_id, ap.org_id, sum(ap.extra_supporters)}
       )
-      |> Repo.all(timeout: 30_000)
+      |> maybe_filter_campaigns(filter_ids)
+      |> Repo.all(timeout: timeout)
 
     # warning : if org has only exras, they are not yet in the map
     {result_all, result_orgs} =
@@ -208,7 +246,8 @@ defmodule Proca.Server.Stats do
         group_by: [a.campaign_id, a.action_type],
         select: {a.campaign_id, a.action_type, count(a.id)}
       )
-      |> Repo.all(timeout: 30_000)
+      |> maybe_filter_campaigns(filter_ids)
+      |> Repo.all(timeout: timeout)
 
     result_action =
       for {campaign_id, action_type, count} <- action_counts, reduce: %{} do
@@ -233,6 +272,12 @@ defmodule Proca.Server.Stats do
       end
 
     result
+  end
+
+  defp maybe_filter_campaigns(query, nil), do: query
+
+  defp maybe_filter_campaigns(query, campaign_ids) do
+    where(query, [a], a.campaign_id in ^campaign_ids)
   end
 
   # Client side

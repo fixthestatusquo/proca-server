@@ -16,14 +16,7 @@ defmodule Supporter.RejectionTest do
   describe "Supporter rejection via URL" do
     for supporter_status <- @statuses do
       for action_status <- @statuses do
-        email_statuses_to_test =
-          case supporter_status do
-            :accepted -> @email_statuses
-            :delivered -> @email_statuses
-            _ -> [:none]
-          end
-
-        for email_status <- email_statuses_to_test do
+        for email_status <- @email_statuses do
           test "supporter: #{supporter_status}, action: #{action_status}, email_status: #{email_status}, verb: reject",
                %{
                  conn: conn,
@@ -59,35 +52,24 @@ defmodule Supporter.RejectionTest do
             updated_action = Repo.get!(Action, action.id)
 
             # Expected outcomes
-            expected_supporter =
-              case unquote(supporter_status) do
-                :new -> :new
-                :confirming -> :rejected
-                :accepted -> :rejected
-                :rejected -> :rejected
-                :delivered -> :rejected
-              end
+            expected_supporter = :rejected
 
             expected_email_status =
-              case {unquote(supporter_status), unquote(email_status)} do
-                {:accepted, :double_opt_in} -> :unsub
-                {:delivered, :double_opt_in} -> :unsub
+              case unquote(email_status) do
+                :double_opt_in -> :unsub
                 _ -> unquote(email_status)
               end
 
-            expected_action =
-              case unquote(action_status) do
-                :new -> :new
-                :confirming -> :rejected
-                :accepted -> :rejected
-                :rejected -> :rejected
-                :delivered -> :rejected
-              end
+            expected_action = :rejected
 
             assert response(conn, 200) =~ "SUCCESS"
             assert updated_supporter.processing_status == expected_supporter
             assert updated_supporter.email_status == expected_email_status
             assert updated_action.processing_status == expected_action
+
+            if expected_email_status == :unsub do
+              assert updated_supporter.email_status_changed != nil
+            end
           end
         end
       end
