@@ -326,7 +326,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
       @desc "contact_ref from action export (base64url fingerprint)"
       arg(:contact_ref, non_null(:string))
 
-      load(:org, by: [:org_name])
+      load(:org, by: [name: :org_name])
       determine_auth(for: :org)
       allow([:org_owner])
 
