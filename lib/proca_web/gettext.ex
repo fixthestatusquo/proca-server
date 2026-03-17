@@ -20,5 +20,5 @@ defmodule ProcaWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :proca
+  use Gettext.Backend, otp_app: :proca
 end

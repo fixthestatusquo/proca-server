@@ -10,6 +10,8 @@ defmodule Proca.PublicKey do
   alias Proca.Repo
   alias Proca.{PublicKey, Org}
 
+  @derive {Inspect, only: [:id, :name, :org, :active, :expired]}
+
   schema "public_keys" do
     field :name, :string
     field :public, :binary
@@ -20,8 +22,6 @@ defmodule Proca.PublicKey do
 
     timestamps()
   end
-
-  @derive {Inspect, only: [:id, :name, :org, :active, :expired]}
 
   @doc false
   def changeset(public_key, attrs) do

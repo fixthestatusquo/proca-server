@@ -47,7 +47,8 @@ defmodule Proca.Service.EmailBackend do
   alias Proca.{Org, Service}
   alias Proca.Service.EmailTemplate
   alias Swoosh.Email
-  import Logger
+  require Logger
+  @compile {:no_warn_undefined, Proca.TestEmailBackend}
   import Proca.Stage.Support, only: [flatten_keys: 2]
 
   # Template management
@@ -231,7 +232,7 @@ defmodule Proca.Service.EmailBackend do
 
   def rewrite_sender(username, domain, unix_time \\ System.os_time(:millisecond)) do
     if srs_key() == "teiy1sah8seengiem0ee2Yai",
-      do: warn("EMAIL_SRS_KEY missing, using '#{srs_key()}'")
+      do: Logger.warning("EMAIL_SRS_KEY missing, using '#{srs_key()}'")
 
     timestamp = trunc(unix_time / 1000 / (60 * 60 * 24)) |> rem(1024) |> encode_int32
 
