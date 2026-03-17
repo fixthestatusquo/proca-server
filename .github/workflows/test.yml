@@ -51,12 +51,5 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      - name: Setup app db (migrate)
-        run: |
-          mix ecto.migrate
-          mix run priv/repo/seeds.exs
-        env:
-          MIX_ENV: test
-
       - name: Run tests
         run: mix test

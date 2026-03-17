@@ -114,9 +114,20 @@ defmodule Proca.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": [
+        "ecto.create",
+        "ecto.load --skip-if-loaded",
+        "ecto.migrate",
+        "run priv/repo/seeds.exs"
+      ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      test: [
+        "ecto.create --quiet",
+        "ecto.load --quiet --skip-if-loaded",
+        "ecto.migrate --quiet",
+        "run priv/repo/seeds.exs",
+        "test"
+      ],
       "gen.schema": "absinthe.schema.sdl --schema ProcaWeb.Schema",
       "assets.deploy": [
         "cmd cp -r assets/static/* priv/static",
