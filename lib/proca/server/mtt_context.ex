@@ -15,7 +15,6 @@ defmodule Proca.Server.MTTContext do
   require Logger
 
   @default_locale "en"
-  # 1 day ago
   @recent_test_messages -1 * 60 * 60 * 24
 
   def get_active_targets do
@@ -117,14 +116,13 @@ defmodule Proca.Server.MTTContext do
       end)
       |> Enum.into(%{})
 
-    for {locale, msgs} <- msgs_per_locale do
-      # for testing, just send the first one
-      {msgs, testing} = Enum.split(msgs, 1)
+    for {locale, locale_msgs} <- msgs_per_locale do
+      {batchable_msgs, testing} = Enum.split(locale_msgs, 1)
 
       Message.mark_all(testing, :delivered)
       Message.mark_all(testing, :sent)
 
-      for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(target.campaign.org)) do
+      for chunk <- Enum.chunk_every(batchable_msgs, EmailBackend.batch_size(target.campaign.org)) do
         batch =
           for e <- chunk do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
@@ -184,7 +182,7 @@ defmodule Proca.Server.MTTContext do
              target.campaign.mtt.message_template,
              locale
            ) do
-        {:ok, template} -> template
+        {:ok, loaded_template} -> loaded_template
         _ -> nil
       end
 
@@ -214,13 +212,17 @@ defmodule Proca.Server.MTTContext do
 
         Message.mark_one(msg, :sent)
 
+        :ok
+
       {:error, statuses} ->
         Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
 
-        if Enum.member?(statuses, &(&1 == :ok)) do
+        if Enum.any?(statuses, &(&1 == :ok)) do
           msg
           |> Message.mark_one(:sent)
         end
+
+        :ok
     end
   end
 
@@ -281,8 +283,8 @@ defmodule Proca.Server.MTTContext do
       m in Proca.Action.Message,
       join: t in assoc(m, :target),
       join: a in assoc(m, :action),
-      join: s in assoc(a, :supporter),
-      join: ap in assoc(a, :action_page),
+      join: _s in assoc(a, :supporter),
+      join: _ap in assoc(a, :action_page),
       join: mc in assoc(m, :message_content),
       where:
         m.target_id == ^target_id and
@@ -317,12 +319,11 @@ defmodule Proca.Server.MTTContext do
       if is_test do
         %Proca.TargetEmail{email: supporter.email, email_status: :none}
       else
-        Enum.find(message.target.emails, fn email_to ->
-          email_to.email_status in [:active, :none]
+        Enum.find(message.target.emails, fn email ->
+          email.email_status in [:active, :none]
         end)
       end
 
-    # Re-use logic to convert first_name, last_name to name
     supporter_name =
       Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
 
@@ -348,9 +349,8 @@ defmodule Proca.Server.MTTContext do
   defp put_message_content(
          email = %Email{},
          %Proca.Action.MessageContent{subject: subject, body: body},
-         _template = nil
+         nil
        ) do
-    # Render the raw body
     target_assigns = camel_case_keys(%{target: email.assigns[:target]})
 
     Sentry.Context.set_extra_context(%{

@@ -15,7 +15,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
 
   describe "Double opt in" do
     setup ctx do
-      story =
+      _story =
         blue_story()
         |> Map.merge(ctx)
     end
@@ -40,7 +40,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
           consent: {true, true}
         )
 
-      a = check_action(s, status: :delivered)
+      _a = check_action(s, status: :delivered)
     end
   end
 

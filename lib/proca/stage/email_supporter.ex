@@ -67,7 +67,7 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_message(_, message = %Message{data: data}, _) do
-    case JSON.decode(data) do
+    case Jason.decode(data) do
       {
         :ok,
         %{
@@ -103,7 +103,7 @@ defmodule Proca.Stage.EmailSupporter do
         end
 
       {:ok, _} ->
-        warn("EmailSupporter wrk: Invalid message format #{data}")
+        warning("EmailSupporter wrk: Invalid message format #{data}")
 
         ignore(message, "Invalid message format")
 

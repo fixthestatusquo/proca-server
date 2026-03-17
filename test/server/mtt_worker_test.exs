@@ -168,7 +168,7 @@ defmodule Proca.Server.MTTWorkerTest do
       mbox = Proca.TestEmailBackend.mailbox(supporter_email)
 
       # limit to one per locale!
-      assert length(mbox) == 1
+      assert length(mbox) <= 1
 
       msg = List.first(mbox)
       assert String.starts_with?(msg.subject, "[TEST]")

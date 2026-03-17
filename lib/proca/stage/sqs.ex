@@ -50,7 +50,7 @@ defmodule Proca.Stage.SQS do
     if too_many_retries?(message) do
       ignore(message, "too many retries")
     else
-      case JSON.decode(data) do
+      case Jason.decode(data) do
         {:ok, %{"orgId" => org_id, "schema" => schema} = action} ->
           message
           |> Message.put_data(action)
@@ -108,7 +108,7 @@ defmodule Proca.Stage.SQS do
   end
 
   def to_message(body) do
-    {:ok, payload} = JSON.encode(body)
+    payload = Jason.encode!(body)
     [id: body["actionId"], message_body: payload, message_attributes: to_message_attributes(body)]
   end
 

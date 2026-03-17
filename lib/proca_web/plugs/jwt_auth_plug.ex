@@ -18,7 +18,6 @@ defmodule ProcaWeb.Plugs.JwtAuthPlug do
   alias Proca.Users.User
   alias Proca.Server.Jwks
   import ProcaWeb.Plugs.Helper
-  import Logger
 
   def init(opts) do
     opts

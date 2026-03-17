@@ -241,7 +241,7 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def handle_bounce(params) do
-    warn("Malformed Mailjet bounce event: #{inspect(params)}")
+    warning("Malformed Mailjet bounce event: #{inspect(params)}")
   end
 
   @impl true
@@ -264,7 +264,7 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def handle_event(params) do
-    warn("Malformed Mailjet event: #{inspect(params)}")
+    warning("Malformed Mailjet event: #{inspect(params)}")
   end
 
   def config(%Service{name: :mailjet, user: u, password: p}) do

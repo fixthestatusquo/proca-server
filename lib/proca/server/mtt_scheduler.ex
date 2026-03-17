@@ -66,11 +66,9 @@ defmodule Proca.Server.MTTScheduler do
       when messages_count > 1 and left_messages_count > 0 do
     base = div(@one_hour_ms, max(messages_count - 1, 1))
 
-    # +/- 25%
     jitter_amount = div(base, 4)
     jitter = if jitter_toggle, do: jitter_amount, else: -jitter_amount
 
-    # at least 1s
     max(base + jitter, 1000)
   end
 

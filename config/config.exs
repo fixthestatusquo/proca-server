@@ -1,4 +1,11 @@
-use Mix.Config
+# This file is responsible for configuring your application
+# and its dependencies with the aid of the Mix.Config module.
+#
+# This configuration file is loaded before any dependency and
+# is restricted to this project.
+
+# General application configuration
+import Config
 
 config :proca,
   ecto_repos: [Proca.Repo]
@@ -61,9 +68,6 @@ config :proca, Proca.Pipes,
   url: "amqp://proca:proca@localhost/proca",
   ssl_options: nil,
   retry_limit: 3
-
-# Disable lager logging (included by rabbitmq app)
-config :lager, handlers: []
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

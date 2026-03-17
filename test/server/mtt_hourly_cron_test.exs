@@ -18,13 +18,11 @@ defmodule Proca.Server.MTTHourlyCronTest do
   end
 
   describe "MTTHourlyCron" do
-    test "MTTContext queries tests", %{targets: [target | _] = targets} do
-      # set max_emails per hour for 2 campaigns to 100
+    test "queries active targets and computes hourly limits", %{targets: [target | _] = targets} do
       Repo.update_all(from(mtt in Proca.MTT, where: mtt.campaign_id == ^target.campaign.id),
         set: [max_emails_per_hour: 100]
       )
 
-      # get current hour in Etc/UTC timezone
       current_hour = DateTime.utc_now().hour
 
       default_max_emails =
@@ -35,19 +33,16 @@ defmodule Proca.Server.MTTHourlyCronTest do
         Application.get_env(:proca, Proca.Server.MTTScheduler)
         |> Access.get(:messages_ratio_per_hour)
 
-      # get ratio for current hour
-      ratio =
-        messages_ratio
-        |> Access.get(current_hour)
+      ratio = messages_ratio |> Access.get(current_hour)
 
       active_targets = MTTContext.get_active_targets()
 
       active_targets
-      |> Enum.each(fn target ->
-        max_emails = MTTContext.max_emails_per_hour(target.campaign)
+      |> Enum.each(fn active_target ->
+        max_emails = MTTContext.max_emails_per_hour(active_target.campaign)
 
         target_emails_per_hour =
-          ((target.campaign.mtt.max_emails_per_hour || default_max_emails) * ratio)
+          ((active_target.campaign.mtt.max_emails_per_hour || default_max_emails) * ratio)
           |> trunc()
 
         assert is_integer(max_emails) or is_atom(max_emails)
@@ -58,7 +53,7 @@ defmodule Proca.Server.MTTHourlyCronTest do
       assert {:ok, _} = MTTContext.dupe_rank()
     end
 
-    test "starts one MTT scheduler process per active target", %{
+    test "starts one scheduler process per active target", %{
       cron_pid: cron_pid,
       sup_pid: sup_pid,
       targets: targets
@@ -70,12 +65,10 @@ defmodule Proca.Server.MTTHourlyCronTest do
 
       :timer.sleep(2000)
 
-      # Check supervisor children
       children = DynamicSupervisor.count_children(sup_pid)
 
-      assert children.workers == targets |> Enum.count()
+      assert children.workers == Enum.count(targets)
 
-      # Clean up
       GenServer.stop(cron_pid)
       DynamicSupervisor.stop(sup_pid)
     end

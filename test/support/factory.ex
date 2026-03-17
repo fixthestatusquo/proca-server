@@ -140,7 +140,7 @@ defmodule Proca.Factory do
   end
 
   def contact_factory do
-    {:ok, payload} =
+    payload =
       %{
         first_name: "John",
         last_name: "Brown",
@@ -148,7 +148,7 @@ defmodule Proca.Factory do
         country: "GB",
         postcode: "012345"
       }
-      |> JSON.encode()
+      |> Jason.encode!()
 
     %Proca.Contact{
       payload: payload
