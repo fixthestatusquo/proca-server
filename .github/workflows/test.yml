@@ -51,5 +51,10 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Setup app db
+        run: mix ecto.setup
+        env:
+          MIX_ENV: test
+
       - name: Run tests
         run: mix test
