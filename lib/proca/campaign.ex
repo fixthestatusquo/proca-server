@@ -22,7 +22,7 @@ defmodule Proca.Campaign do
     field :status, CampaignStatus, default: :live
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
-    field :start, :date,  source: :start_date
+    field :start, :date, source: :start_date
     field :end, :date, source: :end_date
 
     belongs_to :org, Proca.Org
@@ -154,7 +154,8 @@ defmodule Proca.Campaign do
       on: c.id == ap.campaign_id,
       where: ap.org_id == ^org.id or c.org_id == ^org.id
     )
-    |> distinct(true)
+    |> distinct([c], c.id)
+    |> order_by([c], c.id)
   end
 
   def get_with_local_pages(campaign_id) when is_integer(campaign_id) do
