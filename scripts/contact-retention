@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -eu
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/rpc"
+
+usage() {
+  cat <<EOF
+Usage: $0 <delete_contacts|remove_pii> <org_name> [months] [--dry-run]
+
+Examples:
+  $0 delete_contacts my-org
+  $0 delete_contacts my-org 6 --dry-run
+  $0 remove_pii my-org --months 24
+EOF
+}
+
+if [ $# -lt 2 ]; then
+  usage
+  exit 1
+fi
+
+mode=$1
+org=$2
+shift 2
+
+case "$mode" in
+  delete_contacts|remove_pii)
+    ;;
+  *)
+    echo "mode must be delete_contacts or remove_pii" >&2
+    usage
+    exit 1
+    ;;
+esac
+
+months=24
+dry_run=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run)
+      dry_run=true
+      ;;
+    --months)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "missing value for --months" >&2
+        exit 1
+      fi
+      months=$1
+      ;;
+    --months=*)
+      months=${1#*=}
+      ;;
+    *)
+      months=$1
+      ;;
+  esac
+
+  shift
+done
+
+rpc <<END
+alias Proca.Supporter.RetentionCleanup
+
+case RetentionCleanup.run("$org", :$mode, months: "$months", dry_run: $dry_run) do
+  {:ok, %{mode: :delete_contacts, dry_run: true, contacts_count: count, org_name: org_name, months: months}} ->
+    IO.puts("Would delete #{count} contacts for #{org_name} older than #{months} months")
+
+  {:ok, %{mode: :delete_contacts, contacts_count: count, org_name: org_name, months: months}} ->
+    IO.puts("Deleted #{count} contacts for #{org_name} older than #{months} months")
+
+  {:ok,
+   %{mode: :remove_pii, dry_run: true, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months}} ->
+    IO.puts(
+      "Would delete #{contacts} contacts and anonymize #{supporters} supporters for #{org_name} older than #{months} months"
+    )
+
+  {:ok,
+   %{mode: :remove_pii, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months}} ->
+    IO.puts(
+      "Deleted #{contacts} contacts and anonymized #{supporters} supporters for #{org_name} older than #{months} months"
+    )
+
+  {:error, message} ->
+    IO.puts(:stderr, message)
+    System.halt(1)
+end
+END
