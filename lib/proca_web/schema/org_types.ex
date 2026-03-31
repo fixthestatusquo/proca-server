@@ -328,7 +328,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
-      allow([:org_owner])
+      allow([:delete_contacts])
 
       resolve(&Resolvers.Org.delete_contact/3)
     end
