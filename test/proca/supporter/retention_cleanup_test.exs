@@ -106,6 +106,20 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     assert fetch_supporter(newer_supporter.id).email
   end
 
+  test "cleanup skips supporters on closed campaigns with recent end date" do
+    %{org: org, pages: [page], campaign: campaign} = blue_story()
+    action = insert_processed_action(page)
+    Repo.update!(change(campaign, status: :closed, end: Date.utc_today()))
+    age_action(action, @old_inserted_at)
+
+    assert {:ok, result} = RetentionCleanup.run(org.name, :remove_pii, months: 6)
+    assert result.contacts_count == 0
+    assert result.supporters_count == 0
+
+    assert contacts_for_org(action.supporter_id, org.id) == 1
+    assert fetch_supporter(action.supporter_id).email
+  end
+
   test "cleanup is scoped to contacts owned by the selected org in coalition campaigns" do
     %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
       teal_story(partner_count: 1)
@@ -203,7 +217,7 @@ defmodule Proca.Supporter.RetentionCleanupTest do
   end
 
   defp close_campaign(campaign) do
-    Repo.update!(change(campaign, status: :closed))
+    Repo.update!(change(campaign, status: :closed, end: ~D[2020-01-01]))
   end
 
   defp age_action(action, inserted_at) do

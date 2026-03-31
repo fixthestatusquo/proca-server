@@ -96,6 +96,7 @@ defmodule Proca.Supporter.RetentionCleanup do
           "bool_and(?)",
           a.processing_status in ^@processed_statuses and
             campaign.status == ^:closed and
+            campaign.end < ago(^months, "month") and
             a.inserted_at < ago(^months, "month")
         ),
       select: %{id: s.id, fingerprint: s.fingerprint}
@@ -114,9 +115,10 @@ defmodule Proca.Supporter.RetentionCleanup do
         not (
           a.processing_status in ^@processed_statuses and
             campaign.status == ^:closed and
+            campaign.end < ago(^months, "month") and
             a.inserted_at < ago(^months, "month")
         ),
-      distinct: true,
+      distinct: s.fingerprint,
       select: %{fingerprint: s.fingerprint}
     )
   end
