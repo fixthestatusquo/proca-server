@@ -94,9 +94,19 @@ defmodule Proca.Users do
 
   """
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    result =
+      %User{}
+      |> User.registration_changeset(attrs)
+      |> Repo.insert()
+
+    case result do
+      {:ok, user} ->
+        Proca.Stage.SystemEvent.emit_new_user(user)
+        {:ok, user}
+
+      error ->
+        error
+    end
   end
 
   def register_user_from_sso!(attrs) do
@@ -107,6 +117,7 @@ defmodule Proca.Users do
 
     case peek_unique_error(new_user) do
       {:ok, user} ->
+        Proca.Stage.SystemEvent.emit_new_user(user)
         user
 
       # handle a race condition where user exists - in that case fetch the user

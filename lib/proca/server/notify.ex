@@ -186,8 +186,11 @@ defmodule Proca.Server.Notify do
     end)
   end
 
-  def multi(:user_created_org, %{org: org}, opts) do
+  def multi(:user_created_org, %{org: org, staffer: staffer}, opts) do
     created(org, opts)
+
+    user = Repo.preload(staffer, :user).user
+    Proca.Stage.SystemEvent.emit_new_org(user, org)
   end
 
   def multi(:delete_action_page, result, _opts) do
