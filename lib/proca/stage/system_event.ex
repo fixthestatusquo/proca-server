@@ -17,7 +17,7 @@ defmodule Proca.Stage.SystemEvent do
   alias Proca.Pipes.{Connection, Topology}
   alias Proca.Repo
 
-  def emit(event_type, data, org_id) do
+  def emit(data, event_type, org_id) do
     routing_key = "system." <> Atom.to_string(event_type)
     exchange = Topology.xn(%Org{id: org_id}, "event")
 
