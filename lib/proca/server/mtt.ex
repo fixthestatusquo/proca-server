@@ -111,8 +111,6 @@ defmodule Proca.Server.MTT do
       )
       |> Repo.all()
 
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(running_mtts)}, %{})
-
     Enum.map(running_mtts, fn campaign ->
       Logger.info("Start MTT worker for #{campaign.name} (waiting for connection pool)")
 
