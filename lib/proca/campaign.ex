@@ -22,6 +22,8 @@ defmodule Proca.Campaign do
     field :status, CampaignStatus, default: :live
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
+    field :start, :date, source: :start_date
+    field :end, :date, source: :end_date
 
     belongs_to :org, Proca.Org
     has_many :action_pages, Proca.ActionPage
@@ -44,7 +46,9 @@ defmodule Proca.Campaign do
       :contact_schema,
       :status,
       :supporter_confirm,
-      :supporter_confirm_template
+      :supporter_confirm_template,
+      :start,
+      :end
     ])
     |> change(assocs)
     |> cast_assoc(:mtt)
@@ -52,8 +56,20 @@ defmodule Proca.Campaign do
     |> validate_format(:name, ~r/^[\w\d_-]+$/)
     # 4 byte signed int max
     |> validate_inclusion(:external_id, 0..(Integer.pow(2, 31) - 1))
+    |> validate_date_range()
     |> unique_constraint(:org_id_extrenal_id)
     |> unique_constraint(:name)
+  end
+
+  defp validate_date_range(changeset) do
+    start = get_field(changeset, :start)
+    end_date = get_field(changeset, :end)
+
+    if start && end_date && Date.compare(start, end_date) != :lt do
+      add_error(changeset, :end, "must be after start")
+    else
+      changeset
+    end
   end
 
   def upsert(org, attrs = %{external_id: id}) when not is_nil(id) do
@@ -138,7 +154,8 @@ defmodule Proca.Campaign do
       on: c.id == ap.campaign_id,
       where: ap.org_id == ^org.id or c.org_id == ^org.id
     )
-    |> distinct(true)
+    |> distinct([c], c.id)
+    |> order_by([c], c.id)
   end
 
   def get_with_local_pages(campaign_id) when is_integer(campaign_id) do

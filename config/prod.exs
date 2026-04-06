@@ -36,6 +36,8 @@ config :mix_systemd,
     ["RELEASE_TMP=", :runtime_dir]
   ]
 
+config :tzdata, :data_dir, "/etc/elixir_tzdata_data"
+
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key

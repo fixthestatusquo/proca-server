@@ -1,0 +1,3 @@
+#!/bin/bash
+
+proca-live rpc "Proca.Campaign.BackfillDates.run()"

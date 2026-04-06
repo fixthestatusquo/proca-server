@@ -22,6 +22,11 @@ defmodule Proca.Service.EmailMerge do
   - `tracking.campaign` - the utm_campaign of action
   - `tracking.medium` - the utm_medium
   - `tracking.source` - the utm_source
+  - `tracking.content` - the utm_content of action
+  - `tracking.location` - the raw location URL
+  - `tracking.encodedLocation` - URL-encoded location (use in href)
+  - `tracking.encodedContent` - URL-encoded utm_content (use in href)
+  - `variant.{token}` - boolean `true` for each cleaned, space-separated token in utm_content
   - `isDupe` - true if supporter for this campaign is a duplicate.
   - `privacy.optIn`
   - custom fields - custom fields (camel cased!)
@@ -153,7 +158,10 @@ defmodule Proca.Service.EmailMerge do
       action_type: get_in(action_data, ["action", "actionType"]),
       created_at: DateTime.to_string(created_at),
       is_action_type: %{get_in(action_data, ["action", "actionType"]) => true},
-      tracking: get_in(action_data, ["tracking"]) |> also_encode("location"),
+      tracking:
+        get_in(action_data, ["tracking"]) |> also_encode("location") |> also_encode("content"),
+      variant: make_variant(get_in(action_data, ["tracking", "content"])),
+      test: get_in(action_data, ["action", "testing"]),
       privacy: get_in(action_data, ["privacy"])
     })
   end
@@ -211,6 +219,21 @@ defmodule Proca.Service.EmailMerge do
 
   def plain_to_html(text) do
     "<p>" <> String.replace(text, "\n", "</p><p>") <> "</p>"
+  end
+
+  defp make_variant(nil), do: %{}
+  defp make_variant(content) when is_bitstring(content) do
+    tokens = String.split(content, ~r/\s+/, trim: true)
+
+    tokens
+    |> Enum.map(fn token ->
+      token
+      |> String.replace("-", "_")
+      |> String.replace(~r/[^a-zA-Z0-9_]/, "")
+    end)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.map(&{&1, true})
+    |> Map.new()
   end
 
   def also_encode(nil, _), do: nil

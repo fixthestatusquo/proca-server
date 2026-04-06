@@ -50,7 +50,8 @@ defmodule Proca.Stage.Processing do
 
   A rejected suppoter or action will not be counted into the statistics for the campaign.
 
-  A bounce event received from email backend will mark the `Supporter` as rejected (even if they were accepted before).
+  A bounce event received from email backend will mark both the `Supporter` and
+  the `Action` as rejected (even if they were accepted before).
   """
 
   defstruct action_change: nil,
