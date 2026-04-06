@@ -25,6 +25,7 @@ defmodule Proca.Confirm.Operation do
   def mod(:confirm_action), do: Proca.Confirm.ConfirmAction
   def mod(:launch_page), do: Proca.Confirm.LaunchPage
   def mod(:add_staffer), do: Proca.Confirm.AddStaffer
+  def mod(:join_campaign), do: Proca.Confirm.JoinCampaign
 
   @callback(
     run(%Confirm{}, :confirm | :reject, Auth) ::
