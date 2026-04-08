@@ -4,721 +4,6 @@ schema {
   query: RootQueryType
 }
 
-interface Campaign {
-  "Campaign id"
-  id: Int!
-
-  "External ID (if set)"
-  externalId: Int
-
-  "Internal name of the campaign"
-  name: String!
-
-  "Full, official name of the campaign"
-  title: String!
-
-  "Current status of the campaign"
-  status: CampaignStatus!
-
-  "Schema for contact personal information"
-  contactSchema: ContactSchema!
-
-  "Custom config map"
-  config: Json!
-
-  "Statistics"
-  stats: CampaignStats!
-
-  "Lead org"
-  org: Org!
-
-  """
-  Fetch public actions. Can be used to display recent comments for example.
-
-  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
-  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
-  """
-  actions(
-    "Specify action type to return"
-    actionType: String!
-
-    "Limit the number of returned actions, default is 10, max is 100)"
-    limit: Int!
-  ): PublicActionsResult!
-
-  "List MTT targets of this campaign"
-  targets: [Target]
-}
-
-type PublicCampaign implements Campaign {
-  "Campaign id"
-  id: Int!
-
-  "External ID (if set)"
-  externalId: Int
-
-  "Internal name of the campaign"
-  name: String!
-
-  "Full, official name of the campaign"
-  title: String!
-
-  "Current status of the campaign"
-  status: CampaignStatus!
-
-  "Schema for contact personal information"
-  contactSchema: ContactSchema!
-
-  "Custom config map"
-  config: Json!
-
-  "Statistics"
-  stats: CampaignStats!
-
-  "Lead org"
-  org: Org!
-
-  """
-  Fetch public actions. Can be used to display recent comments for example.
-
-  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
-  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
-  """
-  actions(
-    "Specify action type to return"
-    actionType: String!
-
-    "Limit the number of returned actions, default is 10, max is 100)"
-    limit: Int!
-  ): PublicActionsResult!
-
-  "List MTT targets of this campaign"
-  targets: [Target]
-}
-
-"Tracking codes (UTM params)"
-type Tracking {
-  source: String!
-  medium: String!
-  campaign: String!
-  content: String!
-}
-
-"GDPR consent data structure"
-input ConsentInput {
-  "Has contact consented to receiving communication from widget owner? Null: not asked"
-  optIn: Boolean
-
-  "Opt in to the campaign leader"
-  leadOptIn: Boolean
-}
-
-type Donation {
-  schema: DonationSchema
-
-  "Provide amount of this donation, in smallest units for currency"
-  amount: Int!
-
-  "Provide currency of this donation"
-  currency: String!
-
-  "Donation data"
-  payload: Json!
-
-  "Donation frequency unit"
-  frequencyUnit: DonationFrequencyUnit!
-}
-
-type RootSubscriptionType {
-  actionPageUpserted(orgName: String): ActionPage!
-}
-
-type Confirm {
-  "Secret code\/PIN of the confirm"
-  code: String!
-
-  "Email the confirm is sent to"
-  email: String
-
-  "Message attached to the confirm"
-  message: String
-
-  "Object id that confirmable action refers to"
-  objectId: Int
-
-  "Who created the confirm"
-  creator: User
-}
-
-input SelectKey {
-  "Key id"
-  id: Int
-
-  "Only active"
-  active: Boolean
-
-  "Key having this public part"
-  public: String
-}
-
-interface ActionPage {
-  "Id"
-  id: Int!
-
-  "Locale for the widget, in i18n format"
-  locale: String!
-
-  "Name where the widget is hosted"
-  name: String!
-
-  "Thank you email templated of this Action Page"
-  thankYouTemplate: String
-
-  "A reference to thank you email template of this ActionPage"
-  thankYouTemplateRef: String
-
-  "Is live?"
-  live: Boolean!
-
-  "List of steps in journey"
-  journey: [String!]! @deprecated(reason: "moved under config")
-
-  "Config JSON of this action page"
-  config: Json!
-
-  "Campaign this action page belongs to."
-  campaign: Campaign!
-
-  "Org the action page belongs to"
-  org: Org!
-}
-
-type PrivateActionPage implements ActionPage {
-  "Id"
-  id: Int!
-
-  "Locale for the widget, in i18n format"
-  locale: String!
-
-  "Name where the widget is hosted"
-  name: String!
-
-  "Thank you email templated of this Action Page"
-  thankYouTemplate: String
-
-  "A reference to thank you email template of this ActionPage"
-  thankYouTemplateRef: String
-
-  "Is live?"
-  live: Boolean!
-
-  "List of steps in journey"
-  journey: [String!]! @deprecated(reason: "moved under config")
-
-  "Config JSON of this action page"
-  config: Json!
-
-  "Campaign this action page belongs to."
-  campaign: Campaign!
-
-  "Org the action page belongs to"
-  org: Org!
-
-  "Extra supporters, a number added to deduplicated supporter count. Cannot be added to per-area or per-action_type counts."
-  extraSupporters: Int!
-
-  """
-  Action page collects also opt-out actions, to deliver them to authorities.
-  If false, the opt-outs will fallback to lead (we never trash data with opt-outs)
-  """
-  delivery: Boolean!
-
-  "Email template to confirm supporter (DOI)"
-  supporterConfirmTemplate: String
-
-  "Location of the widget as last seen in HTTP REFERER header"
-  location: String
-
-  "Status of action page - STANDBY (ready to get actions), ACTIVE (collecting actions), STALLED (actions not coming any more)"
-  status: ActionPageStatus
-}
-
-type Service {
-  "Id"
-  id: Int!
-
-  "Service name (type)"
-  name: ServiceName!
-
-  "Hostname of service, but can be used as any \"container\" of the service. For AWS, contains a region."
-  host: String
-
-  "User, Account id, client id, whatever your API has"
-  user: String
-
-  "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
-  path: String
-}
-
-"Count of actions for particular action type"
-type AreaCount {
-  "area"
-  area: String!
-
-  "count of supporters in this area"
-  count: Int!
-}
-
-input StripeSubscriptionInput {
-  "Amount of payment"
-  amount: Int!
-
-  "Currency ofo payment"
-  currency: String!
-
-  "how often is recurrent payment made?"
-  frequencyUnit: DonationFrequencyUnit!
-}
-
-enum EmailStatus {
-  "An unused email"
-  NONE
-
-  "The user has received a DOI on this email and accepted it"
-  DOUBLE_OPT_IN
-
-  "This email was used and bounced"
-  BOUNCE
-
-  "This email was used and blocked"
-  BLOCKED
-
-  "This email was used and marked spam"
-  SPAM
-
-  "This email was used and user unsubscribed"
-  UNSUB
-
-  "This email was disabled and should not be contacted"
-  INACTIVE
-
-  "This email was contacted before"
-  ACTIVE
-}
-
-"Campaign statistics"
-type CampaignStats {
-  "Unique action tagers count"
-  supporterCount: Int!
-
-  "Unique action takers by area"
-  supporterCountByArea: [AreaCount!]!
-
-  "Unique action takers by org"
-  supporterCountByOrg: [OrgCount!]!
-
-  "Unique supporter count not including the ones collected by org_name"
-  supporterCountByOthers(
-    "Org name to exclude from counting supporters"
-    orgName: String!
-  ): Int!
-
-  "Action counts per action types (with duplicates)"
-  actionCount: [ActionTypeCount!]!
-}
-
-"Api token metadata"
-type ApiToken {
-  expiresAt: NaiveDateTime!
-}
-
-"""
-The `Naive DateTime` scalar type represents a naive date and time without
-timezone. The DateTime appears in a JSON response as an ISO8601 formatted
-string.
-"""
-scalar NaiveDateTime
-
-type PublicActionPage implements ActionPage {
-  "Id"
-  id: Int!
-
-  "Locale for the widget, in i18n format"
-  locale: String!
-
-  "Name where the widget is hosted"
-  name: String!
-
-  "Thank you email templated of this Action Page"
-  thankYouTemplate: String
-
-  "A reference to thank you email template of this ActionPage"
-  thankYouTemplateRef: String
-
-  "Is live?"
-  live: Boolean!
-
-  "List of steps in journey"
-  journey: [String!]! @deprecated(reason: "moved under config")
-
-  "Config JSON of this action page"
-  config: Json!
-
-  "Campaign this action page belongs to."
-  campaign: Campaign!
-
-  "Org the action page belongs to"
-  org: Org!
-}
-
-"Count of supporters for particular org"
-type OrgCount {
-  "org"
-  org: Org!
-
-  "count of supporters registered by org"
-  count: Int!
-}
-
-type DeleteUserResult {
-  status: Status!
-}
-
-"Encryption or sign key with integer id (database)"
-type Key {
-  "Key id"
-  id: Int!
-
-  "Public part of the key (base64url)"
-  public: String!
-
-  "Name of the key (human readable)"
-  name: String!
-
-  "Is it active?"
-  active: Boolean!
-
-  "Is it expired?"
-  expired: Boolean!
-
-  "When the key was expired, in UTC"
-  expiredAt: NaiveDateTime
-}
-
-enum ServiceName {
-  "AWS SES to send emails"
-  SES
-
-  "AWS SQS to process messages"
-  SQS
-
-  "Preview of emails (test provider)"
-  PREVIEW
-
-  "Mailjet to send emails"
-  MAILJET
-
-  "SMTP to send emails"
-  SMTP
-
-  "Wordpress HTTP API"
-  WORDPRESS
-
-  "Stripe to process donations"
-  STRIPE
-
-  "Stripe test account to test donations"
-  TEST_STRIPE
-
-  "HTTP POST webhook"
-  WEBHOOK
-
-  "Use a service that instance org is using"
-  SYSTEM
-
-  "Supabase to store files"
-  SUPABASE
-}
-
-type CampaignMtt {
-  "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
-  startAt: DateTime!
-
-  "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
-  endAt: DateTime!
-
-  """
-  If email templates are used to create MTT, use this template (works like thank you email templates).
-  Otherwise, the raw text that is send with MTT action will make a plain text email.
-  """
-  messageTemplate: String
-
-  "A test target email (yourself) where test mtt actions will be sent (instead to real targets)"
-  testEmail: String
-}
-
-input MttActionInput {
-  "Subject line"
-  subject: String
-
-  "Body"
-  body: String
-
-  "Target ids"
-  targets: [String!]!
-
-  "Files to attach (images allowed)"
-  files: [String!]
-}
-
-type Contact {
-  "Contact ref (fingerprint) of supporter"
-  contactRef: ID!
-
-  "Stringified json with PII optionally encrypted"
-  payload: String!
-
-  "Encryption nonce value"
-  nonce: String
-
-  "Public key used to encrypt this action"
-  publicKey: KeyIds
-
-  "Signing key used to encrypt this action"
-  signKey: KeyIds
-}
-
-input StripePaymentIntentInput {
-  "Amount of payment"
-  amount: Int!
-
-  "Currency ofo payment"
-  currency: String!
-
-  "Stripe payment method type"
-  paymentMethodTypes: [String!]
-}
-
-interface Target {
-  id: String!
-
-  "Name of target"
-  name: String!
-
-  "unique external_id of target, used to upsert target"
-  externalId: String!
-
-  "Locale of this target (in which language do they read emails?)"
-  locale: String
-
-  "Area of the target"
-  area: String
-
-  "Custom fields, stringified json"
-  fields: Json
-}
-
-type PublicTarget implements Target {
-  id: String!
-
-  "Name of target"
-  name: String!
-
-  "unique external_id of target, used to upsert target"
-  externalId: String!
-
-  "Locale of this target (in which language do they read emails?)"
-  locale: String
-
-  "Area of the target"
-  area: String
-
-  "Custom fields, stringified json"
-  fields: Json
-}
-
-enum Status {
-  "Operation completed succesfully"
-  SUCCESS
-
-  "Operation awaiting confirmation"
-  CONFIRMING
-
-  "Operation had no effect (already done)"
-  NOOP
-}
-
-type KeyIds {
-  "Key id"
-  id: Int!
-
-  "Public part of the key (base64url)"
-  public: String!
-}
-
-type User {
-  "Id of user"
-  id: Int!
-
-  "Email of user"
-  email: String!
-
-  "Phone"
-  phone: String
-
-  "Url to profile picture"
-  pictureUrl: String
-
-  "Job title"
-  jobTitle: String
-
-  "Users API token (to check expiry)"
-  apiToken: ApiToken
-
-  "Is user an admin?"
-  isAdmin: Boolean!
-
-  "user's roles in orgs"
-  roles: [UserRole!]!
-}
-
-enum Queue {
-  "Queue of thank you email sender worker"
-  EMAIL_SUPPORTER
-
-  "a custom queue of action that needs DOI"
-  CUSTOM_SUPPORTER_CONFIRM
-
-  "a custom queue of action that needs moderation"
-  CUSTOM_ACTION_CONFIRM
-
-  "a custom queue of actions to sync to CRM"
-  CUSTOM_ACTION_DELIVER
-
-  "Queue of SQS sync worker"
-  SQS
-
-  "Queue of webhook sync worker"
-  WEBHOOK
-}
-
-input SelectActionPage {
-  "Filter by campaign Id"
-  campaignId: Int
-}
-
-type UserRole {
-  "Org this role is in"
-  org: Org!
-
-  "Role name"
-  role: String!
-}
-
-type Partnership {
-  "Partner org"
-  org: Org!
-
-  "Partner's pages that are part of this campaign (can be more, eg: multiple languages)"
-  actionPages: [ActionPage!]!
-
-  "Join\/Launch requests of this partner"
-  launchRequests: [Confirm!]!
-
-  "The partner staffers who initiated a request"
-  launchRequesters: [User!]!
-}
-
-"""
-The `Date` scalar type represents a date. The Date appears in a JSON
-response as an ISO8601 formatted string, without a time component.
-"""
-scalar Date
-
-type ConfirmResult {
-  "Status of Confirm: Success, Confirming (waiting for confirmation), Noop"
-  status: Status!
-
-  "Action page if its an object of confirm"
-  actionPage: ActionPage
-
-  "Campaign page if its an object of confirm"
-  campaign: Campaign
-
-  "Org if its an object of confirm"
-  org: Org
-
-  "A message attached to the confirm"
-  message: String
-}
-
-"Custom field added to action. For signature it can be contact, for mail it can be subject and body"
-input ActionInput {
-  "Action Type"
-  actionType: String!
-
-  "Custom fields added to action"
-  customFields: Json
-
-  "Deprecated format: Other fields added to action"
-  fields: [CustomFieldInput!] @deprecated(reason: "use custom_fields")
-
-  "Donation payload"
-  donation: DonationActionInput
-
-  "MTT payload"
-  mtt: MttActionInput
-
-  "Test mode"
-  testing: Boolean
-}
-
-input UserDetailsInput {
-  "Users profile pic url"
-  pictureUrl: String
-
-  "Job title"
-  jobTitle: String
-
-  "Phone"
-  phone: String
-}
-
-type ActionCustomFields {
-  "id of action"
-  actionId: Int!
-
-  "type of action"
-  actionType: String!
-
-  "creation timestamp"
-  insertedAt: NaiveDateTime!
-
-  "area of supporter that did the action"
-  area: String
-
-  "custom fields as stringified json"
-  customFields: Json!
-
-  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
-}
-
-type OrgUser {
-  email: String!
-
-  "Role in an org"
-  role: String!
-
-  "Date and time the user was created on this instance"
-  createdAt: NaiveDateTime!
-
-  "Date and time when user joined org"
-  joinedAt: NaiveDateTime!
-
-  "Will be removed"
-  lastSigninAt: NaiveDateTime
-}
-
 type RootQueryType {
   "Returns a public list of campaigns, filtered by title. Can be used to implement a campaign search box on a website."
   campaigns(
@@ -849,6 +134,9 @@ type RootQueryType {
 
     "Also include testing actions"
     includeTesting: Boolean
+
+    "Filter by supporter email address (for GDPR lookup)"
+    email: String
   ): [Action]!
 
   "Get the current user, as determined by Authorization header"
@@ -868,529 +156,6 @@ type RootQueryType {
 
   "Get application info"
   application: Application
-}
-
-"""
-The `DateTime` scalar type represents a date and time in the UTC
-timezone. The DateTime appears in a JSON response as an ISO8601 formatted
-string, including UTC timezone ("Z"). The parsed date and time string will
-be converted to UTC if there is an offset.
-"""
-scalar DateTime
-
-"Campaign content changed in mutations"
-input CampaignInput {
-  "Campaign short name"
-  name: String
-
-  "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
-  externalId: Int
-
-  "Campaign human readable title"
-  title: String
-
-  "Schema for contact personal information"
-  contactSchema: ContactSchema
-
-  "Current status of the campaign"
-  status: CampaignStatus
-
-  "Custom config as stringified JSON map"
-  config: Json
-
-  "Action pages of this campaign"
-  actionPages: [ActionPageInput!]
-
-  "MTT configuration"
-  mtt: CampaignMttInput
-}
-
-type PersonalData {
-  "Schema for contact personal information"
-  contactSchema: ContactSchema!
-
-  "Email opt in enabled"
-  supporterConfirm: Boolean!
-
-  "Email opt in template name"
-  supporterConfirmTemplate: String
-
-  "High data security enabled"
-  highSecurity: Boolean!
-
-  "Only send thank you emails to opt-ins"
-  doiThankYou: Boolean!
-
-  "Enable reply_to for emails"
-  replyEnabled: Boolean
-}
-
-input SelectCampaign {
-  titleLike: String
-  orgName: String
-}
-
-interface Org {
-  "Organisation short name"
-  name: String!
-
-  "Organisation title (human readable name)"
-  title: String!
-
-  "config"
-  config: Json!
-}
-
-type ContactReference {
-  "Contact's reference"
-  contactRef: String!
-
-  "Contacts first name"
-  firstName: String
-}
-
-input DonationActionInput {
-  "Provide payload schema to validate, eg. stripe_payment_intent"
-  schema: DonationSchema
-
-  "Provide amount of this donation, in smallest units for currency"
-  amount: Int
-
-  "Provide currency of this donation"
-  currency: String
-
-  "How often is the recurring donation collected"
-  frequencyUnit: DonationFrequencyUnit
-
-  "Custom JSON data"
-  payload: Json!
-}
-
-"Custom field with a key and value. Both are strings."
-input CustomFieldInput {
-  key: String!
-
-  value: String!
-
-  "Unused. To mark action_type\/key as transient, use campaign.transient_actions list"
-  transient: Boolean
-}
-
-type JoinOrgResult {
-  "Result of joining - succes or pending confirmation"
-  status: Status!
-
-  "Org that was joined"
-  org: Org!
-}
-
-input TargetEmailInput {
-  "Email of target"
-  email: String!
-}
-
-type Application {
-  name: String
-  version: String
-  logLevel: String
-}
-
-input NationalityInput {
-  "Nationality \/ issuer of id document"
-  country: String!
-
-  "Document type"
-  documentType: String
-
-  "Document serial id\/number"
-  documentNumber: String
-}
-
-input OrgUserInput {
-  "Email of user"
-  email: String!
-
-  "Role name of user in this org"
-  role: String!
-}
-
-enum OutdatedTargets {
-  "Keep outdated targets"
-  KEEP
-
-  "Disable emails for outdated targets"
-  DISABLE
-
-  "Delete outdated targets (only possible for targets without any action)"
-  DELETE
-}
-
-type ChangeUserStatus {
-  status: Status!
-}
-
-"Criteria to filter users"
-input SelectUser {
-  id: Int
-
-  "Use % as wildcard"
-  email: String
-
-  "Exact org name"
-  orgName: String
-}
-
-enum ContactSchema {
-  BASIC
-  POPULAR_INITIATIVE
-  ECI
-  IT_CI
-}
-
-input SelectService {
-  name: ServiceName
-}
-
-"Result of actions query"
-type PublicActionsResult {
-  "Custom field keys which are public"
-  fieldKeys: [String!]
-
-  "List of actions custom fields"
-  list: [ActionCustomFields]
-}
-
-input GenKeyInput {
-  "Name of the key"
-  name: String!
-}
-
-input AddKeyInput {
-  "Name of the key"
-  name: String!
-
-  "Public part of the key (base64url)"
-  public: String!
-}
-
-scalar Json
-
-type Action {
-  "Id of action"
-  actionId: Int!
-
-  "Timestamp of creation"
-  createdAt: NaiveDateTime!
-
-  "Action type"
-  actionType: String!
-
-  "supporter contact data"
-  contact: Contact!
-
-  "Action custom fields (as stringified JSON)"
-  customFields: Json!
-
-  "Deprecated, use customFields"
-  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
-
-  "UTM codes"
-  tracking: Tracking
-
-  "Campaign this action was collected in"
-  campaign: Campaign!
-
-  "Action page this action was collected at"
-  actionPage: ActionPage!
-
-  "Consents, privacy data of this action"
-  privacy: Consent!
-
-  "Donation specific data"
-  donation: Donation
-}
-
-type LaunchActionPageResult {
-  status: Status!
-}
-
-enum DonationSchema {
-  STRIPE_PAYMENT_INTENT
-}
-
-type PrivateCampaign implements Campaign {
-  "Campaign id"
-  id: Int!
-
-  "External ID (if set)"
-  externalId: Int
-
-  "Internal name of the campaign"
-  name: String!
-
-  "Full, official name of the campaign"
-  title: String!
-
-  "Current status of the campaign"
-  status: CampaignStatus!
-
-  "Schema for contact personal information"
-  contactSchema: ContactSchema!
-
-  "Custom config map"
-  config: Json!
-
-  "Statistics"
-  stats: CampaignStats!
-
-  "Lead org"
-  org: Org!
-
-  """
-  Fetch public actions. Can be used to display recent comments for example.
-
-  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
-  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
-  """
-  actions(
-    "Specify action type to return"
-    actionType: String!
-
-    "Limit the number of returned actions, default is 10, max is 100)"
-    limit: Int!
-  ): PublicActionsResult!
-
-  "List MTT targets of this campaign"
-  targets: [Target]
-
-  "Campaign onwer collects opt-out actions for delivery even if campaign partner is delivering"
-  forceDelivery: Boolean!
-
-  "Action Pages of this campaign that are accessible to current user"
-  actionPages: [PrivateActionPage!]!
-
-  "List of partnerships and requests to join partnership"
-  partnerships: [Partnership!]
-
-  "MTT configuration"
-  mtt: CampaignMtt
-}
-
-type PrivateOrg implements Org {
-  "Organisation short name"
-  name: String!
-
-  "Organisation title (human readable name)"
-  title: String!
-
-  "config"
-  config: Json!
-
-  "Organization id"
-  id: Int!
-
-  "Personal data settings for this org"
-  personalData: PersonalData!
-
-  "Encryption keys"
-  keys(select: SelectKey): [Key!]!
-
-  "Get encryption key"
-  key(
-    "Parameters to select the key by"
-    select: SelectKey!
-  ): Key!
-
-  "Services of this org"
-  services(
-    "Parameters to select the key by"
-    select: SelectService
-  ): [Service]!
-
-  "Users of this org"
-  users: [OrgUser]!
-
-  "Action processing settings for this org"
-  processing: Processing!
-
-  "List campaigns this org is leader or partner of"
-  campaigns(select: SelectCampaign): [Campaign!]!
-
-  "List action pages this org has"
-  actionPages(select: SelectActionPage): [ActionPage!]!
-
-  "Get one page belonging to this org"
-  actionPage(
-    "Id of page"
-    id: Int
-
-    "Name of page"
-    name: String
-  ): ActionPage!
-
-  "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
-  campaign(id: Int!): Campaign!
-}
-
-"Custom field with a key and value."
-type CustomField {
-  key: String!
-  value: String!
-}
-
-input OrgInput {
-  "Name used to rename"
-  name: String
-
-  "Organisation title (human readable name)"
-  title: String
-
-  "Schema for contact personal information"
-  contactSchema: ContactSchema
-
-  "Email opt in enabled"
-  supporterConfirm: Boolean
-
-  "Email opt in template name"
-  supporterConfirmTemplate: String
-
-  "Only send thank you emails to opt-ins"
-  doiThankYou: Boolean
-
-  "Enable reply_to for emails"
-  replyEnabled: Boolean
-
-  "Config"
-  config: Json
-}
-
-type TargetEmail {
-  "Email of target"
-  email: String!
-
-  "The status of email (normal or bouncing etc)"
-  emailStatus: EmailStatus!
-
-  "An error received when bouncing email was reported"
-  error: String
-}
-
-type KeyWithPrivate {
-  "Key id"
-  id: Int!
-
-  "Public part of the key (base64url)"
-  public: String!
-
-  "Private (Secret) part of the key (base64url)"
-  private: String!
-
-  "Name of the key (human readable)"
-  name: String!
-
-  "Is it active?"
-  active: Boolean!
-
-  "Is it expired?"
-  expired: Boolean!
-
-  "When the key was expired, in UTC"
-  expiredAt: NaiveDateTime
-}
-
-input ConfirmInput {
-  "secret code of this confirm"
-  code: String!
-
-  "email that confirm was assigned for"
-  email: String
-
-  "object_id that this confirm refers to"
-  objectId: Int
-}
-
-"Count of actions for particular action type"
-type ActionTypeCount {
-  "action type"
-  actionType: String!
-
-  "count of actions of action type"
-  count: Int!
-}
-
-"Tracking codes, utm medium\/campaign\/source default to 'unknown', content to empty string"
-input TrackingInput {
-  source: String
-
-  medium: String
-
-  campaign: String
-
-  content: String
-
-  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
-  location: String
-}
-
-"GDPR consent data for this org"
-type Consent {
-  "communication (email) opt-in"
-  optIn: Boolean
-
-  "Consent timestamp"
-  givenAt: NaiveDateTime!
-
-  "Email status, whether it's normal, DOI, or bouncing"
-  emailStatus: EmailStatus!
-
-  "When did the email status change last time"
-  emailStatusChanged: NaiveDateTime
-
-  "This action contained consent (if false, it could be a share action that is attached to another action containing a consent)"
-  withConsent: Boolean!
-}
-
-input ServiceInput {
-  "Service name (type)"
-  name: ServiceName!
-
-  "Hostname of service, but can be used as any \"container\" of the service. For AWS, contains a region."
-  host: String
-
-  "User, Account id, client id, whatever your API has"
-  user: String
-
-  "Password, key, secret or whatever your API has as secret credential"
-  password: String
-
-  "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
-  path: String
-}
-
-type ActivateKeyResult {
-  status: Status!
-}
-
-type PrivateTarget implements Target {
-  id: String!
-
-  "Name of target"
-  name: String!
-
-  "unique external_id of target, used to upsert target"
-  externalId: String!
-
-  "Locale of this target (in which language do they read emails?)"
-  locale: String
-
-  "Area of the target"
-  area: String
-
-  "Custom fields, stringified json"
-  fields: Json
-
-  "Email list of this target"
-  emails: [TargetEmail]!
 }
 
 type RootMutationType {
@@ -1420,6 +185,18 @@ type RootMutationType {
 
     "Campaign content to be updated"
     input: CampaignInput!
+  ): Campaign!
+
+  "Updates an existing campaign."
+  updateCampaignProcessing(
+    "Name of campaign to update"
+    name: String
+
+    "Enable supporter confirmation"
+    supporterConfirm: Boolean
+
+    "Supporter confirmation template name"
+    supporterConfirmTemplate: String
   ): Campaign!
 
   "Add a new campaign"
@@ -1724,6 +501,18 @@ type RootMutationType {
   ): ActivateKeyResult!
 
   """
+  Anonymize personal data (GDPR right-to-erasure).
+  Nulls PII fields on supporter and deletes all contact records.
+  Only affects fully processed (accepted/delivered) supporters.
+  """
+  deleteContact(
+    orgName: String!
+
+    "contact_ref from action export (base64url fingerprint)"
+    contactRef: String!
+  ): Status!
+
+  """
   Upsert an email tempalte to be used for sending various emails.
   It belongs to org and is identified by (name, locale), so you can have multiple "thank_you" templates for different languages.
   """
@@ -1847,6 +636,328 @@ type RootMutationType {
   ): [PrivateTarget]!
 }
 
+type RootSubscriptionType {
+  actionPageUpserted(orgName: String): ActionPage!
+}
+
+type Application {
+  name: String
+  version: String
+  logLevel: String
+}
+
+input TargetEmailInput {
+  "Email of target"
+  email: String!
+}
+
+type TargetEmail {
+  "Email of target"
+  email: String!
+
+  "The status of email (normal or bouncing etc)"
+  emailStatus: EmailStatus!
+
+  "An error received when bouncing email was reported"
+  error: String
+}
+
+input TargetInput {
+  "Name of target"
+  name: String
+
+  "unique external_id of target, used to upsert target"
+  externalId: String!
+
+  "Locale of this target (in which language do they read emails?)"
+  locale: String
+
+  "Area of the target"
+  area: String
+
+  "Custom fields, stringified json"
+  fields: Json
+
+  "Email list of this target"
+  emails: [TargetEmailInput!]
+}
+
+interface Target {
+  id: String!
+
+  "Name of target"
+  name: String!
+
+  "unique external_id of target, used to upsert target"
+  externalId: String!
+
+  "Locale of this target (in which language do they read emails?)"
+  locale: String
+
+  "Area of the target"
+  area: String
+
+  "Custom fields, stringified json"
+  fields: Json
+}
+
+type PublicTarget implements Target {
+  id: String!
+
+  "Name of target"
+  name: String!
+
+  "unique external_id of target, used to upsert target"
+  externalId: String!
+
+  "Locale of this target (in which language do they read emails?)"
+  locale: String
+
+  "Area of the target"
+  area: String
+
+  "Custom fields, stringified json"
+  fields: Json
+}
+
+type PrivateTarget implements Target {
+  id: String!
+
+  "Name of target"
+  name: String!
+
+  "unique external_id of target, used to upsert target"
+  externalId: String!
+
+  "Locale of this target (in which language do they read emails?)"
+  locale: String
+
+  "Area of the target"
+  area: String
+
+  "Custom fields, stringified json"
+  fields: Json
+
+  "Email list of this target"
+  emails: [TargetEmail]!
+}
+
+interface Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+
+  "config"
+  config: Json!
+}
+
+type PublicOrg implements Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+
+  "config"
+  config: Json!
+}
+
+type PrivateOrg implements Org {
+  "Organisation short name"
+  name: String!
+
+  "Organisation title (human readable name)"
+  title: String!
+
+  "config"
+  config: Json!
+
+  "Organization id"
+  id: Int!
+
+  "Personal data settings for this org"
+  personalData: PersonalData!
+
+  "Encryption keys"
+  keys(select: SelectKey): [Key!]!
+
+  "Get encryption key"
+  key(
+    "Parameters to select the key by"
+    select: SelectKey!
+  ): Key!
+
+  "Services of this org"
+  services(
+    "Parameters to select the key by"
+    select: SelectService
+  ): [Service]!
+
+  "Users of this org"
+  users: [OrgUser]!
+
+  "Action processing settings for this org"
+  processing: Processing!
+
+  "List campaigns this org is leader or partner of"
+  campaigns(select: SelectCampaign): [Campaign!]!
+
+  "List action pages this org has"
+  actionPages(select: SelectActionPage): [ActionPage!]!
+
+  "Get one page belonging to this org"
+  actionPage(
+    "Id of page"
+    id: Int
+
+    "Name of page"
+    name: String
+  ): ActionPage!
+
+  "DEPRECATED: use campaign() in API root. Get campaign this org is leader or partner of by id"
+  campaign(id: Int!): Campaign!
+}
+
+input OrgInput {
+  "Name used to rename"
+  name: String
+
+  "Organisation title (human readable name)"
+  title: String
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
+  "Email opt in enabled"
+  supporterConfirm: Boolean
+
+  "Email opt in template name"
+  supporterConfirmTemplate: String
+
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean
+
+  "Enable reply_to for emails"
+  replyEnabled: Boolean
+
+  "Config"
+  config: Json
+}
+
+type PersonalData {
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Email opt in enabled"
+  supporterConfirm: Boolean!
+
+  "Email opt in template name"
+  supporterConfirmTemplate: String
+
+  "High data security enabled"
+  highSecurity: Boolean!
+
+  "Only send thank you emails to opt-ins"
+  doiThankYou: Boolean!
+
+  "Enable reply_to for emails"
+  replyEnabled: Boolean
+}
+
+"Encryption or sign key with integer id (database)"
+type Key {
+  "Key id"
+  id: Int!
+
+  "Public part of the key (base64url)"
+  public: String!
+
+  "Name of the key (human readable)"
+  name: String!
+
+  "Is it active?"
+  active: Boolean!
+
+  "Is it expired?"
+  expired: Boolean!
+
+  "When the key was expired, in UTC"
+  expiredAt: NaiveDateTime
+}
+
+type KeyWithPrivate {
+  "Key id"
+  id: Int!
+
+  "Public part of the key (base64url)"
+  public: String!
+
+  "Private (Secret) part of the key (base64url)"
+  private: String!
+
+  "Name of the key (human readable)"
+  name: String!
+
+  "Is it active?"
+  active: Boolean!
+
+  "Is it expired?"
+  expired: Boolean!
+
+  "When the key was expired, in UTC"
+  expiredAt: NaiveDateTime
+}
+
+type KeyIds {
+  "Key id"
+  id: Int!
+
+  "Public part of the key (base64url)"
+  public: String!
+}
+
+input AddKeyInput {
+  "Name of the key"
+  name: String!
+
+  "Public part of the key (base64url)"
+  public: String!
+}
+
+input GenKeyInput {
+  "Name of the key"
+  name: String!
+}
+
+input SelectKey {
+  "Key id"
+  id: Int
+
+  "Only active"
+  active: Boolean
+
+  "Key having this public part"
+  public: String
+}
+
+type JoinOrgResult {
+  "Result of joining - succes or pending confirmation"
+  status: Status!
+
+  "Org that was joined"
+  org: Org!
+}
+
+type ActivateKeyResult {
+  status: Status!
+}
+
+input SelectService {
+  name: ServiceName
+}
+
 type Processing {
   "Envelope FROM email when sending emails"
   emailFrom: String
@@ -1891,22 +1002,579 @@ type Processing {
   emailTemplates: [String!]
 }
 
-type PublicOrg implements Org {
-  "Organisation short name"
+input EmailTemplateInput {
+  "template name"
   name: String!
 
-  "Organisation title (human readable name)"
-  title: String!
+  "template locale"
+  locale: String
 
-  "config"
-  config: Json!
+  "Subject text"
+  subject: String
+
+  "Html part body"
+  html: String
+
+  "Plaintext part body"
+  text: String
 }
 
-enum DonationFrequencyUnit {
-  ONE_OFF
-  WEEKLY
-  MONTHLY
-  DAILY
+input StripePaymentIntentInput {
+  "Amount of payment"
+  amount: Int!
+
+  "Currency ofo payment"
+  currency: String!
+
+  "Stripe payment method type"
+  paymentMethodTypes: [String!]
+}
+
+input StripeSubscriptionInput {
+  "Amount of payment"
+  amount: Int!
+
+  "Currency ofo payment"
+  currency: String!
+
+  "how often is recurrent payment made?"
+  frequencyUnit: DonationFrequencyUnit!
+}
+
+enum ServiceName {
+  "AWS SES to send emails"
+  SES
+
+  "AWS SQS to process messages"
+  SQS
+
+  "Mailjet to send emails"
+  MAILJET
+
+  "SMTP to send emails"
+  SMTP
+
+  "Preview emails in \/mailbox"
+  PREVIEW
+
+  "Wordpress HTTP API"
+  WORDPRESS
+
+  "Stripe to process donations"
+  STRIPE
+
+  "Stripe test account to test donations"
+  TEST_STRIPE
+
+  "HTTP POST webhook"
+  WEBHOOK
+
+  "Use a service that instance org is using"
+  SYSTEM
+
+  "Supabase to store files"
+  SUPABASE
+}
+
+type Service {
+  "Id"
+  id: Int!
+
+  "Service name (type)"
+  name: ServiceName!
+
+  "Hostname of service, but can be used as any \"container\" of the service. For AWS, contains a region."
+  host: String
+
+  "User, Account id, client id, whatever your API has"
+  user: String
+
+  "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
+  path: String
+}
+
+input ServiceInput {
+  "Service name (type)"
+  name: ServiceName!
+
+  "Hostname of service, but can be used as any \"container\" of the service. For AWS, contains a region."
+  host: String
+
+  "User, Account id, client id, whatever your API has"
+  user: String
+
+  "Password, key, secret or whatever your API has as secret credential"
+  password: String
+
+  "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
+  path: String
+}
+
+type User {
+  "Id of user"
+  id: Int!
+
+  "Email of user"
+  email: String!
+
+  "Phone"
+  phone: String
+
+  "Url to profile picture"
+  pictureUrl: String
+
+  "Job title"
+  jobTitle: String
+
+  "Users API token (to check expiry)"
+  apiToken: ApiToken
+
+  "Is user an admin?"
+  isAdmin: Boolean!
+
+  "user's roles in orgs"
+  roles: [UserRole!]!
+}
+
+type UserRole {
+  "Org this role is in"
+  org: Org!
+
+  "Role name"
+  role: String!
+}
+
+type OrgUser {
+  email: String!
+
+  "Role in an org"
+  role: String!
+
+  "Date and time the user was created on this instance"
+  createdAt: NaiveDateTime!
+
+  "Date and time when user joined org"
+  joinedAt: NaiveDateTime!
+
+  "Will be removed"
+  lastSigninAt: NaiveDateTime
+}
+
+input OrgUserInput {
+  "Email of user"
+  email: String!
+
+  "Role name of user in this org"
+  role: String!
+}
+
+input UserDetailsInput {
+  "Users profile pic url"
+  pictureUrl: String
+
+  "Job title"
+  jobTitle: String
+
+  "Phone"
+  phone: String
+}
+
+type ChangeUserStatus {
+  status: Status!
+}
+
+type DeleteUserResult {
+  status: Status!
+}
+
+"Criteria to filter users"
+input SelectUser {
+  id: Int
+
+  "Use % as wildcard"
+  email: String
+
+  "Exact org name"
+  orgName: String
+}
+
+"Api token metadata"
+type ApiToken {
+  expiresAt: NaiveDateTime!
+}
+
+"Contact information"
+input ContactInput {
+  "Full name"
+  name: String
+
+  "First name (when you provide full name split into first and last)"
+  firstName: String
+
+  "Last name (when you provide full name split into first and last)"
+  lastName: String
+
+  "Email"
+  email: String
+
+  "Contacts phone number"
+  phone: String
+
+  "Date of birth in format YYYY-MM-DD"
+  birthDate: Date
+
+  "Contacts address"
+  address: AddressInput
+
+  "Nationality information"
+  nationality: NationalityInput
+}
+
+"Address type which can hold different addres fields."
+input AddressInput {
+  "Country code (two-letter)."
+  country: String
+
+  "Postcode, in format correct for country locale"
+  postcode: String
+
+  "Locality, which can be a city\/town\/village"
+  locality: String
+
+  "Region, being province, voyevodship, county"
+  region: String
+
+  "Street name"
+  street: String
+
+  "Street number"
+  streetNumber: String
+}
+
+input NationalityInput {
+  "Nationality \/ issuer of id document"
+  country: String!
+
+  "Document type"
+  documentType: String
+
+  "Document serial id\/number"
+  documentNumber: String
+}
+
+"Custom field added to action. For signature it can be contact, for mail it can be subject and body"
+input ActionInput {
+  "Action Type"
+  actionType: String!
+
+  "Custom fields added to action"
+  customFields: Json
+
+  "Deprecated format: Other fields added to action"
+  fields: [CustomFieldInput!] @deprecated(reason: "use custom_fields")
+
+  "Donation payload"
+  donation: DonationActionInput
+
+  "MTT payload"
+  mtt: MttActionInput
+
+  "Test mode"
+  testing: Boolean
+}
+
+type Action {
+  "Id of action"
+  actionId: Int!
+
+  "Timestamp of creation"
+  createdAt: NaiveDateTime!
+
+  "Action type"
+  actionType: String!
+
+  "supporter contact data"
+  contact: Contact!
+
+  "Action custom fields (as stringified JSON)"
+  customFields: Json!
+
+  "Deprecated, use customFields"
+  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
+
+  "UTM codes"
+  tracking: Tracking
+
+  "Campaign this action was collected in"
+  campaign: Campaign!
+
+  "Action page this action was collected at"
+  actionPage: ActionPage!
+
+  "Consents, privacy data of this action"
+  privacy: Consent!
+
+  "Donation specific data"
+  donation: Donation
+}
+
+type Contact {
+  "Contact ref (fingerprint) of supporter"
+  contactRef: ID!
+
+  "Stringified json with PII optionally encrypted"
+  payload: String!
+
+  "Encryption nonce value"
+  nonce: String
+
+  "Public key used to encrypt this action"
+  publicKey: KeyIds
+
+  "Signing key used to encrypt this action"
+  signKey: KeyIds
+}
+
+"Custom field with a key and value. Both are strings."
+input CustomFieldInput {
+  key: String!
+
+  value: String!
+
+  "Unused. To mark action_type\/key as transient, use campaign.transient_actions list"
+  transient: Boolean
+}
+
+"Custom field with a key and value."
+type CustomField {
+  key: String!
+  value: String!
+}
+
+"GDPR consent data structure"
+input ConsentInput {
+  "Has contact consented to receiving communication from widget owner? Null: not asked"
+  optIn: Boolean
+
+  "Opt in to the campaign leader"
+  leadOptIn: Boolean
+}
+
+"GDPR consent data for this org"
+type Consent {
+  "communication (email) opt-in"
+  optIn: Boolean
+
+  "Consent timestamp"
+  givenAt: NaiveDateTime!
+
+  "Email status, whether it's normal, DOI, or bouncing"
+  emailStatus: EmailStatus!
+
+  "When did the email status change last time"
+  emailStatusChanged: NaiveDateTime
+
+  "This action contained consent (if false, it could be a share action that is attached to another action containing a consent)"
+  withConsent: Boolean!
+}
+
+"Tracking codes (UTM params)"
+type Tracking {
+  source: String!
+  medium: String!
+  campaign: String!
+  content: String!
+}
+
+"Tracking codes, utm medium\/campaign\/source default to 'unknown', content to empty string"
+input TrackingInput {
+  source: String
+
+  medium: String
+
+  campaign: String
+
+  content: String
+
+  "Action page location. Url from which action is added. Must contain schema, domain, (port), pathname"
+  location: String
+}
+
+type ContactReference {
+  "Contact's reference"
+  contactRef: String!
+
+  "Contacts first name"
+  firstName: String
+}
+
+input DonationActionInput {
+  "Provide payload schema to validate, eg. stripe_payment_intent"
+  schema: DonationSchema
+
+  "Provide amount of this donation, in smallest units for currency"
+  amount: Int
+
+  "Provide currency of this donation"
+  currency: String
+
+  "How often is the recurring donation collected"
+  frequencyUnit: DonationFrequencyUnit
+
+  "Custom JSON data"
+  payload: Json!
+}
+
+input MttActionInput {
+  "Subject line"
+  subject: String
+
+  "Body"
+  body: String
+
+  "Target ids"
+  targets: [String!]!
+
+  "Files to attach (images allowed)"
+  files: [String!]
+}
+
+type Donation {
+  schema: DonationSchema
+
+  "Provide amount of this donation, in smallest units for currency"
+  amount: Int!
+
+  "Provide currency of this donation"
+  currency: String!
+
+  "Donation data"
+  payload: Json!
+
+  "Donation frequency unit"
+  frequencyUnit: DonationFrequencyUnit!
+}
+
+type RequeueResult {
+  "Count of actions selected for requeueing"
+  count: Int!
+
+  "Count of actions that could not be requeued"
+  failed: Int!
+}
+
+interface ActionPage {
+  "Id"
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]! @deprecated(reason: "moved under config")
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+}
+
+type PrivateActionPage implements ActionPage {
+  "Id"
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]! @deprecated(reason: "moved under config")
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
+
+  "Extra supporters, a number added to deduplicated supporter count. Cannot be added to per-area or per-action_type counts."
+  extraSupporters: Int!
+
+  """
+  Action page collects also opt-out actions, to deliver them to authorities.
+  If false, the opt-outs will fallback to lead (we never trash data with opt-outs)
+  """
+  delivery: Boolean!
+
+  "Email template to confirm supporter (DOI)"
+  supporterConfirmTemplate: String
+
+  "Location of the widget as last seen in HTTP REFERER header"
+  location: String
+
+  "Status of action page - STANDBY (ready to get actions), ACTIVE (collecting actions), STALLED (actions not coming any more)"
+  status: ActionPageStatus
+}
+
+type PublicActionPage implements ActionPage {
+  "Id"
+  id: Int!
+
+  "Locale for the widget, in i18n format"
+  locale: String!
+
+  "Name where the widget is hosted"
+  name: String!
+
+  "Thank you email templated of this Action Page"
+  thankYouTemplate: String
+
+  "A reference to thank you email template of this ActionPage"
+  thankYouTemplateRef: String
+
+  "Is live?"
+  live: Boolean!
+
+  "List of steps in journey"
+  journey: [String!]! @deprecated(reason: "moved under config")
+
+  "Config JSON of this action page"
+  config: Json!
+
+  "Campaign this action page belongs to."
+  campaign: Campaign!
+
+  "Org the action page belongs to"
+  org: Org!
 }
 
 "ActionPage input"
@@ -1941,36 +1609,277 @@ input ActionPageInput {
   delivery: Boolean
 }
 
-"Address type which can hold different addres fields."
-input AddressInput {
-  "Country code (two-letter)."
-  country: String
-
-  "Postcode, in format correct for country locale"
-  postcode: String
-
-  "Locality, which can be a city\/town\/village"
-  locality: String
-
-  "Region, being province, voyevodship, county"
-  region: String
-
-  "Street name"
-  street: String
-
-  "Street number"
-  streetNumber: String
+input SelectActionPage {
+  "Filter by campaign Id"
+  campaignId: Int
 }
 
-enum ActionPageStatus {
-  "This action page is ready to receive first action or is stalled for over 1 year"
-  STANDBY
+interface Campaign {
+  "Campaign id"
+  id: Int!
 
-  "This action page received actions lately"
-  ACTIVE
+  "External ID (if set)"
+  externalId: Int
 
-  "This action page did not receive actions lately"
-  STALLED
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Current status of the campaign"
+  status: CampaignStatus!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign start date"
+  start: Date
+
+  "Campaign end date"
+  end: Date
+
+  "Action processing settings for this campaign"
+  campaignProcessing: CampaignProcessing
+
+  "Statistics"
+  stats: CampaignStats!
+
+  "Lead org"
+  org: Org!
+
+  """
+  Fetch public actions. Can be used to display recent comments for example.
+
+  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+  """
+  actions(
+    "Specify action type to return"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+
+  "List MTT targets of this campaign"
+  targets: [Target]
+}
+
+type PublicCampaign implements Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Current status of the campaign"
+  status: CampaignStatus!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign start date"
+  start: Date
+
+  "Campaign end date"
+  end: Date
+
+  "Action processing settings for this campaign"
+  campaignProcessing: CampaignProcessing
+
+  "Statistics"
+  stats: CampaignStats!
+
+  "Lead org"
+  org: Org!
+
+  """
+  Fetch public actions. Can be used to display recent comments for example.
+
+  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+  """
+  actions(
+    "Specify action type to return"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+
+  "List MTT targets of this campaign"
+  targets: [Target]
+}
+
+type PrivateCampaign implements Campaign {
+  "Campaign id"
+  id: Int!
+
+  "External ID (if set)"
+  externalId: Int
+
+  "Internal name of the campaign"
+  name: String!
+
+  "Full, official name of the campaign"
+  title: String!
+
+  "Current status of the campaign"
+  status: CampaignStatus!
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema!
+
+  "Custom config map"
+  config: Json!
+
+  "Campaign start date"
+  start: Date
+
+  "Campaign end date"
+  end: Date
+
+  "Action processing settings for this campaign"
+  campaignProcessing: CampaignProcessing
+
+  "Statistics"
+  stats: CampaignStats!
+
+  "Lead org"
+  org: Org!
+
+  """
+  Fetch public actions. Can be used to display recent comments for example.
+
+  To allow-list action fields to be public, `campaign.public_actions` must be set to a list of strings in form
+  action_type:custom_field_name, eg: `["signature:comment"]`. XXX this cannot be set in API, you need to set in backend.
+  """
+  actions(
+    "Specify action type to return"
+    actionType: String!
+
+    "Limit the number of returned actions, default is 10, max is 100)"
+    limit: Int!
+  ): PublicActionsResult!
+
+  "List MTT targets of this campaign"
+  targets: [Target]
+
+  "Campaign onwer collects opt-out actions for delivery even if campaign partner is delivering"
+  forceDelivery: Boolean!
+
+  "Action Pages of this campaign that are accessible to current user"
+  actionPages: [PrivateActionPage!]!
+
+  "List of partnerships and requests to join partnership"
+  partnerships: [Partnership!]
+
+  "MTT configuration"
+  mtt: CampaignMtt
+}
+
+type Partnership {
+  "Partner org"
+  org: Org!
+
+  "Partner's pages that are part of this campaign (can be more, eg: multiple languages)"
+  actionPages: [ActionPage!]!
+
+  "Join\/Launch requests of this partner"
+  launchRequests: [Confirm!]!
+
+  "The partner staffers who initiated a request"
+  launchRequesters: [User!]!
+}
+
+type LaunchActionPageResult {
+  status: Status!
+}
+
+type CampaignProcessing {
+  "Enable supporter confirmation"
+  supporterConfirm: Boolean
+
+  "Supporter confirmation template name"
+  supporterConfirmTemplate: String
+}
+
+"Campaign content changed in mutations"
+input CampaignInput {
+  "Campaign short name"
+  name: String
+
+  "Campaign external_id. If provided, it will be used to find campaign. Can be used to rename a campaign"
+  externalId: Int
+
+  "Campaign human readable title"
+  title: String
+
+  "Schema for contact personal information"
+  contactSchema: ContactSchema
+
+  "Current status of the campaign"
+  status: CampaignStatus
+
+  "Custom config as stringified JSON map"
+  config: Json
+
+  "Campaign start date"
+  start: Date
+
+  "Campaign end date"
+  end: Date
+
+  "Action pages of this campaign"
+  actionPages: [ActionPageInput!]
+
+  "MTT configuration"
+  mtt: CampaignMttInput
+
+  "Supporter confirmation enabled"
+  supporterConfirm: Boolean
+
+  "Supporter confirmation template name"
+  supporterConfirmTemplate: String
+}
+
+type CampaignMtt {
+  "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
+  startAt: DateTime!
+
+  "This is last day and end hour of the campaign. Note, every day of the campaign the end hour will be same."
+  endAt: DateTime!
+
+  """
+  If email templates are used to create MTT, use this template (works like thank you email templates).
+  Otherwise, the raw text that is send with MTT action will make a plain text email.
+  """
+  messageTemplate: String
+
+  "A test target email (yourself) where test mtt actions will be sent (instead to real targets)"
+  testEmail: String
+
+  "List of additional contacts that will be added to CC."
+  ccContacts: [String]
+
+  "If checked, the sender will be added to CC."
+  ccSender: Boolean
+
+  "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
+  dripDelivery: Boolean
 }
 
 input CampaignMttInput {
@@ -1988,78 +1897,229 @@ input CampaignMttInput {
 
   "A test target email (yourself) where test mtt actions will be sent (instead to real targets)"
   testEmail: String
+
+  "List of additional contacts that will be added to CC."
+  ccContacts: [String]
+
+  "If checked, the sender will be added to CC."
+  ccSender: Boolean
+
+  "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
+  dripDelivery: Boolean
 }
 
-type RequeueResult {
-  "Count of actions selected for requeueing"
+"Campaign statistics"
+type CampaignStats {
+  "Unique action tagers count"
+  supporterCount: Int!
+
+  "Unique action takers by area"
+  supporterCountByArea: [AreaCount!]!
+
+  "Unique action takers by org"
+  supporterCountByOrg: [OrgCount!]!
+
+  "Unique supporter count not including the ones collected by org_name"
+  supporterCountByOthers(
+    "Org name to exclude from counting supporters"
+    orgName: String!
+  ): Int!
+
+  "Action counts per action types (with duplicates)"
+  actionCount: [ActionTypeCount!]!
+}
+
+"Count of actions for particular action type"
+type ActionTypeCount {
+  "action type"
+  actionType: String!
+
+  "count of actions of action type"
   count: Int!
-
-  "Count of actions that could not be requeued"
-  failed: Int!
 }
 
-"Contact information"
-input ContactInput {
-  "Full name"
-  name: String
+"Count of actions for particular action type"
+type AreaCount {
+  "area"
+  area: String!
 
-  "First name (when you provide full name split into first and last)"
-  firstName: String
-
-  "Last name (when you provide full name split into first and last)"
-  lastName: String
-
-  "Email"
-  email: String
-
-  "Contacts phone number"
-  phone: String
-
-  "Date of birth in format YYYY-MM-DD"
-  birthDate: Date
-
-  "Contacts address"
-  address: AddressInput
-
-  "Nationality information"
-  nationality: NationalityInput
+  "count of supporters in this area"
+  count: Int!
 }
 
-input EmailTemplateInput {
-  "template name"
-  name: String!
+"Count of supporters for particular org"
+type OrgCount {
+  "org"
+  org: Org!
 
-  "template locale"
-  locale: String
-
-  "Subject text"
-  subject: String
-
-  "Html part body"
-  html: String
-
-  "Plaintext part body"
-  text: String
+  "count of supporters registered by org"
+  count: Int!
 }
 
-input TargetInput {
-  "Name of target"
-  name: String
+type ActionCustomFields {
+  "id of action"
+  actionId: Int!
 
-  "unique external_id of target, used to upsert target"
-  externalId: String!
+  "type of action"
+  actionType: String!
 
-  "Locale of this target (in which language do they read emails?)"
-  locale: String
+  "creation timestamp"
+  insertedAt: NaiveDateTime!
 
-  "Area of the target"
+  "area of supporter that did the action"
   area: String
 
-  "Custom fields, stringified json"
-  fields: Json
+  "custom fields as stringified json"
+  customFields: Json!
 
-  "Email list of this target"
-  emails: [TargetEmailInput!]
+  fields: [CustomField!]! @deprecated(reason: "use custom_fields")
+}
+
+"Result of actions query"
+type PublicActionsResult {
+  "Custom field keys which are public"
+  fieldKeys: [String!]
+
+  "List of actions custom fields"
+  list: [ActionCustomFields]
+}
+
+input SelectCampaign {
+  titleLike: String
+  orgName: String
+}
+
+input ConfirmInput {
+  "secret code of this confirm"
+  code: String!
+
+  "email that confirm was assigned for"
+  email: String
+
+  "object_id that this confirm refers to"
+  objectId: Int
+}
+
+type ConfirmResult {
+  "Status of Confirm: Success, Confirming (waiting for confirmation), Noop"
+  status: Status!
+
+  "Action page if its an object of confirm"
+  actionPage: ActionPage
+
+  "Campaign page if its an object of confirm"
+  campaign: Campaign
+
+  "Org if its an object of confirm"
+  org: Org
+
+  "A message attached to the confirm"
+  message: String
+}
+
+type Confirm {
+  "Secret code\/PIN of the confirm"
+  code: String!
+
+  "Email the confirm is sent to"
+  email: String
+
+  "Message attached to the confirm"
+  message: String
+
+  "Object id that confirmable action refers to"
+  objectId: Int
+
+  "Who created the confirm"
+  creator: User
+}
+
+scalar Json
+
+enum ContactSchema {
+  BASIC
+  POPULAR_INITIATIVE
+  ECI
+  IT_CI
+}
+
+enum DonationSchema {
+  STRIPE_PAYMENT_INTENT
+}
+
+enum DonationFrequencyUnit {
+  ONE_OFF
+  WEEKLY
+  MONTHLY
+  DAILY
+}
+
+enum Status {
+  "Operation completed succesfully"
+  SUCCESS
+
+  "Operation awaiting confirmation"
+  CONFIRMING
+
+  "Operation had no effect (already done)"
+  NOOP
+}
+
+enum ActionPageStatus {
+  "This action page is ready to receive first action or is stalled for over 1 year"
+  STANDBY
+
+  "This action page received actions lately"
+  ACTIVE
+
+  "This action page did not receive actions lately"
+  STALLED
+}
+
+enum EmailStatus {
+  "An unused email"
+  NONE
+
+  "The user has received a DOI on this email and accepted it"
+  DOUBLE_OPT_IN
+
+  "This email was used and bounced"
+  BOUNCE
+
+  "This email was used and blocked"
+  BLOCKED
+
+  "This email was used and marked spam"
+  SPAM
+
+  "This email was used and user unsubscribed"
+  UNSUB
+
+  "This email was disabled and should not be contacted"
+  INACTIVE
+
+  "This email was contacted before"
+  ACTIVE
+}
+
+enum Queue {
+  "Queue of thank you email sender worker"
+  EMAIL_SUPPORTER
+
+  "a custom queue of action that needs DOI"
+  CUSTOM_SUPPORTER_CONFIRM
+
+  "a custom queue of action that needs moderation"
+  CUSTOM_ACTION_CONFIRM
+
+  "a custom queue of actions to sync to CRM"
+  CUSTOM_ACTION_DELIVER
+
+  "Queue of SQS sync worker"
+  SQS
+
+  "Queue of webhook sync worker"
+  WEBHOOK
 }
 
 enum CampaignStatus {
@@ -2068,3 +2128,35 @@ enum CampaignStatus {
   CLOSED
   IGNORED
 }
+
+enum OutdatedTargets {
+  "Keep outdated targets"
+  KEEP
+
+  "Disable emails for outdated targets"
+  DISABLE
+
+  "Delete outdated targets (only possible for targets without any action)"
+  DELETE
+}
+
+"""
+The `DateTime` scalar type represents a date and time in the UTC
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string, including UTC timezone ("Z"). The parsed date and time string will
+be converted to UTC if there is an offset.
+"""
+scalar DateTime
+
+"""
+The `Naive DateTime` scalar type represents a naive date and time without
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string.
+"""
+scalar NaiveDateTime
+
+"""
+The `Date` scalar type represents a date. The Date appears in a JSON
+response as an ISO8601 formatted string, without a time component.
+"""
+scalar Date
