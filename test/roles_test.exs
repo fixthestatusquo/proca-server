@@ -1,9 +1,8 @@
 defmodule RolesTest do
   use Proca.DataCase
   doctest Proca.Staffer.Role
-  alias Proca.{Staffer}
   alias Proca.Staffer.Role
-  import Proca.Permission, only: [can?: 2, add: 2]
+  import Proca.Permission, only: [can?: 2, add: 2, remove: 2]
   alias Ecto.Changeset
 
   test "can change roles" do
@@ -22,6 +21,15 @@ defmodule RolesTest do
     refute translator |> can?(:manage_orgs)
 
     assert Role.findrole(translator) == :translator
+  end
+
+  test "legacy owner is still detected as owner and can assign owner role" do
+    legacy_owner =
+      Factory.build(:staffer, perms: add(0, Role.permissions(:owner)) |> remove(:delete_contacts))
+
+    assert Role.findrole(legacy_owner) == :owner
+    assert Role.can_assign_role?(%Proca.Auth{staffer: legacy_owner}, :owner)
+    refute can?(legacy_owner, :delete_contacts)
   end
 
   #   test "When removing role, leave extra bits" do

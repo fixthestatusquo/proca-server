@@ -3,7 +3,9 @@ defmodule ProcaWeb.Api.DeleteContactTest do
 
   import Ecto.Query
   import Proca.StoryFactory, only: [red_story: 0]
+  import Proca.Permission, only: [remove: 2]
 
+  alias Ecto.Changeset
   alias Proca.{Contact, Factory, Repo, Supporter}
 
   setup do
@@ -58,6 +60,46 @@ defmodule ProcaWeb.Api.DeleteContactTest do
     action: action,
     contact_ref: contact_ref
   } do
+    supporter_id = action.supporter.id
+    before_supporter = Repo.get!(Supporter, supporter_id)
+
+    res =
+      conn
+      |> auth_api_post(delete_contact_query(org.name, contact_ref), user)
+      |> json_response(200)
+
+    assert %{
+             "errors" => [
+               %{
+                 "extensions" => %{
+                   "code" => "permission_denied"
+                 }
+               }
+             ]
+           } = res
+
+    assert contact_count(supporter_id, org.id) == 1
+
+    supporter = Repo.get!(Supporter, supporter_id)
+
+    assert supporter.first_name == before_supporter.first_name
+    assert supporter.last_name == before_supporter.last_name
+    assert supporter.email == before_supporter.email
+    assert supporter.address == before_supporter.address
+  end
+
+  test "legacy owner without delete permission cannot delete contact", %{
+    conn: conn,
+    yellow_org: org,
+    yellow_user: user,
+    yellow_owner: owner,
+    action: action,
+    contact_ref: contact_ref
+  } do
+    owner
+    |> Changeset.change(perms: remove(owner.perms, :delete_contacts))
+    |> Repo.update!()
+
     supporter_id = action.supporter.id
     before_supporter = Repo.get!(Supporter, supporter_id)
 
