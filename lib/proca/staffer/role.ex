@@ -40,6 +40,7 @@ defmodule Proca.Staffer.Role do
       :change_campaign_settings
     ]
   ]
+  @legacy_owner_permissions List.delete(@roles[:owner], :delete_contacts)
 
   @spec from_string(String.t()) :: atom() | nil
   def from_string(rs) when is_bitstring(rs) do
@@ -56,7 +57,7 @@ defmodule Proca.Staffer.Role do
   end
 
   def findrole(staffer = %Staffer{}, [role | other_roles]) do
-    if Permission.can?(staffer, @roles[role]) do
+    if matches_role?(staffer, role) do
       role
     else
       findrole(staffer, other_roles)
@@ -67,6 +68,10 @@ defmodule Proca.Staffer.Role do
 
   def permissions(role) do
     @roles[role] || []
+  end
+
+  def legacy_owner_permissions do
+    @legacy_owner_permissions
   end
 
   def lesser_equal?(weaker, stronger) when is_atom(weaker) and is_atom(stronger) do
@@ -92,11 +97,29 @@ defmodule Proca.Staffer.Role do
   @doc """
   Check if current user or staffer has big enough permission to assign a role
   """
-  def can_assign_role?(%Auth{staffer: %Staffer{perms: perms}}, role) do
-    permissions(role) -- Permission.to_list(perms) == []
+  def can_assign_role?(%Auth{staffer: %Staffer{} = staffer}, role) do
+    permissions(role) -- assignable_permissions(staffer) == []
   end
 
   def can_assign_role?(%Auth{} = auth) do
     Permission.can?(auth, :manage_users)
+  end
+
+  defp matches_role?(staffer, :owner) do
+    Permission.can?(staffer, @roles[:owner]) or Permission.can?(staffer, @legacy_owner_permissions)
+  end
+
+  defp matches_role?(staffer, role) do
+    Permission.can?(staffer, @roles[role])
+  end
+
+  defp assignable_permissions(staffer) do
+    perms = Permission.to_list(staffer.perms)
+
+    if matches_role?(staffer, :owner) do
+      Enum.uniq(@roles[:owner] ++ perms)
+    else
+      perms
+    end
   end
 end
