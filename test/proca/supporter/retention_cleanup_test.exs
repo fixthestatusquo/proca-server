@@ -127,7 +127,9 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     partner_page = Repo.update!(change(partner_page, delivery: false))
     close_campaign(campaign)
 
-    supporter = insert_supporter_with_contacts(partner_page, %Privacy{opt_in: true, lead_opt_in: true})
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: true, lead_opt_in: true})
+
     action = insert_action_for_supporter(supporter, partner_page)
     age_action(action, @old_inserted_at)
 
@@ -142,6 +144,77 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     assert contacts_for_org(supporter.id, partner_org.id) == 1
   end
 
+  test "dry run counts fallback opt-out contacts attributable to a partner org" do
+    %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
+      teal_story(partner_count: 1)
+
+    partner_page = Repo.update!(change(partner_page, delivery: false))
+    close_campaign(campaign)
+
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: false, lead_opt_in: false})
+
+    action = insert_action_for_supporter(supporter, partner_page)
+    age_action(action, @old_inserted_at)
+
+    assert contacts_for_org(supporter.id, partner_org.id) == 0
+    assert contacts_for_org(supporter.id, lead_org.id) == 1
+
+    assert {:ok, result} =
+             RetentionCleanup.run(partner_org.name, :delete_contacts, months: 6, dry_run: true)
+
+    assert result.contacts_count == 1
+    assert result.supporters_count == 0
+
+    assert contacts_for_org(supporter.id, lead_org.id) == 1
+    assert fetch_supporter(supporter.id).email
+  end
+
+  test "delete_contacts deletes fallback opt-out contacts attributable to a partner org" do
+    %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
+      teal_story(partner_count: 1)
+
+    partner_page = Repo.update!(change(partner_page, delivery: false))
+    close_campaign(campaign)
+
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: false, lead_opt_in: false})
+
+    action = insert_action_for_supporter(supporter, partner_page)
+    age_action(action, @old_inserted_at)
+
+    assert {:ok, result} = RetentionCleanup.run(partner_org.name, :delete_contacts, months: 6)
+    assert result.contacts_count == 1
+    assert result.supporters_count == 0
+
+    assert contacts_for_org(supporter.id, partner_org.id) == 0
+    assert contacts_for_org(supporter.id, lead_org.id) == 0
+    assert fetch_supporter(supporter.id).email
+  end
+
+  test "partner cleanup keeps lead-owned contacts that are not fallback opt-outs" do
+    %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
+      teal_story(partner_count: 1)
+
+    partner_page = Repo.update!(change(partner_page, delivery: false))
+    close_campaign(campaign)
+
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: false, lead_opt_in: true})
+
+    action = insert_action_for_supporter(supporter, partner_page)
+    age_action(action, @old_inserted_at)
+
+    assert contacts_for_org(supporter.id, partner_org.id) == 0
+    assert contacts_for_org(supporter.id, lead_org.id) == 1
+
+    assert {:ok, result} = RetentionCleanup.run(partner_org.name, :delete_contacts, months: 6)
+    assert result.contacts_count == 0
+    assert result.supporters_count == 0
+
+    assert contacts_for_org(supporter.id, lead_org.id) == 1
+  end
+
   test "remove_pii keeps supporter cleartext when other org contacts remain in a coalition campaign" do
     %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
       teal_story(partner_count: 1)
@@ -149,7 +222,9 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     partner_page = Repo.update!(change(partner_page, delivery: false))
     close_campaign(campaign)
 
-    supporter = insert_supporter_with_contacts(partner_page, %Privacy{opt_in: true, lead_opt_in: true})
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: true, lead_opt_in: true})
+
     action = insert_action_for_supporter(supporter, partner_page)
     age_action(action, @old_inserted_at)
 
@@ -163,6 +238,31 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     supporter = fetch_supporter(supporter.id)
     assert supporter.email
     assert supporter.first_name
+  end
+
+  test "remove_pii anonymizes supporter when only fallback opt-out contact is deleted" do
+    %{org: lead_org, campaign: campaign, partners: [%{org: partner_org, page: partner_page}]} =
+      teal_story(partner_count: 1)
+
+    partner_page = Repo.update!(change(partner_page, delivery: false))
+    close_campaign(campaign)
+
+    supporter =
+      insert_supporter_with_contacts(partner_page, %Privacy{opt_in: false, lead_opt_in: false})
+
+    action = insert_action_for_supporter(supporter, partner_page)
+    age_action(action, @old_inserted_at)
+
+    assert {:ok, result} = RetentionCleanup.run(partner_org.name, :remove_pii, months: 6)
+    assert result.contacts_count == 1
+    assert result.supporters_count == 1
+
+    assert contacts_for_org(supporter.id, partner_org.id) == 0
+    assert contacts_for_org(supporter.id, lead_org.id) == 0
+
+    supporter = fetch_supporter(supporter.id)
+    assert is_nil(supporter.email)
+    assert is_nil(supporter.first_name)
   end
 
   defp insert_processed_action(action_page) do
@@ -188,7 +288,10 @@ defmodule Proca.Supporter.RetentionCleanupTest do
         }
       else
         {
-          change(%Supporter{}, Factory.params_for(:basic_data_pl_supporter, action_page: action_page)),
+          change(
+            %Supporter{},
+            Factory.params_for(:basic_data_pl_supporter, action_page: action_page)
+          ),
           change(%Contact{}, Factory.params_for(:basic_data_pl_contact, action_page: action_page))
         }
       end

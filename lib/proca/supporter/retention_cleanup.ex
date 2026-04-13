@@ -5,7 +5,7 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   import Ecto.Query
 
-  alias Proca.{Action, Campaign, Contact, Org, Repo, Supporter}
+  alias Proca.{Action, ActionPage, Campaign, Contact, Org, Repo, Supporter}
 
   @default_months 24
   @processed_statuses [:accepted, :delivered]
@@ -58,14 +58,12 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   defp cleanup_queries(org_id, months) do
     supporter_ids = eligible_supporter_ids_query(org_id, months)
-    supporter_ids_to_clear = supporter_ids_to_clear_query(supporter_ids, org_id)
+    contacts = deletable_contacts_query(supporter_ids, org_id)
+    supporter_ids_to_clear = supporter_ids_to_clear_query(supporter_ids, contacts)
 
     %{
       supporters: from(s in Supporter, where: s.id in subquery(supporter_ids_to_clear)),
-      contacts:
-        from(c in Contact,
-          where: c.org_id == ^org_id and c.supporter_id in subquery(supporter_ids)
-        )
+      contacts: contacts
     }
   end
 
@@ -83,8 +81,13 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   defp candidate_supporters_query(org_id, months) do
     from(s in Supporter,
+      join: ap in ActionPage,
+      on: ap.id == s.action_page_id,
       join: c in Contact,
-      on: c.supporter_id == s.id and c.org_id == ^org_id,
+      on:
+        c.supporter_id == s.id and
+          (c.org_id == ^org_id or
+             (ap.org_id == ^org_id and c.org_id != ^org_id and c.communication_consent == false)),
       join: a in Action,
       on: a.supporter_id == s.id,
       join: campaign in Campaign,
@@ -105,32 +108,56 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   defp protected_fingerprints_query(org_id, months) do
     from(s in Supporter,
+      join: ap in ActionPage,
+      on: ap.id == s.action_page_id,
       join: c in Contact,
-      on: c.supporter_id == s.id and c.org_id == ^org_id,
+      on:
+        c.supporter_id == s.id and
+          (c.org_id == ^org_id or
+             (ap.org_id == ^org_id and c.org_id != ^org_id and c.communication_consent == false)),
       join: a in Action,
       on: a.supporter_id == s.id,
       join: campaign in Campaign,
       on: campaign.id == a.campaign_id,
       where:
-        not (
-          a.processing_status in ^@processed_statuses and
-            campaign.status == ^:closed and
-            campaign.end < ago(^months, "month") and
-            a.inserted_at < ago(^months, "month")
-        ),
+        not (a.processing_status in ^@processed_statuses and
+               campaign.status == ^:closed and
+               campaign.end < ago(^months, "month") and
+               a.inserted_at < ago(^months, "month")),
       distinct: s.fingerprint,
       select: %{fingerprint: s.fingerprint}
     )
   end
 
-  defp supporter_ids_to_clear_query(supporter_ids, org_id) do
+  defp deletable_contacts_query(supporter_ids, org_id) do
+    from(c in Contact,
+      join: s in Supporter,
+      on: s.id == c.supporter_id,
+      join: ap in ActionPage,
+      on: ap.id == s.action_page_id,
+      join: eligible in subquery(supporter_ids),
+      on: eligible.id == s.id,
+      where:
+        c.org_id == ^org_id or
+          (ap.org_id == ^org_id and c.org_id != ^org_id and c.communication_consent == false)
+    )
+  end
+
+  defp supporter_ids_to_clear_query(supporter_ids, contacts_to_delete) do
+    contact_ids_to_delete =
+      from(c in subquery(contacts_to_delete),
+        select: %{id: c.id}
+      )
+
     from(s in Supporter,
       join: eligible in subquery(supporter_ids),
       on: eligible.id == s.id,
-      left_join: other_contacts in Contact,
-      on: other_contacts.supporter_id == s.id and other_contacts.org_id != ^org_id,
+      left_join: all_contacts in Contact,
+      on: all_contacts.supporter_id == s.id,
+      left_join: deletable_contacts in subquery(contact_ids_to_delete),
+      on: deletable_contacts.id == all_contacts.id,
       group_by: s.id,
-      having: count(other_contacts.id) == 0,
+      having: count(all_contacts.id) == count(deletable_contacts.id),
       select: s.id
     )
   end
