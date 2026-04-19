@@ -7,11 +7,12 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 usage() {
   cat <<EOF
-Usage: $0 <delete_contacts|remove_pii> <org_name> [months] [--dry-run]
+Usage: $0 <delete_contacts|remove_pii> <org_name> [months] [--dry-run] [--campaign <name>]
 
 Examples:
   $0 delete_contacts my-org
   $0 delete_contacts my-org 6 --dry-run
+  $0 delete_contacts my-org --campaign together4forests --dry-run
   $0 remove_pii my-org --months 24
 EOF
 }
@@ -37,6 +38,7 @@ esac
 
 months=24
 dry_run=false
+campaign=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -54,6 +56,17 @@ while [ $# -gt 0 ]; do
     --months=*)
       months=${1#*=}
       ;;
+    --campaign)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "missing value for --campaign" >&2
+        exit 1
+      fi
+      campaign=$1
+      ;;
+    --campaign=*)
+      campaign=${1#*=}
+      ;;
     *)
       months=$1
       ;;
@@ -62,26 +75,30 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+campaign_opt=$([ -n "$campaign" ] && echo ", campaign: \"$campaign\"" || echo "")
+
 rpc <<END
 alias Proca.Supporter.RetentionCleanup
 
-case RetentionCleanup.run("$org", :$mode, months: "$months", dry_run: $dry_run) do
-  {:ok, %{mode: :delete_contacts, dry_run: true, contacts_count: count, org_name: org_name, months: months}} ->
-    IO.puts("Would delete #{count} contacts for #{org_name} older than #{months} months")
+campaign_label = fn name -> if name, do: " in campaign #{name}", else: "" end
 
-  {:ok, %{mode: :delete_contacts, contacts_count: count, org_name: org_name, months: months}} ->
-    IO.puts("Deleted #{count} contacts for #{org_name} older than #{months} months")
+case RetentionCleanup.run("$org", :$mode, months: "$months", dry_run: $dry_run$campaign_opt) do
+  {:ok, %{mode: :delete_contacts, dry_run: true, contacts_count: count, org_name: org_name, months: months, campaign_name: campaign_name}} ->
+    IO.puts("Would delete #{count} contacts for #{org_name}#{campaign_label.(campaign_name)} older than #{months} months")
+
+  {:ok, %{mode: :delete_contacts, contacts_count: count, org_name: org_name, months: months, campaign_name: campaign_name}} ->
+    IO.puts("Deleted #{count} contacts for #{org_name}#{campaign_label.(campaign_name)} older than #{months} months")
 
   {:ok,
-   %{mode: :remove_pii, dry_run: true, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months}} ->
+   %{mode: :remove_pii, dry_run: true, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months, campaign_name: campaign_name}} ->
     IO.puts(
-      "Would delete #{contacts} contacts and anonymize #{supporters} supporters for #{org_name} older than #{months} months"
+      "Would delete #{contacts} contacts and anonymize #{supporters} supporters for #{org_name}#{campaign_label.(campaign_name)} older than #{months} months"
     )
 
   {:ok,
-   %{mode: :remove_pii, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months}} ->
+   %{mode: :remove_pii, contacts_count: contacts, supporters_count: supporters, org_name: org_name, months: months, campaign_name: campaign_name}} ->
     IO.puts(
-      "Deleted #{contacts} contacts and anonymized #{supporters} supporters for #{org_name} older than #{months} months"
+      "Deleted #{contacts} contacts and anonymized #{supporters} supporters for #{org_name}#{campaign_label.(campaign_name)} older than #{months} months"
     )
 
   {:error, message} ->

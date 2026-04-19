@@ -165,6 +165,68 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     assert supporter.first_name
   end
 
+  test "campaign filter deletes only contacts from the specified campaign" do
+    %{org: org, pages: [page], campaign: campaign_a} = blue_story()
+
+    campaign_b = Factory.insert(:campaign, org: org)
+    page_b = Factory.insert(:action_page, org: org, campaign: campaign_b)
+
+    action_a = insert_processed_action(page)
+    action_b = insert_processed_action(page_b)
+
+    close_campaign(campaign_a)
+    close_campaign(campaign_b)
+    age_action(action_a, @old_inserted_at)
+    age_action(action_b, @old_inserted_at)
+
+    assert {:ok, result} =
+             RetentionCleanup.run(org.name, :delete_contacts,
+               campaign: campaign_a.name,
+               dry_run: false
+             )
+
+    assert result.contacts_count == 1
+    assert result.campaign_name == campaign_a.name
+
+    assert contacts_for_org(action_a.supporter_id, org.id) == 0
+    assert contacts_for_org(action_b.supporter_id, org.id) == 1
+  end
+
+  test "campaign filter returns error for unknown campaign" do
+    %{org: org} = blue_story()
+
+    assert {:error, message} =
+             RetentionCleanup.run(org.name, :delete_contacts, campaign: "no-such-campaign")
+
+    assert message =~ "no such campaign"
+  end
+
+  test "campaign filter still protects supporters with active actions in another campaign" do
+    %{org: org, pages: [page], campaign: campaign_a} = blue_story()
+
+    campaign_b = Factory.insert(:campaign, org: org)
+    page_b = Factory.insert(:action_page, org: org, campaign: campaign_b)
+
+    action_a = insert_processed_action(page)
+    close_campaign(campaign_a)
+    age_action(action_a, @old_inserted_at)
+
+    supporter = Repo.preload(fetch_supporter(action_a.supporter_id), action_page: :campaign)
+
+    Factory.insert(:action,
+      supporter: supporter,
+      action_page: page_b,
+      campaign: campaign_b,
+      processing_status: :delivered
+    )
+
+    assert {:ok, result} =
+             RetentionCleanup.run(org.name, :delete_contacts, campaign: campaign_a.name)
+
+    assert result.contacts_count == 0
+    assert contacts_for_org(action_a.supporter_id, org.id) == 1
+  end
+
   defp insert_processed_action(action_page) do
     Factory.insert(:action,
       action_page: action_page,

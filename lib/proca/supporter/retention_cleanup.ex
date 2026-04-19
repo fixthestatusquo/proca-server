@@ -18,8 +18,10 @@ defmodule Proca.Supporter.RetentionCleanup do
 
     with {:ok, org} <- fetch_org(org_or_name),
          {:ok, mode} <- validate_mode(mode),
-         {:ok, months} <- validate_months(Keyword.get(opts, :months, @default_months)) do
-      queries = cleanup_queries(org.id, months)
+         {:ok, months} <- validate_months(Keyword.get(opts, :months, @default_months)),
+         {:ok, campaign} <- fetch_campaign(Keyword.get(opts, :campaign), org) do
+      campaign_id = campaign && campaign.id
+      queries = cleanup_queries(org.id, months, campaign_id)
       contacts_count = Repo.aggregate(queries.contacts, :count, :id)
 
       supporters_count =
@@ -33,6 +35,7 @@ defmodule Proca.Supporter.RetentionCleanup do
         mode: mode,
         months: months,
         org_name: org.name,
+        campaign_name: campaign && campaign.name,
         contacts_count: contacts_count,
         supporters_count: supporters_count
       }
@@ -56,8 +59,8 @@ defmodule Proca.Supporter.RetentionCleanup do
     end
   end
 
-  defp cleanup_queries(org_id, months) do
-    supporter_ids = eligible_supporter_ids_query(org_id, months)
+  defp cleanup_queries(org_id, months, campaign_id \\ nil) do
+    supporter_ids = eligible_supporter_ids_query(org_id, months, campaign_id)
     supporter_ids_to_clear = supporter_ids_to_clear_query(supporter_ids, org_id)
 
     %{
@@ -69,8 +72,8 @@ defmodule Proca.Supporter.RetentionCleanup do
     }
   end
 
-  defp eligible_supporter_ids_query(org_id, months) do
-    candidate_supporters = candidate_supporters_query(org_id, months)
+  defp eligible_supporter_ids_query(org_id, months, campaign_id) do
+    candidate_supporters = candidate_supporters_query(org_id, months, campaign_id)
     protected_fingerprints = protected_fingerprints_query(org_id, months)
 
     from(candidate in subquery(candidate_supporters),
@@ -81,26 +84,33 @@ defmodule Proca.Supporter.RetentionCleanup do
     )
   end
 
-  defp candidate_supporters_query(org_id, months) do
-    from(s in Supporter,
-      join: c in Contact,
-      on: c.supporter_id == s.id and c.org_id == ^org_id,
-      join: a in Action,
-      on: a.supporter_id == s.id,
-      join: campaign in Campaign,
-      on: campaign.id == a.campaign_id,
-      where: s.processing_status in ^@processed_statuses,
-      group_by: [s.id, s.fingerprint],
-      having:
-        fragment(
-          "bool_and(?)",
-          a.processing_status in ^@processed_statuses and
-            campaign.status == ^:closed and
-            campaign.end < ago(^months, "month") and
-            a.inserted_at < ago(^months, "month")
-        ),
-      select: %{id: s.id, fingerprint: s.fingerprint}
-    )
+  defp candidate_supporters_query(org_id, months, campaign_id) do
+    base =
+      from(s in Supporter,
+        join: c in Contact,
+        on: c.supporter_id == s.id and c.org_id == ^org_id,
+        join: a in Action,
+        on: a.supporter_id == s.id,
+        join: campaign in Campaign,
+        on: campaign.id == a.campaign_id,
+        where: s.processing_status in ^@processed_statuses,
+        group_by: [s.id, s.fingerprint],
+        having:
+          fragment(
+            "bool_and(?)",
+            a.processing_status in ^@processed_statuses and
+              campaign.status == ^:closed and
+              campaign.end < ago(^months, "month") and
+              a.inserted_at < ago(^months, "month")
+          ),
+        select: %{id: s.id, fingerprint: s.fingerprint}
+      )
+
+    if campaign_id do
+      where(base, [_s, _c, a], a.campaign_id == ^campaign_id)
+    else
+      base
+    end
   end
 
   defp protected_fingerprints_query(org_id, months) do
@@ -160,4 +170,13 @@ defmodule Proca.Supporter.RetentionCleanup do
   end
 
   defp validate_months(_), do: {:error, "months must be a positive integer"}
+
+  defp fetch_campaign(nil, _org), do: {:ok, nil}
+
+  defp fetch_campaign(campaign_name, org) when is_binary(campaign_name) do
+    case Campaign.one(name: campaign_name, org: org) do
+      %Campaign{} = campaign -> {:ok, campaign}
+      nil -> {:error, "no such campaign #{campaign_name} for org #{org.name}"}
+    end
+  end
 end
