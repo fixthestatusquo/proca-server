@@ -174,7 +174,7 @@ defmodule Proca.Supporter.RetentionCleanup do
   defp fetch_campaign(nil, _org), do: {:ok, nil}
 
   defp fetch_campaign(campaign_name, org) when is_binary(campaign_name) do
-    case Campaign.one(name: campaign_name, org: org) do
+    case Campaign.one(name: campaign_name) do
       %Campaign{} = campaign -> {:ok, campaign}
       nil -> {:error, "no such campaign #{campaign_name} for org #{org.name}"}
     end
