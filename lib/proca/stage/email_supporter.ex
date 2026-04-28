@@ -168,6 +168,7 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
+            emit_confirm_lag(messages, org.id)
             messages
 
           {:error, statuses} ->
@@ -180,6 +181,27 @@ defmodule Proca.Stage.EmailSupporter do
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
         )
     end
+  end
+
+  defp emit_confirm_lag(messages, org_id) do
+    now = DateTime.utc_now()
+    action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
+
+    inserted_ats =
+      from(a in Action, where: a.id in ^action_ids, select: {a.id, a.inserted_at})
+      |> Repo.all()
+      |> Map.new()
+
+    Enum.each(action_ids, fn action_id ->
+      case Map.get(inserted_ats, action_id) do
+        nil ->
+          :ok
+
+        inserted_at ->
+          lag_ms = DateTime.diff(now, inserted_at, :millisecond)
+          :telemetry.execute([:proca, :email, :supporter_confirm], %{lag_ms: lag_ms}, %{org_id: org_id})
+      end
+    end)
   end
 
   defp send_thank_you?(action_page_id, action_id) do
