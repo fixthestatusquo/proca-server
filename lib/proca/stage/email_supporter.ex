@@ -127,8 +127,12 @@ defmodule Proca.Stage.EmailSupporter do
     case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          :ok ->
+            emit_thank_you_lag(messages, org.id)
+            messages
+
+          {:error, statuses} ->
+            failed_partially(messages, statuses)
         end
 
       :not_found ->
@@ -168,7 +172,7 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
-            emit_confirm_lag(messages, org.id)
+            emit_supporter_confirm_lag(messages, org.id)
             messages
 
           {:error, statuses} ->
@@ -183,7 +187,15 @@ defmodule Proca.Stage.EmailSupporter do
     end
   end
 
-  defp emit_confirm_lag(messages, org_id) do
+  defp emit_supporter_confirm_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :supporter_confirm)
+  end
+
+  defp emit_thank_you_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :thank_you)
+  end
+
+  defp emit_email_lag(messages, org_id, stage) do
     now = DateTime.utc_now()
     action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
 
@@ -220,7 +232,7 @@ defmodule Proca.Stage.EmailSupporter do
           lag_ms = DateTime.diff(now, inserted_at, :millisecond)
 
           :telemetry.execute(
-            [:proca, :email, :supporter_confirm],
+            [:proca, :email, stage],
             %{lag_ms: lag_ms},
             %{org_id: org_id}
           )

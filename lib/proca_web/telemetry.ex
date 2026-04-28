@@ -140,6 +140,13 @@ defmodule ProcaWeb.Telemetry do
         ],
         tags: [:org_id]
       ),
+      distribution("proca.email.thank_you.lag_ms",
+        unit: :millisecond,
+        reporter_options: [
+          buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
+        ],
+        tags: [:org_id]
+      ),
 
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
