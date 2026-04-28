@@ -187,10 +187,29 @@ defmodule Proca.Stage.EmailSupporter do
     now = DateTime.utc_now()
     action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
 
-    inserted_ats =
-      from(a in Action, where: a.id in ^action_ids, select: {a.id, a.inserted_at})
-      |> Repo.all()
-      |> Map.new()
+    inserted_ats_from_message =
+      Enum.reduce(messages, %{}, fn m, acc ->
+        case action_inserted_at(m.data) do
+          nil -> acc
+          inserted_at -> Map.put(acc, m.data["actionId"], inserted_at)
+        end
+      end)
+
+    missing_ids =
+      action_ids
+      |> Enum.uniq()
+      |> Enum.reject(&Map.has_key?(inserted_ats_from_message, &1))
+
+    inserted_ats_from_db =
+      if missing_ids == [] do
+        %{}
+      else
+        from(a in Action, where: a.id in ^missing_ids, select: {a.id, a.inserted_at})
+        |> Repo.all()
+        |> Map.new()
+      end
+
+    inserted_ats = Map.merge(inserted_ats_from_db, inserted_ats_from_message)
 
     Enum.each(action_ids, fn action_id ->
       case Map.get(inserted_ats, action_id) do
@@ -199,10 +218,28 @@ defmodule Proca.Stage.EmailSupporter do
 
         inserted_at ->
           lag_ms = DateTime.diff(now, inserted_at, :millisecond)
-          :telemetry.execute([:proca, :email, :supporter_confirm], %{lag_ms: lag_ms}, %{org_id: org_id})
+
+          :telemetry.execute(
+            [:proca, :email, :supporter_confirm],
+            %{lag_ms: lag_ms},
+            %{org_id: org_id}
+          )
       end
     end)
   end
+
+  defp action_inserted_at(%{"action" => %{"createdAt" => created_at}})
+       when is_binary(created_at) do
+    case DateTime.from_iso8601(created_at) do
+      {:ok, inserted_at, _offset} ->
+        inserted_at
+
+      _ ->
+        nil
+    end
+  end
+
+  defp action_inserted_at(_), do: nil
 
   defp send_thank_you?(action_page_id, action_id) do
     from(a in Action,
