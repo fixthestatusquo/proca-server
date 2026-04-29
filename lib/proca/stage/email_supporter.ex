@@ -199,7 +199,7 @@ defmodule Proca.Stage.EmailSupporter do
     now = DateTime.utc_now()
     action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
 
-    inserted_ats_from_message =
+    inserted_ats =
       Enum.reduce(messages, %{}, fn m, acc ->
         case action_inserted_at(m.data) do
           nil -> acc
@@ -207,26 +207,14 @@ defmodule Proca.Stage.EmailSupporter do
         end
       end)
 
-    missing_ids =
-      action_ids
-      |> Enum.uniq()
-      |> Enum.reject(&Map.has_key?(inserted_ats_from_message, &1))
-
-    inserted_ats_from_db =
-      if missing_ids == [] do
-        %{}
-      else
-        from(a in Action, where: a.id in ^missing_ids, select: {a.id, a.inserted_at})
-        |> Repo.all()
-        |> Map.new()
-      end
-
-    inserted_ats = Map.merge(inserted_ats_from_db, inserted_ats_from_message)
-
     Enum.each(action_ids, fn action_id ->
       case Map.get(inserted_ats, action_id) do
         nil ->
-          :ok
+          :telemetry.execute(
+            [:proca, :email, stage, :lag_unknown],
+            %{count: 1},
+            %{org_id: org_id}
+          )
 
         inserted_at ->
           lag_ms = DateTime.diff(now, inserted_at, :millisecond)
