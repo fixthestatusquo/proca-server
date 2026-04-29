@@ -127,8 +127,12 @@ defmodule Proca.Stage.EmailSupporter do
     case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          :ok ->
+            emit_thank_you_lag(messages, org.id)
+            messages
+
+          {:error, statuses} ->
+            failed_partially(messages, statuses)
         end
 
       :not_found ->
@@ -168,6 +172,7 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
+            emit_supporter_confirm_lag(messages, org.id)
             messages
 
           {:error, statuses} ->
@@ -181,6 +186,60 @@ defmodule Proca.Stage.EmailSupporter do
         )
     end
   end
+
+  defp emit_supporter_confirm_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :supporter_confirm)
+  end
+
+  defp emit_thank_you_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :thank_you)
+  end
+
+  defp emit_email_lag(messages, org_id, stage) do
+    now = DateTime.utc_now()
+    action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
+
+    inserted_ats =
+      Enum.reduce(messages, %{}, fn m, acc ->
+        case action_inserted_at(m.data) do
+          nil -> acc
+          inserted_at -> Map.put(acc, m.data["actionId"], inserted_at)
+        end
+      end)
+
+    Enum.each(action_ids, fn action_id ->
+      case Map.get(inserted_ats, action_id) do
+        nil ->
+          :telemetry.execute(
+            [:proca, :email, stage, :lag_unknown],
+            %{count: 1},
+            %{org_id: org_id}
+          )
+
+        inserted_at ->
+          lag_ms = DateTime.diff(now, inserted_at, :millisecond)
+
+          :telemetry.execute(
+            [:proca, :email, stage],
+            %{lag_ms: lag_ms},
+            %{org_id: org_id}
+          )
+      end
+    end)
+  end
+
+  defp action_inserted_at(%{"action" => %{"createdAt" => created_at}})
+       when is_binary(created_at) do
+    case DateTime.from_iso8601(created_at) do
+      {:ok, inserted_at, _offset} ->
+        inserted_at
+
+      _ ->
+        nil
+    end
+  end
+
+  defp action_inserted_at(_), do: nil
 
   defp send_thank_you?(action_page_id, action_id) do
     from(a in Action,

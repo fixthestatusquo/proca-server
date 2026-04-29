@@ -132,6 +132,24 @@ defmodule ProcaWeb.Telemetry do
       # count sent messages per target
       counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
 
+      # Email Metrics
+      distribution("proca.email.supporter_confirm.lag_ms",
+        unit: :millisecond,
+        reporter_options: [
+          buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
+        ],
+        tags: [:org_id]
+      ),
+      distribution("proca.email.thank_you.lag_ms",
+        unit: :millisecond,
+        reporter_options: [
+          buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
+        ],
+        tags: [:org_id]
+      ),
+      counter("proca.email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
+      counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
+
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
       last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
