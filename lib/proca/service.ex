@@ -250,6 +250,12 @@ defmodule Proca.Service do
     |> json_request_opts(rest, srv)
   end
 
+  defp json_request_opts(req, [{:auth, :api_key} | rest], srv = %{password: pwd})
+       when is_bitstring(pwd) do
+    %{req | headers: [{"api-key", pwd}] ++ req.headers}
+    |> json_request_opts(rest, srv)
+  end
+
   defp json_request_opts(req, [{:auth, nil} | rest], srv) do
     json_request_opts(req, rest, srv)
   end

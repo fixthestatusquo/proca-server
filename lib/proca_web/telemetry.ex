@@ -121,6 +121,8 @@ defmodule ProcaWeb.Telemetry do
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
+      counter("proca.brevo.events.count", tags: [:reason]),
+      counter("proca.brevo.bounces.count", tags: [:reason]),
       last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
