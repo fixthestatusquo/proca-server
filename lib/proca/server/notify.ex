@@ -141,6 +141,11 @@ defmodule Proca.Server.Notify do
     end
   end
 
+  def updated(%Campaign{org_id: org_id, status: :closed} = campaign, opts) when is_number(org_id) do
+    Event.emit(:campaign_updated, campaign, org_id, opts)
+    Proca.Stage.SystemEvent.emit_campaign_close(campaign)
+  end
+
   def updated(%Campaign{org_id: org_id} = campaign, opts) when is_number(org_id) do
     Event.emit(:campaign_updated, campaign, org_id, opts)
   end
@@ -180,6 +185,10 @@ defmodule Proca.Server.Notify do
     {campaign, pages_map} = Map.pop(records, :campaign)
 
     updated(campaign, opts)
+
+    if NaiveDateTime.compare(campaign.inserted_at, campaign.updated_at) == :eq do
+      Proca.Stage.SystemEvent.emit_campaign_add(campaign)
+    end
 
     Enum.each(pages_map, fn {_k, page} ->
       updated(page, opts)

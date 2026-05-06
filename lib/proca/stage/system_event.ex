@@ -94,6 +94,56 @@ defmodule Proca.Stage.SystemEvent do
     |> emit(:new_org, instance_org_id)
   end
 
+  def emit_campaign_add(campaign) do
+    campaign = Repo.preload(campaign, [:org])
+
+    %{
+      "contact" => nil,
+      "personalInfo" => nil,
+      "privacy" => %{},
+      "tracking" => %{},
+      "org" => %{"name" => campaign.org.name, "title" => campaign.org.title},
+      "orgId" => campaign.org.id,
+      "campaign" => MessageV2.campaign_data(campaign),
+      "campaignId" => campaign.id,
+      "actionPage" => nil,
+      "actionPageId" => nil,
+      "action" => %{
+        "actionType" => "campaign_add",
+        "customFields" => %{},
+        "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
+        "testing" => false
+      },
+      "actionId" => nil
+    }
+    |> emit(:campaign_add, campaign.org_id)
+  end
+
+  def emit_campaign_close(campaign) do
+    campaign = Repo.preload(campaign, [:org])
+
+    %{
+      "contact" => nil,
+      "personalInfo" => nil,
+      "privacy" => %{},
+      "tracking" => %{},
+      "org" => %{"name" => campaign.org.name, "title" => campaign.org.title},
+      "orgId" => campaign.org.id,
+      "campaign" => MessageV2.campaign_data(campaign),
+      "campaignId" => campaign.id,
+      "actionPage" => nil,
+      "actionPageId" => nil,
+      "action" => %{
+        "actionType" => "campaign_close",
+        "customFields" => %{},
+        "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
+        "testing" => false
+      },
+      "actionId" => nil
+    }
+    |> emit(:campaign_close, campaign.org_id)
+  end
+
   def emit_new_user(user) do
     instance_org_id = Proca.Server.Instance.org().id
 
