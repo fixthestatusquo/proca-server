@@ -149,6 +149,7 @@ defmodule ProcaWeb.Telemetry do
       ),
       counter("proca.email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
       counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
+      counter("proca.email.reminder_confirm.count", tags: [:org_id]),
 
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
