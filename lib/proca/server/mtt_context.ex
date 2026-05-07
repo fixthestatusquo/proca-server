@@ -238,18 +238,12 @@ defmodule Proca.Server.MTTContext do
   def max_emails_per_hour(%Campaign{
         mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone, end_at: end_at}
       }) do
-    now = %{DateTime.utc_now() | minute: 0, second: 0, microsecond: {0, 0}}
-
-    if DateTime.diff(end_at, now, :hour) > 1 do
-      Application.get_env(:proca, Proca.Server.MTTScheduler)
-      |> Access.get(:messages_ratio_per_hour)
-      |> Access.get(DateTime.now!(timezone).hour)
-      |> Kernel.*(max_emails_per_hour)
-      |> trunc()
-      |> max(1)
-    else
-      :all
-    end
+    Application.get_env(:proca, Proca.Server.MTTScheduler)
+    |> Access.get(:messages_ratio_per_hour)
+    |> Access.get(DateTime.now!(timezone).hour)
+    |> Kernel.*(max_emails_per_hour)
+    |> trunc()
+    |> max(1)
   end
 
   def dupe_rank() do
