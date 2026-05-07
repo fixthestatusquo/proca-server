@@ -74,6 +74,8 @@ defmodule Proca.Service.EmailBackend do
 
   def service_module(:preview), do: Proca.Service.Email.Preview
 
+  def service_module(:brevo), do: Proca.Service.Brevo
+
   def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
   end

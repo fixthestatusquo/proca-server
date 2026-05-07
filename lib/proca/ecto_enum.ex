@@ -67,7 +67,8 @@ defenum(ExternalService,
   testmail: "testmail",
   webhook: "webhook",
   supabase: "supabase",
-  testdetail: "testdetail"
+  testdetail: "testdetail",
+  brevo: "brevo"
 )
 
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)

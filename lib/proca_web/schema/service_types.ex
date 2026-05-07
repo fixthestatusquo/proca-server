@@ -117,6 +117,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     # inherit from instance
     value(:system, description: "Use a service that instance org is using")
     value(:supabase, description: "Supabase to store files")
+    value(:brevo, description: "Brevo to send transactional emails")
   end
 
   object :service do

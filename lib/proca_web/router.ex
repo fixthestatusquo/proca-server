@@ -75,6 +75,7 @@ defmodule ProcaWeb.Router do
     pipe_through :api_without_auth
 
     post "/mailjet", ProcaWeb.WebhookController, :mailjet
+    post "/brevo", ProcaWeb.WebhookController, :brevo
   end
 
   scope "/api" do
