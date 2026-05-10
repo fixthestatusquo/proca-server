@@ -3,20 +3,23 @@ defmodule Proca.Supporter.ConfirmReminder do
   Sends confirmation reminder emails to supporters stuck in :confirming state.
 
   Per-org config (stored in org.config["reminder"]):
-    - "delay_days"  - days to wait before sending first reminder (default 2)
-    - "max_count"   - maximum number of reminders to send (default 1)
+    - "delay_days" - days to wait before sending first reminder, and between
+                     subsequent reminders (default 2)
+
+  Timing is tracked via action.updated_at. When a reminder is sent the action's
+  updated_at is touched, so the next reminder is spaced by delay_days from that
+  point. supporter_confirm can be enabled at the org or campaign level.
   """
 
   import Ecto.Query
   require Logger
 
-  alias Proca.{Repo, Org, Action, Supporter}
+  alias Proca.{Repo, Org, Campaign, Action, Supporter}
   alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplateDirectory}
   alias Proca.Stage.{EmailSupporter, Support}
   alias Swoosh.Email
 
   @default_delay_days 2
-  @default_max_count 1
 
   def run do
     orgs_with_confirm()
@@ -25,9 +28,11 @@ defmodule Proca.Supporter.ConfirmReminder do
 
   defp orgs_with_confirm do
     from(o in Org,
-      where: o.supporter_confirm == true,
+      left_join: c in assoc(o, :campaigns),
+      where: o.supporter_confirm == true or c.supporter_confirm == true,
       where: not is_nil(o.email_backend_id),
       where: not is_nil(o.email_from),
+      distinct: true,
       preload: [email_backend: :org]
     )
     |> Repo.all()
@@ -35,9 +40,7 @@ defmodule Proca.Supporter.ConfirmReminder do
 
   defp process_org(org) do
     delay_days = org_delay_days(org)
-    max_count = org_max_count(org)
-
-    actions = due_actions(org.id, delay_days, max_count)
+    actions = due_actions(org.id, delay_days)
 
     if actions != [] do
       Logger.info(
@@ -48,17 +51,18 @@ defmodule Proca.Supporter.ConfirmReminder do
     end
   end
 
-  defp due_actions(org_id, delay_days, max_count) do
+  defp due_actions(org_id, delay_days) do
     action_ids =
       from(a in Action,
         join: s in assoc(a, :supporter),
         join: ap in assoc(a, :action_page),
+        join: c in assoc(a, :campaign),
+        join: o in assoc(ap, :org),
         where: ap.org_id == ^org_id,
+        where: o.supporter_confirm == true or c.supporter_confirm == true,
         where: s.processing_status == :confirming,
         where: a.with_consent == true,
-        where: s.reminder_count < ^max_count,
-        where: s.inserted_at < ago(^delay_days, "day"),
-        where: is_nil(s.reminder_sent_at) or s.reminder_sent_at < ago(^delay_days, "day"),
+        where: a.updated_at < ago(^delay_days, "day"),
         select: a.id
       )
       |> Repo.all()
@@ -135,27 +139,18 @@ defmodule Proca.Supporter.ConfirmReminder do
     )
   end
 
-  defp mark_sent(%Action{supporter_id: supporter_id}) do
+  defp mark_sent(%Action{id: action_id}) do
     now = DateTime.truncate(DateTime.utc_now(), :second)
 
     Repo.update_all(
-      from(s in Supporter, where: s.id == ^supporter_id),
-      inc: [reminder_count: 1],
-      set: [reminder_sent_at: now]
+      from(a in Action, where: a.id == ^action_id),
+      set: [updated_at: now]
     )
   end
 
   defp org_delay_days(%Org{config: config}) do
     case get_in(config, ["reminder", "delay_days"]) do
       nil -> @default_delay_days
-      v when is_integer(v) -> v
-      v when is_binary(v) -> String.to_integer(v)
-    end
-  end
-
-  defp org_max_count(%Org{config: config}) do
-    case get_in(config, ["reminder", "max_count"]) do
-      nil -> @default_max_count
       v when is_integer(v) -> v
       v when is_binary(v) -> String.to_integer(v)
     end

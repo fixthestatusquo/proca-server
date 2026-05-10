@@ -12,10 +12,9 @@ defmodule Proca.Supporter.ConfirmReminderTest do
 
   use Proca.TestEmailBackend
 
-  @old_inserted_at ~U[2024-01-01 00:00:00Z]
+  @old_timestamp ~U[2024-01-01 00:00:00Z]
 
   setup do
-    # Reuse the testmail service started by TestEmailBackend setup
     email_service = Proca.Service.one(name: :testmail)
 
     org =
@@ -66,10 +65,10 @@ defmodule Proca.Supporter.ConfirmReminderTest do
     Repo.get!(Action, action.id) |> Repo.preload(:supporter)
   end
 
-  defp age_supporter(action) do
+  defp age_action(action) do
     Repo.update_all(
-      from(s in Supporter, where: s.id == ^action.supporter_id),
-      set: [inserted_at: @old_inserted_at]
+      from(a in Action, where: a.id == ^action.id),
+      set: [updated_at: @old_timestamp]
     )
   end
 
@@ -78,17 +77,11 @@ defmodule Proca.Supporter.ConfirmReminderTest do
   end
 
   describe "ConfirmReminder.run/0" do
-    test "sends reminder and increments reminder_count for overdue confirming supporter", %{
-      ap: ap
-    } do
+    test "sends reminder when action is overdue", %{ap: ap} do
       action = insert_confirming_action(ap)
-      age_supporter(action)
+      age_action(action)
 
       ConfirmReminder.run()
-
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 1
-      assert supporter.reminder_sent_at != nil
 
       [email] = TestEmailBackend.mailbox(action.supporter.email)
       assert email.subject == "Please confirm your action"
@@ -96,7 +89,7 @@ defmodule Proca.Supporter.ConfirmReminderTest do
 
     test "reminder confirm link contains ?reminder=1", %{ap: ap} do
       action = insert_confirming_action(ap)
-      age_supporter(action)
+      age_action(action)
 
       ConfirmReminder.run()
 
@@ -104,44 +97,46 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert email.html_body =~ "reminder=1"
     end
 
-    test "does not send reminder for supporter inserted recently", %{ap: ap} do
+    test "touches action updated_at after sending so next reminder is spaced", %{ap: ap} do
+      action = insert_confirming_action(ap)
+      age_action(action)
+
+      before_run = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      ConfirmReminder.run()
+
+      updated = Repo.get!(Action, action.id)
+      assert NaiveDateTime.compare(updated.updated_at, before_run) != :lt
+    end
+
+    test "does not send reminder for action updated recently", %{ap: ap} do
       action = insert_confirming_action(ap)
 
       ConfirmReminder.run()
 
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 0
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
-    test "does not send second reminder if max_count already reached", %{ap: ap, org: org} do
-      Repo.update!(change(org, config: %{"reminder" => %{"max_count" => 1}}))
-
+    test "does not re-send reminder immediately after first send", %{ap: ap} do
       action = insert_confirming_action(ap)
-      age_supporter(action)
+      age_action(action)
 
-      Repo.update_all(
-        from(s in Supporter, where: s.id == ^action.supporter_id),
-        set: [reminder_count: 1]
-      )
-
+      # First run sends, touching updated_at to now
+      ConfirmReminder.run()
+      # Second run should not send since updated_at is now fresh
       ConfirmReminder.run()
 
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 1
-      assert TestEmailBackend.mailbox(action.supporter.email) == []
+      assert length(TestEmailBackend.mailbox(action.supporter.email)) == 1
     end
 
     test "does not send reminder if org has supporter_confirm disabled", %{ap: ap, org: org} do
       Repo.update!(change(org, supporter_confirm: false))
 
       action = insert_confirming_action(ap)
-      age_supporter(action)
+      age_action(action)
 
       ConfirmReminder.run()
 
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 0
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
     test "does not send reminder for already accepted supporter", %{ap: ap} do
@@ -149,12 +144,10 @@ defmodule Proca.Supporter.ConfirmReminderTest do
         Factory.insert(:action, action_page: ap, with_consent: true)
         |> Repo.preload(:supporter)
 
-      age_supporter(action)
+      age_action(action)
 
       ConfirmReminder.run()
 
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 0
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
@@ -164,15 +157,37 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       action = insert_confirming_action(ap)
 
       Repo.update_all(
-        from(s in Supporter, where: s.id == ^action.supporter_id),
-        set: [inserted_at: DateTime.add(DateTime.utc_now(), -2 * 86400, :second)]
+        from(a in Action, where: a.id == ^action.id),
+        set: [updated_at: DateTime.add(DateTime.utc_now(), -2 * 86400, :second)]
       )
 
       ConfirmReminder.run()
 
-      supporter = fetch_supporter(action)
-      assert supporter.reminder_count == 0
       assert TestEmailBackend.mailbox(action.supporter.email) == []
+    end
+
+    test "sends reminder when campaign has supporter_confirm (org does not)", %{
+      org: org,
+      campaign: campaign
+    } do
+      Repo.update!(change(org, supporter_confirm: false))
+      Repo.update!(change(campaign, supporter_confirm: true))
+
+      ap =
+        Factory.insert(:action_page,
+          org: org,
+          campaign: campaign,
+          name: "test_campaign_confirm_#{System.unique_integer()}/en",
+          locale: "en"
+        )
+
+      action = insert_confirming_action(ap)
+      age_action(action)
+
+      ConfirmReminder.run()
+
+      [email] = TestEmailBackend.mailbox(action.supporter.email)
+      assert email.subject == "Please confirm your action"
     end
   end
 end

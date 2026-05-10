@@ -85,9 +85,6 @@ defmodule Proca.Supporter do
     field :email_status_changed, :utc_datetime
     field :dupe_rank, :integer
 
-    field :reminder_count, :integer, default: 0
-    field :reminder_sent_at, :utc_datetime
-
     timestamps()
   end
 
