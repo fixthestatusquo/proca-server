@@ -84,6 +84,7 @@ defmodule Proca.Supporter do
     field :email_status, EmailStatus, default: :none
     field :email_status_changed, :utc_datetime
     field :dupe_rank, :integer
+    field :dupe_same_page, :boolean
 
     timestamps()
   end
@@ -112,11 +113,15 @@ defmodule Proca.Supporter do
 
     fingerprint = get_field(ch, :fingerprint)
     campaign_id = get_field(ch, :campaign_id)
+    action_page_id = get_field(ch, :action_page_id)
     q_id = get_field(ch, :id)
 
     q =
       from(s in Supporter,
-        select: count(s.id),
+        select: %{
+          rank: count(s.id),
+          same_page: fragment("bool_or(? = ?)", s.action_page_id, ^action_page_id)
+        },
         where:
           s.processing_status == :accepted and
             s.fingerprint == ^fingerprint and
@@ -130,9 +135,9 @@ defmodule Proca.Supporter do
         q
       end
 
-    rank = Repo.one(q)
+    %{rank: rank, same_page: same_page} = Repo.one(q)
 
-    change(ch, dupe_rank: rank)
+    change(ch, dupe_rank: rank, dupe_same_page: same_page)
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do
