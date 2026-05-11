@@ -20,7 +20,7 @@ defmodule Proca.Stage.Processing do
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right?
 
   State diagram below shows transitions while processing. `A` stands for Action,
-  `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
+  `S` for supporter. States are enumerated in ActionProcessingStatus / SupporterProcessingStatus (see `Enums`), and supporter
   and action track its status separately.
 
   ```
@@ -118,7 +118,8 @@ defmodule Proca.Stage.Processing do
 
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
-          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
+          | {:new | :confirming | :accepted | :delivered | :rejected,
+             :new | :confirming | :accepted | :rejected,
              :supporter_confirm | :action_confirm | :deliver | nil}
   @doc """
   This function implements the state machine for Action.

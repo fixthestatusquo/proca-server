@@ -80,7 +80,7 @@ defmodule Proca.Supporter do
     field :email, :string
     field :area, :string
 
-    field :processing_status, ProcessingStatus, default: :new
+    field :processing_status, SupporterProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
     field :email_status_changed, :utc_datetime
     field :dupe_rank, :integer
@@ -168,7 +168,6 @@ defmodule Proca.Supporter do
       :confirming -> Repo.update(change(sup, processing_status: :accepted))
       :rejected -> {:error, "supporter data already rejected"}
       :accepted -> {:noop, "supporter data already processed"}
-      :delivered -> {:noop, "supporter data already processed"}
     end
   end
 
@@ -184,9 +183,6 @@ defmodule Proca.Supporter do
         {:noop, "supporter data already rejected"}
 
       :accepted ->
-        update_supporter_reject(sup)
-
-      :delivered ->
         update_supporter_reject(sup)
     end
   end
@@ -306,7 +302,7 @@ defmodule Proca.Supporter do
           where:
             s.fingerprint == ^fingerprint and
               c.org_id == ^org_id and
-              s.processing_status in [:accepted, :delivered]),
+              s.processing_status == :accepted),
         set: [first_name: nil, last_name: nil, email: nil, address: nil]
       )
 
