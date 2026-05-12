@@ -81,11 +81,8 @@ defmodule Proca.Stage.EmailSupporter do
           "actionId" => action_id
         } = action
       } ->
-        is_dupe = (get_in(action, ["contact", "dupeRank"]) || 0) > 0
-
         cond do
-          is_dupe and send_duplicate?(action_page_id, action_id) and
-              not too_many_retries?(message) ->
+          send_duplicate?(action_page_id, action_id) and not too_many_retries?(message) ->
             message
             |> Message.update_data(fn _ -> action end)
             |> Message.put_batch_key(action_page_id)
@@ -343,15 +340,14 @@ defmodule Proca.Stage.EmailSupporter do
       on: a.action_page_id == ap.id,
       join: o in Org,
       on: o.id == ap.org_id,
-      join: s in assoc(a, :supporter),
       where:
         a.id == ^action_id and
           a.with_consent and
           ap.id == ^action_page_id and
+          a.processing_status == :repeat and
           not is_nil(ap.duplicate_template) and
           not is_nil(o.email_backend_id) and
-          not is_nil(o.email_from) and
-          s.dupe_rank > 0
+          not is_nil(o.email_from)
     )
     |> Repo.exists?()
   end

@@ -84,7 +84,6 @@ defmodule Proca.Supporter do
     field :email_status, EmailStatus, default: :none
     field :email_status_changed, :utc_datetime
     field :dupe_rank, :integer
-    field :dupe_same_page, :boolean
 
     timestamps()
   end
@@ -137,7 +136,7 @@ defmodule Proca.Supporter do
 
     %{rank: rank, same_page: same_page} = Repo.one(q)
 
-    change(ch, dupe_rank: rank, dupe_same_page: same_page)
+    {change(ch, dupe_rank: rank), same_page == true}
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do

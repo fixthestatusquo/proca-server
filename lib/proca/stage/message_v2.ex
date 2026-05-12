@@ -93,7 +93,6 @@ defmodule Proca.Stage.MessageV2 do
           email: email,
           fingerprint: ref,
           dupe_rank: dupe_rank,
-          dupe_same_page: dupe_same_page,
           area: area
         },
         contact
@@ -103,7 +102,6 @@ defmodule Proca.Stage.MessageV2 do
       "email" => email,
       "contactRef" => Contact.base_encode(ref),
       "dupeRank" => dupe_rank,
-      "dupeSamePage" => dupe_same_page,
       "area" => area
     }
     |> contact_data_cleartext(contact)
