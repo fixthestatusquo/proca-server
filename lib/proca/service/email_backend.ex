@@ -203,6 +203,12 @@ defmodule Proca.Service.EmailBackend do
       from_email == via_org.email_from ->
         email
 
+      # SRS rewriting disabled - send from backend org email with Reply-To
+      not org.sender_rewrite ->
+        email
+        |> Email.from({from_name, via_org.email_from})
+        |> maybe_add_reply(from_email, org.reply_enabled)
+
       # Any from email - we will use SRS here
       true ->
         email
