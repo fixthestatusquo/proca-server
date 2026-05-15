@@ -112,14 +112,19 @@ defmodule Proca.Stage.Support do
     supporter_link(action_id, ref, op)
   end
 
-  def supporter_link(action_id, contact_ref, op)
-      when is_integer(action_id) and is_bitstring(contact_ref) do
+  def supporter_link(action_id, contact_ref, op) do
+    supporter_link(action_id, contact_ref, op, [])
+  end
+
+  def supporter_link(action_id, contact_ref, op, extra)
+      when is_integer(action_id) and is_bitstring(contact_ref) and is_list(extra) do
     ProcaWeb.Router.Helpers.confirm_url(
       ProcaWeb.Endpoint,
       :supporter,
       action_id,
       link_verb(op),
-      contact_ref
+      contact_ref,
+      extra
     )
   end
 

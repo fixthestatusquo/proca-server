@@ -111,6 +111,8 @@ defmodule Proca.Application do
       {Proca.Server.MTT, []},
       {Proca.Server.MTTSupervisor, []},
       {Proca.Server.MTTHourlyCron, []},
+      # Confirm reminder cron
+      {Proca.Server.ConfirmReminderCron, Application.get_env(:proca, Proca.Server.ConfirmReminderCron, [])},
       # User status
       {Proca.Users.Status, [interval: 30_000]}
     ]
