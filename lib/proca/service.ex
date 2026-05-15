@@ -101,6 +101,7 @@ defmodule Proca.Service do
     field :user, :string, default: ""
     field :password, :string, default: ""
     field :path, :string
+    field :sending_from, :string
     belongs_to :org, Proca.Org
 
     timestamps()
@@ -110,7 +111,7 @@ defmodule Proca.Service do
     assocs = Map.take(attrs, [:org])
 
     service
-    |> cast(attrs, [:name, :host, :user, :password, :path])
+    |> cast(attrs, [:name, :host, :user, :password, :path, :sending_from])
     |> change(assocs)
   end
 

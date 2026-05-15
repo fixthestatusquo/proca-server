@@ -140,6 +140,13 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
     """
     field :path, :string
+
+    @desc """
+    Verified sending address for this backend. Used as the envelope From domain when rewriting
+    sender addresses (SRS). Falls back to the org's email_from if not set. Must be on a domain
+    the email backend is authorized to send from (SPF/DKIM configured).
+    """
+    field :sending_from, :string
   end
 
   input_object :service_input do
@@ -165,5 +172,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     A sub-selector of a resource. Can be url path, but can be something like AWS bucket name
     """
     field :path, :string
+
+    @desc "Verified sending address for this backend (overrides org email_from as the envelope From domain)"
+    field :sending_from, :string
   end
 end

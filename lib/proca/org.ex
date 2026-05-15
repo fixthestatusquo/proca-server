@@ -44,6 +44,7 @@ defmodule Proca.Org do
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
+    field :sender_rewrite, :boolean, default: true
 
     # supporter confirm in configuration
     field :supporter_confirm, :boolean, default: false
@@ -102,6 +103,7 @@ defmodule Proca.Org do
       :high_security,
       :doi_thank_you,
       :reply_enabled,
+      :sender_rewrite,
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
