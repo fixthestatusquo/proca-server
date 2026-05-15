@@ -20,7 +20,7 @@ defmodule Proca.Stage.Processing do
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right?
 
   State diagram below shows transitions while processing. `A` stands for Action,
-  `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
+  `S` for supporter. States are enumerated in ActionProcessingStatus / SupporterProcessingStatus (see `Enums`), and supporter
   and action track its status separately.
 
   ```
@@ -118,7 +118,8 @@ defmodule Proca.Stage.Processing do
 
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
-          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
+          | {:new | :confirming | :accepted | :delivered | :rejected,
+             :new | :confirming | :accepted | :rejected,
              :supporter_confirm | :action_confirm | :deliver | nil}
   @doc """
   This function implements the state machine for Action.
@@ -276,6 +277,10 @@ defmodule Proca.Stage.Processing do
     :ok
   end
 
+  def transition(%{processing_status: :repeat}, _ap) do
+    :ok
+  end
+
   ## Processing pipeline steps!
 
   def change_status(
@@ -294,9 +299,25 @@ defmodule Proca.Stage.Processing do
   2. action confirm stage
   3. action delivery stage
   """
-  def rank_supporter(p = %Processing{supporter_change: changeset, stage: queue_stage})
+  def rank_supporter(
+        p = %Processing{
+          supporter_change: changeset,
+          action_change: action_ch,
+          stage: queue_stage
+        }
+      )
       when queue_stage != nil do
-    %{p | supporter_change: Supporter.naive_rank(changeset)}
+    {ranked_ch, same_page} = Supporter.naive_rank(changeset)
+
+    action_ch =
+      if same_page and Ecto.Changeset.get_change(ranked_ch, :dupe_rank, 0) > 0 and
+           Ecto.Changeset.get_change(action_ch, :processing_status) == :delivered do
+        change(action_ch, processing_status: :repeat)
+      else
+        action_ch
+      end
+
+    %{p | supporter_change: ranked_ch, action_change: action_ch}
   end
 
   def rank_supporter(p), do: p
