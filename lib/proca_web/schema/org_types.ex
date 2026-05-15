@@ -180,6 +180,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Enable reply_to for emails"
     field :reply_enabled, :boolean
 
+    @desc "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+    field :sender_rewrite, :boolean
+
     @desc "Config"
     field :config, :json
   end
@@ -371,6 +374,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Enable reply_to for emails"
     field :reply_enabled, :boolean
+
+    @desc "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+    field :sender_rewrite, :boolean
   end
 
   @desc "Encryption or sign key with integer id (database)"

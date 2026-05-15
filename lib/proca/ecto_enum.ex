@@ -6,14 +6,23 @@ defmodule Enums do
   @moduledoc """
   Enums used in Proca database.
 
-  ## ProcessingStatus
-  The processing status used for both action and supporter
+  ## ActionProcessingStatus
+  Processing status for actions.
 
   - 0 - `new`
   - 1 - `confirming`
   - 2 - `rejected`
   - 3 - `accepted`
   - 4 - `delivered`
+  - 5 - `repeat` (duplicate action by the same supporter on the same page)
+
+  ## SupporterProcessingStatus
+  Processing status for supporters.
+
+  - 0 - `new`
+  - 1 - `confirming`
+  - 2 - `rejected`
+  - 3 - `accepted`
 
   Possible status transitions
 
@@ -22,7 +31,7 @@ defmodule Enums do
     v      v
   accepted
     v
-  delivered (action status only)
+  delivered (action only)  |  repeat (action only)
   ```
 
   ## EmailStatus ##
@@ -47,12 +56,20 @@ defmodule Enums do
   """
 end
 
-defenum(ProcessingStatus,
+defenum(ActionProcessingStatus,
   new: 0,
   confirming: 1,
   rejected: 2,
   accepted: 3,
-  delivered: 4
+  delivered: 4,
+  repeat: 5
+)
+
+defenum(SupporterProcessingStatus,
+  new: 0,
+  confirming: 1,
+  rejected: 2,
+  accepted: 3
 )
 
 defenum(ExternalService,
@@ -67,7 +84,8 @@ defenum(ExternalService,
   testmail: "testmail",
   webhook: "webhook",
   supabase: "supabase",
-  testdetail: "testdetail"
+  testdetail: "testdetail",
+  brevo: "brevo"
 )
 
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)

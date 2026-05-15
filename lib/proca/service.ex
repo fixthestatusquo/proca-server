@@ -101,6 +101,7 @@ defmodule Proca.Service do
     field :user, :string, default: ""
     field :password, :string, default: ""
     field :path, :string
+    field :sending_from, :string
     belongs_to :org, Proca.Org
 
     timestamps()
@@ -110,7 +111,7 @@ defmodule Proca.Service do
     assocs = Map.take(attrs, [:org])
 
     service
-    |> cast(attrs, [:name, :host, :user, :password, :path])
+    |> cast(attrs, [:name, :host, :user, :password, :path, :sending_from])
     |> change(assocs)
   end
 
@@ -247,6 +248,12 @@ defmodule Proca.Service do
   defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd})
        when is_bitstring(pwd) do
     %{req | headers: [{"Authorization", pwd}] ++ req.headers}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :api_key} | rest], srv = %{password: pwd})
+       when is_bitstring(pwd) do
+    %{req | headers: [{"api-key", pwd}] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 

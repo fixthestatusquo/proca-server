@@ -10,22 +10,32 @@ defmodule Proca.Stage.SystemEvent do
   campaigner/user rather than a supporter.
   """
 
-  alias Proca.{Org, Campaign, ActionPage}
+  alias Proca.Org
   alias Proca.Users.User
   alias Proca.Stage.MessageV2
-  alias Proca.Stage.Support
   alias Proca.Pipes.{Connection, Topology}
   alias Proca.Repo
+  import Logger
 
   def emit(data, event_type, org_id) do
     routing_key = "system." <> Atom.to_string(event_type)
     exchange = Topology.xn(%Org{id: org_id}, "event")
 
-    data
-    |> Map.put("schema", "proca:action:2")
-    |> Map.put("stage", "system")
-    |> Map.put("eventType", Atom.to_string(event_type))
-    |> Connection.publish(exchange, routing_key)
+    result =
+      data
+      |> Map.put("schema", "proca:action:2")
+      |> Map.put("stage", "system")
+      |> Map.put("eventType", Atom.to_string(event_type))
+      |> Connection.publish(exchange, routing_key)
+
+    case result do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        warning("SystemEvent #{event_type} publish failed: #{inspect(reason)} exchange=#{exchange}")
+        {:error, reason}
+    end
   end
 
   def user_contact_data(%User{email: email}) do

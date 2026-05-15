@@ -201,30 +201,28 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     assert message =~ "no such campaign"
   end
 
-  test "campaign filter still protects supporters with active actions in another campaign" do
+  test "campaign filter deletes contacts even when the same fingerprint has active actions in another campaign" do
     %{org: org, pages: [page], campaign: campaign_a} = blue_story()
 
     campaign_b = Factory.insert(:campaign, org: org)
     page_b = Factory.insert(:action_page, org: org, campaign: campaign_b)
 
-    action_a = insert_processed_action(page)
+    old_supporter = insert_supporter_with_contacts(page, %Privacy{opt_in: true})
+    old_action = insert_action_for_supporter(old_supporter, page)
     close_campaign(campaign_a)
-    age_action(action_a, @old_inserted_at)
+    age_action(old_action, @old_inserted_at)
 
-    supporter = Repo.preload(fetch_supporter(action_a.supporter_id), action_page: :campaign)
+    newer_supporter = insert_supporter_with_contacts(page_b, %Privacy{opt_in: true}, old_supporter)
+    _newer_action = insert_action_for_supporter(newer_supporter, page_b)
 
-    Factory.insert(:action,
-      supporter: supporter,
-      action_page: page_b,
-      campaign: campaign_b,
-      processing_status: :delivered
-    )
+    assert old_supporter.fingerprint == newer_supporter.fingerprint
 
     assert {:ok, result} =
              RetentionCleanup.run(org.name, :delete_contacts, campaign: campaign_a.name)
 
-    assert result.contacts_count == 0
-    assert contacts_for_org(action_a.supporter_id, org.id) == 1
+    assert result.contacts_count == 1
+    assert contacts_for_org(old_supporter.id, org.id) == 0
+    assert contacts_for_org(newer_supporter.id, org.id) == 1
   end
 
   defp insert_processed_action(action_page) do

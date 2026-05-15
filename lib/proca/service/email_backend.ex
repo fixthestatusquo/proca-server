@@ -74,6 +74,8 @@ defmodule Proca.Service.EmailBackend do
 
   def service_module(:preview), do: Proca.Service.Email.Preview
 
+  def service_module(:brevo), do: Proca.Service.Brevo
+
   def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
   end
@@ -193,13 +195,20 @@ defmodule Proca.Service.EmailBackend do
       ) do
     %{org: via_org} = Proca.Repo.preload(srv, [:org])
 
+    sending_from = srv.sending_from || via_org.email_from
     [username, domain] = Regex.split(~r/@/, from_email)
-    [_via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
+    [_sending_username, via_domain] = Regex.split(~r/@/, sending_from)
 
     cond do
-      # FROM set, but matching the sending backend
-      from_email == via_org.email_from ->
+      # FROM set, but matching the verified sending address
+      from_email == sending_from ->
         email
+
+      # SRS rewriting disabled - send from verified sending address with Reply-To
+      not org.sender_rewrite ->
+        email
+        |> Email.from({from_name, sending_from})
+        |> maybe_add_reply(from_email, org.reply_enabled)
 
       # Any from email - we will use SRS here
       true ->

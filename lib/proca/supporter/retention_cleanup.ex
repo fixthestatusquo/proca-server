@@ -74,7 +74,7 @@ defmodule Proca.Supporter.RetentionCleanup do
 
   defp eligible_supporter_ids_query(org_id, months, campaign_id) do
     candidate_supporters = candidate_supporters_query(org_id, months, campaign_id)
-    protected_fingerprints = protected_fingerprints_query(org_id, months)
+    protected_fingerprints = protected_fingerprints_query(org_id, months, campaign_id)
 
     from(candidate in subquery(candidate_supporters),
       left_join: protected in subquery(protected_fingerprints),
@@ -113,24 +113,31 @@ defmodule Proca.Supporter.RetentionCleanup do
     end
   end
 
-  defp protected_fingerprints_query(org_id, months) do
-    from(s in Supporter,
-      join: c in Contact,
-      on: c.supporter_id == s.id and c.org_id == ^org_id,
-      join: a in Action,
-      on: a.supporter_id == s.id,
-      join: campaign in Campaign,
-      on: campaign.id == a.campaign_id,
-      where:
-        not (
-          a.processing_status in ^@processed_statuses and
-            campaign.status == ^:closed and
-            campaign.end < ago(^months, "month") and
-            a.inserted_at < ago(^months, "month")
-        ),
-      distinct: s.fingerprint,
-      select: %{fingerprint: s.fingerprint}
-    )
+  defp protected_fingerprints_query(org_id, months, campaign_id \\ nil) do
+    base =
+      from(s in Supporter,
+        join: c in Contact,
+        on: c.supporter_id == s.id and c.org_id == ^org_id,
+        join: a in Action,
+        on: a.supporter_id == s.id,
+        join: campaign in Campaign,
+        on: campaign.id == a.campaign_id,
+        where:
+          not (
+            a.processing_status in ^@processed_statuses and
+              campaign.status == ^:closed and
+              campaign.end < ago(^months, "month") and
+              a.inserted_at < ago(^months, "month")
+          ),
+        distinct: s.fingerprint,
+        select: %{fingerprint: s.fingerprint}
+      )
+
+    if campaign_id do
+      where(base, [_s, _c, a], a.campaign_id == ^campaign_id)
+    else
+      base
+    end
   end
 
   defp supporter_ids_to_clear_query(supporter_ids, org_id) do
