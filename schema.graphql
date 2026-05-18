@@ -842,6 +842,9 @@ input OrgInput {
   "Enable reply_to for emails"
   replyEnabled: Boolean
 
+  "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+  senderRewrite: Boolean
+
   "Config"
   config: Json
 }
@@ -864,6 +867,9 @@ type PersonalData {
 
   "Enable reply_to for emails"
   replyEnabled: Boolean
+
+  "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+  senderRewrite: Boolean
 }
 
 "Encryption or sign key with integer id (database)"
@@ -1074,6 +1080,9 @@ enum ServiceName {
 
   "Supabase to store files"
   SUPABASE
+
+  "Brevo to send transactional emails"
+  BREVO
 }
 
 type Service {
@@ -1091,6 +1100,13 @@ type Service {
 
   "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
   path: String
+
+  """
+  Verified sending address for this backend. Used as the envelope From domain when rewriting
+  sender addresses (SRS). Falls back to the org's email_from if not set. Must be on a domain
+  the email backend is authorized to send from (SPF/DKIM configured).
+  """
+  sendingFrom: String
 }
 
 input ServiceInput {
@@ -1108,6 +1124,9 @@ input ServiceInput {
 
   "A sub-selector of a resource. Can be url path, but can be something like AWS bucket name"
   path: String
+
+  "Verified sending address for this backend (overrides org email_from as the envelope From domain)"
+  sendingFrom: String
 }
 
 type User {
@@ -1538,6 +1557,9 @@ type PrivateActionPage implements ActionPage {
   "Email template to confirm supporter (DOI)"
   supporterConfirmTemplate: String
 
+  "Email template sent to supporters who sign again (duplicate action)"
+  duplicateTemplate: String
+
   "Location of the widget as last seen in HTTP REFERER header"
   location: String
 
@@ -1598,6 +1620,9 @@ input ActionPageInput {
 
   "Supporter confirm email template of this ActionPage"
   supporterConfirmTemplate: String
+
+  "Duplicate action email template of this ActionPage"
+  duplicateTemplate: String
 
   "Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here."
   extraSupporters: Int
