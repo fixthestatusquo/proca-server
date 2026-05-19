@@ -134,7 +134,7 @@ defmodule Proca.Supporter.RetentionCleanup do
       )
 
     if campaign_id do
-      where(base, [_s, _c, a], a.campaign_id == ^campaign_id)
+      where(base, [_s, _c, a], a.campaign_id != ^campaign_id)
     else
       base
     end
