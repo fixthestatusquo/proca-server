@@ -110,7 +110,7 @@ defmodule Proca.Org do
     ])
     |> cast_backend(
       :email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
       attrs,
       org
     )
