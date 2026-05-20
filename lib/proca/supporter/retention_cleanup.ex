@@ -8,7 +8,6 @@ defmodule Proca.Supporter.RetentionCleanup do
   alias Proca.{Action, Campaign, Contact, Org, Repo, Supporter}
 
   @default_months 24
-  @processed_statuses [:accepted, :delivered]
   @supporter_pii_fields [first_name: nil, last_name: nil, email: nil, address: nil]
 
   def default_months, do: @default_months
@@ -93,13 +92,12 @@ defmodule Proca.Supporter.RetentionCleanup do
         on: a.supporter_id == s.id,
         join: campaign in Campaign,
         on: campaign.id == a.campaign_id,
-        where: s.processing_status in ^@processed_statuses,
         group_by: [s.id, s.fingerprint],
         having:
           fragment(
             "bool_and(?)",
-            a.processing_status in ^@processed_statuses and
-              campaign.status == ^:closed and
+            campaign.status == ^:closed and
+              not is_nil(campaign.end) and
               campaign.end < ago(^months, "month") and
               a.inserted_at < ago(^months, "month")
           ),
@@ -124,8 +122,8 @@ defmodule Proca.Supporter.RetentionCleanup do
         on: campaign.id == a.campaign_id,
         where:
           not (
-            a.processing_status in ^@processed_statuses and
-              campaign.status == ^:closed and
+            campaign.status == ^:closed and
+              not is_nil(campaign.end) and
               campaign.end < ago(^months, "month") and
               a.inserted_at < ago(^months, "month")
           ),
