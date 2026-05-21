@@ -62,7 +62,8 @@ defmodule ProcaWeb.Resolvers.Org do
         :supporter_confirm_template,
         :high_security,
         :doi_thank_you,
-        :reply_enabled
+        :reply_enabled,
+        :sender_rewrite
       ])
     }
   end
