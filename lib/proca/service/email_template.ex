@@ -17,6 +17,7 @@ defmodule Proca.Service.EmailTemplate do
     field :locale, :string, null: false
     # only for external ref (could be string)
     field :ref, :string, null: true, virtual: true
+    field :external_id, :string, null: true
 
     field :subject, :string, null: false
     field :html, :string, null: false
@@ -33,8 +34,9 @@ defmodule Proca.Service.EmailTemplate do
   def changeset(service, attrs) do
     related = Map.take(attrs, [:org])
 
-    cast(service, attrs, [:name, :locale, :ref, :subject, :html, :text])
-    |> validate_required([:name, :locale, :subject, :html])
+    cast(service, attrs, [:name, :locale, :ref, :external_id, :subject, :html, :text])
+    |> validate_required([:name, :locale])
+    |> validate_local_content()
     |> validate_format(:name, ~r/^[\w\d_ -]+$/)
     |> change(related)
     |> validate_template(:subject)
@@ -44,6 +46,14 @@ defmodule Proca.Service.EmailTemplate do
   end
 
   def changeset(attrs), do: changeset(%EmailTemplate{}, attrs)
+
+  defp validate_local_content(changeset) do
+    if get_field(changeset, :external_id) do
+      changeset
+    else
+      validate_required(changeset, [:subject, :html])
+    end
+  end
 
   def validate_template(changeset, field) do
     validate_change(changeset, field, fn _f, tmplstr ->
