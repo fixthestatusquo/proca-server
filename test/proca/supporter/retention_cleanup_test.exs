@@ -21,13 +21,13 @@ defmodule Proca.Supporter.RetentionCleanupTest do
     assert {:ok, result} = RetentionCleanup.run(org.name, :delete_contacts, dry_run: true)
     assert result.dry_run
     assert result.contacts_count == 1
-    assert result.supporters_count == 0
+    assert result.supporters_count == 1
 
     assert contacts_for_org(action.supporter_id, org.id) == 1
     assert fetch_supporter(action.supporter_id).email
   end
 
-  test "delete_contacts deletes eligible org contacts and keeps supporter cleartext" do
+  test "delete_contacts deletes eligible org contacts and anonymizes supporter cleartext" do
     %{org: org, pages: [page], campaign: campaign} = blue_story()
     action = insert_processed_action(page)
     close_campaign(campaign)
@@ -35,11 +35,13 @@ defmodule Proca.Supporter.RetentionCleanupTest do
 
     assert {:ok, result} = RetentionCleanup.run(org.name, :delete_contacts, months: 6)
     assert result.contacts_count == 1
-    assert result.supporters_count == 0
+    assert result.supporters_count == 1
 
     assert contacts_for_org(action.supporter_id, org.id) == 0
-    assert fetch_supporter(action.supporter_id).email
-    assert fetch_supporter(action.supporter_id).first_name
+
+    supporter = fetch_supporter(action.supporter_id)
+    assert is_nil(supporter.email)
+    assert is_nil(supporter.first_name)
   end
 
   test "remove_pii deletes eligible contacts and clears supporter fields" do
