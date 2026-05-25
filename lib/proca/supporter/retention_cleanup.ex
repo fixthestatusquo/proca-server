@@ -22,12 +22,7 @@ defmodule Proca.Supporter.RetentionCleanup do
       campaign_id = campaign && campaign.id
       queries = cleanup_queries(org.id, months, campaign_id)
       contacts_count = Repo.aggregate(queries.contacts, :count, :id)
-
-      supporters_count =
-        case mode do
-          :remove_pii -> Repo.aggregate(queries.supporters, :count, :id)
-          :delete_contacts -> 0
-        end
+      supporters_count = Repo.aggregate(queries.supporters, :count, :id)
 
       result = %{
         dry_run: dry_run,
@@ -43,7 +38,7 @@ defmodule Proca.Supporter.RetentionCleanup do
         {:ok, result}
       else
         case Repo.transaction(fn ->
-               if mode == :remove_pii and supporters_count > 0 do
+               if supporters_count > 0 do
                  Repo.update_all(queries.supporters, set: @supporter_pii_fields)
                end
 
