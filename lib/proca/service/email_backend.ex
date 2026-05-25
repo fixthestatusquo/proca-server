@@ -150,6 +150,14 @@ defmodule Proca.Service.EmailBackend do
 
   defp prepare_template(email, nil), do: email
 
+  # local template with external_id — delegate to external provider (e.g. Brevo templateId)
+  defp prepare_template(email, tmpl = %EmailTemplate{id: id, external_id: ext_id})
+       when is_number(id) and not is_nil(ext_id) do
+    email
+    |> Email.put_private(:template, %{tmpl | ref: ext_id})
+    |> prepare_fields()
+  end
+
   defp prepare_template(email, tmpl = %EmailTemplate{id: id}) when is_number(id) do
     email
     |> EmailTemplate.render(tmpl)

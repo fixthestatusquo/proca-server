@@ -507,6 +507,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     @desc "template locale"
     field :locale, :string
+    @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text."
+    field :external_id, :string
     @desc "Subject text"
     field :subject, :string
     @desc "Html part body"
