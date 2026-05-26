@@ -149,12 +149,24 @@ defmodule Proca.Stage.EmailSupporter do
         end
 
       :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter thank_you: template #{ap.thank_you_template} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{ap.thank_you_template} not found (org #{org.name})")
         )
 
       :not_configured ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter thank_you: template #{ap.thank_you_template} backend not configured (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(
@@ -193,6 +205,12 @@ defmodule Proca.Stage.EmailSupporter do
         end
 
       :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter supporter_confirm: template #{tmpl_name} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
@@ -220,12 +238,24 @@ defmodule Proca.Stage.EmailSupporter do
         end
 
       :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter duplicate: template #{ap.duplicate_template} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{ap.duplicate_template} not found (org #{org.name})")
         )
 
       :not_configured ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter duplicate: template #{ap.duplicate_template} backend not configured (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(
