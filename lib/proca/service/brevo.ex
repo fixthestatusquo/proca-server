@@ -78,22 +78,29 @@ defmodule Proca.Service.Brevo do
   @impl true
   def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv}) do
     body = build_payload(email)
+    custom_id = Map.get(email.private, :custom_id)
 
     case Service.json_request(srv, "#{@api_url}/smtp/email", auth: :api_key, post: body) do
       {:ok, _, _} ->
         :ok
 
       {:ok, code} ->
-        warn("Brevo deliver HTTP#{code}")
+        error("Brevo deliver HTTP#{code} custom_id=#{custom_id}")
         {:error, "HTTP#{code}"}
 
       {:error, reason} ->
-        error("Brevo deliver failed: #{inspect(reason)}")
+        error("Brevo deliver failed custom_id=#{custom_id}: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
   defp build_payload(%Email{} = email) do
+    if length(email.to) > 1,
+      do:
+        error(
+          "Brevo build_payload: #{length(email.to)} recipients on a transactional email (custom_id=#{Map.get(email.private, :custom_id)}), expected 1"
+        )
+
     %{}
     |> Map.put("to", Enum.map(email.to, fn {name, addr} -> %{"email" => addr, "name" => name} end))
     |> put_sender(email.from)
