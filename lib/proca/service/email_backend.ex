@@ -216,10 +216,10 @@ defmodule Proca.Service.EmailBackend do
       from_email == sending_from ->
         email
 
-      # SRS rewriting disabled at org level - send from verified address with Reply-To
+      # SRS rewriting disabled at org level - send from org-named address on system domain, Reply-To set to org's from
       not org.sender_rewrite ->
         email
-        |> Email.from({from_name, sending_from})
+        |> Email.from({from_name, "#{org.name}@#{via_domain}"})
         |> maybe_add_reply(from_email, org.reply_enabled)
 
       # SRS disabled per-call (e.g. thank-you emails) — keep original from

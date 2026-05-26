@@ -128,14 +128,7 @@ defmodule Proca.Service.EmailTemplate do
   def compile_string(nil), do: nil
 
   def compile_string(m) do
-    try do
-      :bbmustache.parse_binary(m)
-    rescue
-      error ->
-        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
-        # TODO: return proper error instead of reraising
-        reraise Sentry.CrashError.exception(error.original), __STACKTRACE__
-    end
+    :bbmustache.parse_binary(m)
   end
 
   # when end is_tuple(m) do
