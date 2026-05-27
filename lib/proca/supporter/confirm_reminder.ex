@@ -3,6 +3,7 @@ defmodule Proca.Supporter.ConfirmReminder do
   Sends confirmation reminder emails to supporters stuck in :confirming state.
 
   Per-org config (stored in org.config["reminder"]):
+    - "enabled"    - must be true to send reminders (opt-in, default disabled)
     - "delay_days" - days to wait before sending first reminder, and between
                      subsequent reminders (default 2)
 
@@ -39,15 +40,19 @@ defmodule Proca.Supporter.ConfirmReminder do
   end
 
   defp process_org(org) do
-    delay_days = org_delay_days(org)
-    actions = due_actions(org.id, delay_days)
+    if reminder_enabled?(org) do
+      delay_days = org_delay_days(org)
+      actions = due_actions(org.id, delay_days)
 
-    if actions != [] do
-      Logger.info(
-        "ConfirmReminder: sending #{length(actions)} reminders for org #{org.name}"
-      )
+      if actions != [] do
+        Logger.info(
+          "ConfirmReminder: sending #{length(actions)} reminders for org #{org.name}"
+        )
 
-      send_for_org(org, actions)
+        send_for_org(org, actions)
+      end
+    else
+      Logger.debug("ConfirmReminder: skipping org #{org.name} (reminder not enabled in config)")
     end
   end
 
@@ -146,6 +151,10 @@ defmodule Proca.Supporter.ConfirmReminder do
       from(a in Action, where: a.id == ^action_id),
       set: [updated_at: now]
     )
+  end
+
+  defp reminder_enabled?(%Org{config: config}) do
+    get_in(config, ["reminder", "enabled"]) == true
   end
 
   defp org_delay_days(%Org{config: config}) do
