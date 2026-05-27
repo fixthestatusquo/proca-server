@@ -100,11 +100,11 @@ defmodule Proca.Service.EmailBackend do
 
   Surprise: you can get  `{:error, [:ok, :ok, :ok]}` with there was some error but adapter decided to drop the email (fatal problem, retry will not help)
   """
-  def deliver(emails, org, email_template \\ nil, opts \\ [])
+  def deliver(emails, org, email_template \\ nil)
 
-  @spec deliver([Email.t()], Org.t(), EmailTemplate.t() | nil, keyword()) ::
+  @spec deliver([Email.t()], Org.t(), EmailTemplate.t() | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
-  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template, opts)
+  def deliver(recipients, org = %Org{email_backend: %Service{name: name}}, email_template)
       when is_list(recipients) do
     backend = service_module(name)
 
@@ -112,21 +112,21 @@ defmodule Proca.Service.EmailBackend do
       recipients
       |> Enum.map(fn e ->
         e
-        |> determine_sender(org, opts)
+        |> determine_sender(org)
         |> prepare_template(email_template)
       end)
 
     apply(backend, :deliver, [emails, org])
   end
 
-  @spec deliver(Email.t(), Org.t(), EmailTemplate.t() | nil, keyword()) ::
+  @spec deliver(Email.t(), Org.t(), EmailTemplate.t() | nil) ::
           :ok | {:error, [:ok | {:error, String.t()}]}
-  def deliver(email = %Email{}, org = %Org{email_backend: %Service{name: name}}, email_template, opts) do
+  def deliver(email = %Email{}, org = %Org{email_backend: %Service{name: name}}, email_template) do
     backend = service_module(name)
 
     email =
       email
-      |> determine_sender(org, opts)
+      |> determine_sender(org)
       |> prepare_template(email_template)
 
     apply(backend, :deliver, [email, org])
@@ -184,26 +184,21 @@ defmodule Proca.Service.EmailBackend do
   3. FROM set, we need to check the address - if email is different then sending one, replace FROM email with a mix.
 
   """
-  def determine_sender(email, org, opts \\ [])
-
   def determine_sender(
         email = %Email{from: nil},
-        org = %Org{id: id, email_backend: %Service{org_id: id}},
-        _opts
+        org = %Org{id: id, email_backend: %Service{org_id: id}}
       ) do
     Email.from(email, {org.title, org.email_from})
   end
 
-  def determine_sender(email = %Email{from: nil}, org = %Org{email_backend: %Service{}}, opts) do
-    email
-    |> Email.from({org.title, org.email_from})
-    |> determine_sender(org, opts)
+  def determine_sender(email = %Email{from: nil}, org = %Org{email_backend: srv}) do
+    %{org: via_org} = Proca.Repo.preload(srv, [:org])
+    Email.from(email, {org.title, org.email_from || via_org.email_from})
   end
 
   def determine_sender(
         email = %Email{from: {from_name, from_email}},
-        org = %Org{email_backend: srv},
-        opts
+        org = %Org{email_backend: srv}
       ) do
     %{org: via_org} = Proca.Repo.preload(srv, [:org])
 
@@ -220,11 +215,6 @@ defmodule Proca.Service.EmailBackend do
       not org.sender_rewrite ->
         email
         |> Email.from({from_name, sending_from})
-        |> maybe_add_reply(from_email, org.reply_enabled)
-
-      # SRS disabled per-call (e.g. thank-you emails) — keep original from
-      not Keyword.get(opts, :srs, true) ->
-        email
         |> maybe_add_reply(from_email, org.reply_enabled)
 
       # Any from email - we will use SRS here

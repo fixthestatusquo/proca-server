@@ -139,7 +139,7 @@ defmodule Proca.Stage.EmailSupporter do
 
     case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template, ap.locale) do
       {:ok, tmpl} ->
-        case EmailBackend.deliver(recipients, org, tmpl, srs: false) do
+        case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
             emit_thank_you_lag(messages, org.id)
             messages
@@ -195,7 +195,7 @@ defmodule Proca.Stage.EmailSupporter do
 
     case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
       {:ok, tmpl} ->
-        case EmailBackend.deliver(recipients, org, tmpl, srs: false) do
+        case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
             emit_supporter_confirm_lag(messages, org.id)
             messages
