@@ -3,24 +3,30 @@ defmodule Proca.Supporter.ConfirmReminder do
   Sends confirmation reminder emails to supporters stuck in :confirming state.
 
   Per-org config (stored in org.config["reminder"]):
-    - "enabled"    - must be true to send reminders (opt-in, default disabled)
-    - "delay_days" - days to wait before sending first reminder, and between
-                     subsequent reminders (default 2)
+    - "enabled"              - must be true to send reminders (opt-in, default disabled)
+    - "reminder_delays_days" - list of delays (in days from inserted_at) at which to
+                               send each reminder. Default [2, 5] sends a first reminder
+                               2 days after signup and a second at 5 days.
+    - "max_age_days"         - actions older than this (from inserted_at) are ignored;
+                               prevents reminding supporters who signed up long ago.
+                               Default 30.
 
-  Timing is tracked via action.updated_at. When a reminder is sent the action's
-  updated_at is touched, so the next reminder is spaced by delay_days from that
-  point. supporter_confirm can be enabled at the org or campaign level.
+  Timing is tracked via action.reminder_count. Each sent reminder increments the
+  counter. reminder_count == N means N reminders have been sent; the action is due
+  for reminder N when inserted_at is older than reminder_delays_days[N] and
+  reminder_count == N. When all delays are exhausted no further reminders are sent.
   """
 
   import Ecto.Query
   require Logger
 
-  alias Proca.{Repo, Org, Campaign, Action, Supporter}
+  alias Proca.{Repo, Org, Action, Supporter}
   alias Proca.Service.{EmailBackend, EmailMerge, EmailTemplateDirectory}
   alias Proca.Stage.{EmailSupporter, Support}
   alias Swoosh.Email
 
-  @default_delay_days 2
+  @default_reminder_delays [2]
+  @default_max_age_days 30
 
   def run do
     orgs_with_confirm()
@@ -41,8 +47,9 @@ defmodule Proca.Supporter.ConfirmReminder do
 
   defp process_org(org) do
     if reminder_enabled?(org) do
-      delay_days = org_delay_days(org)
-      actions = due_actions(org.id, delay_days)
+      delays = org_reminder_delays(org)
+      max_age = org_max_age_days(org)
+      actions = due_actions(org.id, delays, max_age)
 
       if actions != [] do
         Logger.info(
@@ -56,7 +63,15 @@ defmodule Proca.Supporter.ConfirmReminder do
     end
   end
 
-  defp due_actions(org_id, delay_days) do
+  defp due_actions(org_id, reminder_delays, max_age_days) do
+    reminder_delays
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {delay_days, count} ->
+      query_due_actions(org_id, count, delay_days, max_age_days)
+    end)
+  end
+
+  defp query_due_actions(org_id, reminder_count, delay_days, max_age_days) do
     action_ids =
       from(a in Action,
         join: s in assoc(a, :supporter),
@@ -67,7 +82,9 @@ defmodule Proca.Supporter.ConfirmReminder do
         where: o.supporter_confirm == true or c.supporter_confirm == true,
         where: s.processing_status == :confirming,
         where: a.with_consent == true,
-        where: a.updated_at < ago(^delay_days, "day"),
+        where: a.reminder_count == ^reminder_count,
+        where: a.inserted_at < ago(^delay_days, "day"),
+        where: a.inserted_at > ago(^max_age_days, "day"),
         select: a.id
       )
       |> Repo.all()
@@ -145,11 +162,9 @@ defmodule Proca.Supporter.ConfirmReminder do
   end
 
   defp mark_sent(%Action{id: action_id}) do
-    now = DateTime.truncate(DateTime.utc_now(), :second)
-
     Repo.update_all(
       from(a in Action, where: a.id == ^action_id),
-      set: [updated_at: now]
+      inc: [reminder_count: 1]
     )
   end
 
@@ -157,11 +172,17 @@ defmodule Proca.Supporter.ConfirmReminder do
     get_in(config, ["reminder", "enabled"]) == true
   end
 
-  defp org_delay_days(%Org{config: config}) do
-    case get_in(config, ["reminder", "delay_days"]) do
-      nil -> @default_delay_days
+  defp org_reminder_delays(%Org{config: config}) do
+    case get_in(config, ["reminder", "reminder_delays_days"]) do
+      nil -> @default_reminder_delays
+      list when is_list(list) -> list
+    end
+  end
+
+  defp org_max_age_days(%Org{config: config}) do
+    case get_in(config, ["reminder", "max_age_days"]) do
+      nil -> @default_max_age_days
       v when is_integer(v) -> v
-      v when is_binary(v) -> String.to_integer(v)
     end
   end
 end

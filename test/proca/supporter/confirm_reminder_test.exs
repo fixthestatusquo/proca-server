@@ -12,8 +12,6 @@ defmodule Proca.Supporter.ConfirmReminderTest do
 
   use Proca.TestEmailBackend
 
-  @old_timestamp ~U[2024-01-01 00:00:00Z]
-
   setup do
     email_service = Proca.Service.one(name: :testmail)
 
@@ -27,7 +25,8 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       Repo.update!(
         change(org,
           supporter_confirm: true,
-          supporter_confirm_template: "supporter_confirm"
+          supporter_confirm_template: "supporter_confirm",
+          config: %{"reminder" => %{"enabled" => true}}
         )
       )
 
@@ -66,14 +65,16 @@ defmodule Proca.Supporter.ConfirmReminderTest do
   end
 
   defp age_action(action) do
-    Repo.update_all(
-      from(a in Action, where: a.id == ^action.id),
-      set: [updated_at: @old_timestamp]
-    )
+    set_action_age_days(action, 3)
   end
 
-  defp fetch_supporter(action) do
-    Repo.get!(Supporter, action.supporter_id)
+  defp set_action_age_days(action, days) do
+    ts = DateTime.add(DateTime.utc_now(), -days * 86400, :second)
+
+    Repo.update_all(
+      from(a in Action, where: a.id == ^action.id),
+      set: [inserted_at: ts]
+    )
   end
 
   describe "ConfirmReminder.run/0" do
@@ -97,18 +98,17 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert email.html_body =~ "reminder=1"
     end
 
-    test "touches action updated_at after sending so next reminder is spaced", %{ap: ap} do
+    test "increments reminder_count after sending", %{ap: ap} do
       action = insert_confirming_action(ap)
       age_action(action)
 
-      before_run = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
       ConfirmReminder.run()
 
       updated = Repo.get!(Action, action.id)
-      assert NaiveDateTime.compare(updated.updated_at, before_run) != :lt
+      assert updated.reminder_count == 1
     end
 
-    test "does not send reminder for action updated recently", %{ap: ap} do
+    test "does not send reminder for action inserted recently", %{ap: ap} do
       action = insert_confirming_action(ap)
 
       ConfirmReminder.run()
@@ -120,12 +120,68 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       action = insert_confirming_action(ap)
       age_action(action)
 
-      # First run sends, touching updated_at to now
       ConfirmReminder.run()
-      # Second run should not send since updated_at is now fresh
+      # reminder_count is now 1; inserted_at is old but only 2 days elapsed since
+      # signup, not 5, so the second reminder slot is not yet due
       ConfirmReminder.run()
 
       assert length(TestEmailBackend.mailbox(action.supporter.email)) == 1
+    end
+
+    test "sends second reminder when action reaches second delay threshold", %{ap: ap, org: org} do
+      Repo.update!(
+        change(org,
+          config: %{"reminder" => %{"enabled" => true, "reminder_delays_days" => [2, 5]}}
+        )
+      )
+
+      action = insert_confirming_action(ap)
+      # Simulate: 6 days since signup, first reminder already sent
+      set_action_age_days(action, 6)
+
+      Repo.update_all(
+        from(a in Action, where: a.id == ^action.id),
+        set: [reminder_count: 1]
+      )
+
+      ConfirmReminder.run()
+
+      [email] = TestEmailBackend.mailbox(action.supporter.email)
+      assert email.subject == "Please confirm your action"
+
+      updated = Repo.get!(Action, action.id)
+      assert updated.reminder_count == 2
+    end
+
+    test "does not send more than the configured number of reminders", %{ap: ap} do
+      action = insert_confirming_action(ap)
+      age_action(action)
+
+      # Simulate both reminders already sent
+      Repo.update_all(
+        from(a in Action, where: a.id == ^action.id),
+        set: [reminder_count: 2]
+      )
+
+      ConfirmReminder.run()
+
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
+    end
+
+    test "does not send reminder for action older than max_age_days", %{ap: ap, org: org} do
+      Repo.update!(
+        change(org,
+          config: %{"reminder" => %{"enabled" => true, "max_age_days" => 7}}
+        )
+      )
+
+      action = insert_confirming_action(ap)
+      # 10 days old — beyond the 7-day max age
+      set_action_age_days(action, 10)
+
+      ConfirmReminder.run()
+
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
     test "does not send reminder if org has supporter_confirm disabled", %{ap: ap, org: org} do
@@ -151,15 +207,16 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
-    test "respects per-org delay_days config", %{ap: ap, org: org} do
-      Repo.update!(change(org, config: %{"reminder" => %{"delay_days" => 5}}))
+    test "respects per-org reminder_delays_days config", %{ap: ap, org: org} do
+      Repo.update!(
+        change(org,
+          config: %{"reminder" => %{"enabled" => true, "reminder_delays_days" => [5, 10]}}
+        )
+      )
 
       action = insert_confirming_action(ap)
-
-      Repo.update_all(
-        from(a in Action, where: a.id == ^action.id),
-        set: [updated_at: DateTime.add(DateTime.utc_now(), -2 * 86400, :second)]
-      )
+      # 3 days old — not yet past the first 5-day delay
+      set_action_age_days(action, 3)
 
       ConfirmReminder.run()
 
