@@ -94,6 +94,12 @@ defmodule Proca.Stage.EmailSupporter do
             |> Message.put_batch_key(action_page_id)
             |> Message.put_batcher(:thank_you)
 
+          send_repeat_confirm?(action_page_id, action_id) and not too_many_retries?(message) ->
+            message
+            |> Message.update_data(fn _ -> action end)
+            |> Message.put_batch_key(action_page_id)
+            |> Message.put_batcher(:supporter_confirm)
+
           true ->
             ignore(message)
         end
@@ -354,6 +360,29 @@ defmodule Proca.Stage.EmailSupporter do
         a.id == ^action_id and
           a.with_consent and
           ap.id == ^action_page_id and
+          (not is_nil(o.supporter_confirm_template) or
+             not is_nil(c.supporter_confirm_template) or
+             not is_nil(ap.supporter_confirm_template)) and
+          not is_nil(o.email_backend_id) and
+          not is_nil(o.email_from)
+    )
+    |> Repo.exists?()
+  end
+
+  def send_repeat_confirm?(action_page_id, action_id) do
+    from(
+      a in Action,
+      join: ap in ActionPage,
+      on: a.action_page_id == ap.id,
+      join: o in Org,
+      on: o.id == ap.org_id,
+      join: c in assoc(ap, :campaign),
+      where:
+        a.id == ^action_id and
+          a.with_consent and
+          ap.id == ^action_page_id and
+          a.processing_status == :repeat and
+          is_nil(ap.duplicate_template) and
           (not is_nil(o.supporter_confirm_template) or
              not is_nil(c.supporter_confirm_template) or
              not is_nil(ap.supporter_confirm_template)) and
