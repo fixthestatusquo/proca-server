@@ -33,6 +33,21 @@ defmodule Proca.Supporter.ConfirmReminder do
     |> Enum.each(&process_org/1)
   end
 
+  @doc """
+  Returns `{org, [action]}` pairs that would receive reminders on the next run.
+  Used by the mix task dry-run.
+  """
+  def list_due do
+    orgs_with_confirm()
+    |> Enum.filter(&reminder_enabled?/1)
+    |> Enum.map(fn org ->
+      delays = org_reminder_delays(org)
+      max_age = org_max_age_days(org)
+      {org, due_actions(org.id, delays, max_age)}
+    end)
+    |> Enum.reject(fn {_org, actions} -> actions == [] end)
+  end
+
   defp orgs_with_confirm do
     from(o in Org,
       left_join: c in assoc(o, :campaigns),
