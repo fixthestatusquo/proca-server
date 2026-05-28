@@ -88,17 +88,17 @@ defmodule Proca.Stage.EmailSupporter do
             |> Message.put_batch_key(action_page_id)
             |> Message.put_batcher(:duplicate)
 
-          send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) ->
-            message
-            |> Message.update_data(fn _ -> action end)
-            |> Message.put_batch_key(action_page_id)
-            |> Message.put_batcher(:thank_you)
-
           send_repeat_confirm?(action_page_id, action_id) and not too_many_retries?(message) ->
             message
             |> Message.update_data(fn _ -> action end)
             |> Message.put_batch_key(action_page_id)
             |> Message.put_batcher(:supporter_confirm)
+
+          send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) ->
+            message
+            |> Message.update_data(fn _ -> action end)
+            |> Message.put_batch_key(action_page_id)
+            |> Message.put_batcher(:thank_you)
 
           true ->
             ignore(message)
