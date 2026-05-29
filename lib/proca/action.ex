@@ -33,6 +33,7 @@ defmodule Proca.Action do
 
     field :processing_status, ActionProcessingStatus, default: :new
     field :testing, :boolean, default: false
+    field :reminder_count, :integer, default: 0
 
     timestamps()
   end
