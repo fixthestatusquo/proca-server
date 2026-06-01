@@ -27,7 +27,8 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       Repo.update!(
         change(org,
           supporter_confirm: true,
-          supporter_confirm_template: "supporter_confirm"
+          supporter_confirm_template: "supporter_confirm",
+          config: %{"reminder" => %{"enabled" => true}}
         )
       )
 
@@ -69,6 +70,13 @@ defmodule Proca.Supporter.ConfirmReminderTest do
     Repo.update_all(
       from(a in Action, where: a.id == ^action.id),
       set: [updated_at: @old_timestamp]
+    )
+  end
+
+  defp expire_action(action) do
+    Repo.update_all(
+      from(a in Action, where: a.id == ^action.id),
+      set: [inserted_at: @old_timestamp, updated_at: @old_timestamp]
     )
   end
 
@@ -152,7 +160,7 @@ defmodule Proca.Supporter.ConfirmReminderTest do
     end
 
     test "respects per-org delay_days config", %{ap: ap, org: org} do
-      Repo.update!(change(org, config: %{"reminder" => %{"delay_days" => 5}}))
+      Repo.update!(change(org, config: %{"reminder" => %{"enabled" => true, "delay_days" => 5}}))
 
       action = insert_confirming_action(ap)
 
@@ -188,6 +196,31 @@ defmodule Proca.Supporter.ConfirmReminderTest do
 
       [email] = TestEmailBackend.mailbox(action.supporter.email)
       assert email.subject == "Please confirm your action"
+    end
+
+    test "does not send reminder when reminder.enabled is not set in config", %{ap: ap, org: org} do
+      Repo.update!(change(org, config: %{}))
+
+      action = insert_confirming_action(ap)
+      age_action(action)
+
+      ConfirmReminder.run()
+
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
+    end
+
+    test "does not send reminder when action is outside max_count window", %{ap: ap, org: org} do
+      Repo.update!(
+        change(org, config: %{"reminder" => %{"enabled" => true, "delay_days" => 1, "max_count" => 2}})
+      )
+
+      action = insert_confirming_action(ap)
+      # inserted_at older than max_count * delay_days (2 days), so window is exhausted
+      expire_action(action)
+
+      ConfirmReminder.run()
+
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
   end
 end
