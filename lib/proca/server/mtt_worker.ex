@@ -384,14 +384,30 @@ defmodule Proca.Server.MTTWorker do
     })
 
     body =
-      body
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      try do
+        body
+        |> EmailTemplate.compile_string()
+        |> EmailTemplate.render_string(target_assigns)
+      catch
+        :exit, {:incorrect_format, reason} ->
+          Sentry.capture_message("Malformed mustache tag in MTT message body",
+            extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], body: body}
+          )
+          body
+      end
 
     subject =
-      subject
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      try do
+        subject
+        |> EmailTemplate.compile_string()
+        |> EmailTemplate.render_string(target_assigns)
+      catch
+        :exit, {:incorrect_format, reason} ->
+          Sentry.capture_message("Malformed mustache tag in MTT message subject",
+            extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], subject: subject}
+          )
+          subject
+      end
 
     html_body = Proca.Service.EmailMerge.plain_to_html(body)
 
