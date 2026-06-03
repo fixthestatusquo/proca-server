@@ -24,7 +24,7 @@ defmodule Proca.Server.MTTWorker do
 
   alias Swoosh.Email
   alias Proca.{Action, Campaign, ActionPage, Org, TargetEmail}
-  alias Proca.Action.Message
+  alias Proca.Action.{Message, MessageContent}
   alias Proca.Service.{EmailBackend, EmailTemplate, EmailMerge, EmailTemplateDirectory}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
@@ -241,6 +241,13 @@ defmodule Proca.Server.MTTWorker do
       ActionPage.all(preload: [:org], by_ids: action_pages_ids)
       |> Enum.into(%{})
 
+    compiled_contents =
+      msgs
+      |> Enum.map(& &1.message_content)
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.map(fn mc -> {mc.id, MessageContent.compile(mc)} end)
+      |> Map.new()
+
     msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 
     target_locales = Enum.uniq(Map.keys(msgs_per_locale))
@@ -282,7 +289,9 @@ defmodule Proca.Server.MTTWorker do
           for e <- chunk do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
-            message_content = change_test_subject(e.message_content, e.action.testing)
+            message_content =
+              compiled_contents[e.message_content.id]
+              |> change_test_subject(e.action.testing)
 
             cc_recipients =
               if campaign.mtt.cc_sender do
@@ -370,10 +379,9 @@ defmodule Proca.Server.MTTWorker do
 
   def put_message_content(
         email = %Email{},
-        %Action.MessageContent{subject: subject, body: body},
+        %Action.MessageContent{subject: subject, body: body, compiled: compiled},
         _template = nil
       ) do
-    # Render the raw body
     target_assigns = camel_case_keys(%{target: email.assigns[:target]})
 
     Sentry.Context.set_extra_context(%{
@@ -383,31 +391,39 @@ defmodule Proca.Server.MTTWorker do
       message_body: body
     })
 
-    body =
-      try do
-        body
-        |> EmailTemplate.compile_string()
-        |> EmailTemplate.render_string(target_assigns)
-      catch
-        :exit, {:incorrect_format, reason} ->
-          Sentry.capture_message("Malformed mustache tag in MTT message body",
-            extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], body: body}
-          )
-          body
+    {compiled_subject, compiled_body} =
+      case compiled do
+        %{subject: cs, body: cb} ->
+          {cs, cb}
+
+        nil ->
+          cs =
+            try do
+              EmailTemplate.compile_string(subject)
+            catch
+              :exit, {:incorrect_format, reason} ->
+                Sentry.capture_message("Malformed mustache tag in MTT message subject",
+                  extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], subject: subject}
+                )
+                nil
+            end
+
+          cb =
+            try do
+              EmailTemplate.compile_string(body)
+            catch
+              :exit, {:incorrect_format, reason} ->
+                Sentry.capture_message("Malformed mustache tag in MTT message body",
+                  extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], body: body}
+                )
+                nil
+            end
+
+          {cs, cb}
       end
 
-    subject =
-      try do
-        subject
-        |> EmailTemplate.compile_string()
-        |> EmailTemplate.render_string(target_assigns)
-      catch
-        :exit, {:incorrect_format, reason} ->
-          Sentry.capture_message("Malformed mustache tag in MTT message subject",
-            extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], subject: subject}
-          )
-          subject
-      end
+    body = if compiled_body, do: EmailTemplate.render_string(compiled_body, target_assigns), else: body
+    subject = if compiled_subject, do: EmailTemplate.render_string(compiled_subject, target_assigns), else: subject
 
     html_body = Proca.Service.EmailMerge.plain_to_html(body)
 
