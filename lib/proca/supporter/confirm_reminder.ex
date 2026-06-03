@@ -3,12 +3,16 @@ defmodule Proca.Supporter.ConfirmReminder do
   Sends confirmation reminder emails to supporters stuck in :confirming state.
 
   Per-org config (stored in org.config["reminder"]):
+    - "enabled"    - must be true to send reminders (opt-in, default disabled)
     - "delay_days" - days to wait before sending first reminder, and between
                      subsequent reminders (default 2)
+    - "max_count"  - maximum number of reminders to send per action (default 3)
 
   Timing is tracked via action.updated_at. When a reminder is sent the action's
   updated_at is touched, so the next reminder is spaced by delay_days from that
-  point. supporter_confirm can be enabled at the org or campaign level.
+  point. The total reminder window is capped at delay_days * max_count days from
+  action.inserted_at, so no migration is needed to track reminder count.
+  supporter_confirm can be enabled at the org or campaign level.
   """
 
   import Ecto.Query
@@ -20,10 +24,26 @@ defmodule Proca.Supporter.ConfirmReminder do
   alias Swoosh.Email
 
   @default_delay_days 2
+  @default_max_count 3
 
   def run do
     orgs_with_confirm()
     |> Enum.each(&process_org/1)
+  end
+
+  @doc """
+  Returns `{org, [action]}` pairs that would receive reminders on the next run.
+  Used by the mix task dry-run.
+  """
+  def list_due do
+    orgs_with_confirm()
+    |> Enum.filter(&reminder_enabled?/1)
+    |> Enum.map(fn org ->
+      delay_days = org_delay_days(org)
+      max_count = org_max_count(org)
+      {org, due_actions(org.id, delay_days, max_count)}
+    end)
+    |> Enum.reject(fn {_org, actions} -> actions == [] end)
   end
 
   defp orgs_with_confirm do
@@ -39,19 +59,26 @@ defmodule Proca.Supporter.ConfirmReminder do
   end
 
   defp process_org(org) do
-    delay_days = org_delay_days(org)
-    actions = due_actions(org.id, delay_days)
+    if reminder_enabled?(org) do
+      delay_days = org_delay_days(org)
+      max_count = org_max_count(org)
+      actions = due_actions(org.id, delay_days, max_count)
 
-    if actions != [] do
-      Logger.info(
-        "ConfirmReminder: sending #{length(actions)} reminders for org #{org.name}"
-      )
+      if actions != [] do
+        Logger.info(
+          "ConfirmReminder: sending #{length(actions)} reminders for org #{org.name}"
+        )
 
-      send_for_org(org, actions)
+        send_for_org(org, actions)
+      end
+    else
+      Logger.debug("ConfirmReminder: skipping org #{org.name} (reminder not enabled in config)")
     end
   end
 
-  defp due_actions(org_id, delay_days) do
+  defp due_actions(org_id, delay_days, max_count) do
+    max_days = delay_days * max_count
+
     action_ids =
       from(a in Action,
         join: s in assoc(a, :supporter),
@@ -63,6 +90,7 @@ defmodule Proca.Supporter.ConfirmReminder do
         where: s.processing_status == :confirming,
         where: a.with_consent == true,
         where: a.updated_at < ago(^delay_days, "day"),
+        where: a.inserted_at > ago(^max_days, "day"),
         select: a.id
       )
       |> Repo.all()
@@ -148,9 +176,21 @@ defmodule Proca.Supporter.ConfirmReminder do
     )
   end
 
+  defp reminder_enabled?(%Org{config: config}) do
+    get_in(config, ["reminder", "enabled"]) == true
+  end
+
   defp org_delay_days(%Org{config: config}) do
     case get_in(config, ["reminder", "delay_days"]) do
       nil -> @default_delay_days
+      v when is_integer(v) -> v
+      v when is_binary(v) -> String.to_integer(v)
+    end
+  end
+
+  defp org_max_count(%Org{config: config}) do
+    case get_in(config, ["reminder", "max_count"]) do
+      nil -> @default_max_count
       v when is_integer(v) -> v
       v when is_binary(v) -> String.to_integer(v)
     end
