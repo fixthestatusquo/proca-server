@@ -44,6 +44,20 @@ The other special link to _reject_ a supporter can be used to mark a _confirming
 
 Proca also supports confirming of each action separately (_action confirmation_), this was not used much in real world. However, in this case we don't care if the supporter email is real, we care more about the action content, for example, custom fields, MTT body, attached file. We would put actions in a wait/confirming state until such actions are moderated/checked and accepted. **Partly unimplemented**: There is no api or link format to confirm or reject a particular action (could be easily added but needs a proper use-case).
 
+## Duplicate actions
+
+When the same supporter (matched by contact data fingerprint) submits more than one action on the same action page (same campaign, same page), the second and subsequent actions are marked as duplicates. The supporter's `dupe_rank` is set to a value > 0, and the action's `processing_status` is set to `:repeat` (value 5).
+
+Cross-page duplicates (same supporter, different page in the same campaign) are NOT marked as `:repeat` — they reach `:delivered` status with `dupe_rank > 0` in the contact payload.
+
+Duplicate (`:repeat`) actions are:
+
+- **Delivered to the queue**: On first processing, a `:repeat` action is still emitted to the `cus.X.deliver` exchange with `dupeRank > 0` in the contact payload. Consumers can use `dupeRank` to decide how to handle them (e.g. skip CRM sync but send a different email).
+- **Exported**: `exportActions` / `actions` / `contacts` queries include `:repeat` actions. The `contact.dupeRank` field in the export response will be > 0 for these.
+- **Requeue-able**: The `requeueActions` mutation treats `:repeat` actions the same as `:delivered` — they can be sent to any delivery destination.
+
+A bouncing email or rejection will mark a supporter as `:rejected`, which in turn rejects all their associated actions regardless of dupe status.
+
 ## Delivery
 
 Delivery of actions means that action is ready to be served and consumed. Actions can be delivered using internal and external mechanisms.

@@ -33,6 +33,8 @@ defmodule Proca.Stage.Support do
     :action_confirm
   end
 
+  def action_stage(%Action{processing_status: :repeat, supporter: %Supporter{}}), do: :deliver
+
   def action_stage(%Action{supporter: %Supporter{}}), do: nil
 
   def bulk_actions_data(action_ids, stage \\ :deliver, org_id \\ nil) do
