@@ -361,6 +361,11 @@ defmodule ProcaWeb.Resolvers.Org do
     end
   end
 
+  def deactivate_all_keys(_, _, %{context: %{org: org}}) do
+    PublicKey.deactivate_all_for(org)
+    {:ok, %{status: :success}}
+  end
+
   def delete_contact(_parent, %{contact_ref: ref_b64}, %{context: %{org: org}}) do
     case Supporter.base_decode(ref_b64) do
       {:ok, fingerprint} ->

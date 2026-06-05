@@ -319,6 +319,17 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.activate_key/3)
     end
 
+    @desc "Deactivate all encryption keys for the org. Use before revoking access or rotating keys."
+    field :deactivate_all_keys, type: non_null(:activate_key_result) do
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([Proca.Permission.add([:change_org_settings, :export_contacts])])
+
+      arg(:org_name, non_null(:string))
+
+      resolve(&Resolvers.Org.deactivate_all_keys/3)
+    end
+
     @desc """
     Anonymize personal data (GDPR right-to-erasure).
     Nulls PII fields on supporter and deletes all contact records.
