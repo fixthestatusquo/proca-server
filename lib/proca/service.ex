@@ -206,7 +206,7 @@ defmodule Proca.Service do
     case Tesla.request(client, method: req.method, url: url, body: req.body) do
       {:ok, response = %{status: code}} when code in [200, 201] -> {:ok, code, response.body}
       {:ok, %{status: code}} when code in 500..599 -> {:error, "HTTP#{code}"}
-      {:ok, response} -> {:ok, response.status}
+      {:ok, response} -> {:ok, response.status, response.body}
       {:error, _reason} = e -> e
       # Weird but it seems this error is sent up from Mint
       {:error, _, %{reason: reason}} -> {:error, reason}

@@ -48,7 +48,7 @@ defmodule Proca.Service.Brevo do
           {:ok, acc ++ mapped}
         end
 
-      {:ok, 401} ->
+      {:ok, 401, _} ->
         {:error, "not authenticated"}
 
       {:error, err} ->
@@ -79,13 +79,14 @@ defmodule Proca.Service.Brevo do
   def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv}) do
     body = build_payload(email)
     custom_id = Map.get(email.private, :custom_id)
+    debug("Brevo deliver custom_id=#{custom_id} payload=#{inspect(body)}")
 
     case Service.json_request(srv, "#{@api_url}/smtp/email", auth: :api_key, post: body) do
-      {:ok, _, _} ->
+      {:ok, code, _} when code in [200, 201] ->
         :ok
 
-      {:ok, code} ->
-        error("Brevo deliver HTTP#{code} custom_id=#{custom_id}")
+      {:ok, code, resp_body} ->
+        error("Brevo deliver HTTP#{code} custom_id=#{custom_id} response=#{inspect(resp_body)}")
         {:error, "HTTP#{code}"}
 
       {:error, reason} ->
