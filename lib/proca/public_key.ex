@@ -77,10 +77,17 @@ defmodule Proca.PublicKey do
     |> Multi.run(:active_key, fn _repo, _ -> {:ok, PublicKey.one(id: id, preload: [:org])} end)
   end
 
-  @spec deactivate_all_for(%Org{}) :: {non_neg_integer(), nil}
-  def deactivate_all_for(%Org{id: org_id}) do
-    from(pk in PublicKey, where: pk.org_id == ^org_id and pk.active)
-    |> Repo.update_all(set: [active: false])
+  @spec deactivate_all_for(%Org{}) :: Ecto.Multi.t()
+  def deactivate_all_for(%Org{id: org_id} = org) do
+    alias Ecto.Multi
+
+    Multi.new()
+    |> Multi.update_all(
+      :deactivated_keys,
+      fn _ -> from(pk in PublicKey, where: pk.org_id == ^org_id and pk.active) end,
+      set: [active: false]
+    )
+    |> Multi.run(:org, fn _repo, _ -> {:ok, org} end)
   end
 
   def build_for(org, name \\ "generated") do

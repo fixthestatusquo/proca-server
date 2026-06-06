@@ -176,6 +176,10 @@ defmodule Proca.Server.Notify do
     key_activated(key)
   end
 
+  def multi(:deactivated_all_keys, %{org: org}, _opts) do
+    Proca.Server.Keys.remove_key(org)
+  end
+
   def multi(:upsert_campaign, records, opts) do
     {campaign, pages_map} = Map.pop(records, :campaign)
 

@@ -362,8 +362,11 @@ defmodule ProcaWeb.Resolvers.Org do
   end
 
   def deactivate_all_keys(_, _, %{context: %{org: org}}) do
-    PublicKey.deactivate_all_for(org)
-    {:ok, %{status: :success}}
+    case PublicKey.deactivate_all_for(org)
+         |> Repo.transaction_and_notify(:deactivated_all_keys) do
+      {:ok, _} -> {:ok, %{status: :success}}
+      {:error, error} -> {:error, error}
+    end
   end
 
   def delete_contact(_parent, %{contact_ref: ref_b64}, %{context: %{org: org}}) do
