@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -eu
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/rpc"
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <target-email>" >&2
+  exit 1
+fi
+
+target="$1"
+
+rpc <<END
+case Proca.Action.MessageExport.export("$target") do
+  {:ok, csv} -> IO.puts(csv)
+  {:error, reason} -> IO.puts(:stderr, reason); System.halt(1)
+end
+END
