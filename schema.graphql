@@ -500,6 +500,9 @@ type RootMutationType {
     id: Int!
   ): ActivateKeyResult!
 
+  "Deactivate all encryption keys for the org. Use before revoking access or rotating keys."
+  deactivateAllKeys(orgName: String!): ActivateKeyResult!
+
   """
   Anonymize personal data (GDPR right-to-erasure).
   Nulls PII fields on supporter and deletes all contact records.
@@ -1014,6 +1017,9 @@ input EmailTemplateInput {
 
   "template locale"
   locale: String
+
+  "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html\/subject\/text."
+  externalId: String
 
   "Subject text"
   subject: String
