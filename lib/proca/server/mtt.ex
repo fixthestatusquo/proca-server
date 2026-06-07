@@ -72,6 +72,11 @@ defmodule Proca.Server.MTT do
     end
 
     {:noreply, %{workers: workers}}
+  rescue
+    e in DBConnection.ConnectionError ->
+      Logger.warning("MTT work cycle skipped: DB connection error: #{Exception.message(e)}")
+      schedule_work()
+      {:noreply, %{workers: w}}
   end
 
   @impl true
