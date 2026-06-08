@@ -120,6 +120,15 @@ defmodule Proca.Server.Keys do
     {:noreply, {ioid, sensitive_data_wrap(keys2), nonce}}
   end
 
+  @impl true
+  def handle_cast(
+        {:remove_key, org_id},
+        {ioid, keys, nonce}
+      ) do
+    keys2 = keys.() |> Map.delete(org_id)
+    {:noreply, {ioid, sensitive_data_wrap(keys2), nonce}}
+  end
+
   # SERVER API
 
   def encryption(from_to) do
@@ -133,6 +142,11 @@ defmodule Proca.Server.Keys do
 
   def update_key(%Org{}, pk = %{active: false}) do
     raise "Tried to use an inactive key id: #{pk.id}"
+  end
+
+  def remove_key(%Org{id: org_id}) do
+    GenServer.cast(__MODULE__, {:remove_key, org_id})
+    :ok
   end
 
   # HELPER FUNCTIONS
