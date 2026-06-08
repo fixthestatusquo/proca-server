@@ -43,7 +43,6 @@ defmodule Mix.Tasks.Proca.ExportTargetMessages do
         {:ok, csv} -> IO.puts(csv)
         {:error, reason} -> Mix.shell().info(reason)
       end
-
-    Repo.all(query)
+    end)
   end
 end
