@@ -19,6 +19,7 @@ defmodule Proca.Server.Stats do
   defstruct supporters: 0, action: %{}, area: %{}, org: %{}
 
   use GenServer
+  require Logger
   alias Proca.Server.Stats
   alias Proca.{Action, Supporter, ActionPage, Campaign}
   alias Proca.Repo
@@ -43,7 +44,16 @@ defmodule Proca.Server.Stats do
   def handle_continue(:first_load, state) do
     unless state.query_runs do
       me = self()
-      Task.start_link(fn -> GenServer.cast(me, {:update_campaigns, calculate()}) end)
+
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_campaigns, calculate()})
+        rescue
+          e in DBConnection.ConnectionError ->
+            Logger.warning("Stats calculate skipped: DB connection error: #{Exception.message(e)}")
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
     end
 
     if state.interval > 0 do
@@ -60,7 +70,16 @@ defmodule Proca.Server.Stats do
   def handle_info(:sync, state) do
     unless state.query_runs do
       me = self()
-      Task.start_link(fn -> GenServer.cast(me, {:update_live_campaigns, calculate_live()}) end)
+
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_live_campaigns, calculate_live()})
+        rescue
+          e in DBConnection.ConnectionError ->
+            Logger.warning("Stats sync skipped: DB connection error: #{Exception.message(e)}")
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
     end
 
     if state.interval > 0 do
@@ -80,6 +99,11 @@ defmodule Proca.Server.Stats do
   @impl true
   def handle_cast({:update_live_campaigns, live_campaign}, state) do
     {:noreply, %{state | campaign: Map.merge(state.campaign, live_campaign), query_runs: false}}
+  end
+
+  @impl true
+  def handle_cast(:stats_query_failed, state) do
+    {:noreply, %{state | query_runs: false}}
   end
 
   @impl true

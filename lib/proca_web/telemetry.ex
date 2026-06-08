@@ -108,6 +108,9 @@ defmodule ProcaWeb.Telemetry do
     :telemetry.execute([:proca, :mtt], %{campaigns_running: length(no_drip_delivery)}, %{
       drip_delivery: false
     })
+  rescue
+    e in DBConnection.ConnectionError ->
+      Logger.warning("count_sendable_messages skipped: DB connection error: #{Exception.message(e)}")
   end
 
   defp metrics do
