@@ -195,6 +195,7 @@ defmodule Mix.Tasks.Proca.ExportTargetMessages do
       else
         where(base, [m], m.dupe_rank == 0)
       end
-    end)
+
+    Repo.all(query)
   end
 end
