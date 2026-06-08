@@ -138,7 +138,7 @@ defmodule Proca.Service.Detail do
       {:ok, 200, data} when is_bitstring(data) ->
         {:error, :bad_content_type}
 
-      {:ok, 404} ->
+      {:ok, 404, _} ->
         {:error, :not_found}
 
       other ->

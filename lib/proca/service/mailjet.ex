@@ -50,7 +50,7 @@ defmodule Proca.Service.Mailjet do
           templates -> list_templates(org, lst ++ templates)
         end
 
-      {:ok, 401} ->
+      {:ok, 401, _} ->
         {:error, "not authenticated"}
 
       {:error, err} ->
