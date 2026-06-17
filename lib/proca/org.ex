@@ -41,6 +41,8 @@ defmodule Proca.Org do
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
+    # backend used for transactional (non-MTT) emails; falls back to email_backend if unset
+    belongs_to :transactional_email_backend, Proca.Service
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
@@ -112,6 +114,12 @@ defmodule Proca.Org do
     ])
     |> cast_backend(
       :email_backend,
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      attrs,
+      org
+    )
+    |> cast_backend(
+      :transactional_email_backend,
       [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
       attrs,
       org
@@ -266,6 +274,15 @@ defmodule Proca.Org do
   def active_public_key(org) do
     Proca.Repo.one(from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1))
   end
+
+  @doc """
+  Returns org with `email_backend` swapped for `transactional_email_backend`, for
+  sending transactional (non-MTT) emails. Falls back to `email_backend` if no
+  transactional backend is configured. Requires both to be preloaded.
+  """
+  def for_transactional_email(%Org{transactional_email_backend: nil} = org), do: org
+  def for_transactional_email(%Org{transactional_email_backend: backend} = org),
+    do: %{org | email_backend: backend}
 
   def put_service(%Org{} = org, service), do: put_service(change(org), service)
 
