@@ -44,4 +44,45 @@ defmodule ProcaWeb.OrgMutationsTest do
 
     assert {:error, %Ecto.Changeset{errors: [{:title, {"can't be blank", _}} | _]}} = er
   end
+
+  describe "update_org_processing - transactional email backend" do
+    setup do
+      org = Factory.insert(:org)
+      transactional_service = Factory.insert(:email_backend, org: org, name: :brevo)
+
+      %{org: org, transactional_service: transactional_service}
+    end
+
+    test "sets transactional_email_backend and transactional_email_budget", %{org: org} do
+      assert {:ok, updated} =
+               ProcaWeb.Resolvers.Org.update_org_processing(
+                 0,
+                 %{
+                   name: org.name,
+                   transactional_email_backend: :brevo,
+                   transactional_email_budget: 200
+                 },
+                 %{context: %{org: org}}
+               )
+
+      updated = Proca.Repo.preload(updated, [:transactional_email_backend])
+
+      assert updated.transactional_email_backend.name == :brevo
+      assert updated.transactional_email_budget == 200
+    end
+
+    test "rejects a backend the org doesn't actually have", %{org: org} do
+      assert {:error, changeset} =
+               ProcaWeb.Resolvers.Org.update_org_processing(
+                 0,
+                 %{name: org.name, transactional_email_backend: :mailjet},
+                 %{context: %{org: org}}
+               )
+
+      assert Enum.any?(changeset.errors, fn
+               {:transactional_email_backend, {"no such service", _}} -> true
+               _ -> false
+             end)
+    end
+  end
 end

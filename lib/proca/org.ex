@@ -43,6 +43,10 @@ defmodule Proca.Org do
     belongs_to :email_backend, Proca.Service
     # backend used for transactional (non-MTT) emails; falls back to email_backend if unset
     belongs_to :transactional_email_backend, Proca.Service
+    # how many transactional emails to send via transactional_email_backend before
+    # falling back to email_backend (warming up a new backend / capping its usage);
+    # nil means no limit
+    field :transactional_email_budget, :integer
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
@@ -110,7 +114,8 @@ defmodule Proca.Org do
       :custom_action_confirm,
       :custom_action_deliver,
       :custom_event_deliver,
-      :action_schema_version
+      :action_schema_version,
+      :transactional_email_budget
     ])
     |> cast_backend(
       :email_backend,
@@ -182,7 +187,8 @@ defmodule Proca.Org do
     :disable
   end
 
-  defp cast_backend_service(:email_backend, :system, _org) do
+  defp cast_backend_service(type, :system, _org)
+       when type in [:email_backend, :transactional_email_backend] do
     Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
   end
 
@@ -277,12 +283,38 @@ defmodule Proca.Org do
 
   @doc """
   Returns org with `email_backend` swapped for `transactional_email_backend`, for
-  sending transactional (non-MTT) emails. Falls back to `email_backend` if no
-  transactional backend is configured. Requires both to be preloaded.
+  sending transactional (non-MTT) emails. Falls back to `email_backend`:
+
+  - if no transactional backend is configured, or
+  - once `transactional_email_budget` transactional emails have been sent
+    (tracked in memory by `Proca.Service.EmailBudget`) - this lets an org warm
+    up a new backend, or cap its usage, before falling back.
+
+  Requires both backends to be preloaded. `count` is the number of emails
+  about to be sent in this call, so a multi-recipient send is charged against
+  the budget all at once.
   """
-  def for_transactional_email(%Org{transactional_email_backend: nil} = org), do: org
-  def for_transactional_email(%Org{transactional_email_backend: backend} = org),
-    do: %{org | email_backend: backend}
+  def for_transactional_email(org, count \\ 1)
+
+  def for_transactional_email(%Org{transactional_email_backend: nil} = org, _count), do: org
+
+  def for_transactional_email(
+        %Org{transactional_email_backend: %Ecto.Association.NotLoaded{}} = org,
+        _count
+      ),
+      do: org
+
+  def for_transactional_email(
+        %Org{id: id, transactional_email_backend: backend, transactional_email_budget: budget} =
+          org,
+        count
+      ) do
+    if budget == nil or Proca.Service.EmailBudget.add(id, count) <= budget do
+      %{org | email_backend: backend}
+    else
+      org
+    end
+  end
 
   def put_service(%Org{} = org, service), do: put_service(change(org), service)
 

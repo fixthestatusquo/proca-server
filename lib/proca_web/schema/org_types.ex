@@ -230,6 +230,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, non_null(:string))
       @desc "Use a particular owned service type for sending emails"
       arg(:email_backend, :service_name)
+
+      @desc "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+      arg(:transactional_email_backend, :service_name)
+
+      @desc "How many transactional emails to send via transactional_email_backend before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+      arg(:transactional_email_budget, :integer)
       @desc "Envelope FROM email when sending emails"
       arg(:email_from, :string)
 
@@ -474,6 +480,12 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Use a particular owned service type for sending emails"
     field :email_backend, :service_name
 
+    @desc "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+    field :transactional_email_backend, :service_name
+
+    @desc "How many transactional emails to send via transactional_email_backend before falling back to email_backend. Null means no limit."
+    field :transactional_email_budget, :integer
+
     @desc "Is the supporter required to double opt in their action (and associated personal data)?"
     field :supporter_confirm, non_null(:boolean)
     @desc "The email template name that will be used to send the action DOI request"
@@ -518,6 +530,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     @desc "template locale"
     field :locale, :string
+
     @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text."
     field :external_id, :string
     @desc "Subject text"

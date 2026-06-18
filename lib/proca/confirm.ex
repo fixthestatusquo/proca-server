@@ -229,7 +229,7 @@ defmodule Proca.Confirm do
 
     instance =
       Org.one([preload: [:email_backend, :transactional_email_backend]] ++ [:instance])
-      |> Org.for_transactional_email()
+      |> Org.for_transactional_email(length(emails))
 
     recipients =
       emails
