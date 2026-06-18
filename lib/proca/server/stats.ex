@@ -50,7 +50,9 @@ defmodule Proca.Server.Stats do
           GenServer.cast(me, {:update_campaigns, calculate()})
         rescue
           e in DBConnection.ConnectionError ->
-            Logger.warning("Stats calculate skipped: DB connection error: #{Exception.message(e)}")
+            msg = "Stats calculate skipped: DB connection error: #{Exception.message(e)}"
+            Logger.warning(msg)
+            Sentry.capture_message(msg, level: "warning")
             GenServer.cast(me, :stats_query_failed)
         end
       end)
@@ -76,7 +78,9 @@ defmodule Proca.Server.Stats do
           GenServer.cast(me, {:update_live_campaigns, calculate_live()})
         rescue
           e in DBConnection.ConnectionError ->
-            Logger.warning("Stats sync skipped: DB connection error: #{Exception.message(e)}")
+            msg = "Stats sync skipped: DB connection error: #{Exception.message(e)}"
+            Logger.warning(msg)
+            Sentry.capture_message(msg, level: "warning")
             GenServer.cast(me, :stats_query_failed)
         end
       end)
@@ -179,7 +183,7 @@ defmodule Proca.Server.Stats do
       from(c in Campaign, where: c.status == :live, select: c.id)
       |> Repo.all(timeout: 10_000)
 
-    do_calculate(campaign_ids, 10_000)
+    do_calculate(campaign_ids, 30_000)
   end
 
   defp do_calculate([], _timeout), do: %{}
