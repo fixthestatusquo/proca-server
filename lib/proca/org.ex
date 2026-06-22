@@ -41,12 +41,9 @@ defmodule Proca.Org do
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
-    # backend used for transactional (non-MTT) emails; falls back to email_backend if unset
+    # backend used for transactional (non-MTT) emails; falls back to email_backend if unset.
+    # See `transactional_email_budget` on `Proca.Service` for warming/capping its usage.
     belongs_to :transactional_email_backend, Proca.Service
-    # how many transactional emails to send via transactional_email_backend before
-    # falling back to email_backend (warming up a new backend / capping its usage);
-    # nil means no limit
-    field :transactional_email_budget, :integer
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
@@ -114,8 +111,7 @@ defmodule Proca.Org do
       :custom_action_confirm,
       :custom_action_deliver,
       :custom_event_deliver,
-      :action_schema_version,
-      :transactional_email_budget
+      :action_schema_version
     ])
     |> cast_backend(
       :email_backend,
@@ -286,9 +282,9 @@ defmodule Proca.Org do
   sending transactional (non-MTT) emails. Falls back to `email_backend`:
 
   - if no transactional backend is configured, or
-  - once `transactional_email_budget` transactional emails have been sent
-    (tracked in memory by `Proca.Service.EmailBudget`) - this lets an org warm
-    up a new backend, or cap its usage, before falling back.
+  - once the backend's `transactional_email_budget` transactional emails have
+    been sent (tracked in memory by `Proca.Service.EmailBudget`) - this lets
+    an org warm up a new backend, or cap its usage, before falling back.
 
   Requires both backends to be preloaded. `count` is the number of emails
   about to be sent in this call, so a multi-recipient send is charged against
@@ -305,8 +301,10 @@ defmodule Proca.Org do
       do: org
 
   def for_transactional_email(
-        %Org{id: id, transactional_email_backend: backend, transactional_email_budget: budget} =
-          org,
+        %Org{
+          id: id,
+          transactional_email_backend: %Service{transactional_email_budget: budget} = backend
+        } = org,
         count
       ) do
     if budget == nil or Proca.Service.EmailBudget.add(id, count) <= budget do

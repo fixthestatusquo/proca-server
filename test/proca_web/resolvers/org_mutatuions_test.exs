@@ -53,22 +53,29 @@ defmodule ProcaWeb.OrgMutationsTest do
       %{org: org, transactional_service: transactional_service}
     end
 
-    test "sets transactional_email_backend and transactional_email_budget", %{org: org} do
+    test "sets transactional_email_backend, and budget lives on the service", %{
+      org: org,
+      transactional_service: transactional_service
+    } do
       assert {:ok, updated} =
                ProcaWeb.Resolvers.Org.update_org_processing(
                  0,
-                 %{
-                   name: org.name,
-                   transactional_email_backend: :brevo,
-                   transactional_email_budget: 200
-                 },
+                 %{name: org.name, transactional_email_backend: :brevo},
                  %{context: %{org: org}}
                )
 
       updated = Proca.Repo.preload(updated, [:transactional_email_backend])
 
       assert updated.transactional_email_backend.name == :brevo
-      assert updated.transactional_email_budget == 200
+
+      assert {:ok, service} =
+               ProcaWeb.Resolvers.Service.upsert_service(
+                 0,
+                 %{id: transactional_service.id, input: %{transactional_email_budget: 200}},
+                 %{context: %{org: org}}
+               )
+
+      assert service.transactional_email_budget == 200
     end
 
     test "rejects a backend the org doesn't actually have", %{org: org} do

@@ -147,6 +147,9 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     the email backend is authorized to send from (SPF/DKIM configured).
     """
     field :sending_from, :string
+
+    @desc "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+    field :transactional_email_budget, :integer
   end
 
   input_object :service_input do
@@ -175,5 +178,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
 
     @desc "Verified sending address for this backend (overrides org email_from as the envelope From domain)"
     field :sending_from, :string
+
+    @desc "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+    field :transactional_email_budget, :integer
   end
 end

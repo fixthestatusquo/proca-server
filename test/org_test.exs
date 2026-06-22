@@ -45,9 +45,9 @@ defmodule OrgTest do
 
     test "swaps in transactional_email_backend when no budget is set" do
       org = org_with_email_backend()
-      transactional = attached_service(org, :brevo)
+      transactional = %{attached_service(org, :brevo) | transactional_email_budget: nil}
 
-      org = %{org | transactional_email_backend: transactional, transactional_email_budget: nil}
+      org = %{org | transactional_email_backend: transactional}
 
       result = Org.for_transactional_email(org, 1000)
 
@@ -57,9 +57,9 @@ defmodule OrgTest do
     test "falls back to email_backend once the budget is exhausted" do
       org = org_with_email_backend()
       fallback = org.email_backend
-      transactional = attached_service(org, :ses)
+      transactional = %{attached_service(org, :ses) | transactional_email_budget: 5}
 
-      org = %{org | transactional_email_backend: transactional, transactional_email_budget: 5}
+      org = %{org | transactional_email_backend: transactional}
 
       # first 5 emails go via the transactional (warming) backend
       assert %{email_backend: %{id: id}} = Org.for_transactional_email(org, 3)
@@ -78,12 +78,12 @@ defmodule OrgTest do
 
     test "budget is tracked in memory per org id, independent of other orgs" do
       org1 = org_with_email_backend()
-      transactional1 = attached_service(org1, :ses)
-      org1 = %{org1 | transactional_email_backend: transactional1, transactional_email_budget: 1}
+      transactional1 = %{attached_service(org1, :ses) | transactional_email_budget: 1}
+      org1 = %{org1 | transactional_email_backend: transactional1}
 
       org2 = org_with_email_backend()
-      transactional2 = attached_service(org2, :ses)
-      org2 = %{org2 | transactional_email_backend: transactional2, transactional_email_budget: 1}
+      transactional2 = %{attached_service(org2, :ses) | transactional_email_budget: 1}
+      org2 = %{org2 | transactional_email_backend: transactional2}
 
       assert %{email_backend: %{id: id}} = Org.for_transactional_email(org1, 1)
       assert id == transactional1.id
