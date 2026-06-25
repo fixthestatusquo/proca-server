@@ -33,6 +33,9 @@ defmodule Proca.Application do
       # Email template directory
       {Proca.Service.EmailTemplateDirectory, []},
 
+      # In-memory counters for transactional email backend warming/budget
+      {Proca.Service.EmailBudget, []},
+
       # Processing / queue management
       {Registry, [keys: :unique, name: Proca.Pipes.Registry]},
       {Proca.Pipes.Supervisor, []},
@@ -112,7 +115,8 @@ defmodule Proca.Application do
       {Proca.Server.MTTSupervisor, []},
       {Proca.Server.MTTHourlyCron, []},
       # Confirm reminder cron
-      {Proca.Server.ConfirmReminderCron, Application.get_env(:proca, Proca.Server.ConfirmReminderCron, [])},
+      {Proca.Server.ConfirmReminderCron,
+       Application.get_env(:proca, Proca.Server.ConfirmReminderCron, [])},
       # User status
       {Proca.Users.Status, [interval: 30_000]}
     ]

@@ -89,8 +89,7 @@ defmodule ProcaWeb.Telemetry do
     Enum.each(active_campaigns, fn campaign ->
       unsent_messages =
         Message.select_by_campaign(campaign.id)
-        |> Proca.Repo.all()
-        |> length()
+        |> Proca.Repo.aggregate(:count)
 
       :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
         campaign_id: campaign.id,

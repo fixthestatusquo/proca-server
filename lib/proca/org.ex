@@ -41,6 +41,9 @@ defmodule Proca.Org do
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
+    # backend used for transactional (non-MTT) emails; falls back to email_backend if unset.
+    # See `transactional_email_budget` on `Proca.Service` for warming/capping its usage.
+    belongs_to :transactional_email_backend, Proca.Service
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
@@ -116,6 +119,12 @@ defmodule Proca.Org do
       attrs,
       org
     )
+    |> cast_backend(
+      :transactional_email_backend,
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      attrs,
+      org
+    )
     |> cast_backend(:event_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:push_backend, [:sqs, :webhook], attrs, org)
     |> cast_backend(:storage_backend, [:supabase], attrs, org)
@@ -174,7 +183,8 @@ defmodule Proca.Org do
     :disable
   end
 
-  defp cast_backend_service(:email_backend, :system, _org) do
+  defp cast_backend_service(type, :system, _org)
+       when type in [:email_backend, :transactional_email_backend] do
     Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
   end
 
@@ -265,6 +275,43 @@ defmodule Proca.Org do
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
     Proca.Repo.one(from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1))
+  end
+
+  @doc """
+  Returns org with `email_backend` swapped for `transactional_email_backend`, for
+  sending transactional (non-MTT) emails. Falls back to `email_backend`:
+
+  - if no transactional backend is configured, or
+  - once the backend's `transactional_email_budget` transactional emails have
+    been sent (tracked in memory by `Proca.Service.EmailBudget`) - this lets
+    an org warm up a new backend, or cap its usage, before falling back.
+
+  Requires both backends to be preloaded. `count` is the number of emails
+  about to be sent in this call, so a multi-recipient send is charged against
+  the budget all at once.
+  """
+  def for_transactional_email(org, count \\ 1)
+
+  def for_transactional_email(%Org{transactional_email_backend: nil} = org, _count), do: org
+
+  def for_transactional_email(
+        %Org{transactional_email_backend: %Ecto.Association.NotLoaded{}} = org,
+        _count
+      ),
+      do: org
+
+  def for_transactional_email(
+        %Org{
+          id: id,
+          transactional_email_backend: %Service{transactional_email_budget: budget} = backend
+        } = org,
+        count
+      ) do
+    if budget == nil or Proca.Service.EmailBudget.add(id, count) <= budget do
+      %{org | email_backend: backend}
+    else
+      org
+    end
   end
 
   def put_service(%Org{} = org, service), do: put_service(change(org), service)

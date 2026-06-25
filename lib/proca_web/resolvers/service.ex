@@ -5,6 +5,11 @@ defmodule ProcaWeb.Resolvers.Service do
   alias ProcaWeb.Error
   import Proca.Repo
 
+  def reset_transactional_email_budget(_p, _args, %{context: %{org: org}}) do
+    Proca.Service.EmailBudget.reset(org.id)
+    {:ok, :success}
+  end
+
   def upsert_service(_p, %{id: id, input: attrs}, %{context: %{org: org}}) do
     result =
       case Service.one([id: id, org: org] ++ [:latest]) do
