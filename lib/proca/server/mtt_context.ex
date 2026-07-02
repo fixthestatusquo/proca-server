@@ -249,25 +249,31 @@ defmodule Proca.Server.MTTContext do
   end
 
   def dupe_rank() do
-    sql = """
-    UPDATE messages
-    SET dupe_rank = ranked.dupe_rank
-    FROM
-    (
-      SELECT
-        m.id,
-        rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
-      FROM messages m
-        JOIN actions a ON m.action_id = a.id
-        JOIN supporters s ON a.supporter_id = s.id
-      WHERE m.dupe_rank is NULL
-        AND a.processing_status = 4
-        AND s.processing_status = 3
-    ) ranked
-    WHERE messages.id = ranked.id;
-    """
+    # Fast check if any messages need ranking — the partial index
+    # on messages(dupe_rank) WHERE dupe_rank IS NULL makes this instant.
+    if Repo.aggregate(from(m in Message, where: is_nil(m.dupe_rank)), :count) == 0 do
+      :ok
+    else
+      sql = """
+      UPDATE messages
+      SET dupe_rank = ranked.dupe_rank
+      FROM
+      (
+        SELECT
+          m.id,
+          rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
+        FROM messages m
+          JOIN actions a ON m.action_id = a.id
+          JOIN supporters s ON a.supporter_id = s.id
+        WHERE m.dupe_rank is NULL
+          AND a.processing_status = 4
+          AND s.processing_status = 3
+      ) ranked
+      WHERE messages.id = ranked.id;
+      """
 
-    Ecto.Adapters.SQL.query(Proca.Repo, sql)
+      Ecto.Adapters.SQL.query(Proca.Repo, sql)
+    end
   end
 
   defp query_emails_to_send(target_id, sent, testing) do
@@ -297,13 +303,7 @@ defmodule Proca.Server.MTTContext do
     )
   end
 
-  defp query_test_emails_to_delete() do
-    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
-    from m in Message,
-      join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and a.testing and a.inserted_at < ^recent
-  end
 
   def make_email(
         message = %{id: message_id, action: %{supporter: supporter, testing: is_test}},
