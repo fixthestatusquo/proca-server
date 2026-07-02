@@ -83,8 +83,8 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def process_mtt_test_mails() do
-    # Purge old test messages
-    Repo.delete_all(query_test_emails_to_delete())
+    # Purge of old test messages happens once/hour from MTTHourlyCron,
+    # see Proca.Server.MTTContext.delete_old_test_emails/0
 
     # Get recent messages to send
     emails =
