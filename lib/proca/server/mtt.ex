@@ -21,7 +21,7 @@ defmodule Proca.Server.MTT do
   alias Proca.Repo
   alias Proca.Server.MTTWorker
 
-  @interval 30_000
+  @interval 180_000
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
