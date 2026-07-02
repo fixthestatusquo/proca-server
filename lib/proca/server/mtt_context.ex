@@ -58,9 +58,11 @@ defmodule Proca.Server.MTTContext do
     |> Repo.all()
   end
 
-  def process_test_mails(target) do
-    Repo.delete_all(query_test_emails_to_delete())
+  def delete_old_test_emails do
+    Repo.delete_all(query_test_emails_to_delete(), timeout: :timer.seconds(30))
+  end
 
+  def process_test_mails(target) do
     test_emails = get_pending_test_messages(target.id)
 
     if target.campaign.org.email_backend != nil do
