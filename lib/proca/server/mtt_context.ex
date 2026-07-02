@@ -62,6 +62,15 @@ defmodule Proca.Server.MTTContext do
     Repo.delete_all(query_test_emails_to_delete(), timeout: :timer.seconds(30))
   end
 
+  defp query_test_emails_to_delete() do
+    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
+
+    from m in Message,
+      join: a in assoc(m, :action),
+      where:
+        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
+  end
+
   def process_test_mails(target) do
     test_emails = get_pending_test_messages(target.id)
 
