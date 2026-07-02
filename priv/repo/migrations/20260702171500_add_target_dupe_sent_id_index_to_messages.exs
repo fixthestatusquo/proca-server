@@ -5,7 +5,7 @@ defmodule Proca.Repo.Migrations.AddTargetDupeSentIdIndexToMessages do
 
   def change do
     create_if_not_exists index(:messages, [:target_id, :dupe_rank, :sent, :id],
-                           name: :messages_target_dupe_sent_id_index,
+                           name: :messages_target_id_dupe_rank_sent_id_index,
                            concurrently: true
                          )
   end
