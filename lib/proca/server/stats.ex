@@ -216,7 +216,7 @@ defmodule Proca.Server.Stats do
           s.processing_status == :accepted and
             a.processing_status in [:accepted, :delivered] and
             s.dupe_rank == 0,
-        distinct: [a.campaign_id, ap.org_id, s.fingerprint],
+        distinct: true,
         select: %{campaign_id: a.campaign_id, org_id: ap.org_id, fingerprint: s.fingerprint}
       )
       |> maybe_filter_campaigns(filter_ids)
