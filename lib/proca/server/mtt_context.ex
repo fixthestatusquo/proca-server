@@ -55,7 +55,7 @@ defmodule Proca.Server.MTTContext do
         q
         |> limit(^max_emails_per_hour)
     end
-    |> Repo.all()
+    |> Repo.all(prepare: :unnamed)
   end
 
   def delete_old_test_emails do
