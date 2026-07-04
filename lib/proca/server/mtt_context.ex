@@ -183,8 +183,10 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_message(target, msg) do
-    if Message.cancel_if_empty(msg), do: :ok
+    if Message.cancel_if_empty(msg) do
+      :ok
     else
+      :telemetry.execute(
       [:proca, :mtt_new, :deliver_message],
       %{},
       %{target_id: target.id}
