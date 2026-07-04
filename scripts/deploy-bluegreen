@@ -41,15 +41,15 @@ case "$ENV" in
     ENV_FILE="/etc/proca/env"
     SERVICE_PREFIX="proca"
     BLUE_PORT=4000
-    GREEN_PORT=4001
-    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-staging"
+    GREEN_PORT=4010
+    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca"
     ;;
   live)
     CURRENT_LINK="/srv/proca/live"
     ENV_FILE="/etc/proca/env.live"
     SERVICE_PREFIX="proca-live"
-    BLUE_PORT=4100
-    GREEN_PORT=4101
+    BLUE_PORT=4001
+    GREEN_PORT=4011
     NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-live"
     ;;
   *)

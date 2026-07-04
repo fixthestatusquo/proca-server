@@ -23,7 +23,7 @@ case "$ENV" in
     CURRENT_LINK="/srv/proca/live"
     ENV_FILE="/etc/proca/env.live"
     SERVICE="proca-live"
-    PORT=4000
+    PORT=4001
     ;;
   *)
     echo "ERROR: unknown environment '$ENV'. Use staging or live."
