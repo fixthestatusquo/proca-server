@@ -137,7 +137,122 @@ To build:
 ./build
 ```
 
+The build script uses `mix release --overwrite` and `strip_beams: true` for
+smaller, faster-loading releases. The built release is placed in
+`_build/prod/rel/proca/`.
+
 Read more in [Developing](/guides/Developing).
+
+---
+
+## 🚢 Deploying
+
+Two deploy scripts are provided under `scripts/`.
+
+### Simple deploy (single instance, brief downtime)
+
+```bash
+./scripts/build-release
+./scripts/deploy-simple
+```
+
+This will:
+1. Extract the version from `mix.exs`
+2. Rsync the release to `/srv/proca/releases/proca-<version>`
+3. Swap the `/srv/proca/current` symlink atomically (`ln -sfn`)
+4. Run database migrations from the new release
+5. Restart the `proca` systemd service
+6. Verify the `/health` endpoint responds
+
+> **Note:** `deploy-simple` requires a running systemd service named `proca`.
+> If you also have a staging instance, pass the version explicitly:
+> ```bash
+> ./scripts/deploy-simple 3.9.16
+> ```
+
+### Zero-downtime deploy (blue-green, requires setup)
+
+Eliminate restart downtime by running two Proca instances behind nginx.
+Only one instance receives traffic at a time; the other is the standby.
+
+#### 1. Install the systemd template
+
+```bash
+sudo cp deploy/proca@.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable proca@blue
+sudo systemctl start  proca@blue
+sudo systemctl enable proca@green
+sudo systemctl start  proca@green
+```
+
+The template uses `%i` (the instance name, `blue` or `green`) as the `PORT`
+environment variable — blue listens on `4000`, green on `4001`.
+
+#### 2. Configure nginx
+
+Edit your nginx site config to use an upstream block:
+
+```nginx
+upstream proca_backend {
+    server 127.0.0.1:4000 max_fails=3 fail_timeout=10s;
+}
+```
+
+See `deploy/proca-nginx.conf` for a complete example including SSL,
+WebSocket support, and the `/health` location.
+
+Reload nginx: `sudo nginx -s reload`
+
+#### 3. Deploy
+
+```bash
+./scripts/deploy-bluegreen
+```
+
+This will:
+1. Build the release and copy it to `/srv/proca/releases/proca-<version>`
+2. Detect which instance (blue or green) is currently active
+3. Run database migrations
+4. **Start the standby instance** and wait for it to pass the `/health` check
+5. **Reload nginx** to switch traffic to the standby (now active)
+6. **Stop the old instance**
+
+Zero downtime throughout — one instance is always serving.
+
+---
+
+## 🔍 Health Check
+
+After deploying, both routers (main and ECI) expose a readiness endpoint:
+
+```
+GET /health
+```
+
+Returns `{"status":"ok"}` (HTTP 200) when the database is reachable, or
+`{"status":"error","message":"database unreachable"}` (HTTP 503) otherwise.
+
+Use this for nginx `proxy_pass` health checks, load balancer probes, or
+manual verification after deployment:
+
+```bash
+curl http://localhost:4000/health
+```
+
+---
+
+## ⏱️ Startup Optimisation
+
+The production release compresses BEAM bytecode (`strip_beams: true`) for
+faster loading. Additionally, background daemon servers (MTT, Stats,
+OldActions, Jwks, etc.) are started with a **configurable delay** so the
+HTTP endpoint and database pool come up first:
+
+| Config | Env var | Default | Description |
+|---|---|---|---|
+| `daemon_start_delay` | `DAEMON_START_DELAY` | `5000` (ms) | Delay before starting non-critical background services. Set to `0` for synchronous startup. |
+| `start_daemon_servers` | — | `true` | Set to `false` to disable all background services entirely (useful in development). |
 
 ---
 

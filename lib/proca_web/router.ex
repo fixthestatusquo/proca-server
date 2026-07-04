@@ -55,6 +55,9 @@ defmodule ProcaWeb.Router do
     :require_authenticated_user
   end
 
+  # Health check — no auth, no session, used by nginx/load-balancer readiness probes
+  scope "/health", do: get("/", ProcaWeb.HealthController, :index)
+
   scope "/" do
     pipe_through :browser
 

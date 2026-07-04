@@ -1,9 +1,12 @@
 #!/bin/sh
 # Build a production release of Proca.
 #
-# Prerequisites: asdf with versions from .tool-versions
+# Prerequisites: asdf with elixir 1.14.4 / erlang 25.2.2 (see .tool-versions)
 #
-# After building, deploy with:  ./scripts/deploy-simple $(grep -oP 'version: "\K[^"]+' mix.exs)
+# Usage:  MIX_ENV=prod ./scripts/build-release
+#
+# Produces a release under _build/prod/rel/proca/.
+# Deploy with: ./scripts/deploy-simple <version>
 
 set -euo pipefail
 
@@ -16,7 +19,7 @@ echo "==> Compiling dependencies"
 mix deps.compile
 
 echo "==> Compiling application"
-mix compile
+mix compile --warnings-as-errors
 
 echo "==> Building static assets"
 mix phx.digest
@@ -28,4 +31,3 @@ mix release --overwrite
 echo "==> Done"
 echo "Release built at _build/prod/rel/proca/"
 grep -oP 'version: "\K[^"]+' mix.exs
-

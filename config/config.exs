@@ -46,6 +46,7 @@ config :proca, Proca,
   # XXX move to Proca.Server.Stats
   process_old_interval: 0,
   start_daemon_servers: true,
+  daemon_start_delay: 5_000,
   mtt_cycle_time: 3
 
 # Defaults only for development

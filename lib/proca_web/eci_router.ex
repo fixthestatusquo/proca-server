@@ -16,6 +16,8 @@ defmodule ProcaWeb.EciRouter do
     plug ProcaWeb.Plugs.TokenAuthPlug
   end
 
+  scope "/health", do: get("/", ProcaWeb.HealthController, :index)
+
   scope "/api" do
     pipe_through :api
 

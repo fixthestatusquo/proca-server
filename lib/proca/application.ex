@@ -42,14 +42,22 @@ defmodule Proca.Application do
       {Proca.Service.Preview.OrgStorage, []}
     ]
 
-    # Proca SErvers
+    # Proca Servers — started via DaemonSupervisor with a short delay so the
+    # HTTP endpoint and DB pool are ready first. Set delay to 0 to start
+    # synchronously. Disable entirely with start_daemon_servers: false.
+    daemon_delay =
+      if Application.get_env(:proca, Proca)[:start_daemon_servers] do
+        Application.get_env(:proca, Proca)[:daemon_start_delay] || 5_000
+      else
+        :disabled
+      end
+
     children =
-      children ++
-        if Application.get_env(:proca, Proca)[:start_daemon_servers] do
-          daemon_servers()
-        else
-          []
-        end
+      if daemon_delay == :disabled do
+        children
+      else
+        children ++ [{Proca.DaemonSupervisor, [delay: daemon_delay]}]
+      end
 
     # AMQP logging is very verbose so quiet it:
     :logger.add_primary_filter(
@@ -73,7 +81,7 @@ defmodule Proca.Application do
     :ok
   end
 
-  defp daemon_servers() do
+  def daemon_servers() do
     [
       # Async processing systems
       %{

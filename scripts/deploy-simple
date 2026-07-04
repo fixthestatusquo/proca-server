@@ -1,0 +1,54 @@
+#!/bin/sh
+# Deploy a built release to the production directory and restart the service.
+#
+# Usage:  ./scripts/deploy-simple <version>
+#
+# The version is the directory name under /srv/proca/releases/.
+# The release must already be built at _build/prod/rel/proca/.
+#
+# Changes from the previous manual process:
+#   - Uses ln -sfn for an atomic symlink swap (no dangling window)
+#   - Runs migrations before restart so the new process boots faster
+#   - Validates that the release exists before deploying
+
+set -euo pipefail
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
+  echo "==> No version specified, extracted from mix.exs: ${VERSION}"
+fi
+
+RELEASE_SRC="_build/prod/rel/proca"
+RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
+CURRENT_LINK="/srv/proca/current"
+
+if [ ! -d "$RELEASE_SRC" ]; then
+  echo "ERROR: Release not found at $RELEASE_SRC"
+  echo "Run ./scripts/build-release first"
+  exit 1
+fi
+
+echo "==> Copying release to $RELEASE_DST"
+mkdir -p "$(dirname "$RELEASE_DST")"
+rsync -avz --delete "$RELEASE_SRC/" "$RELEASE_DST/"
+
+echo "==> Updating current symlink (atomic)"
+ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
+
+echo "==> Running database migrations"
+"$RELEASE_DST/bin/proca" eval Proca.ReleaseTasks.migrate
+
+echo "==> Restarting service"
+sudo systemctl restart proca
+
+echo "==> Done"
+echo "Deployed version ${VERSION}. Waiting for health check..."
+sleep 3
+
+# Quick health check
+if curl -sf http://127.0.0.1:4000/health > /dev/null 2>&1; then
+  echo "Service is healthy."
+else
+  echo "WARNING: Health check failed. Check logs with: journalctl -u proca -f"
+fi
