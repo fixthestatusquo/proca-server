@@ -147,84 +147,72 @@ Read more in [Developing](/guides/Developing).
 
 ## 🚢 Deploying
 
-Two deploy scripts are provided under `scripts/`.
-
-### Simple deploy (single instance, brief downtime)
+### 1. Build + release
 
 ```bash
-./scripts/build-release
-./scripts/deploy-simple
+./scripts/release [version]
 ```
 
-This will:
-1. Extract the version from `mix.exs`
-2. Rsync the release to `/srv/proca/releases/proca-<version>`
-3. Swap the `/srv/proca/current` symlink atomically (`ln -sfn`)
-4. Run database migrations from the new release
-5. Restart the `proca` systemd service
-6. Verify the `/health` endpoint responds
+Builds the release, copies it to `/srv/proca/releases/proca-<version>`,
+and cleans up old releases. Shared step — run once, then deploy to staging
+and/or live.
 
-> **Note:** `deploy-simple` requires a running systemd service named `proca`.
-> If you also have a staging instance, pass the version explicitly:
-> ```bash
-> ./scripts/deploy-simple 3.9.16
-> ```
-
-### Zero-downtime deploy (blue-green, requires setup)
-
-Eliminate restart downtime by running two Proca instances behind nginx.
-Only one instance runs at a time during normal operation. During a deploy,
-the standby starts briefly (10–30s), nginx switches traffic to it, and the
-old one stops. This avoids running two DB connection pools permanently.
-
-#### 1. Install the systemd services
+### 2. Deploy to staging
 
 ```bash
-sudo cp deploy/proca-blue.service /etc/systemd/system/
-sudo cp deploy/proca-green.service /etc/systemd/system/
+./scripts/deploy-staging [version]
+```
+
+Runs `release`, symlinks `/srv/proca/current`, migrates, and restarts `proca`.
+
+### 3. Deploy to live
+
+**Simple (brief downtime):**
+```bash
+./scripts/deploy-live [version]
+```
+
+Assumes `release` was already run. Checks the `/srv/proca/live` symlink,
+migrates, and restarts `proca-live`.
+
+**Zero-downtime (blue-green):**
+
+Eliminates restart downtime by running two instances behind nginx. Only **one**
+instance runs at a time during normal operation. During a deploy, the standby
+starts briefly, nginx swaps the upstream port, and the old instance is stopped.
+
+Install both systemd services:
+
+```bash
+sudo cp deploy/proca-blue.service /etc/systemd/system/proca-live-blue.service
+sudo cp deploy/proca-green.service /etc/systemd/system/proca-live-green.service
 sudo systemctl daemon-reload
+sudo systemctl enable proca-live-blue && sudo systemctl start proca-live-blue
 ```
 
-Only one service is enabled at a time (the active one). First time:
-
-```bash
-./build
-sudo systemctl enable proca-blue
-sudo systemctl start  proca-blue
-```
-
-Blue listens on port **4000**, green on port **4001**.
-
-#### 2. Configure nginx
-
-Edit your nginx site config to use an upstream block:
+Configure nginx upstream with primary + backup (see `deploy/proca-nginx.conf`):
 
 ```nginx
-upstream proca_backend {
-    server 127.0.0.1:4000 max_fails=3 fail_timeout=10s;
+upstream proca_live {
+    server 127.0.0.1:4001;
+    server 127.0.0.1:4011 backup;
 }
 ```
 
-See `deploy/proca-nginx.conf` for a complete example including SSL,
-WebSocket support, and the `/health` location.
-
-Reload nginx: `sudo nginx -s reload`
-
-#### 3. Deploy
-
+Deploy:
 ```bash
-./scripts/deploy-bluegreen
+./scripts/deploy-bluegreen [version]
 ```
 
 This will:
-1. Build the release and copy it to `/srv/proca/releases/proca-<version>`
-2. Detect which instance (blue or green) is currently active
-3. Run database migrations
-4. **Start the standby instance** (briefly) and wait for `/health`
-5. **Reload nginx** to switch traffic to the standby
+1. Verify the release exists and the symlink
+2. Run database migrations
+3. **Start the standby** instance and wait for `/health`
+4. **Swap the nginx upstream** — standby becomes primary, old becomes backup
+5. `nginx -s reload`
 6. **Stop the old instance**
 
-The two instances overlap only during the switch (seconds, not permanently).
+The two instances overlap only during the switch.
 
 ---
 

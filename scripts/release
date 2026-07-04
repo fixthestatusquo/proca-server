@@ -1,0 +1,35 @@
+#!/bin/bash
+# Build the release and copy it to /srv/proca/releases/.
+# Shared step — run this once, then deploy with deploy-staging, deploy-live,
+# or deploy-bluegreen.
+#
+# Usage:  ./scripts/release [version]
+#
+# If version is omitted, it is extracted from mix.exs.
+
+set -euo pipefail
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
+  echo "==> No version specified, extracted from mix.exs: ${VERSION}"
+fi
+
+echo "==> Building release ${VERSION}"
+export MIX_ENV=prod
+mix deps.get --only prod
+mix deps.compile
+mix compile
+mix phx.digest
+mix assets.deploy
+mix release --overwrite
+
+echo "==> Cleaning up old releases"
+find /srv/proca/releases -maxdepth 1 -type d -name 'proca-*' -exec rm -rf {} \;
+
+RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
+echo "==> Copying release to ${RELEASE_DST}"
+mkdir -p "$(dirname "$RELEASE_DST")"
+rsync -avz --delete _build/prod/rel/proca/ "${RELEASE_DST}/"
+
+echo "==> Release ${VERSION} ready at ${RELEASE_DST}"

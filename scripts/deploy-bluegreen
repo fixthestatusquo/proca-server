@@ -1,126 +1,67 @@
 #!/bin/bash
-# Zero-downtime blue-green deploy for Proca behind nginx.
+# Zero-downtime deploy to live by switching the nginx upstream.
 #
-# Usage:  ./scripts/deploy-bluegreen [version] [staging|live]
+# Assumes ./scripts/release was already run.
 #
-# If version is omitted, it is extracted from mix.exs.
-#
-# How it works:
-#   Only ONE instance runs at a time during normal operation.
-#   During a deploy, the standby is started briefly (10-30s),
-#   nginx is reloaded to point to it, and the old instance is stopped.
-#   This avoids running two DB connection pools permanently.
-#
-# Prerequisites:
-#   1. Both systemd services installed (but only one enabled):
-#        sudo cp deploy/${SERVICE_PREFIX}-blue.service /etc/systemd/system/
-#        sudo cp deploy/${SERVICE_PREFIX}-green.service /etc/systemd/system/
-#        sudo systemctl daemon-reload
-#   2. Nginx configured with an upstream pointing to the active port
-#      (see deploy/proca-nginx.conf)
-#   3. Run from the proca source directory
-#
-# Setup example (first time):
-#   ./build
-#   sudo systemctl enable ${SERVICE_PREFIX}-blue && sudo systemctl start ${SERVICE_PREFIX}-blue
-#   # configure nginx to proxy to 127.0.0.1:4000, then:
-#   sudo nginx -s reload
-#
-# Examples:
-#   ./scripts/deploy-bluegreen              # staging
-#   ./scripts/deploy-bluegreen 3.9.16 live  # explicit version, live
+# Usage:  ./scripts/deploy-bluegreen [version]
 
 set -euo pipefail
 
-# ---- Which environment? ----
-ENV="${2:-staging}"
-
-case "$ENV" in
-  staging)
-    CURRENT_LINK="/srv/proca/current"
-    ENV_FILE="/etc/proca/env"
-    SERVICE_PREFIX="proca"
-    BLUE_PORT=4000
-    GREEN_PORT=4010
-    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca"
-    ;;
-  live)
-    CURRENT_LINK="/srv/proca/live"
-    ENV_FILE="/etc/proca/env.live"
-    SERVICE_PREFIX="proca-live"
-    BLUE_PORT=4001
-    GREEN_PORT=4011
-    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-live"
-    ;;
-  *)
-    echo "ERROR: unknown environment '$ENV'. Use staging or live."
-    exit 1
-    ;;
-esac
-
-echo "==> Environment: ${ENV}"
-
-RELEASE_DIR="/srv/proca/releases"
-
-# ---- Helpers ----
-port_for() {
-  case "$1" in
-    blue)  echo "$BLUE_PORT" ;;
-    green) echo "$GREEN_PORT" ;;
-  esac
-}
-
-service_name() { echo "proca-$1"; }
-
-# ---- Determine version ----
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
   VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
 fi
-echo "==> Deploying version: $VERSION"
 
-# ---- Build the release ----
-echo "==> Building release"
-./scripts/build-release
+RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
+CURRENT_LINK="/srv/proca/live"
+ENV_FILE="/etc/proca/env.live"
+BLUE_PORT=4001
+GREEN_PORT=4011
+SERVICE_PREFIX="proca-live"
+NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-live"
 
-# ---- Rsync to releases directory ----
-RELEASE_DST="${RELEASE_DIR}/proca-${VERSION}"
-echo "==> Copying release to ${RELEASE_DST}"
-mkdir -p "$(dirname "$RELEASE_DST")"
-rsync -avz --delete "_build/prod/rel/proca/" "${RELEASE_DST}/"
+# ---- Verify release exists ----
+if [ ! -d "$RELEASE_DST" ]; then
+  echo "ERROR: Release not found at ${RELEASE_DST}"
+  echo "Run ./scripts/release first"
+  exit 1
+fi
 
-echo "==> Updating current symlink (atomic)"
-ln -sfn "${RELEASE_DST}" "${CURRENT_LINK}"
+# ---- Verify symlink points to this version ----
+if [ "$(readlink -f "$CURRENT_LINK")" != "$RELEASE_DST" ]; then
+  echo "==> Updating symlink to ${RELEASE_DST}"
+  ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
+else
+  echo "==> Symlink already points to ${RELEASE_DST}"
+fi
+
+# ---- Migrate ----
+echo "==> Running database migrations"
+sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
 
 # ---- Determine which instance is currently active ----
 ACTIVE_INSTANCE=""
-if systemctl is-active --quiet ${SERVICE_PREFIX}-blue 2>/dev/null; then
+if systemctl is-active --quiet "${SERVICE_PREFIX}-blue" 2>/dev/null; then
   ACTIVE_INSTANCE="blue"
-elif systemctl is-active --quiet ${SERVICE_PREFIX}-green 2>/dev/null; then
+  ACTIVE_PORT="$BLUE_PORT"
+elif systemctl is-active --quiet "${SERVICE_PREFIX}-green" 2>/dev/null; then
   ACTIVE_INSTANCE="green"
-fi
-
-if [ -z "$ACTIVE_INSTANCE" ]; then
-  echo "ERROR: No active proca instance found."
+  ACTIVE_PORT="$GREEN_PORT"
+else
+  echo "ERROR: No active live instance found."
   echo "Start one first: sudo systemctl start ${SERVICE_PREFIX}-blue"
   exit 1
 fi
 
 STANDBY_INSTANCE=$([ "$ACTIVE_INSTANCE" = "blue" ] && echo "green" || echo "blue")
-ACTIVE_PORT=$(port_for "$ACTIVE_INSTANCE")
-STANDBY_PORT=$(port_for "$STANDBY_INSTANCE")
+STANDBY_PORT=$([ "$STANDBY_INSTANCE" = "blue" ] && echo "$BLUE_PORT" || echo "$GREEN_PORT")
 
-echo "==> Active:  proca-${ACTIVE_INSTANCE}  (port ${ACTIVE_PORT})"
-echo "==> Standby: proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
-
-# ---- Run migrations (backward-compatible only) ----
-echo "==> Running database migrations"
-# Run as root because /etc/proca/env is root-readable only
-sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
+echo "==> Active:  ${SERVICE_PREFIX}-${ACTIVE_INSTANCE}  (port ${ACTIVE_PORT})"
+echo "==> Standby: ${SERVICE_PREFIX}-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
 
 # ---- Start the standby instance ----
-echo "==> Starting standby instance on port ${STANDBY_PORT}"
-sudo systemctl start "proca-${STANDBY_INSTANCE}"
+echo "==> Starting standby instance"
+sudo systemctl start "${SERVICE_PREFIX}-${STANDBY_INSTANCE}"
 
 echo "==> Waiting for standby to pass health check..."
 HEALTHY=false
@@ -134,37 +75,42 @@ for i in $(seq 1 30); do
 done
 
 if [ "$HEALTHY" != "true" ]; then
-  echo "ERROR: Standby did not become healthy. Check logs:"
-  echo "  sudo journalctl -u proca-${STANDBY_INSTANCE} -f"
-  sudo systemctl stop "proca-${STANDBY_INSTANCE}" 2>/dev/null || true
+  echo "ERROR: Standby did not become healthy."
+  echo "  Check: sudo journalctl -u ${SERVICE_PREFIX}-${STANDBY_INSTANCE} -f"
+  sudo systemctl stop "${SERVICE_PREFIX}-${STANDBY_INSTANCE}" 2>/dev/null || true
   exit 1
 fi
 
-# ---- Switch nginx ----
-echo "==> Switching nginx to port ${STANDBY_PORT} (${STANDBY_INSTANCE})"
+# ---- Swap nginx upstream ----
+echo "==> Swapping nginx: port ${STANDBY_PORT} → primary, port ${ACTIVE_PORT} → backup"
 if [ -f "$NGINX_UPSTREAM_CONF" ]; then
-  # Flip the active port number in the upstream block
-  sudo sed -i "s/:${ACTIVE_PORT}/:STANDBY_PLACEHOLDER/g; s/:${STANDBY_PORT}/:${ACTIVE_PORT}/g; s/:STANDBY_PLACEHOLDER/:${STANDBY_PORT}/g" "$NGINX_UPSTREAM_CONF"
+  sudo sed -i \
+    -e "s/${ACTIVE_PORT}/__TMP__/g" \
+    -e "s/${STANDBY_PORT}/${ACTIVE_PORT}/g" \
+    -e "s/__TMP__/${STANDBY_PORT}/g" \
+    "$NGINX_UPSTREAM_CONF"
+  sudo nginx -s reload
+  echo "   nginx reloaded."
+else
+  echo "   Config not found at ${NGINX_UPSTREAM_CONF}"
+  echo "   Update it manually and run: sudo nginx -s reload"
 fi
 
-sudo nginx -s reload
-echo "   nginx reloaded."
-
 # ---- Stop the old instance ----
-echo "==> Stopping old instance: proca-${ACTIVE_INSTANCE}"
-sudo systemctl stop "proca-${ACTIVE_INSTANCE}"
+echo "==> Stopping old instance: ${SERVICE_PREFIX}-${ACTIVE_INSTANCE}"
+sudo systemctl stop "${SERVICE_PREFIX}-${ACTIVE_INSTANCE}"
 
 # Final health check
 sleep 2
-echo "==> Verifying new instance health..."
+echo "==> Verifying new primary is healthy..."
 if curl -sf "http://127.0.0.1:${STANDBY_PORT}/health" >/dev/null 2>&1; then
   echo "   Healthy."
 else
-  echo "WARNING: Health check failed after stopping old instance."
-  echo "  Check: sudo journalctl -u proca-${STANDBY_INSTANCE} -f"
+  echo "WARNING: Health check failed after swap."
+  echo "  Check: sudo journalctl -u ${SERVICE_PREFIX}-${STANDBY_INSTANCE} -f"
 fi
 
 echo ""
 echo "==> Deploy complete!"
 echo "   Version: ${VERSION}"
-echo "   Active:  proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
+echo "   Active:  ${SERVICE_PREFIX}-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"

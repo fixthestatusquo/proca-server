@@ -1,0 +1,50 @@
+#!/bin/bash
+# Deploy to live (simple, brief downtime).
+#
+# Assumes ./scripts/release was already run.
+#
+# Usage:  ./scripts/deploy-live [version]
+
+set -euo pipefail
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
+fi
+
+RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
+CURRENT_LINK="/srv/proca/live"
+ENV_FILE="/etc/proca/env.live"
+SERVICE="proca-live"
+PORT=4001
+
+# ---- Verify release exists ----
+if [ ! -d "$RELEASE_DST" ]; then
+  echo "ERROR: Release not found at ${RELEASE_DST}"
+  echo "Run ./scripts/release first"
+  exit 1
+fi
+
+# ---- Verify symlink points to this version ----
+if [ "$(readlink -f "$CURRENT_LINK")" != "$RELEASE_DST" ]; then
+  echo "==> Updating symlink to ${RELEASE_DST}"
+  ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
+else
+  echo "==> Symlink already points to ${RELEASE_DST}"
+fi
+
+# ---- Migrate ----
+echo "==> Running database migrations"
+sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
+
+# ---- Restart ----
+echo "==> Restarting ${SERVICE}"
+sudo systemctl restart "$SERVICE"
+
+echo "==> Done. Waiting for health check..."
+sleep 3
+if curl -sf "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then
+  echo "Service is healthy."
+else
+  echo "WARNING: Health check failed. Check: journalctl -u ${SERVICE} -f"
+fi

@@ -1,14 +1,15 @@
-# Systemd service for Proca (green instance, port 4001)
+# Systemd service for Proca live (green instance, port 4011)
+#
+# Used together with proca-live-blue.service for zero-downtime deploys.
+# Only one is active at a time.
 #
 # Install:
-#   sudo cp deploy/proca-green.service /etc/systemd/system/
-#   sudo systemctl enable proca-green && sudo systemctl start proca-green
-#
-# Used together with proca-blue.service for zero-downtime deploys.
-# The deploy-bluegreen script handles start/stop of each.
+#   sudo cp deploy/proca-green.service /etc/systemd/system/proca-live-green.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable proca-live-green && sudo systemctl start proca-live-green
 
 [Unit]
-Description=Proca (green instance, port 4001)
+Description=Proca live (green instance, port 4011)
 After=network.target postgresql.service
 Requires=postgresql.service
 
@@ -16,19 +17,20 @@ Requires=postgresql.service
 Type=exec
 User=app
 Group=app
-WorkingDirectory=/srv/proca/current
+WorkingDirectory=/srv/proca/live
 
-Environment=PORT=4001
-Environment=RELEASE_TMP=/srv/proca/current/tmp
+Environment=PORT=4011
+Environment=RELEASE_TMP=/run/proca-live
+Environment=RELEASE_NODE=live@steinem
 
 # Load secret env vars (DATABASE_URL, SECRET_KEY_BASE, etc.)
-EnvironmentFile=/srv/proca/environment
+EnvironmentFile=/etc/proca/env.live
 
-ExecStart=/srv/proca/current/bin/proca start
-ExecStop=/srv/proca/current/bin/proca stop
+ExecStart=/srv/proca/live/bin/proca start
+ExecStop=/srv/proca/live/bin/proca stop
 
 # Health-check after start
-ExecStartPost=/bin/sh -c 'for i in $$(seq 1 30); do curl -sf http://127.0.0.1:4001/health >/dev/null && exit 0; sleep 1; done; exit 1'
+ExecStartPost=/bin/sh -c 'for i in $$(seq 1 30); do curl -sf http://127.0.0.1:4011/health >/dev/null && exit 0; sleep 1; done; exit 1'
 
 Restart=on-failure
 RestartSec=5

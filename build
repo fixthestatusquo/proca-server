@@ -1,31 +1,4 @@
 #!/bin/bash
-# Build a production release of Proca.
-#
-# Prerequisites: asdf with versions from .tool-versions
-#
-# After building, deploy with:  ./scripts/deploy-simple $(grep -oP 'version: "\K[^"]+' mix.exs)
-
-set -euo pipefail
-
-export MIX_ENV="${MIX_ENV:-prod}"
-
-echo "==> Getting dependencies"
-mix deps.get --only prod
-
-echo "==> Compiling dependencies"
-mix deps.compile
-
-echo "==> Compiling application"
-mix compile
-
-echo "==> Building static assets"
-mix phx.digest
-mix assets.deploy
-
-echo "==> Assembling release"
-mix release --overwrite
-
-echo "==> Done"
-echo "Release built at _build/prod/rel/proca/"
-grep -oP 'version: "\K[^"]+' mix.exs
-
+# Build and release — wrapper around scripts/release.
+# Usage: ./build [version]
+exec ./scripts/release "$@"
