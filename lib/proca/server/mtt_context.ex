@@ -294,6 +294,12 @@ defmodule Proca.Server.MTTContext do
   defp query_emails_to_send(target_id, sent, testing) do
     sent = List.wrap(sent)
 
+    sent_dynamic =
+      case sent do
+        [val] -> dynamic([m], m.sent == ^val)
+        vals -> dynamic([m], m.sent in ^vals)
+      end
+
     from(
       m in Proca.Action.Message,
       join: t in assoc(m, :target),
@@ -305,7 +311,7 @@ defmodule Proca.Server.MTTContext do
         m.target_id == ^target_id and
           a.processing_status == :delivered and
           a.testing == ^testing and
-          m.sent in ^sent and
+          ^sent_dynamic and
           m.dupe_rank == 0,
       order_by: [asc: m.id],
       distinct: m.id,
