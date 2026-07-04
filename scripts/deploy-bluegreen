@@ -116,7 +116,7 @@ echo "==> Standby: proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
 # ---- Run migrations (backward-compatible only) ----
 echo "==> Running database migrations"
 # Run as root because /etc/proca/env is root-readable only
-sudo sh -c ". ${ENV_FILE} && ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
+sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
 
 # ---- Start the standby instance ----
 echo "==> Starting standby instance on port ${STANDBY_PORT}"
