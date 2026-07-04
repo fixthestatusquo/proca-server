@@ -18,11 +18,27 @@ defmodule Proca.Server.MTTScheduler do
   def init({target, max_emails_per_hour}) do
     Task.start(fn -> MTTContext.process_test_mails(target) end)
 
+    # Fetch messages asynchronously — don't block init on the slow query.
+    # With thousands of targets, blocking on each one would take minutes.
+    # Stagger the query by a random delay (0-10s) so 8301 schedulers don't
+    # all hit the database simultaneously.
+    Process.send_after(self(), {:fetch_messages}, :rand.uniform(10_000))
+
+    {:ok,
+     %{
+       target: target,
+       max_emails_per_hour: max_emails_per_hour,
+       messages: [],
+       jitter_toggle: true,
+       count: 0
+     }}
+  end
+
+  @impl true
+  def handle_info({:fetch_messages}, %{target: target, max_emails_per_hour: max_emails_per_hour} = state) do
     messages = MTTContext.get_pending_messages(target.id, max_emails_per_hour)
-
     send(self(), {:send_message})
-
-    {:ok, %{target: target, messages: messages, jitter_toggle: true, count: Enum.count(messages)}}
+    {:noreply, %{state | messages: messages, count: Enum.count(messages)}}
   end
 
   @impl true

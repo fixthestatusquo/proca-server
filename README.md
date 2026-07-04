@@ -173,21 +173,27 @@ This will:
 ### Zero-downtime deploy (blue-green, requires setup)
 
 Eliminate restart downtime by running two Proca instances behind nginx.
-Only one instance receives traffic at a time; the other is the standby.
+Only one instance runs at a time during normal operation. During a deploy,
+the standby starts briefly (10–30s), nginx switches traffic to it, and the
+old one stops. This avoids running two DB connection pools permanently.
 
-#### 1. Install the systemd template
+#### 1. Install the systemd services
 
 ```bash
-sudo cp deploy/proca@.service /etc/systemd/system/
+sudo cp deploy/proca-blue.service /etc/systemd/system/
+sudo cp deploy/proca-green.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable proca@blue
-sudo systemctl start  proca@blue
-sudo systemctl enable proca@green
-sudo systemctl start  proca@green
 ```
 
-The template uses `%i` (the instance name, `blue` or `green`) as the `PORT`
-environment variable — blue listens on `4000`, green on `4001`.
+Only one service is enabled at a time (the active one). First time:
+
+```bash
+./build
+sudo systemctl enable proca-blue
+sudo systemctl start  proca-blue
+```
+
+Blue listens on port **4000**, green on port **4001**.
 
 #### 2. Configure nginx
 
@@ -214,11 +220,11 @@ This will:
 1. Build the release and copy it to `/srv/proca/releases/proca-<version>`
 2. Detect which instance (blue or green) is currently active
 3. Run database migrations
-4. **Start the standby instance** and wait for it to pass the `/health` check
-5. **Reload nginx** to switch traffic to the standby (now active)
+4. **Start the standby instance** (briefly) and wait for `/health`
+5. **Reload nginx** to switch traffic to the standby
 6. **Stop the old instance**
 
-Zero downtime throughout — one instance is always serving.
+The two instances overlap only during the switch (seconds, not permanently).
 
 ---
 

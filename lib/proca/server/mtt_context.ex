@@ -181,7 +181,16 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_message(target, msg) do
-    :telemetry.execute(
+    # If the message has no subject or body, cancel the action instead of
+    # attempting to send. These messages were previously filtered out of the
+    # query entirely (and never processed), which left them stuck forever.
+    if msg.message_content.subject in ["", nil] or msg.message_content.body in ["", nil] do
+      Logger.warning("Cancelling action #{msg.action_id}: empty message content")
+      Proca.Repo.update(Ecto.Changeset.change(msg.action, processing_status: :cancelled))
+      Message.mark_one(msg, :sent)
+      :ok
+    else
+      :telemetry.execute(
       [:proca, :mtt_new, :deliver_message],
       %{},
       %{target_id: target.id}
@@ -232,6 +241,7 @@ defmodule Proca.Server.MTTContext do
           msg
           |> Message.mark_one(:sent)
         end
+    end
     end
   end
 
@@ -300,8 +310,7 @@ defmodule Proca.Server.MTTContext do
           a.processing_status == :delivered and
           a.testing == ^testing and
           m.sent in ^sent and
-          m.dupe_rank == 0 and
-          mc.subject != "" and mc.body != "",
+          m.dupe_rank == 0,
       order_by: [asc: m.id],
       distinct: m.id,
       preload: [
