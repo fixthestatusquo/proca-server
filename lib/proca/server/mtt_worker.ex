@@ -230,6 +230,7 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def send_emails(campaign, msgs) do
+    {_cancelled, msgs} = Enum.split_with(msgs, &Proca.Action.Message.cancel_if_empty/1)
     org = Org.one(id: campaign.org_id, preload: [:email_backend, :storage_backend])
 
     # fetch action pages for email merge

@@ -94,6 +94,8 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_messages(target, msgs) do
+    {_cancelled, msgs} = Enum.split_with(msgs, &Message.cancel_if_empty/1)
+
     action_pages_ids =
       msgs
       |> Enum.map(fn m -> m.action.action_page_id end)
@@ -181,7 +183,8 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_message(target, msg) do
-    :telemetry.execute(
+    if Message.cancel_if_empty(msg), do: :ok
+    else
       [:proca, :mtt_new, :deliver_message],
       %{},
       %{target_id: target.id}
@@ -232,6 +235,7 @@ defmodule Proca.Server.MTTContext do
           msg
           |> Message.mark_one(:sent)
         end
+    end
     end
   end
 
@@ -300,8 +304,7 @@ defmodule Proca.Server.MTTContext do
           a.processing_status == :delivered and
           a.testing == ^testing and
           m.sent in ^sent and
-          m.dupe_rank == 0 and
-          mc.subject != "" and mc.body != "",
+          m.dupe_rank == 0,
       order_by: [asc: m.id],
       distinct: m.id,
       preload: [

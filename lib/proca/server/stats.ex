@@ -49,8 +49,8 @@ defmodule Proca.Server.Stats do
         try do
           GenServer.cast(me, {:update_campaigns, calculate()})
         rescue
-          e in DBConnection.ConnectionError ->
-            msg = "Stats calculate skipped: DB connection error: #{Exception.message(e)}"
+          e ->
+            msg = "Stats first load failed: #{Exception.message(e)}"
             Logger.warning(msg)
             Sentry.capture_message(msg, level: "warning")
             GenServer.cast(me, :stats_query_failed)
@@ -107,7 +107,27 @@ defmodule Proca.Server.Stats do
 
   @impl true
   def handle_cast(:stats_query_failed, state) do
+    Logger.info("Stats retrying in 30s")
+    Process.send_after(self(), :retry_first_load, 30_000)
     {:noreply, %{state | query_runs: false}}
+  end
+
+  @impl true
+  def handle_info(:retry_first_load, state) do
+    unless state.query_runs do
+      me = self()
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_campaigns, calculate()})
+        rescue
+          e ->
+            msg = "Stats retry failed: #{Exception.message(e)}"
+            Logger.warning(msg)
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
+    end
+    {:noreply, %{state | query_runs: true}}
   end
 
   @impl true

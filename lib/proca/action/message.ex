@@ -104,8 +104,7 @@ defmodule Proca.Action.Message do
             a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
-            (a.testing == true or m.dupe_rank == 0) and
-            mc.subject != "" and mc.body != ""
+            a.testing == true or m.dupe_rank == 0
       )
 
     case target_ids do
@@ -139,6 +138,26 @@ defmodule Proca.Action.Message do
     )
 
     :ok
+  end
+
+  @doc """
+  If the message's content has no subject or body, cancel the action and mark
+  the message as sent so it won't be picked up again. Returns true if cancelled.
+  """
+  @spec cancel_if_empty(%Message{}) :: boolean
+  def cancel_if_empty(%Message{message_content: mc, action: action} = msg) do
+    if mc.subject in ["", nil] or mc.body in ["", nil] do
+      require Logger
+      Logger.warning("Cancelling action #{action.id}: empty message content")
+      Sentry.capture_message("MTT message cancelled: empty content",
+        extra: %{action_id: action.id, message_id: msg.id},
+        level: "warning")
+      Proca.Repo.update(Ecto.Changeset.change(action, processing_status: :cancelled))
+      mark_one(msg, :sent)
+      true
+    else
+      false
+    end
   end
 
   def handle_event(event) do
