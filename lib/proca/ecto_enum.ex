@@ -62,7 +62,8 @@ defenum(ActionProcessingStatus,
   rejected: 2,
   accepted: 3,
   delivered: 4,
-  repeat: 5
+  repeat: 5,
+  cancelled: 6
 )
 
 defenum(SupporterProcessingStatus,
