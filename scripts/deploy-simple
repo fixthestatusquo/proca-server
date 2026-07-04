@@ -1,18 +1,39 @@
 #!/bin/sh
-# Deploy a built release to the production directory and restart the service.
+# Deploy a built release and restart the service.
 #
-# Usage:  ./scripts/deploy-simple <version>
+# Usage:  ./scripts/deploy-simple [version] [staging|live]
 #
-# The version is the directory name under /srv/proca/releases/.
-# The release must already be built at _build/prod/rel/proca/.
-#
-# Changes from the previous manual process:
-#   - Uses ln -sfn for an atomic symlink swap (no dangling window)
-#   - Runs migrations before restart so the new process boots faster
-#   - Validates that the release exists before deploying
+# Examples:
+#   ./scripts/deploy-simple                  # uses mix.exs version, deploys to staging
+#   ./scripts/deploy-simple 3.9.16 live      # explicit version, deploys to live
 
 set -euo pipefail
 
+# ---- Which environment? ----
+ENV="${2:-staging}"
+
+case "$ENV" in
+  staging)
+    CURRENT_LINK="/srv/proca/current"
+    ENV_FILE="/etc/proca/env"
+    SERVICE="proca"
+    PORT=4000
+    ;;
+  live)
+    CURRENT_LINK="/srv/proca/live"
+    ENV_FILE="/etc/proca/env.live"
+    SERVICE="proca-live"
+    PORT=4000
+    ;;
+  *)
+    echo "ERROR: unknown environment '$ENV'. Use staging or live."
+    exit 1
+    ;;
+esac
+
+echo "==> Environment: ${ENV}"
+
+# ---- Version ----
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
   VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
@@ -21,7 +42,6 @@ fi
 
 RELEASE_SRC="_build/prod/rel/proca"
 RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
-CURRENT_LINK="/srv/proca/current"
 
 if [ ! -d "$RELEASE_SRC" ]; then
   echo "ERROR: Release not found at $RELEASE_SRC"
@@ -37,18 +57,20 @@ echo "==> Updating current symlink (atomic)"
 ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
 
 echo "==> Running database migrations"
+if [ -f "$ENV_FILE" ]; then
+  set -a; . "$ENV_FILE"; set +a
+fi
 "$RELEASE_DST/bin/proca" eval Proca.ReleaseTasks.migrate
 
-echo "==> Restarting service"
-sudo systemctl restart proca
+echo "==> Restarting service: ${SERVICE}"
+sudo systemctl restart "$SERVICE"
 
 echo "==> Done"
-echo "Deployed version ${VERSION}. Waiting for health check..."
+echo "Deployed version ${VERSION} to ${ENV}. Waiting for health check..."
 sleep 3
 
-# Quick health check
-if curl -sf http://127.0.0.1:4000/health > /dev/null 2>&1; then
+if curl -sf "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then
   echo "Service is healthy."
 else
-  echo "WARNING: Health check failed. Check logs with: journalctl -u proca -f"
+  echo "WARNING: Health check failed. Check logs with: journalctl -u ${SERVICE} -f"
 fi

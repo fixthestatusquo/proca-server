@@ -1,7 +1,7 @@
 #!/bin/sh
 # Zero-downtime blue-green deploy for Proca behind nginx.
 #
-# Usage:  ./scripts/deploy-bluegreen [version]
+# Usage:  ./scripts/deploy-bluegreen [version] [staging|live]
 #
 # If version is omitted, it is extracted from mix.exs.
 #
@@ -13,8 +13,8 @@
 #
 # Prerequisites:
 #   1. Both systemd services installed (but only one enabled):
-#        sudo cp deploy/proca-blue.service /etc/systemd/system/
-#        sudo cp deploy/proca-green.service /etc/systemd/system/
+#        sudo cp deploy/${SERVICE_PREFIX}-blue.service /etc/systemd/system/
+#        sudo cp deploy/${SERVICE_PREFIX}-green.service /etc/systemd/system/
 #        sudo systemctl daemon-reload
 #   2. Nginx configured with an upstream pointing to the active port
 #      (see deploy/proca-nginx.conf)
@@ -22,18 +22,45 @@
 #
 # Setup example (first time):
 #   ./build
-#   sudo systemctl enable proca-blue && sudo systemctl start proca-blue
+#   sudo systemctl enable ${SERVICE_PREFIX}-blue && sudo systemctl start ${SERVICE_PREFIX}-blue
 #   # configure nginx to proxy to 127.0.0.1:4000, then:
 #   sudo nginx -s reload
+#
+# Examples:
+#   ./scripts/deploy-bluegreen              # staging
+#   ./scripts/deploy-bluegreen 3.9.16 live  # explicit version, live
 
 set -euo pipefail
 
-# ---- Configuration (customise for your server) ----
+# ---- Which environment? ----
+ENV="${2:-staging}"
+
+case "$ENV" in
+  staging)
+    CURRENT_LINK="/srv/proca/current"
+    ENV_FILE="/etc/proca/env"
+    SERVICE_PREFIX="proca"
+    BLUE_PORT=4000
+    GREEN_PORT=4001
+    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-staging"
+    ;;
+  live)
+    CURRENT_LINK="/srv/proca/live"
+    ENV_FILE="/etc/proca/env.live"
+    SERVICE_PREFIX="proca-live"
+    BLUE_PORT=4100
+    GREEN_PORT=4101
+    NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca-live"
+    ;;
+  *)
+    echo "ERROR: unknown environment '$ENV'. Use staging or live."
+    exit 1
+    ;;
+esac
+
+echo "==> Environment: ${ENV}"
+
 RELEASE_DIR="/srv/proca/releases"
-CURRENT_LINK="/srv/proca/current"
-BLUE_PORT=4000
-GREEN_PORT=4001
-NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca"   # change to your nginx config path
 
 # ---- Helpers ----
 port_for() {
@@ -67,15 +94,15 @@ ln -sfn "${RELEASE_DST}" "${CURRENT_LINK}"
 
 # ---- Determine which instance is currently active ----
 ACTIVE_INSTANCE=""
-if systemctl is-active --quiet proca-blue 2>/dev/null; then
+if systemctl is-active --quiet ${SERVICE_PREFIX}-blue 2>/dev/null; then
   ACTIVE_INSTANCE="blue"
-elif systemctl is-active --quiet proca-green 2>/dev/null; then
+elif systemctl is-active --quiet ${SERVICE_PREFIX}-green 2>/dev/null; then
   ACTIVE_INSTANCE="green"
 fi
 
 if [ -z "$ACTIVE_INSTANCE" ]; then
   echo "ERROR: No active proca instance found."
-  echo "Start one first: sudo systemctl start proca-blue"
+  echo "Start one first: sudo systemctl start ${SERVICE_PREFIX}-blue"
   exit 1
 fi
 
@@ -88,6 +115,9 @@ echo "==> Standby: proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
 
 # ---- Run migrations (backward-compatible only) ----
 echo "==> Running database migrations"
+if [ -f "$ENV_FILE" ]; then
+  set -a; . "$ENV_FILE"; set +a
+fi
 "${RELEASE_DST}/bin/proca" eval Proca.ReleaseTasks.migrate
 
 # ---- Start the standby instance ----
