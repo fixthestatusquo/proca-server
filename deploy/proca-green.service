@@ -1,0 +1,42 @@
+# Systemd service for Proca (green instance, port 4001)
+#
+# Install:
+#   sudo cp deploy/proca-green.service /etc/systemd/system/
+#   sudo systemctl enable proca-green && sudo systemctl start proca-green
+#
+# Used together with proca-blue.service for zero-downtime deploys.
+# The deploy-bluegreen script handles start/stop of each.
+
+[Unit]
+Description=Proca (green instance, port 4001)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=app
+Group=app
+WorkingDirectory=/srv/proca/current
+
+Environment=PORT=4001
+Environment=RELEASE_TMP=/srv/proca/current/tmp
+
+# Load secret env vars (DATABASE_URL, SECRET_KEY_BASE, etc.)
+EnvironmentFile=/srv/proca/environment
+
+ExecStart=/srv/proca/current/bin/proca start
+ExecStop=/srv/proca/current/bin/proca stop
+
+# Health-check after start
+ExecStartPost=/bin/sh -c 'for i in $$(seq 1 30); do curl -sf http://127.0.0.1:4001/health >/dev/null && exit 0; sleep 1; done; exit 1'
+
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

@@ -5,27 +5,45 @@
 #
 # If version is omitted, it is extracted from mix.exs.
 #
-# Prerequisites:
-#   1. systemd services installed:  sudo systemctl enable proca@blue  && sudo systemctl start proca@blue
-#                                   sudo systemctl enable proca@green && sudo systemctl start proca@green
-#   2. Nginx configured with the upstream block from deploy/proca-nginx.conf
-#   3. This script is run from the proca source directory (/usr/src/proca-server)
-#
 # How it works:
-#   - Blue listens on port 4000, Green on port 4001
-#   - At any time, only one is active (receiving nginx traffic)
-#   - The deploy builds the new release, starts the standby instance,
-#     switches nginx to it, then stops the old instance
-#   - Zero downtime because one instance is always serving
+#   Only ONE instance runs at a time during normal operation.
+#   During a deploy, the standby is started briefly (10-30s),
+#   nginx is reloaded to point to it, and the old instance is stopped.
+#   This avoids running two DB connection pools permanently.
+#
+# Prerequisites:
+#   1. Both systemd services installed (but only one enabled):
+#        sudo cp deploy/proca-blue.service /etc/systemd/system/
+#        sudo cp deploy/proca-green.service /etc/systemd/system/
+#        sudo systemctl daemon-reload
+#   2. Nginx configured with an upstream pointing to the active port
+#      (see deploy/proca-nginx.conf)
+#   3. Run from the proca source directory
+#
+# Setup example (first time):
+#   ./build
+#   sudo systemctl enable proca-blue && sudo systemctl start proca-blue
+#   # configure nginx to proxy to 127.0.0.1:4000, then:
+#   sudo nginx -s reload
 
 set -euo pipefail
 
-# ---- Configuration ----
+# ---- Configuration (customise for your server) ----
 RELEASE_DIR="/srv/proca/releases"
 CURRENT_LINK="/srv/proca/current"
-NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca"   # adjust to your path
 BLUE_PORT=4000
 GREEN_PORT=4001
+NGINX_UPSTREAM_CONF="/etc/nginx/sites-enabled/proca"   # change to your nginx config path
+
+# ---- Helpers ----
+port_for() {
+  case "$1" in
+    blue)  echo "$BLUE_PORT" ;;
+    green) echo "$GREEN_PORT" ;;
+  esac
+}
+
+service_name() { echo "proca-$1"; }
 
 # ---- Determine version ----
 VERSION="${1:-}"
@@ -49,100 +67,76 @@ ln -sfn "${RELEASE_DST}" "${CURRENT_LINK}"
 
 # ---- Determine which instance is currently active ----
 ACTIVE_INSTANCE=""
-STANDBY_INSTANCE=""
-
-if systemctl is-active --quiet proca@blue 2>/dev/null; then
+if systemctl is-active --quiet proca-blue 2>/dev/null; then
   ACTIVE_INSTANCE="blue"
-  STANDBY_INSTANCE="green"
-elif systemctl is-active --quiet proca@green 2>/dev/null; then
+elif systemctl is-active --quiet proca-green 2>/dev/null; then
   ACTIVE_INSTANCE="green"
-  STANDBY_INSTANCE="blue"
-else
-  echo "WARNING: No active proca instance found. Starting blue as initial instance."
-  ACTIVE_INSTANCE=""
-  STANDBY_INSTANCE="blue"
 fi
 
-echo "==> Active instance:  ${ACTIVE_INSTANCE:-none}"
-echo "==> Standby instance: ${STANDBY_INSTANCE}"
+if [ -z "$ACTIVE_INSTANCE" ]; then
+  echo "ERROR: No active proca instance found."
+  echo "Start one first: sudo systemctl start proca-blue"
+  exit 1
+fi
+
+STANDBY_INSTANCE=$([ "$ACTIVE_INSTANCE" = "blue" ] && echo "green" || echo "blue")
+ACTIVE_PORT=$(port_for "$ACTIVE_INSTANCE")
+STANDBY_PORT=$(port_for "$STANDBY_INSTANCE")
+
+echo "==> Active:  proca-${ACTIVE_INSTANCE}  (port ${ACTIVE_PORT})"
+echo "==> Standby: proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
 
 # ---- Run migrations (backward-compatible only) ----
 echo "==> Running database migrations"
 "${RELEASE_DST}/bin/proca" eval Proca.ReleaseTasks.migrate
 
 # ---- Start the standby instance ----
-if [ -n "$STANDBY_INSTANCE" ]; then
-  echo "==> Starting standby instance: proca@${STANDBY_INSTANCE}"
-  sudo systemctl start "proca@${STANDBY_INSTANCE}"
+echo "==> Starting standby instance on port ${STANDBY_PORT}"
+sudo systemctl start "proca-${STANDBY_INSTANCE}"
 
-  # Wait for it to be healthy
-  STANDBY_PORT=$([ "$STANDBY_INSTANCE" = "blue" ] && echo "$BLUE_PORT" || echo "$GREEN_PORT")
-  echo "==> Waiting for standby to pass health check on port ${STANDBY_PORT}..."
-
-  HEALTHY=false
-  for i in $(seq 1 30); do
-    if curl -sf "http://127.0.0.1:${STANDBY_PORT}/health" >/dev/null 2>&1; then
-      HEALTHY=true
-      echo "   Standby instance is healthy after ${i}s"
-      break
-    fi
-    sleep 1
-  done
-
-  if [ "$HEALTHY" != "true" ]; then
-    echo "ERROR: Standby instance did not become healthy. Check logs: sudo journalctl -u proca@${STANDBY_INSTANCE} -f"
-    sudo systemctl stop "proca@${STANDBY_INSTANCE}" 2>/dev/null || true
-    exit 1
+echo "==> Waiting for standby to pass health check..."
+HEALTHY=false
+for i in $(seq 1 30); do
+  if curl -sf "http://127.0.0.1:${STANDBY_PORT}/health" >/dev/null 2>&1; then
+    HEALTHY=true
+    echo "   Healthy after ${i}s"
+    break
   fi
+  sleep 1
+done
+
+if [ "$HEALTHY" != "true" ]; then
+  echo "ERROR: Standby did not become healthy. Check logs:"
+  echo "  sudo journalctl -u proca-${STANDBY_INSTANCE} -f"
+  sudo systemctl stop "proca-${STANDBY_INSTANCE}" 2>/dev/null || true
+  exit 1
 fi
 
-# ---- Switch nginx traffic to the new instance ----
-if [ -n "$ACTIVE_INSTANCE" ]; then
-  # The nginx config uses commented/uncommented upstream blocks to switch.
-  # We update the config file to point to the standby instance.
-  NEW_ACTIVE_PORT=$([ "$STANDBY_INSTANCE" = "blue" ] && echo "$BLUE_PORT" || echo "$GREEN_PORT")
-
-  echo "==> Switching nginx upstream to port ${NEW_ACTIVE_PORT} (${STANDBY_INSTANCE})"
-  echo "   Manually update ${NGINX_UPSTREAM_CONF} to point to 127.0.0.1:${NEW_ACTIVE_PORT}"
-  echo "   Then run: sudo nginx -s reload"
-  echo ""
-  echo "   Or if using the dual-upstream approach with backup, just run:"
-  echo "   sudo nginx -s reload"
-  echo "   (the old active will be marked as backup, the standby takes over)"
-  echo ""
-
-  # We can't modify the nginx config automatically without knowing its exact layout.
-  # Two options — ask the user or use a helper.
-  if [ -f "${NGINX_UPSTREAM_CONF}" ]; then
-    echo "   Attempting automatic upstream switch..."
-    # Replace the active port with the standby port in the upstream block
-    sudo sed -i "s/server 127.0.0.1:${BLUE_PORT}/server 127.0.0.1:${GREEN_PORT}/g; s/server 127.0.0.1:${GREEN_PORT}/server 127.0.0.1:${BLUE_PORT}/g" "${NGINX_UPSTREAM_CONF}" 2>/dev/null || true
-    sudo nginx -s reload
-    echo "   nginx reloaded."
-  else
-    echo "   Nginx config not found at ${NGINX_UPSTREAM_CONF}."
-    echo "   Please update it manually and run: sudo nginx -s reload"
-  fi
+# ---- Switch nginx ----
+echo "==> Switching nginx to port ${STANDBY_PORT} (${STANDBY_INSTANCE})"
+if [ -f "$NGINX_UPSTREAM_CONF" ]; then
+  # Flip the active port number in the upstream block
+  sudo sed -i "s/:${ACTIVE_PORT}/:STANDBY_PLACEHOLDER/g; s/:${STANDBY_PORT}/:${ACTIVE_PORT}/g; s/:STANDBY_PLACEHOLDER/:${STANDBY_PORT}/g" "$NGINX_UPSTREAM_CONF"
 fi
+
+sudo nginx -s reload
+echo "   nginx reloaded."
 
 # ---- Stop the old instance ----
-if [ -n "$ACTIVE_INSTANCE" ]; then
-  echo "==> Stopping old instance: proca@${ACTIVE_INSTANCE}"
-  sudo systemctl stop "proca@${ACTIVE_INSTANCE}"
+echo "==> Stopping old instance: proca-${ACTIVE_INSTANCE}"
+sudo systemctl stop "proca-${ACTIVE_INSTANCE}"
 
-  # Verify the new instance is still healthy
-  echo "==> Verifying new instance health..."
-  sleep 2
-  NEW_ACTIVE_PORT=$([ "$STANDBY_INSTANCE" = "blue" ] && echo "$BLUE_PORT" || echo "$GREEN_PORT")
-  if curl -sf "http://127.0.0.1:${NEW_ACTIVE_PORT}/health" >/dev/null 2>&1; then
-    echo "   New instance is healthy."
-  else
-    echo "WARNING: New instance health check failed after stopping old instance!"
-    echo "   Check logs: sudo journalctl -u proca@${STANDBY_INSTANCE} -f"
-  fi
+# Final health check
+sleep 2
+echo "==> Verifying new instance health..."
+if curl -sf "http://127.0.0.1:${STANDBY_PORT}/health" >/dev/null 2>&1; then
+  echo "   Healthy."
+else
+  echo "WARNING: Health check failed after stopping old instance."
+  echo "  Check: sudo journalctl -u proca-${STANDBY_INSTANCE} -f"
 fi
 
 echo ""
 echo "==> Deploy complete!"
 echo "   Version: ${VERSION}"
-echo "   Active:  proca@${STANDBY_INSTANCE} (port $( [ "$STANDBY_INSTANCE" = "blue" ] && echo "$BLUE_PORT" || echo "$GREEN_PORT"))"
+echo "   Active:  proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
