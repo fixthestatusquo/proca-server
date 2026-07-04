@@ -42,7 +42,7 @@ defmodule Proca.DaemonSupervisor do
   defp start_daemons do
     children = Proca.Application.daemon_servers()
 
-    case Supervisor.start_link(children, strategy: :one_for_one, name: Proca.DaemonSupervisor) do
+    case Supervisor.start_link(children, strategy: :one_for_one, name: Proca.DaemonSupervisor.Instance) do
       {:ok, pid} ->
         Logger.info("DaemonSupervisor started background service supervisor (#{inspect(pid)})")
 

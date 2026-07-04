@@ -30,6 +30,6 @@ find /srv/proca/releases -maxdepth 1 -type d -name 'proca-*' -exec rm -rf {} \;
 RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
 echo "==> Copying release to ${RELEASE_DST}"
 mkdir -p "$(dirname "$RELEASE_DST")"
-rsync -avz --delete _build/prod/rel/proca/ "${RELEASE_DST}/"
+rsync -avz _build/prod/rel/proca/ "${RELEASE_DST}/"
 
 echo "==> Release ${VERSION} ready at ${RELEASE_DST}"
