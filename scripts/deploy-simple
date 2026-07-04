@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Deploy a built release and restart the service.
 #
 # Usage:  ./scripts/deploy-simple [version] [staging|live]
@@ -57,10 +57,8 @@ echo "==> Updating current symlink (atomic)"
 ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
 
 echo "==> Running database migrations"
-if [ -f "$ENV_FILE" ]; then
-  set -a; . "$ENV_FILE"; set +a
-fi
-"$RELEASE_DST/bin/proca" eval Proca.ReleaseTasks.migrate
+# Run as root because /etc/proca/env is root-readable only
+sudo sh -c ". ${ENV_FILE} && ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
 
 echo "==> Restarting service: ${SERVICE}"
 sudo systemctl restart "$SERVICE"

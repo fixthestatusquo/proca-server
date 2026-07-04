@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Build a production release of Proca.
 #
 # Prerequisites: asdf with versions from .tool-versions

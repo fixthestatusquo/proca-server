@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Zero-downtime blue-green deploy for Proca behind nginx.
 #
 # Usage:  ./scripts/deploy-bluegreen [version] [staging|live]
@@ -115,10 +115,8 @@ echo "==> Standby: proca-${STANDBY_INSTANCE} (port ${STANDBY_PORT})"
 
 # ---- Run migrations (backward-compatible only) ----
 echo "==> Running database migrations"
-if [ -f "$ENV_FILE" ]; then
-  set -a; . "$ENV_FILE"; set +a
-fi
-"${RELEASE_DST}/bin/proca" eval Proca.ReleaseTasks.migrate
+# Run as root because /etc/proca/env is root-readable only
+sudo sh -c ". ${ENV_FILE} && ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
 
 # ---- Start the standby instance ----
 echo "==> Starting standby instance on port ${STANDBY_PORT}"
