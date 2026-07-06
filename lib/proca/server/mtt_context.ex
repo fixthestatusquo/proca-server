@@ -300,27 +300,29 @@ defmodule Proca.Server.MTTContext do
         vals -> dynamic([m], m.sent in ^vals)
       end
 
-    from(
-      m in Proca.Action.Message,
-      join: t in assoc(m, :target),
-      join: a in assoc(m, :action),
-      join: s in assoc(a, :supporter),
-      join: ap in assoc(a, :action_page),
-      join: mc in assoc(m, :message_content),
-      where:
-        m.target_id == ^target_id and
-          a.processing_status == :delivered and
-          a.testing == ^testing and
-          ^sent_dynamic and
-          m.dupe_rank == 0,
-      order_by: [asc: m.id],
-      distinct: m.id,
-      preload: [
-        target: :emails,
-        message_content: mc,
-        action: {a, [:supporter, :action_page]}
-      ]
-    )
+    base =
+      from(
+        m in Proca.Action.Message,
+        join: t in assoc(m, :target),
+        join: a in assoc(m, :action),
+        join: s in assoc(a, :supporter),
+        join: ap in assoc(a, :action_page),
+        join: mc in assoc(m, :message_content),
+        where:
+          m.target_id == ^target_id and
+            a.processing_status == :delivered and
+            a.testing == ^testing and
+            m.dupe_rank == 0,
+        order_by: [asc: m.id],
+        distinct: m.id,
+        preload: [
+          target: :emails,
+          message_content: mc,
+          action: {a, [:supporter, :action_page]}
+        ]
+      )
+
+    from(m in base, where: ^sent_dynamic)
   end
 
 
