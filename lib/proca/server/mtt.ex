@@ -125,7 +125,7 @@ defmodule Proca.Server.MTT do
           Repo.checkout(
             fn ->
               Logger.info("Start MTT worker for #{campaign.name} (connection acquired)")
-              MTTWorker.process_mtt_campaign(campaign)
+              process_campaign_exclusively(campaign)
             end,
             timeout: :infinity
           )
@@ -133,5 +133,24 @@ defmodule Proca.Server.MTT do
 
       task.ref
     end)
+  end
+
+  # DB-level mutual exclusion per campaign, so a crash-restarted GenServer or
+  # a second node can't run this campaign concurrently and double-send.
+  @doc false
+  def process_campaign_exclusively(campaign) do
+    case Ecto.Adapters.SQL.query!(Repo, "SELECT pg_try_advisory_lock($1)", [campaign.id]) do
+      %{rows: [[true]]} ->
+        try do
+          MTTWorker.process_mtt_campaign(campaign)
+        after
+          Ecto.Adapters.SQL.query!(Repo, "SELECT pg_advisory_unlock($1)", [campaign.id])
+        end
+
+      _ ->
+        Logger.warning(
+          "Skipping MTT worker for #{campaign.name}: another worker is already sending for this campaign (advisory lock held)"
+        )
+    end
   end
 end
