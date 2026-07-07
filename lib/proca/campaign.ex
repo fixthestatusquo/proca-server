@@ -22,6 +22,11 @@ defmodule Proca.Campaign do
     field :status, CampaignStatus, default: :live
     field :supporter_confirm, :boolean, default: false
     field :supporter_confirm_template, :string
+
+    # Tri-state override of org.custom_action_confirm for this campaign only:
+    # nil -> inherit the org setting, true -> force action confirm on, false -> force it off.
+    field :action_confirm, :boolean
+
     field :start, :date, source: :start_date
     field :end, :date, source: :end_date
 
@@ -47,6 +52,7 @@ defmodule Proca.Campaign do
       :status,
       :supporter_confirm,
       :supporter_confirm_template,
+      :action_confirm,
       :start,
       :end
     ])
