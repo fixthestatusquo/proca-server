@@ -168,15 +168,24 @@ defmodule Proca.Server.MTTContext do
             Message.mark_all(chunk, :sent)
 
           {:error, statuses} ->
-            Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+            successes =
+              Enum.zip(chunk, statuses)
+              |> Enum.filter(fn
+                {_, :ok} -> true
+                _ -> false
+              end)
+              |> Enum.map(fn {m, _} -> m end)
 
-            Enum.zip(chunk, statuses)
-            |> Enum.filter(fn
-              {_, :ok} -> true
-              _ -> false
-            end)
-            |> Enum.map(fn {m, _} -> m end)
-            |> Message.mark_all(:sent)
+            if successes != [] do
+              Logger.error("MTT partially failed to send: #{inspect(statuses)}")
+              Message.mark_all(successes, :sent)
+            else
+              Logger.error(
+                "MTT all attempts failed for batch: #{inspect(statuses)}, marking all sent to prevent retry"
+              )
+
+              Message.mark_all(chunk, :sent)
+            end
         end
       end
     end
@@ -231,12 +240,15 @@ defmodule Proca.Server.MTTContext do
         Message.mark_one(msg, :sent)
 
       {:error, statuses} ->
-        Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
-
-        if Enum.member?(statuses, &(&1 == :ok)) do
-          msg
-          |> Message.mark_one(:sent)
+        if Enum.any?(statuses, &(&1 == :ok)) do
+          Logger.error("MTT partially failed to send: #{inspect(statuses)}")
+        else
+          Logger.error(
+            "MTT all attempts failed for message #{msg.id}: #{inspect(statuses)}, marking sent to prevent retry"
+          )
         end
+
+        Message.mark_one(msg, :sent)
     end
     end
   end
