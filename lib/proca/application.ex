@@ -117,6 +117,7 @@ defmodule Proca.Application do
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
       # MTT cron job
       {Proca.Server.MTT, []},
+      {Registry, [name: Proca.Server.MTTSchedulerRegistry, keys: :unique]},
       {Proca.Server.MTTSupervisor, []},
       {Proca.Server.MTTHourlyCron, []},
       # Confirm reminder cron

@@ -136,6 +136,19 @@ defmodule ProcaWeb.Telemetry do
       # count sent messages per target
       counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
 
+      # MTT New Scheduler Lifecycle
+      counter("proca.mtt_new.scheduler.start", tags: [:campaign_id]),
+      counter("proca.mtt_new.scheduler.skip", tags: [:campaign_id, :reason]),
+      counter("proca.mtt_new.scheduler.stop", tags: [:campaign_id, :stop_reason]),
+      distribution("proca.mtt_new.scheduler.duration",
+        unit: {:native, :millisecond},
+        tags: [:campaign_id, :stop_reason],
+        reporter_options: [
+          buckets: [1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000]
+        ]
+      ),
+      last_value("proca.mtt_new.scheduler.pending_count", tags: [:campaign_id]),
+
       # Email Metrics
       distribution("proca.email.supporter_confirm.lag_ms",
         unit: :millisecond,

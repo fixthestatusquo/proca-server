@@ -11,6 +11,9 @@ defmodule Proca.Server.MTTHourlyCronTest do
   setup do
     %{targets: targets} = mtt_story()
 
+    {:ok, _reg_pid} =
+      Registry.start_link(keys: :unique, name: Proca.Server.MTTSchedulerRegistry)
+
     {:ok, sup_pid} = MTTSupervisor.start_link([])
     {:ok, cron_pid} = MTTHourlyCron.start_link([])
 
