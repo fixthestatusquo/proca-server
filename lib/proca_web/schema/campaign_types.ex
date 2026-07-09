@@ -187,6 +187,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :supporter_confirm, :boolean
     @desc "Supporter confirmation template name"
     field :supporter_confirm_template, :string
+    @desc """
+    Override the org's action confirmation setting (org.customActionConfirm) for this campaign only.
+    null - inherit the org setting, true - force action confirm on, false - force it off.
+    """
+    field :action_confirm, :boolean
   end
 
   object :campaign_mutations do
@@ -242,6 +247,11 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:supporter_confirm, :boolean)
       @desc "Supporter confirmation template name"
       arg(:supporter_confirm_template, :string)
+      @desc """
+      Override the org's action confirmation setting for this campaign only.
+      null - inherit the org setting, true - force action confirm on, false - force it off.
+      """
+      arg(:action_confirm, :boolean)
 
       load(:campaign, by: [:name])
       determine_auth(for: :campaign)
@@ -324,6 +334,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "Supporter confirmation template name"
     field(:supporter_confirm_template, :string)
+
+    @desc """
+    Override the org's action confirmation setting for this campaign only.
+    null - inherit the org setting, true - force action confirm on, false - force it off.
+    """
+    field(:action_confirm, :boolean)
   end
 
   object :campaign_mtt do

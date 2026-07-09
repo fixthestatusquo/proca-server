@@ -116,6 +116,14 @@ defmodule Proca.Stage.Processing do
 
   def needs_lookup?(_, _), do: false
 
+  @doc """
+  Tri-state override of org.custom_action_confirm by campaign.action_confirm:
+  nil defers to the org setting, true/false force it on or off for this campaign.
+  """
+  @spec effective_action_confirm(boolean(), boolean() | nil) :: boolean()
+  def effective_action_confirm(org_action_confirm, nil), do: org_action_confirm
+  def effective_action_confirm(_org_action_confirm, campaign_action_confirm), do: campaign_action_confirm
+
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
           | {:new | :confirming | :accepted | :delivered | :rejected,
@@ -160,10 +168,11 @@ defmodule Proca.Stage.Processing do
           org: %{
             supporter_confirm: system_confirm,
             custom_supporter_confirm: custom_confirm,
-            custom_action_confirm: action_confirm
+            custom_action_confirm: org_action_confirm
           },
           campaign: %{
-            supporter_confirm: campaign_confirm
+            supporter_confirm: campaign_confirm,
+            action_confirm: campaign_action_confirm
           }
         }
       ) do
@@ -172,7 +181,7 @@ defmodule Proca.Stage.Processing do
       system_confirm or campaign_confirm or custom_confirm ->
         {:new, :confirming, :supporter_confirm}
 
-      action_confirm ->
+      effective_action_confirm(org_action_confirm, campaign_action_confirm) ->
         {:confirming, :accepted, :action_confirm}
 
       true ->
@@ -225,9 +234,12 @@ defmodule Proca.Stage.Processing do
           supporter: %{processing_status: :accepted}
         },
         %ActionPage{
-          org: %{custom_action_confirm: true}
+          org: %{custom_action_confirm: org_action_confirm},
+          campaign: %{action_confirm: campaign_action_confirm}
         }
-      ) do
+      )
+      when (is_nil(campaign_action_confirm) and org_action_confirm == true) or
+             campaign_action_confirm == true do
     # Send action to action_confirm queue
     {:confirming, :accepted, :action_confirm}
   end
