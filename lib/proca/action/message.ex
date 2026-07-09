@@ -104,7 +104,7 @@ defmodule Proca.Action.Message do
             a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
-            a.testing == true or m.dupe_rank == 0
+            (a.testing == true or m.dupe_rank == 0)
       )
 
     case target_ids do
