@@ -102,6 +102,10 @@ defmodule Proca.Service do
     field :password, :string, default: ""
     field :path, :string
     field :sending_from, :string
+    # when this service is used as an org's transactional_email_backend, how
+    # many emails to send via it before falling back to email_backend
+    # (warming up a new backend / capping its usage); nil means no limit
+    field :transactional_email_budget, :integer
     belongs_to :org, Proca.Org
 
     timestamps()
@@ -111,7 +115,15 @@ defmodule Proca.Service do
     assocs = Map.take(attrs, [:org])
 
     service
-    |> cast(attrs, [:name, :host, :user, :password, :path, :sending_from])
+    |> cast(attrs, [
+      :name,
+      :host,
+      :user,
+      :password,
+      :path,
+      :sending_from,
+      :transactional_email_budget
+    ])
     |> change(assocs)
   end
 

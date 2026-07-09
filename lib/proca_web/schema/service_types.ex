@@ -27,6 +27,21 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     end
 
     @desc """
+    Reset the in-memory transactional email counter for an org's transactional_email_backend.
+    Call this from a nightly cron to re-open the budget window each day.
+    """
+    field :reset_transactional_email_budget, type: non_null(:status) do
+      @desc "Owner org"
+      arg(:org_name, non_null(:string))
+
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([:change_org_services])
+
+      resolve(&Resolvers.Service.reset_transactional_email_budget/3)
+    end
+
+    @desc """
     Stripe API - add a stripe payment intent, when donating to the action page specified by id
     """
     field :add_stripe_payment_intent, type: non_null(:json) do
@@ -147,6 +162,9 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     the email backend is authorized to send from (SPF/DKIM configured).
     """
     field :sending_from, :string
+
+    @desc "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+    field :transactional_email_budget, :integer
   end
 
   input_object :service_input do
@@ -175,5 +193,8 @@ defmodule ProcaWeb.Schema.ServiceTypes do
 
     @desc "Verified sending address for this backend (overrides org email_from as the envelope From domain)"
     field :sending_from, :string
+
+    @desc "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+    field :transactional_email_budget, :integer
   end
 end

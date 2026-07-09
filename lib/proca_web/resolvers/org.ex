@@ -72,6 +72,7 @@ defmodule ProcaWeb.Resolvers.Org do
     org =
       Repo.preload(org, [
         :email_backend,
+        :transactional_email_backend,
         :event_backend,
         :storage_backend,
         :push_backend,
@@ -81,6 +82,12 @@ defmodule ProcaWeb.Resolvers.Org do
     email_backend =
       case org do
         %Org{email_backend: %{name: name}} -> name
+        _ -> nil
+      end
+
+    transactional_email_backend =
+      case org do
+        %Org{transactional_email_backend: %{name: name}} -> name
         _ -> nil
       end
 
@@ -113,6 +120,7 @@ defmodule ProcaWeb.Resolvers.Org do
       %{
         org: org,
         email_backend: email_backend,
+        transactional_email_backend: transactional_email_backend,
         event_backend: event_backend,
         storage_backend: storage_backend,
         push_backend: push_backend,
