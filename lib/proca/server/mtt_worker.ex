@@ -458,7 +458,9 @@ defmodule Proca.Server.MTTWorker do
   defp change_test_subject(message_content, false), do: message_content
 
   defp change_test_subject(message_content = %{subject: subject}, true) do
-    Map.put(message_content, :subject, "[TEST] " <> subject)
+    # drop the compiled cache: put_message_content prefers compiled.subject,
+    # which would discard the [TEST] prefix
+    %{message_content | subject: "[TEST] " <> subject, compiled: nil}
   end
 
   defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
