@@ -173,6 +173,9 @@ defmodule Proca.Org do
 
         :disable ->
           put_change(chset, String.to_existing_atom("#{backend_type}_id"), nil)
+
+        {:error, message} ->
+          add_error(chset, backend_type, message)
       end
     else
       chset
@@ -187,9 +190,12 @@ defmodule Proca.Org do
     Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
   end
 
-  # Returns nil if instance org has no transactional backend — for_transactional_email/2 will then fall back to orgx.email_backend.
+  # If instance org has no transactional backend configured, fails with an error
   defp cast_backend_service(:transactional_email_backend, :system, _org) do
-    Proca.Org.one([:instance] ++ [preload: [:transactional_email_backend]]).transactional_email_backend
+    instance = Proca.Org.one([:instance] ++ [preload: [:transactional_email_backend]])
+
+    instance.transactional_email_backend ||
+      {:error, "instance org has no transactional email backend configured"}
   end
 
   defp cast_backend_service(_type, service, org) when is_atom(service) do
