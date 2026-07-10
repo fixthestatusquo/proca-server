@@ -188,8 +188,10 @@ defmodule Proca.Org do
   end
 
   # Returns nil if instance org has no transactional backend — for_transactional_email/2 will then fall back to orgx.email_backend.
+  # If instance org has no transactional backend, returns :disable (sets to nil) — for_transactional_email/2 will then fall back to orgx.email_backend.
   defp cast_backend_service(:transactional_email_backend, :system, _org) do
-    Proca.Org.one([:instance] ++ [preload: [:transactional_email_backend]]).transactional_email_backend
+    instance = Proca.Org.one([:instance] ++ [preload: [:transactional_email_backend]])
+    instance.transactional_email_backend || :disable
   end
 
   defp cast_backend_service(_type, service, org) when is_atom(service) do

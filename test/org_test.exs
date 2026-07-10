@@ -98,24 +98,42 @@ defmodule OrgTest do
   end
 
   describe "changeset transactional_email_backend: :system" do
-    test "resolves to the instance org's own email backend" do
+    test "resolves to the instance org's transactional email backend" do
       instance_org =
         case Org.one([:instance]) do
           nil -> Repo.insert!(%Org{name: Org.instance_org_name(), title: "Instance Org"})
           o -> o
         end
 
-      instance_backend = attached_service(instance_org, :ses)
+      instance_trans_backend = attached_service(instance_org, :ses)
 
       instance_org
-      |> change(email_backend_id: instance_backend.id)
+      |> change(transactional_email_backend_id: instance_trans_backend.id)
       |> Repo.update!()
 
       org = Factory.insert(:org)
 
       ch = Org.changeset(org, %{transactional_email_backend: :system})
       assert ch.valid?
-      assert get_change(ch, :transactional_email_backend_id) == instance_backend.id
+      assert get_change(ch, :transactional_email_backend_id) == instance_trans_backend.id
+    end
+
+    test "resolves to nil if instance org has no transactional email backend" do
+      instance_org =
+        case Org.one([:instance]) do
+          nil -> Repo.insert!(%Org{name: Org.instance_org_name(), title: "Instance Org"})
+          o -> o
+        end
+
+      instance_org
+      |> change(transactional_email_backend_id: nil)
+      |> Repo.update!()
+
+      org = Factory.insert(:org)
+
+      ch = Org.changeset(org, %{transactional_email_backend: :system})
+      assert ch.valid?
+      assert get_change(ch, :transactional_email_backend_id) == nil
     end
   end
 end
