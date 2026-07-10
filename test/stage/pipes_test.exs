@@ -37,4 +37,16 @@ defmodule Proca.PipesTest do
 
     assert Proca.Stage.Support.times_retried(msg) == 55613
   end
+
+  test "too_many_retries? uses the configured numeric limit" do
+    previous = Application.get_env(:proca, Proca.Pipes)
+    Application.put_env(:proca, Proca.Pipes, Keyword.put(previous, :retry_limit, 3))
+    on_exit(fn -> Application.put_env(:proca, Proca.Pipes, previous) end)
+
+    assert Proca.Stage.Support.too_many_retries?(%Broadway.Message{
+             data: "",
+             acknowledger: Broadway.NoopAcknowledger,
+             metadata: @failed_metadata
+           })
+  end
 end

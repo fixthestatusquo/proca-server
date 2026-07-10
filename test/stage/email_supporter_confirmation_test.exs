@@ -62,6 +62,34 @@ defmodule ProcaWeb.Stage.EmailSupporterConfirmationTest do
   end
 
   describe "supporter confirmation emails" do
+    test "uses the org transactional backend for supporter confirmations", %{
+      org: org,
+      ap: action_page
+    } do
+      transactional = Factory.insert(:email_backend, org: org, name: :testmail)
+
+      Repo.update!(
+        Ecto.Changeset.change(org,
+          supporter_confirm: true,
+          supporter_confirm_template: "test_org_template",
+          transactional_email_backend_id: transactional.id
+        )
+      )
+
+      action = Factory.insert(:action, action_page: action_page, with_consent: true)
+      action_data = Proca.Stage.Support.action_data(action, :supporter_confirm)
+
+      Proca.Stage.EmailSupporter.handle_batch(
+        :supporter_confirm,
+        [%Broadway.Message{data: action_data, acknowledger: Broadway.NoopAcknowledger}],
+        %Broadway.BatchInfo{batch_key: action_page.id},
+        nil
+      )
+
+      [email] = TestEmailBackend.mailbox(action.supporter.email)
+      assert email.private.backend_id == transactional.id
+    end
+
     test "sends email using org template if campaign supporter_confirmation set to false and has no template",
          %{
            org: org,

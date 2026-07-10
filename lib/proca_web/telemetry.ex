@@ -109,7 +109,9 @@ defmodule ProcaWeb.Telemetry do
     })
   rescue
     e in DBConnection.ConnectionError ->
-      Logger.warning("count_sendable_messages skipped: DB connection error: #{Exception.message(e)}")
+      Logger.warning(
+        "count_sendable_messages skipped: DB connection error: #{Exception.message(e)}"
+      )
   end
 
   defp metrics do
@@ -132,9 +134,11 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
       sum("proca.mtt.messages_sent", tags: @campaign_tags),
 
-      # MTT New Algo
-      # count sent messages per target
-      counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
+      # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not
+      # exported as labels to avoid unbounded Prometheus cardinality.
+      counter("proca.mtt.delivery.count",
+        tags: [:kind, :result, :reason, :org_id, :campaign_id, :drip_delivery]
+      ),
 
       # MTT New Scheduler Lifecycle
       counter("proca.mtt_new.scheduler.start", tags: [:campaign_id]),

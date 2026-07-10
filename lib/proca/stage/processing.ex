@@ -122,7 +122,9 @@ defmodule Proca.Stage.Processing do
   """
   @spec effective_action_confirm(boolean(), boolean() | nil) :: boolean()
   def effective_action_confirm(org_action_confirm, nil), do: org_action_confirm
-  def effective_action_confirm(_org_action_confirm, campaign_action_confirm), do: campaign_action_confirm
+
+  def effective_action_confirm(_org_action_confirm, campaign_action_confirm),
+    do: campaign_action_confirm
 
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
@@ -399,12 +401,34 @@ defmodule Proca.Stage.Processing do
       Connection.publish(data, exchange, routing, chan)
     end
 
-    if Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
+    # Publish the idempotent MTT test event first. If its queue is unavailable,
+    # do not also duplicate normal delivery events on the processing retry.
+    if publish_mtt_test(action, chan) == :ok and
+         Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
       :ok
     else
       :error
     end
   end
+
+  # MTT test actions are pushed to the global low-volume test queue when the
+  # action is delivered, instead of waiting for a polling sender. Returning
+  # error re-runs emit later.
+  defp publish_mtt_test(
+         %{id: id, testing: true, action_page: %{campaign: %{}}},
+         chan
+       ) do
+    import Ecto.Query, only: [from: 2]
+
+    if Repo.exists?(from(m in Proca.Action.Message, where: m.action_id == ^id)) do
+      queue = Proca.Pipes.Topology.mtt_test_queue()
+      Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, chan)
+    else
+      :ok
+    end
+  end
+
+  defp publish_mtt_test(_action, _chan), do: :ok
 
   def emit(p = %Processing{stage: stage}, chan) when stage != nil do
     action = changed_action(p)

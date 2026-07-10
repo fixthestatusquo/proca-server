@@ -41,6 +41,33 @@ defmodule ProcaWeb.Stage.EmailSupporterDuplicateTest do
   end
 
   describe "duplicate emails" do
+    test "uses the org transactional backend for duplicate emails", %{
+      org: org,
+      ap: action_page
+    } do
+      transactional = Factory.insert(:email_backend, org: org, name: :testmail)
+
+      Repo.update!(Ecto.Changeset.change(org, transactional_email_backend_id: transactional.id))
+
+      action_page =
+        Repo.update!(
+          Proca.ActionPage.changeset(action_page, %{duplicate_template: "duplicate_template"})
+        )
+
+      action = Factory.insert(:action, action_page: action_page, with_consent: true)
+      action_data = Proca.Stage.Support.action_data(action)
+
+      Proca.Stage.EmailSupporter.handle_batch(
+        :duplicate,
+        [%Broadway.Message{data: action_data, acknowledger: Broadway.NoopAcknowledger}],
+        %Broadway.BatchInfo{batch_key: action_page.id},
+        nil
+      )
+
+      [email] = TestEmailBackend.mailbox(action.supporter.email)
+      assert email.private.backend_id == transactional.id
+    end
+
     test "sends duplicate email when supporter is a dupe and duplicate_template is set", %{
       ap: action_page
     } do
@@ -90,9 +117,10 @@ defmodule ProcaWeb.Stage.EmailSupporterDuplicateTest do
       assert email.subject == "Thank you"
     end
 
-    test "send_duplicate? returns true when action has processing_status repeat and template is configured", %{
-      ap: action_page
-    } do
+    test "send_duplicate? returns true when action has processing_status repeat and template is configured",
+         %{
+           ap: action_page
+         } do
       action_page =
         Repo.update!(
           Proca.ActionPage.changeset(action_page, %{duplicate_template: "duplicate_template"})

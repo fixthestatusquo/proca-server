@@ -9,6 +9,7 @@ defmodule Proca.Server.MTTWorkerTest do
   alias Proca.Factory
 
   alias Proca.Server.MTTWorker
+  alias Proca.Server.MTTContext
   alias Proca.Action.Message
 
   use Proca.TestEmailBackend
@@ -63,12 +64,6 @@ defmodule Proca.Server.MTTWorkerTest do
       tids = MTTWorker.get_sendable_target_ids(c)
       assert length(tids) == 10
 
-      emails = Proca.Repo.all(MTTWorker.query_test_emails_to_delete())
-      assert length(emails) == 0
-
-      emails = MTTWorker.get_test_emails_to_send()
-      assert length(emails) == 3
-
       # Before dupe rank was run:
       emails = MTTWorker.get_emails_to_send(tids, {700, 700})
       assert length(emails) == 0
@@ -84,6 +79,57 @@ defmodule Proca.Server.MTTWorkerTest do
       # we have 3 test emails and 7 live emails (one per target), so at 699 we still do not send that one i guess?
       emails = MTTWorker.get_emails_to_send(tids, {699, 700})
       assert length(emails) == 0
+    end
+
+    test "selection filters cannot be bypassed by dupe rank", %{
+      ap: ap,
+      targets: [target | _]
+    } do
+      valid_action =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted,
+          testing: false
+        )
+
+      valid = Factory.insert(:message, action: valid_action, target: target)
+      sent = Factory.insert(:message, action: valid_action, target: target, sent: true)
+
+      test_action =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted,
+          testing: true
+        )
+
+      testing = Factory.insert(:message, action: test_action, target: target)
+
+      pending_action =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :new,
+          supporter_processing_status: :new,
+          testing: false
+        )
+
+      undelivered = Factory.insert(:message, action: pending_action, target: target)
+
+      Repo.update_all(
+        from(m in Message, where: m.id in ^[valid.id, sent.id, testing.id, undelivered.id]),
+        set: [dupe_rank: 0]
+      )
+
+      selected_ids =
+        Message.select_by_targets([target.id], false, false)
+        |> select([m], m.id)
+        |> Repo.all()
+
+      assert valid.id in selected_ids
+      refute sent.id in selected_ids
+      refute testing.id in selected_ids
+      refute undelivered.id in selected_ids
     end
   end
 
@@ -149,45 +195,15 @@ defmodule Proca.Server.MTTWorkerTest do
       Message.mark_all(emails, :sent)
     end
 
-    test "test sending", %{campaign: c, target: %{id: tid, emails: [%{email: test_email}]}} do
-      Proca.Repo.update_all(from(a in Proca.Action), set: [testing: true])
-
-      c = %{c | mtt: Proca.Repo.update!(change(c.mtt, %{test_email: test_email}))}
-
-      MTTWorker.process_mtt_test_mails()
-
-      supporter_email =
-        Proca.Repo.one(
-          from s in Proca.Supporter,
-            join: camp in assoc(s, :campaign),
-            where: camp.id == ^c.id,
-            select: s.email,
-            limit: 1
-        )
-
-      mbox = Proca.TestEmailBackend.mailbox(supporter_email)
-
-      # limit to one per locale!
-      assert length(mbox) == 1
-
-      msg = List.first(mbox)
-      assert String.starts_with?(msg.subject, "[TEST]")
-      assert msg.cc == [{"", test_email}]
-    end
-
     test "live sending", %{campaign: c, target: %{id: tid, emails: [%{email: email}]}} do
       msgs = MTTWorker.get_emails_to_send([tid], {1, 1})
 
-      c = %{
-        c
-        | mtt:
-            Proca.Repo.update!(
-              change(c.mtt, %{
-                cc_contacts: ["first@domain.com", "second@domain.com"],
-                cc_sender: true
-              })
-            )
-      }
+      Proca.Repo.update!(
+        change(c.mtt, %{
+          cc_contacts: ["first@domain.com", "second@domain.com"],
+          cc_sender: true
+        })
+      )
 
       assert Enum.all?(msgs, fn %{
                                   action: %{
@@ -199,7 +215,9 @@ defmodule Proca.Server.MTTWorkerTest do
                ln != nil
              end)
 
-      MTTWorker.send_emails(c, msgs)
+      # deliver like Proca.Stage.MTT does when consuming the queue
+      target = MTTContext.get_target(tid)
+      Enum.each(msgs, &MTTContext.deliver_message(target, &1))
 
       te = Proca.TargetEmail.one(target_id: tid)
       assert te.email_status == :active
@@ -213,6 +231,29 @@ defmodule Proca.Server.MTTWorkerTest do
       assert {"", "first@domain.com"} in msg.cc
       assert {"", "second@domain.com"} in msg.cc
       assert %{"Reply-To" => _} = msg.headers
+
+      assert Enum.all?(msgs, &Proca.Repo.reload(&1).sent)
+    end
+
+    test "process_mtt_campaign fails closed when the org queue is unavailable", %{
+      campaign: %{id: campaign_id},
+      target: %{id: tid, emails: [%{email: email}]}
+    } do
+      move_schedule(%{id: campaign_id}, 29, 1)
+
+      # fetch fresh so the preloads pick up the moved schedule
+      c = Proca.Campaign.one(id: campaign_id)
+
+      # No Pipes.Topology process runs for this fixture org. Publishing must
+      # not fall back to direct provider delivery or mutate the DB.
+      MTTWorker.process_mtt_campaign(c)
+
+      assert Proca.TestEmailBackend.mailbox(email) == []
+
+      assert Repo.aggregate(
+               from(m in Message, where: m.target_id == ^tid and not m.sent),
+               :count
+             ) == 20
     end
   end
 
@@ -247,7 +288,7 @@ defmodule Proca.Server.MTTWorkerTest do
   test "sending without template", %{campaign: c, targets: [t | _]} do
     msg = Factory.insert(:message, target: t)
 
-    MTTWorker.send_emails(c, [msg])
+    MTTContext.deliver_message(MTTContext.get_target(t.id), msg)
 
     [%{email: target_email}] = t.emails
 
@@ -279,9 +320,7 @@ defmodule Proca.Server.MTTWorkerTest do
 
     update!(Proca.MTT.changeset(c.mtt, %{message_template: template.name}))
 
-    c = Proca.Campaign.one(id: c.id, preload: [:mtt, :org])
-
-    MTTWorker.send_emails(c, [msg])
+    MTTContext.deliver_message(MTTContext.get_target(t.id), msg)
 
     [%{email: target_email}] = t.emails
 

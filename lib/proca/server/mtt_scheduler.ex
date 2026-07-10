@@ -1,6 +1,9 @@
 defmodule Proca.Server.MTTScheduler do
   @moduledoc """
   Sending messages for a single target, spreading them over 1 hour with randomness.
+
+  Delivery itself goes through the org's `wrk.N.mtt` RabbitMQ queue (consumed
+  by `Proca.Stage.MTT`); see `Proca.Server.MTTContext.dispatch_message/2`.
   """
 
   use GenServer
@@ -17,8 +20,6 @@ defmodule Proca.Server.MTTScheduler do
   @impl true
   def init({target, max_emails_per_hour}) do
     start_time = System.monotonic_time()
-
-    Task.start(fn -> MTTContext.process_test_mails(target) end)
 
     messages = MTTContext.get_pending_messages(target.id, max_emails_per_hour)
 
@@ -69,7 +70,7 @@ defmodule Proca.Server.MTTScheduler do
         %{target: target, messages: [msg | rest], jitter_toggle: jitter_toggle} = state
       ) do
     Task.start(fn ->
-      MTTContext.deliver_message(target, msg)
+      MTTContext.dispatch_message(target, msg)
     end)
 
     interval = calc_interval(state.count, jitter_toggle, length(rest))

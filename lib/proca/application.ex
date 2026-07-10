@@ -120,6 +120,7 @@ defmodule Proca.Application do
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
       # MTT cron job
       {Proca.Server.MTT, []},
+      {Proca.Stage.MTTTest, []},
       {Registry, [name: Proca.Server.MTTSchedulerRegistry, keys: :unique]},
       {Proca.Server.MTTSupervisor, []},
       {Proca.Server.MTTHourlyCron, []},
