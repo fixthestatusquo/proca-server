@@ -325,10 +325,7 @@ defmodule Proca.Server.MTTWorker do
           |> Enum.split_with(fn {_e, email} -> not is_nil(email) end)
 
         batch = Enum.map(deliverable, fn {_e, email} -> email end)
-        skipped_msgs = Enum.map(skipped, fn {e, _email} -> e end)
-
-        # Mark skipped messages as delivered immediately (no valid target email)
-        Message.mark_all(skipped_msgs, :delivered)
+        # we don't change the message, it will - possibly - be processed again once the target as a new valid email
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
