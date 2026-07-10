@@ -13,7 +13,6 @@ defmodule Proca.Action.Message do
     field :opened, :boolean, default: false
     field :clicked, :boolean, default: false
     field :dupe_rank, :integer
-
     # files in storage service
     field :files, {:array, :string}, default: []
 
@@ -149,9 +148,12 @@ defmodule Proca.Action.Message do
     if mc.subject in ["", nil] or mc.body in ["", nil] do
       require Logger
       Logger.warning("Cancelling action #{action.id}: empty message content")
+
       Sentry.capture_message("MTT message cancelled: empty content",
         extra: %{action_id: action.id, message_id: msg.id},
-        level: "warning")
+        level: "warning"
+      )
+
       Proca.Repo.update(Ecto.Changeset.change(action, processing_status: :cancelled))
       mark_one(msg, :sent)
       true
@@ -173,6 +175,10 @@ defmodule Proca.Action.Message do
 
         :click ->
           Repo.update!(change(message, clicked: true, opened: true, delivered: true))
+
+        # webhook is a trust boundary - never crash on an unexpected event type
+        _ ->
+          :ok
       end
     end
   end
