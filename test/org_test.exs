@@ -118,7 +118,7 @@ defmodule OrgTest do
       assert get_change(ch, :transactional_email_backend_id) == instance_trans_backend.id
     end
 
-    test "resolves to nil if instance org has no transactional email backend" do
+    test "fails if instance org has no transactional email backend" do
       instance_org =
         case Org.one([:instance]) do
           nil -> Repo.insert!(%Org{name: Org.instance_org_name(), title: "Instance Org"})
@@ -132,8 +132,8 @@ defmodule OrgTest do
       org = Factory.insert(:org)
 
       ch = Org.changeset(org, %{transactional_email_backend: :system})
-      assert ch.valid?
-      assert get_change(ch, :transactional_email_backend_id) == nil
+      refute ch.valid?
+      assert {"instance org has no transactional email backend configured", _} = ch.errors[:transactional_email_backend]
     end
   end
 end
