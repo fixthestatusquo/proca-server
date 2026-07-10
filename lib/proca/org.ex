@@ -174,9 +174,6 @@ defmodule Proca.Org do
         :disable ->
           put_change(chset, String.to_existing_atom("#{backend_type}_id"), nil)
 
-        :ignore ->
-          chset
-
         {:error, message} ->
           add_error(chset, backend_type, message)
       end
