@@ -61,6 +61,54 @@ defmodule TargetTest do
 
     assert target_email.error ==
              "recipient: user unknown: Host or domain name not found. Name service error for name=lbjsnrftlsiuvbsren.com type=A: Host not found"
+
+    # hard bounce disables the address immediately
+    assert target_email.email_status == :bounce
+  end
+
+  test "a soft bounce is counted, its reason stored, and the address disabled", %{
+    message: message,
+    email: email
+  } do
+    event =
+      @bounce_event1
+      |> Jason.decode!()
+      |> Map.put("email", email.email)
+      |> Map.put("CustomID", "mtt:#{message.id}")
+      |> Map.put("hard_bounce", false)
+
+    te = Proca.Service.Mailjet.handle_bounce(event)
+
+    assert te.soft_bounce_count == 1
+    assert te.error =~ "user unknown"
+    # threshold is currently 1: first soft bounce disables the address
+    assert te.email_status == :bounce
+  end
+
+  test "successful delivery resets the soft bounce count", %{
+    message: message,
+    email: email
+  } do
+    Repo.update!(Ecto.Changeset.change(email, soft_bounce_count: 2))
+
+    TargetEmail.mark_one(email.id, :active)
+
+    email = Repo.get!(TargetEmail, email.id)
+    assert email.email_status == :active
+    assert email.soft_bounce_count == 0
+
+    # after the reset, a soft bounce counts from 1 again
+    te =
+      Target.handle_bounce(%{
+        id: message.id,
+        email: email.email,
+        reason: :bounce,
+        soft: true,
+        error: "greylisted"
+      })
+
+    assert te.soft_bounce_count == 1
+    assert te.error == "greylisted"
   end
 
   test "Delete a target", %{target: t} do

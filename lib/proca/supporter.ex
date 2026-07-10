@@ -233,6 +233,20 @@ defmodule Proca.Supporter do
     end
   end
 
+  # soft bounces are transient - do not reject the supporter for them,
+  # but log the reason (domain only, the address is PII) for diagnostics
+  def handle_bounce(%{soft: true} = params) do
+    domain = params[:email] |> to_string() |> String.split("@") |> List.last()
+
+    require Logger
+
+    Logger.warning(
+      "Soft bounce for supporter email at #{domain}: #{params[:error] || "no reason given"}"
+    )
+
+    {:ok, %Supporter{}}
+  end
+
   def handle_bounce(%{id: id, reason: reason}) do
     case Action.one(id: id, preload: [:supporter]) do
       # ignore a bounce when not found

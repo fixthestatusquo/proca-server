@@ -121,6 +121,11 @@ defmodule Proca.Target do
     end
   end
 
+  # ponytail: disable on the FIRST soft bounce for now - Mailjet reputation is at
+  # risk (30% soft bounce rate); raise the threshold once the rate recovers, the
+  # count/reset machinery already supports it
+  @max_soft_bounces 1
+
   def handle_bounce(%{id: id, email: email, reason: reason} = params) do
     case TargetEmail.one(message_id: id, email: email) do
       # ignore a bounce when not found
@@ -129,7 +134,33 @@ defmodule Proca.Target do
         {:ok, %TargetEmail{}}
 
       target_email ->
-        Repo.update!(change(target_email, email_status: reason, error: params[:error]))
+        if params[:soft] do
+          handle_soft_bounce(target_email, params)
+        else
+          Repo.update!(change(target_email, email_status: reason, error: params[:error]))
+        end
     end
+  end
+
+  # a soft bounce is usually transient (greylisting, mailbox full), so only
+  # disable the address after @max_soft_bounces consecutive ones; the count
+  # is reset on successful delivery (TargetEmail.mark_one/mark_all :active)
+  defp handle_soft_bounce(target_email, params) do
+    count = target_email.soft_bounce_count + 1
+
+    warn(
+      "Soft bounce ##{count} for target email #{target_email.email}: #{params[:error] || "no reason given"}"
+    )
+
+    status =
+      if count >= @max_soft_bounces, do: :bounce, else: target_email.email_status
+
+    Repo.update!(
+      change(target_email,
+        email_status: status,
+        soft_bounce_count: count,
+        error: params[:error]
+      )
+    )
   end
 end
