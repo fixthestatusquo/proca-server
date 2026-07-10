@@ -229,7 +229,8 @@ defmodule Proca.Service.Mailjet do
       id: id,
       email: email,
       reason: String.to_existing_atom(reason),
-      error: error
+      error: error,
+      soft: reason == "bounce" and event["hard_bounce"] != true
     }
 
     case type do

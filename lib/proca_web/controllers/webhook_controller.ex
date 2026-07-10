@@ -16,8 +16,9 @@ defmodule ProcaWeb.WebhookController do
         et in ["blocked", "spam", "unsub"] ->
           Mailjet.handle_bounce(event)
 
-        # Ignore temporary soft bounces
-        et == "bounce" and event["hard_bounce"] == true ->
+        # both hard and soft bounces; soft ones only disable the address
+        # after repeated failures (see Proca.Target.handle_bounce/1)
+        et == "bounce" ->
           Mailjet.handle_bounce(event)
 
         true ->
