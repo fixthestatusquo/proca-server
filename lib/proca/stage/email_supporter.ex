@@ -46,17 +46,17 @@ defmodule Proca.Stage.EmailSupporter do
       batchers: [
         thank_you: [
           batch_size: 5,
-          batch_timeout: 10_000,
+          batch_timeout: 2_000,
           concurrency: 1
         ],
         supporter_confirm: [
           batch_size: 5,
-          batch_timeout: 10_000,
+          batch_timeout: 2_000,
           concurrency: 1
         ],
         duplicate: [
           batch_size: 5,
-          batch_timeout: 10_000,
+          batch_timeout: 2_000,
           concurrency: 1
         ]
       ]
