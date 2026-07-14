@@ -76,8 +76,22 @@ defmodule Proca.Service.SMTP do
       nil -> 587
       x -> x
     end)
+    |> Keyword.put(:sockopts, [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get()
+    ])
+  end
 
-    # set if not set
+  def put_security(opts, "smtps") do
+    [{:ssl, true} | opts]
+    |> Keyword.update(:port, 465, fn
+      nil -> 465
+      x -> x
+    end)
+    |> Keyword.put(:sockopts, [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get()
+    ])
   end
 
   def put_security(opts, "tls") do
@@ -86,8 +100,10 @@ defmodule Proca.Service.SMTP do
       nil -> 25
       x -> x
     end)
-
-    # set if not set
+    |> Keyword.put(:tls_options, [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get()
+    ])
   end
 
   @impl true
