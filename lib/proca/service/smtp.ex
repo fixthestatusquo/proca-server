@@ -4,6 +4,8 @@ defmodule Proca.Service.SMTP do
   alias Swoosh.Email
   alias Swoosh.Adapters.SMTP
 
+  @cacerts :public_key.cacerts_get()
+
   @impl true
   def supports_templates?(_org) do
     false
@@ -78,7 +80,7 @@ defmodule Proca.Service.SMTP do
     end)
     |> Keyword.put(:sockopts, [
       verify: :verify_peer,
-      cacerts: :public_key.cacerts_get()
+      cacerts: @cacerts
     ])
   end
 
@@ -90,7 +92,7 @@ defmodule Proca.Service.SMTP do
     end)
     |> Keyword.put(:sockopts, [
       verify: :verify_peer,
-      cacerts: :public_key.cacerts_get()
+      cacerts: @cacerts
     ])
   end
 
@@ -102,7 +104,7 @@ defmodule Proca.Service.SMTP do
     end)
     |> Keyword.put(:tls_options, [
       verify: :verify_peer,
-      cacerts: :public_key.cacerts_get()
+      cacerts: @cacerts
     ])
   end
 
