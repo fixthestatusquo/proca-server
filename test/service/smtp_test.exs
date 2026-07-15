@@ -21,7 +21,7 @@ defmodule Proca.Service.SMTPTest do
     c = Proca.Service.SMTP.config(%{@tls_service | host: "ssl://secure.org"})
 
     assert c[:relay] == "secure.org"
-    assert c[:port] == 587
+    assert c[:port] == 465
     assert c[:ssl] == true
     assert %{sockopts: [verify: :verify_peer, cacerts: cacerts2]} = c
     assert is_list(cacerts2)
@@ -48,5 +48,29 @@ defmodule Proca.Service.SMTPTest do
     assert c3[:ssl] == true
     assert c3[:port] == 587
     assert %{sockopts: [verify: :verify_peer, cacerts: _]} = c3
+  end
+
+  describe "deliver/2" do
+    test "empty list returns :ok" do
+      org = %Proca.Org{
+        name: "test-org",
+        email_backend: %Service{
+          user: "u",
+          password: "p",
+          host: "tls://smtp.example.com"
+        }
+      }
+
+      assert Proca.Service.SMTP.deliver([], org) == :ok
+    end
+
+    test "put_message_id sets Message-Id header" do
+      email =
+        Swoosh.Email.new(to: {"Test", "test@example.com"})
+        |> Swoosh.Email.put_private(:custom_id, "action:42")
+
+      result = Proca.Service.SMTP.put_message_id(email)
+      assert result.headers["Message-Id"] == "action:42"
+    end
   end
 end
