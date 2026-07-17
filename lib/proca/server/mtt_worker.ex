@@ -246,8 +246,26 @@ defmodule Proca.Server.MTTWorker do
       msgs
       |> Enum.map(& &1.message_content)
       |> Enum.uniq_by(& &1.id)
-      |> Enum.map(fn mc -> {mc.id, MessageContent.compile(mc)} end)
+      |> Enum.map(fn mc ->
+        try do
+          {mc.id, MessageContent.compile(mc)}
+        catch
+          :throw, {:incorrect_format, reason} ->
+            Logger.warning(
+              "MTT message_content #{mc.id} has invalid mustache template (#{inspect(reason)}), skipping"
+            )
+
+            {mc.id, :invalid}
+        end
+      end)
       |> Map.new()
+
+    {invalid_msgs, msgs} = Enum.split_with(msgs, &(compiled_contents[&1.message_content.id] == :invalid))
+
+    if invalid_msgs != [] do
+      # can't retry a template that will never compile, mark sent to stop the loop
+      Message.mark_all(invalid_msgs, :sent)
+    end
 
     msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 

@@ -345,4 +345,32 @@ defmodule ProcaWeb.Api.ActionTest do
     mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
     assert mc_count_2 == 2
   end
+
+  test "reject mtt action with invalid mustache template", %{org: org, campaign: c, pages: [ap]} do
+    Repo.update!(
+      Campaign.changeset(
+        Repo.preload(c, [:mtt]),
+        %{mtt: %{start_at: ~N[2022-01-01 10:00:00], end_at: ~N[2022-01-10 18:00:00]}}
+      )
+    )
+
+    targets = Factory.insert_list(3, :target)
+    mc_count_before = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+
+    action_with_contact_invalid(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello",
+          body: "Our demands are: {{#unclosed}}"
+        }
+      },
+      %{first_name: "Frank", email: "frank@email.com"}
+    )
+
+    mc_count_after = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+    assert mc_count_after == mc_count_before
+  end
 end

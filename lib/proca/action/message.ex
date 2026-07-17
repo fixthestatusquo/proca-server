@@ -55,23 +55,26 @@ defmodule Proca.Action.Message do
     if is_nil(action_page.campaign.mtt) do
       add_error(action, :mtt, "Campaign does not support MTT")
     else
-      {_, message_content} =
-        Proca.Repo.insert(Action.MessageContent.changeset(%Action.MessageContent{}, attrs))
+      case Proca.Repo.insert(Action.MessageContent.changeset(%Action.MessageContent{}, attrs)) do
+        {:ok, message_content} ->
+          messages =
+            Enum.map(targets, fn t ->
+              %{
+                target_id: t,
+                message_content: message_content,
+                files: Map.get(attrs, :files, [])
+              }
+            end)
 
-      # which ever we have - failed changeset or good record, lets just add it once
+          action
+          |> cast(%{messages: messages}, [])
+          |> cast_assoc(:messages)
 
-      messages =
-        Enum.map(targets, fn t ->
-          %{
-            target_id: t,
-            message_content: message_content,
-            files: Map.get(attrs, :files, [])
-          }
-        end)
-
-      action
-      |> cast(%{messages: messages}, [])
-      |> cast_assoc(:messages)
+        {:error, changeset} ->
+          Enum.reduce(changeset.errors, action, fn {field, {msg, opts}}, action ->
+            add_error(action, field, msg, opts)
+          end)
+      end
     end
   end
 

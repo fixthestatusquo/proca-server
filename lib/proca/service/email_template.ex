@@ -72,6 +72,12 @@ defmodule Proca.Service.EmailTemplate do
             e ->
               [{field, "Invalid template in #{field}: #{inspect(e)}"}]
           end
+      catch
+        :throw, {:incorrect_format, reason} ->
+          [
+            {field,
+             {"Invalid mustache template format in #{field}: #{inspect(reason)}", [reason]}}
+          ]
       end
     end)
   end
