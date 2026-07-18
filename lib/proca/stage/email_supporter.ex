@@ -134,8 +134,13 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
-    org = ap.org
+    ap =
+      ActionPage.one(
+        id: ap_id,
+        preload: [org: [:email_backend, :transactional_email_backend]]
+      )
+
+    org = Org.for_transactional_email(ap.org, length(messages))
 
     recipients =
       Enum.map(messages, fn m ->
@@ -186,8 +191,13 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:supporter_confirm, messages, %BatchInfo{batch_key: ap_id}, _)
       when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [campaign: [], org: [email_backend: :org]])
-    org = ap.org
+    ap =
+      ActionPage.one(
+        id: ap_id,
+        preload: [campaign: [], org: [:email_backend, :transactional_email_backend]]
+      )
+
+    org = Org.for_transactional_email(ap.org, length(messages))
 
     tmpl_name =
       ap.supporter_confirm_template || ap.campaign.supporter_confirm_template ||
