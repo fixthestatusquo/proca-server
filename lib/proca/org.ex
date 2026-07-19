@@ -115,13 +115,13 @@ defmodule Proca.Org do
     ])
     |> cast_backend(
       :email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
       attrs,
       org
     )
     |> cast_backend(
       :transactional_email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
       attrs,
       org
     )
