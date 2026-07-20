@@ -124,6 +124,10 @@ defmodule Proca.Stage.Processing do
   def effective_action_confirm(org_action_confirm, nil), do: org_action_confirm
   def effective_action_confirm(_org_action_confirm, campaign_action_confirm), do: campaign_action_confirm
 
+  @spec effective_supporter_confirm(boolean(), boolean() | nil) :: boolean()
+  def effective_supporter_confirm(org_supporter_confirm, nil), do: org_supporter_confirm
+  def effective_supporter_confirm(_org_supporter_confirm, campaign_supporter_confirm), do: campaign_supporter_confirm
+
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
           | {:new | :confirming | :accepted | :delivered | :rejected,
@@ -178,7 +182,7 @@ defmodule Proca.Stage.Processing do
       ) do
     # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
     cond do
-      system_confirm or campaign_confirm or custom_confirm ->
+      effective_supporter_confirm(system_confirm or custom_confirm, campaign_confirm) ->
         {:new, :confirming, :supporter_confirm}
 
       effective_action_confirm(org_action_confirm, campaign_action_confirm) ->
