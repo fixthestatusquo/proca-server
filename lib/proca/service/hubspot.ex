@@ -56,28 +56,40 @@ defmodule Proca.Service.Hubspot do
 
     case build_payload(email) do
       {:ok, body} ->
-        debug("Hubspot deliver custom_id=#{custom_id} payload=#{inspect(body)}")
-
         case Service.json_request(srv, @api_url, auth: :header, post: body) do
           {:ok, code, _} when code in [200, 201] ->
             :ok
 
-          {:ok, code, resp_body} ->
+          {:ok, code, response_body} ->
             error(
-              "Hubspot deliver HTTP#{code} custom_id=#{custom_id} response=#{inspect(resp_body)}"
+              "Hubspot deliver HTTP#{code} custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} response=#{inspect(response_body)}"
             )
 
             {:error, "HTTP#{code}"}
 
           {:error, reason} ->
-            error("Hubspot deliver failed custom_id=#{custom_id}: #{inspect(reason)}")
+            error(
+              "Hubspot deliver failed custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} reason=#{inspect(reason)}"
+            )
+
             {:error, reason}
         end
 
       {:error, reason} ->
-        error("Hubspot deliver rejected custom_id=#{custom_id}: #{reason}")
+        error("Hubspot deliver rejected custom_id=#{log_custom_id(custom_id)}: #{reason}")
         {:error, reason}
     end
+  end
+
+  defp log_custom_id("user:" <> _email), do: "user:[REDACTED]"
+  defp log_custom_id(custom_id), do: custom_id
+
+  defp request_summary(body) do
+    %{
+      email_id: body["emailId"],
+      message_fields: body["message"] |> Map.keys() |> Enum.sort(),
+      custom_properties: body["customProperties"] |> Map.keys() |> Enum.sort()
+    }
   end
 
   @spec build_payload(Email.t()) :: {:ok, map()} | {:error, String.t()}
@@ -118,7 +130,10 @@ defmodule Proca.Service.Hubspot do
     end
   end
 
-  defp build_message(%Email{from: from, reply_to: reply_to, cc: cc, bcc: bcc, private: private}, to) do
+  defp build_message(
+         %Email{from: from, reply_to: reply_to, cc: cc, bcc: bcc, private: private},
+         to
+       ) do
     %{"to" => to}
     |> put_from(from)
     |> put_send_id(Map.get(private, :custom_id))

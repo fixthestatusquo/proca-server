@@ -1,9 +1,20 @@
 defmodule Proca.Service.HubspotTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+  alias Proca.{Org, Service}
   alias Proca.Service.Hubspot
   alias Proca.Service.EmailTemplate
   alias Swoosh.Email
+
+  setup do
+    adapter = Application.get_env(:tesla, :adapter)
+    Application.put_env(:tesla, :adapter, Tesla.Mock)
+
+    on_exit(fn -> Application.put_env(:tesla, :adapter, adapter) end)
+
+    :ok
+  end
 
   defp email_with_template(ref) do
     Email.new()
@@ -12,6 +23,10 @@ defmodule Proca.Service.HubspotTest do
     |> Email.assign(:firstName, "Jo")
     |> Swoosh.Email.put_private(:template, %EmailTemplate{ref: ref})
     |> Swoosh.Email.put_private(:custom_id, "action:1")
+  end
+
+  defp hubspot_org do
+    %Org{email_backend: %Service{password: "Bearer private-token"}}
   end
 
   test "build_payload sends emailId, recipient, sendId, and contact data as customProperties" do
@@ -90,5 +105,34 @@ defmodule Proca.Service.HubspotTest do
   test "handle_bounce and handle_event are no-ops (no webhook mechanism implemented)" do
     assert Hubspot.handle_bounce(%{"anything" => "goes"}) == :ok
     assert Hubspot.handle_event(%{"anything" => "goes"}) == :ok
+  end
+
+  test "delivery client error logs sanitized request and response diagnostics" do
+    Tesla.Mock.mock(fn _env ->
+      Tesla.Mock.json(%{"message" => "invalid payload"},
+        status: 400,
+        headers: [{"content-type", "application/json"}]
+      )
+    end)
+
+    email =
+      email_with_template("123")
+      |> Email.assign(:firstName, "Robert'; touch /tmp/exploited; #")
+      |> Email.put_private(:custom_id, "user:private@example.com")
+
+    log =
+      capture_log(fn ->
+        assert {:error, "HTTP400"} = Hubspot.deliver(email, hubspot_org())
+      end)
+
+    assert log =~ "email_id: 123"
+    assert log =~ "custom_id=user:[REDACTED]"
+    assert log =~ "custom_properties: [:firstName]"
+    assert log =~ "response=%{\"message\" => \"invalid payload\"}"
+    refute log =~ "jo@example.com"
+    refute log =~ "Robert"
+    refute log =~ "private-token"
+    refute log =~ "private@example.com"
+    refute log =~ "curl"
   end
 end
