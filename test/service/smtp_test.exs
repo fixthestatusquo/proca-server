@@ -10,7 +10,7 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "smtp.mail.op"
     assert c[:port] == 25
     assert c[:tls] == :always
-    assert [verify: :verify_peer, cacerts: cacerts] = c[:tls_options]
+    assert [verify: :verify_peer, cacerts: cacerts, server_name_indication: 'smtp.mail.op'] = c[:tls_options]
     assert is_list(cacerts)
     assert length(cacerts) > 0
 
@@ -23,7 +23,7 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "secure.org"
     assert c[:port] == 465
     assert c[:ssl] == true
-    assert [verify: :verify_peer, cacerts: cacerts2] = c[:sockopts]
+    assert [verify: :verify_peer, cacerts: cacerts2, server_name_indication: 'secure.org'] = c[:sockopts]
     assert is_list(cacerts2)
     assert length(cacerts2) > 0
   end
@@ -35,7 +35,7 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "smtp.mail.op"
     assert c[:port] == 465
     assert c[:ssl] == true
-    assert [verify: :verify_peer, cacerts: cacerts] = c[:sockopts]
+    assert [verify: :verify_peer, cacerts: cacerts, server_name_indication: 'smtp.mail.op'] = c[:sockopts]
     assert is_list(cacerts)
     assert length(cacerts) > 0
 
@@ -47,7 +47,7 @@ defmodule Proca.Service.SMTPTest do
     c3 = Proca.Service.SMTP.config(%{s | host: "smtps://secure.org:587"})
     assert c3[:ssl] == true
     assert c3[:port] == 587
-    assert [verify: :verify_peer, cacerts: _] = c3[:sockopts]
+    assert [verify: :verify_peer, cacerts: _, server_name_indication: 'secure.org'] = c3[:sockopts]
   end
 
   describe "deliver/2" do
