@@ -286,8 +286,9 @@ defmodule Proca.Server.MTTWorker do
         end
 
       for chunk <- Enum.chunk_every(msgs, EmailBackend.batch_size(org)) do
-        batch =
-          for e <- chunk do
+        {deliverable, skipped} =
+          chunk
+          |> Enum.map(fn e ->
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
             message_content =
@@ -301,15 +302,30 @@ defmodule Proca.Server.MTTWorker do
                 campaign.mtt.cc_contacts
               end
 
-            e
-            |> make_email(test_email: campaign.mtt.test_email, cc_recipients: cc_recipients)
-            |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
-            |> EmailMerge.put_campaign(campaign)
-            |> EmailMerge.put_action(e.action)
-            |> EmailMerge.put_target(e.target)
-            |> EmailMerge.put_files(resolve_files(org, e.files))
-            |> put_message_content(message_content, templates[locale])
-          end
+            email =
+              case make_email(e,
+                     test_email: campaign.mtt.test_email,
+                     cc_recipients: cc_recipients
+                   ) do
+                nil ->
+                  nil
+
+                email ->
+                  email
+                  |> EmailMerge.put_action_page(action_pages[e.action.action_page_id])
+                  |> EmailMerge.put_campaign(campaign)
+                  |> EmailMerge.put_action(e.action)
+                  |> EmailMerge.put_target(e.target)
+                  |> EmailMerge.put_files(resolve_files(org, e.files))
+                  |> put_message_content(message_content, templates[locale])
+              end
+
+            {e, email}
+          end)
+          |> Enum.split_with(fn {_e, email} -> not is_nil(email) end)
+
+        batch = Enum.map(deliverable, fn {_e, email} -> email end)
+        # we don't change the message, it will - possibly - be processed again once the target as a new valid email
 
         case EmailBackend.deliver(batch, org, templates[locale]) do
           :ok ->
@@ -326,12 +342,12 @@ defmodule Proca.Server.MTTWorker do
 
           {:error, statuses} ->
             successes =
-              Enum.zip(chunk, statuses)
+              Enum.zip(deliverable, statuses)
               |> Enum.filter(fn
                 {_, :ok} -> true
                 _ -> false
               end)
-              |> Enum.map(fn {m, _} -> m end)
+              |> Enum.map(fn {{e, _email}, _} -> e end)
 
             if successes != [] do
               Logger.error("MTT partially failed to send: #{inspect(statuses)}")
@@ -364,20 +380,28 @@ defmodule Proca.Server.MTTWorker do
         end)
       end
 
-    # Re-use logic to convert first_name, last_name to name
-    supporter_name =
-      Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
-
-    email =
-      Proca.Service.EmailBackend.make_email(
-        {message.target.name, email_to.email},
-        {:mtt, message_id},
-        email_to.id
+    if is_nil(email_to) do
+      Logger.warning(
+        "MTT: no active/none email for target #{message.target_id} in message #{message_id}, skipping"
       )
-      |> Email.from({supporter_name, supporter.email})
-      |> maybe_add_cc(test_email, is_test)
 
-    Enum.reduce(cc_recipients, email, &Email.cc(&2, &1))
+      nil
+    else
+      # Re-use logic to convert first_name, last_name to name
+      supporter_name =
+        Proca.Contact.Input.Contact.normalize_names(Map.from_struct(supporter))[:name]
+
+      email =
+        Proca.Service.EmailBackend.make_email(
+          {message.target.name, email_to.email},
+          {:mtt, message_id},
+          email_to.id
+        )
+        |> Email.from({supporter_name, supporter.email})
+        |> maybe_add_cc(test_email, is_test)
+
+      Enum.reduce(cc_recipients, email, &Email.cc(&2, &1))
+    end
   end
 
   def resolve_files(org, file_keys) do

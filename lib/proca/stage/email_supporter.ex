@@ -209,28 +209,41 @@ defmodule Proca.Stage.EmailSupporter do
         |> add_supporter_confirm()
       end)
 
-    case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
-      {:ok, tmpl} ->
-        case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok ->
-            emit_supporter_confirm_lag(messages, org.id)
-            messages
+    if is_nil(tmpl_name) do
+      action_ids = Enum.map(messages, & &1.data["actionId"])
 
-          {:error, statuses} ->
-            failed_partially(messages, statuses)
-        end
+      error(
+        "EmailSupporter supporter_confirm: no template configured (org #{org.name}, action_ids=#{inspect(action_ids)})"
+      )
 
-      :not_found ->
-        action_ids = Enum.map(messages, & &1.data["actionId"])
+      Enum.map(
+        messages,
+        &Message.failed(&1, "No supporter_confirm_template configured (org #{org.name})")
+      )
+    else
+      case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
+        {:ok, tmpl} ->
+          case EmailBackend.deliver(recipients, org, tmpl) do
+            :ok ->
+              emit_supporter_confirm_lag(messages, org.id)
+              messages
 
-        error(
-          "EmailSupporter supporter_confirm: template #{tmpl_name} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
-        )
+            {:error, statuses} ->
+              failed_partially(messages, statuses)
+          end
 
-        Enum.map(
-          messages,
-          &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
-        )
+        :not_found ->
+          action_ids = Enum.map(messages, & &1.data["actionId"])
+
+          error(
+            "EmailSupporter supporter_confirm: template #{tmpl_name} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+          )
+
+          Enum.map(
+            messages,
+            &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
+          )
+      end
     end
   end
 
