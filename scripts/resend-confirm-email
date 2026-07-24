@@ -1,0 +1,108 @@
+#!/bin/bash
+
+set -eu
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/rpc"
+
+usage() {
+  cat <<EOF
+Usage: $0 --org <name> [--campaign <name>] [--since-days <n>] [--dry-run]
+
+Resend supporter confirmation emails to unconfirmed supporters
+(stuck in :confirming). Bypasses automatic reminder gating.
+
+Examples:
+  $0 --org my-org --dry-run
+  $0 --org my-org --campaign my-campaign --since-days 7
+EOF
+}
+
+org=""
+campaign=""
+since_days=""
+dry_run=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --org)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "missing value for --org" >&2
+        exit 1
+      fi
+      org=$1
+      ;;
+    --org=*)
+      org=${1#*=}
+      ;;
+    --campaign)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "missing value for --campaign" >&2
+        exit 1
+      fi
+      campaign=$1
+      ;;
+    --campaign=*)
+      campaign=${1#*=}
+      ;;
+    --since-days)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "missing value for --since-days" >&2
+        exit 1
+      fi
+      since_days=$1
+      ;;
+    --since-days=*)
+      since_days=${1#*=}
+      ;;
+    --dry-run)
+      dry_run=true
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "unknown argument: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ -z "$org" ]; then
+  echo "--org is required" >&2
+  usage
+  exit 1
+fi
+
+opts="org: \"$org\""
+if [ -n "$campaign" ]; then
+  opts="$opts, campaign: \"$campaign\""
+fi
+if [ -n "$since_days" ]; then
+  opts="$opts, since_days: $since_days"
+fi
+
+if [ "$dry_run" = true ]; then
+  rpc <<END
+alias Proca.Supporter.ConfirmReminder
+
+{org, actions} = ConfirmReminder.list_unconfirmed([$opts])
+IO.puts("#{length(actions)} email(s) would be sent for #{org.name}:")
+Enum.each(actions, fn a ->
+  IO.puts("  action #{a.id} — #{a.supporter.email} (inserted_at=#{a.inserted_at})")
+end)
+END
+else
+  rpc <<END
+alias Proca.Supporter.ConfirmReminder
+
+{org, actions} = ConfirmReminder.resend_unconfirmed([$opts])
+IO.puts("Sent #{length(actions)} confirmation email(s) for #{org.name}.")
+END
+fi

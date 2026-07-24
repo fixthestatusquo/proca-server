@@ -126,6 +126,10 @@ defmodule Proca.Supporter.ConfirmReminder do
 
     case EmailTemplateDirectory.by_name_reload(org, tmpl_name, ap.locale) do
       {:ok, tmpl} ->
+        Logger.info(
+          "ConfirmReminder: sending #{length(actions)} email(s) org=#{org.name} template=#{tmpl_name}"
+        )
+
         recipients =
           Enum.map(actions, fn action ->
             data = Support.action_data(action, :supporter_confirm)
@@ -138,17 +142,30 @@ defmodule Proca.Supporter.ConfirmReminder do
           :ok ->
             Enum.each(actions, &mark_sent/1)
 
-          {:error, statuses} ->
-            Enum.zip(actions, statuses)
-            |> Enum.each(fn
-              {action, :ok} ->
-                mark_sent(action)
+            Logger.info(
+              "ConfirmReminder: done org=#{org.name} template=#{tmpl_name} sent=#{length(actions)} failed=0"
+            )
 
-              {action, {:error, reason}} ->
-                Logger.error(
-                  "ConfirmReminder: failed for action #{action.id}: #{inspect(reason)}"
-                )
-            end)
+          {:error, statuses} ->
+            failed =
+              Enum.zip(actions, statuses)
+              |> Enum.filter(fn
+                {action, :ok} ->
+                  mark_sent(action)
+                  false
+
+                {action, {:error, reason}} ->
+                  Logger.error(
+                    "ConfirmReminder: failed for action #{action.id}: #{inspect(reason)}"
+                  )
+
+                  true
+              end)
+              |> length()
+
+            Logger.info(
+              "ConfirmReminder: done org=#{org.name} template=#{tmpl_name} sent=#{length(actions) - failed} failed=#{failed}"
+            )
         end
 
       :not_found ->
@@ -156,6 +173,71 @@ defmodule Proca.Supporter.ConfirmReminder do
           "ConfirmReminder: template #{tmpl_name} not found for org #{org.name}"
         )
     end
+  end
+
+  @doc """
+  Ad-hoc lookup of unconfirmed actions, bypassing the reminder.enabled/delay_days/
+  max_count gating used by run/0. Used to recover from lost transactional emails.
+
+  opts:
+    - :org (required) - org name
+    - :campaign (optional) - campaign name, restricts to that campaign
+    - :since_days (optional) - only actions taken in the last N days
+  """
+  def list_unconfirmed(opts) do
+    org =
+      from(o in Org,
+        where: o.name == ^Keyword.fetch!(opts, :org),
+        preload: [:email_backend, :transactional_email_backend]
+      )
+      |> Repo.one!()
+
+    campaign_id =
+      case opts[:campaign] do
+        nil -> nil
+        name -> Repo.get_by!(Campaign, name: name).id
+      end
+
+    query =
+      from(a in Action,
+        join: s in assoc(a, :supporter),
+        join: ap in assoc(a, :action_page),
+        where: ap.org_id == ^org.id,
+        where: s.processing_status == :confirming,
+        where: a.with_consent == true,
+        preload: [
+          action_page: [:campaign, :org],
+          supporter: [contacts: [:public_key, :sign_key, :org]],
+          campaign: [],
+          source: []
+        ]
+      )
+
+    query = if campaign_id, do: from(a in query, where: a.campaign_id == ^campaign_id), else: query
+
+    query =
+      if opts[:since_days],
+        do: from(a in query, where: a.inserted_at >= ago(^opts[:since_days], "day")),
+        else: query
+
+    {org, Repo.all(query)}
+  end
+
+  @doc """
+  Resends the supporter-confirm email for the actions matched by list_unconfirmed/1.
+  """
+  def resend_unconfirmed(opts) do
+    {org, actions} = list_unconfirmed(opts)
+
+    Logger.info(
+      "ConfirmReminder: resend_unconfirmed org=#{opts[:org]} campaign=#{opts[:campaign]} since_days=#{opts[:since_days]} count=#{length(actions)}"
+    )
+
+    if actions != [] do
+      send_for_org(org, actions)
+    end
+
+    {org, actions}
   end
 
   defp add_reminder_links(%Email{assigns: %{ref: ref, action_id: action_id}} = email) do
