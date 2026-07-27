@@ -51,8 +51,9 @@ defmodule Proca.Service.Hubspot do
   end
 
   @impl true
-  def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv}) do
+  def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv} = org) do
     custom_id = Map.get(email.private, :custom_id)
+    org_ref = Org.log_ref(org)
 
     case build_payload(email) do
       {:ok, body} ->
@@ -62,21 +63,24 @@ defmodule Proca.Service.Hubspot do
 
           {:ok, code, response_body} ->
             error(
-              "Hubspot deliver HTTP#{code} custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} response=#{inspect(response_body)}"
+              "Hubspot deliver HTTP#{code} org=#{org_ref} custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} response=#{inspect(response_body)}"
             )
 
             {:error, "HTTP#{code}"}
 
           {:error, reason} ->
             error(
-              "Hubspot deliver failed custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} reason=#{inspect(reason)}"
+              "Hubspot deliver failed org=#{org_ref} custom_id=#{log_custom_id(custom_id)} url=#{@api_url} request=#{inspect(request_summary(body))} reason=#{inspect(reason)}"
             )
 
             {:error, reason}
         end
 
       {:error, reason} ->
-        error("Hubspot deliver rejected custom_id=#{log_custom_id(custom_id)}: #{reason}")
+        error(
+          "Hubspot deliver rejected org=#{org_ref} custom_id=#{log_custom_id(custom_id)}: #{reason}"
+        )
+
         {:error, reason}
     end
   end

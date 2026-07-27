@@ -271,6 +271,9 @@ defmodule Proca.Org do
     Application.get_env(:proca, Proca)[:org_name]
   end
 
+  @doc "Human-readable org reference for log/error messages"
+  def log_ref(%Org{id: id, name: name}), do: "#{name}(#{id})"
+
   def list(preloads \\ []) do
     all(preload: preloads)
   end
