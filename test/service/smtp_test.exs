@@ -10,9 +10,12 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "smtp.mail.op"
     assert c[:port] == 25
     assert c[:tls] == :always
-    assert [verify: :verify_peer, cacerts: cacerts, server_name_indication: 'smtp.mail.op'] = c[:tls_options]
-    assert is_list(cacerts)
-    assert length(cacerts) > 0
+    assert c[:tls_options][:verify] == :verify_peer
+    assert c[:tls_options][:server_name_indication] == 'smtp.mail.op'
+    assert is_list(c[:tls_options][:cacerts])
+    assert length(c[:tls_options][:cacerts]) > 0
+    assert {vf, []} = c[:tls_options][:verify_fun]
+    assert is_function(vf)
 
     c = Proca.Service.SMTP.config(%{@tls_service | host: @tls_service.host <> ":1234"})
 
@@ -23,9 +26,10 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "secure.org"
     assert c[:port] == 465
     assert c[:ssl] == true
-    assert [verify: :verify_peer, cacerts: cacerts2, server_name_indication: 'secure.org'] = c[:sockopts]
-    assert is_list(cacerts2)
-    assert length(cacerts2) > 0
+    assert c[:sockopts][:verify] == :verify_peer
+    assert c[:sockopts][:server_name_indication] == 'secure.org'
+    assert is_list(c[:sockopts][:cacerts])
+    assert length(c[:sockopts][:cacerts]) > 0
   end
 
   test "smtps config" do
@@ -35,9 +39,10 @@ defmodule Proca.Service.SMTPTest do
     assert c[:relay] == "smtp.mail.op"
     assert c[:port] == 465
     assert c[:ssl] == true
-    assert [verify: :verify_peer, cacerts: cacerts, server_name_indication: 'smtp.mail.op'] = c[:sockopts]
-    assert is_list(cacerts)
-    assert length(cacerts) > 0
+    assert c[:sockopts][:verify] == :verify_peer
+    assert c[:sockopts][:server_name_indication] == 'smtp.mail.op'
+    assert is_list(c[:sockopts][:cacerts])
+    assert length(c[:sockopts][:cacerts]) > 0
 
     # explicit port overrides default
     c2 = Proca.Service.SMTP.config(%{s | host: "smtps://smtp.mail.op:246"})
@@ -47,7 +52,8 @@ defmodule Proca.Service.SMTPTest do
     c3 = Proca.Service.SMTP.config(%{s | host: "smtps://secure.org:587"})
     assert c3[:ssl] == true
     assert c3[:port] == 587
-    assert [verify: :verify_peer, cacerts: _, server_name_indication: 'secure.org'] = c3[:sockopts]
+    assert c3[:sockopts][:verify] == :verify_peer
+    assert c3[:sockopts][:server_name_indication] == 'secure.org'
   end
 
   describe "deliver/2" do

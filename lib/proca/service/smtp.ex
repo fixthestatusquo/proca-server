@@ -82,7 +82,8 @@ defmodule Proca.Service.SMTP do
     |> Keyword.put(:sockopts, [
       verify: :verify_peer,
       cacerts: @cacerts,
-      server_name_indication: to_charlist(host)
+      server_name_indication: to_charlist(host),
+      verify_fun: {&verify_cert/3, []}
     ])
   end
 
@@ -97,9 +98,16 @@ defmodule Proca.Service.SMTP do
     |> Keyword.put(:tls_options, [
       verify: :verify_peer,
       cacerts: @cacerts,
-      server_name_indication: to_charlist(host)
+      server_name_indication: to_charlist(host),
+      verify_fun: {&verify_cert/3, []}
     ])
   end
+
+  defp verify_cert(_cert, {:bad_cert, :max_path_length_reached}, state), do: {:valid, state}
+  defp verify_cert(_cert, {:extension, _}, state), do: {:unknown, state}
+  defp verify_cert(_cert, :valid, state), do: {:valid, state}
+  defp verify_cert(_cert, :valid_peer, state), do: {:valid, state}
+  defp verify_cert(_cert, reason, _state), do: {:fail, reason}
 
   @impl true
   def handle_bounce(_), do: :ok
