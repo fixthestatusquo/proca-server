@@ -55,7 +55,7 @@ defmodule Proca.Service.Brevo do
         {:error, err}
 
       x ->
-        error("Brevo list_templates unexpected result: #{inspect(x)}")
+        error("Brevo list_templates org=#{Org.log_ref(org)} unexpected result: #{inspect(x)}")
         {:error, "unexpected return from Brevo"}
     end
   end
@@ -76,36 +76,49 @@ defmodule Proca.Service.Brevo do
   end
 
   @impl true
-  def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv}) do
+  def deliver(%Email{} = email, %Org{email_backend: %Service{} = srv} = org) do
+    org_ref = Org.log_ref(org)
+
+    if length(email.to) > 1,
+      do:
+        error(
+          "Brevo deliver org=#{org_ref}: #{length(email.to)} recipients on a transactional email (custom_id=#{Map.get(email.private, :custom_id)}), expected 1"
+        )
+
     body = build_payload(email)
     custom_id = Map.get(email.private, :custom_id)
-    debug("Brevo deliver custom_id=#{custom_id} payload=#{inspect(body)}")
+    debug("Brevo deliver org=#{org_ref} custom_id=#{custom_id} payload=#{inspect(body)}")
 
     case Service.json_request(srv, "#{@api_url}/smtp/email", auth: :api_key, post: body) do
       {:ok, code, _} when code in [200, 201] ->
         :ok
 
       {:ok, code, resp_body} ->
-        error("Brevo deliver HTTP#{code} custom_id=#{custom_id} response=#{inspect(resp_body)}")
+        error(
+          "Brevo deliver HTTP#{code} org=#{org_ref} custom_id=#{custom_id} response=#{inspect(resp_body)}"
+        )
+
         {:error, "HTTP#{code}"}
 
       {:error, reason} ->
-        error("Brevo deliver failed custom_id=#{custom_id}: #{inspect(reason)}")
+        error("Brevo deliver failed org=#{org_ref} custom_id=#{custom_id}: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
   defp build_payload(%Email{} = email) do
-    if length(email.to) > 1,
-      do:
-        error(
-          "Brevo build_payload: #{length(email.to)} recipients on a transactional email (custom_id=#{Map.get(email.private, :custom_id)}), expected 1"
-        )
-
     %{}
-    |> Map.put("to", Enum.map(email.to, fn {name, addr} -> %{"email" => addr, "name" => name} end))
+    |> Map.put(
+      "to",
+      Enum.map(email.to, fn {name, addr} -> %{"email" => addr, "name" => name} end)
+    )
     |> put_sender(email.from)
-    |> put_content(Map.get(email.private, :template), email.subject, email.html_body, email.text_body)
+    |> put_content(
+      Map.get(email.private, :template),
+      email.subject,
+      email.html_body,
+      email.text_body
+    )
     |> put_params(email.assigns)
     |> put_tags(Map.get(email.private, :custom_id))
   end

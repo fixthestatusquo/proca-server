@@ -15,7 +15,7 @@ defmodule Proca.Stage.EmailSupporter do
     only: [
       ignore: 1,
       ignore: 2,
-      failed_partially: 2,
+      failed_partially: 3,
       supporter_link: 3,
       double_opt_in_link: 2,
       too_many_retries?: 1
@@ -156,7 +156,7 @@ defmodule Proca.Stage.EmailSupporter do
             messages
 
           {:error, statuses} ->
-            failed_partially(messages, statuses)
+            failed_partially(messages, statuses, org)
         end
 
       :not_found ->
@@ -217,7 +217,7 @@ defmodule Proca.Stage.EmailSupporter do
             messages
 
           {:error, statuses} ->
-            failed_partially(messages, statuses)
+            failed_partially(messages, statuses, org)
         end
 
       :not_found ->
@@ -250,7 +250,7 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          {:error, statuses} -> failed_partially(messages, statuses, org)
         end
 
       :not_found ->
