@@ -110,11 +110,10 @@ defmodule Proca.Service.Detail do
         %Org{id: org_id, name: org_name, detail_backend: %{name: :webhook} = srv},
         %Supporter{email: email, fingerprint: ref}
       ) do
-    payload =
-      Jason.encode!(%{
-        "email" => email,
-        "contactRef" => Supporter.base_encode(ref)
-      })
+    payload = %{
+      "email" => email,
+      "contactRef" => Supporter.base_encode(ref)
+    }
 
     case Service.json_request(srv, srv.host, post: payload, auth: Service.Webhook.auth_type(srv)) do
       {:ok, 200, data} when is_map(data) ->
