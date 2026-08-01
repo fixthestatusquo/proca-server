@@ -85,7 +85,8 @@ defenum(ExternalService,
   webhook: "webhook",
   supabase: "supabase",
   testdetail: "testdetail",
-  brevo: "brevo"
+  brevo: "brevo",
+  hubspot: "hubspot"
 )
 
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)

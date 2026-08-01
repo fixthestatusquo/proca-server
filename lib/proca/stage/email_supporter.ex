@@ -137,7 +137,7 @@ defmodule Proca.Stage.EmailSupporter do
     ap =
       ActionPage.one(
         id: ap_id,
-        preload: [org: [[email_backend: :org], [transactional_email_backend: :org]]]
+        preload: [org: [:email_backend, :transactional_email_backend]]
       )
 
     org = Org.for_transactional_email(ap.org, length(messages))
@@ -194,10 +194,7 @@ defmodule Proca.Stage.EmailSupporter do
     ap =
       ActionPage.one(
         id: ap_id,
-        preload: [
-          campaign: [],
-          org: [[email_backend: :org], [transactional_email_backend: :org]]
-        ]
+        preload: [campaign: [], org: [:email_backend, :transactional_email_backend]]
       )
 
     org = Org.for_transactional_email(ap.org, length(messages))
@@ -240,13 +237,8 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:duplicate, messages, %BatchInfo{batch_key: ap_id}, _)
       when is_number(ap_id) do
-    ap =
-      ActionPage.one(
-        id: ap_id,
-        preload: [org: [[email_backend: :org], [transactional_email_backend: :org]]]
-      )
-
-    org = Org.for_transactional_email(ap.org, length(messages))
+    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
+    org = ap.org
 
     recipients =
       Enum.map(messages, fn m ->

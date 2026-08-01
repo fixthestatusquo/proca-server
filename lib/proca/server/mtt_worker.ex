@@ -56,7 +56,10 @@ defmodule Proca.Server.MTTWorker do
 
         :telemetry.execute(
           [:proca, :mtt],
-          %{messages_sent: length(emails_to_send)},
+          %{
+            messages_published: length(emails_to_send),
+            messages_sent: length(emails_to_send)
+          },
           %{campaign_id: campaign.id, campaign_name: campaign.name}
         )
 
@@ -176,6 +179,7 @@ defmodule Proca.Server.MTTWorker do
         preload: [[target: :emails], [action: [:supporter, action_page: :org]], :message_content]
       )
     )
+    |> Enum.reject(&MTTContext.in_flight?(&1.id))
   end
 
   defp max_messages_per_cycle() do

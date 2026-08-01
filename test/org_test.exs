@@ -133,8 +133,7 @@ defmodule OrgTest do
 
       ch = Org.changeset(org, %{transactional_email_backend: :system})
       refute ch.valid?
-
-      assert {"instance org has no transactional email backend configured", _} =
+assert {"instance org has no transactional email backend configured", _} =
                ch.errors[:transactional_email_backend]
     end
   end

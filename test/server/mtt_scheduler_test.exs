@@ -66,9 +66,7 @@ defmodule Proca.Server.MTTSchedulerTest do
       targets: [_, _, %{emails: [%{email: email}]} = target | _],
       messages_live: messages_live
     } do
-      max_emails = MTTContext.max_emails_per_hour(target.campaign)
-
-      MTTContext.get_pending_messages(target.id, max_emails)
+      MTTContext.get_pending_messages(target.id, :all)
       |> Enum.each(fn message ->
         assert MTTContext.deliver_message(target, message) == :ok
 

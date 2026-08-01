@@ -160,7 +160,9 @@ mtt_mode =
       raise "Invalid MTT_MODE #{inspect(invalid)}; expected enabled, disabled, or dry_run"
   end
 
-config :proca, Proca.Server.MTT, mode: mtt_mode
+config :proca, Proca.Server.MTT,
+  mode: mtt_mode,
+  retry_limit: parse_int.("MTT_RETRY_LIMIT", 5)
 
 config :proca, ProcaWeb.Telemetry,
   enable: System.get_env("ENABLE_TELEMETRY", "true") == "true",

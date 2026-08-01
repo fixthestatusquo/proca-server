@@ -21,7 +21,9 @@ defmodule Proca.Stage.MTT do
   import Logger
 
   def start_for?(org),
-    do: Proca.Server.MTT.mode() == :enabled and Proca.Stage.EmailSupporter.start_for?(org)
+    do:
+      Proca.Server.MTT.mode() == :enabled and not Proca.Server.MTTMailer.paused?() and
+        Proca.Stage.EmailSupporter.start_for?(org)
 
   def start_link(org = %Org{id: org_id}) do
     Broadway.start_link(__MODULE__,
@@ -41,9 +43,9 @@ defmodule Proca.Stage.MTT do
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
       {:ok, %{"messageId" => message_id, "targetId" => target_id}} ->
-        if too_many_retries?(message) do
+        if mtt_too_many_retries?(message) do
           Logger.error("MTT retry limit exceeded for message #{message_id}")
-          MTTContext.emit_delivery(:discarded, reason: :retry_limit_exceeded)
+          MTTContext.abandon_after_retries(message_id)
           message
         else
           case deliver(message_id, target_id) do
@@ -60,6 +62,19 @@ defmodule Proca.Stage.MTT do
 
       {:error, reason} ->
         ignore(message, reason)
+    end
+  end
+
+  defp mtt_too_many_retries?(message) do
+    limit =
+      Application.get_env(:proca, Proca.Server.MTT, [])
+      |> Keyword.get(:retry_limit) ||
+        Application.get_env(:proca, Proca.Pipes)[:retry_limit]
+
+    if is_number(limit) do
+      Proca.Stage.Support.times_retried(message) >= limit
+    else
+      too_many_retries?(message)
     end
   end
 

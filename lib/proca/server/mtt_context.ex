@@ -17,6 +17,62 @@ defmodule Proca.Server.MTTContext do
   @default_locale "en"
   # 1 day ago
   @recent_test_messages -1 * 60 * 60 * 24
+  @in_flight_table :mtt_in_flight_messages
+
+  def ensure_in_flight_table do
+    case :ets.whereis(@in_flight_table) do
+      :undefined ->
+        :ets.new(@in_flight_table, [:named_table, :public, :set, read_concurrency: true])
+
+      _tid ->
+        @in_flight_table
+    end
+  end
+
+  def mark_in_flight(message_id) when is_integer(message_id) do
+    ensure_in_flight_table()
+    :ets.insert(@in_flight_table, {message_id, true})
+    :ok
+  end
+
+  def clear_in_flight(message_id) when is_integer(message_id) do
+    ensure_in_flight_table()
+    :ets.delete(@in_flight_table, message_id)
+    :ok
+  end
+
+  def in_flight?(message_id) when is_integer(message_id) do
+    ensure_in_flight_table()
+    :ets.member(@in_flight_table, message_id)
+  end
+
+  @doc """
+  After RabbitMQ retry exhaustion, mark the DB row sent so schedulers stop
+  republishing the same failed message forever. Telemetry records the discard.
+  """
+  def abandon_after_retries(message_id) when is_integer(message_id) do
+    clear_in_flight(message_id)
+
+    case Repo.get(Message, message_id) do
+      nil ->
+        emit_delivery(:discarded, reason: :retry_limit_exceeded)
+
+      message ->
+        message = Repo.preload(message, target: [campaign: :mtt])
+        Message.mark_one(message, :sent)
+
+        emit_delivery(:discarded,
+          reason: :retry_limit_exceeded,
+          org_id: message.target && message.target.campaign && message.target.campaign.org_id,
+          campaign_id: message.target && message.target.campaign_id,
+          drip_delivery:
+            message.target && message.target.campaign && message.target.campaign.mtt &&
+              message.target.campaign.mtt.drip_delivery
+        )
+    end
+
+    :ok
+  end
 
   def emit_delivery(result, metadata \\ %{}) do
     metadata =
@@ -123,11 +179,23 @@ defmodule Proca.Server.MTTContext do
         Proca.Server.MTT.mode() != :enabled ->
           {:error, :mtt_disabled}
 
+        in_flight?(msg.id) ->
+          :ok
+
         not is_pid(Proca.Pipes.Topology.whereis(org)) ->
           {:error, :mtt_queue_unavailable}
 
         true ->
-          Proca.Pipes.Connection.publish(payload, "", queue)
+          mark_in_flight(msg.id)
+
+          case Proca.Pipes.Connection.publish(payload, "", queue) do
+            :ok ->
+              :ok
+
+            error ->
+              clear_in_flight(msg.id)
+              error
+          end
       end
 
     case result do
@@ -169,10 +237,19 @@ defmodule Proca.Server.MTTContext do
       validate_and_deliver(message, target_id)
     end)
     |> case do
-      {:ok, result} -> result
-      {:error, reason} -> {:error, reason}
+      {:ok, result} ->
+        maybe_clear_in_flight(message_id, result)
+        result
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
+
+  defp maybe_clear_in_flight(message_id, :ok), do: clear_in_flight(message_id)
+  defp maybe_clear_in_flight(message_id, :ignore), do: clear_in_flight(message_id)
+  defp maybe_clear_in_flight(message_id, {:discard, _}), do: clear_in_flight(message_id)
+  defp maybe_clear_in_flight(_message_id, _), do: :ok
 
   defp validate_and_deliver(nil, _target_id), do: :ignore
 

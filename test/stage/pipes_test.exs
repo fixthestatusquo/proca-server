@@ -49,4 +49,8 @@ defmodule Proca.PipesTest do
              metadata: @failed_metadata
            })
   end
+
+  test "MTT fail queue TTL is 30 minutes" do
+    assert Proca.Pipes.Topology.mtt_fail_ttl_ms() == 1_800_000
+  end
 end

@@ -132,6 +132,8 @@ defmodule ProcaWeb.Telemetry do
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
+      sum("proca.mtt.messages_published", tags: @campaign_tags),
+      # Kept for existing dashboards; same event as messages_published (queue publish, not SMTP).
       sum("proca.mtt.messages_sent", tags: @campaign_tags),
 
       # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not

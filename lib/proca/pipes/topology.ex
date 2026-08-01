@@ -15,8 +15,8 @@ defmodule Proca.Pipes.Topology do
   - 3 exchanges reflect 3 stages of processing (supporter confirms their data, moderator confirms the action, action is delivered)
   - Each exchange has build in worker queues attached, *if workers are enabled*. Worker queues are read by Proca workers.
   - Each exchange has custom queue attached, *if enabled on Org*. Custom queues are meant to be read by external client.
-  - Worker and custom queues have a legacy Dead Letter Exchange (DLX). Its fail queue has no TTL, so messages stay there until operationally requeued.
-  - MTT uses a separate DLX with a 30-second TTL, allowing bounded retries without changing the arguments of existing production queues.
+  - Worker and custom queues use a legacy Dead Letter Exchange (`org.N.fail` / `org.N.retry`). The fail queue has **no message TTL in application code** (ops may set a RabbitMQ policy). Rejected messages park on `org.N.fail` until requeued onto `org.N.retry`.
+  - MTT uses a separate DLX (`org.N.mtt.fail` / `org.N.mtt.retry`) with a **30-minute** TTL. It cannot reuse `org.N.fail` because that queue already exists in production without TTL args, and RabbitMQ rejects redeclaration with different arguments.
   - When data is shared with your org by other org, you only receive action onto deliver exchange.
   - Routing key is: `${campaign}.${action_type}`, eg. `no_to_gmo.share`
   - The action format is v1 or v2, depending on `org.action_schema_version`. Defaults to 2 for new Orgs.
@@ -38,11 +38,13 @@ defmodule Proca.Pipes.Topology do
                           #     > =wrk.N.webhook
                           #     > =wrk.N.sqs
 
-  (default exchange)      wrk.N.mtt -> =wrk.N.mtt  (published directly by MTT scheduler)
+  (default exchange)      wrk.N.mtt -> =wrk.N.mtt  (published by MTTWorker / MTTScheduler)
+  (default exchange)      wrk.mtt.test            (MTT test actions from Processing)
 
   legacy workers/custom:          DLX:x org.N.fail fanout> org.N.fail
+                                  (no app TTL; park until ops requeue via org.N.retry)
   MTT:                            DLX:x org.N.mtt.fail > org.N.mtt.fail
-                                  TTL 30s > x org.N.mtt.retry > wrk.N.mtt
+                                  TTL 30min > x org.N.mtt.retry > wrk.N.mtt
 
   Event Routing Key: event_type.sub_type
 
@@ -178,6 +180,10 @@ defmodule Proca.Pipes.Topology do
     :ok = Exchange.declare(chan, xn(o, "event"), :topic, durable: true)
   end
 
+  @mtt_fail_ttl_ms 1_800_000
+
+  def mtt_fail_ttl_ms, do: @mtt_fail_ttl_ms
+
   def declare_retry_circuit(chan, o = %Org{}) do
     # fail queue = fail exchange
     qn = xn(o, "fail")
@@ -193,14 +199,15 @@ defmodule Proca.Pipes.Topology do
 
     # MTT uses a separate retry circuit. The legacy org fail queue already
     # exists in production without a TTL, and RabbitMQ rejects redeclaration
-    # of an existing queue with different arguments.
+    # of an existing queue with different arguments. Legacy fail is still used
+    # by email.supporter / sqs / webhook / custom deliver queues.
     mtt_fail_queue = xn(o, "mtt.fail")
 
     Queue.declare(chan, mtt_fail_queue,
       durable: true,
       arguments: [
         {"x-dead-letter-exchange", :longstr, xn(o, "mtt.retry")},
-        {"x-message-ttl", :long, 30_000}
+        {"x-message-ttl", :long, @mtt_fail_ttl_ms}
       ]
     )
 
@@ -258,8 +265,8 @@ defmodule Proca.Pipes.Topology do
     # through RabbitMQ's default exchange.
     Queue.declare(chan, mtt_test_queue(), durable: true)
 
-    # Regular MTT queue: Proca.Server.MTTScheduler and MTTWorker publish here.
-    # publishes to it via the default exchange, Proca.Stage.MTT consumes it.
+    # Regular MTT queue: Proca.Server.MTTScheduler and MTTWorker publish here
+    # via the default exchange; Proca.Stage.MTT consumes it.
     if config[:email_supporter] do
       qn = mtt_queue(o)
 

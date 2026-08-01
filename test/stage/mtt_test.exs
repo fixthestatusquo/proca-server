@@ -294,11 +294,11 @@ defmodule Proca.Stage.MTTStageTest do
       refute Repo.get(Proca.Action.Message, msg.id).sent
     end
 
-    test "retry exhaustion acknowledges the queue event without marking sent", %{target: target} do
+    test "retry exhaustion marks the message sent so drip does not republish", %{target: target} do
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
-      previous = Application.get_env(:proca, Proca.Pipes)
-      Application.put_env(:proca, Proca.Pipes, Keyword.put(previous, :retry_limit, 3))
-      on_exit(fn -> Application.put_env(:proca, Proca.Pipes, previous) end)
+      previous = Application.get_env(:proca, Proca.Server.MTT, [])
+      Application.put_env(:proca, Proca.Server.MTT, Keyword.put(previous, :retry_limit, 3))
+      on_exit(fn -> Application.put_env(:proca, Proca.Server.MTT, previous) end)
 
       {:ok, payload} = JSON.encode(%{messageId: msg.id, targetId: target.id})
 
@@ -322,8 +322,8 @@ defmodule Proca.Stage.MTTStageTest do
       persisted = Repo.get!(Proca.Action.Message, msg.id)
 
       assert result.status == :ok
-      refute persisted.sent
-      assert msg.id in Enum.map(MTTContext.get_pending_messages(target.id, :all), & &1.id)
+      assert persisted.sent
+      refute msg.id in Enum.map(MTTContext.get_pending_messages(target.id, :all), & &1.id)
     end
   end
 

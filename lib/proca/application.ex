@@ -45,6 +45,10 @@ defmodule Proca.Application do
       {Proca.Service.Preview.OrgStorage, []}
     ]
 
+    # MTT in-flight publish tracking (prevents drip republish while a message
+    # is still in wrk.N.mtt / org.N.mtt.fail).
+    _ = Proca.Server.MTTContext.ensure_in_flight_table()
+
     # Proca Servers — started via DaemonSupervisor with a short delay so the
     # HTTP endpoint and DB pool are ready first. Set delay to 0 to start
     # synchronously. Disable entirely with start_daemon_servers: false.

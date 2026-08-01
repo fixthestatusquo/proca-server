@@ -20,7 +20,8 @@ defmodule Proca.Campaign do
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
     field :status, CampaignStatus, default: :live
-    field :supporter_confirm, :boolean, default: false
+    # Tri-state override of org supporter_confirm, same as action_confirm below.
+    field :supporter_confirm, :boolean
     field :supporter_confirm_template, :string
 
     # Tri-state override of org.custom_action_confirm for this campaign only:

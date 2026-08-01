@@ -89,7 +89,32 @@ For each stages of processing, actions can land in custom queues. If you enable 
 
 You can enable the custom queues by setting the respective Org setting: `customSupporterConfirm`, `customActionConfirm`, `customActionDeliver`.
 
-- `org.X.fail` - for any failed processing (or when you nack/don't ack a message) the message will land in a fail queue for 30 minutes before being redelivered to the queue again. This mechanism prevents a fast retry loops. However, the failed messages are _not_ removed even if they are retried many times, which has to be carefully handled by consumer. For example, if re-delivery count is high, you might consider to drop a message. If reading a message has non-idempotent side effect, consider storing information about particular id being processed. This can let you avoid sending multiple emails in case you sent the email during action processing, but then encountered an error and failed to ack the message.
+### Dead-letter / retry circuits
+
+**Legacy (transactional workers + custom deliver):**
+
+- Worker queues (`wrk.X.email.supporter`, `wrk.X.sqs`, `wrk.X.webhook`) and custom queues (`cus.X.*`) set their dead-letter exchange to `org.X.fail`.
+- `org.X.fail` is a durable park queue. **There is no message TTL in application code** (a RabbitMQ policy may add one in some deployments). Messages stay until ops requeue them onto `org.X.retry`, which routes back to the original worker/custom queue by routing key.
+- Do not delete `org.X.fail` / `org.X.retry` — they are still used by every non-MTT consumer.
+
+**MTT (separate circuit):**
+
+- Live MTT delivery uses `wrk.X.mtt`. Failures dead-letter to `org.X.mtt.fail`, which has an application TTL of **30 minutes**, then route via `org.X.mtt.retry` back to `wrk.X.mtt`.
+- MTT cannot share `org.X.fail` because that queue already exists in production without TTL args, and RabbitMQ rejects redeclaration with different arguments.
+- Test MTT actions use the global `wrk.mtt.test` queue (no DLX TTL circuit; low volume).
+
+| Queue / exchange | Role | TTL |
+|---|---|---|
+| `wrk.X.email.supporter` / `sqs` / `webhook` | Built-in workers | none (DLX → `org.X.fail`) |
+| `cus.X.deliver` (and other custom) | External consumers | none (DLX → `org.X.fail`) |
+| `org.X.fail` | Legacy dead letter park | none in app code |
+| `org.X.retry` | Re-inject to original queue | n/a |
+| `wrk.X.mtt` | MTT live delivery | none (DLX → `org.X.mtt.fail`) |
+| `org.X.mtt.fail` | MTT dead letter | **30 minutes** |
+| `org.X.mtt.retry` | MTT re-inject to `wrk.X.mtt` | n/a |
+| `wrk.mtt.test` | MTT test actions | none |
+
+See also the diagram in `Proca.Pipes.Topology` moduledoc.
 
 ## Action message
 
@@ -228,4 +253,8 @@ If current org is instance org, and it has `eventBackend` set, it will receive e
 
 ### MTT emails
 
-MTT sending is not part of action processing and runs under "cron like" server, see `Proca.Server.MTT`.
+MTT scheduling still runs under cron-like servers (`Proca.Server.MTT` every ~3 minutes for drip, `Proca.Server.MTTHourlyCron` / `MTTScheduler` for no-drip). They **publish** `{messageId, targetId}` to the org queue `wrk.X.mtt` (default exchange). `Proca.Stage.MTT` Broadway consumers deliver the email and mark the DB row `sent`.
+
+Test actions are published to `wrk.mtt.test` from `Proca.Stage.Processing` when the action reaches deliver.
+
+Ops controls (no restart): `scripts/mttmailer pause|start|status|max_messages <n>` — pause stops the Broadway consumers so messages accumulate in RabbitMQ for inspection while schedulers keep queuing.

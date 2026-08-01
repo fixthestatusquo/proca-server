@@ -151,7 +151,7 @@ config :proca, Proca.Server.MTTScheduler,
     23 => 0.02
   }
 
-config :proca, Proca.Server.MTT, mode: :enabled
+config :proca, Proca.Server.MTT, mode: :enabled, retry_limit: 5
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
