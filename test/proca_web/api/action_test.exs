@@ -346,7 +346,7 @@ defmodule ProcaWeb.Api.ActionTest do
     assert mc_count_2 == 2
   end
 
-  test "reject mtt action with invalid mustache template", %{org: org, campaign: c, pages: [ap]} do
+  test "accept mtt action with invalid mustache template", %{org: org, campaign: c, pages: [ap]} do
     Repo.update!(
       Campaign.changeset(
         Repo.preload(c, [:mtt]),
@@ -357,7 +357,7 @@ defmodule ProcaWeb.Api.ActionTest do
     targets = Factory.insert_list(3, :target)
     mc_count_before = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
 
-    action_with_contact_invalid(
+    action_with_contact(
       ap,
       %{
         action_type: "mtt",
@@ -371,6 +371,6 @@ defmodule ProcaWeb.Api.ActionTest do
     )
 
     mc_count_after = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
-    assert mc_count_after == mc_count_before
+    assert mc_count_after == mc_count_before + 1
   end
 end
