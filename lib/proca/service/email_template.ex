@@ -72,12 +72,6 @@ defmodule Proca.Service.EmailTemplate do
             e ->
               [{field, "Invalid template in #{field}: #{inspect(e)}"}]
           end
-      catch
-        :throw, {:incorrect_format, reason} ->
-          [
-            {field,
-             {"Invalid mustache template format in #{field}: #{inspect(reason)}", [reason]}}
-          ]
       end
     end)
   end
@@ -135,6 +129,16 @@ defmodule Proca.Service.EmailTemplate do
 
   def compile_string(m) do
     :bbmustache.parse_binary(m)
+  end
+
+  def safe_compile_string(nil), do: {:ok, nil}
+
+  def safe_compile_string(m) do
+    try do
+      {:ok, compile_string(m)}
+    catch
+      :error, {:incorrect_format, reason} -> {:error, reason}
+    end
   end
 
   # when end is_tuple(m) do

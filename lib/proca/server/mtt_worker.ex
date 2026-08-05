@@ -247,25 +247,11 @@ defmodule Proca.Server.MTTWorker do
       |> Enum.map(& &1.message_content)
       |> Enum.uniq_by(& &1.id)
       |> Enum.map(fn mc ->
-        try do
-          {mc.id, MessageContent.compile(mc)}
-        catch
-          :throw, {:incorrect_format, reason} ->
-            Logger.warning(
-              "MTT message_content #{mc.id} has invalid mustache template (#{inspect(reason)}), skipping"
-            )
-
-            {mc.id, :invalid}
-        end
+        cs = compile_mtt_field(mc.subject, "subject", "mc_id=#{mc.id}")
+        cb = compile_mtt_field(mc.body, "body", "mc_id=#{mc.id}")
+        {mc.id, %{mc | compiled: %{subject: cs, body: cb}}}
       end)
       |> Map.new()
-
-    {invalid_msgs, msgs} = Enum.split_with(msgs, &(compiled_contents[&1.message_content.id] == :invalid))
-
-    if invalid_msgs != [] do
-      # can't retry a template that will never compile, mark sent to stop the loop
-      Message.mark_all(invalid_msgs, :sent)
-    end
 
     msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 
@@ -425,27 +411,9 @@ defmodule Proca.Server.MTTWorker do
           {cs, cb}
 
         nil ->
-          cs =
-            try do
-              EmailTemplate.compile_string(subject)
-            catch
-              :exit, {:incorrect_format, reason} ->
-                Sentry.capture_message("Malformed mustache tag in MTT message subject",
-                  extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], subject: subject}
-                )
-                nil
-            end
-
-          cb =
-            try do
-              EmailTemplate.compile_string(body)
-            catch
-              :exit, {:incorrect_format, reason} ->
-                Sentry.capture_message("Malformed mustache tag in MTT message body",
-                  extra: %{reason: inspect(reason), action_id: email.assigns[:action_id], body: body}
-                )
-                nil
-            end
+          action_id = email.assigns[:action_id]
+          cs = compile_mtt_field(subject, "subject", "action_id=#{action_id}")
+          cb = compile_mtt_field(body, "body", "action_id=#{action_id}")
 
           {cs, cb}
       end
@@ -483,6 +451,24 @@ defmodule Proca.Server.MTTWorker do
 
   defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
   defp maybe_add_cc(email, _cc, false), do: email
+
+  defp compile_mtt_field(value, field, context) do
+    case EmailTemplate.safe_compile_string(value) do
+      {:ok, compiled} ->
+        compiled
+
+      {:error, reason} ->
+        Logger.warning(
+          "MTT message #{field} has invalid mustache template #{context} reason=#{inspect(reason)}"
+        )
+
+        Sentry.capture_message("Malformed mustache tag in MTT message #{field}",
+          extra: %{reason: inspect(reason)}
+        )
+
+        nil
+    end
+  end
 
   defp max_messages_per_cycle() do
     max_messages = Application.get_env(:proca, __MODULE__)[:max_messages_per_cycle]

@@ -390,15 +390,19 @@ defmodule Proca.Server.MTTContext do
       message_body: body
     })
 
+    action_id = email.assigns[:action_id]
+
     body =
-      body
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(body, "body", "action_id=#{action_id}") do
+        nil -> body
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     subject =
-      subject
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(subject, "subject", "action_id=#{action_id}") do
+        nil -> subject
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     html_body = EmailMerge.plain_to_html(body)
 
@@ -418,6 +422,24 @@ defmodule Proca.Server.MTTContext do
     email
     |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
+  end
+
+  defp compile_mtt_field(value, field, context) do
+    case EmailTemplate.safe_compile_string(value) do
+      {:ok, compiled} ->
+        compiled
+
+      {:error, reason} ->
+        Logger.warning(
+          "MTT message #{field} has invalid mustache template #{context} reason=#{inspect(reason)}"
+        )
+
+        Sentry.capture_message("Malformed mustache tag in MTT message #{field}",
+          extra: %{reason: inspect(reason)}
+        )
+
+        nil
+    end
   end
 
   defp change_test_subject(message_content, false), do: message_content
