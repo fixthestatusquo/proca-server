@@ -100,14 +100,14 @@ You can enable the custom queues by setting the respective Org setting: `customS
 **MTT (separate circuit):**
 
 - Live MTT delivery uses `wrk.X.mtt`. Failures dead-letter to `org.X.mtt.fail`, which has an application TTL of **30 minutes**, then route via `org.X.mtt.retry` back to `wrk.X.mtt`.
-- MTT cannot share `org.X.fail` because that queue already exists in production without TTL args, and RabbitMQ rejects redeclaration with different arguments.
+- MTT cannot share `org.X.fail` because it is actively used by transactional emails, webhooks, and SQS without a TTL, and RabbitMQ rejects redeclaration with different arguments.
 - Test MTT actions use the global `wrk.mtt.test` queue (no DLX TTL circuit; low volume).
 
 | Queue / exchange | Role | TTL |
 |---|---|---|
 | `wrk.X.email.supporter` / `sqs` / `webhook` | Built-in workers | none (DLX → `org.X.fail`) |
 | `cus.X.deliver` (and other custom) | External consumers | none (DLX → `org.X.fail`) |
-| `org.X.fail` | Legacy dead letter park | none in app code |
+| `org.X.fail` | Dead letter park (transactional emails, webhooks, SQS) | none in app code |
 | `org.X.retry` | Re-inject to original queue | n/a |
 | `wrk.X.mtt` | MTT live delivery | none (DLX → `org.X.mtt.fail`) |
 | `org.X.mtt.fail` | MTT dead letter | **30 minutes** |

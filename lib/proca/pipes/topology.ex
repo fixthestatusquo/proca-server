@@ -15,7 +15,7 @@ defmodule Proca.Pipes.Topology do
   - 3 exchanges reflect 3 stages of processing (supporter confirms their data, moderator confirms the action, action is delivered)
   - Each exchange has build in worker queues attached, *if workers are enabled*. Worker queues are read by Proca workers.
   - Each exchange has custom queue attached, *if enabled on Org*. Custom queues are meant to be read by external client.
-  - Worker and custom queues use a legacy Dead Letter Exchange (`org.N.fail` / `org.N.retry`). The fail queue has **no message TTL in application code** (ops may set a RabbitMQ policy). Rejected messages park on `org.N.fail` until requeued onto `org.N.retry`.
+  - Worker and custom queues use a shared Dead Letter Exchange (`org.N.fail` / `org.N.retry`). The fail queue has **no message TTL in application code** (ops may set a RabbitMQ policy). Rejected messages park on `org.N.fail` until requeued onto `org.N.retry`.
   - MTT uses a separate DLX (`org.N.mtt.fail` / `org.N.mtt.retry`) with a **30-minute** TTL. It cannot reuse `org.N.fail` because that queue already exists in production without TTL args, and RabbitMQ rejects redeclaration with different arguments.
   - When data is shared with your org by other org, you only receive action onto deliver exchange.
   - Routing key is: `${campaign}.${action_type}`, eg. `no_to_gmo.share`
@@ -41,7 +41,7 @@ defmodule Proca.Pipes.Topology do
   (default exchange)      wrk.N.mtt -> =wrk.N.mtt  (published by MTTWorker / MTTScheduler)
   (default exchange)      wrk.mtt.test            (MTT test actions from Processing)
 
-  legacy workers/custom:          DLX:x org.N.fail fanout> org.N.fail
+  transactional/custom:           DLX:x org.N.fail fanout> org.N.fail
                                   (no app TTL; park until ops requeue via org.N.retry)
   MTT:                            DLX:x org.N.mtt.fail > org.N.mtt.fail
                                   TTL 30min > x org.N.mtt.retry > wrk.N.mtt
@@ -197,9 +197,9 @@ defmodule Proca.Pipes.Topology do
 
     Queue.bind(chan, qn, qn)
 
-    # MTT uses a separate retry circuit. The legacy org fail queue already
+    # MTT uses a separate retry circuit. The shared org fail queue already
     # exists in production without a TTL, and RabbitMQ rejects redeclaration
-    # of an existing queue with different arguments. Legacy fail is still used
+    # of an existing queue with different arguments. The shared fail is still used
     # by email.supporter / sqs / webhook / custom deliver queues.
     mtt_fail_queue = xn(o, "mtt.fail")
 
