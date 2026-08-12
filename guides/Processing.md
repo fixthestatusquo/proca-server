@@ -91,7 +91,7 @@ You can enable the custom queues by setting the respective Org setting: `customS
 
 ### Dead-letter / retry circuits
 
-**Legacy (transactional workers + custom deliver):**
+**Shared DLX (transactional workers, webhooks, SQS, custom deliver):**
 
 - Worker queues (`wrk.X.email.supporter`, `wrk.X.sqs`, `wrk.X.webhook`) and custom queues (`cus.X.*`) set their dead-letter exchange to `org.X.fail`.
 - `org.X.fail` is a durable park queue. **There is no message TTL in application code** (a RabbitMQ policy may add one in some deployments). Messages stay until ops requeue them onto `org.X.retry`, which routes back to the original worker/custom queue by routing key.

@@ -131,7 +131,7 @@ exporter exporter) scraped into the same VictoriaMetrics/Prometheus.
 3. **Drip publish rate** — `rate(proca_mtt_messages_published_total[5m])` by `campaign_id`
 4. **MTT fail queue depth** (RabbitMQ) — `rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}`
 5. **MTT work queue depth** — `rabbitmq_queue_messages{queue=~"wrk\\..*\\.mtt"}`
-6. **Legacy fail park** — `rabbitmq_queue_messages{queue=~"org\\..*\\.fail"}` (non-MTT)
+6. **Shared fail park** — `rabbitmq_queue_messages{queue=~"org\\..*\\.fail"}` (transactional emails, webhooks, SQS)
 
 Endless DLX loops show up as: fail-queue depth oscillating while
 `proca_mtt_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
