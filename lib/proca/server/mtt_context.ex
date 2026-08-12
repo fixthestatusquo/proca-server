@@ -250,6 +250,7 @@ defmodule Proca.Server.MTTContext do
 
         Message.mark_one(msg, :sent)
     end
+    end
   end
 
   def max_emails_per_hour(campaign = %Campaign{mtt: %{max_emails_per_hour: nil, timezone: _}}) do
