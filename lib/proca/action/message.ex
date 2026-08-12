@@ -55,10 +55,13 @@ defmodule Proca.Action.Message do
     if is_nil(action_page.campaign.mtt) do
       add_error(action, :mtt, "Campaign does not support MTT")
     else
-      {_, message_content} =
-        Proca.Repo.insert(Action.MessageContent.changeset(%Action.MessageContent{}, attrs))
-
-      # which ever we have - failed changeset or good record, lets just add it once
+      # Accept any template from the frontend — malformed mustache is caught at
+      # send time: logged, Sentry-captured, raw string sent as fallback.
+      {:ok, message_content} =
+        Proca.Repo.insert(%Action.MessageContent{
+          subject: Map.get(attrs, :subject, ""),
+          body: Map.get(attrs, :body, "")
+        })
 
       messages =
         Enum.map(targets, fn t ->

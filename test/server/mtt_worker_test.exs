@@ -4,12 +4,13 @@ defmodule Proca.Server.MTTWorkerTest do
 
   import Proca.StoryFactory, only: [green_story: 0]
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Proca.Repo
   alias Proca.Factory
 
   alias Proca.Server.MTTWorker
-  alias Proca.Action.Message
+  alias Proca.Action.{Message, MessageContent}
 
   use Proca.TestEmailBackend
   use Proca.TestProcessing
@@ -321,6 +322,68 @@ defmodule Proca.Server.MTTWorkerTest do
     } do
       emails = MTTWorker.get_emails_to_send([tid1, tid2], {700, 700})
       assert length(emails) == 99
+    end
+  end
+
+  describe "put_message_content with malformed supporter template (drip path nil branch)" do
+    test "falls back to raw subject/body and logs a warning" do
+      email =
+        Swoosh.Email.new()
+        |> Swoosh.Email.assign(:action_id, 42)
+        |> Swoosh.Email.assign(:target, %{"name" => "Parliament"})
+
+      bad_mc = %MessageContent{subject: "{{#unclosed}}", body: "Our demands", compiled: nil}
+
+      log =
+        capture_log(fn ->
+          result = MTTWorker.put_message_content(email, bad_mc, nil)
+          assert result.subject == "{{#unclosed}}"
+          assert result.text_body == "Our demands"
+        end)
+
+      IO.puts("\n[path 3 log] #{log}")
+      assert log =~ "invalid mustache template"
+      assert log =~ "action_id=42"
+    end
+  end
+
+  describe "mtt_context no-drip path with malformed supporter template" do
+    test "compile_string signals :error class — mtt_context now catches it" do
+      assert_raise ErlangError, ~r/incorrect_format/, fn ->
+        Proca.Service.EmailTemplate.compile_string("{{#unclosed}}")
+      end
+    end
+  end
+
+  describe "send_emails with malformed mustache" do
+    setup %{campaign: c, ap: ap, targets: [t | _]} do
+      action =
+        Factory.insert(:action,
+          action_page: ap,
+          processing_status: :delivered,
+          supporter_processing_status: :accepted
+        )
+
+      bad_mc = Repo.insert!(%MessageContent{subject: "{{#unclosed}}", body: "body"})
+      msg = Factory.insert(:message, action: action, target: t, message_content: bad_mc)
+
+      msgs =
+        Repo.all(
+          from(m in Message,
+            where: m.id == ^msg.id,
+            preload: [[target: :emails], [action: :supporter], :message_content]
+          )
+        )
+
+      %{msgs: msgs, msg_id: msg.id}
+    end
+
+    test "sends email with raw fallback string and logs a warning", %{campaign: c, msgs: msgs, msg_id: msg_id} do
+      log = capture_log(fn -> MTTWorker.send_emails(c, msgs) end)
+
+      IO.puts("\n[path 2 log] #{log}")
+      assert log =~ "invalid mustache template"
+      assert Repo.get!(Message, msg_id).sent == true
     end
   end
 end

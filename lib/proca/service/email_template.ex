@@ -131,6 +131,16 @@ defmodule Proca.Service.EmailTemplate do
     :bbmustache.parse_binary(m)
   end
 
+  def safe_compile_string(nil), do: {:ok, nil}
+
+  def safe_compile_string(m) do
+    try do
+      {:ok, compile_string(m)}
+    catch
+      :error, {:incorrect_format, reason} -> {:error, reason}
+    end
+  end
+
   # when end is_tuple(m) do
   def render_string(m, vars) do
     :bbmustache.compile(m, vars, key_type: :binary)
