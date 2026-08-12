@@ -27,7 +27,7 @@ defmodule Proca.Service.SES do
   def batch_size(), do: 50
 
   @impl true
-  def list_templates(%Org{email_backend: %Service{} = srv} = _org) do
+  def list_templates(%Org{email_backend: %Service{} = srv}) do
     list_templates_page(srv)
   end
 
@@ -65,7 +65,7 @@ defmodule Proca.Service.SES do
         end
 
       other ->
-        error("UNEXPECTED AWS SES ListTemplates reply: #{inspect(other)}")
+        error("UNEXPECTED AWS SES ListTemplates reply org_id=#{srv.org_id}: #{inspect(other)}")
         {:error, "unexpected reply from AWS SES"}
     end
   end

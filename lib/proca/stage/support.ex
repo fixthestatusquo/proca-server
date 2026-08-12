@@ -5,7 +5,7 @@ defmodule Proca.Stage.Support do
   (system) or externally (custom).
   """
 
-  alias Proca.{Action, Supporter, Confirm}
+  alias Proca.{Action, Supporter, Confirm, Org}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Broadway.Message
@@ -71,14 +71,14 @@ defmodule Proca.Stage.Support do
     |> Message.failed(reason)
   end
 
-  def failed_partially(messages, statuses) do
+  def failed_partially(messages, statuses, org) do
     Enum.zip(messages, statuses)
     |> Enum.map(fn
       {m, :ok} ->
         m
 
       {m, {:error, reason}} ->
-        error("Cannot sent email: #{inspect(reason)}")
+        error("Cannot send email org=#{Org.log_ref(org)}: #{inspect(reason)}")
         Message.failed(m, reason)
     end)
   end

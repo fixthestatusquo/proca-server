@@ -107,14 +107,13 @@ defmodule Proca.Service.Detail do
   @spec lookup(Org, Supporter) :: {:ok, Detail} | {:error, any()}
 
   def lookup(
-        %Org{detail_backend: %{name: :webhook} = srv},
+        %Org{id: org_id, name: org_name, detail_backend: %{name: :webhook} = srv},
         %Supporter{email: email, fingerprint: ref}
       ) do
-    payload =
-      Jason.encode!(%{
-        "email" => email,
-        "contactRef" => Supporter.base_encode(ref)
-      })
+    payload = %{
+      "email" => email,
+      "contactRef" => Supporter.base_encode(ref)
+    }
 
     case Service.json_request(srv, srv.host, post: payload, auth: Service.Webhook.auth_type(srv)) do
       {:ok, 200, data} when is_map(data) ->
@@ -128,7 +127,7 @@ defmodule Proca.Service.Detail do
             em = ProcaWeb.Helper.format_errors(error)
 
             warn(
-              "Lookup service returned invalid data: (id #{srv.id}) at #{srv.host}: #{inspect(em)}"
+              "Lookup service returned invalid data: org=#{org_name}(#{org_id}) (id #{srv.id}) at #{srv.host}: #{inspect(em)}"
             )
 
             # XXX calling ProcaWeb module
@@ -143,12 +142,12 @@ defmodule Proca.Service.Detail do
 
       other ->
         Sentry.capture_message(
-          "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{inspect(other)}",
+          "Cannot lookup supporter detail from webhook org=#{org_name}(#{org_id}) (id #{srv.id}) at #{srv.host}: #{inspect(other)}",
           result: :none
         )
 
         warn(
-          "Cannot lookup supporter detail from webhook (id #{srv.id}) at #{srv.host}: #{inspect(other)}"
+          "Cannot lookup supporter detail from webhook org=#{org_name}(#{org_id}) (id #{srv.id}) at #{srv.host}: #{inspect(other)}"
         )
 
         {:error, :unknown}
