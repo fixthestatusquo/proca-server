@@ -43,7 +43,7 @@ defmodule Proca.Stage.MTTStageTest do
 
       assert MTT.deliver(-1, target.id) == :ignore
       assert MTT.deliver(msg.id, Ecto.UUID.generate()) == {:discard, :target_mismatch}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
     end
   end
 
@@ -218,14 +218,14 @@ defmodule Proca.Stage.MTTStageTest do
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
 
       assert MTT.deliver(msg.id, wrong_target.id) == {:discard, :target_mismatch}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
     end
 
     test "rejects testing actions from the live queue", %{action: action, first_target: target} do
       msg = Factory.insert(:message, action: action, target: target)
 
       assert MTT.deliver(msg.id, target.id) == {:discard, :testing_action}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
     end
 
     test "rejects closed campaigns", %{target: target} do
@@ -233,7 +233,7 @@ defmodule Proca.Stage.MTTStageTest do
       Repo.update!(Ecto.Changeset.change(target.campaign, status: :closed))
 
       assert MTT.deliver(msg.id, target.id) == {:discard, :campaign_inactive}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
     end
 
     test "rejects messages after MTT end_at", %{target: target} do
@@ -246,10 +246,10 @@ defmodule Proca.Stage.MTTStageTest do
       )
 
       assert MTT.deliver(msg.id, target.id) == {:discard, :mtt_ended}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
     end
 
-    test "rejects targets without a sendable email without marking sent", %{target: target} do
+    test "rejects targets without a sendable email and marks sent", %{target: target} do
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
 
       Enum.each(target.emails, fn email ->
@@ -257,7 +257,28 @@ defmodule Proca.Stage.MTTStageTest do
       end)
 
       assert MTT.deliver(msg.id, target.id) == {:discard, :no_sendable_email}
-      refute Repo.get(Proca.Action.Message, msg.id).sent
+      assert Repo.get(Proca.Action.Message, msg.id).sent
+    end
+
+    test "falls back to raw subject/body on malformed mustache template", %{
+      target: %{emails: [%{email: email}]} = target
+    } do
+      import ExUnit.CaptureLog
+
+      [msg | _] = MTTContext.get_pending_messages(target.id, :all)
+      bad_mc = Repo.insert!(%Proca.Action.MessageContent{subject: "{{#unclosed}}", body: "Our demands"})
+      Repo.update!(Ecto.Changeset.change(msg, message_content_id: bad_mc.id))
+
+      log =
+        capture_log(fn ->
+          assert MTT.deliver(msg.id, target.id) == :ok
+        end)
+
+      assert log =~ "invalid mustache template"
+      assert Repo.get!(Proca.Action.Message, msg.id).sent
+      [sent_email] = Proca.TestEmailBackend.mailbox(email)
+      assert sent_email.subject == "{{#unclosed}}"
+      assert sent_email.text_body =~ "Our demands"
     end
 
     test "concurrent duplicate deliveries send only once", %{

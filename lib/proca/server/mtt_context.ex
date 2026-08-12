@@ -18,6 +18,15 @@ defmodule Proca.Server.MTTContext do
   # 1 day ago
   @recent_test_messages -1 * 60 * 60 * 24
   @in_flight_table :mtt_in_flight_messages
+  @permanent_discard_reasons [
+    :target_mismatch,
+    :testing_action,
+    :campaign_inactive,
+    :mtt_missing,
+    :mtt_ended,
+    :no_sendable_email,
+    :email_backend_missing
+  ]
 
   def ensure_in_flight_table do
     case :ets.whereis(@in_flight_table) do
@@ -102,7 +111,8 @@ defmodule Proca.Server.MTTContext do
       join: email_backend in assoc(org, :email_backend),
       join: te in assoc(target, :emails),
       where:
-        mtt.drip_delivery == false and
+        campaign.status == :live and
+          mtt.drip_delivery == false and
           not is_nil(email_backend) and
           te.email_status in [:active, :none] and
           fragment("?::date", mtt.start_at) <= ^today and
@@ -292,6 +302,10 @@ defmodule Proca.Server.MTTContext do
 
     case result do
       {:discard, reason} ->
+        if reason in @permanent_discard_reasons do
+          Message.mark_one(message, :sent)
+        end
+
         emit_delivery(:discarded,
           org_id: org.id,
           campaign_id: campaign.id,
@@ -335,8 +349,8 @@ defmodule Proca.Server.MTTContext do
 
   @doc """
   Send the test emails of a freshly delivered testing action, for all its
-  targets. Invoked by `Proca.Stage.MTT` when `Proca.Stage.Processing` pushes
-  the confirm-time event. Idempotent - only unsent messages are picked up.
+  targets. Invoked by `Proca.Stage.MTTTest` when `Proca.Stage.Processing` pushes
+  the deliver event. Idempotent - only unsent messages are picked up.
   No dupe_rank filter: it is not computed yet at confirm time and does not
   matter for test sends.
   """
@@ -687,15 +701,19 @@ defmodule Proca.Server.MTTContext do
       message_body: body
     })
 
+    action_id = email.assigns[:action_id]
+
     body =
-      body
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(body, "body", "action_id=#{action_id}") do
+        nil -> body
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     subject =
-      subject
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(subject, "subject", "action_id=#{action_id}") do
+        nil -> subject
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     html_body = EmailMerge.plain_to_html(body)
 
@@ -717,8 +735,29 @@ defmodule Proca.Server.MTTContext do
     |> Email.assign(:subject, subject)
   end
 
+  defp compile_mtt_field(value, field, context) do
+    case EmailTemplate.safe_compile_string(value) do
+      {:ok, compiled} ->
+        compiled
+
+      {:error, reason} ->
+        Logger.warning(
+          "MTT message #{field} has invalid mustache template #{context} reason=#{inspect(reason)}"
+        )
+
+        Sentry.capture_message("Malformed mustache tag in MTT message #{field}",
+          extra: %{reason: inspect(reason)}
+        )
+
+        nil
+    end
+  end
+
   defp change_test_subject(message_content, false), do: message_content
 
-  defp change_test_subject(message_content = %{subject: subject}, true),
-    do: Map.put(message_content, :subject, "[TEST] " <> subject)
+  defp change_test_subject(message_content = %{subject: subject}, true) do
+    message_content
+    |> Map.put(:subject, "[TEST] " <> subject)
+    |> Map.put(:compiled, nil)
+  end
 end

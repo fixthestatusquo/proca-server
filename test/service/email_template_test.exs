@@ -34,6 +34,37 @@ defmodule Proca.EmailTemplateTest do
     assert String.contains?(email.html_body, "You decided to subscribe")
   end
 
+  test "compile_string signals :error class (not :throw or :exit) on malformed template" do
+    try do
+      EmailTemplate.compile_string("{{#unclosed}}")
+      flunk("expected compile_string to raise on malformed template")
+    catch
+      :error, {:incorrect_format, _} -> :ok
+      kind, reason -> flunk("expected :error class signal, got :#{kind}: #{inspect(reason)}")
+    end
+  end
+
+  test "safe_compile_string returns error for malformed template" do
+    assert {:error, :unclosed_tag} = EmailTemplate.safe_compile_string("{{#unclosed}}")
+  end
+
+  test "changeset validation logs nothing — error is returned to the caller", %{org: org} do
+    import ExUnit.CaptureLog
+
+    log =
+      capture_log(fn ->
+        EmailTemplate.changeset(%{
+          org: org,
+          name: "broken template",
+          locale: "en",
+          subject: "Hello {{#unclosed}}",
+          html: "<p>Valid html</p>"
+        })
+      end)
+
+    assert log == ""
+  end
+
   test "changeset rejects template with invalid mustache in subject", %{org: org} do
     ch = EmailTemplate.changeset(%{
       org: org,
