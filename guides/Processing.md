@@ -101,7 +101,7 @@ You can enable the custom queues by setting the respective Org setting: `customS
 
 - Live MTT delivery uses `wrk.X.mtt`. Failures dead-letter to `org.X.mtt.fail`, which has an application TTL of **30 minutes**, then route via `org.X.mtt.retry` back to `wrk.X.mtt`.
 - MTT cannot share `org.X.fail` because it is actively used by transactional emails, webhooks, and SQS without a TTL, and RabbitMQ rejects redeclaration with different arguments.
-- Test MTT actions use the global `wrk.mtt.test` queue (no DLX TTL circuit; low volume).
+- Test MTT emails are sent directly (no queue): ASAP from action processing at deliver time, with the MTT cycle as a backup poll for any still-unsent messages.
 
 | Queue / exchange | Role | TTL |
 |---|---|---|
@@ -112,7 +112,6 @@ You can enable the custom queues by setting the respective Org setting: `customS
 | `wrk.X.mtt` | MTT live delivery | none (DLX → `org.X.mtt.fail`) |
 | `org.X.mtt.fail` | MTT dead letter | **30 minutes** |
 | `org.X.mtt.retry` | MTT re-inject to `wrk.X.mtt` | n/a |
-| `wrk.mtt.test` | MTT test actions | none |
 
 See also the diagram in `Proca.Pipes.Topology` moduledoc.
 
@@ -255,6 +254,6 @@ If current org is instance org, and it has `eventBackend` set, it will receive e
 
 MTT scheduling still runs under cron-like servers (`Proca.Server.MTT` every ~3 minutes for drip, `Proca.Server.MTTHourlyCron` / `MTTScheduler` for no-drip). They **publish** `{messageId, targetId}` to the org queue `wrk.X.mtt` (default exchange). `Proca.Stage.MTT` Broadway consumers deliver the email and mark the DB row `sent`.
 
-Test actions are published to `wrk.mtt.test` from `Proca.Stage.Processing` when the action reaches deliver.
+Test MTT emails are sent directly (no queue): ASAP from `Proca.Stage.Processing` when a testing action reaches deliver, with `MTTWorker.process_mtt_test_mails/0` on each MTT cycle as a backup for any still-unsent messages (one email per locale).
 
 Ops controls (no restart): `scripts/mttmailer pause|start|status|max_messages <n>` — pause stops the Broadway consumers so messages accumulate in RabbitMQ for inspection while schedulers keep queuing.

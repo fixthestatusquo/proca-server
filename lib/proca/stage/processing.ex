@@ -405,34 +405,40 @@ defmodule Proca.Stage.Processing do
       Connection.publish(data, exchange, routing, chan)
     end
 
-    # Publish the idempotent MTT test event first. If its queue is unavailable,
-    # do not also duplicate normal delivery events on the processing retry.
-    if publish_mtt_test(action, chan) == :ok and
-         Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
+    # MTT test emails are sent directly (no queue) so they go out ASAP without
+    # retries. Failures leave messages unsent for the next MTT cycle poll.
+    if Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
+      maybe_send_mtt_test(action)
       :ok
     else
       :error
     end
   end
 
-  # MTT test actions are pushed to the global low-volume test queue when the
-  # action is delivered, instead of waiting for a polling sender. Returning
-  # error re-runs emit later.
-  defp publish_mtt_test(
-         %{id: id, testing: true, action_page: %{campaign: %{}}},
-         chan
-       ) do
+  defp maybe_send_mtt_test(%{id: id, testing: true}) do
     import Ecto.Query, only: [from: 2]
 
-    if Repo.exists?(from(m in Proca.Action.Message, where: m.action_id == ^id)) do
-      queue = Proca.Pipes.Topology.mtt_test_queue()
-      Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, chan)
-    else
-      :ok
+    if Proca.Server.MTT.mode() == :enabled and
+         Repo.exists?(from(m in Proca.Action.Message, where: m.action_id == ^id)) do
+      Task.start(fn ->
+        case Proca.Server.MTTContext.deliver_test_mails(id) do
+          :ok ->
+            :ok
+
+          {:error, reason} ->
+            require Logger
+
+            Logger.warning(
+              "MTT test email send failed for action #{id}: #{inspect(reason)}"
+            )
+        end
+      end)
     end
+
+    :ok
   end
 
-  defp publish_mtt_test(_action, _chan), do: :ok
+  defp maybe_send_mtt_test(_action), do: :ok
 
   def emit(p = %Processing{stage: stage}, chan) when stage != nil do
     action = changed_action(p)

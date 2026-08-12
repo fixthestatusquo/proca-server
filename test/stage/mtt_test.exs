@@ -7,7 +7,6 @@ defmodule Proca.Stage.MTTStageTest do
   alias Proca.Repo
   alias Proca.Server.MTTContext
   alias Proca.Stage.MTT
-  alias Proca.Stage.MTTTest, as: MTTTestStage
   alias Proca.Pipes.Topology
 
   import Proca.StoryFactory, only: [mtt_story: 0]
@@ -71,16 +70,7 @@ defmodule Proca.Stage.MTTStageTest do
     } do
       Repo.update!(Ecto.Changeset.change(first_target.campaign.mtt, %{test_email: test_email}))
 
-      {:ok, payload} = JSON.encode(%{actionId: action.id, stage: "deliver", testing: true})
-
-      message = %Broadway.Message{
-        data: payload,
-        acknowledger: {Broadway.CallerAcknowledger, {self(), make_ref()}, :ok}
-      }
-
-      result = MTTTestStage.handle_message(:default, message, nil)
-
-      assert result.status == :ok
+      assert MTTContext.deliver_test_mails(action.id) == :ok
 
       # one email per locale, to the supporter who tests
       mbox = Proca.TestEmailBackend.mailbox(action.supporter.email)
@@ -117,20 +107,10 @@ defmodule Proca.Stage.MTTStageTest do
       assert [_] = Proca.TestEmailBackend.mailbox(action.supporter.email)
     end
 
-    test "temporary test provider failure remains unsent and fails the queue event", %{
-      action: action
-    } do
+    test "temporary test provider failure remains unsent", %{action: action} do
       Proca.TestEmailBackend.fail_delivery(:temporary)
-      {:ok, payload} = JSON.encode(%{actionId: action.id, testing: true})
 
-      queue_message = %Broadway.Message{
-        data: payload,
-        acknowledger: {Broadway.CallerAcknowledger, {self(), make_ref()}, :ok}
-      }
-
-      result = MTTTestStage.handle_message(:default, queue_message, nil)
-
-      assert {:failed, _} = result.status
+      assert {:error, _} = MTTContext.deliver_test_mails(action.id)
 
       refute Repo.exists?(
                from(m in Proca.Action.Message,
@@ -154,9 +134,7 @@ defmodule Proca.Stage.MTTStageTest do
   end
 
   describe "queue names" do
-    test "uses one global test queue and one live queue per org", %{target: target} do
-      assert Topology.mtt_test_queue() == "wrk.mtt.test"
-
+    test "uses one live queue per org", %{target: target} do
       assert Topology.mtt_queue(target.campaign.org) ==
                "wrk.#{target.campaign.org.id}.mtt"
     end

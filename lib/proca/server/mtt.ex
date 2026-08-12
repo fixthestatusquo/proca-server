@@ -12,10 +12,8 @@ defmodule Proca.Server.MTT do
   1. Calculate `dupeRank` for the MTT messages
   2. For every campaign for which today falls into day range of sending MTT, launch `Proca.Server.MTTWorker`
   3. Publish regular MTT messages to per-org RabbitMQ queues
-  4. Wait until all `Proca.Server.MTTWorker` tasks finish
-
-  Testing actions are published independently to `wrk.mtt.test` when their
-  processing reaches the delivered stage.
+  4. Send out all the test MTT emails directly (no queue)
+  5. Wait until all `Proca.Server.MTTWorker` tasks finish
   """
   use GenServer
 
@@ -61,7 +59,9 @@ defmodule Proca.Server.MTT do
     workers =
       if enabled?() do
         dupe_rank()
-        w ++ process_mtt()
+        workers = w ++ process_mtt()
+        MTTWorker.process_mtt_test_mails()
+        workers
       else
         w
       end

@@ -349,10 +349,10 @@ defmodule Proca.Server.MTTContext do
 
   @doc """
   Send the test emails of a freshly delivered testing action, for all its
-  targets. Invoked by `Proca.Stage.MTTTest` when `Proca.Stage.Processing` pushes
-  the deliver event. Idempotent - only unsent messages are picked up.
-  No dupe_rank filter: it is not computed yet at confirm time and does not
-  matter for test sends.
+  targets. Called directly from `Proca.Stage.Processing` at deliver time and
+  from `Proca.Server.MTTWorker.process_mtt_test_mails/0`. Idempotent - only
+  unsent messages are picked up. No dupe_rank filter: it is not computed yet
+  at confirm time and does not matter for test sends.
   """
   def deliver_test_mails(action_id) do
     Repo.transaction(fn ->

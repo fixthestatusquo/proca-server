@@ -15,9 +15,8 @@ defmodule Proca.Server.MTTWorker do
 
   The worker only picks the messages to send; delivery goes through the org's
   `wrk.N.mtt` RabbitMQ queue (`Proca.Server.MTTContext.dispatch_message/2`,
-  consumed by `Proca.Stage.MTT`). Test emails are sent separately and
-  instantly, pushed to the global `wrk.mtt.test` queue by
-  `Proca.Stage.Processing`.
+  consumed by `Proca.Stage.MTT`). Test emails are sent directly (no queue) by
+  `process_mtt_test_mails/0` and by `Proca.Stage.Processing` at deliver time.
   """
 
   alias Proca.Repo
@@ -28,6 +27,8 @@ defmodule Proca.Server.MTTWorker do
   alias Proca.Server.MTTContext
 
   require Logger
+
+  @recent_test_messages -1 * 60 * 60 * 24
 
   def process_mtt_campaign(campaign) do
     campaign = Repo.preload(campaign, [:mtt, [org: :email_backend]])
@@ -78,6 +79,37 @@ defmodule Proca.Server.MTTWorker do
 
       :noop
     end
+  end
+
+  def process_mtt_test_mails do
+    # Purge of old test messages happens once/hour from MTTHourlyCron,
+    # see Proca.Server.MTTContext.delete_old_test_emails/0
+    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
+
+    action_ids =
+      from(m in Message,
+        join: a in assoc(m, :action),
+        where:
+          a.processing_status == :delivered and
+            a.testing == true and
+            m.sent == false and
+            a.inserted_at >= ^recent,
+        distinct: true,
+        select: a.id
+      )
+      |> Repo.all()
+
+    Enum.each(action_ids, fn action_id ->
+      case MTTContext.deliver_test_mails(action_id) do
+        :ok ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning(
+            "MTT test email send failed for action #{action_id}: #{inspect(reason)}"
+          )
+      end
+    end)
   end
 
   @doc """
