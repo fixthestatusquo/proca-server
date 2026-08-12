@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.10.2",
+      version: "3.10.3",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -82,7 +82,6 @@ defmodule Proca.MixProject do
       {:supabase, "~> 0.2.3"},
       {:tesla, "~> 1.4.1"},
       {:mint, "~> 1.0"},
-      {:castore, "~> 0.1"},
       {:hcaptcha, "~> 0.0.1"},
       {:sweet_xml, "~> 0.6"},
       {:joken, "~> 2.4"},

@@ -115,13 +115,13 @@ defmodule Proca.Org do
     ])
     |> cast_backend(
       :email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
       attrs,
       org
     )
     |> cast_backend(
       :transactional_email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
       attrs,
       org
     )
@@ -270,6 +270,9 @@ defmodule Proca.Org do
   def instance_org_name do
     Application.get_env(:proca, Proca)[:org_name]
   end
+
+  @doc "Human-readable org reference for log/error messages"
+  def log_ref(%Org{id: id, name: name}), do: "#{name}(#{id})"
 
   def list(preloads \\ []) do
     all(preload: preloads)

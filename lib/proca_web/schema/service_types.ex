@@ -133,6 +133,7 @@ defmodule ProcaWeb.Schema.ServiceTypes do
     value(:system, description: "Use a service that instance org is using")
     value(:supabase, description: "Supabase to store files")
     value(:brevo, description: "Brevo to send transactional emails")
+    value(:hubspot, description: "HubSpot to send transactional emails")
   end
 
   object :service do

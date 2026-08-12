@@ -53,7 +53,7 @@ defmodule Proca.Supporter.ConfirmReminder do
       where: not is_nil(o.email_backend_id),
       where: not is_nil(o.email_from),
       distinct: true,
-      preload: [email_backend: :org]
+      preload: [:email_backend, :transactional_email_backend]
     )
     |> Repo.all()
   end
@@ -117,6 +117,8 @@ defmodule Proca.Supporter.ConfirmReminder do
   end
 
   defp send_batch(org, ap, actions) do
+    org = Org.for_transactional_email(org, length(actions))
+
     tmpl_name =
       ap.supporter_confirm_template ||
         ap.campaign.supporter_confirm_template ||

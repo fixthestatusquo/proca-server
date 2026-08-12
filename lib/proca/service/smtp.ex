@@ -4,6 +4,8 @@ defmodule Proca.Service.SMTP do
   alias Swoosh.Email
   alias Swoosh.Adapters.SMTP
 
+  @cacerts :public_key.cacerts_get()
+
   @impl true
   def supports_templates?(_org) do
     false
@@ -25,26 +27,25 @@ defmodule Proca.Service.SMTP do
       |> Enum.map(&SMTP.deliver(&1, conf))
 
     Enum.each(results, fn
-      {:ok, _} ->
-        :ok
-
       {:error, reason} ->
         Sentry.capture_message("Failed to send email by SMTP: #{inspect(reason)}",
           extra: %{org: org_name},
           result: :none
         )
+
+      {:ok, _} ->
+        :ok
     end)
 
-    :ok
-    # XXX not clear which errors are retryable?
-    # if Enum.all?(results, & &1 == :ok) do
-    #   :ok
-    # else
-    #   {:error, Enum.map(results, fn
-    #       {:ok, _r} -> :ok
-    #       {:error, reason} -> {:error, inspect(reason)}
-    #     end)}
-    # end
+    if Enum.all?(results, &match?({:ok, _}, &1)) do
+      :ok
+    else
+      {:error,
+       Enum.map(results, fn
+         {:ok, _r} -> :ok
+         {:error, reason} -> {:error, inspect(reason)}
+       end)}
+    end
   end
 
   def deliver(email, org) do
@@ -70,25 +71,43 @@ defmodule Proca.Service.SMTP do
     end
   end
 
-  def put_security(opts, "ssl") do
+  def put_security(opts, scheme) when scheme in ["ssl", "smtps"] do
+    host = opts[:relay]
+
     [{:ssl, true} | opts]
-    |> Keyword.update(:port, 587, fn
-      nil -> 587
+    |> Keyword.update(:port, 465, fn
+      nil -> 465
       x -> x
     end)
-
-    # set if not set
+    |> Keyword.put(:sockopts, [
+      verify: :verify_peer,
+      cacerts: @cacerts,
+      server_name_indication: to_charlist(host),
+      verify_fun: {&verify_cert/3, []}
+    ])
   end
 
   def put_security(opts, "tls") do
+    host = opts[:relay]
+
     [{:tls, :always} | opts]
     |> Keyword.update(:port, 25, fn
       nil -> 25
       x -> x
     end)
-
-    # set if not set
+    |> Keyword.put(:tls_options, [
+      verify: :verify_peer,
+      cacerts: @cacerts,
+      server_name_indication: to_charlist(host),
+      verify_fun: {&verify_cert/3, []}
+    ])
   end
+
+  defp verify_cert(_cert, {:bad_cert, :max_path_length_reached}, state), do: {:valid, state}
+  defp verify_cert(_cert, {:extension, _}, state), do: {:unknown, state}
+  defp verify_cert(_cert, :valid, state), do: {:valid, state}
+  defp verify_cert(_cert, :valid_peer, state), do: {:valid, state}
+  defp verify_cert(_cert, reason, _state), do: {:fail, reason}
 
   @impl true
   def handle_bounce(_), do: :ok

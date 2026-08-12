@@ -244,7 +244,7 @@ defmodule Proca.Service do
       req
       | method: :post,
         body: body,
-        headers: [{"Content-Type", "application/json"} | req.headers]
+        headers: req.headers
     }
     |> json_request_opts(rest, srv)
   end
