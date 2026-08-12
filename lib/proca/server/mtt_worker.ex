@@ -24,7 +24,7 @@ defmodule Proca.Server.MTTWorker do
 
   alias Swoosh.Email
   alias Proca.{Action, Campaign, ActionPage, Org, TargetEmail}
-  alias Proca.Action.Message
+  alias Proca.Action.{Message, MessageContent}
   alias Proca.Service.{EmailBackend, EmailTemplate, EmailMerge, EmailTemplateDirectory}
   import Proca.Stage.Support, only: [camel_case_keys: 1]
 
@@ -83,8 +83,8 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def process_mtt_test_mails() do
-    # Purge old test messages
-    Repo.delete_all(query_test_emails_to_delete())
+    # Purge of old test messages happens once/hour from MTTHourlyCron,
+    # see Proca.Server.MTTContext.delete_old_test_emails/0
 
     # Get recent messages to send
     emails =
@@ -230,6 +230,7 @@ defmodule Proca.Server.MTTWorker do
   end
 
   def send_emails(campaign, msgs) do
+    {_cancelled, msgs} = Enum.split_with(msgs, &Proca.Action.Message.cancel_if_empty/1)
     org = Org.one(id: campaign.org_id, preload: [:email_backend, :storage_backend])
 
     # fetch action pages for email merge
@@ -240,6 +241,17 @@ defmodule Proca.Server.MTTWorker do
     action_pages =
       ActionPage.all(preload: [:org], by_ids: action_pages_ids)
       |> Enum.into(%{})
+
+    compiled_contents =
+      msgs
+      |> Enum.map(& &1.message_content)
+      |> Enum.uniq_by(& &1.id)
+      |> Enum.map(fn mc ->
+        cs = compile_mtt_field(mc.subject, "subject", "mc_id=#{mc.id}")
+        cb = compile_mtt_field(mc.body, "body", "mc_id=#{mc.id}")
+        {mc.id, %{mc | compiled: %{subject: cs, body: cb}}}
+      end)
+      |> Map.new()
 
     msgs_per_locale = Enum.group_by(msgs, &(&1.target.locale || @default_locale))
 
@@ -282,7 +294,9 @@ defmodule Proca.Server.MTTWorker do
           for e <- chunk do
             Sentry.Context.set_extra_context(%{action_id: e.action_id})
 
-            message_content = change_test_subject(e.message_content, e.action.testing)
+            message_content =
+              compiled_contents[e.message_content.id]
+              |> change_test_subject(e.action.testing)
 
             cc_recipients =
               if campaign.mtt.cc_sender do
@@ -315,15 +329,24 @@ defmodule Proca.Server.MTTWorker do
             Message.mark_all(chunk, :sent)
 
           {:error, statuses} ->
-            Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+            successes =
+              Enum.zip(chunk, statuses)
+              |> Enum.filter(fn
+                {_, :ok} -> true
+                _ -> false
+              end)
+              |> Enum.map(fn {m, _} -> m end)
 
-            Enum.zip(chunk, statuses)
-            |> Enum.filter(fn
-              {_, :ok} -> true
-              _ -> false
-            end)
-            |> Enum.map(fn {m, _} -> m end)
-            |> Message.mark_all(:sent)
+            if successes != [] do
+              Logger.error("MTT partially failed to send: #{inspect(statuses)}")
+              Message.mark_all(successes, :sent)
+            else
+              Logger.error(
+                "MTT all attempts failed for batch: #{inspect(statuses)}, marking all sent to prevent retry"
+              )
+
+              Message.mark_all(chunk, :sent)
+            end
         end
       end
     end
@@ -370,10 +393,9 @@ defmodule Proca.Server.MTTWorker do
 
   def put_message_content(
         email = %Email{},
-        %Action.MessageContent{subject: subject, body: body},
+        %Action.MessageContent{subject: subject, body: body, compiled: compiled},
         _template = nil
       ) do
-    # Render the raw body
     target_assigns = camel_case_keys(%{target: email.assigns[:target]})
 
     Sentry.Context.set_extra_context(%{
@@ -383,15 +405,21 @@ defmodule Proca.Server.MTTWorker do
       message_body: body
     })
 
-    body =
-      body
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+    {compiled_subject, compiled_body} =
+      case compiled do
+        %{subject: cs, body: cb} ->
+          {cs, cb}
 
-    subject =
-      subject
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+        nil ->
+          action_id = email.assigns[:action_id]
+          cs = compile_mtt_field(subject, "subject", "action_id=#{action_id}")
+          cb = compile_mtt_field(body, "body", "action_id=#{action_id}")
+
+          {cs, cb}
+      end
+
+    body = if compiled_body, do: EmailTemplate.render_string(compiled_body, target_assigns), else: body
+    subject = if compiled_subject, do: EmailTemplate.render_string(compiled_subject, target_assigns), else: subject
 
     html_body = Proca.Service.EmailMerge.plain_to_html(body)
 
@@ -416,11 +444,31 @@ defmodule Proca.Server.MTTWorker do
   defp change_test_subject(message_content, false), do: message_content
 
   defp change_test_subject(message_content = %{subject: subject}, true) do
-    Map.put(message_content, :subject, "[TEST] " <> subject)
+    # drop the compiled cache: put_message_content prefers compiled.subject,
+    # which would discard the [TEST] prefix
+    %{message_content | subject: "[TEST] " <> subject, compiled: nil}
   end
 
   defp maybe_add_cc(email, cc, true), do: Email.cc(email, cc)
   defp maybe_add_cc(email, _cc, false), do: email
+
+  defp compile_mtt_field(value, field, context) do
+    case EmailTemplate.safe_compile_string(value) do
+      {:ok, compiled} ->
+        compiled
+
+      {:error, reason} ->
+        Logger.warning(
+          "MTT message #{field} has invalid mustache template #{context} reason=#{inspect(reason)}"
+        )
+
+        Sentry.capture_message("Malformed mustache tag in MTT message #{field}",
+          extra: %{reason: inspect(reason)}
+        )
+
+        nil
+    end
+  end
 
   defp max_messages_per_cycle() do
     max_messages = Application.get_env(:proca, __MODULE__)[:max_messages_per_cycle]

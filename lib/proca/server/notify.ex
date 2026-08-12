@@ -176,6 +176,10 @@ defmodule Proca.Server.Notify do
     key_activated(key)
   end
 
+  def multi(:deactivated_all_keys, %{org: org}, _opts) do
+    Proca.Server.Keys.remove_key(org)
+  end
+
   def multi(:upsert_campaign, records, opts) do
     {campaign, pages_map} = Map.pop(records, :campaign)
 
@@ -186,8 +190,11 @@ defmodule Proca.Server.Notify do
     end)
   end
 
-  def multi(:user_created_org, %{org: org}, opts) do
+  def multi(:user_created_org, %{org: org, staffer: staffer}, opts) do
     created(org, opts)
+
+    user = Repo.preload(staffer, :user).user
+    Proca.Stage.SystemEvent.emit_new_org(user, org)
   end
 
   def multi(:delete_action_page, result, _opts) do

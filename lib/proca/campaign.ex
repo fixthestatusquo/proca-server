@@ -20,9 +20,15 @@ defmodule Proca.Campaign do
     field :contact_schema, ContactSchema, default: :basic
     field :config, :map, default: %{}
     field :status, CampaignStatus, default: :live
-    field :supporter_confirm, :boolean, default: false
+    # Tri-state override of org supporter_confirm, same as action_confirm below.
+    field :supporter_confirm, :boolean
     field :supporter_confirm_template, :string
-    field :start, :date,  source: :start_date
+
+    # Tri-state override of org.custom_action_confirm for this campaign only:
+    # nil -> inherit the org setting, true -> force action confirm on, false -> force it off.
+    field :action_confirm, :boolean
+
+    field :start, :date, source: :start_date
     field :end, :date, source: :end_date
 
     belongs_to :org, Proca.Org
@@ -47,6 +53,7 @@ defmodule Proca.Campaign do
       :status,
       :supporter_confirm,
       :supporter_confirm_template,
+      :action_confirm,
       :start,
       :end
     ])
@@ -154,7 +161,8 @@ defmodule Proca.Campaign do
       on: c.id == ap.campaign_id,
       where: ap.org_id == ^org.id or c.org_id == ^org.id
     )
-    |> distinct(true)
+    |> distinct([c], c.id)
+    |> order_by([c], c.id)
   end
 
   def get_with_local_pages(campaign_id) when is_integer(campaign_id) do

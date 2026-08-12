@@ -80,7 +80,7 @@ defmodule Proca.Supporter do
     field :email, :string
     field :area, :string
 
-    field :processing_status, ProcessingStatus, default: :new
+    field :processing_status, SupporterProcessingStatus, default: :new
     field :email_status, EmailStatus, default: :none
     field :email_status_changed, :utc_datetime
     field :dupe_rank, :integer
@@ -112,11 +112,15 @@ defmodule Proca.Supporter do
 
     fingerprint = get_field(ch, :fingerprint)
     campaign_id = get_field(ch, :campaign_id)
+    action_page_id = get_field(ch, :action_page_id)
     q_id = get_field(ch, :id)
 
     q =
       from(s in Supporter,
-        select: count(s.id),
+        select: %{
+          rank: count(s.id),
+          same_page: fragment("bool_or(? = ?)", s.action_page_id, ^action_page_id)
+        },
         where:
           s.processing_status == :accepted and
             s.fingerprint == ^fingerprint and
@@ -130,9 +134,9 @@ defmodule Proca.Supporter do
         q
       end
 
-    rank = Repo.one(q)
+    %{rank: rank, same_page: same_page} = Repo.one(q)
 
-    change(ch, dupe_rank: rank)
+    {change(ch, dupe_rank: rank), same_page == true}
   end
 
   def new_supporter(data, action_page = %ActionPage{}) do
@@ -163,7 +167,6 @@ defmodule Proca.Supporter do
       :confirming -> Repo.update(change(sup, processing_status: :accepted))
       :rejected -> {:error, "supporter data already rejected"}
       :accepted -> {:noop, "supporter data already processed"}
-      :delivered -> {:noop, "supporter data already processed"}
     end
   end
 
@@ -179,9 +182,6 @@ defmodule Proca.Supporter do
         {:noop, "supporter data already rejected"}
 
       :accepted ->
-        update_supporter_reject(sup)
-
-      :delivered ->
         update_supporter_reject(sup)
     end
   end
@@ -231,6 +231,20 @@ defmodule Proca.Supporter do
           :error -> add_error(changeset, field, "Cannot decode from Base64url")
         end
     end
+  end
+
+  # soft bounces are transient - do not reject the supporter for them,
+  # but log the reason (domain only, the address is PII) for diagnostics
+  def handle_bounce(%{soft: true} = params) do
+    domain = params[:email] |> to_string() |> String.split("@") |> List.last()
+
+    require Logger
+
+    Logger.warning(
+      "Soft bounce for supporter email at #{domain}: #{params[:error] || "no reason given"}"
+    )
+
+    {:ok, %Supporter{}}
   end
 
   def handle_bounce(%{id: id, reason: reason}) do
@@ -301,7 +315,7 @@ defmodule Proca.Supporter do
           where:
             s.fingerprint == ^fingerprint and
               c.org_id == ^org_id and
-              s.processing_status in [:accepted, :delivered]),
+              s.processing_status == :accepted),
         set: [first_name: nil, last_name: nil, email: nil, address: nil]
       )
 

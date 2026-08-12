@@ -19,6 +19,7 @@ defmodule Proca.Server.Stats do
   defstruct supporters: 0, action: %{}, area: %{}, org: %{}
 
   use GenServer
+  require Logger
   alias Proca.Server.Stats
   alias Proca.{Action, Supporter, ActionPage, Campaign}
   alias Proca.Repo
@@ -43,7 +44,18 @@ defmodule Proca.Server.Stats do
   def handle_continue(:first_load, state) do
     unless state.query_runs do
       me = self()
-      Task.start_link(fn -> GenServer.cast(me, {:update_campaigns, calculate()}) end)
+
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_campaigns, calculate()})
+        rescue
+          e ->
+            msg = "Stats first load failed: #{Exception.message(e)}"
+            Logger.warning(msg)
+            Sentry.capture_message(msg, level: "warning")
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
     end
 
     if state.interval > 0 do
@@ -60,7 +72,18 @@ defmodule Proca.Server.Stats do
   def handle_info(:sync, state) do
     unless state.query_runs do
       me = self()
-      Task.start_link(fn -> GenServer.cast(me, {:update_live_campaigns, calculate_live()}) end)
+
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_live_campaigns, calculate_live()})
+        rescue
+          e in DBConnection.ConnectionError ->
+            msg = "Stats sync skipped: DB connection error: #{Exception.message(e)}"
+            Logger.warning(msg)
+            Sentry.capture_message(msg, level: "warning")
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
     end
 
     if state.interval > 0 do
@@ -80,6 +103,31 @@ defmodule Proca.Server.Stats do
   @impl true
   def handle_cast({:update_live_campaigns, live_campaign}, state) do
     {:noreply, %{state | campaign: Map.merge(state.campaign, live_campaign), query_runs: false}}
+  end
+
+  @impl true
+  def handle_cast(:stats_query_failed, state) do
+    Logger.info("Stats retrying in 30s")
+    Process.send_after(self(), :retry_first_load, 30_000)
+    {:noreply, %{state | query_runs: false}}
+  end
+
+  @impl true
+  def handle_info(:retry_first_load, state) do
+    unless state.query_runs do
+      me = self()
+      Task.start(fn ->
+        try do
+          GenServer.cast(me, {:update_campaigns, calculate()})
+        rescue
+          e ->
+            msg = "Stats retry failed: #{Exception.message(e)}"
+            Logger.warning(msg)
+            GenServer.cast(me, :stats_query_failed)
+        end
+      end)
+    end
+    {:noreply, %{state | query_runs: true}}
   end
 
   @impl true
@@ -155,10 +203,15 @@ defmodule Proca.Server.Stats do
       from(c in Campaign, where: c.status == :live, select: c.id)
       |> Repo.all(timeout: 10_000)
 
-    do_calculate(campaign_ids, 10_000)
+    do_calculate(campaign_ids, 30_000)
   end
 
   defp do_calculate([], _timeout), do: %{}
+
+  # work_mem scoped to just this connection/query (via SET LOCAL inside a transaction),
+  # not a global bump - the org_supporters aggregation below needs ~100-200MB to avoid
+  # Postgres spilling its GROUP BY sort to disk on large datasets (see #410).
+  @org_supporters_work_mem "256MB"
 
   defp do_calculate(filter_ids, timeout) do
     # Calculation of supporters:
@@ -167,8 +220,12 @@ defmodule Proca.Server.Stats do
     # We use ORDER + SELECT DISTINCT() to make the DB select such last records
     # When we calculate areas for campaign, we also do this, so if someone signed from two areas, only last one
     # is counted (within scope of campaign)
-
-    org_supporters =
+    #
+    # COUNT(DISTINCT s.fingerprint) GROUP BY (campaign_id, org_id) forces Postgres into an
+    # expensive sort-based plan. Rewritten as an equivalent two-step aggregation
+    # (SELECT DISTINCT campaign_id, org_id, fingerprint, then COUNT(*) GROUP BY campaign_id, org_id)
+    # so it can use a HashAggregate instead - same result, much cheaper.
+    org_supporters_rows =
       from(
         a in Action,
         join: s in Supporter,
@@ -179,11 +236,25 @@ defmodule Proca.Server.Stats do
           s.processing_status == :accepted and
             a.processing_status in [:accepted, :delivered] and
             s.dupe_rank == 0,
-        group_by: [a.campaign_id, ap.org_id],
-        select: {a.campaign_id, ap.org_id, count(s.fingerprint, :distinct)}
+        distinct: true,
+        select: %{campaign_id: a.campaign_id, org_id: ap.org_id, fingerprint: s.fingerprint}
       )
       |> maybe_filter_campaigns(filter_ids)
-      |> Repo.all(timeout: timeout)
+
+    org_supporters_query =
+      from(r in subquery(org_supporters_rows),
+        group_by: [r.campaign_id, r.org_id],
+        select: {r.campaign_id, r.org_id, count(r.fingerprint)}
+      )
+
+    {:ok, org_supporters} =
+      Repo.transaction(
+        fn ->
+          Repo.query!("SET LOCAL work_mem = '#{@org_supporters_work_mem}'")
+          Repo.all(org_supporters_query, timeout: timeout)
+        end,
+        timeout: timeout + 5_000
+      )
 
     # create data for all campaigns so we don't have missing key below
     campaign_ids =

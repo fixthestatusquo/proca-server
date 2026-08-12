@@ -122,7 +122,6 @@ defmodule Proca.Pipes.Topology do
   defp event_backend(_), do: nil
 
   def configuration(o = %Org{}) do
-    instance = Org.one([:instance] ++ [preload: [:push_backend, :event_backend]])
     o = Proca.Repo.preload(o, [:campaigns, :push_backend, :event_backend])
 
     %{
@@ -139,13 +138,7 @@ defmodule Proca.Pipes.Topology do
       custom_action_deliver: o.custom_action_deliver,
       custom_event_deliver: o.custom_event_deliver,
       event_sqs: Stage.SQS.start_for?(o) and event_backend(o) == :sqs,
-      event_webhook: Stage.Webhook.start_for?(o) and event_backend(o) == :webhook,
-      event_forward_to_instance_sqs:
-        Stage.SQS.start_for?(instance) and event_backend(instance) == :sqs,
-      event_forward_to_instance_webhook:
-        Stage.Webhook.start_for?(instance) and event_backend(instance) == :webhook,
-      event_forward_to_instance_custom: instance.custom_event_deliver,
-      instance_org_id: instance.id
+      event_webhook: Stage.Webhook.start_for?(o) and event_backend(o) == :webhook
     }
   end
 
@@ -201,8 +194,6 @@ defmodule Proca.Pipes.Topology do
   end
 
   def declare_worker_queues(chan, o = %Org{}, config) do
-    instance = %Org{id: config[:instance_org_id]}
-
     [
       {
         xn(o, "confirm.supporter"),
@@ -237,25 +228,9 @@ defmodule Proca.Pipes.Topology do
     ]
     |> Enum.each(fn x -> declare_retrying_queue(chan, o, x) end)
 
-    [
-      # Plug instance to the event queues
-      {
-        xn(o, "event"),
-        wqn(instance, "sqs"),
-        bind: config[:event_forward_to_instance_sqs], route: "system.*"
-      },
-      {
-        xn(o, "event"),
-        wqn(instance, "webhook"),
-        bind: config[:event_forward_to_instance_webhook], route: "system.*"
-      },
-      {
-        xn(o, "event"),
-        cqn(instance, "deliver"),
-        bind: config[:event_forward_to_instance_custom], route: "system.*"
-      }
-    ]
-    |> Enum.each(fn x -> bind_queue(chan, x) end)
+    # Declare and bind the global system event queue
+    Queue.declare(chan, "system.deliver", durable: true)
+    :ok = Queue.bind(chan, "system.deliver", xn(o, "event"), routing_key: "system.*")
   end
 
   def retry_queue_arguments(o = %Org{}, queue_name) do
@@ -284,17 +259,6 @@ defmodule Proca.Pipes.Topology do
       :ok = Queue.unbind(chan, queue_name, exchange_name, routing_key: rk)
       # do not unbind the retry queue because some messages might bewaiting for a retry there
       # and we do not want to just throw them away
-    end
-  end
-
-  def bind_queue(
-        chan,
-        {exchange_name, queue_name, [bind: bind?, route: rk]}
-      ) do
-    if bind? do
-      :ok = Queue.bind(chan, queue_name, exchange_name, routing_key: rk)
-    else
-      :ok = Queue.unbind(chan, queue_name, exchange_name, routing_key: rk)
     end
   end
 

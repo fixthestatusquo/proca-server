@@ -43,7 +43,7 @@ defmodule Proca.Confirm.LaunchPage do
 
   @impl true
   def run(
-        %Confirm{
+        cnf = %Confirm{
           operation: :launch_page,
           subject_id: campaign_id,
           object_id: ap_id
@@ -54,7 +54,14 @@ defmodule Proca.Confirm.LaunchPage do
     with camp when not is_nil(camp) <- get(Campaign, campaign_id),
          ap when not is_nil(ap) <- ActionPage.one(id: ap_id, preload: [:org, :campaign]),
          {:perms, true} <- {:perms, can_approve?(st.user_id, camp)} do
-      ActionPage.go_live(ap)
+      result = ActionPage.go_live(ap)
+
+      if ap.org_id != camp.org_id do
+        loaded = preload(cnf, :creator)
+        if loaded.creator, do: Proca.Stage.SystemEvent.emit_join_campaign(loaded.creator, ap.org, camp, ap)
+      end
+
+      result
     else
       nil -> {:error, msg_ext("campaign not found", "not_found")}
       {:perms, false} -> {:error, cant_msg([:manage_campaigns])}

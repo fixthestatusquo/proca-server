@@ -180,6 +180,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Enable reply_to for emails"
     field :reply_enabled, :boolean
 
+    @desc "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+    field :sender_rewrite, :boolean
+
     @desc "Config"
     field :config, :json
   end
@@ -227,6 +230,10 @@ defmodule ProcaWeb.Schema.OrgTypes do
       arg(:name, non_null(:string))
       @desc "Use a particular owned service type for sending emails"
       arg(:email_backend, :service_name)
+
+      @desc "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+      arg(:transactional_email_backend, :service_name)
+
       @desc "Envelope FROM email when sending emails"
       arg(:email_from, :string)
 
@@ -316,6 +323,17 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.activate_key/3)
     end
 
+    @desc "Deactivate all encryption keys for the org. Use before revoking access or rotating keys."
+    field :deactivate_all_keys, type: non_null(:activate_key_result) do
+      load(:org, by: [name: :org_name])
+      determine_auth(for: :org)
+      allow([Proca.Permission.add([:change_org_settings, :export_contacts])])
+
+      arg(:org_name, non_null(:string))
+
+      resolve(&Resolvers.Org.deactivate_all_keys/3)
+    end
+
     @desc """
     Anonymize personal data (GDPR right-to-erasure).
     Nulls PII fields on supporter and deletes all contact records.
@@ -328,7 +346,7 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
       load(:org, by: [name: :org_name])
       determine_auth(for: :org)
-      allow([:org_owner])
+      allow([:delete_contacts])
 
       resolve(&Resolvers.Org.delete_contact/3)
     end
@@ -371,6 +389,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
 
     @desc "Enable reply_to for emails"
     field :reply_enabled, :boolean
+
+    @desc "Rewrite sender address using SRS (disable for cleaner confirmation emails)"
+    field :sender_rewrite, :boolean
   end
 
   @desc "Encryption or sign key with integer id (database)"
@@ -457,6 +478,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     @desc "Use a particular owned service type for sending emails"
     field :email_backend, :service_name
 
+    @desc "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+    field :transactional_email_backend, :service_name
+
     @desc "Is the supporter required to double opt in their action (and associated personal data)?"
     field :supporter_confirm, non_null(:boolean)
     @desc "The email template name that will be used to send the action DOI request"
@@ -501,6 +525,9 @@ defmodule ProcaWeb.Schema.OrgTypes do
     field :name, non_null(:string)
     @desc "template locale"
     field :locale, :string
+
+    @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text."
+    field :external_id, :string
     @desc "Subject text"
     field :subject, :string
     @desc "Html part body"

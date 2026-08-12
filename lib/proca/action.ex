@@ -31,7 +31,7 @@ defmodule Proca.Action do
     has_one :donation, Proca.Action.Donation
     has_many :messages, Proca.Action.Message
 
-    field :processing_status, ProcessingStatus, default: :new
+    field :processing_status, ActionProcessingStatus, default: :new
     field :testing, :boolean, default: false
 
     timestamps()
@@ -136,6 +136,7 @@ defmodule Proca.Action do
       :rejected -> {:error, "data already rejected"}
       :accepted -> {:noop, "already accepted"}
       :delivered -> {:noop, "already accepted"}
+      :repeat -> {:noop, "already accepted"}
     end
   end
 
@@ -146,6 +147,7 @@ defmodule Proca.Action do
       :rejected -> {:noop, "already rejected"}
       :accepted -> Repo.update(change(action, processing_status: :rejected))
       :delivered -> Repo.update(change(action, processing_status: :rejected))
+      :repeat -> Repo.update(change(action, processing_status: :rejected))
     end
   end
 end

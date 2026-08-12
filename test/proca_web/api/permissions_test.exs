@@ -45,6 +45,11 @@ defmodule ProcaWeb.PermissionsTest do
       campaigner: :succeed,
       translator: :fail
     },
+    delete_contact: %{
+      owner: :succeed,
+      campaigner: :fail,
+      translator: :fail
+    },
     export_actions: %{
       owner: :succeed,
       campaigner: :fail,

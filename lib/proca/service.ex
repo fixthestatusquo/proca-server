@@ -101,6 +101,11 @@ defmodule Proca.Service do
     field :user, :string, default: ""
     field :password, :string, default: ""
     field :path, :string
+    field :sending_from, :string
+    # when this service is used as an org's transactional_email_backend, how
+    # many emails to send via it before falling back to email_backend
+    # (warming up a new backend / capping its usage); nil means no limit
+    field :transactional_email_budget, :integer
     belongs_to :org, Proca.Org
 
     timestamps()
@@ -110,7 +115,15 @@ defmodule Proca.Service do
     assocs = Map.take(attrs, [:org])
 
     service
-    |> cast(attrs, [:name, :host, :user, :password, :path])
+    |> cast(attrs, [
+      :name,
+      :host,
+      :user,
+      :password,
+      :path,
+      :sending_from,
+      :transactional_email_budget
+    ])
     |> change(assocs)
   end
 
@@ -204,7 +217,7 @@ defmodule Proca.Service do
     case Tesla.request(client, method: req.method, url: url, body: req.body) do
       {:ok, response = %{status: code}} when code in [200, 201] -> {:ok, code, response.body}
       {:ok, %{status: code}} when code in 500..599 -> {:error, "HTTP#{code}"}
-      {:ok, response} -> {:ok, response.status}
+      {:ok, response} -> {:ok, response.status, response.body}
       {:error, _reason} = e -> e
       # Weird but it seems this error is sent up from Mint
       {:error, _, %{reason: reason}} -> {:error, reason}
@@ -230,7 +243,7 @@ defmodule Proca.Service do
       req
       | method: :post,
         body: body,
-        headers: [{"Content-Type", "application/json"} | req.headers]
+        headers: req.headers
     }
     |> json_request_opts(rest, srv)
   end
@@ -246,6 +259,12 @@ defmodule Proca.Service do
   defp json_request_opts(req, [{:auth, :header} | rest], srv = %{password: pwd})
        when is_bitstring(pwd) do
     %{req | headers: [{"Authorization", pwd}] ++ req.headers}
+    |> json_request_opts(rest, srv)
+  end
+
+  defp json_request_opts(req, [{:auth, :api_key} | rest], srv = %{password: pwd})
+       when is_bitstring(pwd) do
+    %{req | headers: [{"api-key", pwd}] ++ req.headers}
     |> json_request_opts(rest, srv)
   end
 

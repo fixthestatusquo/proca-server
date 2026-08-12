@@ -38,6 +38,8 @@ defmodule ProcaWeb.ConfirmController do
          {:ok, action} <- find_action(args),
          {:ok, action} <- handle_double_opt_in(action, args[:doi]),
          :ok <- handle_supporter(action, args.verb) do
+      if Map.get(params, "reminder") == "1", do: emit_reminder_click(action)
+
       case args do
         %{redir: uri} when is_binary(uri) ->
           if Proca.Source.well_formed_url?(URI.parse(uri)) do
@@ -129,6 +131,8 @@ defmodule ProcaWeb.ConfirmController do
     with {:ok, args} <- double_opt_in_parse_params(params),
          {:ok, action} <- find_action(args),
          {:ok, action} <- handle_double_opt_in(action, "true") do
+      if Map.get(params, "reminder") == "1", do: emit_reminder_click(action)
+
       conn
       |> redirect(external: redirect_url(action, Map.put(args, :doi, 1)))
       |> halt()
@@ -278,6 +282,16 @@ defmodule ProcaWeb.ConfirmController do
 
   defp get_confirm(%{code: code}) do
     Confirm.by_open_code(code)
+  end
+
+  defp emit_reminder_click(%Action{action_page_id: ap_id}) do
+    org_id = Proca.Repo.one(from ap in ActionPage, where: ap.id == ^ap_id, select: ap.org_id)
+
+    :telemetry.execute(
+      [:proca, :email, :reminder_confirm],
+      %{count: 1},
+      %{org_id: org_id}
+    )
   end
 
   defp error_msg(msg) when is_bitstring(msg) do

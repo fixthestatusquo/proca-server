@@ -27,6 +27,7 @@ defmodule Proca.Server.MTTHourlyCron do
     )
 
     MTTContext.dupe_rank()
+    MTTContext.delete_old_test_emails()
     targets_active = MTTContext.get_active_targets()
 
     targets_active

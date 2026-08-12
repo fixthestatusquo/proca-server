@@ -5,6 +5,7 @@ defmodule ProcaWeb.Telemetry do
   require Logger
 
   import Telemetry.Metrics
+  import Ecto.Query
 
   alias Proca.Action.Message
 
@@ -74,8 +75,6 @@ defmodule ProcaWeb.Telemetry do
   end
 
   def count_sendable_messages do
-    import Ecto.Query
-
     active_campaigns =
       from(
         c in Proca.Campaign,
@@ -90,14 +89,27 @@ defmodule ProcaWeb.Telemetry do
     Enum.each(active_campaigns, fn campaign ->
       unsent_messages =
         Message.select_by_campaign(campaign.id)
-        |> Proca.Repo.all()
-        |> length()
+        |> Proca.Repo.aggregate(:count)
 
       :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
         campaign_id: campaign.id,
         campaign_name: campaign.name
       })
     end)
+
+    {drip_delivery, no_drip_delivery} =
+      Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
+
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(drip_delivery)}, %{
+      drip_delivery: true
+    })
+
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(no_drip_delivery)}, %{
+      drip_delivery: false
+    })
+  rescue
+    e in DBConnection.ConnectionError ->
+      Logger.warning("count_sendable_messages skipped: DB connection error: #{Exception.message(e)}")
   end
 
   defp metrics do
@@ -111,7 +123,9 @@ defmodule ProcaWeb.Telemetry do
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
-      last_value("proca.mtt.campaigns_running"),
+      counter("proca.brevo.events.count", tags: [:reason]),
+      counter("proca.brevo.bounces.count", tags: [:reason]),
+      last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
       last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
@@ -121,6 +135,38 @@ defmodule ProcaWeb.Telemetry do
       # MTT New Algo
       # count sent messages per target
       counter("proca.mtt_new.deliver_message.count", tags: [:target_id]),
+
+      # MTT New Scheduler Lifecycle
+      counter("proca.mtt_new.scheduler.start", tags: [:campaign_id]),
+      counter("proca.mtt_new.scheduler.skip", tags: [:campaign_id, :reason]),
+      counter("proca.mtt_new.scheduler.stop", tags: [:campaign_id, :stop_reason]),
+      distribution("proca.mtt_new.scheduler.duration",
+        unit: {:native, :millisecond},
+        tags: [:campaign_id, :stop_reason],
+        reporter_options: [
+          buckets: [1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000]
+        ]
+      ),
+      last_value("proca.mtt_new.scheduler.pending_count", tags: [:campaign_id]),
+
+      # Email Metrics
+      distribution("proca.email.supporter_confirm.lag_ms",
+        unit: :millisecond,
+        reporter_options: [
+          buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
+        ],
+        tags: [:org_id]
+      ),
+      distribution("proca.email.thank_you.lag_ms",
+        unit: :millisecond,
+        reporter_options: [
+          buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
+        ],
+        tags: [:org_id]
+      ),
+      counter("proca.email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
+      counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
+      counter("proca.email.reminder_confirm.count", tags: [:org_id]),
 
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
@@ -140,10 +186,12 @@ defmodule ProcaWeb.Telemetry do
   end
 
   defp enable_telemetry? do
-    Application.get_env(:proca, __MODULE__, enable: true)[:enable]
+    Application.get_env(:proca, __MODULE__)
+    |> Access.get(:enable, true)
   end
 
   defp prometheus_port do
-    Application.get_env(:proca, __MODULE__, port: 9568)[:port]
+    Application.get_env(:proca, __MODULE__)
+    |> Access.get(:port, 9568)
   end
 end

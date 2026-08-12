@@ -137,7 +137,116 @@ To build:
 ./build
 ```
 
+The build script uses `mix release --overwrite` and `strip_beams: true` for
+smaller, faster-loading releases. The built release is placed in
+`_build/prod/rel/proca/`.
+
 Read more in [Developing](/guides/Developing).
+
+---
+
+## 🚢 Deploying
+
+### 1. Build + release
+
+```bash
+./scripts/release [version]
+```
+
+Builds the release, copies it to `/srv/proca/releases/proca-<version>`,
+and cleans up old releases. Shared step — run once, then deploy to staging
+and/or live.
+
+### 2. Deploy to staging
+
+```bash
+./scripts/deploy-staging [version]
+```
+
+Runs `release`, symlinks `/srv/proca/current`, migrates, and restarts `proca`.
+
+### 3. Deploy to live
+
+**Simple (brief downtime):**
+```bash
+./scripts/deploy-live [version]
+```
+
+Assumes `release` was already run. Checks the `/srv/proca/live` symlink,
+migrates, and restarts `proca-live`.
+
+**Zero-downtime (blue-green):**
+
+Eliminates restart downtime by running two instances behind nginx. Only **one**
+instance runs at a time during normal operation. During a deploy, the standby
+starts briefly, nginx swaps the upstream port, and the old instance is stopped.
+
+Install both systemd services:
+
+```bash
+sudo cp deploy/proca-blue.service /etc/systemd/system/proca-live-blue.service
+sudo cp deploy/proca-green.service /etc/systemd/system/proca-live-green.service
+sudo systemctl daemon-reload
+sudo systemctl enable proca-live-blue && sudo systemctl start proca-live-blue
+```
+
+Configure nginx upstream with primary + backup (see `deploy/proca-nginx.conf`):
+
+```nginx
+upstream proca_live {
+    server 127.0.0.1:4001;
+    server 127.0.0.1:4011 backup;
+}
+```
+
+Deploy:
+```bash
+./scripts/deploy-bluegreen [version]
+```
+
+This will:
+1. Verify the release exists and the symlink
+2. Run database migrations
+3. **Start the standby** instance and wait for `/health`
+4. **Swap the nginx upstream** — standby becomes primary, old becomes backup
+5. `nginx -s reload`
+6. **Stop the old instance**
+
+The two instances overlap only during the switch.
+
+---
+
+## 🔍 Health Check
+
+After deploying, both routers (main and ECI) expose a readiness endpoint:
+
+```
+GET /health
+```
+
+Returns `{"status":"ok"}` (HTTP 200) when the database is reachable, or
+`{"status":"error","message":"database unreachable"}` (HTTP 503) otherwise.
+
+Use this for nginx `proxy_pass` health checks, load balancer probes, or
+manual verification after deployment:
+
+```bash
+curl http://localhost:4000/health
+```
+
+---
+
+## ⏱️ Startup Optimisation
+
+The production release compresses BEAM bytecode (`strip_beams: true`) for
+faster loading. Additionally, background daemon servers (MTT, Stats,
+OldActions, Jwks, etc.) are started with a **configurable delay** so the
+HTTP endpoint and database pool come up first:
+
+| Config | Env var | Default | Description |
+|---|---|---|---|
+| `daemon_start_delay` | `DAEMON_START_DELAY` | `5000` (ms) | Delay before starting non-critical background services. Set to `0` for synchronous startup. |
+| `start_daemon_servers` | — | `true` | Set to `false` to disable all background services entirely (useful in development). |
 
 ---
 

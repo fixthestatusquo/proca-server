@@ -68,4 +68,12 @@ defmodule Proca.QueryFixtures do
     }
     """
   end
+
+  def delete_contact(%{org_name: org_name}) do
+    """
+    mutation {
+      deleteContact(orgName: "#{org_name}", contactRef: "Zm9v")
+    }
+    """
+  end
 end

@@ -17,6 +17,7 @@ defmodule Proca.Service.EmailTemplate do
     field :locale, :string
     # only for external ref (could be string)
     field :ref, :string, virtual: true
+    field :external_id, :string
 
     field :subject, :string
     field :html, :string
@@ -33,8 +34,9 @@ defmodule Proca.Service.EmailTemplate do
   def changeset(service, attrs) do
     related = Map.take(attrs, [:org])
 
-    cast(service, attrs, [:name, :locale, :ref, :subject, :html, :text])
-    |> validate_required([:name, :locale, :subject, :html])
+    cast(service, attrs, [:name, :locale, :ref, :external_id, :subject, :html, :text])
+    |> validate_required([:name, :locale])
+    |> validate_local_content()
     |> validate_format(:name, ~r/^[\w\d_ -]+$/)
     |> change(related)
     |> validate_template(:subject)
@@ -44,6 +46,14 @@ defmodule Proca.Service.EmailTemplate do
   end
 
   def changeset(attrs), do: changeset(%EmailTemplate{}, attrs)
+
+  defp validate_local_content(changeset) do
+    if get_field(changeset, :external_id) do
+      changeset
+    else
+      validate_required(changeset, [:subject, :html])
+    end
+  end
 
   def validate_template(changeset, field) do
     validate_change(changeset, field, fn _f, tmplstr ->
@@ -118,13 +128,16 @@ defmodule Proca.Service.EmailTemplate do
   def compile_string(nil), do: nil
 
   def compile_string(m) do
+    :bbmustache.parse_binary(m)
+  end
+
+  def safe_compile_string(nil), do: {:ok, nil}
+
+  def safe_compile_string(m) do
     try do
-      :bbmustache.parse_binary(m)
-    rescue
-      error in [ErlangError] ->
-        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
-        # TODO: return proper error instead of reraising
-        reraise Sentry.CrashError.exception(error.original), __STACKTRACE__
+      {:ok, compile_string(m)}
+    catch
+      :error, {:incorrect_format, reason} -> {:error, reason}
     end
   end
 

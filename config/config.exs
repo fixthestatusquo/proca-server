@@ -53,6 +53,7 @@ config :proca, Proca,
   # XXX move to Proca.Server.Stats
   process_old_interval: 0,
   start_daemon_servers: true,
+  daemon_start_delay: 5_000,
   mtt_cycle_time: 3
 
 # Defaults only for development
@@ -153,6 +154,10 @@ config :proca, Proca.Server.MTTScheduler,
     22 => 0.05,
     23 => 0.02
   }
+
+config :hackney,
+  timeout: 42_000,
+  max_connections: 50
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

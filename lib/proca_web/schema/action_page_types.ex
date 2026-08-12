@@ -110,6 +110,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "Email template to confirm supporter (DOI)"
     field :supporter_confirm_template, :string
 
+    @desc "Email template sent to supporters who sign again (duplicate action)"
+    field :duplicate_template, :string
+
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do
       resolve(fn page, _, _ ->
@@ -285,6 +288,9 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
 
     @desc "Supporter confirm email template of this ActionPage"
     field :supporter_confirm_template, :string
+
+    @desc "Duplicate action email template of this ActionPage"
+    field :duplicate_template, :string
 
     @desc """
     Extra supporter count. If you want to add a number of signatories you have offline or kept in another system, you can specify the number here.

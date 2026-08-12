@@ -14,6 +14,7 @@ defmodule Proca.TargetEmail do
     field :email, :string
     field :email_status, EmailStatus, default: :none
     field :error, :string
+    field :soft_bounce_count, :integer, default: 0
     belongs_to :target, Proca.Target, type: Ecto.UUID
 
     timestamps()
@@ -61,19 +62,25 @@ defmodule Proca.TargetEmail do
                :inactive,
                :active
              ] do
-    Repo.update_all(from(te in TargetEmail, where: te.id in ^ids),
-      set: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
-    )
+    Repo.update_all(from(te in TargetEmail, where: te.id in ^ids), set: mark_set(status))
 
     :ok
   end
 
   def mark_one(id, status)
       when status in [:none, :double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive, :active] do
-    Repo.update_all(from(te in TargetEmail, where: te.id == ^id),
-      set: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
-    )
+    Repo.update_all(from(te in TargetEmail, where: te.id == ^id), set: mark_set(status))
 
     :ok
   end
+
+  # successful delivery resets the consecutive soft bounce count
+  defp mark_set(:active),
+    do: [
+      {:email_status, :active},
+      {:soft_bounce_count, 0},
+      {:updated_at, NaiveDateTime.utc_now()}
+    ]
+
+  defp mark_set(status), do: [{:email_status, status}, {:updated_at, NaiveDateTime.utc_now()}]
 end

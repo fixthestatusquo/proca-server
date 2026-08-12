@@ -4,7 +4,7 @@ defmodule Proca.MixProject do
   def project do
     [
       app: :proca,
-      version: "3.9.7",
+      version: "3.10.3",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
@@ -16,7 +16,7 @@ defmodule Proca.MixProject do
       releases: [
         proca: [
           steps: [:assemble, :tar],
-          strip_beams: false
+          strip_beams: true
         ]
       ]
     ]

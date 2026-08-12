@@ -54,12 +54,23 @@ defmodule Proca.Server.MTTContext do
         q
         |> limit(^max_emails_per_hour)
     end
-    |> Repo.all()
+    |> Repo.all(prepare: :unnamed)
+  end
+
+  def delete_old_test_emails do
+    Repo.delete_all(query_test_emails_to_delete(), timeout: :timer.seconds(30))
+  end
+
+  defp query_test_emails_to_delete() do
+    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
+
+    from m in Message,
+      join: a in assoc(m, :action),
+      where:
+        a.processing_status == :delivered and a.testing and m.sent and a.inserted_at < ^recent
   end
 
   def process_test_mails(target) do
-    Repo.delete_all(query_test_emails_to_delete())
-
     test_emails = get_pending_test_messages(target.id)
 
     if target.campaign.org.email_backend != nil do
@@ -82,6 +93,8 @@ defmodule Proca.Server.MTTContext do
   end
 
   def deliver_messages(target, msgs) do
+    {_cancelled, msgs} = Enum.split_with(msgs, &Message.cancel_if_empty/1)
+
     action_pages_ids =
       msgs
       |> Enum.map(fn m -> m.action.action_page_id end)
@@ -153,22 +166,34 @@ defmodule Proca.Server.MTTContext do
             Message.mark_all(chunk, :sent)
 
           {:error, statuses} ->
-            Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
+            successes =
+              Enum.zip(chunk, statuses)
+              |> Enum.filter(fn
+                {_, :ok} -> true
+                _ -> false
+              end)
+              |> Enum.map(fn {m, _} -> m end)
 
-            Enum.zip(chunk, statuses)
-            |> Enum.filter(fn
-              {_, :ok} -> true
-              _ -> false
-            end)
-            |> Enum.map(fn {m, _} -> m end)
-            |> Message.mark_all(:sent)
+            if successes != [] do
+              Logger.error("MTT partially failed to send: #{inspect(statuses)}")
+              Message.mark_all(successes, :sent)
+            else
+              Logger.error(
+                "MTT all attempts failed for batch: #{inspect(statuses)}, marking all sent to prevent retry"
+              )
+
+              Message.mark_all(chunk, :sent)
+            end
         end
       end
     end
   end
 
   def deliver_message(target, msg) do
-    :telemetry.execute(
+    if Message.cancel_if_empty(msg) do
+      :ok
+    else
+      :telemetry.execute(
       [:proca, :mtt_new, :deliver_message],
       %{},
       %{target_id: target.id}
@@ -215,14 +240,15 @@ defmodule Proca.Server.MTTContext do
         :ok
 
       {:error, statuses} ->
-        Logger.error("MTT failed to send, statuses: #{inspect(statuses)}")
-
         if Enum.any?(statuses, &(&1 == :ok)) do
-          msg
-          |> Message.mark_one(:sent)
+          Logger.error("MTT partially failed to send: #{inspect(statuses)}")
+        else
+          Logger.error(
+            "MTT all attempts failed for message #{msg.id}: #{inspect(statuses)}, marking sent to prevent retry"
+          )
         end
 
-        :ok
+        Message.mark_one(msg, :sent)
     end
   end
 
@@ -240,76 +266,77 @@ defmodule Proca.Server.MTTContext do
   def max_emails_per_hour(%Campaign{
         mtt: %{max_emails_per_hour: max_emails_per_hour, timezone: timezone, end_at: end_at}
       }) do
-    now = %{DateTime.utc_now() | minute: 0, second: 0, microsecond: {0, 0}}
-
-    if DateTime.diff(end_at, now, :hour) > 1 do
-      Application.get_env(:proca, Proca.Server.MTTScheduler)
-      |> Access.get(:messages_ratio_per_hour)
-      |> Access.get(DateTime.now!(timezone).hour)
-      |> Kernel.*(max_emails_per_hour)
-      |> trunc()
-      |> max(1)
-    else
-      :all
-    end
+    Application.get_env(:proca, Proca.Server.MTTScheduler)
+    |> Access.get(:messages_ratio_per_hour)
+    |> Access.get(DateTime.now!(timezone).hour)
+    |> Kernel.*(max_emails_per_hour)
+    |> trunc()
+    |> max(1)
   end
 
   def dupe_rank() do
-    sql = """
-    UPDATE messages
-    SET dupe_rank = ranked.dupe_rank
-    FROM
-    (
-      SELECT
-        m.id,
-        rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
-      FROM messages m
-        JOIN actions a ON m.action_id = a.id
-        JOIN supporters s ON a.supporter_id = s.id
-      WHERE m.dupe_rank is NULL
-        AND a.processing_status = 4
-        AND s.processing_status = 3
-    ) ranked
-    WHERE messages.id = ranked.id;
-    """
+    # Fast check if any messages need ranking — the partial index
+    # on messages(dupe_rank) WHERE dupe_rank IS NULL makes this instant.
+    if Repo.aggregate(from(m in Message, where: is_nil(m.dupe_rank)), :count) == 0 do
+      :ok
+    else
+      sql = """
+      UPDATE messages
+      SET dupe_rank = ranked.dupe_rank
+      FROM
+      (
+        SELECT
+          m.id,
+          rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
+        FROM messages m
+          JOIN actions a ON m.action_id = a.id
+          JOIN supporters s ON a.supporter_id = s.id
+        WHERE m.dupe_rank is NULL
+          AND a.processing_status = 4
+          AND s.processing_status = 3
+      ) ranked
+      WHERE messages.id = ranked.id;
+      """
 
-    Ecto.Adapters.SQL.query(Proca.Repo, sql)
+      Ecto.Adapters.SQL.query(Proca.Repo, sql)
+    end
   end
 
   defp query_emails_to_send(target_id, sent, testing) do
     sent = List.wrap(sent)
 
-    from(
-      m in Proca.Action.Message,
-      join: t in assoc(m, :target),
-      join: a in assoc(m, :action),
-      join: _s in assoc(a, :supporter),
-      join: _ap in assoc(a, :action_page),
-      join: mc in assoc(m, :message_content),
-      where:
-        m.target_id == ^target_id and
-          a.processing_status == :delivered and
-          a.testing == ^testing and
-          m.sent in ^sent and
-          m.dupe_rank == 0 and
-          mc.subject != "" and mc.body != "",
-      order_by: [asc: m.id],
-      distinct: m.id,
-      preload: [
-        target: :emails,
-        message_content: mc,
-        action: {a, [:supporter, :action_page]}
-      ]
-    )
+    sent_dynamic =
+      case sent do
+        [val] -> dynamic([m], m.sent == ^val)
+        vals -> dynamic([m], m.sent in ^vals)
+      end
+
+    base =
+      from(
+        m in Proca.Action.Message,
+        join: t in assoc(m, :target),
+        join: a in assoc(m, :action),
+        join: s in assoc(a, :supporter),
+        join: ap in assoc(a, :action_page),
+        join: mc in assoc(m, :message_content),
+        where:
+          m.target_id == ^target_id and
+            a.processing_status == :delivered and
+            a.testing == ^testing and
+            m.dupe_rank == 0,
+        order_by: [asc: m.id],
+        distinct: m.id,
+        preload: [
+          target: :emails,
+          message_content: mc,
+          action: {a, [:supporter, :action_page]}
+        ]
+      )
+
+    from(m in base, where: ^sent_dynamic)
   end
 
-  defp query_test_emails_to_delete() do
-    recent = DateTime.utc_now() |> DateTime.add(@recent_test_messages, :second)
 
-    from m in Message,
-      join: a in assoc(m, :action),
-      where: a.processing_status == :delivered and a.testing and a.inserted_at < ^recent
-  end
 
   def make_email(
         message = %{id: message_id, action: %{supporter: supporter, testing: is_test}},
@@ -360,15 +387,19 @@ defmodule Proca.Server.MTTContext do
       message_body: body
     })
 
+    action_id = email.assigns[:action_id]
+
     body =
-      body
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(body, "body", "action_id=#{action_id}") do
+        nil -> body
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     subject =
-      subject
-      |> EmailTemplate.compile_string()
-      |> EmailTemplate.render_string(target_assigns)
+      case compile_mtt_field(subject, "subject", "action_id=#{action_id}") do
+        nil -> subject
+        compiled -> EmailTemplate.render_string(compiled, target_assigns)
+      end
 
     html_body = EmailMerge.plain_to_html(body)
 
@@ -388,6 +419,24 @@ defmodule Proca.Server.MTTContext do
     email
     |> Email.assign(:body, html_body)
     |> Email.assign(:subject, subject)
+  end
+
+  defp compile_mtt_field(value, field, context) do
+    case EmailTemplate.safe_compile_string(value) do
+      {:ok, compiled} ->
+        compiled
+
+      {:error, reason} ->
+        Logger.warning(
+          "MTT message #{field} has invalid mustache template #{context} reason=#{inspect(reason)}"
+        )
+
+        Sentry.capture_message("Malformed mustache tag in MTT message #{field}",
+          extra: %{reason: inspect(reason)}
+        )
+
+        nil
+    end
   end
 
   defp change_test_subject(message_content, false), do: message_content

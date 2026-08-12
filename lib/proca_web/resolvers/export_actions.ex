@@ -74,7 +74,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
         q,
         [a, s],
         s.processing_status == :accepted and
-          a.processing_status in [:accepted, :delivered]
+          a.processing_status in [:accepted, :delivered, :repeat]
       )
     end
   end
@@ -91,7 +91,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   def filter_consent(q, _), do: q
 
   def format_contact(
-        %Supporter{fingerprint: ref},
+        %Supporter{fingerprint: ref, dupe_rank: dupe_rank},
         %Contact{
           payload: payload,
           crypto_nonce: nonce,
@@ -101,6 +101,7 @@ defmodule ProcaWeb.Resolvers.ExportActions do
       ) do
     %{
       contact_ref: Supporter.base_encode(ref),
+      dupe_rank: dupe_rank,
       payload: Contact.base_encode(payload),
       nonce: Contact.base_encode(nonce),
       public_key: %{id: pk_id, public: PublicKey.base_encode(pk_key)},
@@ -109,13 +110,14 @@ defmodule ProcaWeb.Resolvers.ExportActions do
   end
 
   def format_contact(
-        %Supporter{fingerprint: ref},
+        %Supporter{fingerprint: ref, dupe_rank: dupe_rank},
         %Contact{
           payload: payload
         }
       ) do
     %{
       contact_ref: Supporter.base_encode(ref),
+      dupe_rank: dupe_rank,
       payload: payload
     }
   end

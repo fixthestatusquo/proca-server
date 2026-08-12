@@ -20,7 +20,7 @@ defmodule Proca.Service.Procaptcha do
       {:ok, 200, %{"success" => false, "reason" => reason}} ->
         {:error, error_message(reason)}
 
-      {:ok, code} ->
+      {:ok, code, _} ->
         {:error, "Procaptcha returned status #{code}"}
 
       {:error, error} ->

@@ -41,9 +41,13 @@ defmodule Proca.Org do
     # services and delivery options
     has_many :services, Proca.Service, on_delete: :delete_all
     belongs_to :email_backend, Proca.Service
+    # backend used for transactional (non-MTT) emails; falls back to email_backend if unset.
+    # See `transactional_email_budget` on `Proca.Service` for warming/capping its usage.
+    belongs_to :transactional_email_backend, Proca.Service
     belongs_to :storage_backend, Proca.Service
     field :email_from, :string
     field :reply_enabled, :boolean, default: true
+    field :sender_rewrite, :boolean, default: true
 
     # supporter confirm in configuration
     field :supporter_confirm, :boolean, default: false
@@ -102,6 +106,7 @@ defmodule Proca.Org do
       :high_security,
       :doi_thank_you,
       :reply_enabled,
+      :sender_rewrite,
       :custom_supporter_confirm,
       :custom_action_confirm,
       :custom_action_deliver,
@@ -110,7 +115,13 @@ defmodule Proca.Org do
     ])
     |> cast_backend(
       :email_backend,
-      [:mailjet, :ses, :smtp, :system, :testmail, :preview],
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
+      attrs,
+      org
+    )
+    |> cast_backend(
+      :transactional_email_backend,
+      [:mailjet, :ses, :smtp, :system, :testmail, :preview, :brevo, :hubspot],
       attrs,
       org
     )
@@ -162,6 +173,9 @@ defmodule Proca.Org do
 
         :disable ->
           put_change(chset, String.to_existing_atom("#{backend_type}_id"), nil)
+
+        {:error, message} ->
+          add_error(chset, backend_type, message)
       end
     else
       chset
@@ -174,6 +188,14 @@ defmodule Proca.Org do
 
   defp cast_backend_service(:email_backend, :system, _org) do
     Proca.Org.one([:instance] ++ [preload: [:email_backend]]).email_backend
+  end
+
+  # If instance org has no transactional backend configured, fails with an error
+  defp cast_backend_service(:transactional_email_backend, :system, _org) do
+    instance = Proca.Org.one([:instance] ++ [preload: [:transactional_email_backend]])
+
+    instance.transactional_email_backend ||
+      {:error, "instance org has no transactional email backend configured"}
   end
 
   defp cast_backend_service(_type, service, org) when is_atom(service) do
@@ -249,6 +271,9 @@ defmodule Proca.Org do
     Application.get_env(:proca, Proca)[:org_name]
   end
 
+  @doc "Human-readable org reference for log/error messages"
+  def log_ref(%Org{id: id, name: name}), do: "#{name}(#{id})"
+
   def list(preloads \\ []) do
     all(preload: preloads)
   end
@@ -263,6 +288,43 @@ defmodule Proca.Org do
   @spec active_public_keys(Proca.Org) :: Proca.PublicKey | nil
   def active_public_key(org) do
     Proca.Repo.one(from(pk in Ecto.assoc(org, :public_keys), order_by: [asc: pk.id], limit: 1))
+  end
+
+  @doc """
+  Returns org with `email_backend` swapped for `transactional_email_backend`, for
+  sending transactional (non-MTT) emails. Falls back to `email_backend`:
+
+  - if no transactional backend is configured, or
+  - once the backend's `transactional_email_budget` transactional emails have
+    been sent (tracked in memory by `Proca.Service.EmailBudget`) - this lets
+    an org warm up a new backend, or cap its usage, before falling back.
+
+  Requires both backends to be preloaded. `count` is the number of emails
+  about to be sent in this call, so a multi-recipient send is charged against
+  the budget all at once.
+  """
+  def for_transactional_email(org, count \\ 1)
+
+  def for_transactional_email(%Org{transactional_email_backend: nil} = org, _count), do: org
+
+  def for_transactional_email(
+        %Org{transactional_email_backend: %Ecto.Association.NotLoaded{}} = org,
+        _count
+      ),
+      do: org
+
+  def for_transactional_email(
+        %Org{
+          id: id,
+          transactional_email_backend: %Service{transactional_email_budget: budget} = backend
+        } = org,
+        count
+      ) do
+    if budget == nil or Proca.Service.EmailBudget.add(id, count) <= budget do
+      %{org | email_backend: backend}
+    else
+      org
+    end
   end
 
   def put_service(%Org{} = org, service), do: put_service(change(org), service)

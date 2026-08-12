@@ -15,7 +15,7 @@ defmodule Proca.Stage.EmailSupporter do
     only: [
       ignore: 1,
       ignore: 2,
-      failed_partially: 2,
+      failed_partially: 3,
       supporter_link: 3,
       double_opt_in_link: 2,
       too_many_retries?: 1
@@ -53,6 +53,11 @@ defmodule Proca.Stage.EmailSupporter do
           batch_size: 5,
           batch_timeout: 10_000,
           concurrency: 1
+        ],
+        duplicate: [
+          batch_size: 5,
+          batch_timeout: 10_000,
+          concurrency: 1
         ]
       ]
     )
@@ -76,13 +81,27 @@ defmodule Proca.Stage.EmailSupporter do
           "actionId" => action_id
         } = action
       } ->
-        if send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) do
-          message
-          |> Message.update_data(fn _ -> action end)
-          |> Message.put_batch_key(action_page_id)
-          |> Message.put_batcher(:thank_you)
-        else
-          ignore(message)
+        cond do
+          send_duplicate?(action_page_id, action_id) and not too_many_retries?(message) ->
+            message
+            |> Message.update_data(fn _ -> action end)
+            |> Message.put_batch_key(action_page_id)
+            |> Message.put_batcher(:duplicate)
+
+          send_repeat_confirm?(action_page_id, action_id) and not too_many_retries?(message) ->
+            message
+            |> Message.update_data(fn _ -> action end)
+            |> Message.put_batch_key(action_page_id)
+            |> Message.put_batcher(:supporter_confirm)
+
+          send_thank_you?(action_page_id, action_id) and not too_many_retries?(message) ->
+            message
+            |> Message.update_data(fn _ -> action end)
+            |> Message.put_batch_key(action_page_id)
+            |> Message.put_batcher(:thank_you)
+
+          true ->
+            ignore(message)
         end
 
       {
@@ -115,8 +134,13 @@ defmodule Proca.Stage.EmailSupporter do
 
   @impl true
   def handle_batch(:thank_you, messages, %BatchInfo{batch_key: ap_id}, _) when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
-    org = ap.org
+    ap =
+      ActionPage.one(
+        id: ap_id,
+        preload: [org: [:email_backend, :transactional_email_backend]]
+      )
+
+    org = Org.for_transactional_email(ap.org, length(messages))
 
     recipients =
       Enum.map(messages, fn m ->
@@ -127,17 +151,33 @@ defmodule Proca.Stage.EmailSupporter do
     case EmailTemplateDirectory.by_name_reload(org, ap.thank_you_template, ap.locale) do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
-          :ok -> messages
-          {:error, statuses} -> failed_partially(messages, statuses)
+          :ok ->
+            emit_thank_you_lag(messages, org.id)
+            messages
+
+          {:error, statuses} ->
+            failed_partially(messages, statuses, org)
         end
 
       :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter thank_you: template #{ap.thank_you_template} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{ap.thank_you_template} not found (org #{org.name})")
         )
 
       :not_configured ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter thank_you: template #{ap.thank_you_template} backend not configured (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(
@@ -151,8 +191,13 @@ defmodule Proca.Stage.EmailSupporter do
   @impl true
   def handle_batch(:supporter_confirm, messages, %BatchInfo{batch_key: ap_id}, _)
       when is_number(ap_id) do
-    ap = ActionPage.one(id: ap_id, preload: [campaign: [], org: [email_backend: :org]])
-    org = ap.org
+    ap =
+      ActionPage.one(
+        id: ap_id,
+        preload: [campaign: [], org: [:email_backend, :transactional_email_backend]]
+      )
+
+    org = Org.for_transactional_email(ap.org, length(messages))
 
     tmpl_name =
       ap.supporter_confirm_template || ap.campaign.supporter_confirm_template ||
@@ -168,19 +213,128 @@ defmodule Proca.Stage.EmailSupporter do
       {:ok, tmpl} ->
         case EmailBackend.deliver(recipients, org, tmpl) do
           :ok ->
+            emit_supporter_confirm_lag(messages, org.id)
             messages
 
           {:error, statuses} ->
-            failed_partially(messages, statuses)
+            failed_partially(messages, statuses, org)
         end
 
       :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter supporter_confirm: template #{tmpl_name} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
         Enum.map(
           messages,
           &Message.failed(&1, "Template #{tmpl_name} not found (org #{org.name})")
         )
     end
   end
+
+  @impl true
+  def handle_batch(:duplicate, messages, %BatchInfo{batch_key: ap_id}, _)
+      when is_number(ap_id) do
+    ap = ActionPage.one(id: ap_id, preload: [org: [email_backend: :org]])
+    org = ap.org
+
+    recipients =
+      Enum.map(messages, fn m ->
+        make(m.data)
+        |> add_doi_link()
+      end)
+
+    case EmailTemplateDirectory.by_name_reload(org, ap.duplicate_template, ap.locale) do
+      {:ok, tmpl} ->
+        case EmailBackend.deliver(recipients, org, tmpl) do
+          :ok -> messages
+          {:error, statuses} -> failed_partially(messages, statuses, org)
+        end
+
+      :not_found ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter duplicate: template #{ap.duplicate_template} not found (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
+        Enum.map(
+          messages,
+          &Message.failed(&1, "Template #{ap.duplicate_template} not found (org #{org.name})")
+        )
+
+      :not_configured ->
+        action_ids = Enum.map(messages, & &1.data["actionId"])
+
+        error(
+          "EmailSupporter duplicate: template #{ap.duplicate_template} backend not configured (org #{org.name}, action_ids=#{inspect(action_ids)})"
+        )
+
+        Enum.map(
+          messages,
+          &Message.failed(
+            &1,
+            "Template #{ap.duplicate_template} backend not configured (org #{org.name})"
+          )
+        )
+    end
+  end
+
+  defp emit_supporter_confirm_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :supporter_confirm)
+  end
+
+  defp emit_thank_you_lag(messages, org_id) do
+    emit_email_lag(messages, org_id, :thank_you)
+  end
+
+  defp emit_email_lag(messages, org_id, stage) do
+    now = DateTime.utc_now()
+    action_ids = Enum.map(messages, fn m -> m.data["actionId"] end)
+
+    inserted_ats =
+      Enum.reduce(messages, %{}, fn m, acc ->
+        case action_inserted_at(m.data) do
+          nil -> acc
+          inserted_at -> Map.put(acc, m.data["actionId"], inserted_at)
+        end
+      end)
+
+    Enum.each(action_ids, fn action_id ->
+      case Map.get(inserted_ats, action_id) do
+        nil ->
+          :telemetry.execute(
+            [:proca, :email, stage, :lag_unknown],
+            %{count: 1},
+            %{org_id: org_id}
+          )
+
+        inserted_at ->
+          lag_ms = DateTime.diff(now, inserted_at, :millisecond)
+
+          :telemetry.execute(
+            [:proca, :email, stage],
+            %{lag_ms: lag_ms},
+            %{org_id: org_id}
+          )
+      end
+    end)
+  end
+
+  defp action_inserted_at(%{"action" => %{"createdAt" => created_at}})
+       when is_binary(created_at) do
+    case DateTime.from_iso8601(created_at) do
+      {:ok, inserted_at, _offset} ->
+        inserted_at
+
+      _ ->
+        nil
+    end
+  end
+
+  defp action_inserted_at(_), do: nil
 
   defp send_thank_you?(action_page_id, action_id) do
     from(a in Action,
@@ -219,6 +373,48 @@ defmodule Proca.Stage.EmailSupporter do
           (not is_nil(o.supporter_confirm_template) or
              not is_nil(c.supporter_confirm_template) or
              not is_nil(ap.supporter_confirm_template)) and
+          not is_nil(o.email_backend_id) and
+          not is_nil(o.email_from)
+    )
+    |> Repo.exists?()
+  end
+
+  def send_repeat_confirm?(action_page_id, action_id) do
+    from(
+      a in Action,
+      join: ap in ActionPage,
+      on: a.action_page_id == ap.id,
+      join: o in Org,
+      on: o.id == ap.org_id,
+      join: c in assoc(ap, :campaign),
+      where:
+        a.id == ^action_id and
+          a.with_consent and
+          ap.id == ^action_page_id and
+          a.processing_status == :repeat and
+          is_nil(ap.duplicate_template) and
+          (not is_nil(o.supporter_confirm_template) or
+             not is_nil(c.supporter_confirm_template) or
+             not is_nil(ap.supporter_confirm_template)) and
+          not is_nil(o.email_backend_id) and
+          not is_nil(o.email_from)
+    )
+    |> Repo.exists?()
+  end
+
+  def send_duplicate?(action_page_id, action_id) do
+    from(
+      a in Action,
+      join: ap in ActionPage,
+      on: a.action_page_id == ap.id,
+      join: o in Org,
+      on: o.id == ap.org_id,
+      where:
+        a.id == ^action_id and
+          a.with_consent and
+          ap.id == ^action_page_id and
+          a.processing_status == :repeat and
+          not is_nil(ap.duplicate_template) and
           not is_nil(o.email_backend_id) and
           not is_nil(o.email_from)
     )

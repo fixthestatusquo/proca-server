@@ -1,12 +1,4 @@
-# you need to install asdf/elixir before
-export MIX_ENV=prod
-#  mix clean
-mix deps.get
-mix deps.compile
-mix compile
-mix phx.digest
-mix assets.deploy
-mix systemd.init
-mix systemd.generate
-mix release
-
+#!/bin/bash
+# Build and release — wrapper around scripts/release.
+# Usage: ./build [version]
+exec ./scripts/release "$@"

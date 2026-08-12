@@ -23,6 +23,7 @@ defmodule Proca.Permission do
 
   - `noun` + `"_owner"` which gives all power on instance/org/etc, and
   - `export_contacts` - can export action data with PII
+  - `delete_contacts` - can erase contact data for an org
 
   Verbs:
 
@@ -48,6 +49,7 @@ defmodule Proca.Permission do
     # XXX deprecated - we go full API so this will be unused
     use_api: 1 <<< 8,
     export_contacts: 1 <<< 9,
+    delete_contacts: 1 <<< 10,
     change_org_users: 1 <<< 15,
     change_org_settings: 1 <<< 16,
     # sames as change_org_settings, maybe will be split in the future

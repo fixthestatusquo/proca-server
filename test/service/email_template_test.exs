@@ -2,7 +2,6 @@ defmodule Proca.EmailTemplateTest do
   use Proca.DataCase
   @moduletag start: [:stats]
   use Proca.TestEmailBackend
-  import Ecto.Changeset
   import Proca.Repo
 
   import Proca.StoryFactory, only: [violet_story: 0]
@@ -10,7 +9,7 @@ defmodule Proca.EmailTemplateTest do
   alias Proca.Service.EmailTemplate
 
   setup do
-    ctx = violet_story()
+    violet_story()
   end
 
   test "sending a thank you email with local template", %{org: org, ap: page} do
@@ -33,6 +32,59 @@ defmodule Proca.EmailTemplateTest do
 
     assert email.from == {org.title, "contact@violet.org"}
     assert String.contains?(email.html_body, "You decided to subscribe")
+  end
+
+  test "compile_string signals :error class (not :throw or :exit) on malformed template" do
+    try do
+      EmailTemplate.compile_string("{{#unclosed}}")
+      flunk("expected compile_string to raise on malformed template")
+    catch
+      :error, {:incorrect_format, _} -> :ok
+      kind, reason -> flunk("expected :error class signal, got :#{kind}: #{inspect(reason)}")
+    end
+  end
+
+  test "changeset validation logs nothing — error is returned to the caller", %{org: org} do
+    import ExUnit.CaptureLog
+
+    log =
+      capture_log(fn ->
+        EmailTemplate.changeset(%{
+          org: org,
+          name: "broken template",
+          locale: "en",
+          subject: "Hello {{#unclosed}}",
+          html: "<p>Valid html</p>"
+        })
+      end)
+
+    assert log == ""
+  end
+
+  test "changeset rejects template with invalid mustache in subject", %{org: org} do
+    ch = EmailTemplate.changeset(%{
+      org: org,
+      name: "broken template",
+      locale: "en",
+      subject: "Hello {{#unclosed}}",
+      html: "<p>Valid html</p>"
+    })
+
+    refute ch.valid?
+    assert {_, _} = List.keyfind(ch.errors, :subject, 0)
+  end
+
+  test "changeset rejects template with invalid mustache in html", %{org: org} do
+    ch = EmailTemplate.changeset(%{
+      org: org,
+      name: "broken template",
+      locale: "en",
+      subject: "Valid subject",
+      html: "<p>{{#unclosed}}</p>"
+    })
+
+    refute ch.valid?
+    assert {_, _} = List.keyfind(ch.errors, :html, 0)
   end
 
   test "sending a thank you email with remote template", %{org: org, ap: page} do

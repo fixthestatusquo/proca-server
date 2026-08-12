@@ -1,0 +1,44 @@
+# Systemd service for Proca live (green instance, port 4011)
+#
+# Used together with proca-live-blue.service for zero-downtime deploys.
+# Only one is active at a time.
+#
+# Install:
+#   sudo cp deploy/proca-green.service /etc/systemd/system/proca-live-green.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable proca-live-green && sudo systemctl start proca-live-green
+
+[Unit]
+Description=Proca live (green instance, port 4011)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=app
+Group=app
+WorkingDirectory=/srv/proca/live
+
+Environment=PORT=4011
+Environment=RELEASE_TMP=/run/proca-live
+Environment=RELEASE_NODE=live@steinem
+
+# Load secret env vars (DATABASE_URL, SECRET_KEY_BASE, etc.)
+EnvironmentFile=/etc/proca/env.live
+
+ExecStart=/srv/proca/live/bin/proca start
+ExecStop=/srv/proca/live/bin/proca stop
+
+# Health-check after start
+ExecStartPost=/bin/sh -c 'for i in $$(seq 1 30); do curl -sf http://127.0.0.1:4011/health >/dev/null && exit 0; sleep 1; done; exit 1'
+
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

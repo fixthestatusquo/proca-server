@@ -5,7 +5,7 @@ defmodule Proca.Stage.Support do
   (system) or externally (custom).
   """
 
-  alias Proca.{Action, Supporter, Confirm}
+  alias Proca.{Action, Supporter, Confirm, Org}
   alias Proca.Repo
   import Ecto.Query, only: [from: 2]
   alias Broadway.Message
@@ -32,6 +32,8 @@ defmodule Proca.Stage.Support do
       }) do
     :action_confirm
   end
+
+  def action_stage(%Action{processing_status: :repeat, supporter: %Supporter{}}), do: :deliver
 
   def action_stage(%Action{supporter: %Supporter{}}), do: nil
 
@@ -69,14 +71,14 @@ defmodule Proca.Stage.Support do
     |> Message.failed(reason)
   end
 
-  def failed_partially(messages, statuses) do
+  def failed_partially(messages, statuses, org) do
     Enum.zip(messages, statuses)
     |> Enum.map(fn
       {m, :ok} ->
         m
 
       {m, {:error, reason}} ->
-        error("Cannot sent email: #{inspect(reason)}")
+        error("Cannot send email org=#{Org.log_ref(org)}: #{inspect(reason)}")
         Message.failed(m, reason)
     end)
   end
@@ -112,14 +114,19 @@ defmodule Proca.Stage.Support do
     supporter_link(action_id, ref, op)
   end
 
-  def supporter_link(action_id, contact_ref, op)
-      when is_integer(action_id) and is_bitstring(contact_ref) do
+  def supporter_link(action_id, contact_ref, op) do
+    supporter_link(action_id, contact_ref, op, [])
+  end
+
+  def supporter_link(action_id, contact_ref, op, extra)
+      when is_integer(action_id) and is_bitstring(contact_ref) and is_list(extra) do
     ProcaWeb.Router.Helpers.confirm_url(
       ProcaWeb.Endpoint,
       :supporter,
       action_id,
       link_verb(op),
-      contact_ref
+      contact_ref,
+      extra
     )
   end
 

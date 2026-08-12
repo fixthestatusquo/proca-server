@@ -28,6 +28,7 @@ defmodule Proca.ActionPage do
 
     field :thank_you_template, :string
     field :supporter_confirm_template, :string
+    field :duplicate_template, :string
     # field :thank_you_template_ref, :string
     # XXX add :thank_you_template and calculate the ref via TemplateDictionary
 
@@ -53,6 +54,7 @@ defmodule Proca.ActionPage do
       :delivery,
       :thank_you_template,
       :supporter_confirm_template,
+      :duplicate_template,
       :config,
       :org_id,
       :campaign_id
@@ -71,6 +73,7 @@ defmodule Proca.ActionPage do
     )
     |> Proca.Service.EmailTemplate.validate_exists(:supporter_confirm_template)
     |> Proca.Service.EmailTemplate.validate_exists(:thank_you_template)
+    |> Proca.Service.EmailTemplate.validate_exists(:duplicate_template)
   end
 
   def changeset(attrs) do

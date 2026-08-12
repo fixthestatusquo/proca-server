@@ -76,23 +76,20 @@ defmodule Proca.Stage.Webhook do
         end
 
       case Webhook.push(webhook, msg.data) do
-        {:ok, 200} ->
-          msg
-
         {:ok, 200, _ret} ->
           msg
 
-        {:ok, 404} ->
+        {:ok, 404, _} ->
           error("Webhook returned 404 Not found: #{webhook.host}")
           Message.failed(msg, "Not found")
 
-        {:ok, code} ->
+        {:ok, code, resp_body} ->
           Sentry.capture_message(
             "Webhook #{webhook.host} returned HTTP code #{code}",
             capture: :none
           )
 
-          error("Webhook returned #{code} code: #{webhook.host}")
+          error("Webhook returned #{code} code: #{webhook.host} body=#{inspect(resp_body)}")
           Message.failed(msg, "Code #{code}")
 
         {:error, reason} ->

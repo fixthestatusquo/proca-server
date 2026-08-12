@@ -50,14 +50,17 @@ defmodule Proca.Service.Mailjet do
           templates -> list_templates(org, lst ++ templates)
         end
 
-      {:ok, 401} ->
+      {:ok, 401, _} ->
         {:error, "not authenticated"}
 
       {:error, err} ->
         {:error, err}
 
       x ->
-        error("Mailjet List Template API unexpected result: #{inspect(x)}")
+        error(
+          "Mailjet List Template API org=#{Org.log_ref(org)} unexpected result: #{inspect(x)}"
+        )
+
         {:error, "unexpected return from mailjet list templates"}
     end
   end
@@ -89,7 +92,7 @@ defmodule Proca.Service.Mailjet do
   end
 
   @impl true
-  def deliver(emails, %Org{email_backend: srv}) when is_list(emails) do
+  def deliver(emails, %Org{email_backend: srv} = org) when is_list(emails) do
     emails =
       Enum.map(emails, fn e ->
         e
@@ -99,11 +102,11 @@ defmodule Proca.Service.Mailjet do
       end)
 
     Mailjet.deliver_many(emails, config(srv))
-    |> handle_return(emails)
+    |> handle_return(emails, org)
   end
 
   @impl true
-  def deliver(email = %Email{}, %Org{email_backend: srv}) do
+  def deliver(email = %Email{}, %Org{email_backend: srv} = org) do
     email =
       email
       |> put_assigns()
@@ -111,7 +114,7 @@ defmodule Proca.Service.Mailjet do
       |> put_custom()
 
     Mailjet.deliver(email, config(srv))
-    |> handle_return([email])
+    |> handle_return([email], org)
   end
 
   # Warning! Swoosh Mailjet adapter will return an inconsistent error data shape:
@@ -154,7 +157,7 @@ defmodule Proca.Service.Mailjet do
   #     %{id: 1152921519812251571}
   #   ]}}
 
-  defp handle_return({:ok, _}, _) do
+  defp handle_return({:ok, _}, _, _org) do
     :ok
   end
 
@@ -164,7 +167,7 @@ defmodule Proca.Service.Mailjet do
   #   handle_return({:error, {code, [status]}}, emails)
   # end
 
-  defp handle_return({:error, {_code, statuses}}, _) when is_list(statuses) do
+  defp handle_return({:error, {_code, statuses}}, _, _org) when is_list(statuses) do
     {:error,
      Enum.map(
        statuses,
@@ -187,10 +190,12 @@ defmodule Proca.Service.Mailjet do
      )}
   end
 
-  defp handle_return({:error, reason}, emails) do
-    Sentry.capture_message("Mailjet: failed HTTP request to API #{inspect(reason)}")
+  defp handle_return({:error, reason}, emails, org) do
+    Sentry.capture_message(
+      "Mailjet: failed HTTP request to API org=#{Org.log_ref(org)} reason=#{inspect(reason)}"
+    )
 
-    error("Mailjet cannot deliver email batch! #{inspect(reason)}")
+    error("Mailjet cannot deliver email batch! org=#{Org.log_ref(org)} reason=#{inspect(reason)}")
     {:error, Enum.map(emails, fn _ -> {:error, reason} end)}
   end
 
@@ -229,7 +234,8 @@ defmodule Proca.Service.Mailjet do
       id: id,
       email: email,
       reason: String.to_existing_atom(reason),
-      error: error
+      error: error,
+      soft: reason == "bounce" and event["hard_bounce"] != true
     }
 
     case type do

@@ -75,6 +75,10 @@ defmodule Proca.Service.EmailBackend do
 
   def service_module(:preview), do: Proca.Service.Email.Preview
 
+  def service_module(:brevo), do: Proca.Service.Brevo
+
+  def service_module(:hubspot), do: Proca.Service.Hubspot
+
   def batch_size(%Org{email_backend: %Service{name: name}}) do
     service_module(name).batch_size()
   end
@@ -149,6 +153,14 @@ defmodule Proca.Service.EmailBackend do
 
   defp prepare_template(email, nil), do: email
 
+  # local template with external_id — delegate to external provider (e.g. Brevo templateId)
+  defp prepare_template(email, tmpl = %EmailTemplate{id: id, external_id: ext_id})
+       when is_number(id) and not is_nil(ext_id) do
+    email
+    |> Email.put_private(:template, %{tmpl | ref: ext_id})
+    |> prepare_fields()
+  end
+
   defp prepare_template(email, tmpl = %EmailTemplate{id: id}) when is_number(id) do
     email
     |> EmailTemplate.render(tmpl)
@@ -182,10 +194,9 @@ defmodule Proca.Service.EmailBackend do
     Email.from(email, {org.title, org.email_from})
   end
 
-  def determine_sender(email = %Email{from: nil}, org = %Org{email_backend: %Service{}}) do
-    email
-    |> Email.from({org.title, org.email_from})
-    |> determine_sender(org)
+  def determine_sender(email = %Email{from: nil}, org = %Org{email_backend: srv}) do
+    %{org: via_org} = Proca.Repo.preload(srv, [:org])
+    Email.from(email, {org.title, org.email_from || via_org.email_from})
   end
 
   def determine_sender(
@@ -194,13 +205,20 @@ defmodule Proca.Service.EmailBackend do
       ) do
     %{org: via_org} = Proca.Repo.preload(srv, [:org])
 
+    sending_from = srv.sending_from || via_org.email_from
     [username, domain] = Regex.split(~r/@/, from_email)
-    [_via_username, via_domain] = Regex.split(~r/@/, via_org.email_from)
+    [_sending_username, via_domain] = Regex.split(~r/@/, sending_from)
 
     cond do
-      # FROM set, but matching the sending backend
-      from_email == via_org.email_from ->
+      # FROM set, but matching the verified sending address
+      from_email == sending_from ->
         email
+
+      # SRS rewriting disabled at org level - send from org-named address on system domain, Reply-To set to org's from
+      not org.sender_rewrite ->
+        email
+        |> Email.from({from_name, "#{org.name}@#{via_domain}"})
+        |> maybe_add_reply(from_email, org.reply_enabled)
 
       # Any from email - we will use SRS here
       true ->

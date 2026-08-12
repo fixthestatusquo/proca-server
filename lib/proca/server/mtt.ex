@@ -19,9 +19,9 @@ defmodule Proca.Server.MTT do
   require Logger
   import Ecto.Query
   alias Proca.Repo
-  alias Proca.Server.MTTWorker
+  alias Proca.Server.{MTTWorker, MTTContext}
 
-  @interval 30_000
+  @interval 180_000
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -39,25 +39,7 @@ defmodule Proca.Server.MTT do
   end
 
   def dupe_rank() do
-    sql = """
-    UPDATE messages
-    SET dupe_rank = ranked.dupe_rank
-    FROM
-    (
-      SELECT
-        m.id,
-        rank() OVER (PARTITION BY s.fingerprint, m.target_id ORDER BY a.inserted_at) - 1 as dupe_rank
-      FROM messages m
-        JOIN actions a ON m.action_id = a.id
-        JOIN supporters s ON a.supporter_id = s.id
-      WHERE m.dupe_rank is NULL
-        AND a.processing_status = 4
-        AND s.processing_status = 3
-    ) ranked
-    WHERE messages.id = ranked.id;
-    """
-
-    Ecto.Adapters.SQL.query(Proca.Repo, sql)
+    MTTContext.dupe_rank()
   end
 
   @impl true
@@ -72,6 +54,11 @@ defmodule Proca.Server.MTT do
     end
 
     {:noreply, %{workers: workers}}
+  rescue
+    e in DBConnection.ConnectionError ->
+      Logger.warning("MTT work cycle skipped: DB connection error: #{Exception.message(e)}")
+      schedule_work()
+      {:noreply, %{workers: w}}
   end
 
   @impl true
@@ -110,8 +97,6 @@ defmodule Proca.Server.MTT do
         order_by: fragment("RANDOM()")
       )
       |> Repo.all()
-
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(running_mtts)}, %{})
 
     Enum.map(running_mtts, fn campaign ->
       Logger.info("Start MTT worker for #{campaign.name} (waiting for connection pool)")

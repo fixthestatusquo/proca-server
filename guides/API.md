@@ -64,4 +64,3 @@ const whoami = async (email : string, pwd : string) => {
   console.log(`I am member of these orgs: ${myOrgs}`)
 }
 ```
-

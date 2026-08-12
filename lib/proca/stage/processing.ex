@@ -20,7 +20,7 @@ defmodule Proca.Stage.Processing do
   without any contact, and it might never arrive). On the other hand, it would be nice to have this later in CRM right?
 
   State diagram below shows transitions while processing. `A` stands for Action,
-  `S` for supporter. States are enumerated in ProcessingStatus (see `Enums`), and supporter
+  `S` for supporter. States are enumerated in ActionProcessingStatus / SupporterProcessingStatus (see `Enums`), and supporter
   and action track its status separately.
 
   ```
@@ -116,9 +116,22 @@ defmodule Proca.Stage.Processing do
 
   def needs_lookup?(_, _), do: false
 
+  @doc """
+  Tri-state override of org.custom_action_confirm by campaign.action_confirm:
+  nil defers to the org setting, true/false force it on or off for this campaign.
+  """
+  @spec effective_action_confirm(boolean(), boolean() | nil) :: boolean()
+  def effective_action_confirm(org_action_confirm, nil), do: org_action_confirm
+  def effective_action_confirm(_org_action_confirm, campaign_action_confirm), do: campaign_action_confirm
+
+  @spec effective_supporter_confirm(boolean(), boolean() | nil) :: boolean()
+  def effective_supporter_confirm(org_supporter_confirm, nil), do: org_supporter_confirm
+  def effective_supporter_confirm(_org_supporter_confirm, campaign_supporter_confirm), do: campaign_supporter_confirm
+
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
-          | {:new | :confirming | :accepted | :delivered, :new | :confirming | :accepted,
+          | {:new | :confirming | :accepted | :delivered | :rejected,
+             :new | :confirming | :accepted | :rejected,
              :supporter_confirm | :action_confirm | :deliver | nil}
   @doc """
   This function implements the state machine for Action.
@@ -159,19 +172,20 @@ defmodule Proca.Stage.Processing do
           org: %{
             supporter_confirm: system_confirm,
             custom_supporter_confirm: custom_confirm,
-            custom_action_confirm: action_confirm
+            custom_action_confirm: org_action_confirm
           },
           campaign: %{
-            supporter_confirm: campaign_confirm
+            supporter_confirm: campaign_confirm,
+            action_confirm: campaign_action_confirm
           }
         }
       ) do
     # if we confirm supporter whether the system (emails) or custom (queue) methods are enabled
     cond do
-      system_confirm or campaign_confirm or custom_confirm ->
+      effective_supporter_confirm(system_confirm or custom_confirm, campaign_confirm) ->
         {:new, :confirming, :supporter_confirm}
 
-      action_confirm ->
+      effective_action_confirm(org_action_confirm, campaign_action_confirm) ->
         {:confirming, :accepted, :action_confirm}
 
       true ->
@@ -224,9 +238,12 @@ defmodule Proca.Stage.Processing do
           supporter: %{processing_status: :accepted}
         },
         %ActionPage{
-          org: %{custom_action_confirm: true}
+          org: %{custom_action_confirm: org_action_confirm},
+          campaign: %{action_confirm: campaign_action_confirm}
         }
-      ) do
+      )
+      when (is_nil(campaign_action_confirm) and org_action_confirm == true) or
+             campaign_action_confirm == true do
     # Send action to action_confirm queue
     {:confirming, :accepted, :action_confirm}
   end
@@ -276,6 +293,10 @@ defmodule Proca.Stage.Processing do
     :ok
   end
 
+  def transition(%{processing_status: :repeat}, _ap) do
+    :ok
+  end
+
   ## Processing pipeline steps!
 
   def change_status(
@@ -294,9 +315,25 @@ defmodule Proca.Stage.Processing do
   2. action confirm stage
   3. action delivery stage
   """
-  def rank_supporter(p = %Processing{supporter_change: changeset, stage: queue_stage})
+  def rank_supporter(
+        p = %Processing{
+          supporter_change: changeset,
+          action_change: action_ch,
+          stage: queue_stage
+        }
+      )
       when queue_stage != nil do
-    %{p | supporter_change: Supporter.naive_rank(changeset)}
+    {ranked_ch, same_page} = Supporter.naive_rank(changeset)
+
+    action_ch =
+      if same_page and Ecto.Changeset.get_change(ranked_ch, :dupe_rank, 0) > 0 and
+           Ecto.Changeset.get_change(action_ch, :processing_status) == :delivered do
+        change(action_ch, processing_status: :repeat)
+      else
+        action_ch
+      end
+
+    %{p | supporter_change: ranked_ch, action_change: action_ch}
   end
 
   def rank_supporter(p), do: p

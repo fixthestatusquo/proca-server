@@ -1,0 +1,40 @@
+#!/bin/bash
+# Deploy to staging: build + release + migrate + restart.
+#
+# Usage:  ./scripts/deploy-staging [version]
+
+set -euo pipefail
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  VERSION=$(grep -oP 'version: "\K[^"]+' mix.exs)
+fi
+
+# ---- Build + rsync ----
+./scripts/release "$VERSION"
+
+RELEASE_DST="/srv/proca/releases/proca-${VERSION}"
+CURRENT_LINK="/srv/proca/current"
+ENV_FILE="/etc/proca/env"
+SERVICE="proca"
+PORT=4000
+
+# ---- Symlink ----
+echo "==> Updating symlink (atomic)"
+ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
+
+# ---- Migrate ----
+echo "==> Running database migrations"
+sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"
+
+# ---- Restart ----
+echo "==> Restarting ${SERVICE}"
+sudo systemctl restart "$SERVICE"
+
+echo "==> Done. Waiting for health check..."
+sleep 3
+if curl -sf "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then
+  echo "Service is healthy."
+else
+  echo "WARNING: Health check failed. Check: journalctl -u ${SERVICE} -f"
+fi

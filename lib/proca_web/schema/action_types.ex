@@ -307,6 +307,8 @@ defmodule ProcaWeb.Schema.ActionTypes do
   object :contact do
     @desc "Contact ref (fingerprint) of supporter"
     field :contact_ref, non_null(:id)
+    @desc "Rank of this action among actions from the same contact in this campaign (0 = first, >0 = duplicate)"
+    field :dupe_rank, non_null(:integer)
     @desc "Stringified json with PII optionally encrypted"
     field :payload, non_null(:string)
     @desc "Encryption nonce value"
