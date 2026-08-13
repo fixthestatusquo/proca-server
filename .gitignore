@@ -49,3 +49,4 @@ TAGS
 .proca-cli
 
 .DS_Store
+.worktrees/

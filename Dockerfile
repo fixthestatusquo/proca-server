@@ -1,11 +1,11 @@
 # --- Builder --------------------------------------------
 
-FROM hexpm/elixir:1.18.4-erlang-27.3.4-alpine-3.21.3 AS builder
+FROM hexpm/elixir:1.18.4-erlang-27.3.4.16-alpine-3.21.7 AS builder
 
 ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
-RUN apk add --no-cache build-base git nodejs npm
+RUN apk add --no-cache build-base git nodejs npm openssl-dev ncurses-dev
 
 RUN mix local.hex --force && \
     mix local.rebar --force

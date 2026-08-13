@@ -87,7 +87,6 @@ defmodule Proca.MixProject do
       {:joken, "~> 2.4"},
       {:bbmustache, "~> 1.12"},
       {:poison, "~> 4.0"},
-      {:random_password, "~> 1.0"},
       {:proper_case, "~> 1.0.2"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},

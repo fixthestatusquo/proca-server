@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict dvzdWAHS9fFYjTeS0vRCoRClxVNAe1WQDMAurVqQzXqQ6rC48DNZjFZrprm7j8a
+\restrict 7QS19kGVbeijzgoDs9y0xlcCzvb5Imf3DRbDQWLe3JjuEEvj5kayYvmRZlh4tjJ
 
 -- Dumped from database version 14.20 (Debian 14.20-1.pgdg13+1)
--- Dumped by pg_dump version 14.20 (Debian 14.20-1.pgdg13+1)
+-- Dumped by pg_dump version 15.18 (Debian 15.18-0+deb12u1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,6 +17,13 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
 
 --
 -- Name: citext; Type: EXTENSION; Schema: -; Owner: -
@@ -53,7 +60,8 @@ CREATE TABLE public.action_pages (
     thank_you_template character varying(255),
     config jsonb DEFAULT '{}'::jsonb NOT NULL,
     live boolean DEFAULT false NOT NULL,
-    supporter_confirm_template character varying(255)
+    supporter_confirm_template character varying(255),
+    duplicate_template character varying(255)
 );
 
 
@@ -149,10 +157,11 @@ CREATE TABLE public.campaigns (
     contact_schema integer DEFAULT 0 NOT NULL,
     transient_actions character varying(255)[] DEFAULT ARRAY[]::character varying[] NOT NULL,
     status integer DEFAULT 0 NOT NULL,
-    supporter_confirm boolean DEFAULT false NOT NULL,
+    supporter_confirm boolean,
     supporter_confirm_template character varying(255),
     start_date date,
-    end_date date
+    end_date date,
+    action_confirm boolean
 );
 
 
@@ -299,7 +308,8 @@ CREATE TABLE public.email_templates (
     subject character varying(255) NOT NULL,
     html text NOT NULL,
     text text,
-    org_id bigint NOT NULL
+    org_id bigint NOT NULL,
+    external_id character varying(255)
 );
 
 
@@ -456,7 +466,9 @@ CREATE TABLE public.orgs (
     storage_backend_id bigint,
     detail_backend_id bigint,
     push_backend_id bigint,
-    reply_enabled boolean DEFAULT true
+    reply_enabled boolean DEFAULT true,
+    sender_rewrite boolean DEFAULT true,
+    transactional_email_backend_id bigint
 );
 
 
@@ -538,7 +550,9 @@ CREATE TABLE public.services (
     name character varying(255) NOT NULL,
     org_id bigint NOT NULL,
     inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
+    updated_at timestamp(0) without time zone NOT NULL,
+    sending_from character varying(255),
+    transactional_email_budget integer
 );
 
 
@@ -684,7 +698,8 @@ CREATE TABLE public.target_emails (
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL,
     email_status smallint DEFAULT 0 NOT NULL,
-    error character varying(255)
+    error character varying(255),
+    soft_bounce_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -1239,6 +1254,20 @@ CREATE UNIQUE INDEX email_templates_org_id_name_locale_index ON public.email_tem
 
 
 --
+-- Name: messages_action_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX messages_action_id_index ON public.messages USING btree (action_id) WHERE (NOT sent);
+
+
+--
+-- Name: messages_dupe_rank_null_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX messages_dupe_rank_null_index ON public.messages USING btree (action_id) WHERE (dupe_rank IS NULL);
+
+
+--
 -- Name: messages_partial_action_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1246,10 +1275,10 @@ CREATE INDEX messages_partial_action_index ON public.messages USING btree (actio
 
 
 --
--- Name: messages_target_id_action_id_dupe_rank_sent_index; Type: INDEX; Schema: public; Owner: -
+-- Name: messages_target_id_dupe_rank_sent_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX messages_target_id_action_id_dupe_rank_sent_index ON public.messages USING btree (target_id, action_id, dupe_rank, sent);
+CREATE INDEX messages_target_id_dupe_rank_sent_id_index ON public.messages USING btree (target_id, dupe_rank, sent, id);
 
 
 --
@@ -1334,6 +1363,13 @@ CREATE INDEX supporters_processing_status_index ON public.supporters USING btree
 --
 
 CREATE INDEX target_emails_target_id_index ON public.target_emails USING btree (target_id);
+
+
+--
+-- Name: targets_campaign_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX targets_campaign_id_index ON public.targets USING btree (campaign_id);
 
 
 --
@@ -1556,6 +1592,14 @@ ALTER TABLE ONLY public.orgs
 
 
 --
+-- Name: orgs orgs_transactional_email_backend_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orgs
+    ADD CONSTRAINT orgs_transactional_email_backend_id_fkey FOREIGN KEY (transactional_email_backend_id) REFERENCES public.services(id) ON DELETE SET NULL;
+
+
+--
 -- Name: public_keys public_keys_org_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1639,181 +1683,161 @@ ALTER TABLE ONLY public.users_tokens
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dvzdWAHS9fFYjTeS0vRCoRClxVNAe1WQDMAurVqQzXqQ6rC48DNZjFZrprm7j8a
+\unrestrict 7QS19kGVbeijzgoDs9y0xlcCzvb5Imf3DRbDQWLe3JjuEEvj5kayYvmRZlh4tjJ
 
---
--- PostgreSQL database dump
---
-
-\restrict dHMOh59biE00I69W4HfunEKNacwE8VvgW2PDuuy1K9azmgnnoFQoUQt6XGONdag
-
--- Dumped from database version 14.20 (Debian 14.20-1.pgdg13+1)
--- Dumped by pg_dump version 14.20 (Debian 14.20-1.pgdg13+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Data for Name: schema_migrations; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.schema_migrations (version, inserted_at) FROM stdin;
-20200216155803	2026-03-16 14:37:19
-20200216160005	2026-03-16 14:37:19
-20200216160617	2026-03-16 14:37:19
-20200216162702	2026-03-16 14:37:19
-20200216172338	2026-03-16 14:37:19
-20200216172508	2026-03-16 14:37:19
-20200216173621	2026-03-16 14:37:19
-20200216174648	2026-03-16 14:37:19
-20200217082940	2026-03-16 14:37:19
-20200217083232	2026-03-16 14:37:19
-20200217084440	2026-03-16 14:37:19
-20200217084727	2026-03-16 14:37:19
-20200217145247	2026-03-16 14:37:19
-20200217170621	2026-03-16 14:37:19
-20200219222933	2026-03-16 14:37:19
-20200220110057	2026-03-16 14:37:19
-20200220222911	2026-03-16 14:37:19
-20200303082509	2026-03-16 14:37:19
-20200303084536	2026-03-16 14:37:19
-20200309145751	2026-03-16 14:37:19
-20200323112323	2026-03-16 14:37:19
-20200323152226	2026-03-16 14:37:19
-20200408151752	2026-03-16 14:37:19
-20200410175531	2026-03-16 14:37:19
-20200417143834	2026-03-16 14:37:19
-20200513123032	2026-03-16 14:37:19
-20200513215935	2026-03-16 14:37:19
-20200514214934	2026-03-16 14:37:19
-20200517200824	2026-03-16 14:37:19
-20200517215824	2026-03-16 14:37:19
-20200518074529	2026-03-16 14:37:19
-20200518110458	2026-03-16 14:37:19
-20200518182717	2026-03-16 14:37:19
-20200527075056	2026-03-16 14:37:19
-20200530172025	2026-03-16 14:37:19
-20200602220302	2026-03-16 14:37:19
-20200603134359	2026-03-16 14:37:19
-20200605162822	2026-03-16 14:37:19
-20200608124555	2026-03-16 14:37:19
-20200609132552	2026-03-16 14:37:19
-20200609144956	2026-03-16 14:37:19
-20200615080332	2026-03-16 14:37:19
-20200615161928	2026-03-16 14:37:19
-20200617203540	2026-03-16 14:37:19
-20200711114921	2026-03-16 14:37:19
-20200727095935	2026-03-16 14:37:19
-20200727103905	2026-03-16 14:37:19
-20200727212540	2026-03-16 14:37:19
-20200804125443	2026-03-16 14:37:19
-20200824094510	2026-03-16 14:37:19
-20200824113349	2026-03-16 14:37:19
-20200911083012	2026-03-16 14:37:19
-20200918091844	2026-03-16 14:37:19
-20201019135201	2026-03-16 14:37:19
-20201019135336	2026-03-16 14:37:19
-20201025182200	2026-03-16 14:37:19
-20201104164703	2026-03-16 14:37:19
-20201120163019	2026-03-16 14:37:19
-20201207134031	2026-03-16 14:37:19
-20210122114655	2026-03-16 14:37:19
-20210122121943	2026-03-16 14:37:19
-20210301182312	2026-03-16 14:37:19
-20210304174947	2026-03-16 14:37:19
-20210331084454	2026-03-16 14:37:19
-20210408084322	2026-03-16 14:37:19
-20210518092615	2026-03-16 14:37:19
-20210527154054	2026-03-16 14:37:19
-20210530144413	2026-03-16 14:37:19
-20210530194531	2026-03-16 14:37:19
-20210616105259	2026-03-16 14:37:19
-20210721104452	2026-03-16 14:37:19
-20210802060718	2026-03-16 14:37:19
-20210807100051	2026-03-16 14:37:19
-20210823161059	2026-03-16 14:37:19
-20210829194238	2026-03-16 14:37:19
-20210922174521	2026-03-16 14:37:19
-20210924143116	2026-03-16 14:37:19
-20210929073932	2026-03-16 14:37:19
-20210929152407	2026-03-16 14:37:19
-20211027070617	2026-03-16 14:37:19
-20211109120438	2026-03-16 14:37:19
-20211109120812	2026-03-16 14:37:19
-20211109134038	2026-03-16 14:37:19
-20211112212140	2026-03-16 14:37:19
-20211116124743	2026-03-16 14:37:19
-20211119150751	2026-03-16 14:37:19
-20211122182219	2026-03-16 14:37:19
-20211206093946	2026-03-16 14:37:20
-20211213100558	2026-03-16 14:37:20
-20211214175814	2026-03-16 14:37:20
-20211220212605	2026-03-16 14:37:20
-20211221110910	2026-03-16 14:37:20
-20211222205257	2026-03-16 14:37:20
-20220103165519	2026-03-16 14:37:20
-20220104093448	2026-03-16 14:37:20
-20220110091050	2026-03-16 14:37:20
-20220111225427	2026-03-16 14:37:20
-20220112200625	2026-03-16 14:37:20
-20220124174655	2026-03-16 14:37:20
-20220127202400	2026-03-16 14:37:20
-20220128231339	2026-03-16 14:37:20
-20220130212834	2026-03-16 14:37:20
-20220131114346	2026-03-16 14:37:20
-20220201191156	2026-03-16 14:37:20
-20220204225820	2026-03-16 14:37:20
-20220205182715	2026-03-16 14:37:20
-20220206233831	2026-03-16 14:37:20
-20220221173944	2026-03-16 14:37:20
-20220222173105	2026-03-16 14:37:20
-20220307120321	2026-03-16 14:37:20
-20220314121517	2026-03-16 14:37:20
-20220328200407	2026-03-16 14:37:20
-20220411181114	2026-03-16 14:37:20
-20220415130710	2026-03-16 14:37:20
-20220419122620	2026-03-16 14:37:20
-20220510190049	2026-03-16 14:37:20
-20220603104555	2026-03-16 14:37:20
-20220606075651	2026-03-16 14:37:20
-20220607065933	2026-03-16 14:37:20
-20220614140633	2026-03-16 14:37:20
-20220810062528	2026-03-16 14:37:20
-20220815102248	2026-03-16 14:37:20
-20220830105140	2026-03-16 14:37:20
-20221019154522	2026-03-16 14:37:20
-20221125105915	2026-03-16 14:37:20
-20230510074416	2026-03-16 14:37:20
-20230802114854	2026-03-16 14:37:20
-20240606100400	2026-03-16 14:37:20
-20250520205903	2026-03-16 14:37:20
-20250708011041	2026-03-16 14:37:20
-20250716132947	2026-03-16 14:37:20
-20250728131601	2026-03-16 14:37:20
-20250728132318	2026-03-16 14:37:20
-20250812130145	2026-03-16 14:37:20
-20250904150640	2026-03-16 14:37:20
-20251002133727	2026-03-16 14:37:20
-20251102174344	2026-03-16 14:37:20
-20251102174912	2026-03-16 14:37:20
-20251106145422	2026-03-16 14:37:20
-20251106205011	2026-03-16 14:37:20
-20251107220738	2026-03-16 14:37:20
-20260207162539	2026-03-16 14:37:20
-\.
-
-
---
--- PostgreSQL database dump complete
---
-
-\unrestrict dHMOh59biE00I69W4HfunEKNacwE8VvgW2PDuuy1K9azmgnnoFQoUQt6XGONdag
-
+INSERT INTO public."schema_migrations" (version) VALUES (20200216155803);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216160005);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216160617);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216162702);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216172338);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216172508);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216173621);
+INSERT INTO public."schema_migrations" (version) VALUES (20200216174648);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217082940);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217083232);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217084440);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217084727);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217145247);
+INSERT INTO public."schema_migrations" (version) VALUES (20200217170621);
+INSERT INTO public."schema_migrations" (version) VALUES (20200219222933);
+INSERT INTO public."schema_migrations" (version) VALUES (20200220110057);
+INSERT INTO public."schema_migrations" (version) VALUES (20200220222911);
+INSERT INTO public."schema_migrations" (version) VALUES (20200303082509);
+INSERT INTO public."schema_migrations" (version) VALUES (20200303084536);
+INSERT INTO public."schema_migrations" (version) VALUES (20200309145751);
+INSERT INTO public."schema_migrations" (version) VALUES (20200323112323);
+INSERT INTO public."schema_migrations" (version) VALUES (20200323152226);
+INSERT INTO public."schema_migrations" (version) VALUES (20200408151752);
+INSERT INTO public."schema_migrations" (version) VALUES (20200410175531);
+INSERT INTO public."schema_migrations" (version) VALUES (20200417143834);
+INSERT INTO public."schema_migrations" (version) VALUES (20200513123032);
+INSERT INTO public."schema_migrations" (version) VALUES (20200513215935);
+INSERT INTO public."schema_migrations" (version) VALUES (20200514214934);
+INSERT INTO public."schema_migrations" (version) VALUES (20200517200824);
+INSERT INTO public."schema_migrations" (version) VALUES (20200517215824);
+INSERT INTO public."schema_migrations" (version) VALUES (20200518074529);
+INSERT INTO public."schema_migrations" (version) VALUES (20200518110458);
+INSERT INTO public."schema_migrations" (version) VALUES (20200518182717);
+INSERT INTO public."schema_migrations" (version) VALUES (20200527075056);
+INSERT INTO public."schema_migrations" (version) VALUES (20200530172025);
+INSERT INTO public."schema_migrations" (version) VALUES (20200602220302);
+INSERT INTO public."schema_migrations" (version) VALUES (20200603134359);
+INSERT INTO public."schema_migrations" (version) VALUES (20200605162822);
+INSERT INTO public."schema_migrations" (version) VALUES (20200608124555);
+INSERT INTO public."schema_migrations" (version) VALUES (20200609132552);
+INSERT INTO public."schema_migrations" (version) VALUES (20200609144956);
+INSERT INTO public."schema_migrations" (version) VALUES (20200615080332);
+INSERT INTO public."schema_migrations" (version) VALUES (20200615161928);
+INSERT INTO public."schema_migrations" (version) VALUES (20200617203540);
+INSERT INTO public."schema_migrations" (version) VALUES (20200711114921);
+INSERT INTO public."schema_migrations" (version) VALUES (20200727095935);
+INSERT INTO public."schema_migrations" (version) VALUES (20200727103905);
+INSERT INTO public."schema_migrations" (version) VALUES (20200727212540);
+INSERT INTO public."schema_migrations" (version) VALUES (20200804125443);
+INSERT INTO public."schema_migrations" (version) VALUES (20200824094510);
+INSERT INTO public."schema_migrations" (version) VALUES (20200824113349);
+INSERT INTO public."schema_migrations" (version) VALUES (20200911083012);
+INSERT INTO public."schema_migrations" (version) VALUES (20200918091844);
+INSERT INTO public."schema_migrations" (version) VALUES (20201019135201);
+INSERT INTO public."schema_migrations" (version) VALUES (20201019135336);
+INSERT INTO public."schema_migrations" (version) VALUES (20201025182200);
+INSERT INTO public."schema_migrations" (version) VALUES (20201104164703);
+INSERT INTO public."schema_migrations" (version) VALUES (20201120163019);
+INSERT INTO public."schema_migrations" (version) VALUES (20201207134031);
+INSERT INTO public."schema_migrations" (version) VALUES (20210122114655);
+INSERT INTO public."schema_migrations" (version) VALUES (20210122121943);
+INSERT INTO public."schema_migrations" (version) VALUES (20210301182312);
+INSERT INTO public."schema_migrations" (version) VALUES (20210304174947);
+INSERT INTO public."schema_migrations" (version) VALUES (20210331084454);
+INSERT INTO public."schema_migrations" (version) VALUES (20210408084322);
+INSERT INTO public."schema_migrations" (version) VALUES (20210518092615);
+INSERT INTO public."schema_migrations" (version) VALUES (20210527154054);
+INSERT INTO public."schema_migrations" (version) VALUES (20210530144413);
+INSERT INTO public."schema_migrations" (version) VALUES (20210530194531);
+INSERT INTO public."schema_migrations" (version) VALUES (20210616105259);
+INSERT INTO public."schema_migrations" (version) VALUES (20210721104452);
+INSERT INTO public."schema_migrations" (version) VALUES (20210802060718);
+INSERT INTO public."schema_migrations" (version) VALUES (20210807100051);
+INSERT INTO public."schema_migrations" (version) VALUES (20210823161059);
+INSERT INTO public."schema_migrations" (version) VALUES (20210829194238);
+INSERT INTO public."schema_migrations" (version) VALUES (20210922174521);
+INSERT INTO public."schema_migrations" (version) VALUES (20210924143116);
+INSERT INTO public."schema_migrations" (version) VALUES (20210929073932);
+INSERT INTO public."schema_migrations" (version) VALUES (20210929152407);
+INSERT INTO public."schema_migrations" (version) VALUES (20211027070617);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109120438);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109120812);
+INSERT INTO public."schema_migrations" (version) VALUES (20211109134038);
+INSERT INTO public."schema_migrations" (version) VALUES (20211112212140);
+INSERT INTO public."schema_migrations" (version) VALUES (20211116124743);
+INSERT INTO public."schema_migrations" (version) VALUES (20211119150751);
+INSERT INTO public."schema_migrations" (version) VALUES (20211122182219);
+INSERT INTO public."schema_migrations" (version) VALUES (20211206093946);
+INSERT INTO public."schema_migrations" (version) VALUES (20211213100558);
+INSERT INTO public."schema_migrations" (version) VALUES (20211214175814);
+INSERT INTO public."schema_migrations" (version) VALUES (20211220212605);
+INSERT INTO public."schema_migrations" (version) VALUES (20211221110910);
+INSERT INTO public."schema_migrations" (version) VALUES (20211222205257);
+INSERT INTO public."schema_migrations" (version) VALUES (20220103165519);
+INSERT INTO public."schema_migrations" (version) VALUES (20220104093448);
+INSERT INTO public."schema_migrations" (version) VALUES (20220110091050);
+INSERT INTO public."schema_migrations" (version) VALUES (20220111225427);
+INSERT INTO public."schema_migrations" (version) VALUES (20220112200625);
+INSERT INTO public."schema_migrations" (version) VALUES (20220124174655);
+INSERT INTO public."schema_migrations" (version) VALUES (20220127202400);
+INSERT INTO public."schema_migrations" (version) VALUES (20220128231339);
+INSERT INTO public."schema_migrations" (version) VALUES (20220130212834);
+INSERT INTO public."schema_migrations" (version) VALUES (20220131114346);
+INSERT INTO public."schema_migrations" (version) VALUES (20220201191156);
+INSERT INTO public."schema_migrations" (version) VALUES (20220204225820);
+INSERT INTO public."schema_migrations" (version) VALUES (20220205182715);
+INSERT INTO public."schema_migrations" (version) VALUES (20220206233831);
+INSERT INTO public."schema_migrations" (version) VALUES (20220221173944);
+INSERT INTO public."schema_migrations" (version) VALUES (20220222173105);
+INSERT INTO public."schema_migrations" (version) VALUES (20220307120321);
+INSERT INTO public."schema_migrations" (version) VALUES (20220314121517);
+INSERT INTO public."schema_migrations" (version) VALUES (20220328200407);
+INSERT INTO public."schema_migrations" (version) VALUES (20220411181114);
+INSERT INTO public."schema_migrations" (version) VALUES (20220415130710);
+INSERT INTO public."schema_migrations" (version) VALUES (20220419122620);
+INSERT INTO public."schema_migrations" (version) VALUES (20220510190049);
+INSERT INTO public."schema_migrations" (version) VALUES (20220603104555);
+INSERT INTO public."schema_migrations" (version) VALUES (20220606075651);
+INSERT INTO public."schema_migrations" (version) VALUES (20220607065933);
+INSERT INTO public."schema_migrations" (version) VALUES (20220614140633);
+INSERT INTO public."schema_migrations" (version) VALUES (20220810062528);
+INSERT INTO public."schema_migrations" (version) VALUES (20220815102248);
+INSERT INTO public."schema_migrations" (version) VALUES (20220830105140);
+INSERT INTO public."schema_migrations" (version) VALUES (20221019154522);
+INSERT INTO public."schema_migrations" (version) VALUES (20221125105915);
+INSERT INTO public."schema_migrations" (version) VALUES (20230510074416);
+INSERT INTO public."schema_migrations" (version) VALUES (20230802114854);
+INSERT INTO public."schema_migrations" (version) VALUES (20240606100400);
+INSERT INTO public."schema_migrations" (version) VALUES (20250520205903);
+INSERT INTO public."schema_migrations" (version) VALUES (20250708011041);
+INSERT INTO public."schema_migrations" (version) VALUES (20250716132947);
+INSERT INTO public."schema_migrations" (version) VALUES (20250728131601);
+INSERT INTO public."schema_migrations" (version) VALUES (20250728132318);
+INSERT INTO public."schema_migrations" (version) VALUES (20250812130145);
+INSERT INTO public."schema_migrations" (version) VALUES (20250904150640);
+INSERT INTO public."schema_migrations" (version) VALUES (20251002133727);
+INSERT INTO public."schema_migrations" (version) VALUES (20251102174344);
+INSERT INTO public."schema_migrations" (version) VALUES (20251102174912);
+INSERT INTO public."schema_migrations" (version) VALUES (20251106145422);
+INSERT INTO public."schema_migrations" (version) VALUES (20251106205011);
+INSERT INTO public."schema_migrations" (version) VALUES (20251107220738);
+INSERT INTO public."schema_migrations" (version) VALUES (20260207162539);
+INSERT INTO public."schema_migrations" (version) VALUES (20260505120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260513142322);
+INSERT INTO public."schema_migrations" (version) VALUES (20260513160000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260522000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260616000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260618000000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260619140000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260702163500);
+INSERT INTO public."schema_migrations" (version) VALUES (20260702170000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260702171500);
+INSERT INTO public."schema_migrations" (version) VALUES (20260702172000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260706120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260710120000);
+INSERT INTO public."schema_migrations" (version) VALUES (20260720120000);

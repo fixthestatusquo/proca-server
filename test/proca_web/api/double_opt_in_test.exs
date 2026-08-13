@@ -211,7 +211,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     # strip http://localhost
     link =
       "/" <>
-        (link |> String.split("/") |> Enum.slice(3..-1) |> Enum.join("/")) <>
+        (link |> String.split("/") |> Enum.slice(3..-1//1) |> Enum.join("/")) <>
         "?redir=https://landingpage.com"
 
     link = link <> if qa == nil, do: "", else: "&" <> qa
