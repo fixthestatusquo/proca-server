@@ -146,6 +146,25 @@ config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 config :proca, Proca.Server.MTTWorker,
   max_messages_per_cycle: String.to_integer(System.get_env("MAX_MESSAGES_PER_CYCLE", "99"))
 
+mtt_mode =
+  case System.get_env("MTT_MODE", "enabled") do
+    "enabled" ->
+      :enabled
+
+    "disabled" ->
+      :disabled
+
+    "dry_run" ->
+      :dry_run
+
+    invalid ->
+      raise "Invalid MTT_MODE #{inspect(invalid)}; expected enabled, disabled, or dry_run"
+  end
+
+config :proca, Proca.Server.MTT,
+  mode: mtt_mode,
+  retry_limit: parse_int.("MTT_RETRY_LIMIT", 5)
+
 config :proca, ProcaWeb.Telemetry,
   enable: System.get_env("ENABLE_TELEMETRY", "true") == "true",
   port: String.to_integer(System.get_env("METRICS_PORT", "9568"))

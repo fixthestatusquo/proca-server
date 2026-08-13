@@ -152,6 +152,8 @@ config :proca, Proca.Server.MTTScheduler,
     23 => 0.02
   }
 
+config :proca, Proca.Server.MTT, mode: :enabled, retry_limit: 5
+
 config :hackney,
   timeout: 42_000,
   max_connections: 50

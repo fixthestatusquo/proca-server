@@ -274,10 +274,10 @@ defmodule Proca.Stage.Support do
   def times_retried(_), do: 0
 
   def too_many_retries?(msg) do
-    limit = Application.get_env(:proca, Proca.Pipes)[:retry_limit] != nil
+    limit = Application.get_env(:proca, Proca.Pipes)[:retry_limit]
 
     if is_number(limit) do
-      times_retried(msg) > limit
+      times_retried(msg) >= limit
     else
       false
     end

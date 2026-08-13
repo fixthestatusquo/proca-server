@@ -21,11 +21,11 @@ Besides, it receives metrics about real-time actions between intervals, and adju
 
 ## MTT 
 
-Module: `Proca.Server.MTT` and `Proca.Server.MTTWorker`
+Modules: `Proca.Server.MTT`, `Proca.Server.MTTWorker`, `Proca.Server.MTTScheduler`, `Proca.Stage.MTT`, `Proca.Server.MTTMailer`
 
-Sends the mail to target emails. The MTT process runs the deduplication (calculates `dupe_rank`) on messages and runs a `MTTWorker` for each running MTT campaign.
-
-The MTTWorker calculates how many messages should be send in proportion to duration of the campaign (2 week campaign, after end of 1st week, 50% of messages should have been sent) and sends them.
+- `MTT` / `MTTWorker` (drip) and `MTTScheduler` (no-drip) decide *when* to send and publish to `wrk.N.mtt`.
+- `Proca.Stage.MTT` consumes the queue and delivers via `MTTContext`.
+- `MTTMailer.pause/start` stops/starts the consumers at runtime (`scripts/mttmailer`).
 
 ## Notify
 

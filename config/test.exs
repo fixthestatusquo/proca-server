@@ -8,7 +8,7 @@ config :proca, Proca.Repo,
   username: "proca",
   password: "proca",
   database: "proca_test",
-  hostname: "localhost",
+  hostname: System.get_env("DB_HOSTNAME", "localhost"),
   pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,
@@ -27,3 +27,6 @@ config :proca, Proca,
   start_daemon_servers: false
 
 config :proca, Proca.Server.MTTWorker, max_messages_per_cycle: 99
+
+config :proca, Proca.Pipes,
+  url: System.get_env("AMQP_URL", "amqp://proca:proca@localhost/proca")

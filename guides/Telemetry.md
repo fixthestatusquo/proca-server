@@ -6,16 +6,16 @@ metrics on the port configured by `config :proca, ProcaWeb.Telemetry, port: 9568
 
 There are two MTT subsystems, each with its own metric namespace:
 
-- **`proca.mtt.*`** — the "drip delivery" worker (runs every 30s, per campaign via `MTTWorker`)
-- **`proca.mtt_new.*`** — the "hourly" per-target scheduler (runs every hour via `MTTScheduler`,
-  launched by `MTTHourlyCron`)
+- **`proca.mtt.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
+- **`proca.mtt_new.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 
 ---
 
-## `proca.mtt.*` — Drip-delivery worker (`MTTWorker`)
+## `proca.mtt.*` — Drip worker + RabbitMQ delivery
 
-Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1` and
-`ProcaWeb.Telemetry.count_sendable_messages/0` (polled every 60s).
+Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
+`ProcaWeb.Telemetry.count_sendable_messages/0` (polled every 60s), and
+`Proca.Server.MTTContext.emit_delivery/2`.
 
 | Metric                        | Type      | Tags                                  | Description                                               |
 |-------------------------------|-----------|---------------------------------------|-----------------------------------------------------------|
@@ -24,7 +24,19 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1` and
 | `proca.mtt.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
 | `proca.mtt.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
 | `proca.mtt.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
-| `proca.mtt.messages_sent`     | Counter   | `campaign_id`, `campaign_name`        | Cumulative messages sent in this cycle                    |
+| `proca.mtt.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
+| `proca.mtt.messages_sent`     | Counter   | `campaign_id`, `campaign_name`        | Same as `messages_published` (legacy name; not SMTP send) |
+| `proca.mtt.delivery.count`    | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `drip_delivery` | Per delivery attempt outcome |
+
+### `proca.mtt.delivery` results
+
+| `result` | Meaning |
+|----------|---------|
+| `published` | Scheduler successfully published to `wrk.N.mtt` |
+| `sent` | Provider accepted the email; DB row marked sent |
+| `retry` | Provider failed; message rejected → MTT fail/retry DLX |
+| `discarded` | Permanently skipped (`retry_limit_exceeded`, `mtt_ended`, …) |
+| `dry_run` / `publish_failed` | Mode / topology publish failures |
 
 ### Example PromQL
 
@@ -32,29 +44,22 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1` and
 # How many campaigns are currently running (drip delivery)
 proca_mtt_campaigns_running{drip_delivery="true"}
 
-# Messages sent per campaign over time
-rate(proca_mtt_messages_sent_total[5m])
+# Queue publishes per campaign (not SMTP)
+rate(proca_mtt_messages_published_total[5m])
+
+# Successful SMTP deliveries vs retries vs permanent discards
+sum by (result) (rate(proca_mtt_delivery_count_total[5m]))
+
+# Permanent retry exhaustion (should stay near zero)
+rate(proca_mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])
 ```
 
 ---
 
 ## `proca.mtt_new.*` — Per-target scheduler (`MTTScheduler`)
 
-Emitted from `Proca.Server.MTTContext.deliver_message/2` (per-message) and
-lifecycle events in `Proca.Server.MTTScheduler` (start / stop / skip).
-
-### `[:proca, :mtt_new, :deliver_message]`
-
-Emitted once per successfully delivered message in `MTTContext.deliver_message/2`.
-
-```
-measurements: %{}
-metadata:     %{target_id: integer}
-```
-
-| Metric                                    | Type    | Tags          | Description                    |
-|-------------------------------------------|---------|---------------|--------------------------------|
-| `proca.mtt_new.deliver_message.count`     | Counter | `target_id`   | One per delivered message      |
+Emitted from lifecycle events in `Proca.Server.MTTScheduler` (start / stop / skip).
+Successful sends also increment `proca.mtt.delivery` with `result="sent"`.
 
 ### `[:proca, :mtt_new, :scheduler, :start]`
 
@@ -73,14 +78,7 @@ metadata:     %{target_id: integer, campaign_id: integer,
 
 ### `[:proca, :mtt_new, :scheduler, :skip]`
 
-Emitted in `MTTSupervisor.start_mtt_scheduler/2` when a scheduler for a target
-is requested but a process for that target is already registered (duplicate
-suppression via Registry).
-
-```
-measurements: %{}
-metadata:     %{target_id: integer, campaign_id: integer, reason: :already_running}
-```
+Emitted when a scheduler for a target is requested but already registered.
 
 | Metric                               | Type    | Tags                         | Description                         |
 |--------------------------------------|---------|------------------------------|-------------------------------------|
@@ -88,42 +86,19 @@ metadata:     %{target_id: integer, campaign_id: integer, reason: :already_runni
 
 ### `[:proca, :mtt_new, :scheduler, :stop]`
 
-Emitted in `MTTScheduler.terminate/2` when a scheduler process stops, for
-whatever reason.
-
-```
-measurements: %{duration: native_time, messages_sent: integer}
-metadata:     %{target_id: integer, campaign_id: integer,
-                campaign_name: string,
-                stop_reason: atom}
-```
-
-**`stop_reason` taxonomy:**
-
-| Reason            | Meaning                                                                 |
-|-------------------|-------------------------------------------------------------------------|
-| `:no_messages`    | `get_pending_messages/2` returned zero — nothing to do                  |
-| `:all_sent`       | All queued messages were delivered, queue drained normally              |
-| `:shutdown`       | Supervisor shut down the scheduler (e.g. hourly cron restart)           |
-| `:crashed`        | Unhandled exception caused the process to exit                          |
-
 | Metric                                    | Type          | Tags                                            | Description                        |
 |-------------------------------------------|---------------|-------------------------------------------------|------------------------------------|
 | `proca.mtt_new.scheduler.stop`            | Counter       | `campaign_id`, `stop_reason`                    | One per scheduler termination      |
 | `proca.mtt_new.scheduler.duration`        | Distribution  | `campaign_id`, `stop_reason`                    | Wall-clock runtime (milliseconds)  |
 | `proca.mtt_new.scheduler.pending_count`   | Gauge         | `campaign_id`                                   | Messages queued at start           |
 
-**Duration buckets** (milliseconds):
+**`stop_reason` taxonomy:** `:no_messages`, `:all_sent`, `:shutdown`, `:crashed`
 
-```
-1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000
-```
+**Duration buckets** (milliseconds): `1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000`
 
 ---
 
 ## Email backend events
-
-Metrics for email provider events (bounces, spam, deliveries).
 
 | Metric                          | Type    | Tags     | Source                       |
 |---------------------------------|---------|----------|------------------------------|
@@ -143,41 +118,40 @@ Metrics for email provider events (bounces, spam, deliveries).
 
 ---
 
-## Dashboard ideas
+## Dashboard ideas (Grafana / VictoriaMetrics)
+
+App metrics are on `:9568/metrics`. RabbitMQ queue depth needs the
+[RabbitMQ Prometheus plugin](https://www.rabbitmq.com/docs/prometheus) (or the
+exporter exporter) scraped into the same VictoriaMetrics/Prometheus.
+
+### Panels to add
+
+1. **MTT delivery outcomes** — stacked `rate(proca_mtt_delivery_count_total[5m])` by `result`
+2. **Retry exhaustion** — `rate(proca_mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])`
+3. **Drip publish rate** — `rate(proca_mtt_messages_published_total[5m])` by `campaign_id`
+4. **MTT fail queue depth** (RabbitMQ) — `rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}`
+5. **MTT work queue depth** — `rabbitmq_queue_messages{queue=~"wrk\\..*\\.mtt"}`
+6. **Shared fail park** — `rabbitmq_queue_messages{queue=~"org\\..*\\.fail"}` (transactional emails, webhooks, SQS)
+
+Endless DLX loops show up as: fail-queue depth oscillating while
+`proca_mtt_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
 
 ### MTT Scheduler Health
 
 - **Scheduler starts** — `rate(proca_mtt_new_scheduler_start_total[1h])`
-- **Stop reason breakdown** — stacked area of
-  `rate(proca_mtt_new_scheduler_stop_total[5m])` by `stop_reason`
-- **Duration heatmap** — heatmap of
-  `proca_mtt_new_scheduler_duration_milliseconds_bucket` over time
-- **Duplicate skips** —
-  `rate(proca_mtt_new_scheduler_skip_total{reason="already_running"}[1h])`
-
-### MTT Throughput
-
-- **Messages delivered** —
-  `rate(proca_mtt_new_deliver_message_count_total[5m])`
-- **Pending messages (gauge)** — `proca_mtt_sendable_messages` by campaign
-- **Campaigns running** — `proca_mtt_campaigns_running`
+- **Stop reason breakdown** — `rate(proca_mtt_new_scheduler_stop_total[5m])` by `stop_reason`
+- **Duration heatmap** — `proca_mtt_new_scheduler_duration_milliseconds_bucket`
 
 ### Example queries
 
 ```promql
-# How many schedulers started per campaign
-rate(proca_mtt_new_scheduler_start_total[1h])
+sum by (result) (rate(proca_mtt_delivery_count_total[5m]))
 
-# What fraction finished all messages vs found none
-sum by (stop_reason) (proca_mtt_new_scheduler_stop_total)
+rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}
 
-# P50 / P95 duration of successful schedulers only
-histogram_quantile(0.5,
+histogram_quantile(0.95,
   sum(rate(
     proca_mtt_new_scheduler_duration_milliseconds_bucket{stop_reason="all_sent"}[5m]
   )) by (le)
 )
-
-# Schedulers killed by hourly restart before finishing
-proca_mtt_new_scheduler_stop_total{stop_reason="shutdown"}
 ```
