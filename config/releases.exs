@@ -136,6 +136,7 @@ config :proca, Proca.Service.EmailBackend,
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
+  enable_mtt: System.get_env("ENABLE_MTT", "true") == "true",
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
   process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
   daemon_start_delay: String.to_integer(System.get_env("DAEMON_START_DELAY", "5000"))
