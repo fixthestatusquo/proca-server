@@ -122,17 +122,28 @@ defmodule Proca.Application do
       {Proca.ActionPage.Status, []},
       # JWT keys dict
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
-      # MTT cron job
+      # MTT test job
       {Proca.Server.MTT, []},
-      {Proca.Stage.MTTTest, []},
-      {Registry, [name: Proca.Server.MTTSchedulerRegistry, keys: :unique]},
-      {Proca.Server.MTTSupervisor, []},
-      {Proca.Server.MTTHourlyCron, []},
       # Confirm reminder cron
       {Proca.Server.ConfirmReminderCron,
        Application.get_env(:proca, Proca.Server.ConfirmReminderCron, [])},
       # User status
       {Proca.Users.Status, [interval: 30_000]}
-    ]
+    ] ++ mtt_daemon_servers()
+  end
+
+  defp mtt_daemon_servers do
+    if Application.get_env(:proca, Proca)[:enable_mtt] do
+      [
+        # MTT cron job
+        {Proca.Server.MTT, []},
+        {Registry, [name: Proca.Server.MTTSchedulerRegistry, keys: :unique]},
+        {Proca.Server.MTTSupervisor, []},
+        {Proca.Server.MTTHourlyCron, []}
+      ]
+    else
+      Logger.info("MTT processing disabled (ENABLE_MTT=false)")
+      []
+    end
   end
 end
