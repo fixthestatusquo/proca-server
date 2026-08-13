@@ -39,6 +39,7 @@ defmodule Proca.Pipes.Topology do
                           #     > =wrk.N.sqs
 
   (default exchange)      wrk.N.mtt -> =wrk.N.mtt  (published by MTTWorker / MTTScheduler)
+  (default exchange)      wrk.mtt.test            (MTT test actions from Processing)
 
   transactional/custom:           DLX:x org.N.fail fanout> org.N.fail
                                   (no app TTL; park until ops requeue via org.N.retry)
@@ -153,6 +154,9 @@ defmodule Proca.Pipes.Topology do
   @doc "Name of queue to which a worker is attached (like for email, SQS)"
   def wqn(%Org{id: id}, name), do: "wrk.#{id}.#{name}"
 
+  @doc "Global queue for low-volume MTT test actions"
+  def mtt_test_queue, do: "wrk.mtt.test"
+
   @doc "Per-org queue for regular drip and no-drip MTT delivery"
   def mtt_queue(org = %Org{}), do: wqn(org, "mtt")
 
@@ -259,6 +263,8 @@ defmodule Proca.Pipes.Topology do
 
     # MTT queues are not bound to stage exchanges. Producers publish directly
     # through RabbitMQ's default exchange.
+    Queue.declare(chan, mtt_test_queue(), durable: true)
+
     # Regular MTT queue: Proca.Server.MTTScheduler and MTTWorker publish here
     # via the default exchange; Proca.Stage.MTT consumes it.
     if config[:email_supporter] do

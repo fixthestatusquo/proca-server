@@ -25,8 +25,7 @@ Modules: `Proca.Server.MTT`, `Proca.Server.MTTWorker`, `Proca.Server.MTTSchedule
 
 - `MTT` / `MTTWorker` (drip) and `MTTScheduler` (no-drip) decide *when* to send and publish to `wrk.N.mtt`.
 - `Proca.Stage.MTT` consumes the queue and delivers via `MTTContext`.
-- Test MTT emails are sent directly (no queue) — ASAP at action deliver, plus MTT cycle backup.
-- `MTTMailer.pause/start` stops/starts the live consumers at runtime (`scripts/mttmailer`).
+- `MTTMailer.pause/start` stops/starts the consumers at runtime (`scripts/mttmailer`).
 
 ## Notify
 
