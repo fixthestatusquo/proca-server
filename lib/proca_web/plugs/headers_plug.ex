@@ -4,9 +4,6 @@ defmodule ProcaWeb.Plugs.HeadersPlug do
   """
   @behaviour Plug
 
-  alias Plug.Conn
-  import ProcaWeb.Plugs.Helper
-
   def init(headers) when is_list(headers), do: headers
 
   def call(conn, headers) do

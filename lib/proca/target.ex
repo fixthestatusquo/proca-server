@@ -130,7 +130,7 @@ defmodule Proca.Target do
     case TargetEmail.one(message_id: id, email: email) do
       # ignore a bounce when not found
       nil ->
-        warn("Could not find target email #{email} for message id #{id}")
+        warning("Could not find target email #{email} for message id #{id}")
         {:ok, %TargetEmail{}}
 
       target_email ->
@@ -148,7 +148,7 @@ defmodule Proca.Target do
   defp handle_soft_bounce(target_email, params) do
     count = target_email.soft_bounce_count + 1
 
-    warn(
+    warning(
       "Soft bounce ##{count} for target email #{target_email.email}: #{params[:error] || "no reason given"}"
     )
 

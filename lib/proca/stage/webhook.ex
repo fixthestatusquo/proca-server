@@ -55,7 +55,7 @@ defmodule Proca.Stage.Webhook do
     if too_many_retries?(message) do
       ignore(message, "too many retries")
     else
-      case JSON.decode(data) do
+      case Jason.decode(data) do
         {:ok, event} ->
           Message.put_data(message, event)
 

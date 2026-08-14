@@ -34,7 +34,7 @@ defmodule Proca.Contact.EciBg do
 
   def parse_date(uci) do
     <<year1, year0, mon1, mon0, day1, day0, _::binary>> = uci
-    [zero] = '0'
+    [zero] = ~c"0"
 
     year = (year1 - zero) * 10 + (year0 - zero)
     month = (mon1 - zero) * 10 + (mon0 - zero)
@@ -50,7 +50,7 @@ defmodule Proca.Contact.EciBg do
   @checksum_weights [2, 4, 8, 5, 10, 9, 7, 3, 6]
 
   def is_valid_checksum(uci) do
-    [zero] = '0'
+    [zero] = ~c"0"
 
     numbers = String.to_charlist(uci) |> Enum.map(&(&1 - zero))
 

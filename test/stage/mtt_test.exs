@@ -51,7 +51,7 @@ defmodule Proca.Stage.MTTStageTest do
     test "delivers on valid payload", %{target: %{emails: [%{email: email}]} = target} do
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
 
-      {:ok, payload} = JSON.encode(%{messageId: msg.id, targetId: target.id})
+      payload = Jason.encode!(%{messageId: msg.id, targetId: target.id})
 
       message = %Broadway.Message{
         data: payload,
@@ -71,7 +71,7 @@ defmodule Proca.Stage.MTTStageTest do
     } do
       Repo.update!(Ecto.Changeset.change(first_target.campaign.mtt, %{test_email: test_email}))
 
-      {:ok, payload} = JSON.encode(%{actionId: action.id, stage: "deliver", testing: true})
+      payload = Jason.encode!(%{actionId: action.id, stage: "deliver", testing: true})
 
       message = %Broadway.Message{
         data: payload,
@@ -121,7 +121,7 @@ defmodule Proca.Stage.MTTStageTest do
       action: action
     } do
       Proca.TestEmailBackend.fail_delivery(:temporary)
-      {:ok, payload} = JSON.encode(%{actionId: action.id, testing: true})
+      payload = Jason.encode!(%{actionId: action.id, testing: true})
 
       queue_message = %Broadway.Message{
         data: payload,
@@ -302,7 +302,7 @@ defmodule Proca.Stage.MTTStageTest do
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
       Proca.TestEmailBackend.fail_delivery(:temporary)
 
-      {:ok, payload} = JSON.encode(%{messageId: msg.id, targetId: target.id})
+      payload = Jason.encode!(%{messageId: msg.id, targetId: target.id})
 
       queue_message = %Broadway.Message{
         data: payload,
@@ -321,7 +321,7 @@ defmodule Proca.Stage.MTTStageTest do
       Application.put_env(:proca, Proca.Server.MTT, Keyword.put(previous, :retry_limit, 3))
       on_exit(fn -> Application.put_env(:proca, Proca.Server.MTT, previous) end)
 
-      {:ok, payload} = JSON.encode(%{messageId: msg.id, targetId: target.id})
+      payload = Jason.encode!(%{messageId: msg.id, targetId: target.id})
 
       queue_message = %Broadway.Message{
         data: payload,

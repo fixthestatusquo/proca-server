@@ -20,7 +20,7 @@ defmodule Proca.TestEmailBackend do
 
   def test_email_backend(context) do
     io = Proca.Org.one([preload: [:services, :email_backend]] ++ [:instance])
-    backend = Proca.Factory.insert(:email_backend, org: io)
+    backend = Proca.Factory.insert(:email_backend, org_id: io.id)
 
     Ecto.Changeset.change(io, email_from: "no-reply@" <> backend.host)
     |> Ecto.Changeset.put_assoc(:services, [backend])

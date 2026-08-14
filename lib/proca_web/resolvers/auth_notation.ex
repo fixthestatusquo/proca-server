@@ -18,7 +18,6 @@ defmodule ProcaWeb.Resolvers.AuthNotation do
 
   """
   import Absinthe.Schema.Notation, only: [middleware: 2]
-  import Proca.Permission, only: [can?: 2]
 
   @doc """
   determine_auth for: :result

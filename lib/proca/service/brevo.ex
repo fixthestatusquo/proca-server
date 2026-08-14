@@ -174,7 +174,7 @@ defmodule Proca.Service.Brevo do
 
   @impl true
   def handle_bounce(params) do
-    warn("Malformed Brevo bounce: #{inspect(params)}")
+    warning("Malformed Brevo bounce: #{inspect(params)}")
   end
 
   @impl true
@@ -193,7 +193,7 @@ defmodule Proca.Service.Brevo do
 
   @impl true
   def handle_event(params) do
-    warn("Malformed Brevo event: #{inspect(params)}")
+    warning("Malformed Brevo event: #{inspect(params)}")
   end
 
   defp brevo_event_to_status("bounced"), do: :bounce

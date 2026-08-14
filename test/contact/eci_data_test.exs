@@ -141,13 +141,10 @@ defmodule EciDataTest do
     c = EciData.from_input(no_docs)
     assert not c.valid?
 
-    assert [
-             %{
-               message: "can't be blank",
-               path: ["nationality", "documentNumber"]
-             },
-             %{message: "can't be blank", path: ["nationality", "documentType"]}
-           ] = format_errors(c)
+    errors = format_errors(c)
+    assert length(errors) == 2
+    assert %{message: "can't be blank", path: ["nationality", "documentType"]} in errors
+    assert %{message: "can't be blank", path: ["nationality", "documentNumber"]} in errors
 
     wrong_type = %{d | nationality: %{n | document_type: "id.card"}}
     c = EciData.from_input(wrong_type)

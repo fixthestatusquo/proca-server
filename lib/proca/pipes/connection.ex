@@ -175,7 +175,7 @@ defmodule Proca.Pipes.Connection do
 
   Error values:
   {:error, :reconnectiong | other} - can come from connection() call or opening a channel (though that should not result in an error) or publishing
-  :error - any error with JSON.encode / other errors
+  :error - any error with Jason.encode / other errors
   """
   @spec publish(map(), String.t(), String.t(), AMQP.Channel | nil) :: :ok | {:error, term()}
   def publish(data, exchange, routing_key, channel \\ nil) do
@@ -185,9 +185,9 @@ defmodule Proca.Pipes.Connection do
     ]
 
     pub = fn chan ->
-      case JSON.encode(data) do
+      case Jason.encode(data) do
         {:ok, payload} -> Basic.publish(chan, exchange, routing_key, payload, options)
-        _e -> {:error, :json_encode}
+        {:error, _e} -> {:error, :json_encode}
       end
     end
 

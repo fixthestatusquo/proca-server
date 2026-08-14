@@ -16,8 +16,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          version-type: strict
-          version-file: .tool-versions
+          elixir-version: "1.18.4" # Define the elixir version [required]
+          otp-version: "27.3.4" # Define the OTP version [required]
       - name: Install and setup PostgreSQL with PostgreSQL extensions and unprivileged user
         uses: Daniel-Marynicz/postgresql-action@1.0.0
         with:
@@ -25,12 +25,7 @@ jobs:
           postgres_image_tag: 12.7 # optional, default is latest
           postgres_user: proca
           postgres_password: proca
-          # POSTGRES_USER - create the user with the superuser power
-          #postgres_user: # optional, default is postgres
-          # POSTGRES_DB - postgres database
-          #postgres_db: # optional, default is postgres
-          # POSTGRES_PASSWORD - superuser password
-          #postgres_password: # optional
+          postgres_db: proca_test
           # POSTGRES_EXTENSIONS - List of postgres extensions separated by space to install in template1 database
           postgres_extensions: citext # optional
           # APP_USER - unprivileged postgres user
@@ -48,16 +43,15 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
 
-      - name: Install RabbitMQ
-        run: ./utils/configure-rabbitmq-develop.sh
-
-      - name: Configure RabbitMQ
-        run: ./utils/configure-rabbitmq.sh
+      - name: Setup RabbitMQ
+        run: |
+          ./utils/configure-rabbitmq-develop.sh
+          ./utils/configure-rabbitmq.sh
 
       - name: Install dependencies
         run: mix deps.get
 
-      - name: Setup app db (migrate)
+      - name: Setup app db
         run: mix ecto.setup
         env:
           MIX_ENV: test

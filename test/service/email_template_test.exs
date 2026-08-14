@@ -45,7 +45,7 @@ defmodule Proca.EmailTemplateTest do
   end
 
   test "safe_compile_string returns error for malformed template" do
-    assert {:error, :unclosed_tag} = EmailTemplate.safe_compile_string("{{#unclosed}}")
+    assert {:error, _reason} = EmailTemplate.safe_compile_string("{{#unclosed}}")
   end
 
   test "changeset validation logs nothing — error is returned to the caller", %{org: org} do

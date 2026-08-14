@@ -20,7 +20,7 @@ defmodule Proca.ActionPage.Status do
   import Ecto.Query
   import Proca.Repo, only: [all: 1, one: 1]
 
-  alias Proca.{Action, ActionPage}
+  alias Proca.Action
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -61,7 +61,7 @@ defmodule Proca.ActionPage.Status do
   def handle_cast(
         {:action,
          action = %Action{
-           id: id,
+           id: _id,
            action_page_id: ap_id,
            inserted_at: seen_at
          }},
