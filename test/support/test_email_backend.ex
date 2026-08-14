@@ -84,6 +84,11 @@ defmodule Proca.TestEmailBackend do
   def handle_call(:opts, _from, st = %{opts: opts}), do: {:reply, st, opts}
 
   @impl true
+  def handle_call({:fail_delivery, reason}, _from, st) do
+    {:reply, :ok, %{st | opts: Keyword.put(st.opts, :deliver_error, reason)}}
+  end
+
+  @impl true
   def handle_call({:send_to, address, email}, _from, st = %{mbox: mbox}) do
     address =
       case address do
@@ -91,11 +96,14 @@ defmodule Proca.TestEmailBackend do
         email_part when is_bitstring(email_part) -> email_part
       end
 
-    mbox =
-      mbox
-      |> Map.update(address, [email], fn e -> [email | e] end)
+    case st.opts[:deliver_error] do
+      nil ->
+        mbox = Map.update(mbox, address, [email], fn e -> [email | e] end)
+        {:reply, :ok, %{st | mbox: mbox}}
 
-    {:reply, :ok, %{st | mbox: mbox}}
+      reason ->
+        {:reply, {:error, reason}, st}
+    end
   end
 
   @impl true
@@ -108,6 +116,8 @@ defmodule Proca.TestEmailBackend do
   def opts(), do: GenServer.call(__MODULE__, :opts)
 
   def send_to(address, email), do: GenServer.call(__MODULE__, {:send_to, address, email})
+
+  def fail_delivery(reason), do: GenServer.call(__MODULE__, {:fail_delivery, reason})
 
   def mailbox(address), do: GenServer.call(__MODULE__, {:mailbox, address})
 
@@ -180,27 +190,29 @@ defmodule Proca.TestEmailBackend do
   end
 
   @impl true
-  def deliver(emails, _org) when is_list(emails) do
-    for e <- emails do
-      t = e.private[:template]
+  def deliver(emails, org) when is_list(emails) do
+    statuses =
+      for e <- emails do
+        e = Email.put_private(e, :backend_id, org.email_backend.id)
+        t = e.private[:template]
 
-      e =
-        if t != nil do
-          e
-          |> Email.put_provider_option(:template_ref, t.ref)
-          |> Email.put_provider_option(:custom_id, e.private[:custom_id])
-          |> Email.subject(t.subject)
-          |> Email.text_body(t.text)
-          |> Email.html_body(t.html)
-        else
-          e
-        end
+        e =
+          if t != nil do
+            e
+            |> Email.put_provider_option(:template_ref, t.ref)
+            |> Email.put_provider_option(:custom_id, e.private[:custom_id])
+            |> Email.subject(t.subject)
+            |> Email.text_body(t.text)
+            |> Email.html_body(t.html)
+          else
+            e
+          end
 
-      [to | _] = e.to
-      send_to(to, e)
-    end
+        [to | _] = e.to
+        send_to(to, e)
+      end
 
-    :ok
+    if Enum.all?(statuses, &(&1 == :ok)), do: :ok, else: {:error, statuses}
   end
 
   @impl true

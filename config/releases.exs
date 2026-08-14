@@ -136,6 +136,7 @@ config :proca, Proca.Service.EmailBackend,
 
 config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
+  enable_mtt: System.get_env("ENABLE_MTT", "true") == "true",
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
   process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
   daemon_start_delay: String.to_integer(System.get_env("DAEMON_START_DELAY", "5000"))
@@ -144,6 +145,25 @@ config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 
 config :proca, Proca.Server.MTTWorker,
   max_messages_per_cycle: String.to_integer(System.get_env("MAX_MESSAGES_PER_CYCLE", "99"))
+
+mtt_mode =
+  case System.get_env("MTT_MODE", "enabled") do
+    "enabled" ->
+      :enabled
+
+    "disabled" ->
+      :disabled
+
+    "dry_run" ->
+      :dry_run
+
+    invalid ->
+      raise "Invalid MTT_MODE #{inspect(invalid)}; expected enabled, disabled, or dry_run"
+  end
+
+config :proca, Proca.Server.MTT,
+  mode: mtt_mode,
+  retry_limit: parse_int.("MTT_RETRY_LIMIT", 5)
 
 config :proca, ProcaWeb.Telemetry,
   enable: System.get_env("ENABLE_TELEMETRY", "true") == "true",

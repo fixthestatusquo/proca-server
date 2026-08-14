@@ -247,6 +247,7 @@ HTTP endpoint and database pool come up first:
 |---|---|---|---|
 | `daemon_start_delay` | `DAEMON_START_DELAY` | `5000` (ms) | Delay before starting non-critical background services. Set to `0` for synchronous startup. |
 | `start_daemon_servers` | — | `true` | Set to `false` to disable all background services entirely (useful in development). |
+| `enable_mtt` | `ENABLE_MTT` | `true` | Set to `false` to disable MTT processing only (schedulers, cron, and monitoring for MTT messages), keeping all other background services running. |
 
 ---
 

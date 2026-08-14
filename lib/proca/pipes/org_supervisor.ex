@@ -34,6 +34,7 @@ defmodule Proca.Pipes.OrgSupervisor do
     workers =
       [
         Proca.Stage.EmailSupporter,
+        Proca.Stage.MTT,
         Proca.Stage.SQS,
         Proca.Stage.Webhook
       ]

@@ -34,24 +34,11 @@ defmodule Proca.Server.MTTSchedulerTest do
   describe "MTTScheduler" do
     test "processes test emails", %{
       targets: [%{emails: [%{email: test_email}]} = target | _],
-      messages_test: messages_test,
       action: action
     } do
-      target =
-        target
-        |> Map.put(
-          :campaign,
-          target.campaign
-          |> Map.put(
-            :mtt,
-            Repo.update!(Ecto.Changeset.change(target.campaign.mtt, %{test_email: test_email}))
-          )
-        )
+      Repo.update!(Ecto.Changeset.change(target.campaign.mtt, %{test_email: test_email}))
 
-      {target_id, count} = MTTContext.process_test_mails(target)
-
-      assert target_id == target.id
-      assert count == Enum.count(messages_test)
+      MTTContext.deliver_test_mails(action.id)
 
       mbox = Proca.TestEmailBackend.mailbox(action.supporter.email)
 
@@ -61,9 +48,14 @@ defmodule Proca.Server.MTTSchedulerTest do
       assert String.starts_with?(msg.subject, "[TEST]")
       assert msg.cc == [{"", test_email}]
 
-      pending_messages = MTTContext.get_pending_test_messages(target_id)
+      import Ecto.Query, only: [from: 2]
 
-      assert Enum.count(pending_messages) == 0
+      refute Repo.exists?(
+               from(m in Proca.Action.Message,
+                 join: a in assoc(m, :action),
+                 where: a.id == ^action.id and not m.sent
+               )
+             )
     end
 
     test "delivers live messages", %{
@@ -89,7 +81,7 @@ defmodule Proca.Server.MTTSchedulerTest do
       assert %{"Reply-To" => _} = msg.headers
     end
 
-    test "drains pending messages after sending", %{targets: [target | _]} do
+    test "queue outage leaves scheduled messages pending", %{targets: [target | _]} do
       max_emails = MTTContext.max_emails_per_hour(target.campaign)
 
       pending_messages_count =
@@ -103,10 +95,13 @@ defmodule Proca.Server.MTTSchedulerTest do
 
       :timer.sleep(2000)
 
+      # The scheduler exhausts its in-memory dispatch list, but because the
+      # fixture org has no queue topology, DB messages remain available for a
+      # later scheduler run. There is deliberately no direct-send fallback.
       messages_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
 
       assert state.count == pending_messages_count
-      assert messages_count == 0
+      assert messages_count == pending_messages_count
     end
   end
 

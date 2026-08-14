@@ -8,7 +8,8 @@ config :proca, Proca.Repo,
   username: System.get_env("DATABASE_USER", "proca"),
   password: System.get_env("DATABASE_PASS", "proca"),
   database: "proca_test",
-  hostname: System.get_env("DATABASE_HOST", "localhost"),
+  hostname:
+    System.get_env("DATABASE_HOST") || System.get_env("DB_HOSTNAME", "localhost"),
   pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,

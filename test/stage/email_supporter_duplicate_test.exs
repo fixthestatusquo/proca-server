@@ -90,9 +90,10 @@ defmodule ProcaWeb.Stage.EmailSupporterDuplicateTest do
       assert email.subject == "Thank you"
     end
 
-    test "send_duplicate? returns true when action has processing_status repeat and template is configured", %{
-      ap: action_page
-    } do
+    test "send_duplicate? returns true when action has processing_status repeat and template is configured",
+         %{
+           ap: action_page
+         } do
       action_page =
         Repo.update!(
           Proca.ActionPage.changeset(action_page, %{duplicate_template: "duplicate_template"})

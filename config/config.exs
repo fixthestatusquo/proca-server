@@ -54,7 +54,8 @@ config :proca, Proca,
   process_old_interval: 0,
   start_daemon_servers: true,
   daemon_start_delay: 5_000,
-  mtt_cycle_time: 3
+  mtt_cycle_time: 3,
+  enable_mtt: true
 
 # Defaults only for development
 config :proca, Proca.Service.EmailBackend,
@@ -154,6 +155,8 @@ config :proca, Proca.Server.MTTScheduler,
     22 => 0.05,
     23 => 0.02
   }
+
+config :proca, Proca.Server.MTT, mode: :enabled, retry_limit: 5
 
 config :hackney,
   timeout: 42_000,

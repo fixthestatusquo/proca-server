@@ -5,14 +5,17 @@ defmodule Proca.Server.MTT do
   This email sender works independently of queue-bound email supporter worker,
   because it is time-bound, sends according to schedule.
 
-  This server runs every 30 seconds or more (under load).
+  This server runs every 3 minutes or more (under load).
 
   I every run, it will:
 
   1. Calculate `dupeRank` for the MTT messages
   2. For every campaign for which today falls into day range of sending MTT, launch `Proca.Server.MTTWorker`
-  3. Send out all the test MTT's instantly
-  4. Wait untill all `Proca.Server.MTTWorker` finish
+  3. Publish regular MTT messages to per-org RabbitMQ queues
+  4. Wait until all `Proca.Server.MTTWorker` tasks finish
+
+  Testing actions are published independently to `wrk.mtt.test` when their
+  processing reaches the delivered stage.
   """
   use GenServer
 
@@ -22,6 +25,17 @@ defmodule Proca.Server.MTT do
   alias Proca.Server.{MTTWorker, MTTContext}
 
   @interval 180_000
+
+  @type mode :: :enabled | :disabled | :dry_run
+
+  @spec mode() :: mode()
+  def mode do
+    Application.get_env(:proca, __MODULE__, [])
+    |> Keyword.get(:mode, :enabled)
+  end
+
+  def enabled?, do: mode() in [:enabled, :dry_run]
+  def dry_run?, do: mode() == :dry_run
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -44,9 +58,13 @@ defmodule Proca.Server.MTT do
 
   @impl true
   def handle_info(:work, %{workers: w}) do
-    dupe_rank()
-    workers = w ++ process_mtt()
-    MTTWorker.process_mtt_test_mails()
+    workers =
+      if enabled?() do
+        dupe_rank()
+        w ++ process_mtt()
+      else
+        w
+      end
 
     if workers == [] do
       # all workers done already (there will be no :DOWN info)
@@ -90,7 +108,8 @@ defmodule Proca.Server.MTT do
         join: mtt in Proca.MTT,
         on: mtt.campaign_id == c.id,
         where:
-          mtt.drip_delivery == true and
+          c.status == :live and
+            mtt.drip_delivery == true and
             mtt.start_at <= from_now(0, "day") and
             mtt.end_at >= from_now(0, "day"),
         preload: [:mtt],

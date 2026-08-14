@@ -1,0 +1,33 @@
+#!/bin/bash
+# Runtime MTT mailer controls (no server restart).
+# Usage: scripts/mttmailer pause|start|status|max_messages <n>
+#
+# pause  — stop Broadway consumers; schedulers keep publishing into wrk.N.mtt
+# start  — resume consumers
+# status — show paused/mode/max_messages_per_cycle/retry_limit
+# max_messages <n> — set drip publish cap for the running node
+
+set -euo pipefail
+
+INSTANCE="${INSTANCE:-proca-live}"
+cmd="${1:-}"
+
+case "$cmd" in
+  pause)
+    "$INSTANCE" rpc 'Proca.Server.MTTMailer.pause()'
+    ;;
+  start)
+    "$INSTANCE" rpc 'Proca.Server.MTTMailer.start()'
+    ;;
+  status)
+    "$INSTANCE" rpc 'IO.inspect(Proca.Server.MTTMailer.status(), label: "mttmailer")'
+    ;;
+  max_messages)
+    n="${2:?usage: mttmailer max_messages <n>}"
+    "$INSTANCE" rpc "Proca.Server.MTTMailer.set_max_messages_per_cycle(${n})"
+    ;;
+  *)
+    echo "usage: $0 pause|start|status|max_messages <n>" >&2
+    exit 1
+    ;;
+esac
