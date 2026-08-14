@@ -18,7 +18,7 @@ defmodule Proca.Stage.MTT do
   alias Proca.Org
   alias Proca.Server.MTTContext
   import Proca.Stage.Support, only: [ignore: 1, ignore: 2, too_many_retries?: 1]
-  import Logger
+  require Logger
 
   def start_for?(org),
     do:
@@ -57,7 +57,7 @@ defmodule Proca.Stage.MTT do
         end
 
       {:ok, _} ->
-        warn("MTT wrk: Invalid message format #{data}")
+        Logger.warning("MTT wrk: Invalid message format #{data}")
         ignore(message, "Invalid message format")
 
       {:error, reason} ->
