@@ -20,12 +20,12 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 | Metric                        | Type      | Tags                                  | Description                                               |
 |-------------------------------|-----------|---------------------------------------|-----------------------------------------------------------|
 | `proca.mtt.campaigns_running` | Gauge     | `drip_delivery` (`true`/`false`)      | Number of active MTT campaigns, split by delivery mode    |
-| `proca.mtt.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`        | Total unsent messages for a campaign (polled)             |
+| `proca.mtt.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`, `drip_delivery` | Total unsent messages for a campaign (polled)     |
 | `proca.mtt.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
 | `proca.mtt.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
 | `proca.mtt.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
-| `proca.mtt.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
-| `proca.mtt.messages_sent`     | Counter   | `campaign_id`, `campaign_name`        | Same as `messages_published` (legacy name; not SMTP send) |
+| `proca.mtt.messages_published`| Counter   | `campaign_id`, `campaign_name`, `drip_delivery` | Queue publishes per campaign (drip: per worker cycle; no-drip: per `dispatch_message`) |
+| `proca.mtt.messages_sent`     | Counter   | `campaign_id`, `campaign_name`, `drip_delivery` | Same as `messages_published` (legacy name; not SMTP send) |
 | `proca.mtt.delivery.count`    | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `drip_delivery` | Per delivery attempt outcome |
 
 ### `proca.mtt.delivery` results
@@ -46,6 +46,12 @@ proca_mtt_campaigns_running{drip_delivery="true"}
 
 # Queue publishes per campaign (not SMTP)
 rate(proca_mtt_messages_published_total[5m])
+
+# No-drip queue publish rate
+rate(proca_mtt_messages_published_total{drip_delivery="false"}[5m])
+
+# No-drip scheduler throughput
+rate(proca_mtt_new_scheduler_messages_sent_total[5m])
 
 # Successful SMTP deliveries vs retries vs permanent discards
 sum by (result) (rate(proca_mtt_delivery_count_total[5m]))
@@ -91,6 +97,8 @@ Emitted when a scheduler for a target is requested but already registered.
 | `proca.mtt_new.scheduler.stop`            | Counter       | `campaign_id`, `stop_reason`                    | One per scheduler termination      |
 | `proca.mtt_new.scheduler.duration`        | Distribution  | `campaign_id`, `stop_reason`                    | Wall-clock runtime (milliseconds)  |
 | `proca.mtt_new.scheduler.pending_count`   | Gauge         | `campaign_id`                                   | Messages queued at start           |
+| `proca.mtt_new.scheduler.messages_sent`   | Counter       | `campaign_id`, `stop_reason`                    | Messages dispatched before stop    |
+| `proca.mtt_new.deliver_message`           | Counter       | `campaign_id`                                   | SMTP delivery attempts (both modes)|
 
 **`stop_reason` taxonomy:** `:no_messages`, `:all_sent`, `:shutdown`, `:crashed`
 

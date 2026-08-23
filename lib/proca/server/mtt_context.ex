@@ -181,37 +181,54 @@ defmodule Proca.Server.MTTContext do
       drip_delivery: target.campaign.mtt.drip_delivery
     ]
 
-    result =
+    {result, queue_published?} =
       cond do
         Proca.Server.MTT.dry_run?() ->
-          :dry_run
+          {:dry_run, false}
 
         Proca.Server.MTT.mode() != :enabled ->
-          {:error, :mtt_disabled}
+          {{:error, :mtt_disabled}, false}
 
         in_flight?(msg.id) ->
-          :ok
+          {:ok, false}
 
         not is_pid(Proca.Pipes.Topology.whereis(org)) ->
-          {:error, :mtt_queue_unavailable}
+          {{:error, :mtt_queue_unavailable}, false}
 
         true ->
           mark_in_flight(msg.id)
 
           case Proca.Pipes.Connection.publish(payload, "", queue) do
             :ok ->
-              :ok
+              {:ok, true}
 
             error ->
               clear_in_flight(msg.id)
-              error
+              {error, false}
           end
       end
 
     case result do
-      :ok -> emit_delivery(:published, metadata)
-      :dry_run -> emit_delivery(:dry_run, metadata)
-      {:error, reason} -> emit_delivery(:publish_failed, Keyword.put(metadata, :reason, reason))
+      :ok ->
+        emit_delivery(:published, metadata)
+
+        if queue_published? and Keyword.get(metadata, :drip_delivery) == false do
+          :telemetry.execute(
+            [:proca, :mtt],
+            %{messages_published: 1, messages_sent: 1},
+            %{
+              campaign_id: target.campaign.id,
+              campaign_name: target.campaign.name,
+              drip_delivery: false
+            }
+          )
+        end
+
+      :dry_run ->
+        emit_delivery(:dry_run, metadata)
+
+      {:error, reason} ->
+        emit_delivery(:publish_failed, Keyword.put(metadata, :reason, reason))
     end
 
     result
@@ -491,8 +508,8 @@ defmodule Proca.Server.MTTContext do
   defp do_deliver_message(target, msg) do
     :telemetry.execute(
       [:proca, :mtt_new, :deliver_message],
-      %{},
-      %{target_id: target.id}
+      %{count: 1},
+      %{target_id: target.id, campaign_id: target.campaign.id}
     )
 
     locale = target.locale || @default_locale

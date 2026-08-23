@@ -93,7 +93,8 @@ defmodule ProcaWeb.Telemetry do
 
       :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
         campaign_id: campaign.id,
-        campaign_name: campaign.name
+        campaign_name: campaign.name,
+        drip_delivery: campaign.mtt.drip_delivery
       })
     end)
 
@@ -128,13 +129,13 @@ defmodule ProcaWeb.Telemetry do
       counter("proca.brevo.events.count", tags: [:reason]),
       counter("proca.brevo.bounces.count", tags: [:reason]),
       last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
-      last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
+      last_value("proca.mtt.sendable_messages", tags: @campaign_tags ++ [:drip_delivery]),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
-      sum("proca.mtt.messages_published", tags: @campaign_tags),
+      sum("proca.mtt.messages_published", tags: @campaign_tags ++ [:drip_delivery]),
       # Kept for existing dashboards; same event as messages_published (queue publish, not SMTP).
-      sum("proca.mtt.messages_sent", tags: @campaign_tags),
+      sum("proca.mtt.messages_sent", tags: @campaign_tags ++ [:drip_delivery]),
 
       # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not
       # exported as labels to avoid unbounded Prometheus cardinality.
@@ -154,6 +155,16 @@ defmodule ProcaWeb.Telemetry do
         ]
       ),
       last_value("proca.mtt_new.scheduler.pending_count", tags: [:campaign_id]),
+      counter("proca.mtt_new.deliver_message",
+        event_name: [:proca, :mtt_new, :deliver_message],
+        measurement: :count,
+        tags: [:campaign_id]
+      ),
+      sum("proca.mtt_new.scheduler.messages_sent",
+        event_name: [:proca, :mtt_new, :scheduler, :stop],
+        measurement: :messages_sent,
+        tags: [:campaign_id, :stop_reason]
+      ),
 
       # Email Metrics
       distribution("proca.email.supporter_confirm.lag_ms",

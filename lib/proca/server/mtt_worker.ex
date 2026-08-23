@@ -60,7 +60,7 @@ defmodule Proca.Server.MTTWorker do
             messages_published: length(emails_to_send),
             messages_sent: length(emails_to_send)
           },
-          %{campaign_id: campaign.id, campaign_name: campaign.name}
+          %{campaign_id: campaign.id, campaign_name: campaign.name, drip_delivery: true}
         )
 
         # Route through the org's wrk.N.mtt queue. A queue outage leaves the
