@@ -64,7 +64,7 @@ defmodule ProcaWeb.CampaignResolverTest do
           id, name, title, status, __typename
           org { name }
           ... on PrivateCampaign {
-            mtt { ccSender, ccContacts, dripDelivery}
+            mtt { ccSender, ccContacts, pacingDelivery, dripDelivery}
           }
         }
       }
@@ -242,7 +242,30 @@ defmodule ProcaWeb.CampaignResolverTest do
     assert data["mtt"]["ccSender"] == true
   end
 
-  test "change drip_delivery field", %{
+  test "change pacing_delivery field", %{
+    conn: conn,
+    red_campaign: camp,
+    red_user: user
+  } do
+    q =
+      update_query(camp.id, %{
+        "mtt" => %{
+          "pacingDelivery" => false,
+          "startAt" => "2026-04-12T16:14:14.170Z",
+          "endAt" => "2026-05-12T16:14:14.170Z"
+        }
+      })
+
+    res =
+      auth_api_post(conn, q, user)
+      |> json_response(200)
+
+    data = res["data"]["updateCampaign"]
+    assert data["mtt"]["pacingDelivery"] == false
+    assert data["mtt"]["dripDelivery"] == false
+  end
+
+  test "deprecated dripDelivery input still works", %{
     conn: conn,
     red_campaign: camp,
     red_user: user
@@ -261,6 +284,7 @@ defmodule ProcaWeb.CampaignResolverTest do
       |> json_response(200)
 
     data = res["data"]["updateCampaign"]
+    assert data["mtt"]["pacingDelivery"] == false
     assert data["mtt"]["dripDelivery"] == false
   end
 end

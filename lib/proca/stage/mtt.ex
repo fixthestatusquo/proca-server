@@ -3,8 +3,8 @@ defmodule Proca.Stage.MTT do
   Broadway stage delivering MTT emails from the `wrk.N.mtt` RabbitMQ queue.
 
   `{messageId, targetId}` payloads are published by the live-send paths, which decide
-    *when* a message goes out: `Proca.Server.MTTScheduler` (no-drip, spread
-    over the hour) and `Proca.Server.MTTWorker` (drip, proportional cycles);
+    *when* a message goes out: `Proca.Server.MTTScheduler` (throttle, spread
+    over the hour) and `Proca.Server.MTTWorker` (pacing, proportional cycles);
   This stage does the actual email delivery via `Proca.Server.MTTContext`.
 
   The messages table remains the source of truth: the message is re-fetched

@@ -371,9 +371,19 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :cc_sender, :boolean
 
     @desc """
-    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    If true, emails use pacing delivery (spread evenly across the campaign window via MTTWorker).
+    If false, emails use throttle delivery (per-target hourly cap via MTTScheduler).
     """
-    field :drip_delivery, :boolean
+    field :pacing_delivery, :boolean do
+      resolve fn mtt, _, _ -> {:ok, mtt.drip_delivery} end
+    end
+
+    @desc """
+    Deprecated alias of pacingDelivery. true = pacing, false = throttle.
+    """
+    field :drip_delivery, :boolean do
+      deprecate "Use pacingDelivery. true means pacing delivery; false means throttle delivery."
+    end
   end
 
   input_object :campaign_mtt_input do
@@ -405,9 +415,17 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :cc_sender, :boolean
 
     @desc """
-    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    If true, emails use pacing delivery (spread evenly across the campaign window via MTTWorker).
+    If false, emails use throttle delivery (per-target hourly cap via MTTScheduler).
     """
-    field :drip_delivery, :boolean
+    field :pacing_delivery, :boolean
+
+    @desc """
+    Deprecated alias of pacingDelivery. true = pacing, false = throttle.
+    """
+    field :drip_delivery, :boolean do
+      deprecate "Use pacingDelivery. true means pacing delivery; false means throttle delivery."
+    end
   end
 
   # public counters
