@@ -94,19 +94,19 @@ defmodule ProcaWeb.Telemetry do
       :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
         campaign_id: campaign.id,
         campaign_name: campaign.name,
-        drip_delivery: campaign.mtt.drip_delivery
+        delivery_mode: Proca.MTT.delivery_mode(campaign.mtt)
       })
     end)
 
-    {drip_delivery, no_drip_delivery} =
+    {pacing, throttle} =
       Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
 
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(drip_delivery)}, %{
-      drip_delivery: true
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(pacing)}, %{
+      delivery_mode: :pacing
     })
 
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(no_drip_delivery)}, %{
-      drip_delivery: false
+    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(throttle)}, %{
+      delivery_mode: :throttle
     })
   rescue
     e in DBConnection.ConnectionError ->
@@ -128,22 +128,22 @@ defmodule ProcaWeb.Telemetry do
       counter("proca.mailjet.bounces.count", tags: [:reason]),
       counter("proca.brevo.events.count", tags: [:reason]),
       counter("proca.brevo.bounces.count", tags: [:reason]),
-      last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
-      last_value("proca.mtt.sendable_messages", tags: @campaign_tags ++ [:drip_delivery]),
+      last_value("proca.mtt.campaigns_running", tags: [:delivery_mode]),
+      last_value("proca.mtt.sendable_messages", tags: @campaign_tags ++ [:delivery_mode]),
       last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
       last_value("proca.mtt.current_cycle", tags: @campaign_tags),
       last_value("proca.mtt.all_cycles", tags: @campaign_tags),
-      sum("proca.mtt.messages_published", tags: @campaign_tags ++ [:drip_delivery]),
+      sum("proca.mtt.messages_published", tags: @campaign_tags ++ [:delivery_mode]),
       # Kept for existing dashboards; same event as messages_published (queue publish, not SMTP).
-      sum("proca.mtt.messages_sent", tags: @campaign_tags ++ [:drip_delivery]),
+      sum("proca.mtt.messages_sent", tags: @campaign_tags ++ [:delivery_mode]),
 
       # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not
       # exported as labels to avoid unbounded Prometheus cardinality.
       counter("proca.mtt.delivery.count",
-        tags: [:kind, :result, :reason, :org_id, :campaign_id, :drip_delivery]
+        tags: [:kind, :result, :reason, :org_id, :campaign_id, :delivery_mode]
       ),
 
-      # MTT New Scheduler Lifecycle
+      # Throttle delivery scheduler lifecycle (`MTTScheduler` / no pacing)
       counter("proca.mtt_new.scheduler.start", tags: [:campaign_id]),
       counter("proca.mtt_new.scheduler.skip", tags: [:campaign_id, :reason]),
       counter("proca.mtt_new.scheduler.stop", tags: [:campaign_id, :stop_reason]),

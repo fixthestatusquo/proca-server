@@ -157,7 +157,7 @@ defmodule Proca.Pipes.Topology do
   @doc "Global queue for low-volume MTT test actions"
   def mtt_test_queue, do: "wrk.mtt.test"
 
-  @doc "Per-org queue for regular drip and no-drip MTT delivery"
+  @doc "Per-org queue for regular pacing and throttle MTT delivery"
   def mtt_queue(org = %Org{}), do: wqn(org, "mtt")
 
   @doc "Name of queue for custom use (usually name is stage name)"
