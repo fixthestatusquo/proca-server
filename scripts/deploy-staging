@@ -23,6 +23,11 @@ PORT=4000
 echo "==> Updating symlink (atomic)"
 ln -sfn "$RELEASE_DST" "$CURRENT_LINK"
 
+# ---- tzdata cache dir (the app user must be able to write it) ----
+echo "==> Ensuring /etc/elixir_tzdata_data exists"
+sudo mkdir -p /etc/elixir_tzdata_data/release_ets
+sudo chown -R proca-api:proca /etc/elixir_tzdata_data
+
 # ---- Migrate ----
 echo "==> Running database migrations"
 sudo bash -c "set -a; . ${ENV_FILE}; ${RELEASE_DST}/bin/proca eval Proca.ReleaseTasks.migrate"

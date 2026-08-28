@@ -100,6 +100,13 @@ fi
 echo "==> Stopping old instance: ${SERVICE_PREFIX}-${ACTIVE_INSTANCE}"
 sudo systemctl stop "${SERVICE_PREFIX}-${ACTIVE_INSTANCE}"
 
+# ---- Persist the active instance ----
+# Only the new primary should start at boot; the standby is only ever running
+# during this release window, so it must never be enabled.
+echo "==> Enabling ${SERVICE_PREFIX}-${STANDBY_INSTANCE}, disabling ${SERVICE_PREFIX}-${ACTIVE_INSTANCE}"
+sudo systemctl enable "${SERVICE_PREFIX}-${STANDBY_INSTANCE}" 2>/dev/null || true
+sudo systemctl disable "${SERVICE_PREFIX}-${ACTIVE_INSTANCE}" 2>/dev/null || true
+
 # Final health check
 sleep 2
 echo "==> Verifying new primary is healthy..."

@@ -247,7 +247,7 @@ HTTP endpoint and database pool come up first:
 |---|---|---|---|
 | `daemon_start_delay` | `DAEMON_START_DELAY` | `5000` (ms) | Delay before starting non-critical background services. Set to `0` for synchronous startup. |
 | `start_daemon_servers` | — | `true` | Set to `false` to disable all background services entirely (useful in development). |
-| `enable_mtt` | `ENABLE_MTT` | `true` | Set to `false` to disable MTT processing only (schedulers, cron, and monitoring for MTT messages), keeping all other background services running. |
+| `Proca.Server.MTT` mode | `MTT_MODE` | `enabled` | Controls live MTT processing. `enabled` → full sending; `dry_run` → MTT machinery runs and schedules but publishes/sends nothing (useful for staging rehearsal, telemetry reports `dry_run` results); `disabled` → the live MTT pipeline is not booted at all. Note: **test MTT emails are always delivered** — the test-actions consumer (`Proca.Stage.MTTTest`) runs regardless of `MTT_MODE`. |
 
 ---
 

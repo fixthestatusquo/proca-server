@@ -12,27 +12,26 @@ defmodule Proca.Stage.MTTTest do
   alias Proca.Server.MTTContext
   import Proca.Stage.Support, only: [ignore: 2]
 
+  # Test MTT actions are always processed, independent of MTT_MODE: the
+  # consumer starts unconditionally so test emails are delivered even when
+  # MTT_MODE=disabled (which only stops the live MTT pipeline).
   def start_link(_opts) do
-    if Proca.Server.MTT.mode() == :enabled do
-      Broadway.start_link(__MODULE__,
-        name: __MODULE__,
-        producer: [
-          module: {
-            BroadwayRabbitMQ.Producer,
-            queue: Proca.Pipes.Topology.mtt_test_queue(),
-            connection: Proca.Pipes.Connection.connection_url(),
-            declare: [durable: true],
-            qos: [prefetch_count: 5],
-            on_failure: :reject_and_requeue_once,
-            metadata: [:headers]
-          },
-          concurrency: 1
-        ],
-        processors: [default: [concurrency: 1]]
-      )
-    else
-      :ignore
-    end
+    Broadway.start_link(__MODULE__,
+      name: __MODULE__,
+      producer: [
+        module: {
+          BroadwayRabbitMQ.Producer,
+          queue: Proca.Pipes.Topology.mtt_test_queue(),
+          connection: Proca.Pipes.Connection.connection_url(),
+          declare: [durable: true],
+          qos: [prefetch_count: 5],
+          on_failure: :reject_and_requeue_once,
+          metadata: [:headers]
+        },
+        concurrency: 1
+      ],
+      processors: [default: [concurrency: 1]]
+    )
   end
 
   @impl true

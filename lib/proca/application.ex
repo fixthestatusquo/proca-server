@@ -122,8 +122,10 @@ defmodule Proca.Application do
       {Proca.ActionPage.Status, []},
       # JWT keys dict
       {Proca.Server.Jwks, Application.get_env(:proca, ProcaWeb.UserAuth)[:sso][:jwks_url]},
-      # MTT test job
-      {Proca.Server.MTT, []},
+      # MTT test-actions consumer. Always runs (even when MTT_MODE=disabled), so
+      # test MTT emails are always delivered regardless of the live MTT pipeline
+      # being on/off/dry_run.
+      {Proca.Stage.MTTTest, []},
       # Confirm reminder cron
       {Proca.Server.ConfirmReminderCron,
        Application.get_env(:proca, Proca.Server.ConfirmReminderCron, [])},
@@ -133,16 +135,19 @@ defmodule Proca.Application do
   end
 
   defp mtt_daemon_servers do
-    if Application.get_env(:proca, Proca)[:enable_mtt] do
+    # enabled?/1 is true for both :enabled and :dry_run, false for :disabled.
+    # This keeps the pipeline booted for dry_run (so it can rehearse without
+    # sending) while :disabled is a full kill-switch that boots nothing.
+    if Proca.Server.MTT.enabled?() do
       [
-        # MTT cron job
+        # MTT processing pipeline (cron/driver, dynamic schedulers, RabbitMQ consumers)
         {Proca.Server.MTT, []},
         {Registry, [name: Proca.Server.MTTSchedulerRegistry, keys: :unique]},
         {Proca.Server.MTTSupervisor, []},
         {Proca.Server.MTTHourlyCron, []}
       ]
     else
-      Logger.info("MTT processing disabled (ENABLE_MTT=false)")
+      Logger.info("MTT processing disabled (MTT_MODE=disabled)")
       []
     end
   end

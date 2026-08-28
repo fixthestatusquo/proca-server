@@ -47,8 +47,7 @@ config :proca, Proca,
   process_old_interval: 0,
   start_daemon_servers: true,
   daemon_start_delay: 5_000,
-  mtt_cycle_time: 3,
-  enable_mtt: true
+  mtt_cycle_time: 3
 
 # Defaults only for development
 config :proca, Proca.Service.EmailBackend,
