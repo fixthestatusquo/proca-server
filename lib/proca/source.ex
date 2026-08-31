@@ -9,39 +9,7 @@ defmodule Proca.Source do
   alias Proca.Source
 
   @cache_table __MODULE__.Cache
-  @counter_table :source_cache_counter
-
-  # The identity columns that make a source unique. Used both for the DB
-  # conflict target and to look up an existing row on a cache miss.
-  @source_key_fields [:source, :medium, :campaign, :content, :location]
-
-  # How often to bump an existing source's updated_at. Sources are bumped at
-  # most once every interval, not on every request: the conditional UPDATE uses
-  # `WHERE updated_at < cutoff`, which naturally coalesces concurrent callers
-  # (the first one to run after the row goes stale wins, the rest skip), so a
-  # hot row never accumulates multixact/write-lock churn.
-  @touch_interval_minutes String.to_integer(System.get_env("SOURCE_TOUCH_INTERVAL_MINUTES") || "5")
-
-  # Static, inlined TTL (milliseconds) for a cached source — deliberately a
-  # compile-time constant so the hot path pays nothing for it. Sources are
-  # append-only, immutable-key lookup rows, so caching them is safe.
-  @cache_ttl_ms :timer.minutes(5)
-
-  # Bounds cache growth so the table cannot grow without limit even when many
-  # distinct sources (e.g. unique referers) arrive. The check is gated by a
-  # counter so it runs only ~1 in @size_check_every writes, keeping it off the
-  # hot path; when exceeded the table is cleared (sources are cheap to
-  # re-fetch on a subsequent miss).
-  @max_cache_entries 100_000
-  @size_check_every 512
-
-  defp maybe_trim do
-    n = :ets.update_counter(@counter_table, :writes, 1, {:writes, 0})
-
-    if rem(n, @size_check_every) == 0 and :ets.info(@cache_table, :size) >= @max_cache_entries do
-      :ets.delete_all_objects(@cache_table)
-    end
-  end
+  @cache_ttl_ms :timer.seconds(30)
 
   schema "sources" do
     field :campaign, :string, default: "unknown"
@@ -87,67 +55,20 @@ defmodule Proca.Source do
         {:ok, source}
 
       :miss ->
-        case ch |> Repo.insert(on_conflict: :nothing, conflict_target: @source_key_fields) do
-          # Actually inserted: the returned struct carries the generated id.
-          {:ok, %Source{id: id} = source} when is_integer(id) ->
+        case ch
+             |> Repo.insert(
+               on_conflict: [set: [updated_at: DateTime.utc_now()]],
+               conflict_target: [:source, :medium, :campaign, :content, :location]
+             ) do
+          {:ok, source} = ok ->
             cache_put(key, source)
-            {:ok, source}
+            ok
 
-          # Conflict: `ON CONFLICT DO NOTHING` returns `{:ok, struct}` with a
-          # nil id (no row inserted) — it does NOT return `{:error, ...}`. A
-          # nil-id struct must never be cached or returned, or Ecto will later
-          # try to persist it as a `belongs_to` parent and raise
-          # `Ecto.NoPrimaryKeyValueError`. So fetch the existing row instead.
-          # We deliberately did not bump updated_at via `DO UPDATE` (that
-          # creates multixact/LWLock churn under concurrency); it is touched
-          # separately, throttled to ~once per interval.
-          {:ok, _source} ->
-            case Repo.get_by(Source, source_key_map(ch)) do
-              nil ->
-                {:error, "source: could not look up existing source"}
-
-              source ->
-                touch_updated_at_if_stale(source)
-                cache_put(key, source)
-                {:ok, source}
-            end
-
-          {:error, _ch} ->
-            # Genuine insert failure (e.g. invalid changeset). Caller treats
-            # this as "no source".
-            {:error, "source: could not insert source"}
+          {:error, _} = e ->
+            e
         end
     end
   end
-
-  defp source_key_map(ch) do
-    Map.new(@source_key_fields, &{&1, get_field(ch, &1)})
-  end
-
-  # Update updated_at at most ~once per @touch_interval_minutes, regardless of
-  # how many concurrent requests hit this source. The caller passes the row it
-  # has already loaded, so we first cheaply check in memory whether the row is
-  # even stale: if `updated_at` is still within the interval we issue no UPDATE
-  # statement at all. Only genuinely stale rows get a conditional UPDATE, whose
-  # `WHERE updated_at < cutoff` is additionally self-coalescing under
-  # concurrency (the first callback bumps the row, the rest skip).
-  defp touch_updated_at_if_stale(%Source{id: id, updated_at: updated_at}) do
-    now = NaiveDateTime.utc_now()
-
-    if NaiveDateTime.diff(now, updated_at, :second) >= @touch_interval_minutes * 60 do
-      import Ecto.Query
-      cutoff = NaiveDateTime.add(now, -@touch_interval_minutes, :minute)
-
-      Repo.update_all(
-        from(s in Source, where: s.id == ^id and s.updated_at < ^cutoff),
-        set: [updated_at: now]
-      )
-    end
-
-    :ok
-  end
-
-  defp touch_updated_at_if_stale(_), do: :ok
 
   ###### Caching ######
 
@@ -166,29 +87,12 @@ defmodule Proca.Source do
       :undefined ->
         try do
           :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
-          ensure_counter_table()
-          @cache_table
         rescue
           ArgumentError -> @cache_table
         end
 
       _table ->
         @cache_table
-    end
-  end
-
-  # Fixed-name counter table for the low-frequency size check; created alongside
-  # the cache table.
-  defp ensure_counter_table do
-    case :ets.whereis(@counter_table) do
-      :undefined ->
-        try do
-          :ets.new(@counter_table, [:named_table, :public, :set])
-        rescue
-          ArgumentError -> @counter_table
-        end
-
-      _ -> @counter_table
     end
   end
 
@@ -216,8 +120,6 @@ defmodule Proca.Source do
 
   defp cache_put(key, source) do
     ensure_cache_table()
-
-    maybe_trim()
     expires_at = System.monotonic_time(:millisecond) + @cache_ttl_ms
     :ets.insert(@cache_table, {key, source, expires_at})
     :ok
