@@ -25,7 +25,7 @@ defmodule Proca.Source do
   # Static, inlined TTL (milliseconds) for a cached source — deliberately a
   # compile-time constant so the hot path pays nothing for it. Sources are
   # append-only, immutable-key lookup rows, so caching them is safe.
-  @cache_ttl_ms :timer.seconds(30)
+  @cache_ttl_ms :timer.minutes(5)
 
   # Bounds cache growth so the table cannot grow without limit even when many
   # distinct sources (e.g. unique referers) arrive. The check is gated by a
@@ -125,18 +125,26 @@ defmodule Proca.Source do
   end
 
   # Update updated_at at most ~once per @touch_interval_minutes, regardless of
-  # how many concurrent requests hit this source. The `WHERE updated_at < cutoff`
-  # makes the update self-coalescing: after a callback bumps the timestamp, the
-  # next N minutes of requests have updated_at fresh and the WHERE matches
-  # nothing, so they take no write lock.
-  defp touch_updated_at_if_stale(%Source{id: id}) do
-    cutoff = DateTime.add(DateTime.utc_now(), -@touch_interval_minutes, :minute)
-    import Ecto.Query
+  # how many concurrent requests hit this source. The caller passes the row it
+  # has already loaded, so we first cheaply check in memory whether the row is
+  # even stale: if `updated_at` is still within the interval we issue no UPDATE
+  # statement at all. Only genuinely stale rows get a conditional UPDATE, whose
+  # `WHERE updated_at < cutoff` is additionally self-coalescing under
+  # concurrency (the first callback bumps the row, the rest skip).
+  defp touch_updated_at_if_stale(%Source{id: id, updated_at: updated_at}) do
+    now = NaiveDateTime.utc_now()
 
-    Repo.update_all(
-      from(s in Source, where: s.id == ^id and s.updated_at < ^cutoff),
-      set: [updated_at: DateTime.utc_now()]
-    )
+    if NaiveDateTime.diff(now, updated_at, :second) >= @touch_interval_minutes * 60 do
+      import Ecto.Query
+      cutoff = NaiveDateTime.add(now, -@touch_interval_minutes, :minute)
+
+      Repo.update_all(
+        from(s in Source, where: s.id == ^id and s.updated_at < ^cutoff),
+        set: [updated_at: now]
+      )
+    end
+
+    :ok
   end
 
   defp touch_updated_at_if_stale(_), do: :ok
