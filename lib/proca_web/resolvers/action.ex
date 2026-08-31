@@ -121,11 +121,8 @@ defmodule ProcaWeb.Resolvers.Action do
     # Verify captcha BEFORE opening the transaction: the captcha check does a
     # cross-origin HTTP call, so running it inside the transaction would hold a
     # DB connection for the whole duration of that call and starve the connection
-    # pool under bursts of concurrent signatures. Likewise, resolve the source
-    # (a cheap SELECT-first lookup) before the transaction so it doesn't hold a
-    # connection either.
-    with {:ok, captcha_meta} <- verify_captcha(resolution),
-         {:ok, source} <- get_tracking(params, get_in(context, [:headers, "referer"])) do
+    # pool under bursts of concurrent signatures.
+    with {:ok, captcha_meta} <- verify_captcha(resolution) do
       result =
         Multi.new()
         |> Multi.run(:action_page, fn _repo, _m ->
@@ -134,7 +131,11 @@ defmodule ProcaWeb.Resolvers.Action do
         |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
           Helper.validate(ActionPage.new_data(contact, action_page))
         end)
-        |> Multi.run(:supporter, fn repo, %{data: data, action_page: action_page} ->
+        |> Multi.run(:source, fn _repo, _ ->
+          get_tracking(params, get_in(context, [:headers, "referer"]))
+        end)
+        |> Multi.run(:supporter, fn repo,
+                                    %{data: data, action_page: action_page, source: source} ->
           Supporter.new_supporter(data, action_page)
           |> Supporter.add_contacts(
             Data.to_contact(data, action_page),
@@ -147,7 +148,8 @@ defmodule ProcaWeb.Resolvers.Action do
         |> Multi.run(:action, fn repo,
                                  %{
                                    supporter: supporter,
-                                   action_page: action_page
+                                   action_page: action_page,
+                                   source: source
                                  } ->
           Action.build_for_supporter(action_attrs, supporter, action_page)
           |> put_assoc(:source, source)
