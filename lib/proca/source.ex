@@ -11,6 +11,17 @@ defmodule Proca.Source do
   @cache_table __MODULE__.Cache
   @counter_table :source_cache_counter
 
+  # The identity columns that make a source unique. Used both for the DB
+  # conflict target and to look up an existing row on a cache miss.
+  @source_key_fields [:source, :medium, :campaign, :content, :location]
+
+  # How often to bump an existing source's updated_at. Sources are bumped at
+  # most once every interval, not on every request: the conditional UPDATE uses
+  # `WHERE updated_at < cutoff`, which naturally coalesces concurrent callers
+  # (the first one to run after the row goes stale wins, the rest skip), so a
+  # hot row never accumulates multixact/write-lock churn.
+  @touch_interval_minutes String.to_integer(System.get_env("SOURCE_TOUCH_INTERVAL_MINUTES") || "5")
+
   # Static, inlined TTL (milliseconds) for a cached source — deliberately a
   # compile-time constant so the hot path pays nothing for it. Sources are
   # append-only, immutable-key lookup rows, so caching them is safe.
@@ -76,20 +87,52 @@ defmodule Proca.Source do
         {:ok, source}
 
       :miss ->
-        case ch
-             |> Repo.insert(
-               on_conflict: [set: [updated_at: DateTime.utc_now()]],
-               conflict_target: [:source, :medium, :campaign, :content, :location]
-             ) do
+        case ch |> Repo.insert(on_conflict: :nothing, conflict_target: @source_key_fields) do
           {:ok, source} = ok ->
             cache_put(key, source)
             ok
 
-          {:error, _} = e ->
-            e
+          {:error, _ch} ->
+            # Conflict: the row already exists. Fetch it instead of a write
+            # lock. `DO UPDATE SET updated_at = now()` on a shared row under
+            # concurrency creates multixact/LWLock churn (visible as
+            # `MultiXactMemberSLRU/Buffer` waits) and blocks inserts for
+            # seconds. `DO NOTHING` takes no write lock, so concurrent
+            # same-source requests no longer contend here; `updated_at` is
+            # bumped separately, throttled to at most ~once per interval.
+            case Repo.get_by(Source, source_key_map(ch)) do
+              nil ->
+                {:error, "source: could not look up existing source"}
+
+              source ->
+                touch_updated_at_if_stale(source)
+                cache_put(key, source)
+                {:ok, source}
+            end
         end
     end
   end
+
+  defp source_key_map(ch) do
+    Map.new(@source_key_fields, &{&1, get_field(ch, &1)})
+  end
+
+  # Update updated_at at most ~once per @touch_interval_minutes, regardless of
+  # how many concurrent requests hit this source. The `WHERE updated_at < cutoff`
+  # makes the update self-coalescing: after a callback bumps the timestamp, the
+  # next N minutes of requests have updated_at fresh and the WHERE matches
+  # nothing, so they take no write lock.
+  defp touch_updated_at_if_stale(%Source{id: id}) do
+    cutoff = DateTime.add(DateTime.utc_now(), -@touch_interval_minutes, :minute)
+    import Ecto.Query
+
+    Repo.update_all(
+      from(s in Source, where: s.id == ^id and s.updated_at < ^cutoff),
+      set: [updated_at: DateTime.utc_now()]
+    )
+  end
+
+  defp touch_updated_at_if_stale(_), do: :ok
 
   ###### Caching ######
 
