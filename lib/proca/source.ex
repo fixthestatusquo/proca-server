@@ -85,6 +85,17 @@ defmodule Proca.Source do
           {:ok, source} = ok ->
             cache_put(key, source)
             ok
+          {:ok, %{id: nil}} ->
+            source = Repo.get_by!(Source,
+              source: ch.source,
+              medium: ch.medium,
+              campaign: ch.campaign,
+              content: ch.content,
+              location: ch.location
+            )
+
+            cache_put(key, source)
+            {:ok, source}
 
           {:error, _} = e ->
             e
