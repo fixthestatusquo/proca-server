@@ -49,12 +49,7 @@ config :proca, Proca,
   daemon_start_delay: 5_000,
   mtt_cycle_time: 3,
   # Broadway processors concurrency for the current-actions pipeline
-  action_processing_concurrency: 40,
-  # Source cache: long TTL avoids the recurring misfire stampede; size cap
-  # bounds memory. Release overrides come from SOURCE_CACHE_TTL_MINUTES /
-  # SOURCE_CACHE_MAX_ENTRIES.
-  source_cache_ttl_ms: 10 * 60 * 1000,
-  source_cache_max_entries: 100_000
+  action_processing_concurrency: 40
 
 # Defaults only for development
 config :proca, Proca.Service.EmailBackend,

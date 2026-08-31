@@ -141,13 +141,7 @@ config :proca, Proca,
   daemon_start_delay: String.to_integer(System.get_env("DAEMON_START_DELAY", "5000")),
   # Broadway processors concurrency for the current-actions pipeline
   action_processing_concurrency:
-    String.to_integer(System.get_env("ACTION_PROCESSING_CONCURRENCY", "40")),
-  # Source cache: long TTL avoids the recurring misfire stampede; the size cap
-  # bounds memory under bursts of distinct sources.
-  source_cache_ttl_ms:
-    String.to_integer(System.get_env("SOURCE_CACHE_TTL_MINUTES", "10")) * 60 * 1000,
-  source_cache_max_entries:
-    String.to_integer(System.get_env("SOURCE_CACHE_MAX_ENTRIES", "100000"))
+    String.to_integer(System.get_env("ACTION_PROCESSING_CONCURRENCY", "40"))
 
 config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 

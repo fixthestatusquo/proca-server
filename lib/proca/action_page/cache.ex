@@ -28,12 +28,16 @@ defmodule Proca.ActionPage.Cache do
   use GenServer
 
   @table __MODULE__
+  @counter_table :action_page_cache_counter
   @default_ttl_ms :timer.minutes(5)
 
   # Bounds the table so it cannot grow without limit (guards against running
   # many distinct action pages through the cache). When exceeded, the table is
-  # cleared; pages are cheap to re-fetch on a subsequent miss.
+  # cleared; pages are cheap to re-fetch on a subsequent miss. The check is
+  # gated by a counter so it runs only ~1 in @size_check_every writes, keeping
+  # it off the hot path.
   @max_cache_entries 100_000
+  @size_check_every 512
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -43,7 +47,20 @@ defmodule Proca.ActionPage.Cache do
   def init([]) do
     # Public: any process reads/writes the ETS table directly for low latency.
     :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
+    :ets.new(@counter_table, [:named_table, :public, :set])
     {:ok, %{}}
+  end
+
+  # ~1-in-N write-triggered size check, shared across processes via a second
+  # ETS table holding a counter. Cheap (one :ets.update_counter) per write; the
+  # :ets.info(:size) call only runs ~1 in @size_check_every writes, keeping the
+  # size cap effectively off the hot path.
+  defp maybe_trim do
+    n = :ets.update_counter(@counter_table, :writes, 1, {:writes, 0})
+
+    if rem(n, @size_check_every) == 0 and :ets.info(@table, :size) >= @max_cache_entries do
+      :ets.delete_all_objects(@table)
+    end
   end
 
   # Race-tolerant table creation. At boot the supervised child creates the table
@@ -52,6 +69,8 @@ defmodule Proca.ActionPage.Cache do
   # creation (e.g. tests that never booted the supervisor): the winner creates
   # the table and the loser simply reuses it instead of crashing.
   defp ensure_table do
+    ensure_counter_table()
+
     case :ets.whereis(@table) do
       :undefined ->
         try do
@@ -62,6 +81,19 @@ defmodule Proca.ActionPage.Cache do
 
       _table ->
         @table
+    end
+  end
+
+  defp ensure_counter_table do
+    case :ets.whereis(@counter_table) do
+      :undefined ->
+        try do
+          :ets.new(@counter_table, [:named_table, :public, :set])
+        rescue
+          ArgumentError -> @counter_table
+        end
+
+      _ -> @counter_table
     end
   end
 
@@ -93,11 +125,7 @@ defmodule Proca.ActionPage.Cache do
   """
   def put(action_page_id, value, ttl_ms \\ @default_ttl_ms) when is_integer(action_page_id) do
     ensure_table()
-
-    if :ets.info(@table, :size) >= @max_cache_entries do
-      :ets.delete_all_objects(@table)
-    end
-
+    maybe_trim()
     expires_at = System.monotonic_time(:millisecond) + ttl_ms
     :ets.insert(@table, {action_page_id, value, expires_at})
     value
