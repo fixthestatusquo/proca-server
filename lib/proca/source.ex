@@ -88,18 +88,20 @@ defmodule Proca.Source do
 
       :miss ->
         case ch |> Repo.insert(on_conflict: :nothing, conflict_target: @source_key_fields) do
-          {:ok, source} = ok ->
+          # Actually inserted: the returned struct carries the generated id.
+          {:ok, %Source{id: id} = source} when is_integer(id) ->
             cache_put(key, source)
-            ok
+            {:ok, source}
 
-          {:error, _ch} ->
-            # Conflict: the row already exists. Fetch it instead of a write
-            # lock. `DO UPDATE SET updated_at = now()` on a shared row under
-            # concurrency creates multixact/LWLock churn (visible as
-            # `MultiXactMemberSLRU/Buffer` waits) and blocks inserts for
-            # seconds. `DO NOTHING` takes no write lock, so concurrent
-            # same-source requests no longer contend here; `updated_at` is
-            # bumped separately, throttled to at most ~once per interval.
+          # Conflict: `ON CONFLICT DO NOTHING` returns `{:ok, struct}` with a
+          # nil id (no row inserted) — it does NOT return `{:error, ...}`. A
+          # nil-id struct must never be cached or returned, or Ecto will later
+          # try to persist it as a `belongs_to` parent and raise
+          # `Ecto.NoPrimaryKeyValueError`. So fetch the existing row instead.
+          # We deliberately did not bump updated_at via `DO UPDATE` (that
+          # creates multixact/LWLock churn under concurrency); it is touched
+          # separately, throttled to ~once per interval.
+          {:ok, _source} ->
             case Repo.get_by(Source, source_key_map(ch)) do
               nil ->
                 {:error, "source: could not look up existing source"}
@@ -109,6 +111,11 @@ defmodule Proca.Source do
                 cache_put(key, source)
                 {:ok, source}
             end
+
+          {:error, _ch} ->
+            # Genuine insert failure (e.g. invalid changeset). Caller treats
+            # this as "no source".
+            {:error, "source: could not insert source"}
         end
     end
   end
