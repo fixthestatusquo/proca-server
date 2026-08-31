@@ -8,8 +8,9 @@ defmodule Proca.Source do
   alias Proca.Repo
   alias Proca.Source
 
-  @cache_table __MODULE__.Cache
-  @cache_ttl_ms :timer.seconds(30)
+  # The identity columns that make a source unique. Used for the conflict
+  # target on insert and to look up an existing row on the (rare) race path.
+  @source_key_fields [:source, :medium, :campaign, :content, :location]
 
   schema "sources" do
     field :campaign, :string, default: "unknown"
@@ -46,83 +47,48 @@ defmodule Proca.Source do
   def default_location(attrs = %{location: nil}), do: Map.put(attrs, :location, "")
   def default_location(attrs), do: attrs
 
+  # SELECT-first: the vast majority of actions already have an existing source,
+  # so doing an `INSERT ... ON CONFLICT DO UPDATE` on every request takes a
+  # write lock on a shared row and, under concurrency, creates multixact/SLRU
+  # contention (previously measured at ~1.1s per upsert). Instead we read first
+  # (a plain, lock-free MVCC read) and only INSERT for a genuinely new source.
   def get_or_create_by(tracking_codes) do
     ch = build_from_attrs(tracking_codes)
-    key = cache_key(ch)
+    key = source_key_map(ch)
 
-    case cache_lookup(key) do
-      {:hit, source} ->
+    case Repo.get_by(Source, key) do
+      nil ->
+        insert_new_source(ch, key)
+
+      source ->
+        {:ok, source}
+    end
+  end
+
+  # Rare path: the source does not exist yet. Keep `on_conflict: :nothing` so a
+  # concurrent request that also saw `nil` cannot raise a unique violation; on
+  # conflict we re-read the now-existing row.
+  defp insert_new_source(ch, key) do
+    case Repo.insert(ch, on_conflict: :nothing, conflict_target: @source_key_fields) do
+      {:ok, %Source{id: id} = source} when is_integer(id) ->
+        # Actually inserted; the returned struct carries the generated id.
         {:ok, source}
 
-      :miss ->
-        case ch
-             |> Repo.insert(
-               on_conflict: [set: [updated_at: DateTime.utc_now()]],
-               conflict_target: [:source, :medium, :campaign, :content, :location]
-             ) do
-          {:ok, source} = ok ->
-            cache_put(key, source)
-            ok
-
-          {:error, _} = e ->
-            e
-        end
-    end
-  end
-
-  ###### Caching ######
-
-  # Small TTL cache for the per-request source upsert. A burst of signatures
-  # sharing the same UTM/referer currently does an INSERT (with on_conflict) for
-  # every request; caching the resulting Source for a short TTL lets those
-  # repeat requests skip the write entirely. Correctness is unaffected because
-  # the DB `on_conflict` insert remains the source of truth on a miss.
-
-  # Race-tolerant table creation. Under a burst of concurrent requests two
-  # callers can both see the table as undefined and try to create it; the loser
-  # would crash with "table name already exists". Rescuing that and reusing the
-  # existing table keeps lazy creation safe.
-  defp ensure_cache_table do
-    case :ets.whereis(@cache_table) do
-      :undefined ->
-        try do
-          :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
-        rescue
-          ArgumentError -> @cache_table
+      {:ok, _conflict} ->
+        # `ON CONFLICT DO NOTHING` returns {:ok, struct} with a nil id on
+        # conflict (no row inserted). Re-read the existing row.
+        case Repo.get_by(Source, key) do
+          nil -> {:error, "source: could not find existing source"}
+          source -> {:ok, source}
         end
 
-      _table ->
-        @cache_table
+      {:error, _ch} ->
+        {:error, "source: could not insert source"}
     end
   end
 
-  defp cache_key(ch) do
-    {get_field(ch, :source), get_field(ch, :medium), get_field(ch, :campaign),
-     get_field(ch, :content), get_field(ch, :location)}
-  end
-
-  defp cache_lookup(key) do
-    ensure_cache_table()
-    now = System.monotonic_time(:millisecond)
-
-    case :ets.lookup(@cache_table, key) do
-      [{^key, source, expires_at}] when expires_at > now ->
-        {:hit, source}
-
-      [{^key, _source, _expires_at}] ->
-        :ets.delete(@cache_table, key)
-        :miss
-
-      [] ->
-        :miss
-    end
-  end
-
-  defp cache_put(key, source) do
-    ensure_cache_table()
-    expires_at = System.monotonic_time(:millisecond) + @cache_ttl_ms
-    :ets.insert(@cache_table, {key, source, expires_at})
-    :ok
+  defp source_key_map(ch) do
+    Map.new(@source_key_fields, &{&1, get_field(ch, &1)})
   end
 
   def well_formed_url?(%URI{host: h, path: p, scheme: s})
