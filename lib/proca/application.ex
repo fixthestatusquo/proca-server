@@ -89,6 +89,11 @@ defmodule Proca.Application do
   end
 
   def daemon_servers() do
+    # Broadway processors concurrency for the current-actions pipeline.
+    # Configurable via ACTION_PROCESSING_CONCURRENCY (default 40).
+    current_actions_concurrency =
+      Application.get_env(:proca, Proca)[:action_processing_concurrency]
+
     [
       # Async processing systems
       %{
@@ -96,7 +101,12 @@ defmodule Proca.Application do
         start: {
           Proca.Stage.Action,
           :start_link,
-          [[producer: {Proca.Stage.Queue, []}]]
+          [
+            [
+              producer: {Proca.Stage.Queue, []},
+              processors_concurrency: current_actions_concurrency
+            ]
+          ]
         }
       },
       %{

@@ -110,6 +110,10 @@ defmodule Proca.Server.Notify do
   def updated(org = %Org{}, _opts) do
     restart_org_pipes(org)
 
+    # Org-level changes can affect how action pages are preloaded/interpreted,
+    # so drop the cached action pages rather than keep stale ones around.
+    ActionPage.Cache.clear()
+
     if org.name == Org.instance_org_name() do
       # Instance org listenes to some events of ALL orgs
       Org.all([])
@@ -118,6 +122,7 @@ defmodule Proca.Server.Notify do
   end
 
   def updated(%ActionPage{} = action_page, _opts) do
+    ActionPage.Cache.bust(action_page.id)
     action_page = Repo.preload(action_page, [:org, :campaign])
     publish_subscription_event(action_page, action_page_upserted: "$instance")
 
@@ -142,6 +147,9 @@ defmodule Proca.Server.Notify do
   end
 
   def updated(%Campaign{org_id: org_id} = campaign, opts) when is_number(org_id) do
+    # Campaign edits affect all of its cached action pages; there is no cheap
+    # reverse lookup, so drop the whole (small, TTL-bounded) cache.
+    ActionPage.Cache.clear()
     Event.emit(:campaign_updated, campaign, org_id, opts)
   end
 

@@ -8,6 +8,9 @@ defmodule Proca.Source do
   alias Proca.Repo
   alias Proca.Source
 
+  @cache_table __MODULE__.Cache
+  @cache_ttl_ms :timer.seconds(30)
+
   schema "sources" do
     field :campaign, :string, default: "unknown"
     field :content, :string, default: ""
@@ -44,11 +47,71 @@ defmodule Proca.Source do
   def default_location(attrs), do: attrs
 
   def get_or_create_by(tracking_codes) do
-    build_from_attrs(tracking_codes)
-    |> Repo.insert(
-      on_conflict: [set: [updated_at: DateTime.utc_now()]],
-      conflict_target: [:source, :medium, :campaign, :content, :location]
-    )
+    ch = build_from_attrs(tracking_codes)
+    key = cache_key(ch)
+
+    case cache_lookup(key) do
+      {:hit, source} ->
+        {:ok, source}
+
+      :miss ->
+        case ch
+             |> Repo.insert(
+               on_conflict: [set: [updated_at: DateTime.utc_now()]],
+               conflict_target: [:source, :medium, :campaign, :content, :location]
+             ) do
+          {:ok, source} = ok ->
+            cache_put(key, source)
+            ok
+
+          {:error, _} = e ->
+            e
+        end
+    end
+  end
+
+  ###### Caching ######
+
+  # Small TTL cache for the per-request source upsert. A burst of signatures
+  # sharing the same UTM/referer currently does an INSERT (with on_conflict) for
+  # every request; caching the resulting Source for a short TTL lets those
+  # repeat requests skip the write entirely. Correctness is unaffected because
+  # the DB `on_conflict` insert remains the source of truth on a miss.
+
+  defp ensure_cache_table do
+    case :ets.whereis(@cache_table) do
+      :undefined -> :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
+      _table -> @cache_table
+    end
+  end
+
+  defp cache_key(ch) do
+    {get_field(ch, :source), get_field(ch, :medium), get_field(ch, :campaign),
+     get_field(ch, :content), get_field(ch, :location)}
+  end
+
+  defp cache_lookup(key) do
+    ensure_cache_table()
+    now = System.monotonic_time(:millisecond)
+
+    case :ets.lookup(@cache_table, key) do
+      [{^key, source, expires_at}] when expires_at > now ->
+        {:hit, source}
+
+      [{^key, _source, _expires_at}] ->
+        :ets.delete(@cache_table, key)
+        :miss
+
+      [] ->
+        :miss
+    end
+  end
+
+  defp cache_put(key, source) do
+    ensure_cache_table()
+    expires_at = System.monotonic_time(:millisecond) + @cache_ttl_ms
+    :ets.insert(@cache_table, {key, source, expires_at})
+    :ok
   end
 
   def well_formed_url?(%URI{host: h, path: p, scheme: s})
