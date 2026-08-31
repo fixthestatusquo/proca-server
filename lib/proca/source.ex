@@ -78,7 +78,8 @@ defmodule Proca.Source do
       :miss ->
         case ch
              |> Repo.insert(
-               on_conflict: [set: [updated_at: DateTime.utc_now()]],
+               on_conflict: :nothing,
+#               on_conflict: [set: [updated_at: DateTime.utc_now()]],
                conflict_target: [:source, :medium, :campaign, :content, :location]
              ) do
           {:ok, source} = ok ->
