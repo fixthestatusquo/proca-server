@@ -82,9 +82,6 @@ defmodule Proca.Source do
 #               on_conflict: [set: [updated_at: DateTime.utc_now()]],
                conflict_target: [:source, :medium, :campaign, :content, :location]
              ) do
-          {:ok, source} = ok ->
-            cache_put(key, source)
-            ok
           {:ok, %{id: nil}} ->
             source = Repo.get_by!(Source,
               source: ch.source,
@@ -96,6 +93,10 @@ defmodule Proca.Source do
 
             cache_put(key, source)
             {:ok, source}
+
+          {:ok, source} = ok ->
+            cache_put(key, source)
+            ok
 
           {:error, _} = e ->
             e
