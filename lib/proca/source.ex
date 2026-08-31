@@ -83,13 +83,16 @@ defmodule Proca.Source do
                conflict_target: [:source, :medium, :campaign, :content, :location]
              ) do
           {:ok, %{id: nil}} ->
-            source = Repo.get_by!(Source,
-              source: ch.source,
-              medium: ch.medium,
-              campaign: ch.campaign,
-              content: ch.content,
-              location: ch.location
-            )
+            {src, med, camp, cont, loc} = key
+
+            source =
+              Repo.get_by!(Source,
+                source: src,
+                medium: med,
+                campaign: camp,
+                content: cont,
+                location: loc
+              )
 
             cache_put(key, source)
             {:ok, source}
