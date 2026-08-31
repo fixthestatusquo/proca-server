@@ -30,6 +30,11 @@ defmodule Proca.ActionPage.Cache do
   @table __MODULE__
   @default_ttl_ms :timer.minutes(5)
 
+  # Bounds the table so it cannot grow without limit (guards against running
+  # many distinct action pages through the cache). When exceeded, the table is
+  # cleared; pages are cheap to re-fetch on a subsequent miss.
+  @max_cache_entries 100_000
+
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -88,6 +93,11 @@ defmodule Proca.ActionPage.Cache do
   """
   def put(action_page_id, value, ttl_ms \\ @default_ttl_ms) when is_integer(action_page_id) do
     ensure_table()
+
+    if :ets.info(@table, :size) >= @max_cache_entries do
+      :ets.delete_all_objects(@table)
+    end
+
     expires_at = System.monotonic_time(:millisecond) + ttl_ms
     :ets.insert(@table, {action_page_id, value, expires_at})
     value

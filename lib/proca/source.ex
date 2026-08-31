@@ -9,7 +9,32 @@ defmodule Proca.Source do
   alias Proca.Source
 
   @cache_table __MODULE__.Cache
-  @cache_ttl_ms :timer.seconds(30)
+
+  # Default TTL (milliseconds) for a cached source. Sources are append-only,
+  # immutable-key lookup rows (the app never deletes or re-keys them), so it is
+  # safe to cache them for a long time. A long TTL avoids the recurring
+  # stampede a short TTL causes: every expiry, a burst of same-source requests
+  # all miss and all hit the DB, exhausting the connection pool periodically.
+  @default_ttl_ms :timer.minutes(10)
+
+  # Bounds cache growth so the table cannot grow without limit even when many
+  # distinct sources (e.g. unique referers) arrive. Once exceeded, the table is
+  # cleared; sources are cheap to re-fetch on a subsequent miss, so evicting all
+  # is safe.
+  @max_cache_entries 100_000
+
+  # Optional runtime overrides (set in config/releases.exs from env).
+  @application :proca
+  @config_module Proca
+
+  defp ttl_ms do
+    Application.get_env(@application, @config_module)[:source_cache_ttl_ms] || @default_ttl_ms
+  end
+
+  defp max_cache_entries do
+    Application.get_env(@application, @config_module)[:source_cache_max_entries] ||
+      @max_cache_entries
+  end
 
   schema "sources" do
     field :campaign, :string, default: "unknown"
@@ -120,7 +145,15 @@ defmodule Proca.Source do
 
   defp cache_put(key, source) do
     ensure_cache_table()
-    expires_at = System.monotonic_time(:millisecond) + @cache_ttl_ms
+
+    # Bounds the table size: if it has grown beyond the cap (e.g. many distinct
+    # referers), clear it. Sources are cheap to re-fetch on a subsequent miss,
+    # so evicting all is safe and keeps memory bounded.
+    if :ets.info(@cache_table, :size) >= max_cache_entries() do
+      :ets.delete_all_objects(@cache_table)
+    end
+
+    expires_at = System.monotonic_time(:millisecond) + ttl_ms()
     :ets.insert(@cache_table, {key, source, expires_at})
     :ok
   end
