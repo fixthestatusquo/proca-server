@@ -253,6 +253,12 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
+  # A successful captcha verification that produced no metadata (procaptcha
+  # returns :ok for a valid challenge without the "method" detail, or captcha
+  # is not configured at all) leaves captcha_meta as nil. audit_log.changeset
+  # is NOT NULL, so there is nothing to audit in that case — skip it.
+  defp audit_captcha(%{captcha_meta: meta}) when is_nil(meta) or meta == %{}, do: nil
+
   defp audit_captcha(%{
          captcha_meta: meta,
          supporter: %{id: sid, fingerprint: _fpr},
