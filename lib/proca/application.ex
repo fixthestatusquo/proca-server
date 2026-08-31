@@ -33,6 +33,9 @@ defmodule Proca.Application do
       # Email template directory
       {Proca.Service.EmailTemplateDirectory, []},
 
+      # TTL cache for preloaded action pages (its ETS table is created at boot)
+      {Proca.ActionPage.Cache, []},
+
       # In-memory counters for transactional email backend warming/budget
       {Proca.Service.EmailBudget, []},
 

@@ -78,10 +78,21 @@ defmodule Proca.Source do
   # repeat requests skip the write entirely. Correctness is unaffected because
   # the DB `on_conflict` insert remains the source of truth on a miss.
 
+  # Race-tolerant table creation. Under a burst of concurrent requests two
+  # callers can both see the table as undefined and try to create it; the loser
+  # would crash with "table name already exists". Rescuing that and reusing the
+  # existing table keeps lazy creation safe.
   defp ensure_cache_table do
     case :ets.whereis(@cache_table) do
-      :undefined -> :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
-      _table -> @cache_table
+      :undefined ->
+        try do
+          :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
+        rescue
+          ArgumentError -> @cache_table
+        end
+
+      _table ->
+        @cache_table
     end
   end
 

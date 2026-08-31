@@ -14,17 +14,49 @@ defmodule Proca.ActionPage.Cache do
   - explicit invalidation (`bust/1`, `bust/2`, `clear/0`) hooked into the
     ordinary update notifications in `Proca.Server.Notify`.
 
-  The cache is a lazy, process-independent ETS table (`:public`), mirroring the
-  pattern used by `Proca.Server.MTTContext` and `Proca.Service.EmailBudget`, so
-  it needs no supervision wiring.
+  ## Concurrency
+
+  The cache is a supervised `GenServer` that creates its (single) `:public` ETS
+  table once at application boot, before any request can arrive. This avoids the
+  create-once table race that a lazy `:ets.whereis` + `:ets.new` pattern has
+  under concurrent load. Because the table is `:public`, reads/writes happen
+  directly in the caller process with no GenServer round-trip, keeping the hot
+  path fast. `ensure_table/0` remains as a race-tolerant fallback for direct
+  calls made before/without boot (e.g. tests), rescuing the "table already
+  exists" `ArgumentError` instead of crashing.
   """
+  use GenServer
+
   @table __MODULE__
   @default_ttl_ms :timer.minutes(5)
 
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  end
+
+  @impl true
+  def init([]) do
+    # Public: any process reads/writes the ETS table directly for low latency.
+    :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
+    {:ok, %{}}
+  end
+
+  # Race-tolerant table creation. At boot the supervised child creates the table
+  # once, so in production this is normally a no-op returning the existing table.
+  # The rescue handles the (now unlikely) case where two callers race a lazy
+  # creation (e.g. tests that never booted the supervisor): the winner creates
+  # the table and the loser simply reuses it instead of crashing.
   defp ensure_table do
     case :ets.whereis(@table) do
-      :undefined -> :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
-      _ -> @table
+      :undefined ->
+        try do
+          :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
+        rescue
+          ArgumentError -> @table
+        end
+
+      _table ->
+        @table
     end
   end
 
@@ -72,7 +104,7 @@ defmodule Proca.ActionPage.Cache do
 
   def bust(action_page_ids) when is_list(action_page_ids) do
     ensure_table()
-    :ets.delete(@table, action_page_ids)
+    Enum.each(action_page_ids, &:ets.delete(@table, &1))
     :ok
   end
 
