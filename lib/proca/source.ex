@@ -47,48 +47,12 @@ defmodule Proca.Source do
   def default_location(attrs = %{location: nil}), do: Map.put(attrs, :location, "")
   def default_location(attrs), do: attrs
 
-  # SELECT-first: the vast majority of actions already have an existing source,
-  # so doing an `INSERT ... ON CONFLICT DO UPDATE` on every request takes a
-  # write lock on a shared row and, under concurrency, creates multixact/SLRU
-  # contention (previously measured at ~1.1s per upsert). Instead we read first
-  # (a plain, lock-free MVCC read) and only INSERT for a genuinely new source.
   def get_or_create_by(tracking_codes) do
-    ch = build_from_attrs(tracking_codes)
-    key = source_key_map(ch)
-
-    case Repo.get_by(Source, key) do
-      nil ->
-        insert_new_source(ch, key)
-
-      source ->
-        {:ok, source}
-    end
-  end
-
-  # Rare path: the source does not exist yet. Keep `on_conflict: :nothing` so a
-  # concurrent request that also saw `nil` cannot raise a unique violation; on
-  # conflict we re-read the now-existing row.
-  defp insert_new_source(ch, key) do
-    case Repo.insert(ch, on_conflict: :nothing, conflict_target: @source_key_fields) do
-      {:ok, %Source{id: id} = source} when is_integer(id) ->
-        # Actually inserted; the returned struct carries the generated id.
-        {:ok, source}
-
-      {:ok, _conflict} ->
-        # `ON CONFLICT DO NOTHING` returns {:ok, struct} with a nil id on
-        # conflict (no row inserted). Re-read the existing row.
-        case Repo.get_by(Source, key) do
-          nil -> {:error, "source: could not find existing source"}
-          source -> {:ok, source}
-        end
-
-      {:error, _ch} ->
-        {:error, "source: could not insert source"}
-    end
-  end
-
-  defp source_key_map(ch) do
-    Map.new(@source_key_fields, &{&1, get_field(ch, &1)})
+    build_from_attrs(tracking_codes)
+    |> Repo.insert(
+      on_conflict: [set: [updated_at: DateTime.utc_now()]],
+      conflict_target: @source_key_fields
+    )
   end
 
   def well_formed_url?(%URI{host: h, path: p, scheme: s})
