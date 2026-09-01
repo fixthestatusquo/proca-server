@@ -9,28 +9,21 @@ defmodule Proca.Source do
   alias Proca.Source
 
   @cache_table __MODULE__.Cache
-  @counter_table :source_cache_counter
+  @registry Proca.Source.Lock
 
-  # Static, inlined TTL (milliseconds) for a cached source — deliberately a
-  # compile-time constant so the hot path pays nothing for it. Sources are
-  # append-only, immutable-key lookup rows, so caching them is safe.
-  @cache_ttl_ms :timer.seconds(30)
+  # Fixed TTL. Sources are append-only and never deleted, so TTL only bounds
+  # memory, not correctness. 5 min keeps a hot source alive between misses
+  # without re-fetching it every few seconds.
+  @cache_ttl_ms :timer.minutes(5)
 
-  # Bounds cache growth so the table cannot grow without limit even when many
-  # distinct sources (e.g. unique referers) arrive. The check is gated by a
-  # counter so it runs only ~1 in @size_check_every writes, keeping it off the
-  # hot path; when exceeded the table is cleared (sources are cheap to
-  # re-fetch on a subsequent miss).
+  # Hard size cap: bounds memory against a flood of distinct sources.
   @max_cache_entries 100_000
-  @size_check_every 512
 
-  defp maybe_trim do
-    n = :ets.update_counter(@counter_table, :writes, 1, {:writes, 0})
-
-    if rem(n, @size_check_every) == 0 and :ets.info(@cache_table, :size) >= @max_cache_entries do
-      :ets.delete_all_objects(@cache_table)
-    end
-  end
+  # Single-flight follower wait budget. The leader is a long-lived request
+  # process, so followers poll the cache for the result rather than monitor the
+  # leader for :DOWN.
+  @lock_wait_timeout_ms 5_000
+  @poll_interval_ms 10
 
   schema "sources" do
     field :campaign, :string, default: "unknown"
@@ -76,44 +69,18 @@ defmodule Proca.Source do
         {:ok, source}
 
       :miss ->
-        case ch
-             |> Repo.insert(
-#               on_conflict: :nothing,
-               on_conflict: [set: [updated_at: DateTime.utc_now()]],
-               conflict_target: [:source, :medium, :campaign, :content, :location]
-             ) do
-          {:ok, %{id: nil}} ->
-            {src, med, camp, cont, loc} = key
-
-            source =
-              Repo.get_by!(Source,
-                source: src,
-                medium: med,
-                campaign: camp,
-                content: cont,
-                location: loc
-              )
-
-            cache_put(key, source)
-            {:ok, source}
-
-          {:ok, source} = ok ->
-            cache_put(key, source)
-            ok
-
-          {:error, _} = e ->
-            e
-        end
+        single_flight(key, fn -> fetch_source(ch, key) end)
     end
   end
 
   ###### Caching ######
 
-  # Small TTL cache for the per-request source upsert. A burst of signatures
-  # sharing the same UTM/referer currently does an INSERT (with on_conflict) for
-  # every request; caching the resulting Source for a short TTL lets those
-  # repeat requests skip the write entirely. Correctness is unaffected because
-  # the DB `on_conflict` insert remains the source of truth on a miss.
+  # Small TTL cache for the per-request source lookup. Sources are append-only
+  # and never deleted, so the cache is a pure memory optimisation: TTL + size
+  # cap bound memory, not correctness. A miss is single-flighted through a
+  # per-key Registry so a burst of concurrent requests for the same source does
+  # NOT all race to the DB (which caused multixact/SLRU contention); one process
+  # does the DB work, the rest wait for the cached result.
 
   # Race-tolerant table creation. Under a burst of concurrent requests two
   # callers can both see the table as undefined and try to create it; the loser
@@ -124,29 +91,12 @@ defmodule Proca.Source do
       :undefined ->
         try do
           :ets.new(@cache_table, [:named_table, :public, :set, read_concurrency: true])
-          ensure_counter_table()
-          @cache_table
         rescue
           ArgumentError -> @cache_table
         end
 
       _table ->
         @cache_table
-    end
-  end
-
-  # Fixed-name counter table for the low-frequency size check; created alongside
-  # the cache table.
-  defp ensure_counter_table do
-    case :ets.whereis(@counter_table) do
-      :undefined ->
-        try do
-          :ets.new(@counter_table, [:named_table, :public, :set])
-        rescue
-          ArgumentError -> @counter_table
-        end
-
-      _ -> @counter_table
     end
   end
 
@@ -174,11 +124,91 @@ defmodule Proca.Source do
 
   defp cache_put(key, source) do
     ensure_cache_table()
-
-    maybe_trim()
+    trim_if_needed()
     expires_at = System.monotonic_time(:millisecond) + @cache_ttl_ms
     :ets.insert(@cache_table, {key, source, expires_at})
     :ok
+  end
+
+  # Single-flight: only one process performs the DB work per key. Followers
+  # poll the cache for the result; if the leader dies before populating, they
+  # retry the claim (bounded) and then fall back to doing the work themselves.
+  defp single_flight(key, fun, retries \\ 2)
+
+  defp single_flight(key, fun, retries) do
+    case Registry.register(@registry, key, nil) do
+      {:ok, _pid} ->
+        try do
+          fun.()
+        after
+          Registry.unregister(@registry, key)
+        end
+
+      {:error, {:already_registered, _pid}} ->
+        case wait_for_cache(key, @lock_wait_timeout_ms) do
+          {:ok, source} ->
+            {:ok, source}
+
+          :timeout when retries > 0 ->
+            single_flight(key, fun, retries - 1)
+
+          :timeout ->
+            fun.()
+        end
+    end
+  end
+
+  defp wait_for_cache(key, timeout_ms) do
+    deadline = System.monotonic_time(:millisecond) + timeout_ms
+    do_wait_for_cache(key, deadline)
+  end
+
+  defp do_wait_for_cache(key, deadline) do
+    case cache_lookup(key) do
+      {:hit, source} ->
+        {:ok, source}
+
+      :miss ->
+        if System.monotonic_time(:millisecond) >= deadline do
+          :timeout
+        else
+          Process.sleep(@poll_interval_ms)
+          do_wait_for_cache(key, deadline)
+        end
+    end
+  end
+
+  defp fetch_source(ch, key) do
+    case ch
+         |> Repo.insert(
+           on_conflict: [set: [updated_at: DateTime.utc_now()]],
+           conflict_target: [:source, :medium, :campaign, :content, :location]
+         ) do
+      {:ok, source} ->
+        cache_put(key, source)
+        {:ok, source}
+
+      {:error, _} = e ->
+        e
+    end
+  end
+
+  # Bounds memory: when the table reaches the cap, keep only the newest
+  # (largest expires_at) non-expired entries. Runs only on a cache miss.
+  defp trim_if_needed do
+    if :ets.info(@cache_table, :size) >= @max_cache_entries do
+      now = System.monotonic_time(:millisecond)
+
+      keep =
+        @cache_table
+        |> :ets.tab2list()
+        |> Enum.filter(fn {_k, _v, expires_at} -> expires_at > now end)
+        |> Enum.sort_by(&elem(&1, 2), :desc)
+        |> Enum.take(max(@max_cache_entries - 1, 0))
+
+      :ets.delete_all_objects(@cache_table)
+      Enum.each(keep, fn entry -> :ets.insert(@cache_table, entry) end)
+    end
   end
 
   def well_formed_url?(%URI{host: h, path: p, scheme: s})

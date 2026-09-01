@@ -36,6 +36,9 @@ defmodule Proca.Application do
       # TTL cache for preloaded action pages (its ETS table is created at boot)
       {Proca.ActionPage.Cache, []},
 
+      # Per-key lock registry used to single-flight source-cache misses
+      {Registry, [keys: :unique, name: Proca.Source.Lock]},
+
       # In-memory counters for transactional email backend warming/budget
       {Proca.Service.EmailBudget, []},
 
