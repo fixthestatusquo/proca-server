@@ -15,9 +15,15 @@ defmodule ProcaWeb.Resolvers.Action do
   alias ProcaWeb.Helper
 
   defp get_action_page(%{action_page_id: id}) do
-    case ActionPage.one(id: id, preload: [:org, [campaign: [:org, :mtt]]]) do
-      nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
-      action_page -> {:ok, action_page}
+    case ActionPage.Cache.lookup(id) do
+      {:hit, action_page} ->
+        {:ok, action_page}
+
+      :miss ->
+        case ActionPage.one(id: id, preload: [:org, [campaign: [:org, :mtt]]]) do
+          nil -> {:error, "action_page_id: Cannot find Action Page with id=#{id}"}
+          action_page -> {:ok, ActionPage.Cache.put(id, action_page)}
+        end
     end
   end
 
@@ -110,61 +116,85 @@ defmodule ProcaWeb.Resolvers.Action do
         params = %{action: action_attrs, contact: contact, privacy: priv},
         resolution = %{context: context}
       ) do
-    action_attrs = merge_old_fields_format(action_attrs)
+    started = System.monotonic_time()
 
-    case Multi.new()
-         |> Multi.run(:action_page, fn _repo, _m ->
-           get_action_page(params)
-         end)
-         |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
-           Helper.validate(ActionPage.new_data(contact, action_page))
-         end)
-         |> check_captcha(resolution)
-         |> Multi.run(:source, fn _repo, _ ->
-           get_tracking(params, get_in(context, [:headers, "referer"]))
-         end)
-         |> Multi.run(:supporter, fn repo,
-                                     %{data: data, action_page: action_page, source: source} ->
-           Supporter.new_supporter(data, action_page)
-           |> Supporter.add_contacts(
-             Data.to_contact(data, action_page),
-             action_page,
-             struct!(Privacy, priv)
-           )
-           |> put_assoc(:source, source)
-           |> repo.insert()
-         end)
-         |> Multi.run(:action, fn repo,
-                                  %{
-                                    supporter: supporter,
-                                    action_page: action_page,
-                                    source: source
-                                  } ->
-           Action.build_for_supporter(action_attrs, supporter, action_page)
-           |> put_assoc(:source, source)
-           |> put_change(:with_consent, true)
-           |> repo.insert()
-         end)
-         |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
-           {:ok, link_references(supporter, params)}
-         end)
-         |> Repo.transaction_and_notify(:add_action_contact, all_error: true) do
-      {:ok, result = %{supporter: supporter}} ->
-        audit_captcha(result)
-        {:ok, output(supporter)}
+    try do
+      action_attrs = merge_old_fields_format(action_attrs)
 
-      {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
-        {:error, Helper.format_errors(changeset)}
+      # Verify captcha BEFORE opening the transaction: the captcha check does a
+      # cross-origin HTTP call, so running it inside the transaction would hold a
+      # DB connection for the whole duration of that call and starve the connection
+      # pool under bursts of concurrent signatures.
+      with {:ok, captcha_meta} <- verify_captcha(resolution) do
+        result =
+          Multi.new()
+          |> Multi.run(:action_page, fn _repo, _m ->
+            get_action_page(params)
+          end)
+          |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
+            Helper.validate(ActionPage.new_data(contact, action_page))
+          end)
+          |> Multi.run(:source, fn _repo, _ ->
+            get_tracking(params, get_in(context, [:headers, "referer"]))
+          end)
+          |> Multi.run(:supporter, fn repo,
+                                      %{data: data, action_page: action_page, source: source} ->
+            Supporter.new_supporter(data, action_page)
+            |> Supporter.add_contacts(
+              Data.to_contact(data, action_page),
+              action_page,
+              struct!(Privacy, priv)
+            )
+            |> put_assoc(:source, source)
+            |> repo.insert()
+          end)
+          |> Multi.run(:action, fn repo,
+                                   %{
+                                     supporter: supporter,
+                                     action_page: action_page,
+                                     source: source
+                                   } ->
+            Action.build_for_supporter(action_attrs, supporter, action_page)
+            |> put_assoc(:source, source)
+            |> put_change(:with_consent, true)
+            |> repo.insert()
+          end)
+          |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
+            {:ok, link_references(supporter, params)}
+          end)
+          |> Repo.transaction_and_notify(:add_action_contact, all_error: true)
 
-      {:error, _v, msg, _ch} ->
-        {:error, msg}
+        case result do
+          {:ok, result = %{supporter: supporter}} ->
+            audit_captcha(Map.put(result, :captcha_meta, captcha_meta))
+            {:ok, output(supporter)}
 
-      _e ->
-        {:error, "other error?"}
+          {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
+            {:error, Helper.format_errors(changeset)}
+
+          {:error, _v, msg, _ch} ->
+            {:error, msg}
+
+          _e ->
+            {:error, "other error?"}
+        end
+      end
+    after
+      # Emit duration in :native (nanosecond) units — the metric declaration
+      # `unit: {:native, :millisecond}` converts it to ms. Do NOT pre-convert to
+      # ms here, or the reporter treats ms-as-native and the value collapses to ~0.
+      # Call count is the histogram's automatic `_count`; no separate count.
+      :telemetry.execute(
+        [:api, :add_action_contact],
+        %{duration: System.monotonic_time() - started},
+        %{}
+      )
     end
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, %{context: context}) do
+    :telemetry.execute([:api, :add_action], %{count: 1}, %{})
+
     action_attrs = merge_old_fields_format(action_attrs)
 
     case Multi.new()
@@ -226,18 +256,24 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
-  defp check_captcha(multi, resolution) do
-    multi
-    |> Multi.run(:captcha, fn _repo, _ ->
-      case ProcaWeb.Resolvers.Captcha.verify(resolution) do
-        resolution = %{state: :resolved} ->
-          {:error, resolution.errors}
+  # Verify the captcha (if configured) OUTSIDE of any DB transaction. Returns
+  # {:ok, captcha_meta} on success (meta is nil when captcha is disabled or the
+  # service returned no metadata), or {:error, errors} when verification failed.
+  defp verify_captcha(resolution) do
+    case ProcaWeb.Resolvers.Captcha.verify(resolution) do
+      resolution = %{state: :resolved} ->
+        {:error, resolution.errors}
 
-        resolution ->
-          {:ok, Map.get(resolution.private, :captcha_meta)}
-      end
-    end)
+      resolution ->
+        {:ok, Map.get(resolution.private, :captcha_meta)}
+    end
   end
+
+  # A successful captcha verification that produced no metadata (procaptcha
+  # returns :ok for a valid challenge without the "method" detail, or captcha
+  # is not configured at all) leaves captcha_meta as nil. audit_log.changeset
+  # is NOT NULL, so there is nothing to audit in that case — skip it.
+  defp audit_captcha(%{captcha_meta: meta}) when is_nil(meta) or meta == %{}, do: nil
 
   defp audit_captcha(%{
          captcha_meta: meta,

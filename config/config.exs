@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :proca,
   ecto_repos: [Proca.Repo]
@@ -47,7 +47,9 @@ config :proca, Proca,
   process_old_interval: 0,
   start_daemon_servers: true,
   daemon_start_delay: 5_000,
-  mtt_cycle_time: 3
+  mtt_cycle_time: 3,
+  # Broadway processors concurrency for the current-actions pipeline
+  action_processing_concurrency: 40
 
 # Defaults only for development
 config :proca, Proca.Service.EmailBackend,

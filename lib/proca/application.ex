@@ -33,6 +33,12 @@ defmodule Proca.Application do
       # Email template directory
       {Proca.Service.EmailTemplateDirectory, []},
 
+      # TTL cache for preloaded action pages (its ETS table is created at boot)
+      {Proca.ActionPage.Cache, []},
+
+      # Per-key lock registry used to single-flight source-cache misses
+      {Registry, [keys: :unique, name: Proca.Source.Lock]},
+
       # In-memory counters for transactional email backend warming/budget
       {Proca.Service.EmailBudget, []},
 
@@ -89,6 +95,11 @@ defmodule Proca.Application do
   end
 
   def daemon_servers() do
+    # Broadway processors concurrency for the current-actions pipeline.
+    # Configurable via ACTION_PROCESSING_CONCURRENCY (default 40).
+    current_actions_concurrency =
+      Application.get_env(:proca, Proca)[:action_processing_concurrency]
+
     [
       # Async processing systems
       %{
@@ -96,7 +107,12 @@ defmodule Proca.Application do
         start: {
           Proca.Stage.Action,
           :start_link,
-          [[producer: {Proca.Stage.Queue, []}]]
+          [
+            [
+              producer: {Proca.Stage.Queue, []},
+              processors_concurrency: current_actions_concurrency
+            ]
+          ]
         }
       },
       %{

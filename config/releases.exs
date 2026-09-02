@@ -138,7 +138,10 @@ config :proca, Proca,
   org_name: System.get_env("ORG_NAME", "instance"),
   stats_sync_interval: String.to_integer(System.get_env("SYNC_INTERVAL", "60000")),
   process_old_interval: String.to_integer(System.get_env("PROCESS_OLD_INTERVAL", "30000")),
-  daemon_start_delay: String.to_integer(System.get_env("DAEMON_START_DELAY", "5000"))
+  daemon_start_delay: String.to_integer(System.get_env("DAEMON_START_DELAY", "5000")),
+  # Broadway processors concurrency for the current-actions pipeline
+  action_processing_concurrency:
+    String.to_integer(System.get_env("ACTION_PROCESSING_CONCURRENCY", "40"))
 
 config :proca, Proca.Supporter, fpr_seed: System.get_env("FINGERPRINT_SEED", "")
 

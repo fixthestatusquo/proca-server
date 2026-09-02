@@ -116,6 +116,23 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
+      # API call counters + durations.
+      # add_action_contact call count comes from the histogram's automatic
+      # `_count` series (api_add_action_contact_duration_count), 
+      counter("api.add_action.count"),
+      counter("api.supporter_count.count"),
+      distribution("api.add_action_contact.duration",
+        unit: {:native, :millisecond},
+        reporter_options: [buckets: [5, 10, 20, 50, 100, 200, 300, 500, 750, 1000, 2000, 5000]]
+      ),
+      distribution("web.duration",
+        event_name: [:phoenix, :endpoint, :stop],
+        measurement: :duration,
+        unit: {:native, :millisecond},
+        reporter_options: [
+          buckets: [10, 25, 50, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000]
+        ]
+      ),
       # API Metrics
       last_value("proca.exporter.export_actions.export_time",
         unit: {:native, :millisecond},
@@ -174,12 +191,32 @@ defmodule ProcaWeb.Telemetry do
       counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
       counter("proca.email.reminder_confirm.count", tags: [:org_id]),
 
-      # Database Metrics
-      last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
-      last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
-      last_value("proca.repo.query.query_time", unit: {:native, :millisecond}),
-      last_value("proca.repo.query.queue_time", unit: {:native, :millisecond}),
-      last_value("proca.repo.query.idle_time", unit: {:native, :millisecond})
+      # Database Metrics (Ecto emits these on [:proca, :repo, :query])
+      last_value("sql.total_time",
+        event_name: [:proca, :repo, :query],
+        measurement: :total_time,
+        unit: {:native, :millisecond}
+      ),
+      last_value("sql.decode_time",
+        event_name: [:proca, :repo, :query],
+        measurement: :decode_time,
+        unit: {:native, :millisecond}
+      ),
+      last_value("sql.query_time",
+        event_name: [:proca, :repo, :query],
+        measurement: :query_time,
+        unit: {:native, :millisecond}
+      ),
+      last_value("sql.queue_time",
+        event_name: [:proca, :repo, :query],
+        measurement: :queue_time,
+        unit: {:native, :millisecond}
+      ),
+      last_value("sql.idle_time",
+        event_name: [:proca, :repo, :query],
+        measurement: :idle_time,
+        unit: {:native, :millisecond}
+      )
     ]
   end
 
