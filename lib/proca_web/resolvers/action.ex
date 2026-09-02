@@ -116,69 +116,85 @@ defmodule ProcaWeb.Resolvers.Action do
         params = %{action: action_attrs, contact: contact, privacy: priv},
         resolution = %{context: context}
       ) do
-    action_attrs = merge_old_fields_format(action_attrs)
+    started = System.monotonic_time()
 
-    # Verify captcha BEFORE opening the transaction: the captcha check does a
-    # cross-origin HTTP call, so running it inside the transaction would hold a
-    # DB connection for the whole duration of that call and starve the connection
-    # pool under bursts of concurrent signatures.
-    with {:ok, captcha_meta} <- verify_captcha(resolution) do
-      result =
-        Multi.new()
-        |> Multi.run(:action_page, fn _repo, _m ->
-          get_action_page(params)
-        end)
-        |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
-          Helper.validate(ActionPage.new_data(contact, action_page))
-        end)
-        |> Multi.run(:source, fn _repo, _ ->
-          get_tracking(params, get_in(context, [:headers, "referer"]))
-        end)
-        |> Multi.run(:supporter, fn repo,
-                                    %{data: data, action_page: action_page, source: source} ->
-          Supporter.new_supporter(data, action_page)
-          |> Supporter.add_contacts(
-            Data.to_contact(data, action_page),
-            action_page,
-            struct!(Privacy, priv)
-          )
-          |> put_assoc(:source, source)
-          |> repo.insert()
-        end)
-        |> Multi.run(:action, fn repo,
-                                 %{
-                                   supporter: supporter,
-                                   action_page: action_page,
-                                   source: source
-                                 } ->
-          Action.build_for_supporter(action_attrs, supporter, action_page)
-          |> put_assoc(:source, source)
-          |> put_change(:with_consent, true)
-          |> repo.insert()
-        end)
-        |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
-          {:ok, link_references(supporter, params)}
-        end)
-        |> Repo.transaction_and_notify(:add_action_contact, all_error: true)
+    try do
+      action_attrs = merge_old_fields_format(action_attrs)
 
-      case result do
-        {:ok, result = %{supporter: supporter}} ->
-          audit_captcha(Map.put(result, :captcha_meta, captcha_meta))
-          {:ok, output(supporter)}
+      # Verify captcha BEFORE opening the transaction: the captcha check does a
+      # cross-origin HTTP call, so running it inside the transaction would hold a
+      # DB connection for the whole duration of that call and starve the connection
+      # pool under bursts of concurrent signatures.
+      with {:ok, captcha_meta} <- verify_captcha(resolution) do
+        result =
+          Multi.new()
+          |> Multi.run(:action_page, fn _repo, _m ->
+            get_action_page(params)
+          end)
+          |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
+            Helper.validate(ActionPage.new_data(contact, action_page))
+          end)
+          |> Multi.run(:source, fn _repo, _ ->
+            get_tracking(params, get_in(context, [:headers, "referer"]))
+          end)
+          |> Multi.run(:supporter, fn repo,
+                                      %{data: data, action_page: action_page, source: source} ->
+            Supporter.new_supporter(data, action_page)
+            |> Supporter.add_contacts(
+              Data.to_contact(data, action_page),
+              action_page,
+              struct!(Privacy, priv)
+            )
+            |> put_assoc(:source, source)
+            |> repo.insert()
+          end)
+          |> Multi.run(:action, fn repo,
+                                   %{
+                                     supporter: supporter,
+                                     action_page: action_page,
+                                     source: source
+                                   } ->
+            Action.build_for_supporter(action_attrs, supporter, action_page)
+            |> put_assoc(:source, source)
+            |> put_change(:with_consent, true)
+            |> repo.insert()
+          end)
+          |> Multi.run(:link_references, fn _repo, %{supporter: supporter} ->
+            {:ok, link_references(supporter, params)}
+          end)
+          |> Repo.transaction_and_notify(:add_action_contact, all_error: true)
 
-        {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
-          {:error, Helper.format_errors(changeset)}
+        case result do
+          {:ok, result = %{supporter: supporter}} ->
+            audit_captcha(Map.put(result, :captcha_meta, captcha_meta))
+            {:ok, output(supporter)}
 
-        {:error, _v, msg, _ch} ->
-          {:error, msg}
+          {:error, _v, %Ecto.Changeset{} = changeset, _chj} ->
+            {:error, Helper.format_errors(changeset)}
 
-        _e ->
-          {:error, "other error?"}
+          {:error, _v, msg, _ch} ->
+            {:error, msg}
+
+          _e ->
+            {:error, "other error?"}
+        end
       end
+    after
+      :telemetry.execute(
+        [:api, :add_action_contact],
+        %{
+          count: 1,
+          duration:
+            System.convert_time_unit(System.monotonic_time() - started, :native, :millisecond)
+        },
+        %{}
+      )
     end
   end
 
   def add_action(_, params = %{contact_ref: _cref, action: action_attrs}, %{context: context}) do
+    :telemetry.execute([:api, :add_action], %{count: 1}, %{})
+
     action_attrs = merge_old_fields_format(action_attrs)
 
     case Multi.new()

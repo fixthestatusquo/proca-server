@@ -1,13 +1,78 @@
-# MTT Telemetry / Prometheus Metrics
+# Telemetry / Prometheus Metrics
 
-All MTT-related metrics are emitted via `:telemetry.execute/3` and exposed as Prometheus
-metrics on the port configured by `config :proca, ProcaWeb.Telemetry, port: 9568`
-(default `9568`).
+Metrics are emitted via `:telemetry.execute/3`, plus Phoenix/Plug and Ecto telemetry, and
+exposed as Prometheus metrics on the port configured by
+`config :proca, ProcaWeb.Telemetry, port: 9568` (default `9568`).
 
-There are two MTT subsystems, each with its own metric namespace:
+Namespaces:
 
+- **`web.duration`** — full HTTP request processing duration
+- **`api.*`** — call counts / duration for the main API operations (`addAction`, `addActionContact`, supporter-count widget)
+- **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
 - **`proca.mtt.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
 - **`proca.mtt_new.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
+
+
+TODO: change the MTT to have the new correct names for the two algo
+
+---
+
+## API / HTTP metrics
+
+Emitted by `Plug.Telemetry` in `ProcaWeb.Endpoint`, `ProcaWeb.Resolvers.Action.add_action_contact/3`
+and `add_action/3`, and `ProcaWeb.Resolvers.Campaign.stats/3` (`supporter_count`).
+
+| Metric                            | Type         | Tags | Description                                                              |
+|-----------------------------------|--------------|------|--------------------------------------------------------------------------|
+| `web.duration`                    | Distribution | —    | Full HTTP request processing time (ms), from `Plug.Telemetry`            |
+| `api.add_action_contact.count`    | Counter      | —    | Number of `addActionContact` calls                                       |
+| `api.add_action_contact.duration` | Distribution | —    | GraphQL resolver duration (ms) for `addActionContact`                    |
+| `api.add_action.count`            | Counter      | —    | Number of `addAction` calls                                              |
+| `api.supporter_count.count`       | Counter      | —    | Number of `campaign { stats { supporter_count } }` resolutions           |
+
+**Duration buckets** (milliseconds):
+- `web.duration`: `10, 25, 50, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000`
+- `api.add_action_contact.duration`: `5, 10, 20, 50, 100, 200, 300, 500, 750, 1000, 2000, 5000`
+
+**Note:** `api.add_action_contact.duration` measures only the resolver; the
+`web.duration` histogram covers the whole HTTP request end-to-end (the client-side k6
+`http_req_duration` also includes network + proxy on top of this).
+
+Example PromQL:
+
+```promql
+# HTTP request rate and p95 latency
+rate(web_duration_count[5m])
+histogram_quantile(0.95,
+  sum by (le) (rate(web_duration_bucket[5m]))
+)
+
+# addActionContact calls/sec + p95 resolver duration
+rate(api_add_action_contact_count_total[5m])
+histogram_quantile(0.95,
+  sum by (le) (rate(api_add_action_contact_duration_bucket[5m]))
+)
+
+# addAction and supporter-count widget call rates
+rate(api_add_action_count_total[5m])
+rate(api_supporter_count_count_total[5m])
+```
+
+---
+
+## Database metrics
+
+Emitted by Ecto for every query (`[:proca, :repo, :query]`), exposed under the `sql.*`
+names. Together these break the DB part of a request into actual execution vs. waiting
+for a pooled connection (`sql.queue_time` is the main pool-saturation signal).
+
+| Metric              | Type  | Tags | Description                                            |
+|---------------------|-------|------|--------------------------------------------------------|
+| `sql.query_time`    | Gauge | —    | Time spent executing the query (ms)                    |
+| `sql.queue_time`    | Gauge | —    | Time spent waiting to check out a DB connection (ms)   |
+| `sql.idle_time`     | Gauge | —    | Time the connection sat idle in the transaction (ms)   |
+| `sql.decode_time`   | Gauge | —    | Time decoding the result rows (ms)                     |
+| `sql.total_time`    | Gauge | —    | query_time + queue_time + decode_time + idle_time (ms) |
 
 ---
 
