@@ -116,9 +116,10 @@ defmodule ProcaWeb.Telemetry do
 
   defp metrics do
     [
-      # API call counters + durations
+      # API call counters + durations.
+      # add_action_contact call count comes from the histogram's automatic
+      # `_count` series (api_add_action_contact_duration_count), 
       counter("api.add_action.count"),
-      counter("api.add_action_contact.count"),
       counter("api.supporter_count.count"),
       distribution("api.add_action_contact.duration",
         unit: {:native, :millisecond},

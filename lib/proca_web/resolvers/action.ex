@@ -180,13 +180,13 @@ defmodule ProcaWeb.Resolvers.Action do
         end
       end
     after
+      # Emit duration in :native (nanosecond) units — the metric declaration
+      # `unit: {:native, :millisecond}` converts it to ms. Do NOT pre-convert to
+      # ms here, or the reporter treats ms-as-native and the value collapses to ~0.
+      # Call count is the histogram's automatic `_count`; no separate count.
       :telemetry.execute(
         [:api, :add_action_contact],
-        %{
-          count: 1,
-          duration:
-            System.convert_time_unit(System.monotonic_time() - started, :native, :millisecond)
-        },
+        %{duration: System.monotonic_time() - started},
         %{}
       )
     end

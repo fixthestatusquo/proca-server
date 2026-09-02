@@ -25,8 +25,7 @@ and `add_action/3`, and `ProcaWeb.Resolvers.Campaign.stats/3` (`supporter_count`
 | Metric                            | Type         | Tags | Description                                                              |
 |-----------------------------------|--------------|------|--------------------------------------------------------------------------|
 | `web.duration`                    | Distribution | —    | Full HTTP request processing time (ms), from `Plug.Telemetry`            |
-| `api.add_action_contact.count`    | Counter      | —    | Number of `addActionContact` calls                                       |
-| `api.add_action_contact.duration` | Distribution | —    | GraphQL resolver duration (ms) for `addActionContact`                    |
+| `api.add_action_contact.duration` | Distribution | —    | GraphQL resolver duration (ms) for `addActionContact`; its `_count` series is the call count |
 | `api.add_action.count`            | Counter      | —    | Number of `addAction` calls                                              |
 | `api.supporter_count.count`       | Counter      | —    | Number of `campaign { stats { supporter_count } }` resolutions           |
 
@@ -47,8 +46,8 @@ histogram_quantile(0.95,
   sum by (le) (rate(web_duration_bucket[5m]))
 )
 
-# addActionContact calls/sec + p95 resolver duration
-rate(api_add_action_contact_count_total[5m])
+# addActionContact calls/sec (histogram _count) + p95 resolver duration
+rate(api_add_action_contact_duration_count[5m])
 histogram_quantile(0.95,
   sum by (le) (rate(api_add_action_contact_duration_bucket[5m]))
 )
