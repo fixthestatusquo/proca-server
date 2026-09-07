@@ -23,7 +23,7 @@ Besides, it receives metrics about real-time actions between intervals, and adju
 
 Modules: `Proca.Server.MTT`, `Proca.Server.MTTWorker`, `Proca.Server.MTTScheduler`, `Proca.Stage.MTT`, `Proca.Server.MTTMailer`
 
-- `MTT` / `MTTWorker` (drip) and `MTTScheduler` (no-drip) decide *when* to send and publish to `wrk.N.mtt`.
+- `MTT` / `MTTWorker` (pacing) and `MTTScheduler` (throttle) decide *when* to send and publish to `wrk.N.mtt`.
 - `Proca.Stage.MTT` consumes the queue and delivers via `MTTContext`.
 - `MTTMailer.pause/start` stops/starts the consumers at runtime (`scripts/mttmailer`).
 

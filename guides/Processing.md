@@ -253,7 +253,7 @@ If current org is instance org, and it has `eventBackend` set, it will receive e
 
 ### MTT emails
 
-MTT scheduling still runs under cron-like servers (`Proca.Server.MTT` every ~3 minutes for drip, `Proca.Server.MTTHourlyCron` / `MTTScheduler` for no-drip). They **publish** `{messageId, targetId}` to the org queue `wrk.X.mtt` (default exchange). `Proca.Stage.MTT` Broadway consumers deliver the email and mark the DB row `sent`.
+MTT scheduling still runs under cron-like servers (`Proca.Server.MTT` every ~3 minutes for pacing, `Proca.Server.MTTHourlyCron` / `MTTScheduler` for throttle). They **publish** `{messageId, targetId}` to the org queue `wrk.X.mtt` (default exchange). `Proca.Stage.MTT` Broadway consumers deliver the email and mark the DB row `sent`.
 
 Test actions are published to `wrk.mtt.test` from `Proca.Stage.Processing` when the action reaches deliver.
 

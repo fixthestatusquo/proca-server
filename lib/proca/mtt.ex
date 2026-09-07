@@ -23,13 +23,30 @@ defmodule Proca.MTT do
 
     field :max_emails_per_hour, :integer
     field :timezone, :string, default: "Etc/UTC"
+    # DB column name is historical; prefer "pacing" / "throttle" in docs and metrics.
+    # true  = pacing delivery (MTTWorker, proportional cycles)
+    # false = throttle delivery (MTTScheduler, per-target hourly cap)
     field :drip_delivery, :boolean, default: true
 
     belongs_to :campaign, Proca.Campaign
   end
 
+  @doc """
+  MTT delivery mode for telemetry and docs.
+
+  - `:pacing` — spread volume evenly across the campaign window (`drip_delivery: true`)
+  - `:throttle` — cap sends per target per hour (`drip_delivery: false`)
+  """
+  def delivery_mode(%__MODULE__{drip_delivery: true}), do: :pacing
+  def delivery_mode(%__MODULE__{drip_delivery: false}), do: :throttle
+  def delivery_mode(true), do: :pacing
+  def delivery_mode(false), do: :throttle
+  def delivery_mode(nil), do: nil
+  def delivery_mode(_), do: nil
+
   def changeset(mtt, attrs) do
     assocs = Map.take(attrs, [:campaign])
+    attrs = normalize_delivery_mode_attrs(attrs)
 
     mtt
     |> cast(attrs, [
@@ -51,4 +68,17 @@ defmodule Proca.MTT do
     |> Proca.Service.EmailTemplate.validate_exists(:message_template)
     |> validate_inclusion(:timezone, Tzdata.zone_list())
   end
+
+  # GraphQL pacingDelivery maps onto the drip_delivery column.
+  defp normalize_delivery_mode_attrs(attrs) when is_map(attrs) do
+    {pacing, attrs} = Map.pop(attrs, :pacing_delivery)
+
+    if is_nil(pacing) do
+      attrs
+    else
+      Map.put(attrs, :drip_delivery, pacing)
+    end
+  end
+
+  defp normalize_delivery_mode_attrs(attrs), do: attrs
 end
