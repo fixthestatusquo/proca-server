@@ -18,7 +18,7 @@ defmodule Proca.ActionPage.Status do
   use GenServer
 
   import Ecto.Query
-  import Proca.Repo, only: [all: 1, one: 1]
+  import Proca.Repo, only: [all: 1]
 
   alias Proca.{Action, ActionPage}
 
@@ -61,7 +61,6 @@ defmodule Proca.ActionPage.Status do
   def handle_cast(
         {:action,
          action = %Action{
-           id: id,
            action_page_id: ap_id,
            inserted_at: seen_at
          }},
@@ -69,12 +68,14 @@ defmodule Proca.ActionPage.Status do
       ) do
     :ets.insert(:last_seen_at, {ap_id, seen_at})
 
-    if action.source_id != nil do
-      source = one(Ecto.assoc(action, :source))
+    # The source association is already loaded (put_assoc in the resolver), so
+    # read its location directly instead of issuing a per-action SELECT by id.
+    case action.source do
+      %{location: location} when location != "" ->
+        :ets.insert(:last_seen_location, {ap_id, location})
 
-      if source.location != "" do
-        :ets.insert(:last_seen_location, {ap_id, source.location})
-      end
+      _ ->
+        :ok
     end
 
     {:noreply, s}

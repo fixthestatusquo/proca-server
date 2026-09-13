@@ -45,6 +45,8 @@ defmodule ProcaWeb.Resolvers.Campaign do
   end
 
   def stats(campaign, _a, _c) do
+    :telemetry.execute([:api, :supporter_count], %{count: 1}, %{})
+
     %Proca.Server.Stats{
       supporters: supporters,
       action: at_cts,
