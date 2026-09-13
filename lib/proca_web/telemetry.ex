@@ -176,7 +176,7 @@ defmodule ProcaWeb.Telemetry do
 
       # Supporter detail lookup (see #327): outcome is one of :found,
       # :not_found, :bad_format, :bad_content_type, :unknown, :not_supported
-      counter("proca.detail.lookup.count", tags: [:org_id, :outcome]),
+      counter("crm.lookup.count", tags: [:org_id, :outcome]),
 
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),

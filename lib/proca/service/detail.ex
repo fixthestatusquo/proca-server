@@ -181,7 +181,7 @@ defmodule Proca.Service.Detail do
   # Outcome of a detail lookup, for monitoring (see #327): whether the
   # supporter was found, not found, or the lookup failed some other way.
   defp emit_lookup_metric(org_id, outcome) do
-    :telemetry.execute([:proca, :detail, :lookup], %{count: 1}, %{
+    :telemetry.execute([:crm, :lookup], %{count: 1}, %{
       org_id: org_id,
       outcome: outcome
     })
