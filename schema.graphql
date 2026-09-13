@@ -197,6 +197,12 @@ type RootMutationType {
 
     "Supporter confirmation template name"
     supporterConfirmTemplate: String
+
+    """
+    Override the org's action confirmation setting for this campaign only.
+    null - inherit the org setting, true - force action confirm on, false - force it off.
+    """
+    actionConfirm: Boolean
   ): Campaign!
 
   "Add a new campaign"
@@ -432,6 +438,9 @@ type RootMutationType {
     "Use a particular owned service type for sending emails"
     emailBackend: ServiceName
 
+    "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+    transactionalEmailBackend: ServiceName
+
     "Envelope FROM email when sending emails"
     emailFrom: String
 
@@ -538,6 +547,15 @@ type RootMutationType {
     "Content of service"
     input: ServiceInput!
   ): Service!
+
+  """
+  Reset the in-memory transactional email counter for an org's transactional_email_backend.
+  Call this from a nightly cron to re-open the budget window each day.
+  """
+  resetTransactionalEmailBudget(
+    "Owner org"
+    orgName: String!
+  ): Status!
 
   "Stripe API - add a stripe payment intent, when donating to the action page specified by id"
   addStripePaymentIntent(
@@ -974,6 +992,9 @@ type Processing {
   "Use a particular owned service type for sending emails"
   emailBackend: ServiceName
 
+  "Use a particular owned service type for sending transactional (non-MTT) emails, instead of email_backend"
+  transactionalEmailBackend: ServiceName
+
   "Is the supporter required to double opt in their action (and associated personal data)?"
   supporterConfirm: Boolean!
 
@@ -1089,6 +1110,9 @@ enum ServiceName {
 
   "Brevo to send transactional emails"
   BREVO
+
+  "HubSpot to send transactional emails"
+  HUBSPOT
 }
 
 type Service {
@@ -1113,6 +1137,9 @@ type Service {
   the email backend is authorized to send from (SPF/DKIM configured).
   """
   sendingFrom: String
+
+  "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+  transactionalEmailBudget: Int
 }
 
 input ServiceInput {
@@ -1133,6 +1160,9 @@ input ServiceInput {
 
   "Verified sending address for this backend (overrides org email_from as the envelope From domain)"
   sendingFrom: String
+
+  "How many transactional emails to send via this service, when used as the org's transactional_email_backend, before falling back to email_backend (for warming up a new backend, or capping its usage). Unset means no limit."
+  transactionalEmailBudget: Int
 }
 
 type User {
@@ -1346,6 +1376,9 @@ type Action {
 type Contact {
   "Contact ref (fingerprint) of supporter"
   contactRef: ID!
+
+  "Rank of this action among actions from the same contact in this campaign (0 = first, >0 = duplicate)"
+  dupeRank: Int!
 
   "Stringified json with PII optionally encrypted"
   payload: String!
@@ -1846,6 +1879,12 @@ type CampaignProcessing {
 
   "Supporter confirmation template name"
   supporterConfirmTemplate: String
+
+  """
+  Override the org's action confirmation setting (org.customActionConfirm) for this campaign only.
+  null - inherit the org setting, true - force action confirm on, false - force it off.
+  """
+  actionConfirm: Boolean
 }
 
 "Campaign content changed in mutations"
@@ -1885,6 +1924,12 @@ input CampaignInput {
 
   "Supporter confirmation template name"
   supporterConfirmTemplate: String
+
+  """
+  Override the org's action confirmation setting for this campaign only.
+  null - inherit the org setting, true - force action confirm on, false - force it off.
+  """
+  actionConfirm: Boolean
 }
 
 type CampaignMtt {
