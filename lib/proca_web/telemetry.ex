@@ -174,6 +174,10 @@ defmodule ProcaWeb.Telemetry do
       counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
       counter("proca.email.reminder_confirm.count", tags: [:org_id]),
 
+      # Supporter detail lookup (see #327): outcome is one of :found,
+      # :not_found, :bad_format, :bad_content_type, :unknown, :not_supported
+      counter("proca.detail.lookup.count", tags: [:org_id, :outcome]),
+
       # Database Metrics
       last_value("proca.repo.query.total_time", unit: {:native, :millisecond}),
       last_value("proca.repo.query.decode_time", unit: {:native, :millisecond}),
