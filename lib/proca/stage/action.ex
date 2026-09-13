@@ -118,15 +118,15 @@ defmodule Proca.Stage.Action do
   end
 
   @doc """
-  Can fail due to lookup failure
+  Detail lookup failures do not fail the message: Processing.lookup_detail/1
+  falls back to processing without the extra detail so the action still
+  proceeds (eg. to sending the normal confirmation email).
   """
   @spec lookup_all([%Message{}]) :: [%Message{}]
   def lookup_all(msgs) do
     map_only_ok(msgs, fn %Message{data: action} = m ->
-      case Processing.lookup_detail(action) do
-        {:ok, proc} -> Message.put_data(m, proc)
-        {:error, reason} -> Message.failed(m, inspect(reason))
-      end
+      {:ok, proc} = Processing.lookup_detail(action)
+      Message.put_data(m, proc)
     end)
   end
 
