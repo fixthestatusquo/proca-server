@@ -341,9 +341,14 @@ defmodule Proca.Stage.Processing do
   def rank_supporter(p), do: p
 
   @doc """
-  If we are emitting to queue, do the lookup and modify supporter and/or action
+  If we are emitting to queue, do the lookup and modify supporter and/or action.
+
+  If the lookup fails (backend down, bad response, not found...) we do not
+  block the action: we proceed without the extra detail, so eg. the
+  supporter still gets the normal (two-button) confirmation email instead of
+  getting stuck retrying the lookup forever.
   """
-  @spec lookup_detail(%Processing{}) :: {:ok, %Processing{}} | {:error, term()}
+  @spec lookup_detail(%Processing{}) :: {:ok, %Processing{}}
   def lookup_detail(p = %{action_change: action_ch, supporter_change: supporter_ch, stage: stage})
       when stage != nil do
     alias Proca.Service.Detail
@@ -355,8 +360,12 @@ defmodule Proca.Stage.Processing do
         {s, a} = Detail.update(supporter_ch, action_ch, details)
         {:ok, %{p | action_change: a, supporter_change: s, details: details}}
 
-      {:error, _reason} = e ->
-        e
+      {:error, reason} ->
+        warn(
+          "Skipping supporter detail lookup for org=#{org.name}(#{org.id}): #{inspect(reason)}"
+        )
+
+        {:ok, p}
     end
   end
 

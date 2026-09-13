@@ -121,6 +121,7 @@ defmodule Proca.Service.Detail do
 
         case details do
           %{valid?: true} ->
+            emit_lookup_metric(org_id, :found)
             {:ok, apply_changes(details)}
 
           error ->
@@ -131,13 +132,16 @@ defmodule Proca.Service.Detail do
             )
 
             # XXX calling ProcaWeb module
+            emit_lookup_metric(org_id, :bad_format)
             {:error, :bad_format}
         end
 
       {:ok, 200, data} when is_bitstring(data) ->
+        emit_lookup_metric(org_id, :bad_content_type)
         {:error, :bad_content_type}
 
       {:ok, 404, _} ->
+        emit_lookup_metric(org_id, :not_found)
         {:error, :not_found}
 
       other ->
@@ -150,18 +154,37 @@ defmodule Proca.Service.Detail do
           "Cannot lookup supporter detail from webhook org=#{org_name}(#{org_id}) (id #{srv.id}) at #{srv.host}: #{inspect(other)}"
         )
 
+        emit_lookup_metric(org_id, :unknown)
         {:error, :unknown}
     end
   end
 
-  def lookup(%Org{detail_backend: %{name: :testdetail}}, supporter) do
-    apply(Proca.TestDetailBackend, :lookup, [supporter])
+  def lookup(%Org{id: org_id, detail_backend: %{name: :testdetail}}, supporter) do
+    case apply(Proca.TestDetailBackend, :lookup, [supporter]) do
+      {:ok, _} = ok ->
+        emit_lookup_metric(org_id, :found)
+        ok
+
+      {:error, reason} = e ->
+        emit_lookup_metric(org_id, reason)
+        e
+    end
   end
 
   def lookup(org, _sup) do
     error("Asked to do unsupported lookup for org #{inspect(org)}")
 
+    emit_lookup_metric(Map.get(org, :id), :not_supported)
     {:error, :not_supported}
+  end
+
+  # Outcome of a detail lookup, for monitoring (see #327): whether the
+  # supporter was found, not found, or the lookup failed some other way.
+  defp emit_lookup_metric(org_id, outcome) do
+    :telemetry.execute([:crm, :lookup], %{count: 1}, %{
+      org_id: org_id,
+      outcome: outcome
+    })
   end
 
   @spec update(Changeset.t(%Supporter{}), Changeset.t(%Action{}), %Detail{}) ::

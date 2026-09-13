@@ -191,6 +191,11 @@ defmodule ProcaWeb.Telemetry do
       counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
       counter("proca.email.reminder_confirm.count", tags: [:org_id]),
 
+      # Supporter detail lookup (see #327): outcome is one of :found,
+      # :not_found, :bad_format, :bad_content_type, :unknown, :not_supported
+      counter("crm.lookup.count", tags: [:org_id, :outcome]),
+
+
       # Database Metrics (Ecto emits these on [:proca, :repo, :query])
       last_value("sql.total_time",
         event_name: [:proca, :repo, :query],
