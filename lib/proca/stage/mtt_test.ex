@@ -12,6 +12,7 @@ defmodule Proca.Stage.MTTTest do
   """
 
   use Broadway
+  require Logger
 
   alias Broadway.Message
   alias Proca.Server.MTTContext
@@ -46,15 +47,23 @@ defmodule Proca.Stage.MTTTest do
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
       {:ok, %{"actionId" => action_id, "testing" => true}} ->
+        Logger.warning("MTT test: received queue message for action #{action_id}")
+
         case MTTContext.deliver_test_mails(action_id) do
-          :ok -> message
-          {:error, reason} -> Message.failed(message, inspect(reason))
+          :ok ->
+            message
+
+          {:error, reason} ->
+            Logger.warning("MTT test: delivery failed for action #{action_id}: #{inspect(reason)}")
+            Message.failed(message, inspect(reason))
         end
 
       {:ok, _} ->
+        Logger.warning("MTT test: invalid message format #{data}")
         ignore(message, "Invalid MTT test message format")
 
       {:error, reason} ->
+        Logger.warning("MTT test: could not decode queue message: #{inspect(reason)}")
         ignore(message, reason)
     end
   end

@@ -435,10 +435,20 @@ defmodule Proca.Stage.Processing do
 
     if Repo.exists?(from(m in Proca.Action.Message, where: m.action_id == ^id)) do
       queue = Proca.Pipes.Topology.mtt_test_queue()
+      warn("MTT test: action #{id} delivered, publishing to #{queue}")
       Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, chan)
     else
+      warn("MTT test: action #{id} delivered but has no target Message rows yet, not publishing")
       :ok
     end
+  end
+
+  # A testing action reached :deliver but didn't match the clause above (eg.
+  # action_page/campaign wasn't preloaded) - would otherwise silently skip
+  # publishing to the test queue with no trace.
+  defp publish_mtt_test(%{id: id, testing: true}, _chan) do
+    warn("MTT test: action #{id} is testing but did not match the publish clause (campaign not loaded?)")
+    :ok
   end
 
   defp publish_mtt_test(_action, _chan), do: :ok

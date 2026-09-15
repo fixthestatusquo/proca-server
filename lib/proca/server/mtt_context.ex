@@ -372,6 +372,11 @@ defmodule Proca.Server.MTTContext do
 
       case messages do
         [] ->
+          Logger.warning(
+            "MTT test: no unsent messages matched for action #{action_id} " <>
+              "(already sent, or action not yet :delivered/:repeat)"
+          )
+
           :ok
 
         [first | _] = messages ->
@@ -380,8 +385,16 @@ defmodule Proca.Server.MTTContext do
           )
 
           case get_target(first.target_id) do
-            nil -> {:error, :target_unavailable}
-            target -> deliver_messages(target, messages)
+            nil ->
+              Logger.warning(
+                "MTT test: target #{first.target_id} unavailable for action #{action_id} " <>
+                  "(missing campaign/mtt/org email_backend)"
+              )
+
+              {:error, :target_unavailable}
+
+            target ->
+              deliver_messages(target, messages)
           end
       end
     end)
