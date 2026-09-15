@@ -358,44 +358,65 @@ defmodule Proca.Server.MTTContext do
     Repo.transaction(fn ->
       Ecto.Adapters.SQL.query!(Repo, "SELECT pg_advisory_xact_lock($1)", [action_id])
 
-      messages =
-        from(m in Message,
-          join: a in assoc(m, :action),
-          where:
-            a.id == ^action_id and a.testing == true and
-              a.processing_status in [:delivered, :repeat] and
-              m.sent == false,
-          order_by: [asc: m.id],
-          preload: [target: :emails, message_content: [], action: [:supporter, action_page: :org]]
-        )
-        |> Repo.all()
+      case Repo.get(Proca.Action, action_id) do
+        nil ->
+          {:error, :action_not_found}
 
-      case messages do
-        [] ->
+        %{testing: true, processing_status: status} when status not in [:delivered, :repeat] ->
+          # The test message is published (Processing.emit) before the new
+          # processing_status is persisted (Processing.store!, which only runs
+          # in Stage.Action's later ack callback) - so this can be a genuine
+          # race, not a real "nothing to do". Returning an error makes it
+          # retryable (on_failure: :reject_and_requeue_once) instead of
+          # silently discarding the message before the status has landed.
           Logger.warning(
-            "MTT test: no unsent messages matched for action #{action_id} " <>
-              "(already sent, or action not yet :delivered/:repeat)"
+            "MTT test: action #{action_id} not yet :delivered/:repeat (currently #{status}), will retry"
           )
 
-          :ok
+          {:error, :action_not_yet_delivered}
 
-        [first | _] = messages ->
-          Logger.warning(
-            "MTT test message(s) to send for action #{action_id}: #{length(messages)} message(s)"
-          )
+        %{testing: true} ->
+          messages =
+            from(m in Message,
+              where: m.action_id == ^action_id and m.sent == false,
+              order_by: [asc: m.id],
+              preload: [
+                target: :emails,
+                message_content: [],
+                action: [:supporter, action_page: :org]
+              ]
+            )
+            |> Repo.all()
 
-          case get_target(first.target_id) do
-            nil ->
+          case messages do
+            [] ->
               Logger.warning(
-                "MTT test: target #{first.target_id} unavailable for action #{action_id} " <>
-                  "(missing campaign/mtt/org email_backend)"
+                "MTT test: no unsent messages left for action #{action_id} (already sent)"
               )
 
-              {:error, :target_unavailable}
+              :ok
 
-            target ->
-              deliver_messages(target, messages)
+            [first | _] = messages ->
+              Logger.warning(
+                "MTT test message(s) to send for action #{action_id}: #{length(messages)} message(s)"
+              )
+
+              case get_target(first.target_id) do
+                nil ->
+                  Logger.warning(
+                    "MTT test: target #{first.target_id} unavailable for action #{action_id} " <>
+                      "(missing campaign/mtt/org email_backend)"
+                  )
+
+                  {:error, :target_unavailable}
+
+                target ->
+                  deliver_messages(target, messages)
+              end
           end
+
+        _not_testing ->
+          {:error, :not_testing}
       end
     end)
     |> case do

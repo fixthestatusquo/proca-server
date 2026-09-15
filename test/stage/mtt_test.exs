@@ -154,6 +154,26 @@ defmodule Proca.Stage.MTTStageTest do
     end
   end
 
+  describe "deliver_test_mails/1 publish-before-persist race" do
+    test "returns a retryable error instead of silently discarding when the action isn't yet :delivered/:repeat in the DB",
+         %{action: action} do
+      # Simulates the window between Processing.emit (publishes to wrk.mtt.test)
+      # and Processing.store! (persists the new processing_status) - the
+      # message can be consumed before the DB write lands.
+      Repo.update!(Ecto.Changeset.change(action, processing_status: :accepted))
+
+      assert MTTContext.deliver_test_mails(action.id) == {:error, :action_not_yet_delivered}
+
+      # nothing was discarded as sent - it's still eligible once the real
+      # status actually lands
+      refute Repo.exists?(
+               from(m in Proca.Action.Message,
+                 where: m.action_id == ^action.id and m.sent == true
+               )
+             )
+    end
+  end
+
   describe "dupe-ranked test actions" do
     test "delivered and would-be-repeat test actions each get exactly one test message", %{
       action: action,
