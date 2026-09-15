@@ -156,8 +156,17 @@ defmodule Proca.Pipes.Topology do
   @doc "Name of queue to which a worker is attached (like for email, SQS)"
   def wqn(%Org{id: id}, name), do: "wrk.#{id}.#{name}"
 
-  @doc "Global queue for low-volume MTT test actions"
-  def mtt_test_queue, do: "wrk.mtt.test"
+  @doc """
+  Global queue for low-volume MTT test actions.
+
+  Named `.v2` because the original `wrk.mtt.test` already exists in production
+  declared as plain `durable: true`, with no arguments. RabbitMQ rejects
+  redeclaring an existing queue with different arguments (406
+  PRECONDITION_FAILED), so adding the dead-letter args below required a new
+  queue name, same as `org.N.mtt.fail` avoiding reuse of `org.N.fail`. The old
+  `wrk.mtt.test` is now unused and safe to delete once drained.
+  """
+  def mtt_test_queue, do: "wrk.mtt.test.v2"
 
   @doc "Global fail exchange/queue for `wrk.mtt.test` (mirrors the per-org `org.N.mtt.fail`)"
   def mtt_test_fail_exchange, do: "mtt.test.fail"
