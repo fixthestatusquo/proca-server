@@ -38,6 +38,19 @@ defmodule Proca.PipesTest do
     assert Proca.Stage.Support.times_retried(msg) == 55613
   end
 
+  test "times_retried does not crash on a first-time message with no x-death header" do
+    # RabbitMQ represents "no headers property at all" as :undefined, not [] -
+    # this is the shape of every message on its first delivery attempt, before
+    # it has ever been dead-lettered.
+    msg = %Broadway.Message{
+      data: "",
+      acknowledger: Broadway.NoopAcknowledger,
+      metadata: %{headers: :undefined}
+    }
+
+    assert Proca.Stage.Support.times_retried(msg) == 0
+  end
+
   test "too_many_retries? uses the configured numeric limit" do
     previous = Application.get_env(:proca, Proca.Pipes)
     Application.put_env(:proca, Proca.Pipes, Keyword.put(previous, :retry_limit, 3))
