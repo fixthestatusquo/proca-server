@@ -258,7 +258,10 @@ defmodule Proca.Stage.Support do
 
   """
   # XXX how is this count counted?
-  def times_retried(%Broadway.Message{metadata: %{headers: hdrs}}) do
+  # A message with no headers at all (eg. a first-time publish, never dead-lettered)
+  # has its AMQP headers property come back as :undefined, not [] - guard against that
+  # so we don't crash before the message ever gets a real delivery attempt.
+  def times_retried(%Broadway.Message{metadata: %{headers: hdrs}}) when is_list(hdrs) do
     case List.keyfind(hdrs, "x-death", 0) do
       {_, _, [{:table, props} | _]} ->
         case List.keyfind(props, "count", 0) do
