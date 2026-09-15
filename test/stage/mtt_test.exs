@@ -8,6 +8,7 @@ defmodule Proca.Stage.MTTStageTest do
   alias Proca.Server.MTTContext
   alias Proca.Stage.MTT
   alias Proca.Stage.MTTTest, as: MTTTestStage
+  alias Proca.Stage.Processing
   alias Proca.Pipes.Topology
 
   import Proca.StoryFactory, only: [mtt_story: 0]
@@ -150,6 +151,54 @@ defmodule Proca.Stage.MTTStageTest do
 
         assert {:failed, _} = result.status
       end
+    end
+  end
+
+  describe "dupe-ranked test actions" do
+    test "delivered and would-be-repeat test actions each get exactly one test message", %{
+      action: action,
+      first_target: first_target
+    } do
+      # Same action page, same fingerprint as `action`'s supporter, and that
+      # supporter is already :accepted -> Supporter.naive_rank will flag this
+      # as a same-page duplicate (dupe_rank > 0), so rank_supporter correctly
+      # demotes it to :repeat. Regression test: deliver_test_mails/1 must
+      # still send the test email for a :repeat testing action, not just
+      # :delivered ones (see deliver_test_mails/1's status filter).
+      other_action =
+        Factory.insert(:action,
+          action_page: action.action_page,
+          testing: true,
+          supporter:
+            Factory.build(:basic_data_pl_supporter_with_contact,
+              action_page: action.action_page,
+              processing_status: :new,
+              fingerprint: action.supporter.fingerprint
+            )
+        )
+
+      p = %Processing{
+        action_change: Ecto.Changeset.change(other_action, processing_status: :delivered),
+        supporter_change: Ecto.Changeset.change(other_action.supporter),
+        new_state: {:delivered, :accepted},
+        stage: :deliver
+      }
+
+      ranked = Processing.rank_supporter(p)
+
+      # sanity check: this really was detected as a same-page duplicate and
+      # demoted, same as it would be for a real (non-test) supporter
+      assert Ecto.Changeset.get_change(ranked.supporter_change, :dupe_rank, 0) > 0
+      assert Ecto.Changeset.get_change(ranked.action_change, :processing_status) == :repeat
+
+      Processing.store!(ranked)
+      Factory.insert(:message, action: other_action, target: first_target)
+
+      assert MTTContext.deliver_test_mails(action.id) == :ok
+      assert MTTContext.deliver_test_mails(other_action.id) == :ok
+
+      assert [_] = Proca.TestEmailBackend.mailbox(action.supporter.email)
+      assert [_] = Proca.TestEmailBackend.mailbox(other_action.supporter.email)
     end
   end
 

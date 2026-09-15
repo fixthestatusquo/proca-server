@@ -362,7 +362,8 @@ defmodule Proca.Server.MTTContext do
         from(m in Message,
           join: a in assoc(m, :action),
           where:
-            a.id == ^action_id and a.testing == true and a.processing_status == :delivered and
+            a.id == ^action_id and a.testing == true and
+              a.processing_status in [:delivered, :repeat] and
               m.sent == false,
           order_by: [asc: m.id],
           preload: [target: :emails, message_content: [], action: [:supporter, action_page: :org]]
