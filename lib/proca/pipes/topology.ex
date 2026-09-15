@@ -45,6 +45,8 @@ defmodule Proca.Pipes.Topology do
                                   (no app TTL; park until ops requeue via org.N.retry)
   MTT:                            DLX:x org.N.mtt.fail > org.N.mtt.fail
                                   TTL 30min > x org.N.mtt.retry > wrk.N.mtt
+  MTT test (global):              DLX:x mtt.test.fail > mtt.test.fail
+                                  TTL 30min > x mtt.test.retry > wrk.mtt.test
 
   Event Routing Key: event_type.sub_type
 
@@ -157,6 +159,24 @@ defmodule Proca.Pipes.Topology do
   @doc "Global queue for low-volume MTT test actions"
   def mtt_test_queue, do: "wrk.mtt.test"
 
+  @doc "Global fail exchange/queue for `wrk.mtt.test` (mirrors the per-org `org.N.mtt.fail`)"
+  def mtt_test_fail_exchange, do: "mtt.test.fail"
+
+  @doc "Global retry exchange for `wrk.mtt.test`, fed by `mtt_test_fail_exchange` after its TTL"
+  def mtt_test_retry_exchange, do: "mtt.test.retry"
+
+  @doc """
+  Dead-letter arguments for `wrk.mtt.test`, so a message that fails twice (its one
+  requeue, then a second failure) parks in `mtt.test.fail` for inspection instead of
+  being silently dropped - same shape as `mtt_retry_queue_arguments/2`, just global.
+  """
+  def mtt_test_retry_queue_arguments do
+    [
+      {"x-dead-letter-exchange", :longstr, mtt_test_fail_exchange()},
+      {"x-dead-letter-routing-key", :longstr, mtt_test_queue()}
+    ]
+  end
+
   @doc "Per-org queue for regular drip and no-drip MTT delivery"
   def mtt_queue(org = %Org{}), do: wqn(org, "mtt")
 
@@ -263,7 +283,32 @@ defmodule Proca.Pipes.Topology do
 
     # MTT queues are not bound to stage exchanges. Producers publish directly
     # through RabbitMQ's default exchange.
-    Queue.declare(chan, mtt_test_queue(), durable: true)
+    #
+    # Global test-queue retry circuit: previously wrk.mtt.test had no DLX at all,
+    # so a message that failed twice (its one on_failure requeue, then a second
+    # failure) was silently dropped with no trace. This mirrors the per-org MTT
+    # retry circuit (declare_retry_circuit/2) but globally, since wrk.mtt.test is
+    # a single shared queue, not one per org.
+    :ok = Exchange.declare(chan, mtt_test_fail_exchange(), :fanout, durable: true)
+    :ok = Exchange.declare(chan, mtt_test_retry_exchange(), :direct, durable: true)
+
+    Queue.declare(chan, mtt_test_fail_exchange(),
+      durable: true,
+      arguments: [
+        {"x-dead-letter-exchange", :longstr, mtt_test_retry_exchange()},
+        {"x-message-ttl", :long, @mtt_fail_ttl_ms}
+      ]
+    )
+
+    :ok = Queue.bind(chan, mtt_test_fail_exchange(), mtt_test_fail_exchange())
+
+    Queue.declare(chan, mtt_test_queue(),
+      durable: true,
+      arguments: mtt_test_retry_queue_arguments()
+    )
+
+    :ok =
+      Queue.bind(chan, mtt_test_queue(), mtt_test_retry_exchange(), routing_key: mtt_test_queue())
 
     # Regular MTT queue: Proca.Server.MTTScheduler and MTTWorker publish here
     # via the default exchange; Proca.Stage.MTT consumes it.
