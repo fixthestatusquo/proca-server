@@ -66,4 +66,13 @@ defmodule Proca.PipesTest do
   test "MTT fail queue TTL is 30 minutes" do
     assert Proca.Pipes.Topology.mtt_fail_ttl_ms() == 1_800_000
   end
+
+  test "wrk.mtt.test has a dead-letter circuit so failed messages park instead of vanishing" do
+    alias Proca.Pipes.Topology
+
+    args = Topology.mtt_test_retry_queue_arguments()
+
+    assert {"x-dead-letter-exchange", :longstr, Topology.mtt_test_fail_exchange()} in args
+    assert {"x-dead-letter-routing-key", :longstr, Topology.mtt_test_queue()} in args
+  end
 end

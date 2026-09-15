@@ -4,6 +4,11 @@ defmodule Proca.Stage.MTTTest do
 
   One event represents one testing action. The database remains the source of
   truth and `MTTContext.deliver_test_mails/1` caps output to one email per locale.
+
+  A message that fails twice (its one `on_failure` requeue, then a second
+  failure) dead-letters into `mtt.test.fail` (30min TTL, then auto-requeues
+  back here) instead of being silently dropped - see
+  `Proca.Pipes.Topology.mtt_test_retry_queue_arguments/0`.
   """
 
   use Broadway
@@ -23,7 +28,10 @@ defmodule Proca.Stage.MTTTest do
           BroadwayRabbitMQ.Producer,
           queue: Proca.Pipes.Topology.mtt_test_queue(),
           connection: Proca.Pipes.Connection.connection_url(),
-          declare: [durable: true],
+          declare: [
+            durable: true,
+            arguments: Proca.Pipes.Topology.mtt_test_retry_queue_arguments()
+          ],
           qos: [prefetch_count: 5],
           on_failure: :reject_and_requeue_once,
           metadata: [:headers]
