@@ -450,7 +450,7 @@ defmodule Proca.Stage.Processing do
   (`Proca.Action.Message.put_messages/3`), and the consumer is idempotent on the
   unsent-`Message` set.
   """
-  @spec publish_mtt_test_after_store(%Processing{}) :: :ok | :error
+  @spec publish_mtt_test_after_store(%Processing{}) :: :ok | {:error, term()}
   def publish_mtt_test_after_store(%Processing{stage: :deliver} = p) do
     case changed_action(p) do
       %{id: id, testing: true, action_page: %{campaign: %{}}} ->

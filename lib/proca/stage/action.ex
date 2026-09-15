@@ -204,15 +204,21 @@ defmodule Proca.Stage.Action do
           # the publish-before-persist race. On failure we only capture to Sentry:
           # an ack can't feed a :failed status back to Broadway, and raising here
           # would crash the whole batch with no retry path.
+          #
+          # publish_mtt_test_after_store/1 forwards Connection.publish/4's own
+          # result, which is `:ok | {:error, term()}` - a reason tuple, not the
+          # bare :error atom - so that's the shape matched here.
           case Processing.publish_mtt_test_after_store(proc) do
             :ok ->
               :ok
 
-            :error ->
-              Logger.warning("MTT test: publish failed after store for action #{action_id}")
+            {:error, reason} ->
+              Logger.warning(
+                "MTT test: publish failed after store for action #{action_id}: #{inspect(reason)}"
+              )
 
               Sentry.capture_message("MTT test: publish failed after store",
-                extra: %{action_id: action_id},
+                extra: %{action_id: action_id, reason: inspect(reason)},
                 level: "warning"
               )
           end
