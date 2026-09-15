@@ -374,7 +374,11 @@ defmodule Proca.Server.MTTContext do
         [] ->
           :ok
 
-        [first | _] ->
+        [first | _] = messages ->
+          Logger.info(
+            "MTT test message(s) to send for action #{action_id}: #{length(messages)} message(s)"
+          )
+
           case get_target(first.target_id) do
             nil -> {:error, :target_unavailable}
             target -> deliver_messages(target, messages)
