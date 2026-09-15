@@ -375,7 +375,7 @@ defmodule Proca.Server.MTTContext do
           :ok
 
         [first | _] = messages ->
-          Logger.info(
+          Logger.warning(
             "MTT test message(s) to send for action #{action_id}: #{length(messages)} message(s)"
           )
 

@@ -75,7 +75,7 @@ defmodule Proca.Server.MTTScheduler do
 
     interval = calc_interval(state.count, jitter_toggle, length(rest))
 
-    Logger.info("Messages interval #{interval} ms for target #{target.id}")
+    Logger.warning("Messages interval #{interval} ms for target #{target.id}")
 
     Process.send_after(self(), {:send_message}, interval)
 
