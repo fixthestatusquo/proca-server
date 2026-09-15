@@ -193,9 +193,30 @@ defmodule Proca.Stage.Action do
       successful
       |> Enum.each(fn
         %{data: %Processing{} = proc} = m ->
+          action_id = action_id(proc)
+
           proc
           |> Processing.clear_transient()
           |> Processing.store!()
+
+          # The MTT test event must be published *after* store! has committed
+          # `processing_status`, so the consumer no longer needs to guard against
+          # the publish-before-persist race. On failure we only capture to Sentry:
+          # an ack can't feed a :failed status back to Broadway, and raising here
+          # would crash the whole batch with no retry path.
+          if proc.stage == :deliver do
+            case Processing.publish_mtt_test_after_store(proc) do
+              :ok ->
+                :ok
+
+              :error ->
+                Logger.warning("MTT test: publish failed after store for action #{action_id}")
+                Sentry.capture_message("MTT test: publish failed after store",
+                  extra: %{action_id: action_id},
+                  level: "warning"
+                )
+            end
+          end
 
           m
 
@@ -211,6 +232,9 @@ defmodule Proca.Stage.Action do
 
     :ok
   end
+
+  defp action_id(%Processing{action_change: %Ecto.Changeset{data: %Action{id: id}}}), do: id
+  defp action_id(_), do: nil
 
   @spec map_only_ok([%Message{}], (%Message{} -> %Message{})) :: [%Message{}]
   defp map_only_ok(messages, fun) do

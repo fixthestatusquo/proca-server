@@ -353,6 +353,11 @@ defmodule Proca.Server.MTTContext do
   the deliver event. Idempotent - only unsent messages are picked up.
   No dupe_rank filter: it is not computed yet at confirm time and does not
   matter for test sends.
+
+  No `processing_status` gate: the test event is only published after the
+  action's status is durably committed (see
+  `Proca.Stage.Processing.publish_mtt_test_after_store/1`), so there is no
+  publish-before-persist race to compensate for here.
   """
   def deliver_test_mails(action_id) do
     Repo.transaction(fn ->
@@ -361,19 +366,6 @@ defmodule Proca.Server.MTTContext do
       case Repo.get(Proca.Action, action_id) do
         nil ->
           {:error, :action_not_found}
-
-        %{testing: true, processing_status: status} when status not in [:delivered, :repeat] ->
-          # The test message is published (Processing.emit) before the new
-          # processing_status is persisted (Processing.store!, which only runs
-          # in Stage.Action's later ack callback) - so this can be a genuine
-          # race, not a real "nothing to do". Returning an error makes it
-          # retryable (on_failure: :reject_and_requeue_once) instead of
-          # silently discarding the message before the status has landed.
-          Logger.warning(
-            "MTT test: action #{action_id} not yet :delivered/:repeat (currently #{status}), will retry"
-          )
-
-          {:error, :action_not_yet_delivered}
 
         %{testing: true} ->
           messages =

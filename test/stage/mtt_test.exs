@@ -154,23 +154,25 @@ defmodule Proca.Stage.MTTStageTest do
     end
   end
 
-  describe "deliver_test_mails/1 publish-before-persist race" do
-    test "returns a retryable error instead of silently discarding when the action isn't yet :delivered/:repeat in the DB",
-         %{action: action} do
-      # Simulates the window between Processing.emit (publishes to wrk.mtt.test)
-      # and Processing.store! (persists the new processing_status) - the
-      # message can be consumed before the DB write lands.
+  describe "deliver_test_mails/1 has no processing_status gate" do
+    test "delivers test emails regardless of the action's processing_status",
+         %{action: action, first_target: %{emails: [%{email: test_email}]} = first_target} do
+      Repo.update!(Ecto.Changeset.change(first_target.campaign.mtt, %{test_email: test_email}))
+
+      # The producer now publishes the test event only *after* store! persists
+      # the status, so the consumer no longer needs to re-check it. A stale or
+      # pre-delivery status must not veto delivery.
       Repo.update!(Ecto.Changeset.change(action, processing_status: :accepted))
 
-      assert MTTContext.deliver_test_mails(action.id) == {:error, :action_not_yet_delivered}
+      assert MTTContext.deliver_test_mails(action.id) == :ok
 
-      # nothing was discarded as sent - it's still eligible once the real
-      # status actually lands
-      refute Repo.exists?(
-               from(m in Proca.Action.Message,
-                 where: m.action_id == ^action.id and m.sent == true
-               )
+      # the unsent messages were actually sent (not discarded/retried)
+      assert Repo.all(
+               from(m in Proca.Action.Message, where: m.action_id == ^action.id and m.sent == true)
              )
+             |> length() > 0
+
+      assert [_] = Proca.TestEmailBackend.mailbox(action.supporter.email)
     end
   end
 

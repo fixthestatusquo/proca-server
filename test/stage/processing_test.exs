@@ -3,6 +3,7 @@ defmodule Proca.Stage.ProcessingTest do
   import Proca.StoryFactory
   alias Proca.Stage
   alias Proca.Factory
+  alias Proca.Stage.Processing
   import Logger
 
   setup do
@@ -52,5 +53,12 @@ defmodule Proca.Stage.ProcessingTest do
     |> Enum.each(&Stage.Action.process/1)
 
     :timer.sleep(10_000)
+  end
+
+  describe "publish_mtt_test_after_store/1" do
+    test "is a no-op for non-deliver stages" do
+      assert Processing.publish_mtt_test_after_store(%Processing{stage: :supporter_confirm}) == :ok
+      assert Processing.publish_mtt_test_after_store(%Processing{stage: nil}) == :ok
+    end
   end
 end

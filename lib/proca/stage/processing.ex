@@ -414,44 +414,12 @@ defmodule Proca.Stage.Processing do
       Connection.publish(data, exchange, routing, chan)
     end
 
-    # Publish the idempotent MTT test event first. If its queue is unavailable,
-    # do not also duplicate normal delivery events on the processing retry.
-    if publish_mtt_test(action, chan) == :ok and
-         Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
+    if Enum.all?(action.supporter.contacts, &(publish_for.(&1) == :ok)) do
       :ok
     else
       :error
     end
   end
-
-  # MTT test actions are pushed to the global low-volume test queue when the
-  # action is delivered, instead of waiting for a polling sender. Returning
-  # error re-runs emit later.
-  defp publish_mtt_test(
-         %{id: id, testing: true, action_page: %{campaign: %{}}},
-         chan
-       ) do
-    import Ecto.Query, only: [from: 2]
-
-    if Repo.exists?(from(m in Proca.Action.Message, where: m.action_id == ^id)) do
-      queue = Proca.Pipes.Topology.mtt_test_queue()
-      warn("MTT test: action #{id} delivered, publishing to #{queue}")
-      Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, chan)
-    else
-      warn("MTT test: action #{id} delivered but has no target Message rows yet, not publishing")
-      :ok
-    end
-  end
-
-  # A testing action reached :deliver but didn't match the clause above (eg.
-  # action_page/campaign wasn't preloaded) - would otherwise silently skip
-  # publishing to the test queue with no trace.
-  defp publish_mtt_test(%{id: id, testing: true}, _chan) do
-    warn("MTT test: action #{id} is testing but did not match the publish clause (campaign not loaded?)")
-    :ok
-  end
-
-  defp publish_mtt_test(_action, _chan), do: :ok
 
   def emit(p = %Processing{stage: stage}, chan) when stage != nil do
     action = changed_action(p)
@@ -467,6 +435,39 @@ defmodule Proca.Stage.Processing do
   end
 
   def emit(_procesing, _chan), do: :ok
+
+  @doc """
+  Publishes the MTT test event for a freshly committed deliver-stage action.
+
+  Invoked by `Proca.Stage.Action.ack/3` *after* `store!/1` has durably persisted
+  `processing_status` to `:delivered`/`:repeat`, so the consumer no longer needs
+  to re-check the status (the publish-before-persist race is gone).
+
+  Returns `:ok` whether or not an event is published (non-deliver stages and
+  non-testing actions are no-ops); returns `:error` only when the RabbitMQ
+  publish itself fails, so the caller can surface it. No message-presence check
+  is needed: target `Message` rows are inserted atomically with the action
+  (`Proca.Action.Message.put_messages/3`), and the consumer is idempotent on the
+  unsent-`Message` set.
+  """
+  @spec publish_mtt_test_after_store(%Processing{}) :: :ok | :error
+  def publish_mtt_test_after_store(%Processing{stage: :deliver} = p) do
+    case changed_action(p) do
+      %{id: id, testing: true, action_page: %{campaign: %{}}} ->
+        queue = Proca.Pipes.Topology.mtt_test_queue()
+        warn("MTT test: action #{id} delivered, publishing to #{queue}")
+        Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, nil)
+
+      %{id: id, testing: true} ->
+        warn("MTT test: action #{id} is testing but did not match the publish clause (campaign not loaded?)")
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  def publish_mtt_test_after_store(_processing), do: :ok
 
   def routing_for(%{action_type: at, campaign: %{name: cname}}) do
     at <> "." <> cname
