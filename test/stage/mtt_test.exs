@@ -204,7 +204,7 @@ defmodule Proca.Stage.MTTStageTest do
 
   describe "queue names" do
     test "uses one global test queue and one live queue per org", %{target: target} do
-      assert Topology.mtt_test_queue() == "wrk.mtt.test.v2"
+      assert Topology.mtt_test_queue() == "wrk.mtt.test"
 
       assert Topology.mtt_queue(target.campaign.org) ==
                "wrk.#{target.campaign.org.id}.mtt"
