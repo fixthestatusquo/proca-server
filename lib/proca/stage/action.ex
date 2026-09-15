@@ -204,18 +204,17 @@ defmodule Proca.Stage.Action do
           # the publish-before-persist race. On failure we only capture to Sentry:
           # an ack can't feed a :failed status back to Broadway, and raising here
           # would crash the whole batch with no retry path.
-          if proc.stage == :deliver do
-            case Processing.publish_mtt_test_after_store(proc) do
-              :ok ->
-                :ok
+          case Processing.publish_mtt_test_after_store(proc) do
+            :ok ->
+              :ok
 
-              :error ->
-                Logger.warning("MTT test: publish failed after store for action #{action_id}")
-                Sentry.capture_message("MTT test: publish failed after store",
-                  extra: %{action_id: action_id},
-                  level: "warning"
-                )
-            end
+            :error ->
+              Logger.warning("MTT test: publish failed after store for action #{action_id}")
+
+              Sentry.capture_message("MTT test: publish failed after store",
+                extra: %{action_id: action_id},
+                level: "warning"
+              )
           end
 
           m
