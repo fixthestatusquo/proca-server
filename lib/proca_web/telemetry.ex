@@ -57,8 +57,8 @@ defmodule ProcaWeb.Telemetry do
     query_duration = System.convert_time_unit(measurements.total_time, :native, :millisecond)
 
     :telemetry.execute(
-      [:proca, :exporter, :export_actions],
-      %{export_time: query_duration, count: 1},
+      [:export, :action],
+      %{duration: query_duration, count: 1},
       %{org_id: org_id}
     )
   end
@@ -91,7 +91,7 @@ defmodule ProcaWeb.Telemetry do
         Message.select_by_campaign(campaign.id)
         |> Proca.Repo.aggregate(:count)
 
-      :telemetry.execute([:proca, :mtt], %{sendable_messages: unsent_messages}, %{
+      :telemetry.execute([:mtt, :pacing], %{sendable_messages: unsent_messages}, %{
         campaign_id: campaign.id,
         campaign_name: campaign.name
       })
@@ -100,11 +100,11 @@ defmodule ProcaWeb.Telemetry do
     {drip_delivery, no_drip_delivery} =
       Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
 
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(drip_delivery)}, %{
+    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(drip_delivery)}, %{
       drip_delivery: true
     })
 
-    :telemetry.execute([:proca, :mtt], %{campaigns_running: length(no_drip_delivery)}, %{
+    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(no_drip_delivery)}, %{
       drip_delivery: false
     })
   rescue
@@ -134,62 +134,60 @@ defmodule ProcaWeb.Telemetry do
         ]
       ),
       # API Metrics
-      last_value("proca.exporter.export_actions.export_time",
+      last_value("export.action.duration",
         unit: {:native, :millisecond},
         tags: [:org_id]
       ),
-      sum("proca.exporter.export_actions.count", tags: [:org_id]),
+      sum("export.action.count", tags: [:org_id]),
       # MTT Metrics
       counter("proca.mailjet.events.count", tags: [:reason]),
       counter("proca.mailjet.bounces.count", tags: [:reason]),
       counter("proca.brevo.events.count", tags: [:reason]),
       counter("proca.brevo.bounces.count", tags: [:reason]),
-      last_value("proca.mtt.campaigns_running", tags: [:drip_delivery]),
-      last_value("proca.mtt.sendable_messages", tags: @campaign_tags),
-      last_value("proca.mtt.sendable_targets", tags: @campaign_tags),
-      last_value("proca.mtt.current_cycle", tags: @campaign_tags),
-      last_value("proca.mtt.all_cycles", tags: @campaign_tags),
-      sum("proca.mtt.messages_published", tags: @campaign_tags),
-      # Kept for existing dashboards; same event as messages_published (queue publish, not SMTP).
-      sum("proca.mtt.messages_sent", tags: @campaign_tags),
+      last_value("mtt.pacing.campaigns_running", tags: [:drip_delivery]),
+      last_value("mtt.pacing.sendable_messages", tags: @campaign_tags),
+      last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
+      last_value("mtt.pacing.current_cycle", tags: @campaign_tags),
+      last_value("mtt.pacing.all_cycles", tags: @campaign_tags),
+      sum("mtt.pacing.messages_published", tags: @campaign_tags),
 
       # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not
       # exported as labels to avoid unbounded Prometheus cardinality.
-      counter("proca.mtt.delivery.count",
+      counter("mtt.pacing.delivery.count",
         tags: [:kind, :result, :reason, :org_id, :campaign_id, :drip_delivery]
       ),
 
       # MTT New Scheduler Lifecycle
-      counter("proca.mtt_new.scheduler.start", tags: [:campaign_id]),
-      counter("proca.mtt_new.scheduler.skip", tags: [:campaign_id, :reason]),
-      counter("proca.mtt_new.scheduler.stop", tags: [:campaign_id, :stop_reason]),
-      distribution("proca.mtt_new.scheduler.duration",
+      counter("mtt.throttle.scheduler.start", tags: [:campaign_id]),
+      counter("mtt.throttle.scheduler.skip", tags: [:campaign_id, :reason]),
+      counter("mtt.throttle.scheduler.stop", tags: [:campaign_id, :stop_reason]),
+      distribution("mtt.throttle.scheduler.duration",
         unit: {:native, :millisecond},
         tags: [:campaign_id, :stop_reason],
         reporter_options: [
           buckets: [1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000]
         ]
       ),
-      last_value("proca.mtt_new.scheduler.pending_count", tags: [:campaign_id]),
+      last_value("mtt.throttle.scheduler.pending_count", tags: [:campaign_id]),
 
       # Email Metrics
-      distribution("proca.email.supporter_confirm.lag_ms",
+      distribution("email.supporter_confirm.duration",
         unit: :millisecond,
         reporter_options: [
           buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
         ],
         tags: [:org_id]
       ),
-      distribution("proca.email.thank_you.lag_ms",
+      distribution("email.thank_you.duration",
         unit: :millisecond,
         reporter_options: [
           buckets: [100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000]
         ],
         tags: [:org_id]
       ),
-      counter("proca.email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
-      counter("proca.email.thank_you.lag_unknown.count", tags: [:org_id]),
-      counter("proca.email.reminder_confirm.count", tags: [:org_id]),
+      counter("email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
+      counter("email.thank_you.lag_unknown.count", tags: [:org_id]),
+      counter("email.reminder_confirm.count", tags: [:org_id]),
 
       # Supporter detail lookup (see #327): outcome is one of :found,
       # :not_found, :bad_format, :bad_content_type, :unknown, :not_supported

@@ -97,7 +97,7 @@ defmodule Proca.Server.MTTContext do
         Map.new(metadata)
       )
 
-    :telemetry.execute([:proca, :mtt, :delivery], %{count: 1}, metadata)
+    :telemetry.execute([:mtt, :pacing, :delivery], %{count: 1}, metadata)
   end
 
   def get_active_targets do
@@ -521,7 +521,7 @@ defmodule Proca.Server.MTTContext do
 
   defp do_deliver_message(target, msg) do
     :telemetry.execute(
-      [:proca, :mtt_new, :deliver_message],
+      [:mtt, :throttle, :deliver_message],
       %{},
       %{target_id: target.id}
     )

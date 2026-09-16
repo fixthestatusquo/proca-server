@@ -9,13 +9,9 @@ Namespaces:
 - **`web.duration`** — full HTTP request processing duration
 - **`api.*`** — call counts / duration for the main API operations (`addAction`, `addActionContact`, supporter-count widget)
 - **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
-- **`proca.mtt.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
-- **`proca.mtt_new.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
+- **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
+- **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 
-
-TODO: change the MTT to have the new correct names for the two algo
-
----
 
 ## API / HTTP metrics
 
@@ -75,7 +71,7 @@ for a pooled connection (`sql.queue_time` is the main pool-saturation signal).
 
 ---
 
-## `proca.mtt.*` — Drip worker + RabbitMQ delivery
+## `mtt.pacing.*` — Drip worker + RabbitMQ delivery
 
 Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 `ProcaWeb.Telemetry.count_sendable_messages/0` (polled every 60s), and
@@ -83,16 +79,15 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 
 | Metric                        | Type      | Tags                                  | Description                                               |
 |-------------------------------|-----------|---------------------------------------|-----------------------------------------------------------|
-| `proca.mtt.campaigns_running` | Gauge     | `drip_delivery` (`true`/`false`)      | Number of active MTT campaigns, split by delivery mode    |
-| `proca.mtt.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`        | Total unsent messages for a campaign (polled)             |
-| `proca.mtt.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
-| `proca.mtt.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
-| `proca.mtt.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
-| `proca.mtt.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
-| `proca.mtt.messages_sent`     | Counter   | `campaign_id`, `campaign_name`        | Same as `messages_published` (legacy name; not SMTP send) |
-| `proca.mtt.delivery.count`    | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `drip_delivery` | Per delivery attempt outcome |
+| `mtt.pacing.campaigns_running` | Gauge     | `drip_delivery` (`true`/`false`)      | Number of active MTT campaigns, split by delivery mode    |
+| `mtt.pacing.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`        | Total unsent messages for a campaign (polled)             |
+| `mtt.pacing.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
+| `mtt.pacing.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
+| `mtt.pacing.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
+| `mtt.pacing.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
+| `mtt.pacing.delivery.count`    | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `drip_delivery` | Per delivery attempt outcome |
 
-### `proca.mtt.delivery` results
+### `mtt.pacing.delivery` results
 
 | `result` | Meaning |
 |----------|---------|
@@ -106,26 +101,26 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 
 ```promql
 # How many campaigns are currently running (drip delivery)
-proca_mtt_campaigns_running{drip_delivery="true"}
+mtt_pacing_campaigns_running{drip_delivery="true"}
 
 # Queue publishes per campaign (not SMTP)
-rate(proca_mtt_messages_published_total[5m])
+rate(mtt_pacing_messages_published_total[5m])
 
 # Successful SMTP deliveries vs retries vs permanent discards
-sum by (result) (rate(proca_mtt_delivery_count_total[5m]))
+sum by (result) (rate(mtt_pacing_delivery_count_total[5m]))
 
 # Permanent retry exhaustion (should stay near zero)
-rate(proca_mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])
+rate(mtt_pacing_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])
 ```
 
 ---
 
-## `proca.mtt_new.*` — Per-target scheduler (`MTTScheduler`)
+## `mtt.throttle.*` — Per-target scheduler (`MTTScheduler`)
 
 Emitted from lifecycle events in `Proca.Server.MTTScheduler` (start / stop / skip).
-Successful sends also increment `proca.mtt.delivery` with `result="sent"`.
+Successful sends also increment `mtt.pacing.delivery` with `result="sent"`.
 
-### `[:proca, :mtt_new, :scheduler, :start]`
+### `[:mtt, :throttle, :scheduler, :start]`
 
 Emitted in `MTTScheduler.init/1` when a scheduler process starts. Contains the
 number of messages queued for this hour.
@@ -138,23 +133,23 @@ metadata:     %{target_id: integer, campaign_id: integer,
 
 | Metric                                | Type    | Tags            | Description                    |
 |---------------------------------------|---------|-----------------|--------------------------------|
-| `proca.mtt_new.scheduler.start`      | Counter | `campaign_id`   | One per scheduler start        |
+| `mtt.throttle.scheduler.start`      | Counter | `campaign_id`   | One per scheduler start        |
 
-### `[:proca, :mtt_new, :scheduler, :skip]`
+### `[:mtt, :throttle, :scheduler, :skip]`
 
 Emitted when a scheduler for a target is requested but already registered.
 
 | Metric                               | Type    | Tags                         | Description                         |
 |--------------------------------------|---------|------------------------------|-------------------------------------|
-| `proca.mtt_new.scheduler.skip`      | Counter | `campaign_id`, `reason`      | One per suppressed duplicate start  |
+| `mtt.throttle.scheduler.skip`      | Counter | `campaign_id`, `reason`      | One per suppressed duplicate start  |
 
-### `[:proca, :mtt_new, :scheduler, :stop]`
+### `[:mtt, :throttle, :scheduler, :stop]`
 
 | Metric                                    | Type          | Tags                                            | Description                        |
 |-------------------------------------------|---------------|-------------------------------------------------|------------------------------------|
-| `proca.mtt_new.scheduler.stop`            | Counter       | `campaign_id`, `stop_reason`                    | One per scheduler termination      |
-| `proca.mtt_new.scheduler.duration`        | Distribution  | `campaign_id`, `stop_reason`                    | Wall-clock runtime (milliseconds)  |
-| `proca.mtt_new.scheduler.pending_count`   | Gauge         | `campaign_id`                                   | Messages queued at start           |
+| `mtt.throttle.scheduler.stop`            | Counter       | `campaign_id`, `stop_reason`                    | One per scheduler termination      |
+| `mtt.throttle.scheduler.duration`        | Distribution  | `campaign_id`, `stop_reason`                    | Wall-clock runtime (milliseconds)  |
+| `mtt.throttle.scheduler.pending_count`   | Gauge         | `campaign_id`                                   | Messages queued at start           |
 
 **`stop_reason` taxonomy:** `:no_messages`, `:all_sent`, `:shutdown`, `:crashed`
 
@@ -177,8 +172,8 @@ Emitted when a scheduler for a target is requested but already registered.
 
 | Metric                                        | Type    | Tags      | Description                          |
 |-----------------------------------------------|---------|-----------|--------------------------------------|
-| `proca.exporter.export_actions.export_time`  | Gauge   | `org_id`  | Duration of an action export (ms)    |
-| `proca.exporter.export_actions.count`        | Counter | `org_id`  | Number of export operations          |
+| `export.action.duration`                  | Gauge   | `org_id`  | Duration of an action export (ms)    |
+| `export.action.count`                     | Counter | `org_id`  | Number of export operations          |
 
 ---
 
@@ -190,32 +185,32 @@ exporter exporter) scraped into the same VictoriaMetrics/Prometheus.
 
 ### Panels to add
 
-1. **MTT delivery outcomes** — stacked `rate(proca_mtt_delivery_count_total[5m])` by `result`
-2. **Retry exhaustion** — `rate(proca_mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])`
-3. **Drip publish rate** — `rate(proca_mtt_messages_published_total[5m])` by `campaign_id`
+1. **MTT delivery outcomes** — stacked `rate(mtt_pacing_delivery_count_total[5m])` by `result`
+2. **Retry exhaustion** — `rate(mtt_pacing_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])`
+3. **Drip publish rate** — `rate(mtt_pacing_messages_published_total[5m])` by `campaign_id`
 4. **MTT fail queue depth** (RabbitMQ) — `rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}`
 5. **MTT work queue depth** — `rabbitmq_queue_messages{queue=~"wrk\\..*\\.mtt"}`
 6. **Shared fail park** — `rabbitmq_queue_messages{queue=~"org\\..*\\.fail"}` (transactional emails, webhooks, SQS)
 
 Endless DLX loops show up as: fail-queue depth oscillating while
-`proca_mtt_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
+`mtt_pacing_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
 
 ### MTT Scheduler Health
 
-- **Scheduler starts** — `rate(proca_mtt_new_scheduler_start_total[1h])`
-- **Stop reason breakdown** — `rate(proca_mtt_new_scheduler_stop_total[5m])` by `stop_reason`
-- **Duration heatmap** — `proca_mtt_new_scheduler_duration_milliseconds_bucket`
+- **Scheduler starts** — `rate(mtt_throttle_scheduler_start_total[1h])`
+- **Stop reason breakdown** — `rate(mtt_throttle_scheduler_stop_total[5m])` by `stop_reason`
+- **Duration heatmap** — `mtt_throttle_scheduler_duration_milliseconds_bucket`
 
 ### Example queries
 
 ```promql
-sum by (result) (rate(proca_mtt_delivery_count_total[5m]))
+sum by (result) (rate(mtt_pacing_delivery_count_total[5m]))
 
 rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}
 
 histogram_quantile(0.95,
   sum(rate(
-    proca_mtt_new_scheduler_duration_milliseconds_bucket{stop_reason="all_sent"}[5m]
+    mtt_throttle_scheduler_duration_milliseconds_bucket{stop_reason="all_sent"}[5m]
   )) by (le)
 )
 ```

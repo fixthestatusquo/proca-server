@@ -37,7 +37,7 @@ defmodule Proca.Server.MTTWorker do
       target_ids = get_sendable_target_ids(campaign)
 
       :telemetry.execute(
-        [:proca, :mtt],
+        [:mtt, :pacing],
         %{sendable_targets: length(target_ids), current_cycle: cycle, all_cycles: all_cycles},
         %{campaign_id: campaign.id, campaign_name: campaign.name}
       )
@@ -55,10 +55,9 @@ defmodule Proca.Server.MTTWorker do
         )
 
         :telemetry.execute(
-          [:proca, :mtt],
+          [:mtt, :pacing],
           %{
-            messages_published: length(emails_to_send),
-            messages_sent: length(emails_to_send)
+            messages_published: length(emails_to_send)
           },
           %{campaign_id: campaign.id, campaign_name: campaign.name}
         )

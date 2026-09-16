@@ -306,17 +306,17 @@ defmodule Proca.Stage.EmailSupporter do
       case Map.get(inserted_ats, action_id) do
         nil ->
           :telemetry.execute(
-            [:proca, :email, stage, :lag_unknown],
+            [:email, stage, :lag_unknown],
             %{count: 1},
             %{org_id: org_id}
           )
 
         inserted_at ->
-          lag_ms = DateTime.diff(now, inserted_at, :millisecond)
+          duration = DateTime.diff(now, inserted_at, :millisecond)
 
           :telemetry.execute(
-            [:proca, :email, stage],
-            %{lag_ms: lag_ms},
+            [:email, stage],
+            %{duration: duration},
             %{org_id: org_id}
           )
       end

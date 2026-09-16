@@ -27,7 +27,7 @@ defmodule Proca.Server.MTTScheduler do
     stop_reason = if pending_count == 0, do: :no_messages, else: :sending
 
     :telemetry.execute(
-      [:proca, :mtt_new, :scheduler, :start],
+      [:mtt, :throttle, :scheduler, :start],
       %{pending_count: pending_count},
       %{
         target_id: target.id,
@@ -102,7 +102,7 @@ defmodule Proca.Server.MTTScheduler do
       end
 
     :telemetry.execute(
-      [:proca, :mtt_new, :scheduler, :stop],
+      [:mtt, :throttle, :scheduler, :stop],
       %{duration: duration, messages_sent: state.sent_count},
       %{
         target_id: state.target.id,

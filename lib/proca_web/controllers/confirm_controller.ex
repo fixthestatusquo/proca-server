@@ -289,7 +289,7 @@ defmodule ProcaWeb.ConfirmController do
     org_id = Proca.Repo.one(from ap in ActionPage, where: ap.id == ^ap_id, select: ap.org_id)
 
     :telemetry.execute(
-      [:proca, :email, :reminder_confirm],
+      [:email, :reminder_confirm],
       %{count: 1},
       %{org_id: org_id}
     )
