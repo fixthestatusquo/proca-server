@@ -305,10 +305,10 @@ defmodule Proca.Stage.EmailSupporter do
     Enum.each(action_ids, fn action_id ->
       case Map.get(inserted_ats, action_id) do
         nil ->
-          :telemetry.execute(
-            [:email, stage, :lag_unknown],
-            %{count: 1},
-            %{org_id: org_id}
+          Sentry.capture_message(
+            "EmailSupporter: action missing or invalid createdAt",
+            extra: %{org_id: org_id, action_id: action_id, stage: stage},
+            level: "warning"
           )
 
         inserted_at ->

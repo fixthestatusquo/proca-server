@@ -139,11 +139,12 @@ defmodule ProcaWeb.Telemetry do
         tags: [:org_id]
       ),
       sum("export.action.count", tags: [:org_id]),
-      # MTT Metrics
-      counter("proca.mailjet.events.count", tags: [:reason]),
-      counter("proca.mailjet.bounces.count", tags: [:reason]),
-      counter("proca.brevo.events.count", tags: [:reason]),
-      counter("proca.brevo.bounces.count", tags: [:reason]),
+      # Mailer Metrics
+      counter("mailer.mailjet.events.count", tags: [:reason]),
+      counter("mailer.mailjet.bounces.count", tags: [:reason]),
+      counter("mailer.brevo.events.count", tags: [:reason]),
+      counter("mailer.brevo.bounces.count", tags: [:reason]),
+      counter("mailer.delivery.count", tags: [:provider, :kind, :result, :org_id]),
       last_value("mtt.pacing.campaigns_running", tags: [:drip_delivery]),
       last_value("mtt.pacing.sendable_messages", tags: @campaign_tags),
       last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
@@ -185,8 +186,6 @@ defmodule ProcaWeb.Telemetry do
         ],
         tags: [:org_id]
       ),
-      counter("email.supporter_confirm.lag_unknown.count", tags: [:org_id]),
-      counter("email.thank_you.lag_unknown.count", tags: [:org_id]),
       counter("email.reminder_confirm.count", tags: [:org_id]),
 
       # Supporter detail lookup (see #327): outcome is one of :found,

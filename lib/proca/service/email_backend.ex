@@ -118,7 +118,9 @@ defmodule Proca.Service.EmailBackend do
         |> prepare_template(email_template)
       end)
 
-    apply(backend, :deliver, [emails, org])
+    result = apply(backend, :deliver, [emails, org])
+    emit_delivery(name, emails, result, org.id)
+    result
   end
 
   @spec deliver(Email.t(), Org.t(), EmailTemplate.t() | nil) ::
@@ -131,7 +133,46 @@ defmodule Proca.Service.EmailBackend do
       |> determine_sender(org)
       |> prepare_template(email_template)
 
-    apply(backend, :deliver, [email, org])
+    result = apply(backend, :deliver, [email, org])
+    emit_delivery(name, [email], result, org.id)
+    result
+  end
+
+  defp emit_delivery(provider, emails, result, org_id) do
+    pairs =
+      case result do
+        :ok ->
+          Enum.map(emails, &{&1, :ok})
+
+        {:error, statuses} when is_list(statuses) and length(statuses) == length(emails) ->
+          Enum.zip(emails, statuses)
+          |> Enum.map(fn {email, status} -> {email, delivery_result(status)} end)
+
+        {:error, _reason} ->
+          Enum.map(emails, &{&1, :error})
+      end
+
+    Enum.each(pairs, fn {email, result} ->
+      :telemetry.execute(
+        [:mailer, :delivery],
+        %{count: 1},
+        %{provider: provider, kind: email_kind(email), result: result, org_id: org_id}
+      )
+    end)
+  end
+
+  defp delivery_result(:ok), do: :ok
+  defp delivery_result({:ok, _}), do: :ok
+  defp delivery_result({:error, _}), do: :error
+  defp delivery_result(_), do: :error
+
+  defp email_kind(%Email{private: private}) do
+    case parse_custom_id(Map.get(private, :custom_id)) do
+      {:action, _} -> :transactional
+      {:mtt, _} -> :mtt
+      {:user, _} -> :user
+      _ -> :unknown
+    end
   end
 
   def make_email(to, custom_id, email_id) do

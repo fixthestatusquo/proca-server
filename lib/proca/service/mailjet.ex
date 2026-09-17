@@ -219,7 +219,7 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def handle_bounce(%{"CustomID" => cid, "email" => email, "event" => reason} = event) do
-    :telemetry.execute([:proca, :mailjet, :bounces], %{count: 1}, %{reason: reason})
+    :telemetry.execute([:mailer, :mailjet, :bounces], %{count: 1}, %{reason: reason})
 
     {type, id} = parse_custom_id(cid)
 
@@ -252,7 +252,7 @@ defmodule Proca.Service.Mailjet do
 
   @impl true
   def handle_event(%{"CustomID" => cid, "email" => email, "event" => reason}) do
-    :telemetry.execute([:proca, :mailjet, :events], %{count: 1}, %{reason: reason})
+    :telemetry.execute([:mailer, :mailjet, :events], %{count: 1}, %{reason: reason})
 
     {type, id} = parse_custom_id(cid)
 

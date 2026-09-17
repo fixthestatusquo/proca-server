@@ -154,7 +154,7 @@ defmodule Proca.Service.Brevo do
   @impl true
   def handle_bounce(%{"event" => event, "email" => email, "tags" => [cid | _]})
       when event in @bounce_events do
-    :telemetry.execute([:proca, :brevo, :bounces], %{count: 1}, %{reason: event})
+    :telemetry.execute([:mailer, :brevo, :bounces], %{count: 1}, %{reason: event})
 
     {type, id} = parse_custom_id(cid)
 
@@ -179,7 +179,7 @@ defmodule Proca.Service.Brevo do
 
   @impl true
   def handle_event(%{"event" => event, "email" => email, "tags" => [cid | _]}) do
-    :telemetry.execute([:proca, :brevo, :events], %{count: 1}, %{reason: event})
+    :telemetry.execute([:mailer, :brevo, :events], %{count: 1}, %{reason: event})
 
     {type, id} = parse_custom_id(cid)
 

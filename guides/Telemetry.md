@@ -11,6 +11,8 @@ Namespaces:
 - **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
 - **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
+- **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
+ - **`mailer.*`** — email provider delivery results (all providers) and webhook events/bounces (`mailjet`, `brevo`)
 
 
 ## API / HTTP metrics
@@ -161,10 +163,75 @@ Emitted when a scheduler for a target is requested but already registered.
 
 | Metric                          | Type    | Tags     | Source                       |
 |---------------------------------|---------|----------|------------------------------|
-| `proca.mailjet.events.count`   | Counter | `reason` | `Proca.Service.Mailjet`      |
-| `proca.mailjet.bounces.count`  | Counter | `reason` | `Proca.Service.Mailjet`      |
-| `proca.brevo.events.count`     | Counter | `reason` | `Proca.Service.Brevo`        |
-| `proca.brevo.bounces.count`    | Counter | `reason` | `Proca.Service.Brevo`        |
+| `mailer.mailjet.events.count`   | Counter | `reason` | `Proca.Service.Mailjet`      |
+| `mailer.mailjet.bounces.count`  | Counter | `reason` | `Proca.Service.Mailjet`      |
+| `mailer.brevo.events.count`     | Counter | `reason` | `Proca.Service.Brevo`        |
+| `mailer.brevo.bounces.count`    | Counter | `reason` | `Proca.Service.Brevo`        |
+
+Mailjet and Brevo are the only providers with webhook callbacks (`handle_event` /
+`handle_bounce`), so they emit `events` and `bounces` counters tagged by the raw
+`reason` reported by the provider.
+
+## Mailer delivery
+
+Send-path telemetry, emitted once per email from the common `EmailBackend.deliver/3`
+funnel — so it covers every provider (Mailjet, Brevo, SES, SMTP) automatically.
+`result` is `:ok` when the provider accepted the message and `:error` otherwise.
+
+| Metric                  | Type    | Tags                                  | Source                    |
+|-------------------------|---------|---------------------------------------|---------------------------|
+| `mailer.delivery.count` | Counter | `provider`, `kind`, `result`, `org_id` | `Proca.Service.EmailBackend.deliver/3` |
+
+- `provider` ∈ `:mailjet | :brevo | :ses | :smtp`
+- `kind` ∈ `:transactional | :mtt | :user | :unknown` (derived from the email's `custom_id`)
+- `result` ∈ `:ok | :error`
+
+> All four providers emit `delivery`. Only Mailjet and Brevo additionally emit the
+> webhook `events` / `bounces` counters above, since SES and SMTP have no provider
+> webhooks.
+
+### Example PromQL
+
+```promql
+# per-provider send success/failure rate
+sum by (provider, result) (rate(mailer_delivery_count_total[5m]))
+
+# MTT vs transactional send volume
+sum by (kind) (rate(mailer_delivery_count_total[5m]))
+```
+
+---
+
+## Transactional email metrics
+
+Emitted by `Proca.Stage.EmailSupporter` (the `supporter_confirm` and `thank_you`
+stages) and `ProcaWeb.ConfirmController` (`reminder_confirm`).
+
+The `*.duration` histograms measure the send lag: the time from an action's
+`createdAt` until the provider accepted the message (`EmailBackend.deliver/3`
+returning `:ok`). It does not include the provider's own delivery time to the
+recipient's inbox. Messages whose action has a missing/invalid `createdAt` are
+reported to Sentry rather than counted as a metric.
+
+| Metric                                        | Type         | Tags     | Description                                             |
+|-----------------------------------------------|--------------|----------|---------------------------------------------------------|
+| `email.supporter_confirm.duration`           | Distribution | `org_id` | Supporter-confirm email send lag (ms)                   |
+| `email.thank_you.duration`                   | Distribution | `org_id` | Thank-you email send lag (ms)                           |
+| `email.reminder_confirm.count`               | Counter      | `org_id` | Reminder-confirm confirmation clicks                    |
+
+**Duration buckets** (milliseconds): `100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000`
+
+### Example PromQL
+
+```promql
+# p95 supporter-confirm send lag
+histogram_quantile(0.95,
+  sum by (le) (rate(email_supporter_confirm_duration_bucket[5m]))
+)
+
+# thank-you lag same, per org
+sum by (org_id) (rate(email_thank_you_duration_count[5m]))
+```
 
 ---
 
