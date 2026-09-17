@@ -13,6 +13,7 @@ Namespaces:
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 - **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
  - **`mailer.*`** — email provider delivery results (all providers) and webhook events/bounces (`mailjet`, `brevo`)
+- **`webhook.*`** — outbound webhook delivery results (`Proca.Stage.Webhook`)
 
 
 ## API / HTTP metrics
@@ -231,6 +232,32 @@ histogram_quantile(0.95,
 
 # thank-you lag same, per org
 sum by (org_id) (rate(email_thank_you_duration_count[5m]))
+```
+
+---
+
+## Webhook delivery
+
+Emitted by `Proca.Stage.Webhook` for each outbound webhook push (org-owned
+webhooks only). `result` is `:ok` when the push returned HTTP 200, `:error`
+otherwise (404, unexpected HTTP codes, transport errors, or no backend
+configured for the schema).
+
+| Metric                   | Type    | Tags                    | Description                    |
+|--------------------------|---------|-------------------------|--------------------------------|
+| `webhook.delivery.count` | Counter | `org_id`, `kind`, `result` | Per-webhook-push outcome |
+
+- `kind` ∈ `:action | :event | :unknown` (derived from the message `schema`)
+- `result` ∈ `:ok | :error`
+
+### Example PromQL
+
+```promql
+# webhook push failure rate, per org
+sum by (org_id, result) (rate(webhook_delivery_count_total[5m]))
+
+# action pushes vs event pushes
+sum by (kind) (rate(webhook_delivery_count_total[5m]))
 ```
 
 ---

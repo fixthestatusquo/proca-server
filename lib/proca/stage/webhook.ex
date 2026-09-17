@@ -80,14 +80,18 @@ defmodule Proca.Stage.Webhook do
           "Webhook: org #{org.id} has no backend configured for schema #{inspect(msg.data["schema"])}, discarding"
         )
 
+        emit_delivery(org.id, msg.data, :error)
+
         ignore(msg, "no webhook backend configured for this schema")
       else
         case Webhook.push(webhook, msg.data) do
           {:ok, 200, _ret} ->
+            emit_delivery(org.id, msg.data, :ok)
             msg
 
           {:ok, 404, _} ->
             error("Webhook returned 404 Not found: #{webhook.host}")
+            emit_delivery(org.id, msg.data, :error)
             Message.failed(msg, "Not found")
 
           {:ok, code, resp_body} ->
@@ -97,13 +101,27 @@ defmodule Proca.Stage.Webhook do
             )
 
             error("Webhook returned #{code} code: #{webhook.host} body=#{inspect(resp_body)}")
+            emit_delivery(org.id, msg.data, :error)
             Message.failed(msg, "Code #{code}")
 
           {:error, reason} ->
             error("Webhook failed: #{inspect(reason)}: #{webhook.host}")
+            emit_delivery(org.id, msg.data, :error)
             Message.failed(msg, reason)
         end
       end
     end
   end
+
+  defp emit_delivery(org_id, data, result) do
+    :telemetry.execute(
+      [:webhook, :delivery],
+      %{count: 1},
+      %{org_id: org_id, kind: webhook_kind(data), result: result}
+    )
+  end
+
+  defp webhook_kind(%{"schema" => "proca:event" <> _}), do: :event
+  defp webhook_kind(%{"schema" => "proca:action" <> _}), do: :action
+  defp webhook_kind(_), do: :unknown
 end

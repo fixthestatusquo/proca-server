@@ -145,6 +145,7 @@ defmodule ProcaWeb.Telemetry do
       counter("mailer.brevo.events.count", tags: [:reason]),
       counter("mailer.brevo.bounces.count", tags: [:reason]),
       counter("mailer.delivery.count", tags: [:provider, :kind, :result, :org_id]),
+      counter("webhook.delivery.count", tags: [:org_id, :kind, :result]),
       last_value("mtt.pacing.campaigns_running", tags: [:drip_delivery]),
       last_value("mtt.pacing.sendable_messages", tags: @campaign_tags),
       last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
