@@ -75,26 +75,34 @@ defmodule Proca.Stage.Webhook do
           %{"schema" => "proca:action" <> _} -> org.push_backend
         end
 
-      case Webhook.push(webhook, msg.data) do
-        {:ok, 200, _ret} ->
-          msg
+      if is_nil(webhook) do
+        error(
+          "Webhook: org #{org.id} has no backend configured for schema #{inspect(msg.data["schema"])}, discarding"
+        )
 
-        {:ok, 404, _} ->
-          error("Webhook returned 404 Not found: #{webhook.host}")
-          Message.failed(msg, "Not found")
+        ignore(msg, "no webhook backend configured for this schema")
+      else
+        case Webhook.push(webhook, msg.data) do
+          {:ok, 200, _ret} ->
+            msg
 
-        {:ok, code, resp_body} ->
-          Sentry.capture_message(
-            "Webhook #{webhook.host} returned HTTP code #{code}",
-            capture: :none
-          )
+          {:ok, 404, _} ->
+            error("Webhook returned 404 Not found: #{webhook.host}")
+            Message.failed(msg, "Not found")
 
-          error("Webhook returned #{code} code: #{webhook.host} body=#{inspect(resp_body)}")
-          Message.failed(msg, "Code #{code}")
+          {:ok, code, resp_body} ->
+            Sentry.capture_message(
+              "Webhook #{webhook.host} returned HTTP code #{code}",
+              capture: :none
+            )
 
-        {:error, reason} ->
-          error("Webhook failed: #{inspect(reason)}: #{webhook.host}")
-          Message.failed(msg, reason)
+            error("Webhook returned #{code} code: #{webhook.host} body=#{inspect(resp_body)}")
+            Message.failed(msg, "Code #{code}")
+
+          {:error, reason} ->
+            error("Webhook failed: #{inspect(reason)}: #{webhook.host}")
+            Message.failed(msg, reason)
+        end
       end
     end
   end
