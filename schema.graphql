@@ -1956,6 +1956,12 @@ type CampaignMtt {
 
   "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
   dripDelivery: Boolean
+
+  """
+  Maximum number of MTT emails sent per hour for this campaign. Applies to the
+  no-drip (asap) algo only. Defaults to the instance-wide setting if not set.
+  """
+  maxEmailsPerHour: Int
 }
 
 input CampaignMttInput {
@@ -1982,6 +1988,12 @@ input CampaignMttInput {
 
   "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
   dripDelivery: Boolean
+
+  """
+  Maximum number of MTT emails sent per hour for this campaign. Applies to the
+  no-drip (asap) algo only. Defaults to the instance-wide setting if not set.
+  """
+  maxEmailsPerHour: Int
 }
 
 "Campaign statistics"

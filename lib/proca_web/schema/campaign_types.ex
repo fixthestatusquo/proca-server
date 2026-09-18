@@ -374,6 +374,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
     """
     field :drip_delivery, :boolean
+
+    @desc """
+    Maximum number of MTT emails sent per hour for this campaign. Applies to the
+    no-drip (asap) algo only. Defaults to the instance-wide setting if not set.
+    """
+    field :max_emails_per_hour, :integer
   end
 
   input_object :campaign_mtt_input do
@@ -408,6 +414,12 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
     """
     field :drip_delivery, :boolean
+
+    @desc """
+    Maximum number of MTT emails sent per hour for this campaign. Applies to the
+    no-drip (asap) algo only. Defaults to the instance-wide setting if not set.
+    """
+    field :max_emails_per_hour, :integer
   end
 
   # public counters
