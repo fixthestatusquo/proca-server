@@ -128,7 +128,9 @@ defmodule Proca.Stage.Processing do
 
   @spec effective_supporter_confirm(boolean(), boolean() | nil) :: boolean()
   def effective_supporter_confirm(org_supporter_confirm, nil), do: org_supporter_confirm
-  def effective_supporter_confirm(_org_supporter_confirm, campaign_supporter_confirm), do: campaign_supporter_confirm
+
+  def effective_supporter_confirm(_org_supporter_confirm, campaign_supporter_confirm),
+    do: campaign_supporter_confirm
 
   @spec transition(%Action{}, %ActionPage{}) ::
           :ok
@@ -455,11 +457,13 @@ defmodule Proca.Stage.Processing do
     case changed_action(p) do
       %{id: id, testing: true, action_page: %{campaign: %{}}} ->
         queue = Proca.Pipes.Topology.mtt_test_queue()
-        warn("MTT test: action #{id} delivered, publishing to #{queue}")
         Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, nil)
 
       %{id: id, testing: true} ->
-        warn("MTT test: action #{id} is testing but did not match the publish clause (campaign not loaded?)")
+        warn(
+          "MTT test: action #{id} is testing but did not match the publish clause (campaign not loaded?)"
+        )
+
         :ok
 
       _ ->

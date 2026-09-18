@@ -47,14 +47,15 @@ defmodule Proca.Stage.MTTTest do
   def handle_message(_, message = %Message{data: data}, _) do
     case JSON.decode(data) do
       {:ok, %{"actionId" => action_id, "testing" => true}} ->
-        Logger.warning("MTT test: received queue message for action #{action_id}")
-
         case MTTContext.deliver_test_mails(action_id) do
           :ok ->
             message
 
           {:error, reason} ->
-            Logger.warning("MTT test: delivery failed for action #{action_id}: #{inspect(reason)}")
+            Logger.warning(
+              "MTT test: delivery failed for action #{action_id}: #{inspect(reason)}"
+            )
+
             Message.failed(message, inspect(reason))
         end
 

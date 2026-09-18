@@ -382,14 +382,10 @@ defmodule Proca.Server.MTTContext do
 
           case messages do
             [] ->
-              Logger.warning(
-                "MTT test: no unsent messages left for action #{action_id} (already sent)"
-              )
-
               :ok
 
             [first | _] = messages ->
-              Logger.warning(
+              Logger.info(
                 "MTT test message(s) to send for action #{action_id}: #{length(messages)} message(s)"
               )
 
