@@ -140,14 +140,6 @@ defmodule Proca.Action.Message do
     :ok
   end
 
-  @doc """
-  If the message's content has no subject or body, skip sending it this round
-  (logged + reported to Sentry). Deliberately makes no DB writes: the action
-  and message are left untouched, so this keeps surfacing on every future
-  attempt until the underlying (usually upstream/widget) content problem is
-  actually fixed, rather than silently going quiet after one report. Returns
-  true if the message should be skipped.
-  """
   @spec cancel_if_empty(%Message{}) :: boolean
   def cancel_if_empty(%Message{message_content: mc, action: action} = msg) do
     if mc.subject in ["", nil] or mc.body in ["", nil] do
