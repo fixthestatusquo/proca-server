@@ -225,6 +225,10 @@ defmodule Proca.Server.MTTContext do
   second consumer cannot pass the unsent check concurrently.
   """
   def deliver_queued_message(message_id, target_id) do
+    # Proca.Stage.MTT runs one long-lived consumer per org:
+    # reset Sentry.Context per message so captured event can't carry stale data from a previous message in the same org.
+    Sentry.Context.clear_all()
+
     Repo.transaction(fn ->
       message =
         from(m in Message,
@@ -360,6 +364,14 @@ defmodule Proca.Server.MTTContext do
   publish-before-persist race to compensate for here.
   """
   def deliver_test_mails(action_id) do
+    # Proca.Stage.MTTTest is a single global consumer (concurrency: 1) that
+    # processes every org's test messages sequentially in one long-lived
+    # process. Sentry.Context accumulates and never resets on its own, so
+    # without this, a Sentry event captured for this message could carry
+    # stale campaign/org/message content left over from whichever message
+    # this same process happened to handle before it.
+    Sentry.Context.clear_all()
+
     Repo.transaction(fn ->
       Ecto.Adapters.SQL.query!(Repo, "SELECT pg_advisory_xact_lock($1)", [action_id])
 
