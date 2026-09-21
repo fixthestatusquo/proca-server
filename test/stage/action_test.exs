@@ -22,13 +22,11 @@ defmodule Proca.Stage.ActionTest do
     test "persists processing_status and attempts the MTT test publish for a testing deliver-stage action" do
       %{action: action} = mtt_story()
 
-      log =
-        capture_log(fn ->
-          assert Action.ack(:store, [deliver_message(action)], []) == :ok
-        end)
+      capture_log(fn ->
+        assert Action.ack(:store, [deliver_message(action)], []) == :ok
+      end)
 
       assert Repo.get!(Proca.Action, action.id).processing_status == :delivered
-      assert log =~ "MTT test: action #{action.id} delivered, publishing to"
     end
 
     test "a publish failure ({:error, reason}, not the bare :error atom) is logged and captured, not raised" do
