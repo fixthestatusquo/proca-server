@@ -112,8 +112,19 @@ defmodule Proca.Server.MTTContext do
   def get_active_targets do
     today = Date.utc_today()
 
+    # only targets with at least one message the scheduler would send
+    pending =
+      from(m in Message,
+        join: a in assoc(m, :action),
+        as: :action,
+        where: m.target_id == parent_as(:target).id and not m.sent,
+        where: ^sendable_message(false),
+        select: 1
+      )
+
     from(
       target in Proca.Target,
+      as: :target,
       join: campaign in assoc(target, :campaign),
       join: mtt in assoc(campaign, :mtt),
       join: org in assoc(campaign, :org),
@@ -125,7 +136,8 @@ defmodule Proca.Server.MTTContext do
           not is_nil(email_backend) and
           te.email_status in [:active, :none] and
           fragment("?::date", mtt.start_at) <= ^today and
-          fragment("?::date", mtt.end_at) >= ^today,
+          fragment("?::date", mtt.end_at) >= ^today and
+          exists(pending),
       order_by: fragment("RANDOM()"),
       distinct: target.id,
       select: %{
@@ -663,14 +675,12 @@ defmodule Proca.Server.MTTContext do
         m in Proca.Action.Message,
         join: t in assoc(m, :target),
         join: a in assoc(m, :action),
+        as: :action,
         join: s in assoc(a, :supporter),
         join: ap in assoc(a, :action_page),
         join: mc in assoc(m, :message_content),
-        where:
-          m.target_id == ^target_id and
-            a.processing_status == :delivered and
-            a.testing == ^testing and
-            m.dupe_rank == 0,
+        where: m.target_id == ^target_id,
+        where: ^sendable_message(testing),
         order_by: [asc: m.id],
         distinct: m.id,
         preload: [
@@ -681,6 +691,16 @@ defmodule Proca.Server.MTTContext do
       )
 
     from(m in base, where: ^sent_dynamic)
+  end
+
+  # Conditions for a message to be sent by the scheduler. Shared by
+  # query_emails_to_send/3 and get_active_targets/0 so the cron never skips a
+  # target that still has messages. Needs the action joined `as: :action`.
+  defp sendable_message(testing) do
+    dynamic(
+      [m, action: a],
+      a.processing_status == :delivered and a.testing == ^testing and m.dupe_rank == 0
+    )
   end
 
   def make_email(
