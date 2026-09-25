@@ -13,23 +13,23 @@ Namespaces:
 - **`mtt.delivery.*`** — RabbitMQ delivery outcomes for both delivery paths (tag `method`: `pacing`/`throttle`)
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 - **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
- - **`mailer.*`** — email provider delivery results (all providers) and webhook events/bounces (`mailjet`, `brevo`)
+- **`mailer.*`** — email provider delivery results (all providers) and webhook events/bounces (`mailjet`, `brevo`)
 - **`webhook.*`** — outbound webhook delivery results (`Proca.Stage.Webhook`)
-
 
 ## API / HTTP metrics
 
 Emitted by `Plug.Telemetry` in `ProcaWeb.Endpoint`, `ProcaWeb.Resolvers.Action.add_action_contact/3`
 and `add_action/3`, and `ProcaWeb.Resolvers.Campaign.stats/3` (`supporter_count`).
 
-| Metric                            | Type         | Tags | Description                                                              |
-|-----------------------------------|--------------|------|--------------------------------------------------------------------------|
-| `web.duration`                    | Distribution | —    | Full HTTP request processing time (ms), from `Plug.Telemetry`            |
+| Metric                            | Type         | Tags | Description                                                                                  |
+| --------------------------------- | ------------ | ---- | -------------------------------------------------------------------------------------------- |
+| `web.duration`                    | Distribution | —    | Full HTTP request processing time (ms), from `Plug.Telemetry`                                |
 | `api.add_action_contact.duration` | Distribution | —    | GraphQL resolver duration (ms) for `addActionContact`; its `_count` series is the call count |
-| `api.add_action.count`            | Counter      | —    | Number of `addAction` calls                                              |
-| `api.supporter_count.count`       | Counter      | —    | Number of `campaign { stats { supporter_count } }` resolutions           |
+| `api.add_action.count`            | Counter      | —    | Number of `addAction` calls                                                                  |
+| `api.supporter_count.count`       | Counter      | —    | Number of `campaign { stats { supporter_count } }` resolutions                               |
 
 **Duration buckets** (milliseconds):
+
 - `web.duration`: `10, 25, 50, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000`
 - `api.add_action_contact.duration`: `5, 10, 20, 50, 100, 200, 300, 500, 750, 1000, 2000, 5000`
 
@@ -65,13 +65,13 @@ Emitted by Ecto for every query (`[:proca, :repo, :query]`), exposed under the `
 names. Together these break the DB part of a request into actual execution vs. waiting
 for a pooled connection (`sql.queue_time` is the main pool-saturation signal).
 
-| Metric              | Type  | Tags | Description                                            |
-|---------------------|-------|------|--------------------------------------------------------|
-| `sql.query_time`    | Gauge | —    | Time spent executing the query (ms)                    |
-| `sql.queue_time`    | Gauge | —    | Time spent waiting to check out a DB connection (ms)   |
-| `sql.idle_time`     | Gauge | —    | Time the connection sat idle in the transaction (ms)   |
-| `sql.decode_time`   | Gauge | —    | Time decoding the result rows (ms)                     |
-| `sql.total_time`    | Gauge | —    | query_time + queue_time + decode_time + idle_time (ms) |
+| Metric            | Type  | Tags | Description                                            |
+| ----------------- | ----- | ---- | ------------------------------------------------------ |
+| `sql.query_time`  | Gauge | —    | Time spent executing the query (ms)                    |
+| `sql.queue_time`  | Gauge | —    | Time spent waiting to check out a DB connection (ms)   |
+| `sql.idle_time`   | Gauge | —    | Time the connection sat idle in the transaction (ms)   |
+| `sql.decode_time` | Gauge | —    | Time decoding the result rows (ms)                     |
+| `sql.total_time`  | Gauge | —    | query_time + queue_time + decode_time + idle_time (ms) |
 
 ---
 
@@ -86,25 +86,25 @@ delivery paths: the `method` label (`pacing` = drip `MTTWorker`, `throttle` =
 hourly `MTTScheduler`) separates them. The no-drip scheduler does not emit a
 delivery metric of its own; its lifecycle lives under `mtt.throttle.*` below.
 
-| Metric                        | Type      | Tags                                  | Description                                               |
-|-------------------------------|-----------|---------------------------------------|-----------------------------------------------------------|
-| `mtt.pacing.campaigns_running` | Gauge     | `method` (`pacing`/`throttle`)        | Number of active MTT campaigns, split by delivery method  |
-| `mtt.pacing.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`        | Total unsent messages for a campaign (polled)             |
-| `mtt.pacing.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
-| `mtt.pacing.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
-| `mtt.pacing.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
-| `mtt.pacing.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
-| `mtt.delivery.count`           | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `method` (`pacing`/`throttle`) | Per delivery attempt outcome |
+| Metric                          | Type    | Tags                                                                                | Description                                              |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `mtt.pacing.campaigns_running`  | Gauge   | `method` (`pacing`/`throttle`)                                                      | Number of active MTT campaigns, split by delivery method |
+| `mtt.pacing.sendable_messages`  | Gauge   | `campaign_id`, `campaign_name`                                                      | Total unsent messages for a campaign (polled)            |
+| `mtt.pacing.sendable_targets`   | Gauge   | `campaign_id`, `campaign_name`                                                      | Number of targets with a good email address              |
+| `mtt.pacing.current_cycle`      | Gauge   | `campaign_id`, `campaign_name`                                                      | Current send cycle number within the sending window      |
+| `mtt.pacing.all_cycles`         | Gauge   | `campaign_id`, `campaign_name`                                                      | Total cycles in the sending window                       |
+| `mtt.pacing.messages_published` | Counter | `campaign_id`, `campaign_name`                                                      | Messages published to RabbitMQ in this drip cycle        |
+| `mtt.delivery.count`            | Counter | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `method` (`pacing`/`throttle`) | Per delivery attempt outcome                             |
 
 ### `mtt.delivery` results
 
-| `result` | Meaning |
-|----------|---------|
-| `published` | Scheduler successfully published to `wrk.N.mtt` |
-| `sent` | Provider accepted the email; DB row marked sent |
-| `retry` | Provider failed; message rejected → MTT fail/retry DLX |
-| `discarded` | Permanently skipped (`retry_limit_exceeded`, `mtt_ended`, …) |
-| `dry_run` / `publish_failed` | Mode / topology publish failures |
+| `result`                     | Meaning                                                      |
+| ---------------------------- | ------------------------------------------------------------ |
+| `published`                  | Scheduler successfully published to `wrk.N.mtt`              |
+| `sent`                       | Provider accepted the email; DB row marked sent              |
+| `retry`                      | Provider failed; message rejected → MTT fail/retry DLX       |
+| `discarded`                  | Permanently skipped (`retry_limit_exceeded`, `mtt_ended`, …) |
+| `dry_run` / `publish_failed` | Mode / topology publish failures                             |
 
 ### Example PromQL
 
@@ -143,25 +143,27 @@ metadata:     %{target_id: integer, campaign_id: integer,
                 campaign_name: string}
 ```
 
-| Metric                                | Type    | Tags            | Description                    |
-|---------------------------------------|---------|-----------------|--------------------------------|
-| `mtt.throttle.scheduler.start`      | Counter | `campaign_id`   | One per scheduler start        |
+| Metric                         | Type    | Tags          | Description             |
+| ------------------------------ | ------- | ------------- | ----------------------- |
+| `mtt.throttle.scheduler.start` | Counter | `campaign_id` | One per scheduler start |
 
 ### `[:mtt, :throttle, :scheduler, :skip]`
 
-Emitted when a scheduler for a target is requested but already registered.
+Emitted when a scheduler for a target is not started: `reason` is `already_running`
+(already registered) or `start_failed` (the scheduler failed to start; also logged and
+sent to Sentry).
 
-| Metric                               | Type    | Tags                         | Description                         |
-|--------------------------------------|---------|------------------------------|-------------------------------------|
-| `mtt.throttle.scheduler.skip`      | Counter | `campaign_id`, `reason`      | One per suppressed duplicate start  |
+| Metric                        | Type    | Tags                    | Description                   |
+| ----------------------------- | ------- | ----------------------- | ----------------------------- |
+| `mtt.throttle.scheduler.skip` | Counter | `campaign_id`, `reason` | One per scheduler not started |
 
 ### `[:mtt, :throttle, :scheduler, :stop]`
 
-| Metric                                    | Type          | Tags                                            | Description                        |
-|-------------------------------------------|---------------|-------------------------------------------------|------------------------------------|
-| `mtt.throttle.scheduler.stop`            | Counter       | `campaign_id`, `stop_reason`                    | One per scheduler termination      |
-| `mtt.throttle.scheduler.duration`        | Distribution  | `campaign_id`, `stop_reason`                    | Wall-clock runtime (milliseconds)  |
-| `mtt.throttle.scheduler.pending_count`   | Gauge         | `campaign_id`                                   | Messages queued at start           |
+| Metric                                 | Type         | Tags                         | Description                       |
+| -------------------------------------- | ------------ | ---------------------------- | --------------------------------- |
+| `mtt.throttle.scheduler.stop`          | Counter      | `campaign_id`, `stop_reason` | One per scheduler termination     |
+| `mtt.throttle.scheduler.duration`      | Distribution | `campaign_id`, `stop_reason` | Wall-clock runtime (milliseconds) |
+| `mtt.throttle.scheduler.pending_count` | Gauge        | `campaign_id`                | Messages queued at start          |
 
 **`stop_reason` taxonomy:** `:no_messages`, `:all_sent`, `:shutdown`, `:crashed`
 
@@ -171,12 +173,12 @@ Emitted when a scheduler for a target is requested but already registered.
 
 ## Email backend events
 
-| Metric                          | Type    | Tags     | Source                       |
-|---------------------------------|---------|----------|------------------------------|
-| `mailer.mailjet.events.count`   | Counter | `reason` | `Proca.Service.Mailjet`      |
-| `mailer.mailjet.bounces.count`  | Counter | `reason` | `Proca.Service.Mailjet`      |
-| `mailer.brevo.events.count`     | Counter | `reason` | `Proca.Service.Brevo`        |
-| `mailer.brevo.bounces.count`    | Counter | `reason` | `Proca.Service.Brevo`        |
+| Metric                         | Type    | Tags     | Source                  |
+| ------------------------------ | ------- | -------- | ----------------------- |
+| `mailer.mailjet.events.count`  | Counter | `reason` | `Proca.Service.Mailjet` |
+| `mailer.mailjet.bounces.count` | Counter | `reason` | `Proca.Service.Mailjet` |
+| `mailer.brevo.events.count`    | Counter | `reason` | `Proca.Service.Brevo`   |
+| `mailer.brevo.bounces.count`   | Counter | `reason` | `Proca.Service.Brevo`   |
 
 Mailjet and Brevo are the only providers with webhook callbacks (`handle_event` /
 `handle_bounce`), so they emit `events` and `bounces` counters tagged by the raw
@@ -188,8 +190,8 @@ Send-path telemetry, emitted once per email from the common `EmailBackend.delive
 funnel — so it covers every provider (Mailjet, Brevo, SES, SMTP) automatically.
 `result` is `:ok` when the provider accepted the message and `:error` otherwise.
 
-| Metric                  | Type    | Tags                                  | Source                    |
-|-------------------------|---------|---------------------------------------|---------------------------|
+| Metric                  | Type    | Tags                                   | Source                                 |
+| ----------------------- | ------- | -------------------------------------- | -------------------------------------- |
 | `mailer.delivery.count` | Counter | `provider`, `kind`, `result`, `org_id` | `Proca.Service.EmailBackend.deliver/3` |
 
 - `provider` ∈ `:mailjet | :brevo | :ses | :smtp`
@@ -223,11 +225,11 @@ returning `:ok`). It does not include the provider's own delivery time to the
 recipient's inbox. Messages whose action has a missing/invalid `createdAt` are
 reported to Sentry rather than counted as a metric.
 
-| Metric                                        | Type         | Tags     | Description                                             |
-|-----------------------------------------------|--------------|----------|---------------------------------------------------------|
-| `email.supporter_confirm.duration`           | Distribution | `org_id` | Supporter-confirm email send lag (ms)                   |
-| `email.thank_you.duration`                   | Distribution | `org_id` | Thank-you email send lag (ms)                           |
-| `email.reminder_confirm.count`               | Counter      | `org_id` | Reminder-confirm confirmation clicks                    |
+| Metric                             | Type         | Tags     | Description                           |
+| ---------------------------------- | ------------ | -------- | ------------------------------------- |
+| `email.supporter_confirm.duration` | Distribution | `org_id` | Supporter-confirm email send lag (ms) |
+| `email.thank_you.duration`         | Distribution | `org_id` | Thank-you email send lag (ms)         |
+| `email.reminder_confirm.count`     | Counter      | `org_id` | Reminder-confirm confirmation clicks  |
 
 **Duration buckets** (milliseconds): `100, 250, 500, 1_000, 2_500, 5_000, 10_000, 30_000, 60_000, 300_000`
 
@@ -252,8 +254,8 @@ webhooks only). `result` is `:ok` when the push returned HTTP 200, `:error`
 otherwise (404, unexpected HTTP codes, transport errors, or no backend
 configured for the schema).
 
-| Metric                   | Type    | Tags                    | Description                    |
-|--------------------------|---------|-------------------------|--------------------------------|
+| Metric                   | Type    | Tags                       | Description              |
+| ------------------------ | ------- | -------------------------- | ------------------------ |
 | `webhook.delivery.count` | Counter | `org_id`, `kind`, `result` | Per-webhook-push outcome |
 
 - `kind` ∈ `:action | :event | :unknown` (derived from the message `schema`)
@@ -273,10 +275,10 @@ sum by (kind) (rate(webhook_delivery_count_total[5m]))
 
 ## Exporter metrics
 
-| Metric                                        | Type    | Tags      | Description                          |
-|-----------------------------------------------|---------|-----------|--------------------------------------|
-| `export.action.duration`                  | Gauge   | `org_id`  | Duration of an action export (ms)    |
-| `export.action.count`                     | Counter | `org_id`  | Number of export operations          |
+| Metric                   | Type    | Tags     | Description                       |
+| ------------------------ | ------- | -------- | --------------------------------- |
+| `export.action.duration` | Gauge   | `org_id` | Duration of an action export (ms) |
+| `export.action.count`    | Counter | `org_id` | Number of export operations       |
 
 ---
 
