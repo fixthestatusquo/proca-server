@@ -6,7 +6,7 @@ defmodule Proca.Repo.Migrations.DeliverOrphanSecondaryActions do
   # UnprocessedActions sweep INNER JOINs supporters, so it never saw them, and
   # the stats recalculation only counts accepted/delivered.
   #
-  # New secondary actions are now written as :delivered by
+  # New orphan secondary actions are now written as :delivered by
   # ProcaWeb.Resolvers.Action.add_action/3; this backfills the orphan rows
   # created before that change so they are counted again.
   #

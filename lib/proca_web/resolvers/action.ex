@@ -230,16 +230,15 @@ defmodule ProcaWeb.Resolvers.Action do
              Action.build_for_supporter(action_attrs, supporter, action_page)
              |> put_assoc(:source, source)
 
-           # addAction is the secondary/share path: there is no confirmation
-           # so we always set them as confirmed
-           # not used yet: if the seconary action is sending an email: it
-           # still needs the pipeline to rank messages and publish the
-           # deliver-stage event.
+           # With a supporter, the action goes through the pipeline as usual
+           # (follows supporter confirmation, gets delivered to the org's
+           # queues). Without one (unknown contact_ref) nothing would ever
+           # process it, so mark it delivered to have it counted in stats.
+           # MTT actions always have a supporter (checked above).
            action =
-             if Map.get(action_attrs, :mtt) do
-               action
-             else
-               put_change(action, :processing_status, :delivered)
+             case supporter do
+               %Supporter{} -> action
+               _ref -> put_change(action, :processing_status, :delivered)
              end
 
            repo.insert(action)

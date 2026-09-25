@@ -72,7 +72,9 @@ defmodule Proca.Action do
   """
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
-    |> Repo.update_all(set: [supporter_id: id, ref: nil])
+    # orphan actions were stored as :delivered (nothing could process them);
+    # now that they have a supporter, let the pipeline pick them up again
+    |> Repo.update_all(set: [supporter_id: id, ref: nil, processing_status: :new])
 
     # XXX decouple in a way that lets use do notify
   end

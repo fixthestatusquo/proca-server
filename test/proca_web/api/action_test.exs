@@ -110,13 +110,35 @@ defmodule ProcaWeb.Api.ActionTest do
     [action] = Repo.all(from(a in Action, order_by: [desc: :id], limit: 1))
 
     assert action.processing_status == :delivered
-    assert is_nil(action.supporter)
+    assert is_nil(action.supporter_id)
 
     stats = Proca.Server.Stats.calculate()
     assert stats[ap.campaign_id].action["share"] == 1
   end
 
-  test "addAction with an existing supporter is terminal delivered", %{pages: [ap]} do
+  test "orphan addAction linked to a supporter goes back to processing", %{
+    org: org,
+    pages: [ap]
+  } do
+    {:ok, %{contact_ref: ref}} = action_with_ref(org, ap, %{action_type: "share"})
+
+    [share] = Repo.all(from(a in Action, where: a.action_type == "share"))
+    assert share.processing_status == :delivered
+
+    action_with_contact(
+      ap,
+      %{action_type: "signature"},
+      %{email: "sharer@example.com", first_name: "Sharer"},
+      %{contact_ref: ref}
+    )
+
+    share = Repo.reload(share)
+    assert share.processing_status == :new
+    refute is_nil(share.supporter_id)
+    assert is_nil(share.ref)
+  end
+
+  test "addAction with an existing supporter goes through the processing pipeline", %{pages: [ap]} do
     {:ok, %{contact_ref: ref}} =
       action_with_contact(
         ap,
@@ -138,7 +160,7 @@ defmodule ProcaWeb.Api.ActionTest do
         )
       )
 
-    assert share.processing_status == :delivered
+    assert share.processing_status == :new
     refute is_nil(share.supporter_id)
   end
 
