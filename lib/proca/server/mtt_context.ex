@@ -122,6 +122,15 @@ defmodule Proca.Server.MTTContext do
         select: 1
       )
 
+    # at least one usable email; EXISTS instead of a join so each target comes
+    # back once and no DISTINCT is needed (DISTINCT ON would force ORDER BY id
+    # before RANDOM(), which killed the shuffle)
+    good_email =
+      from(te in TargetEmail,
+        where: te.target_id == parent_as(:target).id and te.email_status in [:active, :none],
+        select: 1
+      )
+
     from(
       target in Proca.Target,
       as: :target,
@@ -129,17 +138,15 @@ defmodule Proca.Server.MTTContext do
       join: mtt in assoc(campaign, :mtt),
       join: org in assoc(campaign, :org),
       join: email_backend in assoc(org, :email_backend),
-      join: te in assoc(target, :emails),
       where:
         campaign.status == :live and
           mtt.drip_delivery == false and
           not is_nil(email_backend) and
-          te.email_status in [:active, :none] and
+          exists(good_email) and
           fragment("?::date", mtt.start_at) <= ^today and
           fragment("?::date", mtt.end_at) >= ^today and
           exists(pending),
       order_by: fragment("RANDOM()"),
-      distinct: target.id,
       select: %{
         target
         | campaign: %{campaign | mtt: mtt, org: %{org | email_backend: email_backend}}

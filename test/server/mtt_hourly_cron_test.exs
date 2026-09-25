@@ -61,6 +61,21 @@ defmodule Proca.Server.MTTHourlyCronTest do
       assert length(targets) == length(active_targets)
     end
 
+    test "a target with several usable emails is returned once", %{targets: [target | _]} do
+      MTTContext.dupe_rank()
+
+      Repo.insert!(%Proca.TargetEmail{
+        target_id: target.id,
+        email: "second-#{target.id}@example.org",
+        email_status: :active
+      })
+
+      ids = MTTContext.get_active_targets() |> Enum.map(& &1.id)
+
+      assert Enum.count(ids, &(&1 == target.id)) == 1
+      assert ids == Enum.uniq(ids)
+    end
+
     test "targets without pending live messages are not returned", %{
       targets: [done, test_only | rest]
     } do
