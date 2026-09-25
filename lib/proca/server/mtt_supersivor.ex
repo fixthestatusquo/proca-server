@@ -1,5 +1,6 @@
 defmodule Proca.Server.MTTSupervisor do
   use DynamicSupervisor
+  require Logger
 
   @registry Proca.Server.MTTSchedulerRegistry
 
@@ -38,6 +39,21 @@ defmodule Proca.Server.MTTSupervisor do
         )
 
         {:error, :already_running}
+
+      {:error, reason} = error ->
+        Logger.error("MTT scheduler for target #{target.id} failed to start: #{inspect(reason)}")
+
+        Sentry.capture_message("MTT scheduler failed to start",
+          extra: %{target_id: target.id, reason: inspect(reason)}
+        )
+
+        :telemetry.execute(
+          [:mtt, :throttle, :scheduler, :skip],
+          %{},
+          %{target_id: target.id, campaign_id: target.campaign.id, reason: :start_failed}
+        )
+
+        error
 
       other ->
         other

@@ -42,6 +42,8 @@ defmodule Proca.Server.MTTHourlyCronTest do
         messages_ratio
         |> Access.get(current_hour)
 
+      # like MTTHourlyCron, rank before listing: only dupe_rank 0 messages count
+      assert {:ok, _} = MTTContext.dupe_rank()
       active_targets = MTTContext.get_active_targets()
 
       active_targets
@@ -57,7 +59,31 @@ defmodule Proca.Server.MTTHourlyCronTest do
       end)
 
       assert length(targets) == length(active_targets)
-      assert {:ok, _} = MTTContext.dupe_rank()
+    end
+
+    test "targets without pending live messages are not returned", %{
+      targets: [done, test_only | rest]
+    } do
+      MTTContext.dupe_rank()
+
+      # every message of `done` already sent
+      Repo.update_all(from(m in Proca.Action.Message, where: m.target_id == ^done.id),
+        set: [sent: true]
+      )
+
+      # `test_only` has only testing actions (these go via deliver_test_mails)
+      test_action_ids =
+        from(m in Proca.Action.Message, where: m.target_id == ^test_only.id, select: m.action_id)
+
+      Repo.update_all(from(a in Proca.Action, where: a.id in subquery(test_action_ids)),
+        set: [testing: true]
+      )
+
+      active_ids = MTTContext.get_active_targets() |> Enum.map(& &1.id) |> MapSet.new()
+
+      refute done.id in active_ids
+      refute test_only.id in active_ids
+      assert MapSet.new(rest, & &1.id) |> MapSet.subset?(active_ids)
     end
 
     test "starts one MTT scheduler process per active target", %{

@@ -9,7 +9,8 @@ Namespaces:
 - **`web.duration`** — full HTTP request processing duration
 - **`api.*`** — call counts / duration for the main API operations (`addAction`, `addActionContact`, supporter-count widget)
 - **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
-- **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`) plus RabbitMQ delivery outcomes
+- **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`)
+- **`mtt.delivery.*`** — RabbitMQ delivery outcomes for both delivery paths (tag `method`: `pacing`/`throttle`)
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 - **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
  - **`mailer.*`** — email provider delivery results (all providers) and webhook events/bounces (`mailjet`, `brevo`)
@@ -74,23 +75,28 @@ for a pooled connection (`sql.queue_time` is the main pool-saturation signal).
 
 ---
 
-## `mtt.pacing.*` — Drip worker + RabbitMQ delivery
+## `mtt.pacing.*` / `mtt.delivery.*` — Drip worker + delivery outcomes
 
 Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 `ProcaWeb.Telemetry.count_sendable_messages/0` (polled every 60s), and
 `Proca.Server.MTTContext.emit_delivery/2`.
 
+`mtt.delivery.count` is the single delivery-outcome counter for **both**
+delivery paths: the `method` label (`pacing` = drip `MTTWorker`, `throttle` =
+hourly `MTTScheduler`) separates them. The no-drip scheduler does not emit a
+delivery metric of its own; its lifecycle lives under `mtt.throttle.*` below.
+
 | Metric                        | Type      | Tags                                  | Description                                               |
 |-------------------------------|-----------|---------------------------------------|-----------------------------------------------------------|
-| `mtt.pacing.campaigns_running` | Gauge     | `drip_delivery` (`true`/`false`)      | Number of active MTT campaigns, split by delivery mode    |
+| `mtt.pacing.campaigns_running` | Gauge     | `method` (`pacing`/`throttle`)        | Number of active MTT campaigns, split by delivery method  |
 | `mtt.pacing.sendable_messages` | Gauge     | `campaign_id`, `campaign_name`        | Total unsent messages for a campaign (polled)             |
 | `mtt.pacing.sendable_targets`  | Gauge     | `campaign_id`, `campaign_name`        | Number of targets with a good email address               |
 | `mtt.pacing.current_cycle`     | Gauge     | `campaign_id`, `campaign_name`        | Current send cycle number within the sending window       |
 | `mtt.pacing.all_cycles`        | Gauge     | `campaign_id`, `campaign_name`        | Total cycles in the sending window                        |
 | `mtt.pacing.messages_published`| Counter   | `campaign_id`, `campaign_name`        | Messages published to RabbitMQ in this drip cycle         |
-| `mtt.pacing.delivery.count`    | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `drip_delivery` | Per delivery attempt outcome |
+| `mtt.delivery.count`           | Counter   | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `method` (`pacing`/`throttle`) | Per delivery attempt outcome |
 
-### `mtt.pacing.delivery` results
+### `mtt.delivery` results
 
 | `result` | Meaning |
 |----------|---------|
@@ -104,16 +110,19 @@ Emitted from `Proca.Server.MTTWorker.process_mtt_campaign/1`,
 
 ```promql
 # How many campaigns are currently running (drip delivery)
-mtt_pacing_campaigns_running{drip_delivery="true"}
+mtt_pacing_campaigns_running{method="pacing"}
 
 # Queue publishes per campaign (not SMTP)
 rate(mtt_pacing_messages_published_total[5m])
 
 # Successful SMTP deliveries vs retries vs permanent discards
-sum by (result) (rate(mtt_pacing_delivery_count_total[5m]))
+sum by (result) (rate(mtt_delivery_count_total[5m]))
+
+# Split by delivery path
+sum by (method, result) (rate(mtt_delivery_count_total[5m]))
 
 # Permanent retry exhaustion (should stay near zero)
-rate(mtt_pacing_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])
+rate(mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])
 ```
 
 ---
@@ -121,7 +130,7 @@ rate(mtt_pacing_delivery_count_total{result="discarded",reason="retry_limit_exce
 ## `mtt.throttle.*` — Per-target scheduler (`MTTScheduler`)
 
 Emitted from lifecycle events in `Proca.Server.MTTScheduler` (start / stop / skip).
-Successful sends also increment `mtt.pacing.delivery` with `result="sent"`.
+Successful sends also increment `mtt.delivery` with `result="sent"`.
 
 ### `[:mtt, :throttle, :scheduler, :start]`
 
@@ -279,15 +288,15 @@ exporter exporter) scraped into the same VictoriaMetrics/Prometheus.
 
 ### Panels to add
 
-1. **MTT delivery outcomes** — stacked `rate(mtt_pacing_delivery_count_total[5m])` by `result`
-2. **Retry exhaustion** — `rate(mtt_pacing_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])`
+1. **MTT delivery outcomes** — stacked `rate(mtt_delivery_count_total[5m])` by `result`
+2. **Retry exhaustion** — `rate(mtt_delivery_count_total{result="discarded",reason="retry_limit_exceeded"}[15m])`
 3. **Drip publish rate** — `rate(mtt_pacing_messages_published_total[5m])` by `campaign_id`
 4. **MTT fail queue depth** (RabbitMQ) — `rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}`
 5. **MTT work queue depth** — `rabbitmq_queue_messages{queue=~"wrk\\..*\\.mtt"}`
 6. **Shared fail park** — `rabbitmq_queue_messages{queue=~"org\\..*\\.fail"}` (transactional emails, webhooks, SQS)
 
 Endless DLX loops show up as: fail-queue depth oscillating while
-`mtt_pacing_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
+`mtt_delivery_count_total{result="retry"}` keeps rising and `sent` stays flat.
 
 ### MTT Scheduler Health
 
@@ -298,7 +307,7 @@ Endless DLX loops show up as: fail-queue depth oscillating while
 ### Example queries
 
 ```promql
-sum by (result) (rate(mtt_pacing_delivery_count_total[5m]))
+sum by (result) (rate(mtt_delivery_count_total[5m]))
 
 rabbitmq_queue_messages{queue=~"org\\..*\\.mtt\\.fail"}
 

@@ -97,15 +97,15 @@ defmodule ProcaWeb.Telemetry do
       })
     end)
 
-    {drip_delivery, no_drip_delivery} =
+    {pacing_campaigns, throttle_campaigns} =
       Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(drip_delivery)}, %{
-      drip_delivery: true
+    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(pacing_campaigns)}, %{
+      method: :pacing
     })
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(no_drip_delivery)}, %{
-      drip_delivery: false
+    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(throttle_campaigns)}, %{
+      method: :throttle
     })
   rescue
     e in DBConnection.ConnectionError ->
@@ -146,17 +146,19 @@ defmodule ProcaWeb.Telemetry do
       counter("mailer.brevo.bounces.count", tags: [:reason]),
       counter("mailer.delivery.count", tags: [:provider, :kind, :result, :org_id]),
       counter("webhook.delivery.count", tags: [:org_id, :kind, :result]),
-      last_value("mtt.pacing.campaigns_running", tags: [:drip_delivery]),
+      last_value("mtt.pacing.campaigns_running", tags: [:method]),
       last_value("mtt.pacing.sendable_messages", tags: @campaign_tags),
       last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
       last_value("mtt.pacing.current_cycle", tags: @campaign_tags),
       last_value("mtt.pacing.all_cycles", tags: @campaign_tags),
       sum("mtt.pacing.messages_published", tags: @campaign_tags),
 
-      # RabbitMQ MTT delivery. Message/target IDs stay in logs and are not
-      # exported as labels to avoid unbounded Prometheus cardinality.
-      counter("mtt.pacing.delivery.count",
-        tags: [:kind, :result, :reason, :org_id, :campaign_id, :drip_delivery]
+      # RabbitMQ MTT delivery outcomes, for both delivery paths (`method` is
+      # `pacing` for the drip worker, `throttle` for the hourly scheduler).
+      # Message/target IDs stay in logs and are not exported as labels to avoid
+      # unbounded Prometheus cardinality.
+      counter("mtt.delivery.count",
+        tags: [:kind, :result, :reason, :org_id, :campaign_id, :method]
       ),
 
       # MTT New Scheduler Lifecycle
@@ -192,7 +194,6 @@ defmodule ProcaWeb.Telemetry do
       # Supporter detail lookup (see #327): outcome is one of :found,
       # :not_found, :bad_format, :bad_content_type, :unknown, :not_supported
       counter("crm.lookup.count", tags: [:org_id, :outcome]),
-
 
       # Database Metrics (Ecto emits these on [:proca, :repo, :query])
       last_value("sql.total_time",

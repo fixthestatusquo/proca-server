@@ -74,9 +74,11 @@ defmodule Proca.Server.MTTContext do
           reason: :retry_limit_exceeded,
           org_id: message.target && message.target.campaign && message.target.campaign.org_id,
           campaign_id: message.target && message.target.campaign_id,
-          drip_delivery:
-            message.target && message.target.campaign && message.target.campaign.mtt &&
-              message.target.campaign.mtt.drip_delivery
+          method:
+            delivery_method(
+              message.target && message.target.campaign && message.target.campaign.mtt &&
+                message.target.campaign.mtt.drip_delivery
+            )
         )
     end
 
@@ -92,19 +94,37 @@ defmodule Proca.Server.MTTContext do
           reason: :none,
           org_id: nil,
           campaign_id: nil,
-          drip_delivery: nil
+          method: :unknown
         },
         Map.new(metadata)
       )
 
-    :telemetry.execute([:mtt, :pacing, :delivery], %{count: 1}, metadata)
+    :telemetry.execute([:mtt, :delivery], %{count: 1}, metadata)
   end
+
+  # Which scheduler produced this delivery: drip uses the MTTWorker pacing loop
+  # (`mtt.pacing.*`), no-drip uses the hourly per-target throttle scheduler
+  # (`mtt.throttle.*`).
+  defp delivery_method(true), do: :pacing
+  defp delivery_method(false), do: :throttle
+  defp delivery_method(_), do: :unknown
 
   def get_active_targets do
     today = Date.utc_today()
 
+    # only targets with at least one message the scheduler would send
+    pending =
+      from(m in Message,
+        join: a in assoc(m, :action),
+        as: :action,
+        where: m.target_id == parent_as(:target).id and not m.sent,
+        where: ^sendable_message(false),
+        select: 1
+      )
+
     from(
       target in Proca.Target,
+      as: :target,
       join: campaign in assoc(target, :campaign),
       join: mtt in assoc(campaign, :mtt),
       join: org in assoc(campaign, :org),
@@ -116,7 +136,8 @@ defmodule Proca.Server.MTTContext do
           not is_nil(email_backend) and
           te.email_status in [:active, :none] and
           fragment("?::date", mtt.start_at) <= ^today and
-          fragment("?::date", mtt.end_at) >= ^today,
+          fragment("?::date", mtt.end_at) >= ^today and
+          exists(pending),
       order_by: fragment("RANDOM()"),
       distinct: target.id,
       select: %{
@@ -178,7 +199,7 @@ defmodule Proca.Server.MTTContext do
     metadata = [
       org_id: org.id,
       campaign_id: target.campaign.id,
-      drip_delivery: target.campaign.mtt.drip_delivery
+      method: delivery_method(target.campaign.mtt.drip_delivery)
     ]
 
     result =
@@ -313,7 +334,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:discarded,
           org_id: org.id,
           campaign_id: campaign.id,
-          drip_delivery: campaign.mtt && campaign.mtt.drip_delivery,
+          method: delivery_method(campaign.mtt && campaign.mtt.drip_delivery),
           reason: reason
         )
 
@@ -487,7 +508,7 @@ defmodule Proca.Server.MTTContext do
             kind: :test,
             org_id: target.campaign.org.id,
             campaign_id: target.campaign.id,
-            drip_delivery: target.campaign.mtt.drip_delivery
+            method: delivery_method(target.campaign.mtt.drip_delivery)
           )
 
           {:cont, :ok}
@@ -499,7 +520,7 @@ defmodule Proca.Server.MTTContext do
             kind: :test,
             org_id: target.campaign.org.id,
             campaign_id: target.campaign.id,
-            drip_delivery: target.campaign.mtt.drip_delivery,
+            method: delivery_method(target.campaign.mtt.drip_delivery),
             reason: :provider
           )
 
@@ -528,12 +549,6 @@ defmodule Proca.Server.MTTContext do
   end
 
   defp do_deliver_message(target, msg) do
-    :telemetry.execute(
-      [:mtt, :throttle, :deliver_message],
-      %{},
-      %{target_id: target.id}
-    )
-
     locale = target.locale || @default_locale
 
     template =
@@ -579,7 +594,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:sent,
           org_id: target.campaign.org.id,
           campaign_id: target.campaign.id,
-          drip_delivery: target.campaign.mtt.drip_delivery
+          method: delivery_method(target.campaign.mtt.drip_delivery)
         )
 
       {:error, statuses} ->
@@ -588,7 +603,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:retry,
           org_id: target.campaign.org.id,
           campaign_id: target.campaign.id,
-          drip_delivery: target.campaign.mtt.drip_delivery,
+          method: delivery_method(target.campaign.mtt.drip_delivery),
           reason: :provider
         )
 
@@ -660,14 +675,12 @@ defmodule Proca.Server.MTTContext do
         m in Proca.Action.Message,
         join: t in assoc(m, :target),
         join: a in assoc(m, :action),
+        as: :action,
         join: s in assoc(a, :supporter),
         join: ap in assoc(a, :action_page),
         join: mc in assoc(m, :message_content),
-        where:
-          m.target_id == ^target_id and
-            a.processing_status == :delivered and
-            a.testing == ^testing and
-            m.dupe_rank == 0,
+        where: m.target_id == ^target_id,
+        where: ^sendable_message(testing),
         order_by: [asc: m.id],
         distinct: m.id,
         preload: [
@@ -678,6 +691,16 @@ defmodule Proca.Server.MTTContext do
       )
 
     from(m in base, where: ^sent_dynamic)
+  end
+
+  # Conditions for a message to be sent by the scheduler. Shared by
+  # query_emails_to_send/3 and get_active_targets/0 so the cron never skips a
+  # target that still has messages. Needs the action joined `as: :action`.
+  defp sendable_message(testing) do
+    dynamic(
+      [m, action: a],
+      a.processing_status == :delivered and a.testing == ^testing and m.dupe_rank == 0
+    )
   end
 
   def make_email(
