@@ -93,7 +93,7 @@ defmodule Proca.Server.MTTSchedulerTest do
       # # Get initial state
       state = :sys.get_state(pid)
 
-      send(pid, {:send_message})
+      send(pid, :send_message)
 
       :timer.sleep(2000)
 

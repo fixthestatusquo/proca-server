@@ -59,7 +59,7 @@ defmodule Proca.Server.MTTScheduler do
       send(self(), :send_message)
       {:ok, state}
     else
-      schedule_next(state)
+      {:ok, schedule_next(state)}
     end
   end
 
@@ -71,7 +71,7 @@ defmodule Proca.Server.MTTScheduler do
 
     case waits do
       [] -> {:stop, :normal, %{state | stop_reason: :all_sent}}
-      _ -> schedule_next(state)
+      _ -> {:noreply, schedule_next(state)}
     end
   end
 
@@ -107,7 +107,7 @@ defmodule Proca.Server.MTTScheduler do
 
   defp schedule_next(%{waits: [wait | _]} = state) do
     Process.send_after(self(), :send_message, wait)
-    {:ok, state}
+    state
   end
 
   @doc """
