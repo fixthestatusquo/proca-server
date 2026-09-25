@@ -226,9 +226,23 @@ defmodule ProcaWeb.Resolvers.Action do
                                     supporter: supporter,
                                     source: source
                                   } ->
-           Action.build_for_supporter(action_attrs, supporter, action_page)
-           |> put_assoc(:source, source)
-           |> repo.insert()
+           action =
+             Action.build_for_supporter(action_attrs, supporter, action_page)
+             |> put_assoc(:source, source)
+
+           # addAction is the secondary/share path: there is no confirmation
+           # so we always set them as confirmed
+           # not used yet: if the seconary action is sending an email: it
+           # still needs the pipeline to rank messages and publish the
+           # deliver-stage event.
+           action =
+             if Map.get(action_attrs, :mtt) do
+               action
+             else
+               put_change(action, :processing_status, :delivered)
+             end
+
+           repo.insert(action)
          end)
          |> Repo.transaction_and_notify(:add_action, all_error: true) do
       {:ok, %{supporter: supporter, action: _action}} ->
