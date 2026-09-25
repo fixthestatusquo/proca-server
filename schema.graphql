@@ -1067,10 +1067,10 @@ input EmailTemplateInput {
   "template name"
   name: String!
 
-  "template locale"
-  locale: String
+  "template locale (required: identifies the template together with name)"
+  locale: String!
 
-  "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html\/subject\/text."
+  "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html\/subject\/text (subject and html are still required: pass placeholders)."
   externalId: String
 
   "Subject text"

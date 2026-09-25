@@ -537,8 +537,8 @@ defmodule ProcaWeb.Schema.OrgTypes do
   input_object :email_template_input do
     @desc "template name"
     field :name, non_null(:string)
-    @desc "template locale"
-    field :locale, :string
+    @desc "template locale (required: identifies the template together with name)"
+    field :locale, non_null(:string)
 
     @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text (subject and html are still required: pass placeholders)."
     field :external_id, :string

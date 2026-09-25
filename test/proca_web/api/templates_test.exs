@@ -5,6 +5,7 @@ defmodule ProcaWeb.Api.TemplatesTest do
 
   alias Proca.Repo
   alias Proca.Service.EmailTemplate
+  import Ecto.Query, only: [from: 2]
 
   setup do
     story = red_story()
@@ -97,5 +98,22 @@ defmodule ProcaWeb.Api.TemplatesTest do
     assert t.external_id == "9"
     assert t.subject == "Danke"
     assert t.html == "<p>Danke</p>"
+  end
+
+  test "upsertTemplate requires locale, so it cannot overwrite a random locale", %{
+    conn: conn,
+    yellow_org: org,
+    yellow_user: user
+  } do
+    query = """
+    mutation {
+      upsertTemplate(orgName: "#{org.name}", input: {name: "thank_you", subject: "X", html: "X"})
+    }
+    """
+
+    res = conn |> auth_api_post(query, user) |> json_response(200)
+
+    assert %{"errors" => [_ | _]} = res
+    assert Repo.all(from(t in EmailTemplate, where: t.subject == "X")) == []
   end
 end
