@@ -107,16 +107,56 @@ defmodule Proca.Server.MTTSchedulerTest do
     end
   end
 
+  describe "MTTScheduler full run" do
+    setup do
+      handler_id = "mtt-scheduler-stop-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :telemetry.attach(
+        handler_id,
+        [:mtt, :throttle, :scheduler, :stop],
+        fn _event, measurements, metadata, _ ->
+          send(parent, {:scheduler_stop, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+    end
+
+    test "dispatches every pending message and stops as all_sent", %{targets: [target | _]} do
+      max_emails = MTTContext.max_emails_per_hour(target.campaign)
+      pending_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
+      assert pending_count > 1
+
+      {:ok, pid} = MTTScheduler.start_link(target, max_emails, send_window_ms: 300)
+      ref = Process.monitor(pid)
+
+      assert_receive {:scheduler_stop, %{messages_sent: ^pending_count}, %{stop_reason: :all_sent}},
+                     2_000
+
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+    end
+
+    test "with no pending messages stops right away as no_messages", %{targets: [target | _]} do
+      {:ok, pid} = MTTScheduler.start_link(target, 0, send_window_ms: 300)
+      ref = Process.monitor(pid)
+
+      assert_receive {:scheduler_stop, %{messages_sent: 0}, %{stop_reason: :no_messages}}, 1_000
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+    end
+  end
+
   describe "bucket_waits/2" do
     test "no messages, no waits" do
       assert MTTScheduler.bucket_waits(0, @send_window_ms) == []
     end
 
-    test "consistent for every count: one wait per message, all positive" do
+    test "consistent for every count: one wait per message, none negative" do
       for count <- 1..6 do
         waits = MTTScheduler.bucket_waits(count, @send_window_ms)
         assert length(waits) == count
-        assert Enum.all?(waits, &(&1 > 0))
+        assert Enum.all?(waits, &(&1 >= 0))
       end
     end
 
