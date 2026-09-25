@@ -442,4 +442,37 @@ defmodule Proca.Stage.MTTStageTest do
       assert MTTContext.get_unsent_message(msg.id) == nil
     end
   end
+
+  describe "cancel_if_empty/1" do
+    test "empty content: skips without any DB write (regression - used to crash on an invalid processing_status)",
+         %{action: action, first_target: target} do
+      empty_content = Factory.insert(:message_content, subject: "", body: "")
+
+      msg =
+        Factory.insert(:message, action: action, target: target, message_content: empty_content)
+        |> Repo.preload([:message_content, :action])
+
+      status_before = action.processing_status
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert Proca.Action.Message.cancel_if_empty(msg) == true
+        end)
+
+      assert log =~ "Skipping message #{msg.id} for action #{action.id}: empty content"
+
+      # deliberately no DB writes: neither the action's status nor the
+      # message's sent flag are touched
+      assert Repo.get!(Proca.Action, action.id).processing_status == status_before
+      refute Repo.get!(Proca.Action.Message, msg.id).sent
+    end
+
+    test "non-empty content: does not skip", %{action: action, first_target: target} do
+      msg =
+        Factory.insert(:message, action: action, target: target)
+        |> Repo.preload([:message_content, :action])
+
+      refute Proca.Action.Message.cancel_if_empty(msg)
+    end
+  end
 end
