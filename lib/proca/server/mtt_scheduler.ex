@@ -22,12 +22,17 @@ defmodule Proca.Server.MTTScheduler do
   # an overlap would be skipped, delaying that target's next batch by an hour).
   @send_window_ms 55 * 60 * 1000
 
+  @doc """
+  Options: `:send_window_ms` (defaults to 55 min, shorter only in tests); the
+  rest are passed to `GenServer.start_link/3`.
+  """
   def start_link(target, max_emails_per_hour, opts \\ []) do
-    GenServer.start_link(__MODULE__, {target, max_emails_per_hour}, opts)
+    {send_window_ms, opts} = Keyword.pop(opts, :send_window_ms, @send_window_ms)
+    GenServer.start_link(__MODULE__, {target, max_emails_per_hour, send_window_ms}, opts)
   end
 
   @impl true
-  def init({target, max_emails_per_hour}) do
+  def init({target, max_emails_per_hour, send_window_ms}) do
     start_time = System.monotonic_time()
 
     messages = MTTContext.get_pending_messages(target.id, max_emails_per_hour)
@@ -47,7 +52,7 @@ defmodule Proca.Server.MTTScheduler do
     state = %{
       target: target,
       messages: messages,
-      waits: bucket_waits(pending_count, @send_window_ms),
+      waits: bucket_waits(pending_count, send_window_ms),
       start_time: start_time,
       sent_count: 0,
       stop_reason: stop_reason
