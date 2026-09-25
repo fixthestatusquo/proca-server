@@ -61,4 +61,41 @@ defmodule ProcaWeb.Api.TemplatesTest do
     assert [%{"name" => "thank_you", "locale" => "de", "html" => "<p>Danke</p>"}] =
              res["data"]["org"]["templates"]
   end
+
+  test "upsertTemplate without subject/html returns a validation error", %{
+    conn: conn,
+    yellow_org: org,
+    yellow_user: user
+  } do
+    query = """
+    mutation {
+      upsertTemplate(orgName: "#{org.name}", input: {name: "brevo_only", locale: "en", externalId: "7"})
+    }
+    """
+
+    res = conn |> auth_api_post(query, user) |> json_response(200)
+
+    assert %{"errors" => [_ | _] = errors} = res
+    assert Enum.any?(errors, &(&1["message"] =~ "blank"))
+    refute Repo.get_by(EmailTemplate, name: "brevo_only")
+  end
+
+  test "upsertTemplate on an existing template keeps subject/html when not passed", %{
+    conn: conn,
+    yellow_org: org,
+    yellow_user: user
+  } do
+    query = """
+    mutation {
+      upsertTemplate(orgName: "#{org.name}", input: {name: "thank_you", locale: "de", externalId: "9"})
+    }
+    """
+
+    conn |> auth_api_post(query, user) |> json_response(200) |> is_success()
+
+    t = Repo.get_by!(EmailTemplate, org_id: org.id, name: "thank_you", locale: "de")
+    assert t.external_id == "9"
+    assert t.subject == "Danke"
+    assert t.html == "<p>Danke</p>"
+  end
 end
