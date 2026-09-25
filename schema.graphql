@@ -822,6 +822,15 @@ type PrivateOrg implements Org {
   "Action processing settings for this org"
   processing: Processing!
 
+  "Email templates stored in this org (local and references to provider templates)"
+  templates(
+    "Filter by template name"
+    name: String
+
+    "Filter by template locale"
+    locale: String
+  ): [EmailTemplate!]!
+
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
 
@@ -1030,6 +1039,28 @@ type Processing {
 
   "Email templates. (warn: contant is not available to fetch)"
   emailTemplates: [String!]
+}
+
+type EmailTemplate {
+  id: Int!
+
+  "Name of the template"
+  name: String!
+
+  "Locale of the template"
+  locale: String!
+
+  "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html\/subject\/text."
+  externalId: String
+
+  "Subject text"
+  subject: String
+
+  "Html part body"
+  html: String
+
+  "Plaintext part body"
+  text: String
 }
 
 input EmailTemplateInput {
