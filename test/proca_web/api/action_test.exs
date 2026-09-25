@@ -98,10 +98,70 @@ defmodule ProcaWeb.Api.ActionTest do
       Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter]))
 
     assert action.fields == %{}
-    assert action.processing_status == :new
+    assert action.processing_status == :delivered
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id
     assert is_nil(action.supporter)
+  end
+
+  test "orphan addAction is terminal delivered and counted in stats", %{org: org, pages: [ap]} do
+    action_with_ref(org, ap, %{action_type: "share"})
+
+    [action] = Repo.all(from(a in Action, order_by: [desc: :id], limit: 1))
+
+    assert action.processing_status == :delivered
+    assert is_nil(action.supporter_id)
+
+    stats = Proca.Server.Stats.calculate()
+    assert stats[ap.campaign_id].action["share"] == 1
+  end
+
+  test "orphan addAction linked to a supporter goes back to processing", %{
+    org: org,
+    pages: [ap]
+  } do
+    {:ok, %{contact_ref: ref}} = action_with_ref(org, ap, %{action_type: "share"})
+
+    [share] = Repo.all(from(a in Action, where: a.action_type == "share"))
+    assert share.processing_status == :delivered
+
+    action_with_contact(
+      ap,
+      %{action_type: "signature"},
+      %{email: "sharer@example.com", first_name: "Sharer"},
+      %{contact_ref: ref}
+    )
+
+    share = Repo.reload(share)
+    assert share.processing_status == :new
+    refute is_nil(share.supporter_id)
+    assert is_nil(share.ref)
+  end
+
+  test "addAction with an existing supporter goes through the processing pipeline", %{pages: [ap]} do
+    {:ok, %{contact_ref: ref}} =
+      action_with_contact(
+        ap,
+        %{action_type: "signature"},
+        %{email: "sharer@example.com", first_name: "Sharer"}
+      )
+
+    params = %{action: %{action_type: "share"}, action_page_id: ap.id, contact_ref: ref}
+
+    assert {:ok, _} =
+             ProcaWeb.Resolvers.Action.add_action(:unused, params, %Absinthe.Resolution{})
+
+    [share] =
+      Repo.all(
+        from(a in Action,
+          where: a.action_type == "share",
+          order_by: [desc: :id],
+          limit: 1
+        )
+      )
+
+    assert share.processing_status == :new
+    refute is_nil(share.supporter_id)
   end
 
   test "create petition action with custom fields", %{org: org, pages: [ap]} do
@@ -117,7 +177,7 @@ defmodule ProcaWeb.Api.ActionTest do
       Repo.all(from(a in Action, order_by: [desc: :inserted_at], limit: 1, preload: [:supporter]))
 
     assert map_size(action.fields) == 2
-    assert action.processing_status == :new
+    assert action.processing_status == :delivered
     assert action.action_page_id == ap.id
     assert action.campaign_id == ap.campaign_id
     assert not action.testing

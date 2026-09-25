@@ -226,9 +226,22 @@ defmodule ProcaWeb.Resolvers.Action do
                                     supporter: supporter,
                                     source: source
                                   } ->
-           Action.build_for_supporter(action_attrs, supporter, action_page)
-           |> put_assoc(:source, source)
-           |> repo.insert()
+           action =
+             Action.build_for_supporter(action_attrs, supporter, action_page)
+             |> put_assoc(:source, source)
+
+           # With a supporter, the action goes through the pipeline as usual
+           # (follows supporter confirmation, gets delivered to the org's
+           # queues). Without one (unknown contact_ref) nothing would ever
+           # process it, so mark it delivered to have it counted in stats.
+           # MTT actions always have a supporter (checked above).
+           action =
+             case supporter do
+               %Supporter{} -> action
+               _ref -> put_change(action, :processing_status, :delivered)
+             end
+
+           repo.insert(action)
          end)
          |> Repo.transaction_and_notify(:add_action, all_error: true) do
       {:ok, %{supporter: supporter, action: _action}} ->

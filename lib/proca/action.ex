@@ -42,14 +42,12 @@ defmodule Proca.Action do
     |> put_assoc(:supporter, supporter)
   end
 
-  defp put_supporter_or_ref(ch, contact_ref, action_page) when is_bitstring(contact_ref) do
-    case Supporter.one(fingerprint: contact_ref, org_id: action_page.org_id) do
-      %Supporter{} = supporter ->
-        put_assoc(ch, :supporter, supporter)
-
-      nil ->
-        change(ch, %{ref: contact_ref, supporter: nil})
-    end
+  # contact_ref here is the encoded ref (get_supporter/2 already did the decoded,
+  # org-scoped lookup), so there is no supporter to attach: keep the ref so a
+  # later link_refs_to_supporter/2 can bind it. The caller decides whether the
+  # action is terminal (add_action) or goes through the processing pipeline.
+  defp put_supporter_or_ref(ch, contact_ref, _action_page) when is_bitstring(contact_ref) do
+    change(ch, %{ref: contact_ref, supporter: nil})
   end
 
   @doc """
@@ -74,7 +72,9 @@ defmodule Proca.Action do
   """
   def link_refs_to_supporter(refs, %Supporter{id: id}) when not is_nil(id) and is_list(refs) do
     from(a in Action, where: is_nil(a.supporter_id) and a.ref in ^refs)
-    |> Repo.update_all(set: [supporter_id: id, ref: nil])
+    # orphan actions were stored as :delivered (nothing could process them);
+    # now that they have a supporter, let the pipeline pick them up again
+    |> Repo.update_all(set: [supporter_id: id, ref: nil, processing_status: :new])
 
     # XXX decouple in a way that lets use do notify
   end
