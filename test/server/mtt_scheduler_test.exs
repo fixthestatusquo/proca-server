@@ -9,11 +9,7 @@ defmodule Proca.Server.MTTSchedulerTest do
 
   import Proca.StoryFactory, only: [mtt_story: 0]
 
-  @one_hour_ms 55 * 60 * 1000
-  # messages_count = 4
-  @base_for_4 div(@one_hour_ms, max(4 - 1, 1))
-  # messages_count = 5
-  @base_for_5 div(@one_hour_ms, max(5 - 1, 1))
+  @send_window_ms 55 * 60 * 1000
 
   setup do
     %{
@@ -106,29 +102,45 @@ defmodule Proca.Server.MTTSchedulerTest do
       # later scheduler run. There is deliberately no direct-send fallback.
       messages_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
 
-      assert state.count == pending_messages_count
+      assert length(state.messages) == pending_messages_count
       assert messages_count == pending_messages_count
     end
   end
 
-  describe "calc_interval/3" do
-    test "even messages_count last element uses simple division" do
-      assert MTTScheduler.calc_interval(4, true, 1) == @base_for_4
+  describe "bucket_waits/2" do
+    test "no messages, no waits" do
+      assert MTTScheduler.bucket_waits(0, @send_window_ms) == []
     end
 
-    test "jitter applied (+/-25%) and minimum 1s enforced" do
-      base = @base_for_5
-      jitter_amount = div(base, 4)
-      expected_plus = max(base + jitter_amount, 1000)
-      expected_minus = max(base - jitter_amount, 1000)
-
-      assert MTTScheduler.calc_interval(5, true, 3) == expected_plus
-      assert MTTScheduler.calc_interval(5, false, 3) == expected_minus
+    test "consistent for every count: one wait per message, all positive" do
+      for count <- 1..6 do
+        waits = MTTScheduler.bucket_waits(count, @send_window_ms)
+        assert length(waits) == count
+        assert Enum.all?(waits, &(&1 > 0))
+      end
     end
 
-    test "fallback returns small default when not applicable" do
-      assert MTTScheduler.calc_interval(1, true, 0) == 1000
-      assert MTTScheduler.calc_interval(0, false, 0) == 1000
+    test "each message lands inside its own bucket" do
+      count = 6
+      bucket = div(@send_window_ms, count)
+
+      offsets =
+        count
+        |> MTTScheduler.bucket_waits(@send_window_ms)
+        |> Enum.scan(&(&1 + &2))
+
+      offsets
+      |> Enum.with_index()
+      |> Enum.each(fn {offset, i} ->
+        assert offset >= i * bucket
+        assert offset < (i + 1) * bucket
+      end)
+    end
+
+    test "a lone message is scheduled somewhere in the whole window" do
+      [wait] = MTTScheduler.bucket_waits(1, @send_window_ms)
+      assert wait >= 0
+      assert wait < @send_window_ms
     end
   end
 end

@@ -1,6 +1,12 @@
 defmodule Proca.Server.MTTScheduler do
   @moduledoc """
-  Sending messages for a single target, spreading them over 1 hour with randomness.
+  Sends a single target's pending messages, spread evenly over the send window.
+
+  The window is split into `n` equal buckets for `n` messages and message `i` is
+  dispatched at a random moment inside bucket `i`. One rule for every `n`: a lone
+  message lands at a random point in the whole window, six messages land roughly
+  one per sixth of it. No message is sent at the same fixed offset, and every
+  message stays inside its own bucket.
 
   Delivery itself goes through the org's `wrk.N.mtt` RabbitMQ queue (consumed
   by `Proca.Stage.MTT`); see `Proca.Server.MTTContext.dispatch_message/2`.
@@ -11,7 +17,10 @@ defmodule Proca.Server.MTTScheduler do
 
   alias Proca.Server.MTTContext
 
-  @one_hour_ms 55 * 60 * 1000
+  # 55 min, not a full 60: leaves a gap before the next `MTTHourlyCron` tick so a
+  # target never has two scheduler runs overlapping (the target is registered, so
+  # an overlap would be skipped, delaying that target's next batch by an hour).
+  @send_window_ms 55 * 60 * 1000
 
   def start_link(target, max_emails_per_hour, opts \\ []) do
     GenServer.start_link(__MODULE__, {target, max_emails_per_hour}, opts)
@@ -22,8 +31,7 @@ defmodule Proca.Server.MTTScheduler do
     start_time = System.monotonic_time()
 
     messages = MTTContext.get_pending_messages(target.id, max_emails_per_hour)
-
-    pending_count = Enum.count(messages)
+    pending_count = length(messages)
     stop_reason = if pending_count == 0, do: :no_messages, else: :sending
 
     :telemetry.execute(
@@ -36,58 +44,40 @@ defmodule Proca.Server.MTTScheduler do
       }
     )
 
-    send(self(), {:send_message})
+    state = %{
+      target: target,
+      messages: messages,
+      waits: bucket_waits(pending_count, @send_window_ms),
+      start_time: start_time,
+      sent_count: 0,
+      stop_reason: stop_reason
+    }
 
-    {:ok,
-     %{
-       target: target,
-       messages: messages,
-       jitter_toggle: true,
-       count: pending_count,
-       start_time: start_time,
-       sent_count: 0,
-       stop_reason: stop_reason
-     }}
+    # With no messages, tick once so the process stops through the empty clause
+    # and `terminate/2` still emits the matching `:stop` telemetry.
+    if pending_count == 0 do
+      send(self(), :send_message)
+      {:ok, state}
+    else
+      schedule_next(state)
+    end
   end
 
   @impl true
-  def handle_info({:send_message}, %{messages: [], stop_reason: :no_messages} = state) do
-    Logger.info("No messages to send for #{state.target.id}, stopping scheduler")
+  def handle_info(:send_message, %{messages: [msg | rest], waits: [_wait | waits]} = state) do
+    Task.start(fn -> MTTContext.dispatch_message(state.target, msg) end)
 
+    state = %{state | messages: rest, waits: waits, sent_count: state.sent_count + 1}
+
+    case waits do
+      [] -> {:stop, :normal, %{state | stop_reason: :all_sent}}
+      _ -> schedule_next(state)
+    end
+  end
+
+  def handle_info(:send_message, %{messages: []} = state) do
+    Logger.info("MTT scheduler target #{state.target.id}: no messages, stopping")
     {:stop, :normal, state}
-  end
-
-  @impl true
-  def handle_info({:send_message}, %{messages: []} = state) do
-    Logger.info("All messages sent for #{state.target.id}, stopping scheduler")
-
-    {:stop, :normal, %{state | stop_reason: :all_sent}}
-  end
-
-  @impl true
-  def handle_info(
-        {:send_message},
-        %{target: target, messages: [msg | rest], jitter_toggle: jitter_toggle} = state
-      ) do
-    Task.start(fn ->
-      MTTContext.dispatch_message(target, msg)
-    end)
-
-    interval = calc_interval(state.count, jitter_toggle, length(rest))
-
-    Logger.warning("Messages interval #{interval} ms for target #{target.id}")
-
-    Process.send_after(self(), {:send_message}, interval)
-
-    {:noreply,
-     %{state | messages: rest, jitter_toggle: not jitter_toggle, sent_count: state.sent_count + 1}}
-  end
-
-  @impl true
-  def handle_info({:DOWN, ref, _, _, reason}, state) do
-    Logger.info("MTTNew down ref #{inspect(ref)} reason #{inspect(reason)}")
-
-    {:noreply, state}
   end
 
   @impl true
@@ -115,22 +105,29 @@ defmodule Proca.Server.MTTScheduler do
     :ok
   end
 
-  def calc_interval(messages_count, _, 1)
-      when messages_count > 1 and rem(messages_count, 2) == 0 do
-    div(@one_hour_ms, max(messages_count - 1, 1))
+  defp schedule_next(%{waits: [wait | _]} = state) do
+    Process.send_after(self(), :send_message, wait)
+    {:ok, state}
   end
 
-  def calc_interval(messages_count, jitter_toggle, left_messages_count)
-      when messages_count > 1 and left_messages_count > 0 do
-    base = div(@one_hour_ms, max(messages_count - 1, 1))
+  @doc """
+  Waiting time (ms) before each of `count` messages.
 
-    # +/- 25%
-    jitter_amount = div(base, 4)
-    jitter = if jitter_toggle, do: jitter_amount, else: -jitter_amount
+  `window_ms` is split into `count` equal buckets; each returned wait reaches a
+  random moment inside that message's bucket (differences of the per-message
+  offsets, so they can be fed to `Process.send_after/3` in order).
+  """
+  def bucket_waits(count, _window_ms) when count <= 0, do: []
 
-    # at least 1s
-    max(base + jitter, 1000)
+  def bucket_waits(count, window_ms) do
+    bucket = max(div(window_ms, count), 1)
+
+    offsets =
+      for i <- 0..(count - 1) do
+        i * bucket + :rand.uniform(bucket) - 1
+      end
+
+    [first | rest] = offsets
+    [first | Enum.zip_with(offsets, rest, fn a, b -> b - a end)]
   end
-
-  def calc_interval(_, _, _), do: 1000
 end

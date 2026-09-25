@@ -74,9 +74,11 @@ defmodule Proca.Server.MTTContext do
           reason: :retry_limit_exceeded,
           org_id: message.target && message.target.campaign && message.target.campaign.org_id,
           campaign_id: message.target && message.target.campaign_id,
-          drip_delivery:
-            message.target && message.target.campaign && message.target.campaign.mtt &&
-              message.target.campaign.mtt.drip_delivery
+          method:
+            delivery_method(
+              message.target && message.target.campaign && message.target.campaign.mtt &&
+                message.target.campaign.mtt.drip_delivery
+            )
         )
     end
 
@@ -92,13 +94,20 @@ defmodule Proca.Server.MTTContext do
           reason: :none,
           org_id: nil,
           campaign_id: nil,
-          drip_delivery: nil
+          method: :unknown
         },
         Map.new(metadata)
       )
 
-    :telemetry.execute([:mtt, :pacing, :delivery], %{count: 1}, metadata)
+    :telemetry.execute([:mtt, :delivery], %{count: 1}, metadata)
   end
+
+  # Which scheduler produced this delivery: drip uses the MTTWorker pacing loop
+  # (`mtt.pacing.*`), no-drip uses the hourly per-target throttle scheduler
+  # (`mtt.throttle.*`).
+  defp delivery_method(true), do: :pacing
+  defp delivery_method(false), do: :throttle
+  defp delivery_method(_), do: :unknown
 
   def get_active_targets do
     today = Date.utc_today()
@@ -178,7 +187,7 @@ defmodule Proca.Server.MTTContext do
     metadata = [
       org_id: org.id,
       campaign_id: target.campaign.id,
-      drip_delivery: target.campaign.mtt.drip_delivery
+      method: delivery_method(target.campaign.mtt.drip_delivery)
     ]
 
     result =
@@ -309,7 +318,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:discarded,
           org_id: org.id,
           campaign_id: campaign.id,
-          drip_delivery: campaign.mtt && campaign.mtt.drip_delivery,
+          method: delivery_method(campaign.mtt && campaign.mtt.drip_delivery),
           reason: reason
         )
 
@@ -475,7 +484,7 @@ defmodule Proca.Server.MTTContext do
             kind: :test,
             org_id: target.campaign.org.id,
             campaign_id: target.campaign.id,
-            drip_delivery: target.campaign.mtt.drip_delivery
+            method: delivery_method(target.campaign.mtt.drip_delivery)
           )
 
           {:cont, :ok}
@@ -487,7 +496,7 @@ defmodule Proca.Server.MTTContext do
             kind: :test,
             org_id: target.campaign.org.id,
             campaign_id: target.campaign.id,
-            drip_delivery: target.campaign.mtt.drip_delivery,
+            method: delivery_method(target.campaign.mtt.drip_delivery),
             reason: :provider
           )
 
@@ -516,12 +525,6 @@ defmodule Proca.Server.MTTContext do
   end
 
   defp do_deliver_message(target, msg) do
-    :telemetry.execute(
-      [:mtt, :throttle, :deliver_message],
-      %{},
-      %{target_id: target.id}
-    )
-
     locale = target.locale || @default_locale
 
     template =
@@ -567,7 +570,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:sent,
           org_id: target.campaign.org.id,
           campaign_id: target.campaign.id,
-          drip_delivery: target.campaign.mtt.drip_delivery
+          method: delivery_method(target.campaign.mtt.drip_delivery)
         )
 
       {:error, statuses} ->
@@ -576,7 +579,7 @@ defmodule Proca.Server.MTTContext do
         emit_delivery(:retry,
           org_id: target.campaign.org.id,
           campaign_id: target.campaign.id,
-          drip_delivery: target.campaign.mtt.drip_delivery,
+          method: delivery_method(target.campaign.mtt.drip_delivery),
           reason: :provider
         )
 

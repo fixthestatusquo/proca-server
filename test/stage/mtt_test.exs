@@ -260,7 +260,7 @@ defmodule Proca.Stage.MTTStageTest do
 
       :telemetry.attach(
         handler_id,
-        [:proca, :mtt, :delivery],
+        [:mtt, :delivery],
         fn event, measurements, metadata, _ ->
           send(parent, {:mtt_telemetry, event, measurements, metadata})
         end,
@@ -273,11 +273,13 @@ defmodule Proca.Stage.MTTStageTest do
       refute Repo.get(Proca.Action.Message, msg.id).sent
       assert [] = Proca.TestEmailBackend.mailbox(email)
 
-      assert_receive {:mtt_telemetry, [:proca, :mtt, :delivery], %{count: 1}, metadata}
+      assert_receive {:mtt_telemetry, [:mtt, :delivery], %{count: 1}, metadata}
       assert metadata.kind == :live
       assert metadata.result == :dry_run
       assert metadata.org_id == target.campaign.org.id
       assert metadata.campaign_id == target.campaign.id
+      # mtt_story uses drip_delivery: false -> hourly throttle scheduler
+      assert metadata.method == :throttle
     end
   end
 
@@ -337,7 +339,10 @@ defmodule Proca.Stage.MTTStageTest do
       import ExUnit.CaptureLog
 
       [msg | _] = MTTContext.get_pending_messages(target.id, :all)
-      bad_mc = Repo.insert!(%Proca.Action.MessageContent{subject: "{{#unclosed}}", body: "Our demands"})
+
+      bad_mc =
+        Repo.insert!(%Proca.Action.MessageContent{subject: "{{#unclosed}}", body: "Our demands"})
+
       Repo.update!(Ecto.Changeset.change(msg, message_content_id: bad_mc.id))
 
       log =
