@@ -130,20 +130,42 @@ defmodule Proca.Campaign do
   end
 
   def delete(%Multi{} = multi, %Campaign{} = campaign) do
-    %{action_pages: owned_pages} = one([id: campaign.id] ++ [:with_local_pages])
-
-    owned_pages
-    |> Enum.reduce(multi, fn page, m ->
-      ActionPage.delete(m, page)
-    end)
-    |> Multi.delete(
-      {:campaign, campaign.id},
-      change(campaign)
-      |> foreign_key_constraint(:action_pages,
-        name: :action_pages_campaign_id_fkey,
-        message: "has action pages"
+    if has_partner_pages?(campaign) do
+      # Postgres reports ON DELETE RESTRICT as :restrict_violation (23001), which
+      # Ecto's foreign_key_constraint/3 does not map (it only handles
+      # :foreign_key_violation, 23503). Guard here so callers get the same
+      # "has action pages" error on any Postgres version.
+      Multi.error(
+        multi,
+        :campaign,
+        change(campaign)
+        |> add_error(:action_pages, "has action pages")
       )
+    else
+      %{action_pages: owned_pages} = one([id: campaign.id] ++ [:with_local_pages])
+
+      owned_pages
+      |> Enum.reduce(multi, fn page, m ->
+        ActionPage.delete(m, page)
+      end)
+      |> Multi.delete(
+        {:campaign, campaign.id},
+        change(campaign)
+        |> foreign_key_constraint(:action_pages,
+          name: :action_pages_campaign_id_fkey,
+          message: "has action pages"
+        )
+      )
+    end
+  end
+
+  # Action pages on this campaign owned by another org ("partner pages").
+  # A campaign lead must not delete a campaign other orgs still use.
+  defp has_partner_pages?(%Campaign{} = campaign) do
+    from(ap in ActionPage,
+      where: ap.campaign_id == ^campaign.id and ap.org_id != ^campaign.org_id
     )
+    |> Repo.exists?()
   end
 
   def delete(%Campaign{} = campaign) do
