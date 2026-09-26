@@ -160,12 +160,12 @@ defmodule Proca.Stage.SystemEventTest do
       assert result[:user] == %{"id" => user.id, "email" => user.email}
     end
 
-    test "user is nil when no actor is passed", %{yellow_campaign: campaign} do
+    test "omits user when no actor is passed", %{yellow_campaign: campaign} do
       data = Proca.Stage.Event.metadata(:campaign_updated, campaign)
 
       result = Proca.Stage.Event.put_data(data, :campaign_updated, campaign, [])
 
-      assert result[:user] == nil
+      refute Map.has_key?(result, :user)
     end
   end
 

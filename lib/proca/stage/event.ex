@@ -15,7 +15,7 @@ defmodule Proca.Stage.Event do
 
   """
   alias Proca.{Action, Confirm, Org, Supporter}
-  alias Proca.Pipes.Connection
+  alias Proca.Pipes.{Connection, Topology}
   import Proca.Stage.Support, only: [camel_case_keys: 2, to_iso8601: 1, user_data: 1]
 
   @doc """
@@ -127,10 +127,15 @@ defmodule Proca.Stage.Event do
     |> Map.put(:campaign, campaign_data)
     |> Map.put(:campaign_id, campaign.id)
     |> Map.put(:org_id, campaign.org.id)
-    |> Map.put(:user, user_data(opts[:user]))
+    |> maybe_put_user(opts[:user])
   end
 
+  # No actor -> no key. Consumers already tolerate a missing `user` on older
+  # messages, so there is no reason to emit an explicit null.
+  defp maybe_put_user(data, nil), do: data
+  defp maybe_put_user(data, user), do: Map.put(data, :user, user_data(user))
+
   defp exchange_for(org_id) when is_number(org_id) do
-    Proca.Pipes.Topology.xn(%Org{id: org_id}, "event")
+    Topology.xn(%Org{id: org_id}, "event")
   end
 end
