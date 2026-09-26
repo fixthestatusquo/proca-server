@@ -16,6 +16,7 @@ defmodule Proca.Stage.SystemEvent do
   alias Proca.Pipes.{Connection, Topology}
   alias Proca.Repo
   import Logger
+  import Proca.Stage.Support, only: [user_data: 1]
 
   def emit(data, event_type, org_id) do
     routing_key = "system." <> Atom.to_string(event_type)
@@ -33,7 +34,10 @@ defmodule Proca.Stage.SystemEvent do
         :ok
 
       {:error, reason} ->
-        warning("SystemEvent #{event_type} publish failed: #{inspect(reason)} exchange=#{exchange}")
+        warning(
+          "SystemEvent #{event_type} publish failed: #{inspect(reason)} exchange=#{exchange}"
+        )
+
         {:error, reason}
     end
   end
@@ -59,6 +63,7 @@ defmodule Proca.Stage.SystemEvent do
 
     %{
       "contact" => user_contact_data(user),
+      "user" => user_data(user),
       "personalInfo" => nil,
       "privacy" => %{},
       "tracking" => %{},
@@ -84,6 +89,7 @@ defmodule Proca.Stage.SystemEvent do
 
     %{
       "contact" => user_contact_data(user),
+      "user" => user_data(user),
       "personalInfo" => nil,
       "privacy" => %{},
       "tracking" => %{},
@@ -109,6 +115,7 @@ defmodule Proca.Stage.SystemEvent do
 
     %{
       "contact" => user_contact_data(user),
+      "user" => user_data(user),
       "personalInfo" => nil,
       "privacy" => %{},
       "tracking" => %{},

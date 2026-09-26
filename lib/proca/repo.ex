@@ -86,6 +86,6 @@ defmodule Proca.Repo do
   end
 
   defp notify_opts(opts) do
-    Keyword.split(opts, [:auth, :id])
+    Keyword.split(opts, [:auth, :id, :user])
   end
 end

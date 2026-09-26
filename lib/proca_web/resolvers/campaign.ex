@@ -96,7 +96,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
      |> Enum.sum()}
   end
 
-  def upsert(_, %{input: attrs}, %{context: %{org: org}}) do
+  def upsert(_, %{input: attrs}, %{context: %{org: org} = context}) do
     alias Ecto.Multi
 
     {pages, attrs} = Map.pop(attrs, :action_pages, [])
@@ -116,7 +116,7 @@ defmodule ProcaWeb.Resolvers.Campaign do
         end)
       end)
 
-    result = transaction_and_notify(upsert_all, :upsert_campaign)
+    result = transaction_and_notify(upsert_all, :upsert_campaign, user: context[:user])
 
     case result do
       {:ok, %{campaign: campaign}} -> {:ok, campaign}
@@ -161,16 +161,16 @@ defmodule ProcaWeb.Resolvers.Campaign do
     |> insert_and_notify()
   end
 
-  def update(_, %{input: params}, %{context: %{campaign: campaign}}) do
+  def update(_, %{input: params}, %{context: %{campaign: campaign} = context}) do
     campaign
     |> Campaign.changeset(params)
-    |> update_and_notify()
+    |> update_and_notify(user: context[:user])
   end
 
-  def update_campaign_processing(_, args, %{context: %{campaign: campaign}}) do
+  def update_campaign_processing(_, args, %{context: %{campaign: campaign} = context}) do
     campaign
     |> Campaign.changeset(args)
-    |> update_and_notify()
+    |> update_and_notify(user: context[:user])
   end
 
   def delete(_, _, %{context: %{campaign: campaign}}) do

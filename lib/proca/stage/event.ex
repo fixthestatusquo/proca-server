@@ -16,7 +16,7 @@ defmodule Proca.Stage.Event do
   """
   alias Proca.{Action, Confirm, Org, Supporter}
   alias Proca.Pipes.Connection
-  import Proca.Stage.Support, only: [camel_case_keys: 2, to_iso8601: 1]
+  import Proca.Stage.Support, only: [camel_case_keys: 2, to_iso8601: 1, user_data: 1]
 
   @doc """
   Routing key for the event message is two-element topic routing key for confirms (because they have subtype), and one element key for CRUD events.
@@ -109,7 +109,7 @@ defmodule Proca.Stage.Event do
     |> Map.put(:tracking, MessageV1.tracking_data(action))
   end
 
-  def put_data(data, :campaign_updated, campaign, _opts) do
+  def put_data(data, :campaign_updated, campaign, opts) do
     campaign = campaign |> Proca.Repo.preload([:org])
 
     org_data = %{
@@ -127,6 +127,7 @@ defmodule Proca.Stage.Event do
     |> Map.put(:campaign, campaign_data)
     |> Map.put(:campaign_id, campaign.id)
     |> Map.put(:org_id, campaign.org.id)
+    |> Map.put(:user, user_data(opts[:user]))
   end
 
   defp exchange_for(org_id) when is_number(org_id) do

@@ -139,6 +139,36 @@ defmodule Proca.Stage.SystemEventTest do
     end
   end
 
+  describe "Support.user_data/1" do
+    test "builds id + email from a user" do
+      user = Factory.insert(:user)
+
+      assert Proca.Stage.Support.user_data(user) == %{"id" => user.id, "email" => user.email}
+    end
+
+    test "returns nil when there is no user" do
+      assert Proca.Stage.Support.user_data(nil) == nil
+    end
+  end
+
+  describe "campaign_updated message" do
+    test "includes the acting user", %{yellow_campaign: campaign, red_user: user} do
+      data = Proca.Stage.Event.metadata(:campaign_updated, campaign)
+
+      result = Proca.Stage.Event.put_data(data, :campaign_updated, campaign, user: user)
+
+      assert result[:user] == %{"id" => user.id, "email" => user.email}
+    end
+
+    test "user is nil when no actor is passed", %{yellow_campaign: campaign} do
+      data = Proca.Stage.Event.metadata(:campaign_updated, campaign)
+
+      result = Proca.Stage.Event.put_data(data, :campaign_updated, campaign, [])
+
+      assert result[:user] == nil
+    end
+  end
+
   describe "emit routing keys" do
     test "join_campaign routes to campaign lead org's event exchange", %{
       yellow_campaign: campaign,
