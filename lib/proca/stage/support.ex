@@ -11,6 +11,15 @@ defmodule Proca.Stage.Support do
   alias Broadway.Message
   import Logger
 
+  @doc """
+  Top-level `user` object for system events: the acting user, or nil.
+
+  Deliberately not the `contact` shape - this identifies a staff User (id + email),
+  not a supporter contact.
+  """
+  def user_data(%Proca.Users.User{id: id, email: email}), do: %{"id" => id, "email" => email}
+  def user_data(_), do: nil
+
   # XXX for now we assume that only ActionPage owner does the processing, but i think it should be up to
   # the AP.delivery flag
   #
