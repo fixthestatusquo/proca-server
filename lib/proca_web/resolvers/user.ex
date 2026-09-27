@@ -59,8 +59,12 @@ defmodule ProcaWeb.Resolvers.User do
          role when role != nil <- Role.from_string(role_str),
          true <- Role.can_assign_role?(auth, role) do
       case insert(Staffer.changeset(%{user: user, org: org, role: role})) do
-        {:ok, _} -> {:ok, %{status: :success}}
-        {:error, _} = e -> e
+        {:ok, _} ->
+          Proca.Stage.SystemEvent.emit_user_join(auth.user, user, org, role)
+          {:ok, %{status: :success}}
+
+        {:error, _} = e ->
+          e
       end
     else
       {nil, _} -> {:error, msg_ext("User does not exist", "not_found")}
@@ -92,8 +96,15 @@ defmodule ProcaWeb.Resolvers.User do
          role when role != nil <- Role.from_string(role_str),
          true <- Role.can_assign_role?(auth, role) do
       case Role.change(staffer, role) |> update() do
-        {:ok, _} -> {:ok, %{status: :success}}
-        {:error, e} -> {:error, format_errors(e)}
+        {:ok, _} ->
+          Proca.Stage.SystemEvent.emit_user_update(auth.user, user, org, %{
+            "role" => Atom.to_string(role)
+          })
+
+          {:ok, %{status: :success}}
+
+        {:error, e} ->
+          {:error, format_errors(e)}
       end
     else
       {nil, _} -> {:error, msg_ext("User does not exist", "not_found")}
@@ -113,8 +124,27 @@ defmodule ProcaWeb.Resolvers.User do
         end
 
       case User.one(q) do
-        nil -> {:error, "User not found"}
-        user -> update(User.details_changeset(user, params))
+        nil ->
+          {:error, "User not found"}
+
+        user ->
+          ch = User.details_changeset(user, params)
+
+          case update(ch) do
+            {:ok, updated} ->
+              fields = ch.changes |> Map.keys() |> Enum.map(&Atom.to_string/1)
+
+              if fields != [] do
+                Proca.Stage.SystemEvent.emit_user_update(auth.user, updated, nil, %{
+                  "fields" => fields
+                })
+              end
+
+              {:ok, updated}
+
+            e ->
+              e
+          end
       end
     else
       {:error, "Only admin with manage_users permission can modify other users"}
