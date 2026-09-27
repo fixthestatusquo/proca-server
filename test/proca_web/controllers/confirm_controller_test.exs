@@ -24,7 +24,7 @@ defmodule ProcaWeb.ConfirmControllerTest do
 
       :telemetry.attach(
         "test-reminder-confirm",
-        [:proca, :email, :reminder_confirm],
+        [:email, :reminder_confirm],
         fn event, measurements, metadata, _ ->
           :ets.insert(telemetry_events, {event, measurements, metadata})
         end,
@@ -40,7 +40,7 @@ defmodule ProcaWeb.ConfirmControllerTest do
         )
 
       assert conn.status == 200
-      events = :ets.lookup(telemetry_events, [:proca, :email, :reminder_confirm])
+      events = :ets.lookup(telemetry_events, [:email, :reminder_confirm])
       assert length(events) == 1
       {_, %{count: 1}, %{org_id: org_id}} = hd(events)
       assert org_id == action.action_page.org_id
@@ -51,7 +51,7 @@ defmodule ProcaWeb.ConfirmControllerTest do
 
       :telemetry.attach(
         "test-no-reminder-confirm",
-        [:proca, :email, :reminder_confirm],
+        [:email, :reminder_confirm],
         fn event, measurements, metadata, _ ->
           :ets.insert(telemetry_events, {event, measurements, metadata})
         end,
@@ -62,7 +62,7 @@ defmodule ProcaWeb.ConfirmControllerTest do
 
       get(conn, "/link/s/#{action.id}/accept/#{ref}")
 
-      events = :ets.lookup(telemetry_events, [:proca, :email, :reminder_confirm])
+      events = :ets.lookup(telemetry_events, [:email, :reminder_confirm])
       assert events == []
     end
   end
