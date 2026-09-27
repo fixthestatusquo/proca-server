@@ -11,6 +11,7 @@ Namespaces:
 - **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
 - **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`)
 - **`mtt.sendable.messages`** — unsent-message gauge for both delivery paths (tag `method`: `pacing`/`throttle`), polled every 60s
+- **`mtt.campaigns_running`** — active MTT campaigns, split by delivery method (tag `method`: `pacing`/`throttle`)
 - **`mtt.delivery.*`** — RabbitMQ delivery outcomes for both delivery paths (tag `method`: `pacing`/`throttle`)
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 - **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
@@ -89,7 +90,7 @@ delivery metric of its own; its lifecycle lives under `mtt.throttle.*` below.
 
 | Metric                          | Type    | Tags                                                                                | Description                                                  |
 | ------------------------------- | ------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `mtt.pacing.campaigns_running`  | Gauge   | `method` (`pacing`/`throttle`)                                                      | Number of active MTT campaigns, split by delivery method     |
+| `mtt.campaigns_running`         | Gauge   | `method` (`pacing`/`throttle`)                                                      | Number of active MTT campaigns, split by delivery method     |
 | `mtt.sendable.messages`         | Gauge   | `campaign_id`, `campaign_name`, `method` (`pacing`/`throttle`)                      | Unsent messages for a campaign, per delivery method (polled) |
 | `mtt.pacing.sendable_targets`   | Gauge   | `campaign_id`, `campaign_name`                                                      | Number of targets with a good email address                  |
 | `mtt.pacing.current_cycle`      | Gauge   | `campaign_id`, `campaign_name`                                                      | Current send cycle number within the sending window          |
@@ -111,7 +112,7 @@ delivery metric of its own; its lifecycle lives under `mtt.throttle.*` below.
 
 ```promql
 # How many campaigns are currently running (drip delivery)
-mtt_pacing_campaigns_running{method="pacing"}
+mtt_campaigns_running{method="pacing"}
 
 # Queue publishes per campaign (not SMTP)
 rate(mtt_pacing_messages_published_total[5m])

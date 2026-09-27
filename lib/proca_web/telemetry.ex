@@ -106,11 +106,11 @@ defmodule ProcaWeb.Telemetry do
     {pacing_campaigns, throttle_campaigns} =
       Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(pacing_campaigns)}, %{
+    :telemetry.execute([:mtt, :campaigns_running], %{count: length(pacing_campaigns)}, %{
       method: :pacing
     })
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(throttle_campaigns)}, %{
+    :telemetry.execute([:mtt, :campaigns_running], %{count: length(throttle_campaigns)}, %{
       method: :throttle
     })
   rescue
@@ -152,7 +152,11 @@ defmodule ProcaWeb.Telemetry do
       counter("mailer.brevo.bounces.count", tags: [:reason]),
       counter("mailer.delivery.count", tags: [:provider, :kind, :result, :org_id]),
       counter("webhook.delivery.count", tags: [:org_id, :kind, :result]),
-      last_value("mtt.pacing.campaigns_running", tags: [:method]),
+      last_value("mtt.campaigns_running",
+        event_name: [:mtt, :campaigns_running],
+        measurement: :count,
+        tags: [:method]
+      ),
       last_value("mtt.sendable.messages", tags: @campaign_tags ++ [:method]),
       last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
       last_value("mtt.pacing.current_cycle", tags: @campaign_tags),
