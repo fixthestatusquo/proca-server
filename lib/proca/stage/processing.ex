@@ -457,7 +457,7 @@ defmodule Proca.Stage.Processing do
     case changed_action(p) do
       %{id: id, testing: true, action_page: %{campaign: %{}}} ->
         queue = Proca.Pipes.Topology.mtt_test_queue()
-        Connection.publish(%{actionId: id, stage: "deliver", testing: true}, "", queue, nil)
+        publish_fun().(%{actionId: id, stage: "deliver", testing: true}, "", queue, nil)
 
       %{id: id, testing: true} ->
         warn(
@@ -472,6 +472,12 @@ defmodule Proca.Stage.Processing do
   end
 
   def publish_mtt_test_after_store(_processing), do: :ok
+
+  # Overridable so tests can force the publish failure path deterministically,
+  # without depending on whether a RabbitMQ broker happens to be reachable.
+  defp publish_fun do
+    Application.get_env(:proca, :mtt_test_publish_fun, &Connection.publish/4)
+  end
 
   def routing_for(%{action_type: at, campaign: %{name: cname}}) do
     at <> "." <> cname

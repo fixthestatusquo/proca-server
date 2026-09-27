@@ -32,13 +32,26 @@ defmodule Proca.Stage.ActionTest do
     test "a publish failure ({:error, reason}, not the bare :error atom) is logged and captured, not raised" do
       %{action: action} = mtt_story()
 
-      # No RabbitMQ connection in this test environment, so
-      # publish_mtt_test_after_store/1 genuinely hits Connection.publish's
-      # failure path here - this is a regression test for a real bug: the
-      # case in ack/3 used to only match the bare :error atom, which
-      # Connection.publish/4 never actually returns (its own spec is
-      # `:ok | {:error, term()}`), so this failure crashed the whole ack
-      # callback with a CaseClauseError instead of being handled.
+      # Force the failure deterministically: with a broker reachable (CI),
+      # Connection.publish succeeds and there is no failure path to exercise.
+      # The seam is a regression guard for a real bug: the case in ack/3 used to
+      # only match the bare :error atom, which Connection.publish/4 never returns
+      # (its spec is `:ok | {:error, term()}`), so the failure crashed the whole
+      # ack callback with a CaseClauseError instead of being handled.
+      previous = Application.get_env(:proca, :mtt_test_publish_fun)
+
+      Application.put_env(:proca, :mtt_test_publish_fun, fn _data, _exchange, _rk, _chan ->
+        {:error, :test_publish_failure}
+      end)
+
+      on_exit(fn ->
+        if previous do
+          Application.put_env(:proca, :mtt_test_publish_fun, previous)
+        else
+          Application.delete_env(:proca, :mtt_test_publish_fun)
+        end
+      end)
+
       log =
         capture_log(fn ->
           assert Action.ack(:store, [deliver_message(action)], []) == :ok
