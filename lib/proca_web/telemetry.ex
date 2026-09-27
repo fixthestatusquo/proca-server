@@ -86,25 +86,31 @@ defmodule ProcaWeb.Telemetry do
       )
       |> Proca.Repo.all()
 
+    # Emitted for every active campaign on both delivery paths, tagged `method`,
+    # each using the matching query (drip_delivery true/false). Emitting both means
+    # no series goes stale when a campaign switches path.
     Enum.each(active_campaigns, fn campaign ->
+      drip = campaign.mtt.drip_delivery
+
       unsent_messages =
-        Message.select_by_campaign(campaign.id)
+        Message.select_by_campaign(campaign.id, false, false, drip)
         |> Proca.Repo.aggregate(:count)
 
-      :telemetry.execute([:mtt, :pacing], %{sendable_messages: unsent_messages}, %{
+      :telemetry.execute([:mtt, :sendable], %{messages: unsent_messages}, %{
         campaign_id: campaign.id,
-        campaign_name: campaign.name
+        campaign_name: campaign.name,
+        method: if(drip, do: :pacing, else: :throttle)
       })
     end)
 
     {pacing_campaigns, throttle_campaigns} =
       Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(pacing_campaigns)}, %{
+    :telemetry.execute([:mtt, :campaigns_running], %{count: length(pacing_campaigns)}, %{
       method: :pacing
     })
 
-    :telemetry.execute([:mtt, :pacing], %{campaigns_running: length(throttle_campaigns)}, %{
+    :telemetry.execute([:mtt, :campaigns_running], %{count: length(throttle_campaigns)}, %{
       method: :throttle
     })
   rescue
@@ -146,8 +152,12 @@ defmodule ProcaWeb.Telemetry do
       counter("mailer.brevo.bounces.count", tags: [:reason]),
       counter("mailer.delivery.count", tags: [:provider, :kind, :result, :org_id]),
       counter("webhook.delivery.count", tags: [:org_id, :kind, :result]),
-      last_value("mtt.pacing.campaigns_running", tags: [:method]),
-      last_value("mtt.pacing.sendable_messages", tags: @campaign_tags),
+      last_value("mtt.campaigns_running",
+        event_name: [:mtt, :campaigns_running],
+        measurement: :count,
+        tags: [:method]
+      ),
+      last_value("mtt.sendable.messages", tags: @campaign_tags ++ [:method]),
       last_value("mtt.pacing.sendable_targets", tags: @campaign_tags),
       last_value("mtt.pacing.current_cycle", tags: @campaign_tags),
       last_value("mtt.pacing.all_cycles", tags: @campaign_tags),
@@ -161,18 +171,44 @@ defmodule ProcaWeb.Telemetry do
         tags: [:kind, :result, :reason, :org_id, :campaign_id, :method]
       ),
 
-      # MTT New Scheduler Lifecycle
-      counter("mtt.throttle.scheduler.start", tags: [:campaign_id]),
-      counter("mtt.throttle.scheduler.skip", tags: [:campaign_id, :reason]),
-      counter("mtt.throttle.scheduler.stop", tags: [:campaign_id, :stop_reason]),
+      # MTT New Scheduler Lifecycle. These are 4-segment events
+      # ([:mtt, :throttle, :scheduler, :start | :stop | :skip]); event_name must be
+      # set explicitly, because Telemetry.Metrics otherwise infers a 3-segment
+      # event name and every one of these metrics silently records nothing.
+      counter("mtt.throttle.scheduler.start",
+        event_name: [:mtt, :throttle, :scheduler, :start],
+        measurement: :count,
+        tags: [:campaign_id]
+      ),
+      counter("mtt.throttle.scheduler.skip",
+        event_name: [:mtt, :throttle, :scheduler, :skip],
+        measurement: :count,
+        tags: [:campaign_id, :reason]
+      ),
+      counter("mtt.throttle.scheduler.stop",
+        event_name: [:mtt, :throttle, :scheduler, :stop],
+        measurement: :count,
+        tags: [:campaign_id, :stop_reason]
+      ),
       distribution("mtt.throttle.scheduler.duration",
+        event_name: [:mtt, :throttle, :scheduler, :stop],
+        measurement: :duration,
         unit: {:native, :millisecond},
         tags: [:campaign_id, :stop_reason],
         reporter_options: [
           buckets: [1_000, 5_000, 30_000, 60_000, 300_000, 600_000, 3_600_000]
         ]
       ),
-      last_value("mtt.throttle.scheduler.pending_count", tags: [:campaign_id]),
+      last_value("mtt.throttle.scheduler.pending_count",
+        event_name: [:mtt, :throttle, :scheduler, :start],
+        measurement: :pending_count,
+        tags: [:campaign_id]
+      ),
+      sum("mtt.throttle.scheduler.messages_sent",
+        event_name: [:mtt, :throttle, :scheduler, :stop],
+        measurement: :messages_sent,
+        tags: [:campaign_id, :stop_reason]
+      ),
 
       # Email Metrics
       distribution("email.supporter_confirm.duration",

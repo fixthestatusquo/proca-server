@@ -41,7 +41,7 @@ defmodule Proca.Server.MTTScheduler do
 
     :telemetry.execute(
       [:mtt, :throttle, :scheduler, :start],
-      %{pending_count: pending_count},
+      %{pending_count: pending_count, count: 1},
       %{
         target_id: target.id,
         campaign_id: target.campaign.id,
@@ -98,7 +98,7 @@ defmodule Proca.Server.MTTScheduler do
 
     :telemetry.execute(
       [:mtt, :throttle, :scheduler, :stop],
-      %{duration: duration, messages_sent: state.sent_count},
+      %{duration: duration, messages_sent: state.sent_count, count: 1},
       %{
         target_id: state.target.id,
         campaign_id: state.target.campaign.id,
