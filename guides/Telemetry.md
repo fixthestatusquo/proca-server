@@ -10,6 +10,7 @@ Namespaces:
 - **`api.*`** — call counts / duration for the main API operations (`addAction`, `addActionContact`, supporter-count widget)
 - **`sql.*`** — Ecto database query timings (execution, decode, connection-queue wait)
 - **`mtt.pacing.*`** — drip delivery worker (runs every ~3 minutes, per campaign via `MTTWorker`)
+- **`mtt.sendable.messages`** — unsent-message gauge for both delivery paths (tag `method`: `pacing`/`throttle`), polled every 60s
 - **`mtt.delivery.*`** — RabbitMQ delivery outcomes for both delivery paths (tag `method`: `pacing`/`throttle`)
 - **`mtt.throttle.*`** — hourly per-target scheduler lifecycle (`MTTScheduler`, launched by `MTTHourlyCron`)
 - **`email.*`** — transactional email send lag (`supporter_confirm`, `thank_you`) and `reminder_confirm` clicks
@@ -86,15 +87,15 @@ delivery paths: the `method` label (`pacing` = drip `MTTWorker`, `throttle` =
 hourly `MTTScheduler`) separates them. The no-drip scheduler does not emit a
 delivery metric of its own; its lifecycle lives under `mtt.throttle.*` below.
 
-| Metric                          | Type    | Tags                                                                                | Description                                              |
-| ------------------------------- | ------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `mtt.pacing.campaigns_running`  | Gauge   | `method` (`pacing`/`throttle`)                                                      | Number of active MTT campaigns, split by delivery method |
-| `mtt.pacing.sendable_messages`  | Gauge   | `campaign_id`, `campaign_name`                                                      | Total unsent messages for a campaign (polled)            |
-| `mtt.pacing.sendable_targets`   | Gauge   | `campaign_id`, `campaign_name`                                                      | Number of targets with a good email address              |
-| `mtt.pacing.current_cycle`      | Gauge   | `campaign_id`, `campaign_name`                                                      | Current send cycle number within the sending window      |
-| `mtt.pacing.all_cycles`         | Gauge   | `campaign_id`, `campaign_name`                                                      | Total cycles in the sending window                       |
-| `mtt.pacing.messages_published` | Counter | `campaign_id`, `campaign_name`                                                      | Messages published to RabbitMQ in this drip cycle        |
-| `mtt.delivery.count`            | Counter | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `method` (`pacing`/`throttle`) | Per delivery attempt outcome                             |
+| Metric                          | Type    | Tags                                                                                | Description                                                  |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `mtt.pacing.campaigns_running`  | Gauge   | `method` (`pacing`/`throttle`)                                                      | Number of active MTT campaigns, split by delivery method     |
+| `mtt.sendable.messages`         | Gauge   | `campaign_id`, `campaign_name`, `method` (`pacing`/`throttle`)                      | Unsent messages for a campaign, per delivery method (polled) |
+| `mtt.pacing.sendable_targets`   | Gauge   | `campaign_id`, `campaign_name`                                                      | Number of targets with a good email address                  |
+| `mtt.pacing.current_cycle`      | Gauge   | `campaign_id`, `campaign_name`                                                      | Current send cycle number within the sending window          |
+| `mtt.pacing.all_cycles`         | Gauge   | `campaign_id`, `campaign_name`                                                      | Total cycles in the sending window                           |
+| `mtt.pacing.messages_published` | Counter | `campaign_id`, `campaign_name`                                                      | Messages published to RabbitMQ in this drip cycle            |
+| `mtt.delivery.count`            | Counter | `kind`, `result`, `reason`, `org_id`, `campaign_id`, `method` (`pacing`/`throttle`) | Per delivery attempt outcome                                 |
 
 ### `mtt.delivery` results
 
@@ -137,8 +138,8 @@ Successful sends also increment `mtt.delivery` with `result="sent"`.
 Emitted in `MTTScheduler.init/1` when a scheduler process starts. Contains the
 number of messages queued for this hour.
 
-```
-measurements: %{pending_count: integer}
+```text
+measurements: %{pending_count: integer, count: 1}
 metadata:     %{target_id: integer, campaign_id: integer,
                 campaign_name: string}
 ```
@@ -164,6 +165,7 @@ sent to Sentry).
 | `mtt.throttle.scheduler.stop`          | Counter      | `campaign_id`, `stop_reason` | One per scheduler termination     |
 | `mtt.throttle.scheduler.duration`      | Distribution | `campaign_id`, `stop_reason` | Wall-clock runtime (milliseconds) |
 | `mtt.throttle.scheduler.pending_count` | Gauge        | `campaign_id`                | Messages queued at start          |
+| `mtt.throttle.scheduler.messages_sent` | Sum          | `campaign_id`, `stop_reason` | Messages sent during the run      |
 
 **`stop_reason` taxonomy:** `:no_messages`, `:all_sent`, `:shutdown`, `:crashed`
 

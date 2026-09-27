@@ -34,7 +34,7 @@ defmodule Proca.Server.MTTSupervisor do
 
         :telemetry.execute(
           [:mtt, :throttle, :scheduler, :skip],
-          %{},
+          %{count: 1},
           %{target_id: target.id, campaign_id: target.campaign.id, reason: :already_running}
         )
 
@@ -49,7 +49,7 @@ defmodule Proca.Server.MTTSupervisor do
 
         :telemetry.execute(
           [:mtt, :throttle, :scheduler, :skip],
-          %{},
+          %{count: 1},
           %{target_id: target.id, campaign_id: target.campaign.id, reason: :start_failed}
         )
 

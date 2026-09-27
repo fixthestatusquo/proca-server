@@ -81,8 +81,9 @@ defmodule Proca.Action.Message do
   Returns a query for [message, target, action] for specified target id list, or :all for all.
   Use sent and testing flags to further select (not) sent or (not) testing actions
   """
-  @spec select_by_targets([number] | :all, boolean | [boolean], boolean) :: Ecto.Query.t()
-  def select_by_targets(target_ids, sent \\ false, testing \\ false) do
+  @spec select_by_targets([number] | :all, boolean | [boolean], boolean, boolean) ::
+          Ecto.Query.t()
+  def select_by_targets(target_ids, sent \\ false, testing \\ false, drip \\ true) do
     sent = List.wrap(sent)
 
     q =
@@ -100,7 +101,7 @@ defmodule Proca.Action.Message do
         # and with that sent status
         # and either testing or only non-dupe if not testing
         where:
-          mtt.drip_delivery == true and
+          mtt.drip_delivery == ^drip and
             a.processing_status == :delivered and
             a.testing == ^testing and
             m.sent in ^sent and
@@ -116,8 +117,8 @@ defmodule Proca.Action.Message do
     end
   end
 
-  def select_by_campaign(campaign_id, sent \\ false, testing \\ false) do
-    select_by_targets(:all, sent, testing)
+  def select_by_campaign(campaign_id, sent \\ false, testing \\ false, drip \\ true) do
+    select_by_targets(:all, sent, testing, drip)
     |> where([m, t, a, mc], a.campaign_id == ^campaign_id)
   end
 
