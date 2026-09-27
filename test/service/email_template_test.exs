@@ -7,6 +7,7 @@ defmodule Proca.EmailTemplateTest do
   import Proca.StoryFactory, only: [violet_story: 0]
 
   alias Proca.Service.EmailTemplate
+  alias Proca.Stage.{Support, EmailSupporter}
 
   setup do
     violet_story()
@@ -16,9 +17,9 @@ defmodule Proca.EmailTemplateTest do
     page = update!(Proca.ActionPage.changeset(page, %{thank_you_template: "mustache template"}))
     action = Factory.insert(:action, action_page: page, supporter_processing_status: :accepted)
 
-    action_data = Proca.Stage.Support.action_data(action)
+    action_data = Support.action_data(action)
 
-    Proca.Stage.EmailSupporter.handle_batch(
+    EmailSupporter.handle_batch(
       :thank_you,
       [%Broadway.Message{data: action_data, acknowledger: Broadway.NoopAcknowledger}],
       %Broadway.BatchInfo{batch_key: page.id},
@@ -45,7 +46,8 @@ defmodule Proca.EmailTemplateTest do
   end
 
   test "safe_compile_string returns error for malformed template" do
-    assert {:error, :unclosed_tag} = EmailTemplate.safe_compile_string("{{#unclosed}}")
+    assert {:error, {:section_end_tag_not_found, "/unclosed"}} =
+             EmailTemplate.safe_compile_string("{{#unclosed}}")
   end
 
   test "changeset validation logs nothing — error is returned to the caller", %{org: org} do
@@ -96,9 +98,9 @@ defmodule Proca.EmailTemplateTest do
     page = update!(Proca.ActionPage.changeset(page, %{thank_you_template: "thank_you"}))
     action = Factory.insert(:action, action_page: page, supporter_processing_status: :accepted)
 
-    action_data = Proca.Stage.Support.action_data(action)
+    action_data = Support.action_data(action)
 
-    Proca.Stage.EmailSupporter.handle_batch(
+    EmailSupporter.handle_batch(
       :thank_you,
       [%Broadway.Message{data: action_data, acknowledger: Broadway.NoopAcknowledger}],
       %Broadway.BatchInfo{batch_key: page.id},
