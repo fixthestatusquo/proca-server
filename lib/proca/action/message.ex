@@ -148,7 +148,7 @@ defmodule Proca.Action.Message do
       Logger.warning("Skipping message #{msg.id} for action #{action.id}: empty content")
 
       Sentry.capture_message("MTT message skipped: empty content",
-        extra: %{action_id: action.id, message_id: msg.id},
+        tags: %{action_id: to_string(action.id), message_id: to_string(msg.id)},
         level: "warning"
       )
 
