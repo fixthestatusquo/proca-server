@@ -59,25 +59,25 @@ defmodule Proca.Action.Message do
         |> change(subject: Map.get(attrs, :subject) || "", body: Map.get(attrs, :body) || "")
         |> validate_required([:subject, :body])
 
-      case Proca.Repo.insert(content) do
-        {:ok, message_content} ->
-          messages =
-            Enum.map(targets, fn t ->
-              %{
-                target_id: t,
-                message_content: message_content,
-                files: Map.get(attrs, :files, [])
-              }
-            end)
+      if content.valid? do
+        message_content = Proca.Repo.insert!(content)
 
-          action
-          |> cast(%{messages: messages}, [])
-          |> cast_assoc(:messages)
-
-        {:error, %{errors: errors}} ->
-          Enum.reduce(errors, action, fn {field, _}, action ->
-            add_error(action, :mtt, "#{field} is required")
+        messages =
+          Enum.map(targets, fn t ->
+            %{
+              target_id: t,
+              message_content: message_content,
+              files: Map.get(attrs, :files, [])
+            }
           end)
+
+        action
+        |> cast(%{messages: messages}, [])
+        |> cast_assoc(:messages)
+      else
+        Enum.reduce(content.errors, action, fn {field, {msg, opts}}, action ->
+          add_error(action, field, msg, opts)
+        end)
       end
     end
   end

@@ -474,32 +474,33 @@ defmodule ProcaWeb.Api.ActionTest do
       mc_count_after = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
       assert mc_count_after == mc_count_before
 
-      Enum.map(errors, & &1.message)
+      # standard changeset errors; the field is in the path, not the message
+      Enum.map(errors, fn %{message: "can't be blank", path: [field]} -> field end)
     end
 
     test "null subject is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: nil, body: "Our demands"}) ==
-               ["subject is required"]
+               ["subject"]
     end
 
     test "null body is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "Hello", body: nil}) ==
-               ["body is required"]
+               ["body"]
     end
 
     test "whitespace-only subject is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "   ", body: "Our demands"}) ==
-               ["subject is required"]
+               ["subject"]
     end
 
     test "whitespace-only body is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "Hello", body: " \n\t "}) ==
-               ["body is required"]
+               ["body"]
     end
 
     test "missing subject and body reports both", %{pages: [ap], targets: targets} do
       assert Enum.sort(mtt_with_content(ap, targets, %{})) ==
-               ["body is required", "subject is required"]
+               ["body", "subject"]
     end
   end
 end
