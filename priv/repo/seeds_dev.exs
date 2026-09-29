@@ -15,7 +15,9 @@
 #       START_DAEMON_SERVERS=false mix run seeds_dev.exs \
 #         --supporters 10000 --empty-content 10 --tag 2
 #
-#   --supporters N     total supporters across all campaigns (default 3000)
+#   --supporters N     create N dummy supporters (fake people with their
+#                      actions) across all campaigns, to have some data to
+#                      test with (default 3000)
 #   --empty-content N  MTT actions with an empty subject, to exercise
 #                      Message.cancel_if_empty/1 (default 5)
 #   --tag T            suffix added to org/campaign/page/source names, e.g.
@@ -47,6 +49,12 @@
 # backend pointing at *.example.net: new actions added through the API on these
 # two orgs will try to call them and fail.
 #
+# All of it is dummy data and easy to recognise: every email address, org
+# domain and URL it makes up is on the reserved example.org / example.com /
+# example.net domains, which belong to no one and never receive mail.
+#
+# Supporters (and target names) are made up with the Faker library.
+#
 
 alias Proca.{Repo, Org, Campaign, ActionPage, Action, Supporter, Target, TargetEmail, MTT}
 alias Proca.{Source, Staffer, Service, Permission}
@@ -55,6 +63,11 @@ alias Proca.Contact.BasicData
 alias Proca.Service.EmailTemplate
 alias Proca.Users.User
 import Ecto.Query
+
+# Allow only in dev
+if Mix.env() != :dev do
+  raise "seeds_dev.exs creates dummy supporters and actions; it only runs in the dev environment"
+end
 
 {opts, _, _} =
   OptionParser.parse(System.argv(),
