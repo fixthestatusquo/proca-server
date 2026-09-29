@@ -479,27 +479,27 @@ defmodule ProcaWeb.Api.ActionTest do
 
     test "null subject is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: nil, body: "Our demands"}) ==
-               ["subject can't be blank"]
+               ["subject is required"]
     end
 
     test "null body is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "Hello", body: nil}) ==
-               ["body can't be blank"]
+               ["body is required"]
     end
 
     test "whitespace-only subject is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "   ", body: "Our demands"}) ==
-               ["subject can't be blank"]
+               ["subject is required"]
     end
 
     test "whitespace-only body is rejected", %{pages: [ap], targets: targets} do
       assert mtt_with_content(ap, targets, %{subject: "Hello", body: " \n\t "}) ==
-               ["body can't be blank"]
+               ["body is required"]
     end
 
     test "missing subject and body reports both", %{pages: [ap], targets: targets} do
       assert Enum.sort(mtt_with_content(ap, targets, %{})) ==
-               ["body can't be blank", "subject can't be blank"]
+               ["body is required", "subject is required"]
     end
   end
 end

@@ -76,7 +76,7 @@ defmodule Proca.Action.Message do
 
         {:error, %{errors: errors}} ->
           Enum.reduce(errors, action, fn {field, _}, action ->
-            add_error(action, :mtt, "#{field} can't be blank")
+            add_error(action, :mtt, "#{field} is required")
           end)
       end
     end
