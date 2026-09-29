@@ -54,24 +54,31 @@ defmodule Proca.Action.Message do
     if is_nil(action_page.campaign.mtt) do
       add_error(action, :mtt, "Campaign does not support MTT")
     else
-      {:ok, message_content} =
-        Proca.Repo.insert(%Action.MessageContent{
-          subject: Map.get(attrs, :subject, ""),
-          body: Map.get(attrs, :body, "")
-        })
+      content =
+        %Action.MessageContent{}
+        |> change(subject: Map.get(attrs, :subject) || "", body: Map.get(attrs, :body) || "")
+        |> validate_required([:subject, :body])
 
-      messages =
-        Enum.map(targets, fn t ->
-          %{
-            target_id: t,
-            message_content: message_content,
-            files: Map.get(attrs, :files, [])
-          }
+      if content.valid? do
+        message_content = Proca.Repo.insert!(content)
+
+        messages =
+          Enum.map(targets, fn t ->
+            %{
+              target_id: t,
+              message_content: message_content,
+              files: Map.get(attrs, :files, [])
+            }
+          end)
+
+        action
+        |> cast(%{messages: messages}, [])
+        |> cast_assoc(:messages)
+      else
+        Enum.reduce(content.errors, action, fn {field, {msg, opts}}, action ->
+          add_error(action, field, msg, opts)
         end)
-
-      action
-      |> cast(%{messages: messages}, [])
-      |> cast_assoc(:messages)
+      end
     end
   end
 

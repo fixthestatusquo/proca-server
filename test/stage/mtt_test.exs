@@ -467,6 +467,25 @@ defmodule Proca.Stage.MTTStageTest do
       refute Repo.get!(Proca.Action.Message, msg.id).sent
     end
 
+    for {name, content} <- [
+          {"empty subject only", %{subject: "", body: "Our demands"}},
+          {"empty body only", %{subject: "Hello", body: ""}}
+        ] do
+      test "#{name}: skips", %{action: action, first_target: target} do
+        mc = Factory.insert(:message_content, unquote(Macro.escape(content)))
+
+        msg =
+          Factory.insert(:message, action: action, target: target, message_content: mc)
+          |> Repo.preload([:message_content, :action])
+
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert Proca.Action.Message.cancel_if_empty(msg) == true
+        end)
+
+        refute Repo.get!(Proca.Action.Message, msg.id).sent
+      end
+    end
+
     test "non-empty content: does not skip", %{action: action, first_target: target} do
       msg =
         Factory.insert(:message, action: action, target: target)

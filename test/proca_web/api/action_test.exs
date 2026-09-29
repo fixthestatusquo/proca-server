@@ -389,7 +389,7 @@ defmodule ProcaWeb.Api.ActionTest do
       %{first_name: "Frank", email: "not.an.email.exampl.com"}
     )
 
-    action_with_contact(
+    action_with_contact_invalid(
       ap,
       %{
         action_type: "mtt",
@@ -402,8 +402,20 @@ defmodule ProcaWeb.Api.ActionTest do
       %{first_name: "Frank", email: "frank@email.com"}
     )
 
+    action_with_contact_invalid(
+      ap,
+      %{
+        action_type: "mtt",
+        mtt: %{
+          targets: Enum.map(targets, & &1.id),
+          subject: "Hello"
+        }
+      },
+      %{first_name: "Frank", email: "frank@email.com"}
+    )
+
     mc_count_2 = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
-    assert mc_count_2 == 2
+    assert mc_count_2 == 1
   end
 
   test "accept mtt action with invalid mustache template", %{org: org, campaign: c, pages: [ap]} do
@@ -432,5 +444,63 @@ defmodule ProcaWeb.Api.ActionTest do
 
     mc_count_after = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
     assert mc_count_after == mc_count_before + 1
+  end
+
+  describe "mtt action with empty content" do
+    setup %{campaign: c} do
+      Repo.update!(
+        Campaign.changeset(
+          Repo.preload(c, [:mtt]),
+          %{mtt: %{start_at: ~N[2022-01-01 10:00:00], end_at: ~N[2022-01-10 18:00:00]}}
+        )
+      )
+
+      %{targets: Factory.insert_list(2, :target)}
+    end
+
+    defp mtt_with_content(ap, targets, content) do
+      mc_count_before = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+
+      {:error, errors} =
+        action_with_contact_invalid(
+          ap,
+          %{
+            action_type: "mtt",
+            mtt: Map.merge(%{targets: Enum.map(targets, & &1.id)}, content)
+          },
+          %{first_name: "Frank", email: "frank@email.com"}
+        )
+
+      mc_count_after = Repo.one(from(mc in Proca.Action.MessageContent, select: count(mc.id)))
+      assert mc_count_after == mc_count_before
+
+      # standard changeset errors; the field is in the path, not the message
+      Enum.map(errors, fn %{message: "can't be blank", path: [field]} -> field end)
+    end
+
+    test "null subject is rejected", %{pages: [ap], targets: targets} do
+      assert mtt_with_content(ap, targets, %{subject: nil, body: "Our demands"}) ==
+               ["subject"]
+    end
+
+    test "null body is rejected", %{pages: [ap], targets: targets} do
+      assert mtt_with_content(ap, targets, %{subject: "Hello", body: nil}) ==
+               ["body"]
+    end
+
+    test "whitespace-only subject is rejected", %{pages: [ap], targets: targets} do
+      assert mtt_with_content(ap, targets, %{subject: "   ", body: "Our demands"}) ==
+               ["subject"]
+    end
+
+    test "whitespace-only body is rejected", %{pages: [ap], targets: targets} do
+      assert mtt_with_content(ap, targets, %{subject: "Hello", body: " \n\t "}) ==
+               ["body"]
+    end
+
+    test "missing subject and body reports both", %{pages: [ap], targets: targets} do
+      assert Enum.sort(mtt_with_content(ap, targets, %{})) ==
+               ["body", "subject"]
+    end
   end
 end
