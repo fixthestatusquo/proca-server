@@ -136,5 +136,12 @@ defmodule ProcaWeb.Router do
 
       forward "/", Plug.Swoosh.MailboxPreview, storage_driver: Proca.Service.Preview.OrgStorage
     end
+
+    # public target lists for a locally served MTT widget (like widget.proca.app/t/)
+    scope "/t" do
+      pipe_through :api_without_auth
+
+      get "/:file", ProcaWeb.DevTargetsController, :show
+    end
   end
 end
