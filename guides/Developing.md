@@ -31,8 +31,21 @@ mix systemd.generate #
 mix release       # package all into a release bundle under _build/prod (it's a directory, not archive)
 ```
 
-proca-deploy playbook uses [Elixir deployment role](https://github.com/cogini/ansible-role-elixir-release) that runs these commands as well as copies the app to the server, sets up systemd services etc.
+## database
 
+we use tbls to generate guides/database
+it can be regenerated from the test db with:
+
+```bash
+MIX_ENV=test mix ecto.migrate
+mix proca.gen_db_docs
+```
+
+(equivalently `tbls doc --force`, which reads the dsn from `.tbls.yml`)
+
+New tables and non-obvious columns should have a Postgres `COMMENT` explaining
+why they exist — see `priv/repo/migrations/20260929050000_add_schema_comments.exs`
+for the style.
 
 ## Use Erlang debugger
 
