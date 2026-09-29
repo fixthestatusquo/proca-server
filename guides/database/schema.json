@@ -1,0 +1,5070 @@
+{
+  "name": "proca",
+  "tables": [
+    {
+      "name": "public.orgs",
+      "type": "BASE TABLE",
+      "comment": "Organisation (coordinators and partners). Container for campaigns, action pages(widgets), users, services and contacts/supporters data",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('orgs_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "citext",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "custom_supporter_confirm",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Route supporter confirmation via this org's cus.* queue for external/custom gdpr validation workflow"
+        },
+        {
+          "name": "custom_action_confirm",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Route action confirmation via this org's cus.* queue instead of the default queue"
+        },
+        {
+          "name": "custom_action_deliver",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "deliver actions to the org CRM cus.* queue"
+        },
+        {
+          "name": "contact_schema",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Contact data shape collected for this org (Enums.ContactSchema); decides which PII fields exist"
+        },
+        {
+          "name": "email_backend_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "email_from",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Default From address for this org's emails"
+        },
+        {
+          "name": "supporter_confirm",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Require double opt-in before a supporter is treated as active"
+        },
+        {
+          "name": "supporter_confirm_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Email template used for the supporter confirmation message"
+        },
+        {
+          "name": "config",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "Free-form settings, e.g. config[\"reminder\"] configures DOI reminder emails"
+        },
+        {
+          "name": "high_security",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Never store transient action fields on the supporter record; only the org holding the contact key may keep them, can break features!"
+        },
+        {
+          "name": "action_schema_version",
+          "type": "smallint",
+          "nullable": false,
+          "default": "2",
+          "comment": "Proca action payload format this org uses. 2 for everyone for now"
+        },
+        {
+          "name": "event_backend_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "custom_event_deliver",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "deliver events to the CRM cus.* queue"
+        },
+        {
+          "name": "doi_thank_you",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Only send the thank-you email when the supporter gdpr opt-in"
+        },
+        {
+          "name": "storage_backend_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "detail_backend_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "push_backend_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "reply_enabled",
+          "type": "boolean",
+          "nullable": true,
+          "default": "true",
+          "comment": "Add a Reply-To header to mtt sent for this org's campaigns"
+        },
+        {
+          "name": "sender_rewrite",
+          "type": "boolean",
+          "nullable": true,
+          "default": "true",
+          "comment": "Rewrite the envelope sender onto the backend's sending_from domain (SRS); disable for cleaner confirmation emails"
+        },
+        {
+          "name": "transactional_email_backend_id",
+          "type": "bigint",
+          "nullable": true,
+          "comment": "Backend for transactional (non-MTT) email; falls back to email_backend. Capped by services.transactional_email_budget"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "orgs_pkey",
+          "def": "CREATE UNIQUE INDEX orgs_pkey ON public.orgs USING btree (id)",
+          "table": "public.orgs",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_name_index",
+          "def": "CREATE UNIQUE INDEX orgs_name_index ON public.orgs USING btree (name)",
+          "table": "public.orgs",
+          "columns": [
+            "name"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "orgs_action_schema_version_not_null",
+          "type": "n",
+          "def": "NOT NULL action_schema_version",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "action_schema_version"
+          ]
+        },
+        {
+          "name": "orgs_config_not_null",
+          "type": "n",
+          "def": "NOT NULL config",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "config"
+          ]
+        },
+        {
+          "name": "orgs_contact_schema_not_null",
+          "type": "n",
+          "def": "NOT NULL contact_schema",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "contact_schema"
+          ]
+        },
+        {
+          "name": "orgs_custom_action_confirm_not_null",
+          "type": "n",
+          "def": "NOT NULL custom_action_confirm",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "custom_action_confirm"
+          ]
+        },
+        {
+          "name": "orgs_custom_action_deliver_not_null",
+          "type": "n",
+          "def": "NOT NULL custom_action_deliver",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "custom_action_deliver"
+          ]
+        },
+        {
+          "name": "orgs_custom_event_deliver_not_null",
+          "type": "n",
+          "def": "NOT NULL custom_event_deliver",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "custom_event_deliver"
+          ]
+        },
+        {
+          "name": "orgs_custom_supporter_confirm_not_null",
+          "type": "n",
+          "def": "NOT NULL custom_supporter_confirm",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "custom_supporter_confirm"
+          ]
+        },
+        {
+          "name": "orgs_doi_thank_you_not_null",
+          "type": "n",
+          "def": "NOT NULL doi_thank_you",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "doi_thank_you"
+          ]
+        },
+        {
+          "name": "orgs_email_opt_in_not_null",
+          "type": "n",
+          "def": "NOT NULL supporter_confirm",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "supporter_confirm"
+          ]
+        },
+        {
+          "name": "orgs_high_security_not_null",
+          "type": "n",
+          "def": "NOT NULL high_security",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "high_security"
+          ]
+        },
+        {
+          "name": "orgs_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "orgs_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "orgs_title_not_null",
+          "type": "n",
+          "def": "NOT NULL title",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "title"
+          ]
+        },
+        {
+          "name": "orgs_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "orgs_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.orgs",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_detail_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (detail_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "detail_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_email_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (email_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "email_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_event_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (event_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "event_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_push_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (push_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "push_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_storage_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (storage_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "storage_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "orgs_transactional_email_backend_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (transactional_email_backend_id) REFERENCES services(id) ON DELETE SET NULL",
+          "table": "public.orgs",
+          "referenced_table": "public.services",
+          "columns": [
+            "transactional_email_backend_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.campaigns",
+      "type": "BASE TABLE",
+      "comment": "Advocacy campaign. Groups action pages and carries opt-in/delivery behaviour",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('campaigns_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "citext",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "force_delivery",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Also deliver the contact to the campaign-owning org when the page-owning org already delivers; without it the lead only receives data when the page does not deliver"
+        },
+        {
+          "name": "external_id",
+          "type": "integer",
+          "nullable": true,
+          "comment": "Id from an external system, used to find and upsert the campaign"
+        },
+        {
+          "name": "public_actions",
+          "type": "varchar(255)[]",
+          "nullable": false,
+          "default": "ARRAY[]::character varying[]",
+          "comment": "Action types whose fields are published with campaign statistics (last actions taken)"
+        },
+        {
+          "name": "config",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "default widget config and locale texts, exposed as `config` in the API"
+        },
+        {
+          "name": "contact_schema",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Overrides orgs.contact_schema for this campaign"
+        },
+        {
+          "name": "transient_actions",
+          "type": "varchar(255)[]",
+          "nullable": false,
+          "default": "ARRAY[]::character varying[]",
+          "comment": "Action types whose fields are never stored on the supporter, only passed downstream"
+        },
+        {
+          "name": "status",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Lifecycle state: draft/live/closed/ignored (Enums.CampaignStatus)"
+        },
+        {
+          "name": "supporter_confirm",
+          "type": "boolean",
+          "nullable": true,
+          "comment": "Overrides orgs.supporter_confirm; NULL inherits"
+        },
+        {
+          "name": "supporter_confirm_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Overrides orgs.supporter_confirm_template; NULL inherits"
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "nullable": true,
+          "comment": "Start of the campaign window"
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "nullable": true,
+          "comment": "End of the campaign window"
+        },
+        {
+          "name": "action_confirm",
+          "type": "boolean",
+          "nullable": true,
+          "comment": "Overrides whether actions need confirming; NULL inherits"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "campaigns_pkey",
+          "def": "CREATE UNIQUE INDEX campaigns_pkey ON public.campaigns USING btree (id)",
+          "table": "public.campaigns",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "campaigns_org_id_external_id_index",
+          "def": "CREATE UNIQUE INDEX campaigns_org_id_external_id_index ON public.campaigns USING btree (org_id, external_id)",
+          "table": "public.campaigns",
+          "columns": [
+            "org_id",
+            "external_id"
+          ]
+        },
+        {
+          "name": "campaigns_name_index",
+          "def": "CREATE UNIQUE INDEX campaigns_name_index ON public.campaigns USING btree (name)",
+          "table": "public.campaigns",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "campaigns_start_date_index",
+          "def": "CREATE INDEX campaigns_start_date_index ON public.campaigns USING btree (start_date)",
+          "table": "public.campaigns",
+          "columns": [
+            "start_date"
+          ]
+        },
+        {
+          "name": "campaigns_end_date_index",
+          "def": "CREATE INDEX campaigns_end_date_index ON public.campaigns USING btree (end_date)",
+          "table": "public.campaigns",
+          "columns": [
+            "end_date"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "campaigns_config_not_null",
+          "type": "n",
+          "def": "NOT NULL config",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "config"
+          ]
+        },
+        {
+          "name": "campaigns_contact_schema_not_null",
+          "type": "n",
+          "def": "NOT NULL contact_schema",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "contact_schema"
+          ]
+        },
+        {
+          "name": "campaigns_force_delivery_not_null",
+          "type": "n",
+          "def": "NOT NULL force_delivery",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "force_delivery"
+          ]
+        },
+        {
+          "name": "campaigns_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "campaigns_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "campaigns_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "campaigns_public_actions_not_null",
+          "type": "n",
+          "def": "NOT NULL public_actions",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "public_actions"
+          ]
+        },
+        {
+          "name": "campaigns_status_not_null",
+          "type": "n",
+          "def": "NOT NULL status",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "status"
+          ]
+        },
+        {
+          "name": "campaigns_title_not_null",
+          "type": "n",
+          "def": "NOT NULL title",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "title"
+          ]
+        },
+        {
+          "name": "campaigns_transient_actions_not_null",
+          "type": "n",
+          "def": "NOT NULL transient_actions",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "transient_actions"
+          ]
+        },
+        {
+          "name": "campaigns_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "campaigns_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE SET NULL",
+          "table": "public.campaigns",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "campaigns_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.campaigns",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_pages",
+      "type": "BASE TABLE",
+      "comment": "Widget for and org/campaign; usually one per org,campaign,locale (one per webpage)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('action_pages_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "citext",
+          "nullable": false
+        },
+        {
+          "name": "locale",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "campaign_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "delivery",
+          "type": "boolean",
+          "nullable": false,
+          "default": "true",
+          "comment": "When the widget's org and the campaign's org differ, whether the widget-owning org is the one that delivers (and so receives the contact with delivery consent). Same-org widgets always deliver"
+        },
+        {
+          "name": "extra_supporters",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Offset added to the campaign total, for instance for paper or external campaign tools"
+        },
+        {
+          "name": "thank_you_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Template for the thank-you email; falls back to the campaign/org default"
+        },
+        {
+          "name": "config",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "Free-form widget settings, e.g. journey steps and page texts"
+        },
+        {
+          "name": "live",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether the widget is publicly active"
+        },
+        {
+          "name": "supporter_confirm_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Template for this page's supporter confirmation (DOI) email"
+        },
+        {
+          "name": "duplicate_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Template for the email sent when a supporter repeats an action on this page"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_pages_pkey",
+          "def": "CREATE UNIQUE INDEX action_pages_pkey ON public.action_pages USING btree (id)",
+          "table": "public.action_pages",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "action_pages_name_index",
+          "def": "CREATE UNIQUE INDEX action_pages_name_index ON public.action_pages USING btree (name)",
+          "table": "public.action_pages",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "action_pages_campaign_id_index",
+          "def": "CREATE INDEX action_pages_campaign_id_index ON public.action_pages USING btree (campaign_id)",
+          "table": "public.action_pages",
+          "columns": [
+            "campaign_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_pages_campaign_id_not_null",
+          "type": "n",
+          "def": "NOT NULL campaign_id",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "action_pages_config_not_null",
+          "type": "n",
+          "def": "NOT NULL config",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "config"
+          ]
+        },
+        {
+          "name": "action_pages_delivery_not_null",
+          "type": "n",
+          "def": "NOT NULL delivery",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "delivery"
+          ]
+        },
+        {
+          "name": "action_pages_extra_supporters_not_null",
+          "type": "n",
+          "def": "NOT NULL extra_supporters",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "extra_supporters"
+          ]
+        },
+        {
+          "name": "action_pages_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "action_pages_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "action_pages_live_not_null",
+          "type": "n",
+          "def": "NOT NULL live",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "live"
+          ]
+        },
+        {
+          "name": "action_pages_locale_not_null",
+          "type": "n",
+          "def": "NOT NULL locale",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "locale"
+          ]
+        },
+        {
+          "name": "action_pages_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "action_pages_org_id_not_null",
+          "type": "n",
+          "def": "NOT NULL org_id",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "action_pages_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "action_pages_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT",
+          "table": "public.action_pages",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "action_pages_campaign_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE RESTRICT",
+          "table": "public.action_pages",
+          "referenced_table": "public.campaigns",
+          "columns": [
+            "campaign_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "action_pages_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.action_pages",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.supporters",
+      "type": "BASE TABLE",
+      "comment": "One submission by a person. Never updated: repeat submissions create new rows linked by fingerprint. No durable PII here - the email/name/address copies are transient, kept while the action is being processed and cleared at delivery; durable PII lives in contacts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('signatures_id_seq'::regclass)"
+        },
+        {
+          "name": "campaign_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "action_page_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "fingerprint",
+          "type": "bytea",
+          "nullable": false,
+          "comment": "Hash of the person's identifying data; rows sharing a fingerprint are the same person"
+        },
+        {
+          "name": "first_name",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Kept for email personalisation; by default it survives delivery and is only cleared for high_security orgs. Durable PII lives in contacts"
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Transient: used to send confirmation and thank-you email during processing, cleared at delivery (kept for MTT campaigns, which email supporters later). Durable PII lives in contacts"
+        },
+        {
+          "name": "processing_status",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "State: 0 new, 1 confirming (awaiting double opt-in or moderation), 2 rejected (not counted), 3 accepted (valid, counted). Enums.SupporterProcessingStatus"
+        },
+        {
+          "name": "area",
+          "type": "varchar(32)",
+          "nullable": true,
+          "comment": "Area recorded on the action; kept because statistics need it and it is not PII"
+        },
+        {
+          "name": "email_status",
+          "type": "smallint",
+          "nullable": false,
+          "default": "0",
+          "comment": "Deliverability and opt-in state, shared by all orgs holding this supporter: 0 none (unknown), 1 double_opt_in (consented), 2 bounce, 3 blocked, 4 spam, 5 unsub, 6 inactive (do not contact), 7 active. Enums.EmailStatus"
+        },
+        {
+          "name": "email_status_changed",
+          "type": "timestamp(0) without time zone",
+          "nullable": true,
+          "comment": "When email_status last changed; decides whether a status event is emitted"
+        },
+        {
+          "name": "last_name",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Transient: cleared at delivery (kept for MTT campaigns, which need names to send later). Durable PII lives in contacts"
+        },
+        {
+          "name": "address",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Transient: cleared at delivery (kept for MTT campaigns, which need it to send later). Durable PII lives in contacts"
+        },
+        {
+          "name": "dupe_rank",
+          "type": "integer",
+          "nullable": true,
+          "comment": "0 for the first submission by this person on the page, N for the Nth duplicate"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "supporters_pkey",
+          "def": "CREATE UNIQUE INDEX supporters_pkey ON public.supporters USING btree (id)",
+          "table": "public.supporters",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "supporters_campaign_id_index",
+          "def": "CREATE INDEX supporters_campaign_id_index ON public.supporters USING btree (campaign_id)",
+          "table": "public.supporters",
+          "columns": [
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "supporters_action_page_id_index",
+          "def": "CREATE INDEX supporters_action_page_id_index ON public.supporters USING btree (action_page_id)",
+          "table": "public.supporters",
+          "columns": [
+            "action_page_id"
+          ]
+        },
+        {
+          "name": "supporters_processing_status_index",
+          "def": "CREATE INDEX supporters_processing_status_index ON public.supporters USING btree (processing_status)",
+          "table": "public.supporters",
+          "columns": [
+            "processing_status"
+          ]
+        },
+        {
+          "name": "supporters_fingerprint_index",
+          "def": "CREATE INDEX supporters_fingerprint_index ON public.supporters USING btree (fingerprint)",
+          "table": "public.supporters",
+          "columns": [
+            "fingerprint"
+          ]
+        },
+        {
+          "name": "supporters_dupe_rank_index",
+          "def": "CREATE INDEX supporters_dupe_rank_index ON public.supporters USING btree (dupe_rank)",
+          "table": "public.supporters",
+          "columns": [
+            "dupe_rank"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "signatures_action_page_id_not_null",
+          "type": "n",
+          "def": "NOT NULL action_page_id",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "action_page_id"
+          ]
+        },
+        {
+          "name": "signatures_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "signatures_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "signatures_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "supporters_campaign_id_not_null",
+          "type": "n",
+          "def": "NOT NULL campaign_id",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "supporters_email_status_not_null",
+          "type": "n",
+          "def": "NOT NULL email_status",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "email_status"
+          ]
+        },
+        {
+          "name": "supporters_fingerprint_not_null",
+          "type": "n",
+          "def": "NOT NULL fingerprint",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "fingerprint"
+          ]
+        },
+        {
+          "name": "supporters_processing_status_not_null",
+          "type": "n",
+          "def": "NOT NULL processing_status",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "processing_status"
+          ]
+        },
+        {
+          "name": "supporters_campaign_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE RESTRICT",
+          "table": "public.supporters",
+          "referenced_table": "public.campaigns",
+          "columns": [
+            "campaign_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "supporters_action_page_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (action_page_id) REFERENCES action_pages(id) ON DELETE RESTRICT",
+          "table": "public.supporters",
+          "referenced_table": "public.action_pages",
+          "columns": [
+            "action_page_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "supporters_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.supporters",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "supporters_source_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE SET NULL",
+          "table": "public.supporters",
+          "referenced_table": "public.sources",
+          "columns": [
+            "source_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.public_keys",
+      "type": "BASE TABLE",
+      "comment": "to encrypt the PII of a contact, owned by an org. One active key at a time, older keys stay for decryption",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('public_keys_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "public",
+          "type": "bytea",
+          "nullable": true,
+          "comment": "Public half of the org's contact-data keypair (raw 32-byte key)"
+        },
+        {
+          "name": "private",
+          "type": "bytea",
+          "nullable": true,
+          "comment": "Private half, kept so the org can decrypt its own contact data"
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Key currently used to encrypt new contact data for this org"
+        },
+        {
+          "name": "expired",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Retired after key rotation; old contacts encrypted with it can still be decrypted"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "public_keys_pkey",
+          "def": "CREATE UNIQUE INDEX public_keys_pkey ON public.public_keys USING btree (id)",
+          "table": "public.public_keys",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "public_keys_org_id_index",
+          "def": "CREATE INDEX public_keys_org_id_index ON public.public_keys USING btree (org_id)",
+          "table": "public.public_keys",
+          "columns": [
+            "org_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "public_keys_active_not_null",
+          "type": "n",
+          "def": "NOT NULL active",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "active"
+          ]
+        },
+        {
+          "name": "public_keys_expired_not_null",
+          "type": "n",
+          "def": "NOT NULL expired",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "expired"
+          ]
+        },
+        {
+          "name": "public_keys_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "public_keys_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "public_keys_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "public_keys_org_id_not_null",
+          "type": "n",
+          "def": "NOT NULL org_id",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "public_keys_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "public_keys_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE",
+          "table": "public.public_keys",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "public_keys_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.public_keys",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.contacts",
+      "type": "BASE TABLE",
+      "comment": "Per-org supporter's personal data, plus the gdpr consents that org holds. This is where PII is durably retained; supporters only carries a transient copy until delivery",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('contacts_id_seq'::regclass)"
+        },
+        {
+          "name": "public_key_id",
+          "type": "bigint",
+          "nullable": true,
+          "comment": "Key that can decrypt payload (the org's active key at capture time)"
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "bytea",
+          "nullable": true,
+          "comment": "Encrypted personal data; only a holder of the matching key can decrypt it"
+        },
+        {
+          "name": "crypto_nonce",
+          "type": "bytea",
+          "nullable": true,
+          "comment": "Nonce used to encrypt and decrypt payload"
+        },
+        {
+          "name": "supporter_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "sign_key_id",
+          "type": "bigint",
+          "nullable": true,
+          "comment": "Key that signed the payload; may differ from the encryption key"
+        },
+        {
+          "name": "communication_consent",
+          "type": "boolean",
+          "nullable": true,
+          "comment": "Whether the supporter agreed to receive communication from this org"
+        },
+        {
+          "name": "communication_scopes",
+          "type": "varchar(255)[]",
+          "nullable": true,
+          "comment": "Channels the consent covers; currently only email"
+        },
+        {
+          "name": "delivery_consent",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether the supporter's data was delivered to this org (see action_pages.delivery and campaigns.force_delivery)"
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "contacts_pkey",
+          "def": "CREATE UNIQUE INDEX contacts_pkey ON public.contacts USING btree (id)",
+          "table": "public.contacts",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_org_id_index",
+          "def": "CREATE INDEX contacts_org_id_index ON public.contacts USING btree (org_id)",
+          "table": "public.contacts",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "contacts_supporter_id_index",
+          "def": "CREATE INDEX contacts_supporter_id_index ON public.contacts USING btree (supporter_id)",
+          "table": "public.contacts",
+          "columns": [
+            "supporter_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "contacts_delivery_consent_not_null",
+          "type": "n",
+          "def": "NOT NULL delivery_consent",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "delivery_consent"
+          ]
+        },
+        {
+          "name": "contacts_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "contacts_supporter_id_not_null",
+          "type": "n",
+          "def": "NOT NULL supporter_id",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "supporter_id"
+          ]
+        },
+        {
+          "name": "contacts_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "contacts_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE SET NULL",
+          "table": "public.contacts",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_supporter_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (supporter_id) REFERENCES supporters(id) ON DELETE CASCADE",
+          "table": "public.contacts",
+          "referenced_table": "public.supporters",
+          "columns": [
+            "supporter_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_public_key_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (public_key_id) REFERENCES public_keys(id)",
+          "table": "public.contacts",
+          "referenced_table": "public.public_keys",
+          "columns": [
+            "public_key_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_sign_key_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (sign_key_id) REFERENCES public_keys(id)",
+          "table": "public.contacts",
+          "referenced_table": "public.public_keys",
+          "columns": [
+            "sign_key_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "contacts_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.contacts",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.sources",
+      "type": "BASE TABLE",
+      "comment": "Deduplicated tracking tuple (utm_*) and widget location, attached to a supporter or action",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('sources_id_seq'::regclass)"
+        },
+        {
+          "name": "source",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "medium",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "campaign",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "utm_campaign value; not a reference to campaigns"
+        },
+        {
+          "name": "content",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "location",
+          "type": "varchar(255)",
+          "nullable": false,
+          "default": "''::character varying",
+          "comment": "utm_location value; empty string when the widget did not report one"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sources_pkey",
+          "def": "CREATE UNIQUE INDEX sources_pkey ON public.sources USING btree (id)",
+          "table": "public.sources",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "sources_source_medium_campaign_content_location_index",
+          "def": "CREATE UNIQUE INDEX sources_source_medium_campaign_content_location_index ON public.sources USING btree (source, medium, campaign, content, location)",
+          "table": "public.sources",
+          "columns": [
+            "source",
+            "medium",
+            "campaign",
+            "content",
+            "location"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "sources_campaign_not_null",
+          "type": "n",
+          "def": "NOT NULL campaign",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "campaign"
+          ]
+        },
+        {
+          "name": "sources_content_not_null",
+          "type": "n",
+          "def": "NOT NULL content",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "content"
+          ]
+        },
+        {
+          "name": "sources_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "sources_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "sources_location_not_null",
+          "type": "n",
+          "def": "NOT NULL location",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "location"
+          ]
+        },
+        {
+          "name": "sources_medium_not_null",
+          "type": "n",
+          "def": "NOT NULL medium",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "medium"
+          ]
+        },
+        {
+          "name": "sources_source_not_null",
+          "type": "n",
+          "def": "NOT NULL source",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "source"
+          ]
+        },
+        {
+          "name": "sources_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "sources_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.sources",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.staffers",
+      "type": "BASE TABLE",
+      "comment": "Membership of a user in an org, with that user's role/permissions in the org",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('staffers_id_seq'::regclass)"
+        },
+        {
+          "name": "perms",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Permission bit flags of this user in this org (see Proca.Staffer.Role)"
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "last_signin_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": true,
+          "comment": "Last time the user signed in while acting as this org"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "staffers_pkey",
+          "def": "CREATE UNIQUE INDEX staffers_pkey ON public.staffers USING btree (id)",
+          "table": "public.staffers",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "staffers_org_id_user_id_index",
+          "def": "CREATE UNIQUE INDEX staffers_org_id_user_id_index ON public.staffers USING btree (org_id, user_id)",
+          "table": "public.staffers",
+          "columns": [
+            "org_id",
+            "user_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "staffers_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "staffers_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "staffers_org_id_not_null",
+          "type": "n",
+          "def": "NOT NULL org_id",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "staffers_perms_not_null",
+          "type": "n",
+          "def": "NOT NULL perms",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "perms"
+          ]
+        },
+        {
+          "name": "staffers_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "staffers_user_id_not_null",
+          "type": "n",
+          "def": "NOT NULL user_id",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "staffers_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE",
+          "table": "public.staffers",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "staffers_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.staffers",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "staffers_user_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+          "table": "public.staffers",
+          "referenced_table": "public.users",
+          "columns": [
+            "user_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.actions",
+      "type": "BASE TABLE",
+      "comment": "One action taken through a widget (signature, share, donation, MTT message...)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('actions_id_seq'::regclass)"
+        },
+        {
+          "name": "ref",
+          "type": "bytea",
+          "nullable": true,
+          "comment": "Opaque reference used to attach a supporter to an action created before the personal data was collected"
+        },
+        {
+          "name": "supporter_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "action_type",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Type of action taken, e.g. sign, share, donate, mtt"
+        },
+        {
+          "name": "campaign_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "action_page_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "source_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "processing_status",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "State: 0 new, 1 confirming (awaiting confirmation or moderation), 2 rejected (refused, not delivered), 3 accepted (valid, queued for delivery), 4 delivered (sent downstream), 5 repeat (duplicate action on the same page). Enums.ActionProcessingStatus"
+        },
+        {
+          "name": "with_consent",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether this action carried a communication consent, used when building downstream messages"
+        },
+        {
+          "name": "fields",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "Action-specific custom fields; capped at 5 KB"
+        },
+        {
+          "name": "testing",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Test submission; excluded from delivery and statistics"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "actions_pkey",
+          "def": "CREATE UNIQUE INDEX actions_pkey ON public.actions USING btree (id)",
+          "table": "public.actions",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_action_type_index",
+          "def": "CREATE INDEX actions_action_type_index ON public.actions USING btree (action_type)",
+          "table": "public.actions",
+          "columns": [
+            "action_type"
+          ]
+        },
+        {
+          "name": "actions_ref_index",
+          "def": "CREATE INDEX actions_ref_index ON public.actions USING btree (ref)",
+          "table": "public.actions",
+          "columns": [
+            "ref"
+          ]
+        },
+        {
+          "name": "actions_campaign_id_index",
+          "def": "CREATE INDEX actions_campaign_id_index ON public.actions USING btree (campaign_id)",
+          "table": "public.actions",
+          "columns": [
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "actions_processing_status_index",
+          "def": "CREATE INDEX actions_processing_status_index ON public.actions USING btree (processing_status)",
+          "table": "public.actions",
+          "columns": [
+            "processing_status"
+          ]
+        },
+        {
+          "name": "actions_action_page_id_index",
+          "def": "CREATE INDEX actions_action_page_id_index ON public.actions USING btree (action_page_id)",
+          "table": "public.actions",
+          "columns": [
+            "action_page_id"
+          ]
+        },
+        {
+          "name": "actions_supporter_id_index",
+          "def": "CREATE INDEX actions_supporter_id_index ON public.actions USING btree (supporter_id)",
+          "table": "public.actions",
+          "columns": [
+            "supporter_id"
+          ]
+        },
+        {
+          "name": "actions_partial_processing_status_index",
+          "def": "CREATE INDEX actions_partial_processing_status_index ON public.actions USING btree (supporter_id, action_page_id, campaign_id) WHERE (processing_status = ANY (ARRAY[3, 4]))",
+          "table": "public.actions",
+          "columns": [
+            "supporter_id",
+            "action_page_id",
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "actions_partial_status_inserted_at_index",
+          "def": "CREATE INDEX actions_partial_status_inserted_at_index ON public.actions USING btree (processing_status, inserted_at) WHERE testing",
+          "table": "public.actions",
+          "columns": [
+            "processing_status",
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "partial_inserted_at_id_index",
+          "def": "CREATE INDEX partial_inserted_at_id_index ON public.actions USING btree (id, inserted_at) WHERE (processing_status = ANY (ARRAY[0, 3]))",
+          "table": "public.actions",
+          "columns": [
+            "id",
+            "inserted_at"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "actions_action_page_id_not_null",
+          "type": "n",
+          "def": "NOT NULL action_page_id",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "action_page_id"
+          ]
+        },
+        {
+          "name": "actions_action_type_not_null",
+          "type": "n",
+          "def": "NOT NULL action_type",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "action_type"
+          ]
+        },
+        {
+          "name": "actions_fields_not_null",
+          "type": "n",
+          "def": "NOT NULL fields",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "fields"
+          ]
+        },
+        {
+          "name": "actions_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "actions_processing_status_not_null",
+          "type": "n",
+          "def": "NOT NULL processing_status",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "processing_status"
+          ]
+        },
+        {
+          "name": "actions_testing_not_null",
+          "type": "n",
+          "def": "NOT NULL testing",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "testing"
+          ]
+        },
+        {
+          "name": "actions_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "actions_with_consent_not_null",
+          "type": "n",
+          "def": "NOT NULL with_consent",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "with_consent"
+          ]
+        },
+        {
+          "name": "max_fields_size",
+          "type": "CHECK",
+          "def": "CHECK ((pg_column_size(fields) \u003c= 5120))",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "fields"
+          ]
+        },
+        {
+          "name": "actions_campaign_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL",
+          "table": "public.actions",
+          "referenced_table": "public.campaigns",
+          "columns": [
+            "campaign_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_action_page_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (action_page_id) REFERENCES action_pages(id) ON DELETE RESTRICT",
+          "table": "public.actions",
+          "referenced_table": "public.action_pages",
+          "columns": [
+            "action_page_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_supporter_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (supporter_id) REFERENCES supporters(id) ON DELETE CASCADE",
+          "table": "public.actions",
+          "referenced_table": "public.supporters",
+          "columns": [
+            "supporter_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_source_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE SET NULL",
+          "table": "public.actions",
+          "referenced_table": "public.sources",
+          "columns": [
+            "source_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "actions_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.actions",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.services",
+      "type": "BASE TABLE",
+      "comment": "Credentials and endpoint of a remote API an org owns. Referenced from orgs as a particular backend (email, push, storage...)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('services_id_seq'::regclass)"
+        },
+        {
+          "name": "user",
+          "type": "varchar(255)",
+          "nullable": false,
+          "default": "''::character varying",
+          "comment": "Account id, client id, or whatever credential the service uses"
+        },
+        {
+          "name": "password",
+          "type": "varchar(255)",
+          "nullable": false,
+          "default": "''::character varying",
+          "comment": "Secret credential (password, key, token)"
+        },
+        {
+          "name": "host",
+          "type": "varchar(255)",
+          "nullable": false,
+          "default": "''::character varying",
+          "comment": "Hostname, or a type-specific container: for AWS it holds the region"
+        },
+        {
+          "name": "path",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Type-dependent resource selector, e.g. AWS bucket name or URL path"
+        },
+        {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Service type/provider (Enums.ExternalService), e.g. mailjet, webhook, ses"
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "sending_from",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Verified sending address used as envelope From when rewriting the sender (SRS); falls back to orgs.email_from"
+        },
+        {
+          "name": "transactional_email_budget",
+          "type": "integer",
+          "nullable": true,
+          "comment": "How many transactional emails to route via this service before falling back to email_backend; NULL means no limit"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "services_pkey",
+          "def": "CREATE UNIQUE INDEX services_pkey ON public.services USING btree (id)",
+          "table": "public.services",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "services_org_id_index",
+          "def": "CREATE INDEX services_org_id_index ON public.services USING btree (org_id)",
+          "table": "public.services",
+          "columns": [
+            "org_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "services_host_not_null",
+          "type": "n",
+          "def": "NOT NULL host",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "host"
+          ]
+        },
+        {
+          "name": "services_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "services_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "services_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "services_org_id_not_null",
+          "type": "n",
+          "def": "NOT NULL org_id",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "services_password_not_null",
+          "type": "n",
+          "def": "NOT NULL password",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "password"
+          ]
+        },
+        {
+          "name": "services_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "services_user_not_null",
+          "type": "n",
+          "def": "NOT NULL \"user\"",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "user"
+          ]
+        },
+        {
+          "name": "services_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE",
+          "table": "public.services",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "services_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.services",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.confirms",
+      "type": "BASE TABLE",
+      "comment": "Pending operation gated by a code, e.g. joining a campaign, launching a page, adding a staffer",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('confirms_id_seq'::regclass)"
+        },
+        {
+          "name": "operation",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Operation being confirmed (Enums.ConfirmOperation)"
+        },
+        {
+          "name": "subject_id",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Id of the acting subject, e.g. the org that joined a campaign"
+        },
+        {
+          "name": "object_id",
+          "type": "integer",
+          "nullable": true,
+          "comment": "Id of the object the operation acts on, e.g. the campaign"
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "If set, the code is sent to this address and may be used without authentication, like a one-time password"
+        },
+        {
+          "name": "code",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Secret code that accepts or rejects the confirm"
+        },
+        {
+          "name": "charges",
+          "type": "integer",
+          "nullable": false,
+          "comment": "How many times the code may still be used"
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional message attached to the confirm"
+        },
+        {
+          "name": "creator_id",
+          "type": "bigint",
+          "nullable": true,
+          "comment": "User who created the confirm"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "confirms_pkey",
+          "def": "CREATE UNIQUE INDEX confirms_pkey ON public.confirms USING btree (id)",
+          "table": "public.confirms",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "confirms_code_index",
+          "def": "CREATE UNIQUE INDEX confirms_code_index ON public.confirms USING btree (code)",
+          "table": "public.confirms",
+          "columns": [
+            "code"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "confirms_charges_not_null",
+          "type": "n",
+          "def": "NOT NULL charges",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "charges"
+          ]
+        },
+        {
+          "name": "confirms_code_not_null",
+          "type": "n",
+          "def": "NOT NULL code",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "code"
+          ]
+        },
+        {
+          "name": "confirms_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "confirms_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "confirms_operation_not_null",
+          "type": "n",
+          "def": "NOT NULL operation",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "operation"
+          ]
+        },
+        {
+          "name": "confirms_subject_id_not_null",
+          "type": "n",
+          "def": "NOT NULL subject_id",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "subject_id"
+          ]
+        },
+        {
+          "name": "confirms_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "confirms_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.confirms",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "confirms_creator_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL",
+          "table": "public.confirms",
+          "referenced_table": "public.users",
+          "columns": [
+            "creator_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.donations",
+      "type": "BASE TABLE",
+      "comment": "Payment details extracted from a donation action",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('donations_id_seq'::regclass)"
+        },
+        {
+          "name": "schema",
+          "type": "integer",
+          "nullable": true,
+          "comment": "How to interpret payload (Enums.DonationSchema)"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "nullable": false,
+          "comment": "Raw payment provider object that amount and currency are extracted from"
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Amount in the smallest currency unit, e.g. cents"
+        },
+        {
+          "name": "currency",
+          "type": "character(3)",
+          "nullable": false,
+          "comment": "ISO 4217 currency code"
+        },
+        {
+          "name": "action_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "frequency_unit",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "one_off/weekly/monthly/daily (Enums.DonationFrequencyUnit)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "donations_pkey",
+          "def": "CREATE UNIQUE INDEX donations_pkey ON public.donations USING btree (id)",
+          "table": "public.donations",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "donations_action_id_index",
+          "def": "CREATE INDEX donations_action_id_index ON public.donations USING btree (action_id)",
+          "table": "public.donations",
+          "columns": [
+            "action_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "donations_action_id_not_null",
+          "type": "n",
+          "def": "NOT NULL action_id",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "action_id"
+          ]
+        },
+        {
+          "name": "donations_amount_not_null",
+          "type": "n",
+          "def": "NOT NULL amount",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "amount"
+          ]
+        },
+        {
+          "name": "donations_currency_not_null",
+          "type": "n",
+          "def": "NOT NULL currency",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "currency"
+          ]
+        },
+        {
+          "name": "donations_frequency_unit_not_null",
+          "type": "n",
+          "def": "NOT NULL frequency_unit",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "frequency_unit"
+          ]
+        },
+        {
+          "name": "donations_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "donations_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "donations_payload_not_null",
+          "type": "n",
+          "def": "NOT NULL payload",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "payload"
+          ]
+        },
+        {
+          "name": "donations_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "donations_action_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (action_id) REFERENCES actions(id) ON DELETE CASCADE",
+          "table": "public.donations",
+          "referenced_table": "public.actions",
+          "columns": [
+            "action_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "donations_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.donations",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.users",
+      "type": "BASE TABLE",
+      "comment": "Instance user account; authentication only. Org membership lives in staffers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('users_id_seq'::regclass)"
+        },
+        {
+          "name": "email",
+          "type": "citext",
+          "nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Password hash; never the password itself"
+        },
+        {
+          "name": "confirmed_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": true
+        },
+        {
+          "name": "perms",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Instance-level permission flags"
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "picture_url",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "job_title",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "external_id",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Same user in an external identity provider; used to match them on login"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_pkey",
+          "def": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)",
+          "table": "public.users",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "users_email_index",
+          "def": "CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email)",
+          "table": "public.users",
+          "columns": [
+            "email"
+          ]
+        },
+        {
+          "name": "users_external_id_index",
+          "def": "CREATE UNIQUE INDEX users_external_id_index ON public.users USING btree (external_id)",
+          "table": "public.users",
+          "columns": [
+            "external_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "users_email_not_null1",
+          "type": "n",
+          "def": "NOT NULL email",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "email"
+          ]
+        },
+        {
+          "name": "users_hashed_password_not_null",
+          "type": "n",
+          "def": "NOT NULL hashed_password",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "hashed_password"
+          ]
+        },
+        {
+          "name": "users_id_not_null1",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "users_inserted_at_not_null1",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "users_perms_not_null1",
+          "type": "n",
+          "def": "NOT NULL perms",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "perms"
+          ]
+        },
+        {
+          "name": "users_updated_at_not_null1",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "users_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.users",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.users_tokens",
+      "type": "BASE TABLE",
+      "comment": "Issued session and email tokens for a user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('users_tokens_id_seq'::regclass)"
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "token",
+          "type": "bytea",
+          "nullable": false,
+          "comment": "Hashed token; the plaintext is only ever sent to the user"
+        },
+        {
+          "name": "context",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "What the token is for, e.g. session or reset_password"
+        },
+        {
+          "name": "sent_to",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Address the token was delivered to when sent out of band"
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_tokens_pkey",
+          "def": "CREATE UNIQUE INDEX users_tokens_pkey ON public.users_tokens USING btree (id)",
+          "table": "public.users_tokens",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "users_tokens_user_id_index",
+          "def": "CREATE INDEX users_tokens_user_id_index ON public.users_tokens USING btree (user_id)",
+          "table": "public.users_tokens",
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "users_tokens_context_token_index",
+          "def": "CREATE UNIQUE INDEX users_tokens_context_token_index ON public.users_tokens USING btree (context, token)",
+          "table": "public.users_tokens",
+          "columns": [
+            "context",
+            "token"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "users_tokens_context_not_null",
+          "type": "n",
+          "def": "NOT NULL context",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "context"
+          ]
+        },
+        {
+          "name": "users_tokens_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "users_tokens_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "users_tokens_token_not_null",
+          "type": "n",
+          "def": "NOT NULL token",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "token"
+          ]
+        },
+        {
+          "name": "users_tokens_user_id_not_null",
+          "type": "n",
+          "def": "NOT NULL user_id",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "users_tokens_user_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+          "table": "public.users_tokens",
+          "referenced_table": "public.users",
+          "columns": [
+            "user_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "users_tokens_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.users_tokens",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.targets",
+      "type": "BASE TABLE",
+      "comment": "Campaign target supporters can send MTT messages to (e.g. an MP, a company)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false
+        },
+        {
+          "name": "external_id",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Stable id from the target list, used to upsert targets"
+        },
+        {
+          "name": "area",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Area the target belongs to, for filtering message lists"
+        },
+        {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": true
+        },
+        {
+          "name": "fields",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "Free-form target attributes imported from the target list"
+        },
+        {
+          "name": "campaign_id",
+          "type": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "locale",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Language to use for messages to this target"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "targets_pkey",
+          "def": "CREATE UNIQUE INDEX targets_pkey ON public.targets USING btree (id)",
+          "table": "public.targets",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "targets_external_id_index",
+          "def": "CREATE UNIQUE INDEX targets_external_id_index ON public.targets USING btree (external_id)",
+          "table": "public.targets",
+          "columns": [
+            "external_id"
+          ]
+        },
+        {
+          "name": "targets_campaign_id_index",
+          "def": "CREATE INDEX targets_campaign_id_index ON public.targets USING btree (campaign_id)",
+          "table": "public.targets",
+          "columns": [
+            "campaign_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "max_fields_size",
+          "type": "CHECK",
+          "def": "CHECK ((pg_column_size(fields) \u003c= 5120))",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "fields"
+          ]
+        },
+        {
+          "name": "targets_external_id_not_null",
+          "type": "n",
+          "def": "NOT NULL external_id",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "external_id"
+          ]
+        },
+        {
+          "name": "targets_fields_not_null",
+          "type": "n",
+          "def": "NOT NULL fields",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "fields"
+          ]
+        },
+        {
+          "name": "targets_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "targets_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "targets_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "targets_campaign_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id)",
+          "table": "public.targets",
+          "referenced_table": "public.campaigns",
+          "columns": [
+            "campaign_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "targets_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.targets",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.target_emails",
+      "type": "BASE TABLE",
+      "comment": "Email addresses of a target, with the deliverability state of each address",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('target_emails_id_seq'::regclass)"
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)",
+          "nullable": true
+        },
+        {
+          "name": "target_id",
+          "type": "uuid",
+          "nullable": false
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "email_status",
+          "type": "smallint",
+          "nullable": false,
+          "default": "0",
+          "comment": "Deliverability of this address: 0 none (not tried yet), 2 bounce, 3 blocked, 4 spam, 5 unsub, 7 active (last delivery succeeded). Enums.EmailStatus"
+        },
+        {
+          "name": "error",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Last delivery error reported by the mail provider"
+        },
+        {
+          "name": "soft_bounce_count",
+          "type": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Consecutive soft bounces; address is marked bounced once the threshold is passed"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "target_emails_pkey",
+          "def": "CREATE UNIQUE INDEX target_emails_pkey ON public.target_emails USING btree (id)",
+          "table": "public.target_emails",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "target_emails_target_id_index",
+          "def": "CREATE INDEX target_emails_target_id_index ON public.target_emails USING btree (target_id)",
+          "table": "public.target_emails",
+          "columns": [
+            "target_id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "target_emails_email_status_not_null",
+          "type": "n",
+          "def": "NOT NULL email_status",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "email_status"
+          ]
+        },
+        {
+          "name": "target_emails_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "target_emails_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "target_emails_soft_bounce_count_not_null",
+          "type": "n",
+          "def": "NOT NULL soft_bounce_count",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "soft_bounce_count"
+          ]
+        },
+        {
+          "name": "target_emails_target_id_not_null",
+          "type": "n",
+          "def": "NOT NULL target_id",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "target_id"
+          ]
+        },
+        {
+          "name": "target_emails_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "target_emails_target_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (target_id) REFERENCES targets(id) ON DELETE CASCADE",
+          "table": "public.target_emails",
+          "referenced_table": "public.targets",
+          "columns": [
+            "target_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "target_emails_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.target_emails",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.message_contents",
+      "type": "BASE TABLE",
+      "comment": "Email subject and body for one MTT action; shared by that action's messages, one per target",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('message_contents_id_seq'::regclass)"
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "nullable": false,
+          "default": "''::text",
+          "comment": "Subject template, with supporter/target merge fields"
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "nullable": false,
+          "default": "''::text",
+          "comment": "Body template, with supporter/target merge fields"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "message_contents_pkey",
+          "def": "CREATE UNIQUE INDEX message_contents_pkey ON public.message_contents USING btree (id)",
+          "table": "public.message_contents",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "message_contents_body_not_null",
+          "type": "n",
+          "def": "NOT NULL body",
+          "table": "public.message_contents",
+          "referenced_table": "",
+          "columns": [
+            "body"
+          ]
+        },
+        {
+          "name": "message_contents_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.message_contents",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "message_contents_subject_not_null",
+          "type": "n",
+          "def": "NOT NULL subject",
+          "table": "public.message_contents",
+          "referenced_table": "",
+          "columns": [
+            "subject"
+          ]
+        },
+        {
+          "name": "message_contents_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.message_contents",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.messages",
+      "type": "BASE TABLE",
+      "comment": "One email to one target, part of an action's MTT",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('messages_id_seq'::regclass)"
+        },
+        {
+          "name": "action_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "message_content_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "target_id",
+          "type": "uuid",
+          "nullable": false
+        },
+        {
+          "name": "delivered",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether the provider accepted the message for delivery"
+        },
+        {
+          "name": "sent",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether Proca has already sent it; used to pick up unsent messages"
+        },
+        {
+          "name": "opened",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether the recipient opened the email, from provider webhooks"
+        },
+        {
+          "name": "clicked",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Whether the recipient clicked in the email, from provider webhooks"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        },
+        {
+          "name": "dupe_rank",
+          "type": "integer",
+          "nullable": true,
+          "comment": "0 for the first message by this supporter to this target, N for later duplicates; used to avoid re-mailing targets"
+        },
+        {
+          "name": "files",
+          "type": "varchar(255)[]",
+          "nullable": false,
+          "default": "ARRAY[]::character varying[]",
+          "comment": "Attached file keys in the org's storage backend"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "messages_pkey",
+          "def": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)",
+          "table": "public.messages",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "messages_partial_action_index",
+          "def": "CREATE INDEX messages_partial_action_index ON public.messages USING btree (action_id)",
+          "table": "public.messages",
+          "columns": [
+            "action_id"
+          ]
+        },
+        {
+          "name": "messages_action_id_index",
+          "def": "CREATE INDEX messages_action_id_index ON public.messages USING btree (action_id) WHERE (NOT sent)",
+          "table": "public.messages",
+          "columns": [
+            "action_id"
+          ]
+        },
+        {
+          "name": "messages_dupe_rank_null_index",
+          "def": "CREATE INDEX messages_dupe_rank_null_index ON public.messages USING btree (action_id) WHERE (dupe_rank IS NULL)",
+          "table": "public.messages",
+          "columns": [
+            "action_id"
+          ]
+        },
+        {
+          "name": "messages_target_id_dupe_rank_sent_id_index",
+          "def": "CREATE INDEX messages_target_id_dupe_rank_sent_id_index ON public.messages USING btree (target_id, dupe_rank, sent, id)",
+          "table": "public.messages",
+          "columns": [
+            "target_id",
+            "dupe_rank",
+            "sent",
+            "id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "messages_action_id_not_null",
+          "type": "n",
+          "def": "NOT NULL action_id",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "action_id"
+          ]
+        },
+        {
+          "name": "messages_clicked_not_null",
+          "type": "n",
+          "def": "NOT NULL clicked",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "clicked"
+          ]
+        },
+        {
+          "name": "messages_delivered_not_null",
+          "type": "n",
+          "def": "NOT NULL delivered",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "delivered"
+          ]
+        },
+        {
+          "name": "messages_files_not_null",
+          "type": "n",
+          "def": "NOT NULL files",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "files"
+          ]
+        },
+        {
+          "name": "messages_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "messages_message_content_id_not_null",
+          "type": "n",
+          "def": "NOT NULL message_content_id",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "message_content_id"
+          ]
+        },
+        {
+          "name": "messages_opened_not_null",
+          "type": "n",
+          "def": "NOT NULL opened",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "opened"
+          ]
+        },
+        {
+          "name": "messages_sent_not_null",
+          "type": "n",
+          "def": "NOT NULL sent",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "sent"
+          ]
+        },
+        {
+          "name": "messages_target_id_not_null",
+          "type": "n",
+          "def": "NOT NULL target_id",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "target_id"
+          ]
+        },
+        {
+          "name": "messages_updated_at_not_null",
+          "type": "n",
+          "def": "NOT NULL updated_at",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "updated_at"
+          ]
+        },
+        {
+          "name": "messages_action_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (action_id) REFERENCES actions(id) ON DELETE CASCADE",
+          "table": "public.messages",
+          "referenced_table": "public.actions",
+          "columns": [
+            "action_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "messages_target_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (target_id) REFERENCES targets(id) ON DELETE RESTRICT",
+          "table": "public.messages",
+          "referenced_table": "public.targets",
+          "columns": [
+            "target_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "messages_message_content_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (message_content_id) REFERENCES message_contents(id) ON DELETE CASCADE",
+          "table": "public.messages",
+          "referenced_table": "public.message_contents",
+          "columns": [
+            "message_content_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "messages_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.messages",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.mtt",
+      "type": "BASE TABLE",
+      "comment": "Mail-To-Target configuration of a campaign: schedule and sending limits for supporter emails",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('mtt_id_seq'::regclass)"
+        },
+        {
+          "name": "campaign_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "start_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false,
+          "comment": "Start of the window in which emails may be sent"
+        },
+        {
+          "name": "end_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false,
+          "comment": "End of the window in which emails may be sent"
+        },
+        {
+          "name": "stats",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb",
+          "comment": "Aggregated send statistics for this MTT"
+        },
+        {
+          "name": "message_template",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Template used for MTT emails; when unset, the raw action text is sent"
+        },
+        {
+          "name": "test_email",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Address test MTT actions are sent to instead of the real targets"
+        },
+        {
+          "name": "max_emails_per_hour",
+          "type": "integer",
+          "nullable": true,
+          "comment": "Throttle on outbound emails for this MTT"
+        },
+        {
+          "name": "timezone",
+          "type": "varchar(255)",
+          "nullable": false,
+          "default": "'Etc/UTC'::character varying",
+          "comment": "Timezone used to interpret the send window and drip schedule"
+        },
+        {
+          "name": "cc_contacts",
+          "type": "varchar(255)[]",
+          "nullable": false,
+          "default": "ARRAY[]::character varying[]",
+          "comment": "Addresses copied on every MTT email"
+        },
+        {
+          "name": "cc_sender",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "comment": "Also copy the supporter's own address on the email"
+        },
+        {
+          "name": "drip_delivery",
+          "type": "boolean",
+          "nullable": true,
+          "default": "true",
+          "comment": "Spread emails over the window instead of sending them all at the start"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "mtt_pkey",
+          "def": "CREATE UNIQUE INDEX mtt_pkey ON public.mtt USING btree (id)",
+          "table": "public.mtt",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "mtt_campaign_id_not_null",
+          "type": "n",
+          "def": "NOT NULL campaign_id",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "campaign_id"
+          ]
+        },
+        {
+          "name": "mtt_cc_contacts_not_null",
+          "type": "n",
+          "def": "NOT NULL cc_contacts",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "cc_contacts"
+          ]
+        },
+        {
+          "name": "mtt_cc_sender_not_null",
+          "type": "n",
+          "def": "NOT NULL cc_sender",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "cc_sender"
+          ]
+        },
+        {
+          "name": "mtt_end_at_not_null",
+          "type": "n",
+          "def": "NOT NULL end_at",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "end_at"
+          ]
+        },
+        {
+          "name": "mtt_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "mtt_start_at_not_null",
+          "type": "n",
+          "def": "NOT NULL start_at",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "start_at"
+          ]
+        },
+        {
+          "name": "mtt_stats_not_null",
+          "type": "n",
+          "def": "NOT NULL stats",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "stats"
+          ]
+        },
+        {
+          "name": "mtt_timezone_not_null",
+          "type": "n",
+          "def": "NOT NULL timezone",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "timezone"
+          ]
+        },
+        {
+          "name": "mtt_campaign_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE",
+          "table": "public.mtt",
+          "referenced_table": "public.campaigns",
+          "columns": [
+            "campaign_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "mtt_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.mtt",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.email_templates",
+      "type": "BASE TABLE",
+      "comment": "Named per-org email template used for thank-you, confirm, duplicate and MTT emails",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "nullable": false,
+          "default": "nextval('email_templates_id_seq'::regclass)"
+        },
+        {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "locale",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "subject",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "html",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "nullable": true
+        },
+        {
+          "name": "org_id",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "external_id",
+          "type": "varchar(255)",
+          "nullable": true,
+          "comment": "Template id at the external provider; when set, the provider template is used instead of local html/subject/text"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "email_templates_pkey",
+          "def": "CREATE UNIQUE INDEX email_templates_pkey ON public.email_templates USING btree (id)",
+          "table": "public.email_templates",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "email_templates_org_id_name_locale_index",
+          "def": "CREATE UNIQUE INDEX email_templates_org_id_name_locale_index ON public.email_templates USING btree (org_id, name, locale)",
+          "table": "public.email_templates",
+          "columns": [
+            "org_id",
+            "name",
+            "locale"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "email_templates_html_not_null",
+          "type": "n",
+          "def": "NOT NULL html",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "html"
+          ]
+        },
+        {
+          "name": "email_templates_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "email_templates_locale_not_null",
+          "type": "n",
+          "def": "NOT NULL locale",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "locale"
+          ]
+        },
+        {
+          "name": "email_templates_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "email_templates_org_id_not_null",
+          "type": "n",
+          "def": "NOT NULL org_id",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "org_id"
+          ]
+        },
+        {
+          "name": "email_templates_subject_not_null",
+          "type": "n",
+          "def": "NOT NULL subject",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "subject"
+          ]
+        },
+        {
+          "name": "email_templates_org_id_fkey",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE",
+          "table": "public.email_templates",
+          "referenced_table": "public.orgs",
+          "columns": [
+            "org_id"
+          ],
+          "referenced_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "email_templates_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.email_templates",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.audit_log",
+      "type": "BASE TABLE",
+      "comment": "Append-only record of privileged changes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false
+        },
+        {
+          "name": "actor_id",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Who made the change: a user id or an API client id"
+        },
+        {
+          "name": "resource",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Type of the changed resource"
+        },
+        {
+          "name": "resource_id",
+          "type": "varchar(255)",
+          "nullable": false,
+          "comment": "Id of the changed resource"
+        },
+        {
+          "name": "changeset",
+          "type": "jsonb",
+          "nullable": false,
+          "comment": "The recorded change, including before/after values"
+        },
+        {
+          "name": "inserted_at",
+          "type": "timestamp(0) without time zone",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "audit_log_pkey",
+          "def": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)",
+          "table": "public.audit_log",
+          "columns": [
+            "id"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "audit_log_actor_id_not_null",
+          "type": "n",
+          "def": "NOT NULL actor_id",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "actor_id"
+          ]
+        },
+        {
+          "name": "audit_log_changeset_not_null",
+          "type": "n",
+          "def": "NOT NULL changeset",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "changeset"
+          ]
+        },
+        {
+          "name": "audit_log_id_not_null",
+          "type": "n",
+          "def": "NOT NULL id",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "audit_log_inserted_at_not_null",
+          "type": "n",
+          "def": "NOT NULL inserted_at",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "inserted_at"
+          ]
+        },
+        {
+          "name": "audit_log_resource_id_not_null",
+          "type": "n",
+          "def": "NOT NULL resource_id",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "resource_id"
+          ]
+        },
+        {
+          "name": "audit_log_resource_not_null",
+          "type": "n",
+          "def": "NOT NULL resource",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "resource"
+          ]
+        },
+        {
+          "name": "audit_log_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (id)",
+          "table": "public.audit_log",
+          "referenced_table": "",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "table": "public.orgs",
+      "columns": [
+        "detail_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (detail_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.orgs",
+      "columns": [
+        "email_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (email_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.orgs",
+      "columns": [
+        "event_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (event_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.orgs",
+      "columns": [
+        "push_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (push_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.orgs",
+      "columns": [
+        "storage_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (storage_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.orgs",
+      "columns": [
+        "transactional_email_backend_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.services",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (transactional_email_backend_id) REFERENCES services(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.campaigns",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.action_pages",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.action_pages",
+      "columns": [
+        "campaign_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.campaigns",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.supporters",
+      "columns": [
+        "campaign_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.campaigns",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.supporters",
+      "columns": [
+        "action_page_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action_pages",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (action_page_id) REFERENCES action_pages(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.supporters",
+      "columns": [
+        "source_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.sources",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.public_keys",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.contacts",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.contacts",
+      "columns": [
+        "supporter_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.supporters",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (supporter_id) REFERENCES supporters(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.contacts",
+      "columns": [
+        "public_key_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.public_keys",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (public_key_id) REFERENCES public_keys(id)"
+    },
+    {
+      "table": "public.contacts",
+      "columns": [
+        "sign_key_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.public_keys",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (sign_key_id) REFERENCES public_keys(id)"
+    },
+    {
+      "table": "public.staffers",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.staffers",
+      "columns": [
+        "user_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.actions",
+      "columns": [
+        "campaign_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.campaigns",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.actions",
+      "columns": [
+        "action_page_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action_pages",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (action_page_id) REFERENCES action_pages(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.actions",
+      "columns": [
+        "supporter_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.supporters",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (supporter_id) REFERENCES supporters(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.actions",
+      "columns": [
+        "source_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.sources",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.services",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.confirms",
+      "columns": [
+        "creator_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "public.donations",
+      "columns": [
+        "action_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.actions",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (action_id) REFERENCES actions(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.users_tokens",
+      "columns": [
+        "user_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.targets",
+      "columns": [
+        "campaign_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.campaigns",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "zero_or_one",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id)"
+    },
+    {
+      "table": "public.target_emails",
+      "columns": [
+        "target_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.targets",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (target_id) REFERENCES targets(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.messages",
+      "columns": [
+        "action_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.actions",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (action_id) REFERENCES actions(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.messages",
+      "columns": [
+        "target_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.targets",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (target_id) REFERENCES targets(id) ON DELETE RESTRICT"
+    },
+    {
+      "table": "public.messages",
+      "columns": [
+        "message_content_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.message_contents",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (message_content_id) REFERENCES message_contents(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.mtt",
+      "columns": [
+        "campaign_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.campaigns",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.email_templates",
+      "columns": [
+        "org_id"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.orgs",
+      "parent_columns": [
+        "id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+    }
+  ],
+  "functions": [
+    {
+      "name": "public.citextin",
+      "return_type": "citext",
+      "arguments": "cstring",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citextout",
+      "return_type": "cstring",
+      "arguments": "citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citextrecv",
+      "return_type": "citext",
+      "arguments": "internal",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citextsend",
+      "return_type": "bytea",
+      "arguments": "citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext",
+      "return_type": "citext",
+      "arguments": "character",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext",
+      "return_type": "citext",
+      "arguments": "boolean",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext",
+      "return_type": "citext",
+      "arguments": "inet",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_eq",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_ne",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_lt",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_le",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_gt",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_ge",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_cmp",
+      "return_type": "int4",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_hash",
+      "return_type": "int4",
+      "arguments": "citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_smaller",
+      "return_type": "citext",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_larger",
+      "return_type": "citext",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.min",
+      "return_type": "citext",
+      "arguments": "citext",
+      "type": "a"
+    },
+    {
+      "name": "public.max",
+      "return_type": "citext",
+      "arguments": "citext",
+      "type": "a"
+    },
+    {
+      "name": "public.texticlike",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticnlike",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticregexeq",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticregexne",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticlike",
+      "return_type": "bool",
+      "arguments": "citext, text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticnlike",
+      "return_type": "bool",
+      "arguments": "citext, text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticregexeq",
+      "return_type": "bool",
+      "arguments": "citext, text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.texticregexne",
+      "return_type": "bool",
+      "arguments": "citext, text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_match",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_match",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext, flags text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_matches",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_matches",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext, flags text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_replace",
+      "return_type": "text",
+      "arguments": "string citext, pattern citext, replacement text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_replace",
+      "return_type": "text",
+      "arguments": "string citext, pattern citext, replacement text, flags text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_split_to_array",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_split_to_array",
+      "return_type": "_text",
+      "arguments": "string citext, pattern citext, flags text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_split_to_table",
+      "return_type": "text",
+      "arguments": "string citext, pattern citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.regexp_split_to_table",
+      "return_type": "text",
+      "arguments": "string citext, pattern citext, flags text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.strpos",
+      "return_type": "int4",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.replace",
+      "return_type": "text",
+      "arguments": "citext, citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.split_part",
+      "return_type": "text",
+      "arguments": "citext, citext, integer",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.translate",
+      "return_type": "text",
+      "arguments": "citext, citext, text",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_pattern_lt",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_pattern_le",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_pattern_gt",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_pattern_ge",
+      "return_type": "bool",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_pattern_cmp",
+      "return_type": "int4",
+      "arguments": "citext, citext",
+      "type": "FUNCTION"
+    },
+    {
+      "name": "public.citext_hash_extended",
+      "return_type": "int8",
+      "arguments": "citext, bigint",
+      "type": "FUNCTION"
+    }
+  ],
+  "driver": {
+    "name": "postgres",
+    "database_version": "PostgreSQL 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, 64-bit",
+    "meta": {
+      "current_schema": "public",
+      "search_paths": [
+        "proca",
+        "public"
+      ],
+      "dict": {
+        "Functions": "Stored procedures and functions"
+      }
+    }
+  }
+}

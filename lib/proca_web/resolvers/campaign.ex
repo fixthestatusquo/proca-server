@@ -101,9 +101,12 @@ defmodule ProcaWeb.Resolvers.Campaign do
 
     {pages, attrs} = Map.pop(attrs, :action_pages, [])
 
+    campaign_ch = Campaign.upsert(org, attrs)
+    created = is_nil(campaign_ch.data.id)
+
     upsert_all =
       Multi.new()
-      |> Multi.insert_or_update(:campaign, Campaign.upsert(org, attrs))
+      |> Multi.insert_or_update(:campaign, campaign_ch)
       |> Multi.merge(fn %{campaign: campaign} ->
         pages
         |> Enum.with_index()
@@ -116,7 +119,11 @@ defmodule ProcaWeb.Resolvers.Campaign do
         end)
       end)
 
-    result = transaction_and_notify(upsert_all, :upsert_campaign, user: context[:user])
+    result =
+      transaction_and_notify(upsert_all, :upsert_campaign,
+        user: context[:user],
+        created: created
+      )
 
     case result do
       {:ok, %{campaign: campaign}} -> {:ok, campaign}
@@ -152,13 +159,13 @@ defmodule ProcaWeb.Resolvers.Campaign do
     end
   end
 
-  def add(_, %{input: params}, %{context: %{org: org}}) do
+  def add(_, %{input: params}, %{context: %{org: org} = context}) do
     %Campaign{}
     |> Campaign.changeset(
       params
       |> Map.put(:org, org)
     )
-    |> insert_and_notify()
+    |> insert_and_notify(user: context[:user])
   end
 
   def update(_, %{input: params}, %{context: %{campaign: campaign} = context}) do

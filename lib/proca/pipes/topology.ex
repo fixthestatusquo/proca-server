@@ -321,7 +321,9 @@ defmodule Proca.Pipes.Topology do
 
     # Declare and bind the global system event queue
     Queue.declare(chan, "system.deliver", durable: true)
-    :ok = Queue.bind(chan, "system.deliver", xn(o, "event"), routing_key: "system.*")
+    # System event types are `<entity>.<verb>` (e.g. `user.add`), so the routing
+    # key is multi-word: match it with `#`, not `*`.
+    :ok = Queue.bind(chan, "system.deliver", xn(o, "event"), routing_key: "system.#")
   end
 
   def retry_queue_arguments(o = %Org{}, queue_name) do

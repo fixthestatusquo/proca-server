@@ -24,7 +24,7 @@ defmodule Proca.Stage.Event do
   Examples:
   - confirm_created.add_staffer - for new add_staffer confirm XXX remove!
   - supporter.email_status_changed
-  - system.campaign_updated - for any campaign update
+  - system.campaign.update - for any campaign update
   """
   def routing_key(event, %Confirm{operation: op}) do
     Atom.to_string(event) <> "." <> Atom.to_string(op)
@@ -109,7 +109,8 @@ defmodule Proca.Stage.Event do
     |> Map.put(:tracking, MessageV1.tracking_data(action))
   end
 
-  def put_data(data, :campaign_updated, campaign, opts) do
+  def put_data(data, event, campaign, opts)
+      when event in [:"campaign.add", :"campaign.update"] do
     campaign = campaign |> Proca.Repo.preload([:org])
 
     org_data = %{
