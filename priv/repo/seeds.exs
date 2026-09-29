@@ -39,6 +39,18 @@ create_admin = fn org, username ->
   IO.puts("#####   Password: #{pwd}")
   IO.puts("#####")
 
+  # dev/test only: also append the login to credentials.md (gitignored)
+  if Code.ensure_loaded?(Mix) and Mix.env() in [:dev, :test] do
+    File.write!(
+      "credentials.md",
+      "\n## Admin (#{Mix.env()} DB, #{DateTime.utc_now() |> DateTime.truncate(:second)})\n\n" <>
+        "- #{user.email} / `#{pwd}`\n",
+      [:append]
+    )
+
+    IO.puts("#####   (saved to credentials.md)")
+  end
+
   Proca.Org.changeset(org, %{email_from: username})
   |> Proca.Repo.update!()
 end

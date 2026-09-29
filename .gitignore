@@ -49,3 +49,6 @@ TAGS
 .proca-cli
 
 .DS_Store
+
+# local dev logins written by the seed scripts
+credentials.md
