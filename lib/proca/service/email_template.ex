@@ -35,8 +35,9 @@ defmodule Proca.Service.EmailTemplate do
     related = Map.take(attrs, [:org])
 
     cast(service, attrs, [:name, :locale, :ref, :external_id, :subject, :html, :text])
-    |> validate_required([:name, :locale])
-    |> validate_local_content()
+    # subject and html are NOT NULL in the DB, also for provider (external_id)
+    # templates: those need placeholder values, which are not sent
+    |> validate_required([:name, :locale, :subject, :html])
     |> validate_format(:name, ~r/^[\w\d_ -]+$/)
     |> change(related)
     |> validate_template(:subject)
@@ -46,14 +47,6 @@ defmodule Proca.Service.EmailTemplate do
   end
 
   def changeset(attrs), do: changeset(%EmailTemplate{}, attrs)
-
-  defp validate_local_content(changeset) do
-    if get_field(changeset, :external_id) do
-      changeset
-    else
-      validate_required(changeset, [:subject, :html])
-    end
-  end
 
   def validate_template(changeset, field) do
     validate_change(changeset, field, fn _f, tmplstr ->
