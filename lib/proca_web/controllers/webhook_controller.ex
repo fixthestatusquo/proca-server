@@ -4,6 +4,8 @@ defmodule ProcaWeb.WebhookController do
   """
   use ProcaWeb, :controller
 
+  require Logger
+
   alias Proca.Service.Mailjet
   alias Proca.Service.Brevo
 
@@ -12,18 +14,20 @@ defmodule ProcaWeb.WebhookController do
   """
   def mailjet(conn, %{"_json" => events}) do
     for %{"event" => et} = event <- events do
-      cond do
-        et in ["blocked", "spam", "unsub"] ->
-          Mailjet.handle_bounce(event)
+      safely(:mailjet, event, fn ->
+        cond do
+          et in ["blocked", "spam", "unsub"] ->
+            Mailjet.handle_bounce(event)
 
-        # both hard and soft bounces; soft ones only disable the address
-        # after repeated failures (see Proca.Target.handle_bounce/1)
-        et == "bounce" ->
-          Mailjet.handle_bounce(event)
+          # both hard and soft bounces; soft ones only disable the address
+          # after repeated failures (see Proca.Target.handle_bounce/1)
+          et == "bounce" ->
+            Mailjet.handle_bounce(event)
 
-        true ->
-          Mailjet.handle_event(event)
-      end
+          true ->
+            Mailjet.handle_event(event)
+        end
+      end)
     end
 
     conn
@@ -38,11 +42,13 @@ defmodule ProcaWeb.WebhookController do
   @brevo_bounce_events ~w(bounced spam unsubscribed blocked)
 
   def brevo(conn, event = %{"event" => et}) do
-    if et in @brevo_bounce_events do
-      Brevo.handle_bounce(event)
-    else
-      Brevo.handle_event(event)
-    end
+    safely(:brevo, event, fn ->
+      if et in @brevo_bounce_events do
+        Brevo.handle_bounce(event)
+      else
+        Brevo.handle_event(event)
+      end
+    end)
 
     conn |> send_resp(:ok, "")
   end
@@ -50,4 +56,28 @@ defmodule ProcaWeb.WebhookController do
   def brevo(conn, _params) do
     conn |> send_resp(:ok, "")
   end
+
+  # A failing event must never turn into a 500: providers retry the whole batch
+  # and, after repeated errors, mark our callback URL dead and stop calling
+  # (this silently disabled Mailjet bounces for a year). Report and move on.
+  defp safely(provider, event, fun) do
+    fun.()
+  rescue
+    e ->
+      extra = %{provider: provider, event: event["event"], custom_id: custom_id(provider, event)}
+
+      # warning, not error: Sentry.LoggerBackend would report an error log a second time
+      Logger.warning(
+        "#{provider} webhook event failed #{inspect(extra)}: #{Exception.message(e)}"
+      )
+
+      # grouped by stacktrace, so each distinct bug gets its own Sentry issue
+      Sentry.capture_exception(e, stacktrace: __STACKTRACE__, extra: extra)
+
+      :error
+  end
+
+  # report only the type and our id - the payload contains the recipient email
+  defp custom_id(:mailjet, event), do: event["CustomID"]
+  defp custom_id(:brevo, event), do: event["tags"]
 end
