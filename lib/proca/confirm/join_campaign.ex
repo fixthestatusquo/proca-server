@@ -45,6 +45,7 @@ defmodule Proca.Confirm.JoinCampaign do
       |> Repo.update_all(live: true)
 
       cnf = Repo.preload(cnf, :creator)
+
       action_page = Repo.one(from(ap in ActionPage,
         where: ap.org_id == ^org_id and ap.campaign_id == ^campaign_id,
         order_by: [desc: :id],
@@ -52,7 +53,7 @@ defmodule Proca.Confirm.JoinCampaign do
       ))
 
       if cnf.creator && action_page do
-        Proca.Stage.SystemEvent.emit_join_campaign(cnf.creator, org, c, action_page)
+        Proca.Stage.SystemEvent.emit_campaign_join(cnf.creator, org, c, action_page)
       end
 
       :ok
