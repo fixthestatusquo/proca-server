@@ -342,6 +342,13 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field(:action_confirm, :boolean)
   end
 
+  enum :mtt_delivery do
+    @desc "Drip: messages spread over the whole campaign (MTTWorker)"
+    value(:pacing)
+    @desc "As soon as possible, limited per hour (MTTScheduler)"
+    value(:throttle)
+  end
+
   object :campaign_mtt do
     @desc "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
     field :start_at, non_null(:datetime)
@@ -371,9 +378,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :cc_sender, :boolean
 
     @desc """
-    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    MTT delivery algorithm: PACING (drip, spread over the campaign) or THROTTLE (asap, limited per hour).
     """
-    field :drip_delivery, :boolean
+    field :delivery, non_null(:mtt_delivery)
 
     @desc """
     Maximum number of MTT emails sent per hour for this campaign. Applies to the
@@ -411,9 +418,9 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :cc_sender, :boolean
 
     @desc """
-    If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo.
+    MTT delivery algorithm: PACING (drip, spread over the campaign) or THROTTLE (asap, limited per hour).
     """
-    field :drip_delivery, :boolean
+    field :delivery, :mtt_delivery
 
     @desc """
     Maximum number of MTT emails sent per hour for this campaign. Applies to the

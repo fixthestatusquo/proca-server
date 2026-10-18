@@ -278,7 +278,7 @@ defmodule Proca.Stage.MTTStageTest do
       assert metadata.result == :dry_run
       assert metadata.org_id == target.campaign.org.id
       assert metadata.campaign_id == target.campaign.id
-      # mtt_story uses drip_delivery: false -> hourly throttle scheduler
+      # mtt_story uses delivery: :throttle -> hourly throttle scheduler
       assert metadata.method == :throttle
     end
   end
