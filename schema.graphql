@@ -1932,6 +1932,14 @@ input CampaignInput {
   actionConfirm: Boolean
 }
 
+enum MttDelivery {
+  "Drip: messages spread over the whole campaign (MTTWorker)"
+  PACING
+
+  "As soon as possible, limited per hour (MTTScheduler)"
+  THROTTLE
+}
+
 type CampaignMtt {
   "This is first day and start hour of the campaign. Note, every day of the campaign the start hour will be same."
   startAt: DateTime!
@@ -1954,8 +1962,8 @@ type CampaignMtt {
   "If checked, the sender will be added to CC."
   ccSender: Boolean
 
-  "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
-  dripDelivery: Boolean
+  "MTT delivery algorithm: PACING (drip, spread over the campaign) or THROTTLE (asap, limited per hour)."
+  delivery: MttDelivery!
 
   """
   Maximum number of MTT emails sent per hour for this campaign. Applies to the
@@ -1986,8 +1994,8 @@ input CampaignMttInput {
   "If checked, the sender will be added to CC."
   ccSender: Boolean
 
-  "If checked, the mtt campaign emails will be delivered by the drip algo, else by the asap algo."
-  dripDelivery: Boolean
+  "MTT delivery algorithm: PACING (drip, spread over the campaign) or THROTTLE (asap, limited per hour)."
+  delivery: MttDelivery
 
   """
   Maximum number of MTT emails sent per hour for this campaign. Applies to the
