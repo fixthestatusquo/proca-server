@@ -87,24 +87,24 @@ defmodule ProcaWeb.Telemetry do
       |> Proca.Repo.all()
 
     # Emitted for every active campaign on both delivery paths, tagged `method`,
-    # each using the matching query (drip_delivery true/false). Emitting both means
+    # each using the matching query (delivery pacing/throttle). Emitting both means
     # no series goes stale when a campaign switches path.
     Enum.each(active_campaigns, fn campaign ->
-      drip = campaign.mtt.drip_delivery
+      delivery = campaign.mtt.delivery
 
       unsent_messages =
-        Message.select_by_campaign(campaign.id, false, false, drip)
+        Message.select_by_campaign(campaign.id, false, false, delivery)
         |> Proca.Repo.aggregate(:count)
 
       :telemetry.execute([:mtt, :sendable], %{messages: unsent_messages}, %{
         campaign_id: campaign.id,
         campaign_name: campaign.name,
-        method: if(drip, do: :pacing, else: :throttle)
+        method: delivery
       })
     end)
 
     {pacing_campaigns, throttle_campaigns} =
-      Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.drip_delivery == true end)
+      Enum.split_with(active_campaigns, fn campaign -> campaign.mtt.delivery == :pacing end)
 
     :telemetry.execute([:mtt, :campaigns_running], %{count: length(pacing_campaigns)}, %{
       method: :pacing

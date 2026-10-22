@@ -109,7 +109,7 @@ defmodule Proca.Server.MTT do
         on: mtt.campaign_id == c.id,
         where:
           c.status == :live and
-            mtt.drip_delivery == true and
+            mtt.delivery == ^:pacing and
             mtt.start_at <= from_now(0, "day") and
             mtt.end_at >= from_now(0, "day"),
         preload: [:mtt],

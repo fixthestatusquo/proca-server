@@ -332,7 +332,7 @@ fossil =
         DateTime.add(DateTime.utc_now(), -45 * 86_400, :second) |> DateTime.truncate(:second),
       end_at:
         DateTime.add(DateTime.utc_now(), 30 * 86_400, :second) |> DateTime.truncate(:second),
-      drip_delivery: true,
+      delivery: :pacing,
       max_emails_per_hour: 30,
       timezone: "Europe/Brussels",
       test_email: "test@#{lead.domain}",
@@ -359,7 +359,7 @@ farm =
         DateTime.add(DateTime.utc_now(), -20 * 86_400, :second) |> DateTime.truncate(:second),
       end_at:
         DateTime.add(DateTime.utc_now(), 730 * 86_400, :second) |> DateTime.truncate(:second),
-      drip_delivery: false,
+      delivery: :throttle,
       timezone: "Europe/Paris",
       cc_sender: true
     }

@@ -23,7 +23,7 @@ defmodule Proca.MTT do
 
     field :max_emails_per_hour, :integer
     field :timezone, :string, default: "Etc/UTC"
-    field :drip_delivery, :boolean, default: true
+    field :delivery, MTTDelivery, default: :throttle
 
     belongs_to :campaign, Proca.Campaign
   end
@@ -42,10 +42,10 @@ defmodule Proca.MTT do
       :cc_sender,
       :max_emails_per_hour,
       :timezone,
-      :drip_delivery
+      :delivery
     ])
     |> change(assocs)
-    |> validate_required([:start_at, :end_at])
+    |> validate_required([:start_at, :end_at, :delivery])
     |> validate_after(:start_at, :end_at)
     |> Proca.Contact.Input.validate_email(:test_email)
     |> Proca.Service.EmailTemplate.validate_exists(:message_template)

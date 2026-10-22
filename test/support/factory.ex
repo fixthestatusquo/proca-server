@@ -239,7 +239,8 @@ defmodule Proca.Factory do
   def mtt_factory do
     %Proca.MTT{
       start_at: DateTime.utc_now(),
-      end_at: DateTime.utc_now() |> DateTime.add(600, :second)
+      end_at: DateTime.utc_now() |> DateTime.add(600, :second),
+      delivery: :pacing
     }
   end
 
@@ -247,7 +248,7 @@ defmodule Proca.Factory do
     %Proca.MTT{
       start_at: DateTime.utc_now(),
       end_at: DateTime.utc_now() |> DateTime.add(600, :second),
-      drip_delivery: false
+      delivery: :throttle
     }
   end
 end

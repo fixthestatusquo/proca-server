@@ -89,6 +89,8 @@ defenum(ExternalService,
   hubspot: "hubspot"
 )
 
+defenum(MTTDelivery, pacing: "pacing", throttle: "throttle")
+
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)
 
 defenum(ConfirmOperation,
