@@ -7,7 +7,7 @@ defmodule Proca.Stage.SystemEventTest do
   alias Proca.Repo
 
   setup do
-    # Ensure instance org exists (needed for new_org / new_user events)
+    # Ensure instance org exists (needed for org.add / user.add events)
     instance_org =
       case Org.one([:instance]) do
         nil -> Repo.insert!(%Org{name: "instance", title: "Instance Org"})
@@ -38,104 +38,109 @@ defmodule Proca.Stage.SystemEventTest do
     end
   end
 
-  describe "join_campaign message" do
-    test "builds correct action-like message", %{
+  describe "campaign_join_data/4" do
+    test "puts the joining org, the campaign and the requester", %{
       red_org: org,
       yellow_campaign: campaign,
       orange_aps: [ap | _],
       red_user: user
     } do
-      # We can't actually publish (no RabbitMQ in tests), so test message building
-      ap = Repo.preload(ap, [:org, :campaign])
+      msg = SystemEvent.campaign_join_data(user, org, campaign, ap)
 
-      msg = %{
-        "contact" => SystemEvent.user_contact_data(user),
-        "personalInfo" => nil,
-        "privacy" => %{},
-        "tracking" => %{},
-        "org" => %{"name" => org.name, "title" => org.title},
-        "orgId" => org.id,
-        "campaign" => Proca.Stage.MessageV2.campaign_data(campaign),
-        "campaignId" => campaign.id,
-        "actionPage" => Proca.Stage.MessageV2.action_page_data(ap),
-        "actionPageId" => ap.id,
-        "action" => %{
-          "actionType" => "join_campaign",
-          "customFields" => %{},
-          "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
-          "testing" => false
-        },
-        "actionId" => nil
-      }
-
-      assert msg["action"]["actionType"] == "join_campaign"
+      assert msg["action"]["actionType"] == "campaign.join"
+      assert msg["action"]["customFields"] == %{}
       assert msg["org"]["name"] == org.name
+      assert msg["orgId"] == org.id
       assert msg["campaignId"] == campaign.id
       assert msg["actionPageId"] == ap.id
       assert msg["contact"]["email"] == user.email
-      assert msg["personalInfo"] == nil
+      assert msg["user"]["id"] == user.id
     end
   end
 
-  describe "new_org message" do
-    test "builds correct message with nil campaign/actionPage", %{red_org: org, red_user: user} do
-      msg = %{
-        "contact" => SystemEvent.user_contact_data(user),
-        "personalInfo" => nil,
-        "privacy" => %{},
-        "tracking" => %{},
-        "org" => %{"name" => org.name, "title" => org.title},
-        "orgId" => org.id,
-        "campaign" => nil,
-        "campaignId" => nil,
-        "actionPage" => nil,
-        "actionPageId" => nil,
-        "action" => %{
-          "actionType" => "new_org",
-          "customFields" => %{},
-          "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
-          "testing" => false
-        },
-        "actionId" => nil
-      }
+  describe "org_add_data/2" do
+    test "puts the org and the creator", %{red_org: org, red_user: user} do
+      msg = SystemEvent.org_add_data(user, org)
 
-      assert msg["action"]["actionType"] == "new_org"
+      assert msg["action"]["actionType"] == "org.add"
       assert msg["org"]["name"] == org.name
+      assert msg["orgId"] == org.id
       assert msg["campaign"] == nil
       assert msg["actionPage"] == nil
       assert msg["contact"]["email"] == user.email
+      assert msg["user"]["id"] == user.id
     end
   end
 
-  describe "new_user message" do
-    test "builds correct message with nil org/campaign/actionPage" do
+  describe "user_add_data/1" do
+    test "puts the user as contact, with no org/campaign" do
       user = Factory.insert(:user)
+      msg = SystemEvent.user_add_data(user)
 
-      msg = %{
-        "contact" => SystemEvent.user_contact_data(user),
-        "personalInfo" => nil,
-        "privacy" => %{},
-        "tracking" => %{},
-        "org" => nil,
-        "orgId" => nil,
-        "campaign" => nil,
-        "campaignId" => nil,
-        "actionPage" => nil,
-        "actionPageId" => nil,
-        "action" => %{
-          "actionType" => "new_user",
-          "customFields" => %{},
-          "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601(),
-          "testing" => false
-        },
-        "actionId" => nil
-      }
-
-      assert msg["action"]["actionType"] == "new_user"
+      assert msg["action"]["actionType"] == "user.add"
       assert msg["org"] == nil
       assert msg["campaign"] == nil
       assert msg["actionPage"] == nil
       assert msg["contact"]["email"] == user.email
+      assert msg["user"]["id"] == user.id
+    end
+  end
+
+  describe "user_join_data/4" do
+    test "org is the joined org; role goes in customFields", %{red_org: org} do
+      actor = Factory.insert(:user)
+      user = Factory.insert(:user)
+
+      msg = SystemEvent.user_join_data(actor, user, org, :campaigner)
+
+      assert msg["action"]["actionType"] == "user.join"
+      assert msg["action"]["customFields"] == %{"role" => "campaigner"}
+      assert msg["orgId"] == org.id
+      assert msg["contact"]["email"] == user.email
+      assert msg["user"]["id"] == actor.id
+      assert msg["campaign"] == nil
+    end
+  end
+
+  describe "user_update_data/4" do
+    test "role change carries only the role", %{red_org: org} do
+      actor = Factory.insert(:user)
+      user = Factory.insert(:user)
+
+      msg = SystemEvent.user_update_data(actor, user, org, %{"role" => "manager"})
+
+      assert msg["action"]["actionType"] == "user.update"
+      assert msg["action"]["customFields"] == %{"role" => "manager"}
+      assert msg["orgId"] == org.id
+      assert msg["contact"]["email"] == user.email
+      assert msg["user"]["id"] == actor.id
+    end
+
+    test "profile change carries changed field names and no org" do
+      actor = Factory.insert(:user)
+      user = Factory.insert(:user)
+
+      msg = SystemEvent.user_update_data(actor, user, nil, %{"fields" => ["job_title"]})
+
+      assert msg["org"] == nil
+      assert msg["orgId"] == nil
+      assert msg["action"]["customFields"] == %{"fields" => ["job_title"]}
+    end
+  end
+
+  describe "user_email_update_data/2" do
+    test "actionType is updateEmail with empty customFields and no org" do
+      actor = Factory.insert(:user)
+      user = Factory.insert(:user)
+
+      msg = SystemEvent.user_email_update_data(actor, user)
+
+      assert msg["action"]["actionType"] == "updateEmail"
+      assert msg["action"]["customFields"] == %{}
+      assert msg["org"] == nil
+      assert msg["orgId"] == nil
+      assert msg["contact"]["email"] == user.email
+      assert msg["user"]["id"] == actor.id
     end
   end
 
@@ -151,36 +156,28 @@ defmodule Proca.Stage.SystemEventTest do
     end
   end
 
-  describe "campaign_updated message" do
+  describe "campaign.update message" do
     test "includes the acting user", %{yellow_campaign: campaign, red_user: user} do
-      data = Proca.Stage.Event.metadata(:campaign_updated, campaign)
+      data = Proca.Stage.Event.metadata(:"campaign.update", campaign)
 
-      result = Proca.Stage.Event.put_data(data, :campaign_updated, campaign, user: user)
+      result = Proca.Stage.Event.put_data(data, :"campaign.update", campaign, user: user)
 
       assert result[:user] == %{"id" => user.id, "email" => user.email}
     end
 
     test "omits user when no actor is passed", %{yellow_campaign: campaign} do
-      data = Proca.Stage.Event.metadata(:campaign_updated, campaign)
+      data = Proca.Stage.Event.metadata(:"campaign.update", campaign)
 
-      result = Proca.Stage.Event.put_data(data, :campaign_updated, campaign, [])
+      result = Proca.Stage.Event.put_data(data, :"campaign.update", campaign, [])
 
       refute Map.has_key?(result, :user)
     end
   end
 
-  describe "emit routing keys" do
-    test "join_campaign routes to campaign lead org's event exchange", %{
-      yellow_campaign: campaign,
-      yellow_org: yellow_org
-    } do
-      exchange = Proca.Pipes.Topology.xn(%Org{id: campaign.org_id}, "event")
-      assert exchange == "org.#{yellow_org.id}.event"
-    end
-
-    test "new_org routes to instance org's event exchange", %{instance_org: instance_org} do
-      exchange = Proca.Pipes.Topology.xn(%Org{id: instance_org.id}, "event")
-      assert exchange == "org.#{instance_org.id}.event"
+  describe "routing keys" do
+    test "campaign.update routes under system.", %{yellow_campaign: campaign} do
+      assert Proca.Stage.Event.routing_key(:"campaign.update", campaign) ==
+               "system.campaign.update"
     end
   end
 

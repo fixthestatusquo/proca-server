@@ -32,7 +32,7 @@ defmodule Proca.Server.Notify do
     - Updated the public key in [Keys](Proca.Server.Keys.html) dictionary process
 
   - Campaign is updated
-    - Send an event to owner org (`campaign_updated` event)
+    - Send an event to owner org (`campaign.update` event)
 
   - Campaign is upserted
     - run actions for updating or creation of campaign and all of its pages
@@ -100,6 +100,10 @@ defmodule Proca.Server.Notify do
     end
   end
 
+  def created(%Campaign{org_id: org_id} = campaign, opts) when is_number(org_id) do
+    Event.emit(:"campaign.add", campaign, org_id, opts)
+  end
+
   def created(_, _opts), do: :ok
 
   @doc """
@@ -150,7 +154,7 @@ defmodule Proca.Server.Notify do
     # Campaign edits affect all of its cached action pages; there is no cheap
     # reverse lookup, so drop the whole (small, TTL-bounded) cache.
     ActionPage.Cache.clear()
-    Event.emit(:campaign_updated, campaign, org_id, opts)
+    Event.emit(:"campaign.update", campaign, org_id, opts)
   end
 
   def updated(%Proca.Service.EmailTemplate{} = tmpl, _opts) do
@@ -191,7 +195,13 @@ defmodule Proca.Server.Notify do
   def multi(:upsert_campaign, records, opts) do
     {campaign, pages_map} = Map.pop(records, :campaign)
 
-    updated(campaign, opts)
+    # `upsert_campaign` creates or appends; the resolver tells us which via the
+    # `:created` notify opt (insert has no id before insert_or_update).
+    if opts[:created] do
+      Event.emit(:"campaign.add", campaign, campaign.org_id, opts)
+    else
+      updated(campaign, opts)
+    end
 
     Enum.each(pages_map, fn {_k, page} ->
       updated(page, opts)
@@ -202,7 +212,7 @@ defmodule Proca.Server.Notify do
     created(org, opts)
 
     user = Repo.preload(staffer, :user).user
-    Proca.Stage.SystemEvent.emit_new_org(user, org)
+    Proca.Stage.SystemEvent.emit_org_add(user, org)
   end
 
   def multi(:delete_action_page, result, _opts) do

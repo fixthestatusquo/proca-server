@@ -101,7 +101,7 @@ defmodule Proca.Users do
 
     case result do
       {:ok, user} ->
-        Proca.Stage.SystemEvent.emit_new_user(user)
+        Proca.Stage.SystemEvent.emit_user_add(user)
         {:ok, user}
 
       error ->
@@ -117,7 +117,7 @@ defmodule Proca.Users do
 
     case peek_unique_error(new_user) do
       {:ok, user} ->
-        Proca.Stage.SystemEvent.emit_new_user(user)
+        Proca.Stage.SystemEvent.emit_user_add(user)
         user
 
       # handle a race condition where user exists - in that case fetch the user
@@ -188,7 +188,10 @@ defmodule Proca.Users do
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
+         {:ok, %{user: updated}} <- Repo.transaction(user_email_multi(user, email, context)) do
+      # Self-service change: the user is the actor, actionType carries the
+      # change, no customFields. Instance-level, so no org.
+      Proca.Stage.SystemEvent.emit_user_email_update(updated, updated)
       :ok
     else
       _ -> :error

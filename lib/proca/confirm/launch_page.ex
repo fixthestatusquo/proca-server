@@ -58,7 +58,9 @@ defmodule Proca.Confirm.LaunchPage do
 
       if ap.org_id != camp.org_id do
         loaded = preload(cnf, :creator)
-        if loaded.creator, do: Proca.Stage.SystemEvent.emit_join_campaign(loaded.creator, ap.org, camp, ap)
+
+        if loaded.creator,
+          do: Proca.Stage.SystemEvent.emit_campaign_join(loaded.creator, ap.org, camp, ap)
       end
 
       result

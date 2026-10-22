@@ -201,12 +201,12 @@ Message structure:
   - `privacy` - same as in action message (contains new `emailStatus`)
   - `personalInfo` - same as in action message
 
-#### Campaign updated
+#### Campaign added / updated
 
 Message structure
 
 - `schema` - always `proca:event:2`
-- `eventType` - is `system.campaign_updated`
+- `eventType` - `system.campaign.add` (new campaign) or `system.campaign.update`
 - `timestamp` - event timestamp (ISO8601)
 - `campaignId` - id of campaign
 - `campaign` - campaign details, map of:
@@ -215,6 +215,42 @@ Message structure
   - `title`
   - `contactSchema`
   - `config` - custom map
+
+#### System events
+
+Lifecycle events, published to the org's `event` exchange on routing keys and
+`eventType` `system.<entity>.<verb>`, delivered to the `system.deliver` queue.
+They use one of two schemas:
+
+- **`proca:action:2`** (action-like) - carries `contact` (the person the event is
+  about), `user` (the actor), and `action.actionType` + `action.customFields`.
+  Field shapes are the same as in the [Action message](#action-message), with
+  `stage` = `system` and `actionId` = null.
+- **`proca:event:2`** (flat) - `eventType`, `timestamp`, the subject record, and
+  `user` (the actor).
+
+| `eventType` / routing key | schema           | `action.actionType` | Fires when                        | Subject                                                                                                    |
+| ------------------------- | ---------------- | ------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `system.org.add`          | `proca:action:2` | `org.add`           | org (and its owner) created       | `org` = new org, `contact`/`user` = creator                                                                |
+| `system.user.add`         | `proca:action:2` | `user.add`          | user registers / SSO provisioning | `contact`/`user` = the user                                                                                |
+| `system.campaign.add`     | `proca:event:2`  | (none)              | campaign created                  | `campaign`/`campaignId`, `orgId`, `user` = actor                                                           |
+| `system.campaign.update`  | `proca:event:2`  | (none)              | campaign updated                  | as `system.campaign.add`                                                                                   |
+| `system.campaign.join`    | `proca:action:2` | `campaign.join`     | a join request is accepted        | `org` = joining org, `campaign` = joined campaign, `actionPage`, `contact`/`user` = requester              |
+| `system.user.join`        | `proca:action:2` | `user.join`         | user added to an org              | `org` = joined org, `contact` = user, `user` = actor, `customFields.role` = new role                       |
+| `system.user.update`      | `proca:action:2` | `user.update`       | role change or profile update     | `org` = member org or null, `contact` = user, `user` = actor, `customFields.role` or `customFields.fields` |
+| `system.user.update`      | `proca:action:2` | `updateEmail`       | user confirms a new email         | `contact`/`user` = the user, `customFields` empty                                                          |
+
+Common fields for the action-like system events:
+
+- `contact` - the user the event is about, same shape as in the Action message
+  (`email`, `firstName`, `contactRef` = null, `dupeRank` = 0, `area` = null).
+- `user` - the acting user, `{ "id", "email" }` (a staff User, not a contact).
+  `null`/absent when there is no human actor (e.g. SSO provisioning).
+- `org` / `orgId` - the org in context (member org, or the joining org), or `null`.
+- `campaign` / `campaignId` and `actionPage` / `actionPageId` - only set for
+  `system.campaign.join`.
+- `action.customFields` - event-specific data; carries **names/flags only**, never
+  PII values (e.g. `role`, or `fields` = list of changed field names).
 
 ## Built-in workers
 
