@@ -17,6 +17,11 @@ defmodule Proca.Service.SES do
   alias Proca.{Service, Org}
   alias Swoosh.Email
   import Logger
+  import Proca.Service.EmailBackend, only: [parse_custom_id: 1]
+
+  # our id travels both as a header and as SES tags: identity notifications only
+  # carry headers, configuration set events only carry tags
+  @id_header "X-Proca-Id"
 
   @impl true
   def supports_templates?(_org) do
@@ -80,7 +85,7 @@ defmodule Proca.Service.SES do
     results =
       emails
       |> Enum.map(fn e ->
-        case Swoosh.Adapters.AmazonSES.deliver(e, config(srv)) do
+        case Swoosh.Adapters.AmazonSES.deliver(put_custom_id(e), config(srv)) do
           {:ok, _} -> :ok
           {:error, _reason} = e -> e
         end
@@ -100,6 +105,26 @@ defmodule Proca.Service.SES do
   defp config(%Service{name: :ses, user: access_key, password: secret, host: region}) do
     [region: region, access_key: access_key, secret: secret]
   end
+
+  @doc false
+  def put_custom_id(%Email{private: %{custom_id: cid}} = email) when is_bitstring(cid) do
+    case parse_custom_id(cid) do
+      # SES tag values only allow [A-Za-z0-9_-], so "action:1" is split into two tags
+      # https://docs.aws.amazon.com/ses/latest/APIReference/API_MessageTag.html
+      {type, id} when type in [:action, :mtt] ->
+        email
+        |> Email.header(@id_header, cid)
+        |> Email.put_provider_option(:tags, [
+          %{name: "proca_type", value: Atom.to_string(type)},
+          %{name: "proca_id", value: Integer.to_string(id)}
+        ])
+
+      _ ->
+        email
+    end
+  end
+
+  def put_custom_id(email), do: email
 
   def to_destionation(%Email{to: to, assigns: assigns}) do
     %{
