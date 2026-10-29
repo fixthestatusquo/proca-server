@@ -79,6 +79,7 @@ defmodule ProcaWeb.Router do
 
     post "/mailjet", ProcaWeb.WebhookController, :mailjet
     post "/brevo", ProcaWeb.WebhookController, :brevo
+    post "/ses", ProcaWeb.WebhookController, :ses
   end
 
   scope "/api" do

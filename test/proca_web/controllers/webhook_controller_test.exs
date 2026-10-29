@@ -50,4 +50,180 @@ defmodule ProcaWeb.WebhookControllerTest do
       assert response(conn, 200) == ""
     end)
   end
+
+  describe "ses" do
+    @topic "arn:aws:sns:eu-west-3:123456789012:proca-ses-events"
+    @cert_url "https://sns.eu-west-3.amazonaws.com/SimpleNotificationService-test.pem"
+    @subscribe_url "https://sns.eu-west-3.amazonaws.com/?Action=ConfirmSubscription&Token=t"
+
+    setup do
+      %{pem: pem, key: key} = Proca.SNSSigner.generate_cert()
+      :persistent_term.erase({Proca.Service.SNS, @cert_url})
+
+      adapter = Application.get_env(:tesla, :adapter)
+      config = Application.get_env(:proca, Proca.Service.SNS)
+      Application.put_env(:tesla, :adapter, Tesla.Mock)
+      Application.put_env(:proca, Proca.Service.SNS, topic_arns: [@topic])
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, adapter)
+        Application.put_env(:proca, Proca.Service.SNS, config)
+        :persistent_term.erase({Proca.Service.SNS, @cert_url})
+      end)
+
+      test_pid = self()
+
+      Tesla.Mock.mock(fn
+        %{method: :get, url: @cert_url} ->
+          %Tesla.Env{status: 200, body: pem}
+
+        %{method: :get, url: @subscribe_url} ->
+          send(test_pid, :subscribed)
+          %Tesla.Env{status: 200, body: ""}
+      end)
+
+      %{key: key}
+    end
+
+    # SNS posts JSON as text/plain
+    defp post_sns(conn, msg) do
+      conn
+      |> put_req_header("content-type", "text/plain; charset=UTF-8")
+      |> post("/webhook/ses", Jason.encode!(msg))
+    end
+
+    defp sns_message(type, fields) do
+      Map.merge(
+        %{
+          "Type" => type,
+          "MessageId" => "c1c802ef-9d1e-5d7b-bd29-61b47528230a",
+          "TopicArn" => @topic,
+          "Timestamp" => "2026-10-28T12:09:26.298Z",
+          "SignatureVersion" => "1",
+          "SigningCertURL" => @cert_url
+        },
+        fields
+      )
+    end
+
+    defp bounce_notification() do
+      sns_message("Notification", %{
+        "Subject" => "Amazon SES Email Event Notification",
+        "Message" => File.read!("test/fixtures/ses/bounce_event.json")
+      })
+    end
+
+    test "accepts a signed report", %{conn: conn, key: key} do
+      conn = post_sns(conn, bounce_notification() |> Proca.SNSSigner.sign(key))
+      assert response(conn, 200) == ""
+    end
+
+    test "counts bounces and other events apart", %{conn: conn, key: key} do
+      test_pid = self()
+
+      :telemetry.attach_many(
+        "ses-webhook-test",
+        [[:mailer, :ses, :bounces], [:mailer, :ses, :events]],
+        fn event, _measurements, meta, _ -> send(test_pid, {event, meta.reason}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("ses-webhook-test") end)
+
+      report = File.read!("test/fixtures/ses/bounce_event.json") |> Jason.decode!()
+
+      for type <- ~w(Bounce Complaint Delivery Open) do
+        msg =
+          bounce_notification()
+          |> Map.put("Message", Jason.encode!(%{report | "eventType" => type}))
+          |> Proca.SNSSigner.sign(key)
+
+        assert conn |> post_sns(msg) |> response(200) == ""
+      end
+
+      assert_received {[:mailer, :ses, :bounces], "Bounce"}
+      assert_received {[:mailer, :ses, :bounces], "Complaint"}
+      assert_received {[:mailer, :ses, :events], "Delivery"}
+      assert_received {[:mailer, :ses, :events], "Open"}
+    end
+
+    test "accepts the topic validation message, which is not JSON", %{conn: conn, key: key} do
+      msg =
+        sns_message("Notification", %{
+          "Message" => "Successfully validated SNS topic for Amazon SES event publishing."
+        })
+
+      conn = post_sns(conn, msg |> Proca.SNSSigner.sign(key))
+      assert response(conn, 200) == ""
+    end
+
+    test "confirms the subscription", %{conn: conn, key: key} do
+      msg =
+        sns_message("SubscriptionConfirmation", %{
+          "Message" => "You have chosen to subscribe to the topic",
+          "SubscribeURL" => @subscribe_url,
+          "Token" => "t"
+        })
+
+      conn = post_sns(conn, msg |> Proca.SNSSigner.sign(key))
+      assert response(conn, 200) == ""
+      assert_received :subscribed
+    end
+
+    test "refuses a changed report", %{conn: conn, key: key} do
+      msg =
+        bounce_notification()
+        |> Proca.SNSSigner.sign(key)
+        |> Map.update!("Message", &String.replace(&1, "action", "mtt"))
+
+      capture_log(fn ->
+        conn = post_sns(conn, msg)
+        assert response(conn, 403) == ""
+      end)
+    end
+
+    test "logs an error for a signed message from a topic not in the allowlist", %{
+      conn: conn,
+      key: key
+    } do
+      Application.put_env(:proca, Proca.Service.SNS, topic_arns: [])
+
+      log =
+        capture_log(fn ->
+          conn = post_sns(conn, bounce_notification() |> Proca.SNSSigner.sign(key))
+          assert response(conn, 403) == ""
+        end)
+
+      assert log =~ "[error]"
+      assert log =~ "add it to SES_SNS_TOPIC_ARNS"
+    end
+
+    test "does not confirm an unsigned subscription", %{conn: conn} do
+      msg =
+        sns_message("SubscriptionConfirmation", %{
+          "Message" => "You have chosen to subscribe to the topic",
+          "SubscribeURL" => @subscribe_url,
+          "Token" => "t",
+          "Signature" => "bm90IHNpZ25lZA=="
+        })
+
+      capture_log(fn ->
+        conn = post_sns(conn, msg)
+        assert response(conn, 403) == ""
+      end)
+
+      refute_received :subscribed
+    end
+
+    test "refuses a body that is not JSON", %{conn: conn} do
+      capture_log(fn ->
+        conn =
+          conn
+          |> put_req_header("content-type", "text/plain")
+          |> post("/webhook/ses", "hello")
+
+        assert response(conn, 403) == ""
+      end)
+    end
+  end
 end

@@ -14,9 +14,14 @@ defmodule Proca.Service.SES do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.Service.EmailTemplate
-  alias Proca.{Service, Org}
+  alias Proca.{Service, Org, Supporter, Target}
   alias Swoosh.Email
   import Logger
+  import Proca.Service.EmailBackend, only: [parse_custom_id: 1]
+
+  # our id travels both as a header and as SES tags: identity notifications only
+  # carry headers, configuration set events only carry tags
+  @id_header "X-Proca-Id"
 
   @impl true
   def supports_templates?(_org) do
@@ -80,7 +85,7 @@ defmodule Proca.Service.SES do
     results =
       emails
       |> Enum.map(fn e ->
-        case Swoosh.Adapters.AmazonSES.deliver(e, config(srv)) do
+        case Swoosh.Adapters.AmazonSES.deliver(put_custom_id(e), config(srv)) do
           {:ok, _} -> :ok
           {:error, _reason} = e -> e
         end
@@ -100,6 +105,26 @@ defmodule Proca.Service.SES do
   defp config(%Service{name: :ses, user: access_key, password: secret, host: region}) do
     [region: region, access_key: access_key, secret: secret]
   end
+
+  @doc false
+  def put_custom_id(%Email{private: %{custom_id: cid}} = email) when is_bitstring(cid) do
+    case parse_custom_id(cid) do
+      # SES tag values only allow [A-Za-z0-9_-], so "action:1" is split into two tags
+      # https://docs.aws.amazon.com/ses/latest/APIReference/API_MessageTag.html
+      {type, id} when type in [:action, :mtt] ->
+        email
+        |> Email.header(@id_header, cid)
+        |> Email.put_provider_option(:tags, [
+          %{name: "proca_type", value: Atom.to_string(type)},
+          %{name: "proca_id", value: Integer.to_string(id)}
+        ])
+
+      _ ->
+        email
+    end
+  end
+
+  def put_custom_id(email), do: email
 
   def to_destionation(%Email{to: to, assigns: assigns}) do
     %{
@@ -129,9 +154,90 @@ defmodule Proca.Service.SES do
     end)
   end
 
-  @impl true
-  def handle_bounce(_), do: :ok
+  def event_type(report), do: report["eventType"] || report["notificationType"]
+
+  # tags in configuration set events, header in identity notifications (see put_custom_id)
+  def custom_id(%{"tags" => %{"proca_type" => [type | _], "proca_id" => [id | _]}}),
+    do: "#{type}:#{id}"
+
+  def custom_id(%{"headers" => headers}) when is_list(headers) do
+    Enum.find_value(headers, fn
+      %{"name" => name, "value" => value} when is_binary(name) ->
+        if String.downcase(name) == String.downcase(@id_header), do: value
+
+      _ ->
+        nil
+    end)
+  end
+
+  def custom_id(_mail), do: nil
 
   @impl true
-  def handle_event(_), do: :ok
+  def handle_bounce(%{"mail" => mail} = report) do
+    type = event_type(report)
+    :telemetry.execute([:mailer, :ses, :bounces], %{count: 1}, %{reason: type})
+
+    case {custom_id(mail), bounced(type, report)} do
+      # sent without our id, eg. to a user
+      {nil, _} ->
+        :ok
+
+      {_, []} ->
+        warn_malformed(report)
+
+      {cid, recipients} ->
+        case parse_custom_id(cid) do
+          # the supporter is the only recipient
+          {:action, id} -> recipients |> hd() |> Map.put(:id, id) |> Supporter.handle_bounce()
+          {:mtt, id} -> Enum.each(recipients, &Target.handle_bounce(Map.put(&1, :id, id)))
+          _ -> {:error, :invalid_custom_id}
+        end
+    end
+  end
+
+  @impl true
+  def handle_bounce(report), do: warn_malformed(report)
+
+  @impl true
+  def handle_event(%{"mail" => _} = report) do
+    case event_type(report) do
+      nil ->
+        warn_malformed(report)
+
+      type ->
+        :telemetry.execute([:mailer, :ses, :events], %{count: 1}, %{reason: type})
+    end
+  end
+
+  @impl true
+  def handle_event(report), do: warn_malformed(report)
+
+  # params for Supporter/Target.handle_bounce, one per recipient, without the id
+  # https://docs.aws.amazon.com/ses/latest/dg/event-publishing-retrieving-sns-contents.html
+  defp bounced("Bounce", %{"bounce" => %{} = bounce}) do
+    # Transient and Undetermined may still be delivered later
+    soft = bounce["bounceType"] != "Permanent"
+
+    for %{"emailAddress" => email} = r <- bounce["bouncedRecipients"] || [] do
+      %{email: email, reason: :bounce, soft: soft, error: r["diagnosticCode"]}
+    end
+  end
+
+  defp bounced("Complaint", %{"complaint" => %{} = complaint}) do
+    for %{"emailAddress" => email} <- complaint["complainedRecipients"] || [] do
+      %{email: email, reason: :spam, error: complaint["complaintFeedbackType"]}
+    end
+  end
+
+  defp bounced("Reject", %{"reject" => %{} = reject, "mail" => mail}) do
+    for email <- mail["destination"] || [] do
+      %{email: email, reason: :blocked, error: reject["reason"]}
+    end
+  end
+
+  defp bounced(_type, _report), do: []
+
+  defp warn_malformed(report) do
+    warn("Malformed SES report: #{inspect(report)}")
+  end
 end
