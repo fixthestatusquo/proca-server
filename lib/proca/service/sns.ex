@@ -30,10 +30,19 @@ defmodule Proca.Service.SNS do
   @notification_keys ~w(Message MessageId Subject Timestamp TopicArn Type)
   @confirmation_keys ~w(Message MessageId SubscribeURL Timestamp Token TopicArn Type)
 
-  @spec verify(map()) :: :ok | {:error, String.t()}
+  @spec verify(map()) :: :ok | {:error, {:topic_not_allowed, String.t()}} | {:error, String.t()}
   def verify(msg) do
-    with :ok <- check_topic(msg["TopicArn"]),
-         {:ok, keys} <- signed_keys(msg["Type"]),
+    # signature first: a genuine AWS message from a topic we don't allow is most
+    # likely our own topic missing from SES_SNS_TOPIC_ARNS, so it gets its own error
+    with :ok <- check_signature(msg) do
+      check_topic(msg["TopicArn"])
+    end
+  end
+
+  def topic_arns(), do: Application.get_env(:proca, __MODULE__, [])[:topic_arns] || []
+
+  defp check_signature(msg) do
+    with {:ok, keys} <- signed_keys(msg["Type"]),
          {:ok, digest} <- digest(msg["SignatureVersion"]),
          {:ok, signature} <- decode_signature(msg["Signature"]),
          {:ok, public_key} <- public_key(msg["SigningCertURL"]) do
@@ -45,10 +54,8 @@ defmodule Proca.Service.SNS do
     end
   end
 
-  def topic_arns(), do: Application.get_env(:proca, __MODULE__, [])[:topic_arns] || []
-
   defp check_topic(arn) do
-    if arn in topic_arns(), do: :ok, else: {:error, "topic not allowed: #{inspect(arn)}"}
+    if arn in topic_arns(), do: :ok, else: {:error, {:topic_not_allowed, arn}}
   end
 
   defp signed_keys("Notification"), do: {:ok, @notification_keys}
