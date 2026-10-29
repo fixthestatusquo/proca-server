@@ -118,6 +118,35 @@ defmodule ProcaWeb.WebhookControllerTest do
       assert response(conn, 200) == ""
     end
 
+    test "counts bounces and other events apart", %{conn: conn, key: key} do
+      test_pid = self()
+
+      :telemetry.attach_many(
+        "ses-webhook-test",
+        [[:mailer, :ses, :bounces], [:mailer, :ses, :events]],
+        fn event, _measurements, meta, _ -> send(test_pid, {event, meta.reason}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("ses-webhook-test") end)
+
+      report = File.read!("test/fixtures/ses/bounce_event.json") |> Jason.decode!()
+
+      for type <- ~w(Bounce Complaint Delivery Open) do
+        msg =
+          bounce_notification()
+          |> Map.put("Message", Jason.encode!(%{report | "eventType" => type}))
+          |> Proca.SNSSigner.sign(key)
+
+        assert conn |> post_sns(msg) |> response(200) == ""
+      end
+
+      assert_received {[:mailer, :ses, :bounces], "Bounce"}
+      assert_received {[:mailer, :ses, :bounces], "Complaint"}
+      assert_received {[:mailer, :ses, :events], "Delivery"}
+      assert_received {[:mailer, :ses, :events], "Open"}
+    end
+
     test "accepts the topic validation message, which is not JSON", %{conn: conn, key: key} do
       msg =
         sns_message("Notification", %{

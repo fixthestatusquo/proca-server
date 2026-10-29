@@ -9,6 +9,7 @@ defmodule ProcaWeb.WebhookController do
   alias Proca.Service.Mailjet
   alias Proca.Service.Brevo
   alias Proca.Service.SNS
+  alias Proca.Service.SES
 
   @doc """
   Mailjet sends an array of events. Phoenx Plug wraps this in _json key because params is a map and array would break merging other params
@@ -58,6 +59,8 @@ defmodule ProcaWeb.WebhookController do
     conn |> send_resp(:ok, "")
   end
 
+  @ses_bounce_events ~w(Bounce Complaint Reject)
+
   @doc """
   SES reports come through AWS SNS. SNS posts JSON as text/plain, so Plug does not
   parse it and we read the body ourselves. Messages not signed by AWS for one of our
@@ -97,11 +100,16 @@ defmodule ProcaWeb.WebhookController do
     end
   end
 
-  # reports are not processed yet
   defp handle_sns(%{"Type" => "Notification", "Message" => message}) do
     case Jason.decode(message) do
-      {:ok, %{}} ->
-        :ok
+      {:ok, %{} = report} ->
+        safely(:ses, report, fn ->
+          if SES.event_type(report) in @ses_bounce_events do
+            SES.handle_bounce(report)
+          else
+            SES.handle_event(report)
+          end
+        end)
 
       # eg. "Successfully validated SNS topic for Amazon SES event publishing."
       _ ->
@@ -120,7 +128,11 @@ defmodule ProcaWeb.WebhookController do
     fun.()
   rescue
     e ->
-      extra = %{provider: provider, event: event["event"], custom_id: custom_id(provider, event)}
+      extra = %{
+        provider: provider,
+        event: event_name(provider, event),
+        custom_id: custom_id(provider, event)
+      }
 
       # warning, not error: Sentry.LoggerBackend would report an error log a second time
       Logger.warning(
@@ -136,4 +148,12 @@ defmodule ProcaWeb.WebhookController do
   # report only the type and our id - the payload contains the recipient email
   defp custom_id(:mailjet, event), do: event["CustomID"]
   defp custom_id(:brevo, event), do: event["tags"]
+
+  defp custom_id(:ses, %{"mail" => %{"tags" => %{} = tags}}),
+    do: Map.take(tags, ~w(proca_type proca_id))
+
+  defp custom_id(:ses, _), do: nil
+
+  defp event_name(:ses, report), do: SES.event_type(report)
+  defp event_name(_provider, event), do: event["event"]
 end

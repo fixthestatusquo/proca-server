@@ -154,9 +154,31 @@ defmodule Proca.Service.SES do
     end)
   end
 
-  @impl true
-  def handle_bounce(_), do: :ok
+  def event_type(report), do: report["eventType"] || report["notificationType"]
 
   @impl true
-  def handle_event(_), do: :ok
+  def handle_bounce(%{"mail" => _} = report) do
+    :telemetry.execute([:mailer, :ses, :bounces], %{count: 1}, %{reason: event_type(report)})
+  end
+
+  @impl true
+  def handle_bounce(report), do: warn_malformed(report)
+
+  @impl true
+  def handle_event(%{"mail" => _} = report) do
+    case event_type(report) do
+      nil ->
+        warn_malformed(report)
+
+      type ->
+        :telemetry.execute([:mailer, :ses, :events], %{count: 1}, %{reason: type})
+    end
+  end
+
+  @impl true
+  def handle_event(report), do: warn_malformed(report)
+
+  defp warn_malformed(report) do
+    warn("Malformed SES report: #{inspect(report)}")
+  end
 end
