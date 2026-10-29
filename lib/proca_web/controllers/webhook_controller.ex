@@ -149,10 +149,7 @@ defmodule ProcaWeb.WebhookController do
   defp custom_id(:mailjet, event), do: event["CustomID"]
   defp custom_id(:brevo, event), do: event["tags"]
 
-  defp custom_id(:ses, %{"mail" => %{"tags" => %{} = tags}}),
-    do: Map.take(tags, ~w(proca_type proca_id))
-
-  defp custom_id(:ses, _), do: nil
+  defp custom_id(:ses, report), do: SES.custom_id(report["mail"])
 
   defp event_name(:ses, report), do: SES.event_type(report)
   defp event_name(_provider, event), do: event["event"]

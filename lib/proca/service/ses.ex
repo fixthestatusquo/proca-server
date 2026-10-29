@@ -14,7 +14,7 @@ defmodule Proca.Service.SES do
   @behaviour Proca.Service.EmailBackend
 
   alias Proca.Service.EmailTemplate
-  alias Proca.{Service, Org}
+  alias Proca.{Service, Org, Supporter, Target}
   alias Swoosh.Email
   import Logger
   import Proca.Service.EmailBackend, only: [parse_custom_id: 1]
@@ -156,9 +156,43 @@ defmodule Proca.Service.SES do
 
   def event_type(report), do: report["eventType"] || report["notificationType"]
 
+  # tags in configuration set events, header in identity notifications (see put_custom_id)
+  def custom_id(%{"tags" => %{"proca_type" => [type | _], "proca_id" => [id | _]}}),
+    do: "#{type}:#{id}"
+
+  def custom_id(%{"headers" => headers}) when is_list(headers) do
+    Enum.find_value(headers, fn
+      %{"name" => name, "value" => value} when is_binary(name) ->
+        if String.downcase(name) == String.downcase(@id_header), do: value
+
+      _ ->
+        nil
+    end)
+  end
+
+  def custom_id(_mail), do: nil
+
   @impl true
-  def handle_bounce(%{"mail" => _} = report) do
-    :telemetry.execute([:mailer, :ses, :bounces], %{count: 1}, %{reason: event_type(report)})
+  def handle_bounce(%{"mail" => mail} = report) do
+    type = event_type(report)
+    :telemetry.execute([:mailer, :ses, :bounces], %{count: 1}, %{reason: type})
+
+    case {custom_id(mail), bounced(type, report)} do
+      # sent without our id, eg. to a user
+      {nil, _} ->
+        :ok
+
+      {_, []} ->
+        warn_malformed(report)
+
+      {cid, recipients} ->
+        case parse_custom_id(cid) do
+          # the supporter is the only recipient
+          {:action, id} -> recipients |> hd() |> Map.put(:id, id) |> Supporter.handle_bounce()
+          {:mtt, id} -> Enum.each(recipients, &Target.handle_bounce(Map.put(&1, :id, id)))
+          _ -> {:error, :invalid_custom_id}
+        end
+    end
   end
 
   @impl true
@@ -177,6 +211,31 @@ defmodule Proca.Service.SES do
 
   @impl true
   def handle_event(report), do: warn_malformed(report)
+
+  # params for Supporter/Target.handle_bounce, one per recipient, without the id
+  # https://docs.aws.amazon.com/ses/latest/dg/event-publishing-retrieving-sns-contents.html
+  defp bounced("Bounce", %{"bounce" => %{} = bounce}) do
+    # Transient and Undetermined may still be delivered later
+    soft = bounce["bounceType"] != "Permanent"
+
+    for %{"emailAddress" => email} = r <- bounce["bouncedRecipients"] || [] do
+      %{email: email, reason: :bounce, soft: soft, error: r["diagnosticCode"]}
+    end
+  end
+
+  defp bounced("Complaint", %{"complaint" => %{} = complaint}) do
+    for %{"emailAddress" => email} <- complaint["complainedRecipients"] || [] do
+      %{email: email, reason: :spam, error: complaint["complaintFeedbackType"]}
+    end
+  end
+
+  defp bounced("Reject", %{"reject" => %{} = reject, "mail" => mail}) do
+    for email <- mail["destination"] || [] do
+      %{email: email, reason: :blocked, error: reject["reason"]}
+    end
+  end
+
+  defp bounced(_type, _report), do: []
 
   defp warn_malformed(report) do
     warn("Malformed SES report: #{inspect(report)}")
