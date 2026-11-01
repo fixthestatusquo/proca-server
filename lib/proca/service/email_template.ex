@@ -40,6 +40,7 @@ defmodule Proca.Service.EmailTemplate do
     |> validate_required([:name, :locale, :subject, :html])
     |> validate_format(:name, ~r/^[\w\d_ -]+$/)
     |> change(related)
+    |> unique_constraint(:name, name: :email_templates_org_id_name_locale_index)
     |> validate_template(:subject)
     |> validate_template(:html)
     |> validate_template(:text)

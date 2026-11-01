@@ -100,6 +100,17 @@ defmodule ProcaWeb.Api.TemplatesTest do
     assert t.html == "<p>Danke</p>"
   end
 
+  test "duplicate (org, name, locale) returns a changeset error instead of raising", %{
+    yellow_org: org
+  } do
+    assert {:error, ch} =
+             %EmailTemplate{org: org}
+             |> EmailTemplate.changeset(%{name: "thank_you", locale: "en", subject: "y", html: "y"})
+             |> Repo.insert()
+
+    assert {_, [constraint: :unique, constraint_name: _]} = ch.errors[:name]
+  end
+
   test "upsertTemplate requires locale, so it cannot overwrite a random locale", %{
     conn: conn,
     yellow_org: org,
