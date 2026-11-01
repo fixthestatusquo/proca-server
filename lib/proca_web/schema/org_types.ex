@@ -107,9 +107,14 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
-    # field :templates, non_null(list_of(non_null(:email_template))) do
-    #   resolve(&Resolvers.Org.list_templates/3)
-    # end
+    @desc "Email templates stored in this org (local and references to provider templates)"
+    field :templates, non_null(list_of(non_null(:email_template))) do
+      @desc "Filter by template name"
+      arg(:name, :string)
+      @desc "Filter by template locale"
+      arg(:locale, :string)
+      resolve(&Resolvers.Org.list_templates/3)
+    end
 
     # field :processing, :processing
     #  field :email_from, :string
@@ -514,19 +519,28 @@ defmodule ProcaWeb.Schema.OrgTypes do
   end
 
   object :email_template do
+    field :id, non_null(:integer)
     @desc "Name of the template"
     field :name, non_null(:string)
     @desc "Locale of the template"
-    field :locales, list_of(non_null(:string))
+    field :locale, non_null(:string)
+    @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text."
+    field :external_id, :string
+    @desc "Subject text"
+    field :subject, :string
+    @desc "Html part body"
+    field :html, :string
+    @desc "Plaintext part body"
+    field :text, :string
   end
 
   input_object :email_template_input do
     @desc "template name"
     field :name, non_null(:string)
-    @desc "template locale"
-    field :locale, :string
+    @desc "template locale (required: identifies the template together with name)"
+    field :locale, non_null(:string)
 
-    @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text."
+    @desc "External provider template ID (e.g. Brevo templateId). When set, the provider template is used instead of local html/subject/text (subject and html are still required: pass placeholders)."
     field :external_id, :string
     @desc "Subject text"
     field :subject, :string

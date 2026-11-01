@@ -153,6 +153,21 @@ defmodule ProcaWeb.Resolvers.Org do
     |> Repo.update_and_notify()
   end
 
+  def list_templates(%{id: org_id}, args, _) do
+    alias Proca.Service.EmailTemplate
+
+    query =
+      from(t in EmailTemplate, where: t.org_id == ^org_id, order_by: [t.name, t.locale])
+
+    query =
+      Enum.reduce(args, query, fn
+        {:name, name}, q -> where(q, [t], t.name == ^name)
+        {:locale, locale}, q -> where(q, [t], t.locale == ^locale)
+      end)
+
+    {:ok, Repo.all(query)}
+  end
+
   def upsert_template(_, %{input: params}, %{context: %{org: org}}) do
     alias Proca.Service.EmailTemplate
 
