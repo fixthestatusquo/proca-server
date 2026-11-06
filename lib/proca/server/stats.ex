@@ -67,7 +67,7 @@ defmodule Proca.Server.Stats do
 
   @impl true
   @doc """
-  Periodic sync: recalculate only live campaigns and merge into existing state.
+  Periodic sync: recalculate only live and draft campaigns and merge into existing state.
   """
   def handle_info(:sync, state) do
     unless state.query_runs do
@@ -75,7 +75,7 @@ defmodule Proca.Server.Stats do
 
       Task.start(fn ->
         try do
-          GenServer.cast(me, {:update_live_campaigns, calculate_live()})
+          GenServer.cast(me, {:update_active_campaigns, calculate_active()})
         rescue
           e in DBConnection.ConnectionError ->
             msg = "Stats sync skipped: DB connection error: #{Exception.message(e)}"
@@ -101,8 +101,8 @@ defmodule Proca.Server.Stats do
   end
 
   @impl true
-  def handle_cast({:update_live_campaigns, live_campaign}, state) do
-    {:noreply, %{state | campaign: Map.merge(state.campaign, live_campaign), query_runs: false}}
+  def handle_cast({:update_active_campaigns, active_campaign}, state) do
+    {:noreply, %{state | campaign: Map.merge(state.campaign, active_campaign), query_runs: false}}
   end
 
   @impl true
@@ -195,12 +195,12 @@ defmodule Proca.Server.Stats do
   def calculate(), do: do_calculate(nil, 30_000)
 
   @doc """
-  Run calculation of stats for live campaigns only.
-  Used by periodic sync to avoid recalculating closed/draft/ignored campaigns.
+  Run calculation of stats for live and draft campaigns only.
+  Used by periodic sync to avoid recalculating closed/ignored campaigns.
   """
-  def calculate_live() do
+  def calculate_active() do
     campaign_ids =
-      from(c in Campaign, where: c.status == :live, select: c.id)
+      from(c in Campaign, where: c.status in [:live, :draft], select: c.id)
       |> Repo.all(timeout: 10_000)
 
     do_calculate(campaign_ids, 30_000)
