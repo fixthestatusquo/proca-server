@@ -56,6 +56,87 @@ defmodule Proca.Service.HubspotTest do
     assert payload["customProperties"] == %{}
   end
 
+  describe "fullConfirmLink" do
+    defp custom_properties(assigns) do
+      email =
+        Enum.reduce(assigns, email_with_template("123"), fn {k, v}, e ->
+          %{e | assigns: Map.put(e.assigns, k, v)}
+        end)
+
+      {:ok, payload} = Hubspot.build_payload(email)
+      payload["customProperties"]
+    end
+
+    test "is composed from the confirm link, location and content" do
+      props =
+        custom_properties(%{
+          "confirmLink" => "https://api.test/link/s/1/accept/REF",
+          "trackingLocation" => "https://site.test/sign",
+          "trackingContent" => "abc"
+        })
+
+      assert props["fullConfirmLink"] ==
+               "https://api.test/link/s/1/accept/REF?redir=https%3A%2F%2Fsite.test%2Fsign%3Fproca_go%3Ddonate_Redirect%26utm_content%3Dabc"
+    end
+
+    test "joins with & when the confirm link already has a query (reminder)" do
+      props =
+        custom_properties(%{
+          "confirmLink" => "https://api.test/link/s/1/accept/REF?reminder=1",
+          "trackingLocation" => "https://site.test/sign",
+          "trackingContent" => "abc"
+        })
+
+      assert String.starts_with?(
+               props["fullConfirmLink"],
+               "https://api.test/link/s/1/accept/REF?reminder=1&redir=https%3A%2F%2F"
+             )
+    end
+
+    test "redir decodes to a valid url when location has a query and content special chars" do
+      props =
+        custom_properties(%{
+          "confirmLink" => "https://api.test/link/s/1/accept/REF",
+          "trackingLocation" => "https://site.test/sign?a=1",
+          "trackingContent" => "x&y z"
+        })
+
+      redir =
+        URI.parse(props["fullConfirmLink"]).query |> URI.decode_query() |> Map.fetch!("redir")
+
+      assert URI.parse(redir).query |> URI.query_decoder(:rfc3986) |> Enum.to_list() == [
+               {"a", "1"},
+               {"proca_go", "donate_Redirect"},
+               {"utm_content", "x&y z"}
+             ]
+    end
+
+    test "has an empty utm_content when the action has no content" do
+      props =
+        custom_properties(%{
+          "confirmLink" => "https://api.test/link/s/1/accept/REF",
+          "trackingLocation" => "https://site.test/sign",
+          "trackingContent" => ""
+        })
+
+      assert String.ends_with?(props["fullConfirmLink"], "utm_content%3D")
+    end
+
+    test "is the plain confirm link when location is unknown" do
+      link = "https://api.test/link/s/1/accept/REF"
+
+      assert custom_properties(%{"confirmLink" => link})["fullConfirmLink"] == link
+
+      assert custom_properties(%{"confirmLink" => link, "trackingLocation" => ""})[
+               "fullConfirmLink"
+             ] == link
+    end
+
+    test "is not added when the email has no confirm link" do
+      refute Map.has_key?(custom_properties(%{}), "fullConfirmLink")
+    end
+  end
+
   test "build_payload rejects a malformed template ref instead of crashing" do
     assert {:error, _} = Hubspot.build_payload(email_with_template("not-a-number"))
   end

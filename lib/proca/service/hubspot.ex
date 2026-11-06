@@ -8,6 +8,11 @@ defmodule Proca.Service.Hubspot do
   as `customProperties` (not `contactProperties`, which is always sent empty so sending
   never mutates the recipient's CRM record).
 
+  Besides the merge variables, `customProperties` carries `fullConfirmLink` whenever the
+  email has a `confirmLink`: the confirm link with a `redir` back to the action's location,
+  adding `proca_go=donate_Redirect` and `utm_content`. Without a known location it is just
+  the plain confirm link. Use it in a template as `{{ custom.fullConfirmLink }}`.
+
   API reference: https://developers.hubspot.com/docs/api-reference/latest/marketing/transactional-emails/guide
 
   No bounce/event webhook is implemented. HubSpot's general webhooks/subscriptions API
@@ -29,6 +34,7 @@ defmodule Proca.Service.Hubspot do
   import Logger
 
   @api_url "https://api.hubapi.com/marketing/transactional/2026-03/single-email/send"
+  @confirm_redirect_go "donate_Redirect"
 
   @impl true
   def supports_templates?(_org), do: true
@@ -111,11 +117,48 @@ defmodule Proca.Service.Hubspot do
         "message" => build_message(email, to),
         # always sent, always empty: sending must never mutate the recipient's CRM record
         "contactProperties" => %{},
-        "customProperties" => email.assigns
+        "customProperties" => put_full_confirm_link(email.assigns)
       }
 
       {:ok, payload}
     end
+  end
+
+  # Assigns are already flattened and camel cased here (EmailBackend.prepare_fields)
+  #
+  # | Situation                              | fullConfirmLink               | After the click                                       |
+  # |----------------------------------------|-------------------------------|-------------------------------------------------------|
+  # | Location and content                   | Full link with redir          | Confirmed, redirected with proca_go and utm_content   |
+  # | Location, no content                   | Full link, empty utm_content= | Confirmed, redirected the same way                    |
+  # | No location, confirmation email        | Plain confirm link            | Confirmed, sees a bare SUCCESS text page              |
+  # | No location, thank-you email with DOI  | Plain double opt-in link      | Confirmed, sent to action page's last location, or /  |
+  # | No confirm link at all                 | Field isn't added             | Nothing to click                                      |
+  defp put_full_confirm_link(%{"confirmLink" => link} = assigns)
+       when is_binary(link) and link != "" do
+    Map.put(
+      assigns,
+      "fullConfirmLink",
+      full_confirm_link(link, assigns["trackingLocation"], assigns["trackingContent"])
+    )
+  end
+
+  defp put_full_confirm_link(assigns), do: assigns
+
+  defp full_confirm_link(link, location, _content) when location in [nil, ""], do: link
+
+  defp full_confirm_link(link, location, content) do
+    redir = append_query(location, proca_go: @confirm_redirect_go, utm_content: content || "")
+
+    append_query(link, redir: redir)
+  end
+
+  # Both urls can already have a query (reminder links have ?reminder=1, a location can too)
+  defp append_query(url, params) do
+    uri = URI.parse(url)
+    added = URI.encode_query(params, :rfc3986)
+    query = if uri.query in [nil, ""], do: added, else: uri.query <> "&" <> added
+
+    URI.to_string(%{uri | query: query})
   end
 
   defp recipient(%Email{to: [{_name, addr} | _]}), do: {:ok, addr}
