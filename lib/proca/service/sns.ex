@@ -9,6 +9,12 @@ defmodule Proca.Service.SNS do
 
   Allowed topics come from the SES_SNS_TOPIC_ARNS env var, see config/releases.exs.
 
+  A message older than 15 minutes is refused, so a captured message can't be replayed
+  later. `Timestamp` is the publish time. Default SNS retries finish in about a minute,
+  but a custom delivery policy can retry an HTTP endpoint for up to 3600 seconds: if you
+  set one longer than this limit, raise the limit too, or late retries will be refused.
+  https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery-retries.html
+
   ExAws.SNS.verify_message/1 (ex_aws_sns >= 2.3.5) does the same except the topic
   check, but needs Elixir >= 1.15. Replace this with it once we upgrade.
   Do not use older versions, they don't check the certificate url.
@@ -30,12 +36,15 @@ defmodule Proca.Service.SNS do
   @notification_keys ~w(Message MessageId Subject Timestamp TopicArn Type)
   @confirmation_keys ~w(Message MessageId SubscribeURL Timestamp Token TopicArn Type)
 
+  @max_age_seconds 900
+
   @spec verify(map()) :: :ok | {:error, {:topic_not_allowed, String.t()}} | {:error, String.t()}
   def verify(msg) do
     # signature first: a genuine AWS message from a topic we don't allow is most
     # likely our own topic missing from SES_SNS_TOPIC_ARNS, so it gets its own error
-    with :ok <- check_signature(msg) do
-      check_topic(msg["TopicArn"])
+    with :ok <- check_signature(msg),
+         :ok <- check_topic(msg["TopicArn"]) do
+      check_age(msg["Timestamp"])
     end
   end
 
@@ -57,6 +66,22 @@ defmodule Proca.Service.SNS do
   defp check_topic(arn) do
     if arn in topic_arns(), do: :ok, else: {:error, {:topic_not_allowed, arn}}
   end
+
+  defp check_age(timestamp) when is_binary(timestamp) do
+    case DateTime.from_iso8601(timestamp) do
+      {:ok, published_at, _offset} ->
+        if DateTime.diff(DateTime.utc_now(), published_at) > @max_age_seconds do
+          {:error, "message too old: #{timestamp}"}
+        else
+          :ok
+        end
+
+      {:error, _} ->
+        {:error, "invalid timestamp: #{inspect(timestamp)}"}
+    end
+  end
+
+  defp check_age(timestamp), do: {:error, "invalid timestamp: #{inspect(timestamp)}"}
 
   defp signed_keys("Notification"), do: {:ok, @notification_keys}
   defp signed_keys("SubscriptionConfirmation"), do: {:ok, @confirmation_keys}

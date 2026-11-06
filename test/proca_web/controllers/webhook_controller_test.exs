@@ -98,7 +98,7 @@ defmodule ProcaWeb.WebhookControllerTest do
           "Type" => type,
           "MessageId" => "c1c802ef-9d1e-5d7b-bd29-61b47528230a",
           "TopicArn" => @topic,
-          "Timestamp" => "2026-10-28T12:09:26.298Z",
+          "Timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
           "SignatureVersion" => "1",
           "SigningCertURL" => @cert_url
         },
@@ -175,6 +175,20 @@ defmodule ProcaWeb.WebhookControllerTest do
         bounce_notification()
         |> Proca.SNSSigner.sign(key)
         |> Map.update!("Message", &String.replace(&1, "action", "mtt"))
+
+      capture_log(fn ->
+        conn = post_sns(conn, msg)
+        assert response(conn, 403) == ""
+      end)
+    end
+
+    test "refuses a replayed report older than 15 minutes", %{conn: conn, key: key} do
+      old = DateTime.utc_now() |> DateTime.add(-960, :second) |> DateTime.to_iso8601()
+
+      msg =
+        bounce_notification()
+        |> Map.put("Timestamp", old)
+        |> Proca.SNSSigner.sign(key)
 
       capture_log(fn ->
         conn = post_sns(conn, msg)

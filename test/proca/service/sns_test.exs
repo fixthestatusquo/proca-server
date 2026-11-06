@@ -31,6 +31,10 @@ defmodule Proca.Service.SNSTest do
     }
   end
 
+  defp seconds_ago(seconds) do
+    DateTime.utc_now() |> DateTime.add(-seconds, :second) |> DateTime.to_iso8601()
+  end
+
   defp notification(cert_url) do
     %{
       "Type" => "Notification",
@@ -38,7 +42,7 @@ defmodule Proca.Service.SNSTest do
       "TopicArn" => @topic,
       "Subject" => "Amazon SES Email Event Notification",
       "Message" => ~s({"eventType":"Bounce"}),
-      "Timestamp" => "2026-10-28T12:05:46.033Z",
+      "Timestamp" => seconds_ago(0),
       "SignatureVersion" => "1",
       "SigningCertURL" => cert_url
     }
@@ -52,7 +56,7 @@ defmodule Proca.Service.SNSTest do
       "TopicArn" => @topic,
       "Message" => "You have chosen to subscribe to the topic",
       "SubscribeURL" => "https://sns.eu-west-3.amazonaws.com/?Action=ConfirmSubscription",
-      "Timestamp" => "2026-10-28T12:00:00.000Z",
+      "Timestamp" => seconds_ago(0),
       "SignatureVersion" => "1",
       "SigningCertURL" => cert_url
     }
@@ -100,6 +104,41 @@ defmodule Proca.Service.SNSTest do
     other_key = :public_key.generate_key({:rsa, 2048, 65537})
     msg = notification(url) |> Map.put("TopicArn", "arn:aws:sns:eu-west-3:666:other")
     assert {:error, "invalid signature"} = msg |> sign(other_key) |> SNS.verify()
+  end
+
+  test "accepts a message just under 15 minutes old", %{key: key, cert_url: url} do
+    msg = notification(url) |> Map.put("Timestamp", seconds_ago(840)) |> sign(key)
+    assert :ok = SNS.verify(msg)
+  end
+
+  test "rejects a message older than 15 minutes", %{key: key, cert_url: url} do
+    msg = notification(url) |> Map.put("Timestamp", seconds_ago(960)) |> sign(key)
+    assert {:error, "message too old" <> _} = SNS.verify(msg)
+  end
+
+  test "rejects a signed message with an invalid or missing timestamp", %{
+    key: key,
+    cert_url: url
+  } do
+    msg = notification(url) |> Map.put("Timestamp", "yesterday") |> sign(key)
+    assert {:error, "invalid timestamp" <> _} = SNS.verify(msg)
+
+    msg = notification(url) |> Map.delete("Timestamp") |> sign(key)
+    assert {:error, "invalid timestamp" <> _} = SNS.verify(msg)
+  end
+
+  test "reports an old message from another topic as topic_not_allowed", %{
+    key: key,
+    cert_url: url
+  } do
+    other = "arn:aws:sns:eu-west-3:666:other"
+
+    msg =
+      notification(url)
+      |> Map.merge(%{"TopicArn" => other, "Timestamp" => seconds_ago(960)})
+      |> sign(key)
+
+    assert {:error, {:topic_not_allowed, ^other}} = SNS.verify(msg)
   end
 
   test "rejects certificates not hosted by AWS SNS", %{key: key} do
