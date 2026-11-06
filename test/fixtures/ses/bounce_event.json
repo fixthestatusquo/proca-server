@@ -1,0 +1,55 @@
+{
+  "eventType": "Bounce",
+  "bounce": {
+    "feedbackId": "011301a18266ed06-744cf09f-f9cd-4349-93ed-53efac7c61fa-000000",
+    "bounceType": "Permanent",
+    "bounceSubType": "General",
+    "bouncedRecipients": [
+      {
+        "emailAddress": "bounce@simulator.amazonses.com",
+        "action": "failed",
+        "status": "5.1.1",
+        "diagnosticCode": "smtp; 550 5.1.1 As requested: user unknown <bounce@simulator.amazonses.com>"
+      }
+    ],
+    "timestamp": "2026-10-28T12:05:45.818Z",
+    "remoteMtaIp": "192.0.2.2",
+    "reportingMTA": "dns; e246-11.smtp-out.eu-west-3.amazonses.com"
+  },
+  "mail": {
+    "timestamp": "2026-10-28T12:05:45.172Z",
+    "source": "test@proca.app",
+    "sourceArn": "arn:aws:ses:eu-west-3:123456789012:identity/proca.app",
+    "sendingAccountId": "123456789012",
+    "messageId": "011301a18266ea54-e0c9685d-7c7e-4fb4-8b83-c5e68866ccdd-000000",
+    "destination": ["bounce@simulator.amazonses.com"],
+    "headersTruncated": false,
+    "headers": [
+      {"name": "From", "value": "test@proca.app"},
+      {"name": "To", "value": "bounce@simulator.amazonses.com"},
+      {"name": "Subject", "value": "test"},
+      {"name": "MIME-Version", "value": "1.0"},
+      {"name": "Content-Type", "value": "text/plain; charset=UTF-8"},
+      {"name": "Content-Transfer-Encoding", "value": "7bit"},
+      {"name": "X-Proca-Id", "value": "action:123"}
+    ],
+    "commonHeaders": {
+      "from": ["test@proca.app"],
+      "to": ["bounce@simulator.amazonses.com"],
+      "messageId": "011301a18266ea54-e0c9685d-7c7e-4fb4-8b83-c5e68866ccdd-000000",
+      "subject": "test"
+    },
+    "tags": {
+      "ses:source-tls-version": ["TLSv1.3"],
+      "ses:operation": ["SendEmail"],
+      "ses:configuration-set": ["proca-tracked"],
+      "proca_type": ["action"],
+      "ses:recipient-isp": ["AmazonSES"],
+      "ses:source-ip": ["192.0.2.1"],
+      "ses:from-domain": ["proca.app"],
+      "ses:sender-identity": ["proca.app"],
+      "ses:caller-identity": ["proca"],
+      "proca_id": ["123"]
+    }
+  }
+}

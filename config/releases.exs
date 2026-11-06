@@ -111,6 +111,12 @@ config :proca, ProcaWeb.Resolvers.Captcha,
 
 config :proca, Proca.Service.Procaptcha, url: System.get_env("PROCAPTCHA_URL")
 
+# SNS topics we accept SES reports from (see Proca.Service.SNS). Not set means
+# every report is refused. If you add another topic later, for example an SES
+# account in another region, append it with a comma:
+# SES_SNS_TOPIC_ARNS=arn:aws:sns:eu-west-3:612444444:first-topic-name,arn:aws:sns:eu-central-1:...:second-topic-name
+config :proca, Proca.Service.SNS, topic_arns: split_env.("SES_SNS_TOPIC_ARNS", ",") || []
+
 srs_key =
   case System.get_env("EMAIL_SRS_KEY") do
     nil ->
