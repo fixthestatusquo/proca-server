@@ -37,7 +37,7 @@ defmodule ProcaWeb.Router do
 
     plug :accepts, ["json"]
     plug CORSPlug
-    plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
+    plug ProcaWeb.Plugs.HeadersPlug, ["origin", "referer"]
     plug ProcaWeb.Plugs.BasicAuthPlug
     plug ProcaWeb.Plugs.TokenAuthPlug
     plug ProcaWeb.Plugs.JwtAuthPlug
@@ -46,7 +46,7 @@ defmodule ProcaWeb.Router do
   pipeline :api_without_auth do
     plug :accepts, ["json"]
     plug CORSPlug
-    plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
+    plug ProcaWeb.Plugs.HeadersPlug, ["origin", "referer"]
   end
 
   # unused currently, might be useful for /console
@@ -56,7 +56,7 @@ defmodule ProcaWeb.Router do
   end
 
   # Health check — no auth, no session, used by nginx/load-balancer readiness probes
-  scope "/health", do: get("/", ProcaWeb.HealthController, :index)
+  scope("/health", do: get("/", ProcaWeb.HealthController, :index))
 
   scope "/" do
     pipe_through :browser

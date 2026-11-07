@@ -226,6 +226,19 @@ defmodule Proca.Source do
 
   defp disallowed_location?(_), do: false
 
+  @default_ports %{"http" => 80, "https" => 443}
+
+  # scheme, host and port (browsers omit the default port)
+  defp origin_of(%URI{scheme: scheme, host: host, port: port})
+       when is_bitstring(host) and host != "" do
+    case Map.fetch(@default_ports, scheme) do
+      {:ok, default_port} -> {scheme, String.downcase(host), port || default_port}
+      :error -> nil
+    end
+  end
+
+  defp origin_of(_), do: nil
+
   def well_formed_url?(%URI{host: h, path: p, scheme: s})
       when h != nil and h != "" and p != nil and s in ["https", "http", "ws", "wss"],
       do: true
@@ -243,41 +256,45 @@ defmodule Proca.Source do
   end
 
   @doc """
-  Get location from http referer header and location explicitly sent by user.
-  As this is possible to get
+  Get the tracking location: the location sent by the widget when it is on the
+  same origin as the request, otherwise that origin.
+
+  The anchor is the `Origin` header (`Referer` as a fallback): the browser sets
+  it on every POST, page JS cannot forge it and Referrer-Policy never strips
+  it. Origin carries no path, so only the origin is compared.
   """
-  def get_tracking_location(location, referer)
-      when is_bitstring(location) and is_bitstring(referer) do
+  def get_tracking_location(location, origin)
+      when is_bitstring(location) and is_bitstring(origin) do
+    origin_uri = URI.parse(origin)
     loc_uri = URI.parse(location)
-    ref_uri = URI.parse(referer)
-    referer = strip_url(ref_uri)
+    origin_key = origin_of(origin_uri)
 
-    if well_formed_url?(ref_uri) and not disallowed_location?(ref_uri) do
-      if well_formed_url?(loc_uri) and not disallowed_location?(loc_uri) do
-        if String.starts_with?(location, referer) do
-          strip_url(loc_uri)
-        else
-          Sentry.capture_message(
-            "Tracking location '#{location}' does not start with '#{referer}'",
-            result: :none
-          )
+    cond do
+      origin_key == nil or disallowed_location?(origin_uri) ->
+        nil
 
-          # the location provided is outside of the referer scope. Use referer
-          strip_url(ref_uri)
-        end
-      else
-        strip_url(ref_uri)
-      end
-    else
-      nil
+      not well_formed_url?(loc_uri) ->
+        strip_url(origin_uri)
+
+      origin_of(loc_uri) == origin_key ->
+        strip_url(loc_uri)
+
+      true ->
+        Sentry.capture_message(
+          "Tracking location '#{location}' is not on origin '#{origin}'",
+          result: :none
+        )
+
+        # the location provided is outside of the origin. Use the origin
+        strip_url(origin_uri)
     end
   end
 
-  def get_tracking_location(nil, referer) when is_bitstring(referer) do
-    ref_uri = URI.parse(referer)
+  def get_tracking_location(nil, origin) when is_bitstring(origin) do
+    origin_uri = URI.parse(origin)
 
-    if well_formed_url?(ref_uri) and not disallowed_location?(ref_uri) do
-      referer
+    if origin_of(origin_uri) != nil and not disallowed_location?(origin_uri) do
+      strip_url(origin_uri)
     else
       nil
     end

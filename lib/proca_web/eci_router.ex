@@ -7,7 +7,7 @@ defmodule ProcaWeb.EciRouter do
   pipeline :api do
     plug :accepts, ["json"]
     plug CORSPlug
-    plug ProcaWeb.Plugs.HeadersPlug, ["referer"]
+    plug ProcaWeb.Plugs.HeadersPlug, ["origin", "referer"]
     plug ProcaWeb.Plugs.ParseExtensions, schema: %{captcha: :string, captcha_service: :string}
   end
 
@@ -16,7 +16,7 @@ defmodule ProcaWeb.EciRouter do
     plug ProcaWeb.Plugs.TokenAuthPlug
   end
 
-  scope "/health", do: get("/", ProcaWeb.HealthController, :index)
+  scope("/health", do: get("/", ProcaWeb.HealthController, :index))
 
   scope "/api" do
     pipe_through :api
