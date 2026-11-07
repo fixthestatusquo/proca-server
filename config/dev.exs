@@ -56,6 +56,13 @@ config :proca, ProcaWeb.Endpoint,
   ],
   allow_origin: System.get_env("CORS_ALLOW_ORIGIN", "*") |> String.split(~r/\s*,\s*/, trim: true)
 
+# See config/releases.exs - hosts never stored as an action page location,
+# comma separated. For example: DISALLOWED_LOCATION_HOSTS=widget.proca.app
+config :proca,
+  disallowed_location_hosts:
+    System.get_env("DISALLOWED_LOCATION_HOSTS", "")
+    |> String.split(~r/\s*,\s*/, trim: true)
+
 # To enable captcha for dev + run with ENABLE_ECI=1
 # config :proca, ProcaWeb.Resolvers.Captcha,
 #   hcaptcha_key: System.get_env("HCAPTCHA_KEY"),
