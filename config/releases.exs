@@ -96,6 +96,14 @@ config :proca, ProcaWeb.Endpoint,
 config :sentry,
   dsn: System.get_env("SENTRY_DSN")
 
+# Extra hosts never stored as an action page location, comma separated, merged
+# with the built-in dev defaults (0.0.0.0, localhost, 127.0.0.1, ::1).
+# For example: DISALLOWED_LOCATION_HOSTS=widget.proca.app,preview.example.org
+config :proca,
+  disallowed_location_hosts:
+    System.get_env("DISALLOWED_LOCATION_HOSTS", "")
+    |> String.split(~r/\s*,\s*/, trim: true)
+
 config :proca, ProcaWeb.Resolvers.ReportError,
   enable:
     System.get_env("REPORT_USER_ERRORS") == "true" ||

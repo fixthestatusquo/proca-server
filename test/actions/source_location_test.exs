@@ -24,4 +24,24 @@ defmodule Proca.Actions.SourceLocationTest do
 
     get_tracking_location(@urls[:full_url], @urls[:full_url_with_query] == @urls[:full_url])
   end
+
+  test "disallowed dev hosts are never stored as location" do
+    assert get_tracking_location(nil, "http://localhost:4000/x") == nil
+    assert get_tracking_location(nil, "http://127.0.0.1:4000/x") == nil
+    assert get_tracking_location(nil, "http://0.0.0.0:4000/x") == nil
+    assert get_tracking_location(nil, "http://app.localhost:4000/x") == nil
+
+    # allowed referer, disallowed location falls back to the referer
+    assert get_tracking_location("http://localhost:4000/x", "https://saveoceans.org/p") ==
+             "https://saveoceans.org/p"
+  end
+
+  test "DISALLOWED_LOCATION_HOSTS is merged with the defaults" do
+    Application.put_env(:proca, :disallowed_location_hosts, ["Widget.Proca.App"])
+    on_exit(fn -> Application.delete_env(:proca, :disallowed_location_hosts) end)
+
+    assert get_tracking_location(nil, "https://widget.proca.app/x") == nil
+    assert get_tracking_location(nil, "http://localhost:4000/x") == nil
+    assert get_tracking_location(nil, "https://saveoceans.org/x") == "https://saveoceans.org/x"
+  end
 end

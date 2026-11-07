@@ -211,6 +211,21 @@ defmodule Proca.Source do
     end
   end
 
+  # Hosts never accepted as a tracking location. The defaults cover local dev;
+  # an instance adds its own (e.g. a preview page) via DISALLOWED_LOCATION_HOSTS.
+  @disallowed_location_hosts ["0.0.0.0", "localhost", "127.0.0.1", "::1"]
+
+  defp disallowed_hosts do
+    @disallowed_location_hosts ++ Application.get_env(:proca, :disallowed_location_hosts, [])
+  end
+
+  defp disallowed_location?(%URI{host: host}) when is_bitstring(host) do
+    host = String.downcase(host)
+    host in disallowed_hosts() or String.ends_with?(host, ".localhost")
+  end
+
+  defp disallowed_location?(_), do: false
+
   def well_formed_url?(%URI{host: h, path: p, scheme: s})
       when h != nil and h != "" and p != nil and s in ["https", "http", "ws", "wss"],
       do: true
@@ -237,8 +252,8 @@ defmodule Proca.Source do
     ref_uri = URI.parse(referer)
     referer = strip_url(ref_uri)
 
-    if well_formed_url?(ref_uri) do
-      if well_formed_url?(loc_uri) do
+    if well_formed_url?(ref_uri) and not disallowed_location?(ref_uri) do
+      if well_formed_url?(loc_uri) and not disallowed_location?(loc_uri) do
         if String.starts_with?(location, referer) do
           strip_url(loc_uri)
         else
@@ -261,7 +276,7 @@ defmodule Proca.Source do
   def get_tracking_location(nil, referer) when is_bitstring(referer) do
     ref_uri = URI.parse(referer)
 
-    if well_formed_url?(ref_uri) do
+    if well_formed_url?(ref_uri) and not disallowed_location?(ref_uri) do
       referer
     else
       nil
