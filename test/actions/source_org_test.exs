@@ -1,6 +1,8 @@
 defmodule Proca.Actions.SourceOrgTest do
   use Proca.DataCase
 
+  import Proca.Factory
+
   alias Proca.Source
 
   @tracking %{
