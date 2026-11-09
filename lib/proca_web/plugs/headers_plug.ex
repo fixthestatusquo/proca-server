@@ -4,26 +4,15 @@ defmodule ProcaWeb.Plugs.HeadersPlug do
   """
   @behaviour Plug
 
-  alias Plug.Conn
-  import ProcaWeb.Plugs.Helper
-
   def init(headers) when is_list(headers), do: headers
 
   def call(conn, headers) do
-    conn
-    |> add_location(headers)
+    add_location(conn, headers)
   end
 
   def add_location(conn, headers) do
-    for h <- headers, reduce: conn do
-      c ->
-        case List.keyfind(conn.req_headers, h, 0) do
-          {h, val} ->
-            c |> Absinthe.Plug.assign_context(%{headers: %{h => val}})
-
-          nil ->
-            c
-        end
-    end
+    # assign once: Absinthe.Plug.assign_context merges shallowly, so a second
+    # call would replace :headers instead of adding to it
+    Absinthe.Plug.assign_context(conn, %{headers: Map.take(Map.new(conn.req_headers), headers)})
   end
 end

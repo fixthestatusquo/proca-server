@@ -27,27 +27,27 @@ defmodule ProcaWeb.Resolvers.Action do
     end
   end
 
-  defp check_location_against_referer(tr, referer) do
+  defp check_location_against_origin(tr, origin) do
     location = Map.get(tr, :location)
-    Map.put(tr, :location, Source.get_tracking_location(location, referer))
+    Map.put(tr, :location, Source.get_tracking_location(location, origin))
   end
 
-  # utms given and referer header maybe
-  defp get_tracking(%{tracking: tr}, referer) do
+  # utms given and origin header maybe
+  defp get_tracking(%{tracking: tr}, origin) do
     case tr
-         |> check_location_against_referer(referer)
+         |> check_location_against_origin(origin)
          |> Source.get_or_create_by() do
       {:ok, src} -> {:ok, src}
       _ -> {:ok, nil}
     end
   end
 
-  # only refer header given, we provide n/a utm values to better look in stats
-  defp get_tracking(%{}, referer) when is_bitstring(referer) do
-    get_tracking(%{tracking: %{}}, referer)
+  # only origin header given, we provide n/a utm values to better look in stats
+  defp get_tracking(%{}, origin) when is_bitstring(origin) do
+    get_tracking(%{tracking: %{}}, origin)
   end
 
-  # no referer, programmatic api use
+  # no origin, programmatic api use
   defp get_tracking(%{}, nil) do
     {:ok, nil}
   end
@@ -135,7 +135,10 @@ defmodule ProcaWeb.Resolvers.Action do
             Helper.validate(ActionPage.new_data(contact, action_page))
           end)
           |> Multi.run(:source, fn _repo, _ ->
-            get_tracking(params, get_in(context, [:headers, "referer"]))
+            get_tracking(
+              params,
+              get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"])
+            )
           end)
           |> Multi.run(:supporter, fn repo,
                                       %{data: data, action_page: action_page, source: source} ->
@@ -218,7 +221,10 @@ defmodule ProcaWeb.Resolvers.Action do
            end
          end)
          |> Multi.run(:source, fn _repo, _ ->
-           get_tracking(params, get_in(context, [:headers, "referer"]))
+           get_tracking(
+             params,
+             get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"])
+           )
          end)
          |> Multi.run(:action, fn repo,
                                   %{
