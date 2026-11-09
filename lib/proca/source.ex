@@ -218,7 +218,8 @@ defmodule Proca.Source do
   @disallowed_location_hosts ["0.0.0.0", "localhost", "127.0.0.1", "::1"]
 
   defp disallowed_hosts do
-    @disallowed_location_hosts ++ Application.get_env(:proca, :disallowed_location_hosts, [])
+    @disallowed_location_hosts ++
+      Enum.map(Application.get_env(:proca, :disallowed_location_hosts, []), &String.downcase/1)
   end
 
   defp disallowed_location?(%URI{host: host}) when is_bitstring(host) do
