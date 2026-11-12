@@ -28,7 +28,10 @@ defmodule Proca.Supporter do
 
   2. As part of Action DOI, a link to confirm action can have a parameter
   `doi=1` which will _also_ set `double_opt_in` flag when confirming action
-  itself.
+  itself. The same happens when the contact has given communication consent on
+  the form (privacy opt_in), even without the parameter. On accept links the
+  parameter also records the communication consent on the contact: `doi=1`
+  opts in, `doi=0` opts out unless the form gave opt in.
 
   This link can be sent in email
 

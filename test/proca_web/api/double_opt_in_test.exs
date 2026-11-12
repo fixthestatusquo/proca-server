@@ -99,7 +99,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
         check_supporter(ref,
           status: :accepted,
           email_status: :double_opt_in,
-          consent: {true, false}
+          consent: {true, true}
         )
 
       a = check_action(s, status: :new)
@@ -110,7 +110,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
         check_supporter(ref,
           status: :accepted,
           email_status: :double_opt_in,
-          consent: {true, false}
+          consent: {true, true}
         )
 
       a = check_action(s, status: :delivered)
@@ -119,7 +119,7 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
     test "Confirm but do form opt in and double opt in", %{conn: conn, pages: [ap]} do
       {ref, email} = add_action_contact(ap, true)
 
-      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, true})
       a = check_action(s, status: :new)
 
       process(a)
@@ -144,10 +144,89 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
         check_supporter(ref,
           status: :accepted,
           email_status: :double_opt_in,
-          consent: {true, false}
+          consent: {true, true}
         )
 
       a = check_action(s, status: :delivered)
+    end
+
+    test "Confirm with form opt in but no doi param does double opt in", %{
+      conn: conn,
+      pages: [ap]
+    } do
+      {ref, email} = add_action_contact(ap, true)
+
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, true})
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, true})
+
+      click_supporter_link(conn, %{a | supporter: s}, :confirm)
+
+      s =
+        check_supporter(ref,
+          status: :accepted,
+          email_status: :double_opt_in,
+          consent: {true, true}
+        )
+
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s =
+        check_supporter(ref,
+          status: :accepted,
+          email_status: :double_opt_in,
+          consent: {true, true}
+        )
+
+      check_action(s, status: :delivered)
+    end
+
+    test "Confirm with doi=0 and no form opt in keeps consent opt out", %{
+      conn: conn,
+      pages: [ap]
+    } do
+      {ref, email} = add_action_contact(ap, false)
+
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, false})
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, false})
+
+      click_supporter_link(conn, %{a | supporter: s}, :confirm, "doi=0")
+
+      s = check_supporter(ref, status: :accepted, email_status: :none, consent: {true, false})
+
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s = check_supporter(ref, status: :accepted, email_status: :none, consent: {true, false})
+
+      check_action(s, status: :delivered)
+    end
+
+    test "Reject with form opt in does not double opt in", %{conn: conn, pages: [ap]} do
+      {ref, email} = add_action_contact(ap, true)
+
+      s = check_supporter(ref, status: :new, email_status: :none, consent: {true, true})
+      a = check_action(s, status: :new)
+
+      process(a)
+
+      s = check_supporter(ref, status: :confirming, email_status: :none, consent: {true, true})
+
+      click_supporter_link(conn, %{a | supporter: s}, :reject)
+
+      s = check_supporter(ref, status: :rejected, email_status: :none, consent: {true, true})
+
+      check_action(s, status: :rejected)
     end
 
     test "Reject and not double opt in", %{conn: conn, pages: [ap]} do
@@ -185,7 +264,10 @@ defmodule ProcaWeb.Api.DoubleOptInTest do
       )
 
     assert added.processing_status == status
-    assert [%{delivery_consent: dc, communication_consent: cc}] = added.contacts
+
+    assert Enum.map(added.contacts, &{&1.delivery_consent, &1.communication_consent}) ==
+             [{dc, cc}]
+
     assert added.email_status == es
 
     added

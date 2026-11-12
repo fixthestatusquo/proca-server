@@ -20,6 +20,11 @@ defmodule ProcaWeb.ConfirmController do
   Optionally can contain:
   ?doi=1  - for a double opt in
 
+  Double opt in is done when the link has doi=1/yes/true, or when the contact
+  already consented to communication on the form (privacy opt_in). On accept
+  links the doi value also records the communication consent on the contact:
+  1/yes/true opts in, 0/false/no opts out unless the form gave opt in.
+
   This is a special case where we do not use Confirm model. Instead, we use the
   ref known to supporter. This way we do not have to create so many Confirm
   records when org is using double opt in.
@@ -37,9 +42,11 @@ defmodule ProcaWeb.ConfirmController do
   def supporter(conn, params) do
     with {:ok, args} <- supporter_parse_params(params),
          {:ok, action} <- find_action(args),
-         {:ok, action} <- handle_double_opt_in(action, args[:doi]),
+         {:ok, action, doi} <- handle_doi(action, args),
          :ok <- handle_supporter(action, args.verb) do
       if Map.get(params, "reminder") == "1", do: emit_reminder_click(action)
+
+      args = if doi, do: Map.put(args, :doi, "1"), else: args
 
       case args do
         %{redir: uri} when is_binary(uri) ->
@@ -119,12 +126,9 @@ defmodule ProcaWeb.ConfirmController do
   end
 
   defp find_action(%{action_id: action_id, ref: ref}) do
-    action = Action.get_by_id_and_ref(action_id, ref)
-
-    if is_nil(action) do
-      {:error, 404, "malformed link"}
-    else
-      {:ok, action}
+    case Action.get_by_id_and_ref(action_id, ref) do
+      nil -> {:error, 404, "malformed link"}
+      action -> {:ok, Proca.Repo.preload(action, supporter: :contacts, action_page: [])}
     end
   end
 
@@ -177,6 +181,73 @@ defmodule ProcaWeb.ConfirmController do
       {:error, msg} -> {:error, 400, msg}
     end
   end
+
+  # Double opt in when doi param asks for it, or when the form consent was given
+  defp doi?(%{verb: "accept"} = args, action) do
+    args[:doi] in ["1", "yes", "true"] or form_opt_in?(action)
+  end
+
+  defp doi?(_args, _action), do: false
+
+  defp form_opt_in?(%Action{supporter: sup, action_page: ap}) do
+    Enum.any?(sup.contacts, &(&1.org_id == ap.org_id and &1.communication_consent == true))
+  end
+
+  # Communication consent asked for by the doi param, nil if not decided by it
+  defp consent_target(%{verb: "accept"} = args, action) do
+    cond do
+      args[:doi] in ["1", "yes", "true"] -> true
+      args[:doi] in ["0", "false", "no"] -> form_opt_in?(action)
+      true -> nil
+    end
+  end
+
+  defp consent_target(_args, _action), do: nil
+
+  defp handle_doi(action = %Action{supporter: sup}, args) do
+    doi = doi?(args, action)
+    consent = consent_target(args, action)
+
+    if doi or consent != nil do
+      ch =
+        sup
+        |> Supporter.changeset(if(doi, do: %{email_status: :double_opt_in}, else: %{}))
+        |> put_consent(action.action_page.org_id, consent)
+
+      if ch.changes == %{} do
+        {:ok, action, doi}
+      else
+        case update_and_notify(ch, id: action.id) do
+          {:ok, sup2} -> {:ok, %{action | supporter: sup2}, doi}
+          {:error, _ch} -> {:error, 400, "cannot double opt in"}
+        end
+      end
+    else
+      {:ok, action, false}
+    end
+  end
+
+  # Only contacts with a different consent value are changed, so no UPDATE is
+  # issued for contacts that already hold the expected value.
+  defp put_consent(ch, _org_id, nil), do: ch
+  defp put_consent(%{data: %Supporter{contacts: []}} = ch, _org_id, _consent), do: ch
+
+  defp put_consent(%{data: %Supporter{contacts: contacts}} = ch, org_id, consent) do
+    put_assoc(ch, :contacts, Enum.map(contacts, &consent_changeset(&1, org_id, consent)))
+  end
+
+  defp consent_changeset(
+         %{org_id: org_id, communication_consent: cc} = contact,
+         org_id,
+         consent
+       )
+       when cc != consent do
+    if consent,
+      do: change(contact, communication_consent: true, communication_scopes: ["email"]),
+      else: change(contact, communication_consent: false)
+  end
+
+  defp consent_changeset(contact, _org_id, _consent), do: change(contact)
 
   # Change the supporter email_status
   defp handle_double_opt_in(action = %Action{supporter: sup}, doi)
