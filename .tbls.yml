@@ -1,0 +1,22 @@
+dsn: postgres://proca:proca@localhost:5432/proca_test?sslmode=disable
+docPath: guides/database
+name: proca
+
+# Only document your app's schema, not internals
+include:
+  - "*"
+exclude:
+  - schema_migrations
+
+# Fail lint if tables/columns lack comments
+lint:
+  requireTableComment:
+    enabled: false
+    exclude:
+      - schema_migrations
+  requireColumnComment:
+    enabled: false
+    exclude:
+      - id
+      - inserted_at
+      - updated_at
