@@ -50,4 +50,32 @@ defmodule ActionPageTest do
       assert %{valid?: ^is_valid} = ch
     end)
   end
+
+  describe "delete/1 is blocked by remaining data" do
+    import Ecto.Query
+    alias Proca.{Action, Factory}
+
+    defp delete_error(ap) do
+      ap_id = ap.id
+      assert {:error, {:action_page, ^ap_id}, cs, _} = Repo.transaction(ActionPage.delete(ap))
+      Enum.map(cs.errors, fn {field, {msg, _}} -> {field, msg} end)
+    end
+
+    test "page with an action", %{red_ap: ap} do
+      Factory.insert(:action, action_page: ap)
+
+      assert delete_error(ap) == [actions: "has action data"]
+    end
+
+    test "page whose supporter has actions only on another page", %{red_ap: ap} do
+      action = Factory.insert(:action, action_page: ap)
+      other_ap = Factory.insert(:action_page, org: ap.org, campaign: ap.campaign)
+
+      # the supporter stays on `ap`, its only action moves to `other_ap`
+      from(a in Action, where: a.id == ^action.id)
+      |> Repo.update_all(set: [action_page_id: other_ap.id])
+
+      assert delete_error(ap) == [supporters: "has suporter data"]
+    end
+  end
 end
