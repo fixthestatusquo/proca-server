@@ -48,12 +48,16 @@ jobs:
         with:
           version-type: strict
           version-file: .tool-versions
-      - name: Restore dependencies cache
+      # deps + compiled _build. The key includes .tool-versions so an
+      # Elixir/Erlang upgrade never reuses artifacts built with the old version.
+      - name: Restore dependencies and build cache
         uses: actions/cache@v4
         with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-
 
       - name: Install dependencies
         run: mix deps.get
