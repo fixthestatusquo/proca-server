@@ -10,8 +10,10 @@ defmodule Proca.Service.Hubspot do
 
   Besides the merge variables, `customProperties` carries `fullConfirmLink` whenever the
   email has a `confirmLink`: the confirm link with a `redir` back to the action's location,
-  adding `proca_go=donate_Redirect` and `utm_content`. Without a known location it is just
-  the plain confirm link. Use it in a template as `{{ custom.fullConfirmLink }}`.
+  adding `proca_go=donate_Redirect` and `utm_content`, plus `promocode` and `bannerid` when
+  the action has those custom fields (exact flattened, camelCased names; empty values are
+  skipped). Without a known location it is just the plain confirm link. Use it in a
+  template as `{{ custom.fullConfirmLink }}`.
 
   API reference: https://developers.hubspot.com/docs/api-reference/latest/marketing/transactional-emails/guide
 
