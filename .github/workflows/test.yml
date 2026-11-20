@@ -11,6 +11,22 @@ jobs:
     name: Build and test
     runs-on: ubuntu-24.04
 
+    # Postgres for the tests. Keep the major version at production's (18).
+    # citext is created by the migrations themselves.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: proca
+          POSTGRES_PASSWORD: proca
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Elixir
@@ -18,29 +34,6 @@ jobs:
         with:
           version-type: strict
           version-file: .tool-versions
-      - name: Install and setup PostgreSQL with PostgreSQL extensions and unprivileged user
-        uses: Daniel-Marynicz/postgresql-action@1.0.0
-        with:
-          # Docker postgres image tag for available image tags please see https://hub.docker.com/_/postgres
-          postgres_image_tag: 12.7 # optional, default is latest
-          postgres_user: proca
-          postgres_password: proca
-          # POSTGRES_USER - create the user with the superuser power
-          #postgres_user: # optional, default is postgres
-          # POSTGRES_DB - postgres database
-          #postgres_db: # optional, default is postgres
-          # POSTGRES_PASSWORD - superuser password
-          #postgres_password: # optional
-          # POSTGRES_EXTENSIONS - List of postgres extensions separated by space to install in template1 database
-          postgres_extensions: citext # optional
-          # APP_USER - unprivileged postgres user
-          #app_user: proca # optional, default is app
-          # APP_PASSWORD_USER - password for unprivileged postgres user
-          #app_user_password: proca # optional, default is app
-          # APP_DB - database or list of databases separated by space for unprivileged postgres user
-          #app_db: proca_test # optional, default is app
-          # EXPOSED_POSTGRES_PORT - exposed postgres port
-          #exposed_postgres_port: # optional, default is 5432
       - name: Restore dependencies cache
         uses: actions/cache@v4
         with:
