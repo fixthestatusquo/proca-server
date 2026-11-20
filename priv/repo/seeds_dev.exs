@@ -449,22 +449,26 @@ Repo.update!(Ecto.Changeset.change(farm.mtt, message_template: "mtt_farm"))
 # Sources (utm tracking)
 # ---------------------------------------------------------------------------
 
-sources =
-  for {s, m, c, w} <- [
-        {"facebook", "social", "launch", 30},
-        {"newsletter", "email", "weekly", 25},
-        {"twitter", "social", "launch", 8},
-        {"whatsapp", "share", "supporter", 12},
-        {"google", "cpc", "ads", 5},
-        {"unknown", "unknown", "unknown", 20}
-      ] do
-    {Repo.insert!(%Source{
-       source: s,
-       medium: m,
-       campaign: c <> suffix,
-       content: "",
-       location: "https://#{lead.domain}"
-     }), w}
+sources_by_org =
+  for org_id <- all_pages |> Enum.map(& &1.org_id) |> Enum.uniq(), into: %{} do
+    {org_id,
+     for {s, m, c, w} <- [
+           {"facebook", "social", "launch", 30},
+           {"newsletter", "email", "weekly", 25},
+           {"twitter", "social", "launch", 8},
+           {"whatsapp", "share", "supporter", 12},
+           {"google", "cpc", "ads", 5},
+           {"unknown", "unknown", "unknown", 20}
+         ] do
+       {Repo.insert!(%Source{
+          source: s,
+          medium: m,
+          campaign: c <> suffix,
+          content: "",
+          location: "https://#{lead.domain}",
+          org_id: org_id
+        }), w}
+     end}
   end
 
 # ---------------------------------------------------------------------------
@@ -676,7 +680,7 @@ create_supporter = fn page, inserted_at, statuses ->
           doi? and status == :accepted -> :double_opt_in
           true -> :none
         end,
-      source_id: weighted.(sources).id,
+      source_id: weighted.(sources_by_org |> Map.fetch!(page.org_id)).id,
       inserted_at: inserted_at,
       updated_at: inserted_at
     )

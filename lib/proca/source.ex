@@ -32,13 +32,15 @@ defmodule Proca.Source do
     field :source, :string, default: "unknown"
     field :location, :string, default: ""
 
+    belongs_to :org, Proca.Org
+
     timestamps()
   end
 
   @doc false
   def changeset(source, attrs) do
     source
-    |> cast(attrs, [:source, :medium, :campaign, :content, :location])
+    |> cast(attrs, [:source, :medium, :campaign, :content, :location, :org_id])
     |> validate_required([:source, :medium, :campaign])
   end
 
@@ -48,7 +50,7 @@ defmodule Proca.Source do
       |> default_location()
 
     %Source{}
-    |> cast(attrs, [:source, :medium, :campaign, :content, :location])
+    |> cast(attrs, [:source, :medium, :campaign, :content, :location, :org_id])
     |> validate_required([:source, :medium, :campaign])
     |> trim(:source, 255)
     |> trim(:medium, 255)
@@ -101,8 +103,8 @@ defmodule Proca.Source do
   end
 
   defp cache_key(ch) do
-    {get_field(ch, :source), get_field(ch, :medium), get_field(ch, :campaign),
-     get_field(ch, :content), get_field(ch, :location)}
+    {get_field(ch, :org_id), get_field(ch, :source), get_field(ch, :medium),
+     get_field(ch, :campaign), get_field(ch, :content), get_field(ch, :location)}
   end
 
   defp cache_lookup(key) do
@@ -182,7 +184,7 @@ defmodule Proca.Source do
     case ch
          |> Repo.insert(
            on_conflict: [set: [updated_at: DateTime.utc_now()]],
-           conflict_target: [:source, :medium, :campaign, :content, :location]
+           conflict_target: [:org_id, :source, :medium, :campaign, :content, :location]
          ) do
       {:ok, source} ->
         cache_put(key, source)
@@ -216,7 +218,8 @@ defmodule Proca.Source do
   @disallowed_location_hosts ["0.0.0.0", "localhost", "127.0.0.1", "::1"]
 
   defp disallowed_hosts do
-    @disallowed_location_hosts ++ Application.get_env(:proca, :disallowed_location_hosts, [])
+    @disallowed_location_hosts ++
+      Enum.map(Application.get_env(:proca, :disallowed_location_hosts, []), &String.downcase/1)
   end
 
   defp disallowed_location?(%URI{host: host}) when is_bitstring(host) do

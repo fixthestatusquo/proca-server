@@ -33,9 +33,10 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   # utms given and origin header maybe
-  defp get_tracking(%{tracking: tr}, origin) do
+  defp get_tracking(%{tracking: tr}, origin, org_id) do
     case tr
          |> check_location_against_origin(origin)
+         |> Map.put(:org_id, org_id)
          |> Source.get_or_create_by() do
       {:ok, src} -> {:ok, src}
       _ -> {:ok, nil}
@@ -43,12 +44,12 @@ defmodule ProcaWeb.Resolvers.Action do
   end
 
   # only origin header given, we provide n/a utm values to better look in stats
-  defp get_tracking(%{}, origin) when is_bitstring(origin) do
-    get_tracking(%{tracking: %{}}, origin)
+  defp get_tracking(%{}, origin, org_id) when is_bitstring(origin) do
+    get_tracking(%{tracking: %{}}, origin, org_id)
   end
 
   # no origin, programmatic api use
-  defp get_tracking(%{}, nil) do
+  defp get_tracking(%{}, nil, _org_id) do
     {:ok, nil}
   end
 
@@ -134,10 +135,11 @@ defmodule ProcaWeb.Resolvers.Action do
           |> Multi.run(:data, fn _repo, %{action_page: action_page} ->
             Helper.validate(ActionPage.new_data(contact, action_page))
           end)
-          |> Multi.run(:source, fn _repo, _ ->
+          |> Multi.run(:source, fn _repo, %{action_page: action_page} ->
             get_tracking(
               params,
-              get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"])
+              get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"]),
+              action_page.org_id
             )
           end)
           |> Multi.run(:supporter, fn repo,
@@ -220,10 +222,11 @@ defmodule ProcaWeb.Resolvers.Action do
                other
            end
          end)
-         |> Multi.run(:source, fn _repo, _ ->
+         |> Multi.run(:source, fn _repo, %{action_page: action_page} ->
            get_tracking(
              params,
-             get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"])
+             get_in(context, [:headers, "origin"]) || get_in(context, [:headers, "referer"]),
+             action_page.org_id
            )
          end)
          |> Multi.run(:action, fn repo,
