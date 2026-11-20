@@ -180,7 +180,7 @@ defmodule Proca.ActionPage do
         message: "has action data"
       )
       |> foreign_key_constraint(:supporters,
-        name: :actions_supporter_id_fkey,
+        name: :supporters_action_page_id_fkey,
         message: "has suporter data"
       )
     )
