@@ -11,8 +11,8 @@ jobs:
     name: Build and test
     runs-on: ubuntu-24.04
 
-    # Postgres for the tests. Keep the major version at production's (18).
-    # citext is created by the migrations themselves.
+    # Postgres and RabbitMQ for the tests, matching production's versions
+    # (Postgres 18, RabbitMQ 4.0). citext is created by the migrations themselves.
     services:
       postgres:
         image: postgres:18
@@ -27,6 +27,20 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      rabbitmq:
+        image: rabbitmq:4.0
+        env:
+          RABBITMQ_DEFAULT_USER: proca
+          RABBITMQ_DEFAULT_PASS: proca
+          RABBITMQ_DEFAULT_VHOST: proca
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 10s
+          --health-retries 20
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Elixir
@@ -40,12 +54,6 @@ jobs:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
-
-      - name: Install RabbitMQ
-        run: ./utils/configure-rabbitmq-develop.sh
-
-      - name: Configure RabbitMQ
-        run: ./utils/configure-rabbitmq.sh
 
       - name: Install dependencies
         run: mix deps.get
