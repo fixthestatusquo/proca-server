@@ -10,8 +10,10 @@ defmodule Proca.Service.Hubspot do
 
   Besides the merge variables, `customProperties` carries `fullConfirmLink` whenever the
   email has a `confirmLink`: the confirm link with a `redir` back to the action's location,
-  adding `proca_go=donate_Redirect` and `utm_content`. Without a known location it is just
-  the plain confirm link. Use it in a template as `{{ custom.fullConfirmLink }}`.
+  adding `proca_go=donate_Redirect` and `utm_content`, plus `promocode` and `bannerid` when
+  the action has those custom fields (exact flattened, camelCased names; empty values are
+  skipped). Without a known location it is just the plain confirm link. Use it in a
+  template as `{{ custom.fullConfirmLink }}`.
 
   API reference: https://developers.hubspot.com/docs/api-reference/latest/marketing/transactional-emails/guide
 
@@ -128,28 +130,45 @@ defmodule Proca.Service.Hubspot do
   #
   # | Situation                              | fullConfirmLink               | After the click                                       |
   # |----------------------------------------|-------------------------------|-------------------------------------------------------|
-  # | Location and content                   | Full link with redir          | Confirmed, redirected with proca_go and utm_content   |
+  # | Location and content                   | Full link with redir          | Confirmed, redirected with proca_go, utm_content, and |
+  # |                                        |                               | promocode/bannerid when the action has them           |
   # | Location, no content                   | Full link, empty utm_content= | Confirmed, redirected the same way                    |
   # | No location, confirmation email        | Plain confirm link            | Confirmed, sees a bare SUCCESS text page              |
   # | No location, thank-you email with DOI  | Plain double opt-in link      | Confirmed, sent to action page's last location, or /  |
   # | No confirm link at all                 | Field isn't added             | Nothing to click                                      |
   defp put_full_confirm_link(%{"confirmLink" => link} = assigns)
        when is_binary(link) and link != "" do
-    Map.put(
-      assigns,
-      "fullConfirmLink",
-      full_confirm_link(link, assigns["trackingLocation"], assigns["trackingContent"])
-    )
+    Map.put(assigns, "fullConfirmLink", full_confirm_link(link, assigns))
   end
 
   defp put_full_confirm_link(assigns), do: assigns
 
-  defp full_confirm_link(link, location, _content) when location in [nil, ""], do: link
+  defp full_confirm_link(link, assigns) do
+    case assigns["trackingLocation"] do
+      location when location in [nil, ""] ->
+        link
 
-  defp full_confirm_link(link, location, content) do
-    redir = append_query(location, proca_go: @confirm_redirect_go, utm_content: content || "")
+      location ->
+        redir =
+          append_query(
+            location,
+            [{:proca_go, @confirm_redirect_go}, {:utm_content, assigns["trackingContent"] || ""}] ++
+              extra_redir_params(assigns)
+          )
 
-    append_query(link, redir: redir)
+        append_query(link, redir: redir)
+    end
+  end
+
+  # Also passed on to the landing page, when the action has them. Names are the
+  # flattened, camelCased assign keys (a custom field "banner_id" is "bannerId").
+  @redir_custom_fields ["promocode", "bannerid"]
+
+  defp extra_redir_params(assigns) do
+    for key <- @redir_custom_fields,
+        value = assigns[key],
+        value not in [nil, ""],
+        do: {key, to_string(value)}
   end
 
   # Both urls can already have a query (reminder links have ?reminder=1, a location can too)

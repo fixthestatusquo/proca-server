@@ -135,6 +135,44 @@ defmodule Proca.Service.HubspotTest do
     test "is not added when the email has no confirm link" do
       refute Map.has_key?(custom_properties(%{}), "fullConfirmLink")
     end
+
+    defp redir_params(assigns) do
+      assigns = Map.merge(%{"confirmLink" => "https://api.test/link/s/1/accept/REF"}, assigns)
+
+      assigns
+      |> custom_properties()
+      |> Map.fetch!("fullConfirmLink")
+      |> URI.parse()
+      |> Map.fetch!(:query)
+      |> URI.decode_query()
+      |> Map.fetch!("redir")
+      |> URI.parse()
+      |> Map.fetch!(:query)
+      |> URI.query_decoder(:rfc3986)
+      |> Enum.to_list()
+    end
+
+    test "passes promocode and bannerid on to the landing page" do
+      assert redir_params(%{
+               "trackingLocation" => "https://site.test/sign",
+               "promocode" => "SUMMER",
+               "bannerid" => "b7"
+             }) == [
+               {"proca_go", "donate_Redirect"},
+               {"utm_content", ""},
+               {"promocode", "SUMMER"},
+               {"bannerid", "b7"}
+             ]
+    end
+
+    test "omits promocode and bannerid when the action has none" do
+      assert redir_params(%{
+               "trackingLocation" => "https://site.test/sign",
+               "promocode" => "",
+               "bannerid" => nil
+             })
+             |> Enum.map(&elem(&1, 0)) == ["proca_go", "utm_content"]
+    end
   end
 
   test "build_payload rejects a malformed template ref instead of crashing" do
