@@ -91,6 +91,31 @@ defenum(ExternalService,
 
 defenum(MTTDelivery, pacing: "pacing", throttle: "throttle")
 
+# Transactional emails (Proca.TransactionalEmail). Stored as strings.
+# The last seven roles are instance-only (settable only on the instance org).
+defenum(TransactionalEmailRole,
+  thank_you: "thank_you",
+  thank_you_doi: "thank_you_doi",
+  supporter_confirm: "supporter_confirm",
+  supporter_confirm_reminder1: "supporter_confirm_reminder1",
+  supporter_confirm_reminder2: "supporter_confirm_reminder2",
+  duplicate: "duplicate",
+  user_confirm_email: "user_confirm_email",
+  user_reset_password: "user_reset_password",
+  confirm_action: "confirm_action",
+  add_staffer: "add_staffer",
+  add_partner: "add_partner",
+  launch_page: "launch_page",
+  join_campaign: "join_campaign"
+)
+
+# NULL in the column means INHERIT
+defenum(TransactionalEmailMechanism,
+  own_template: "own_template",
+  system_template: "system_template",
+  external_queue: "external_queue"
+)
+
 defenum(ContactSchema, basic: 0, popular_initiative: 1, eci: 2, it_ci: 3)
 
 defenum(ConfirmOperation,
