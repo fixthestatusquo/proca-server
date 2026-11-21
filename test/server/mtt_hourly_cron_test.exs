@@ -50,9 +50,12 @@ defmodule Proca.Server.MTTHourlyCronTest do
       |> Enum.each(fn target ->
         max_emails = MTTContext.max_emails_per_hour(target.campaign)
 
+        # same as MTTContext.max_emails_per_hour/1: at least 1 per hour, so a
+        # low night-time ratio (e.g. 30 * 0.03 = 0.9) still allows 1 email
         target_emails_per_hour =
           ((target.campaign.mtt.max_emails_per_hour || default_max_emails) * ratio)
           |> trunc()
+          |> max(1)
 
         assert is_integer(max_emails) or is_atom(max_emails)
         assert max_emails in [target_emails_per_hour, :all]

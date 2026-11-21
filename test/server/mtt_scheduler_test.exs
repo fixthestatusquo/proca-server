@@ -125,6 +125,11 @@ defmodule Proca.Server.MTTSchedulerTest do
     end
 
     test "dispatches every pending message and stops as all_sent", %{targets: [target | _]} do
+      # The hourly limit is max_emails_per_hour * a ratio for the current hour,
+      # which is tiny at night (0.02 at 00 UTC). With the default 30/hour that
+      # leaves 1 email/hour between 00 and 05 UTC. Use a high limit so the
+      # test does not depend on the time of day.
+      target = put_in(target.campaign.mtt.max_emails_per_hour, 1000)
       max_emails = MTTContext.max_emails_per_hour(target.campaign)
       pending_count = MTTContext.get_pending_messages(target.id, max_emails) |> Enum.count()
       assert pending_count > 1
@@ -132,7 +137,8 @@ defmodule Proca.Server.MTTSchedulerTest do
       {:ok, pid} = MTTScheduler.start_link(target, max_emails, send_window_ms: 300)
       ref = Process.monitor(pid)
 
-      assert_receive {:scheduler_stop, %{messages_sent: ^pending_count}, %{stop_reason: :all_sent}},
+      assert_receive {:scheduler_stop, %{messages_sent: ^pending_count},
+                      %{stop_reason: :all_sent}},
                      2_000
 
       assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
