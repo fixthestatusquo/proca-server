@@ -58,10 +58,8 @@ defmodule Proca.TransactionalEmail do
   # Allowed config keys per role and the check for each value.
   # Roles not listed here take no config.
   @config_keys %{
-    supporter_confirm_reminder: %{
-      "delay_hours" => :pos_integer,
-      "max_count" => :non_neg_integer
-    }
+    supporter_confirm_reminder1: %{"delay_hours" => :pos_integer},
+    supporter_confirm_reminder2: %{"delay_hours" => :pos_integer}
   }
 
   # most specific first
@@ -162,13 +160,9 @@ defmodule Proca.TransactionalEmail do
   # nil = inherit this key
   defp check_config_value(_key, _check, nil), do: []
   defp check_config_value(_key, :pos_integer, v) when is_integer(v) and v > 0, do: []
-  defp check_config_value(_key, :non_neg_integer, v) when is_integer(v) and v >= 0, do: []
 
   defp check_config_value(key, :pos_integer, _v),
     do: [config: "#{key} must be a positive integer"]
-
-  defp check_config_value(key, :non_neg_integer, _v),
-    do: [config: "#{key} must be zero or a positive integer"]
 
   defp normalize_config(nil), do: nil
 

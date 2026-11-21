@@ -66,7 +66,7 @@ defmodule Proca.TransactionalEmailTest do
       assert %TE{mechanism: :external_queue} =
                set!(org, :supporter_confirm, %{mechanism: :external_queue})
 
-      for role <- [:thank_you, :supporter_confirm_reminder, :duplicate] do
+      for role <- [:thank_you, :supporter_confirm_reminder1, :duplicate] do
         assert {:error, cs} = TE.set(org, role, %{mechanism: :external_queue})
         assert {:mechanism, "external_queue is only valid for supporter_confirm"} in errors(cs)
       end
@@ -89,26 +89,36 @@ defmodule Proca.TransactionalEmailTest do
   end
 
   describe "config validation" do
-    test "reminder accepts its keys (atom or string keys)", %{org: org} do
-      te = set!(org, :supporter_confirm_reminder, %{config: %{delay_hours: 48, max_count: 2}})
-      assert te.config == %{"delay_hours" => 48, "max_count" => 2}
+    test "reminders accept delay_hours (atom or string keys)", %{org: org} do
+      te = set!(org, :supporter_confirm_reminder1, %{config: %{delay_hours: 48}})
+      assert te.config == %{"delay_hours" => 48}
+
+      te = set!(org, :supporter_confirm_reminder2, %{config: %{"delay_hours" => 72}})
+      assert te.config == %{"delay_hours" => 72}
     end
 
     test "reminder rejects unknown keys and bad values", %{org: org} do
       assert {:error, cs} =
-               TE.set(org, :supporter_confirm_reminder, %{config: %{"delay_days" => 2}})
+               TE.set(org, :supporter_confirm_reminder1, %{config: %{"delay_days" => 2}})
 
-      assert {:config, "unknown key delay_days for role supporter_confirm_reminder"} in errors(cs)
+      assert {:config, "unknown key delay_days for role supporter_confirm_reminder1"} in errors(
+               cs
+             )
 
       assert {:error, cs} =
-               TE.set(org, :supporter_confirm_reminder, %{config: %{"delay_hours" => 0}})
+               TE.set(org, :supporter_confirm_reminder2, %{config: %{"max_count" => 2}})
+
+      assert {:config, "unknown key max_count for role supporter_confirm_reminder2"} in errors(cs)
+
+      assert {:error, cs} =
+               TE.set(org, :supporter_confirm_reminder1, %{config: %{"delay_hours" => 0}})
 
       assert {:config, "delay_hours must be a positive integer"} in errors(cs)
 
       assert {:error, cs} =
-               TE.set(org, :supporter_confirm_reminder, %{config: %{"max_count" => "3"}})
+               TE.set(org, :supporter_confirm_reminder1, %{config: %{"delay_hours" => "48"}})
 
-      assert {:config, "max_count must be zero or a positive integer"} in errors(cs)
+      assert {:config, "delay_hours must be a positive integer"} in errors(cs)
     end
 
     test "roles without config settings reject a config", %{org: org} do
@@ -229,15 +239,24 @@ defmodule Proca.TransactionalEmailTest do
       campaign: campaign,
       ap: ap
     } do
-      set!(org, :supporter_confirm_reminder, %{config: %{delay_hours: 48, max_count: 3}})
-      set!(campaign, :supporter_confirm_reminder, %{config: %{max_count: 1}})
-      set!(ap, :supporter_confirm_reminder, %{config: %{delay_hours: 24, max_count: nil}})
+      set!(org, :supporter_confirm_reminder1, %{config: %{delay_hours: 48}})
+      set!(campaign, :supporter_confirm_reminder1, %{state: true})
+      set!(ap, :supporter_confirm_reminder1, %{config: %{delay_hours: nil}})
 
-      assert %Effective{config: %{"delay_hours" => 24, "max_count" => 1}} =
-               TE.effective(:supporter_confirm_reminder, ap)
+      # campaign sets no config and the page's nil means inherit: org's 48 wins
+      assert %Effective{state: true, config: %{"delay_hours" => 48}} =
+               TE.effective(:supporter_confirm_reminder1, ap)
 
-      assert %Effective{config: %{"delay_hours" => 48, "max_count" => 1}} =
-               TE.effective(:supporter_confirm_reminder, campaign)
+      set!(ap, :supporter_confirm_reminder1, %{config: %{delay_hours: 24}})
+
+      assert %Effective{config: %{"delay_hours" => 24}} =
+               TE.effective(:supporter_confirm_reminder1, ap)
+
+      assert %Effective{config: %{"delay_hours" => 48}} =
+               TE.effective(:supporter_confirm_reminder1, campaign)
+
+      # the two reminders are configured independently
+      assert %Effective{config: %{}} = TE.effective(:supporter_confirm_reminder2, ap)
     end
   end
 
