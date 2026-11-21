@@ -18,7 +18,7 @@ defmodule Proca.Repo.Migrations.CreateTransactionalEmails do
       add :action_page_id, references(:action_pages, on_delete: :delete_all), null: true
 
       add :role, :string, null: false
-      add :state, :string, null: true
+      add :state, :boolean, null: true
       add :mechanism, :string, null: true
       add :template_ref, :string, null: true
       add :config, :map, null: true

@@ -4,7 +4,7 @@ defmodule Proca.TransactionalEmail do
 
   A row says, for one `role` at one scope (org, campaign or action page):
 
-  - `state`        - `:on` / `:off`, `nil` = inherit
+  - `state`        - `true` / `false`, `nil` = inherit
   - `mechanism`    - `:own_template` / `:system_template` / `:external_queue`, `nil` = inherit
   - `template_ref` - template name, `nil` = inherit
   - `config`       - per-role settings map, each key inherited separately
@@ -24,7 +24,7 @@ defmodule Proca.TransactionalEmail do
 
   | field        | default                                          |
   |--------------|--------------------------------------------------|
-  | state        | `:off`                                           |
+  | state        | `false`                                          |
   | mechanism    | `:own_template`                                  |
   | template_ref | role name for `:system_template`, else `nil`     |
   | config       | `%{}` (keys merged, most specific wins per key)  |
@@ -73,7 +73,7 @@ defmodule Proca.TransactionalEmail do
     belongs_to :action_page, ActionPage
 
     field :role, TransactionalEmailRole
-    field :state, TransactionalEmailState
+    field :state, :boolean
     field :mechanism, TransactionalEmailMechanism
     field :template_ref, :string
     field :config, :map
@@ -87,7 +87,7 @@ defmodule Proca.TransactionalEmail do
 
     @type t :: %__MODULE__{
             role: atom(),
-            state: :on | :off,
+            state: boolean(),
             mechanism: :own_template | :system_template | :external_queue,
             template_ref: String.t() | nil,
             config: map()
@@ -297,7 +297,7 @@ defmodule Proca.TransactionalEmail do
   @doc "Resolve an already fetched chain (most specific first)."
   @spec resolve(atom(), [t()]) :: Effective.t()
   def resolve(role, rows) do
-    state = first_set(rows, :state) || :off
+    state = first_set(rows, :state) || false
     mechanism = first_set(rows, :mechanism) || :own_template
 
     template_ref =
@@ -324,7 +324,10 @@ defmodule Proca.TransactionalEmail do
     }
   end
 
-  defp first_set(rows, field), do: Enum.find_value(rows, &Map.get(&1, field))
+  # state false is a value, not "unset", so find_value would skip it
+  defp first_set(rows, field) do
+    rows |> Enum.map(&Map.get(&1, field)) |> Enum.find(&(not is_nil(&1)))
+  end
 
   @doc """
   Is `role` switched on for `scope` and has something to send with
@@ -334,8 +337,8 @@ defmodule Proca.TransactionalEmail do
   @spec enabled?(atom(), scope()) :: boolean()
   def enabled?(role, scope), do: configured?(effective(role, scope))
 
-  defp configured?(%Effective{state: :on, mechanism: :external_queue}), do: true
-  defp configured?(%Effective{state: :on, template_ref: ref}) when is_binary(ref), do: true
+  defp configured?(%Effective{state: true, mechanism: :external_queue}), do: true
+  defp configured?(%Effective{state: true, template_ref: ref}) when is_binary(ref), do: true
   defp configured?(%Effective{}), do: false
 
   @doc """
@@ -348,7 +351,7 @@ defmodule Proca.TransactionalEmail do
           {:ok, %Proca.Service.EmailTemplate{}, %Org{}} | :off | :external_queue | :not_found
   def template(role, scope, locale \\ nil) do
     case effective(role, scope) do
-      %Effective{state: :off} ->
+      %Effective{state: false} ->
         :off
 
       %Effective{mechanism: :external_queue} ->

@@ -23,17 +23,17 @@ defmodule Proca.TransactionalEmailTest do
 
   describe "set/3 and clear/2" do
     test "stores one row per role and scope, updating on repeat", %{org: org} do
-      set!(org, :thank_you, %{state: :on})
+      set!(org, :thank_you, %{state: true})
       set!(org, :thank_you, %{template_ref: "ty"})
 
-      assert [%TE{state: :on, template_ref: "ty"}] = TE.chain(:thank_you, org)
+      assert [%TE{state: true, template_ref: "ty"}] = TE.chain(:thank_you, org)
       assert Repo.aggregate(TE, :count) == 1
     end
 
     test "sets the scope ids from the scope struct", %{org: org, campaign: campaign, ap: ap} do
-      o = set!(org, :thank_you, %{state: :on})
-      c = set!(campaign, :thank_you, %{state: :on})
-      a = set!(ap, :thank_you, %{state: :on})
+      o = set!(org, :thank_you, %{state: true})
+      c = set!(campaign, :thank_you, %{state: true})
+      a = set!(ap, :thank_you, %{state: true})
 
       assert {o.org_id, o.campaign_id, o.action_page_id} == {org.id, nil, nil}
       assert {c.org_id, c.campaign_id, c.action_page_id} == {org.id, campaign.id, nil}
@@ -42,8 +42,8 @@ defmodule Proca.TransactionalEmailTest do
     end
 
     test "accepts string values (as they come from the API)", %{org: org} do
-      assert %TE{state: :off, mechanism: :own_template} =
-               set!(org, :duplicate, %{"state" => "off", "mechanism" => "own_template"})
+      assert %TE{state: false, mechanism: :own_template} =
+               set!(org, :duplicate, %{"state" => "false", "mechanism" => "own_template"})
     end
 
     test "empty template_ref is stored as nil (inherit)", %{org: org} do
@@ -51,14 +51,14 @@ defmodule Proca.TransactionalEmailTest do
     end
 
     test "clear/2 removes the row", %{ap: ap} do
-      set!(ap, :thank_you, %{state: :on})
+      set!(ap, :thank_you, %{state: true})
       assert :ok = TE.clear(ap, :thank_you)
       assert TE.get(ap, :thank_you) == nil
       assert :ok = TE.clear(ap, :thank_you)
     end
 
     test "rejects an unknown role", %{org: org} do
-      assert {:error, cs} = TE.set(org, :newsletter, %{state: :on})
+      assert {:error, cs} = TE.set(org, :newsletter, %{state: true})
       assert {:role, "is invalid"} in errors(cs)
     end
 
@@ -77,14 +77,14 @@ defmodule Proca.TransactionalEmailTest do
       campaign: campaign
     } do
       for scope <- [org, campaign] do
-        assert {:error, cs} = TE.set(scope, :user_reset_password, %{state: :on})
+        assert {:error, cs} = TE.set(scope, :user_reset_password, %{state: true})
         assert {:role, "user_reset_password can only be set on the instance org"} in errors(cs)
       end
     end
 
     test "instance-only roles can be set on the instance org" do
       instance = Org.one([:instance])
-      assert %TE{state: :on} = set!(instance, :user_reset_password, %{state: :on})
+      assert %TE{state: true} = set!(instance, :user_reset_password, %{state: true})
     end
   end
 
@@ -127,12 +127,12 @@ defmodule Proca.TransactionalEmailTest do
     } do
       assert TE.chain(:thank_you, ap) == []
 
-      set!(org, :thank_you, %{state: :on})
+      set!(org, :thank_you, %{state: true})
       set!(ap, :thank_you, %{template_ref: "ap_ty"})
 
       assert [:action_page, :org] = TE.chain(:thank_you, ap) |> Enum.map(&TE.level/1)
 
-      set!(campaign, :thank_you, %{state: :off})
+      set!(campaign, :thank_you, %{state: false})
 
       assert [:action_page, :campaign, :org] = TE.chain(:thank_you, ap) |> Enum.map(&TE.level/1)
 
@@ -144,9 +144,9 @@ defmodule Proca.TransactionalEmailTest do
       other_campaign = Factory.insert(:campaign, org: org)
       other_ap = Factory.insert(:action_page, org: org, campaign: other_campaign)
 
-      set!(org, :duplicate, %{state: :on})
-      set!(other_ap, :thank_you, %{state: :on})
-      set!(other_campaign, :thank_you, %{state: :on})
+      set!(org, :duplicate, %{state: true})
+      set!(other_ap, :thank_you, %{state: true})
+      set!(other_campaign, :thank_you, %{state: true})
 
       assert TE.chain(:thank_you, ap) == []
     end
@@ -158,7 +158,7 @@ defmodule Proca.TransactionalEmailTest do
 
       set!(owner, :thank_you, %{template_ref: "owner_ty"})
       set!(partner, :thank_you, %{template_ref: "partner_ty"})
-      set!(campaign, :thank_you, %{state: :on})
+      set!(campaign, :thank_you, %{state: true})
 
       assert [%TE{campaign_id: c_id}, %TE{org_id: p_id, template_ref: "partner_ty"}] =
                TE.chain(:thank_you, partner_ap)
@@ -170,7 +170,7 @@ defmodule Proca.TransactionalEmailTest do
 
   describe "effective/2" do
     test "defaults when nothing is stored", %{ap: ap} do
-      assert %Effective{state: :off, mechanism: :own_template, template_ref: nil, config: %{}} =
+      assert %Effective{state: false, mechanism: :own_template, template_ref: nil, config: %{}} =
                TE.effective(:thank_you, ap)
     end
 
@@ -179,27 +179,27 @@ defmodule Proca.TransactionalEmailTest do
       campaign: campaign,
       ap: ap
     } do
-      set!(org, :supporter_confirm, %{state: :on, template_ref: "org_confirm"})
+      set!(org, :supporter_confirm, %{state: true, template_ref: "org_confirm"})
       set!(campaign, :supporter_confirm, %{template_ref: "campaign_confirm"})
       set!(ap, :supporter_confirm, %{mechanism: :own_template})
 
-      assert %Effective{state: :on, mechanism: :own_template, template_ref: "campaign_confirm"} =
+      assert %Effective{state: true, mechanism: :own_template, template_ref: "campaign_confirm"} =
                TE.effective(:supporter_confirm, ap)
     end
 
     test "off blocks a parent's on", %{org: org, campaign: campaign, ap: ap} do
-      set!(org, :supporter_confirm, %{state: :on, template_ref: "c"})
-      set!(campaign, :supporter_confirm, %{state: :off})
+      set!(org, :supporter_confirm, %{state: true, template_ref: "c"})
+      set!(campaign, :supporter_confirm, %{state: false})
 
-      assert %Effective{state: :off} = TE.effective(:supporter_confirm, ap)
+      assert %Effective{state: false} = TE.effective(:supporter_confirm, ap)
       refute TE.enabled?(:supporter_confirm, ap)
 
-      set!(ap, :supporter_confirm, %{state: :on})
+      set!(ap, :supporter_confirm, %{state: true})
       assert TE.enabled?(:supporter_confirm, ap)
     end
 
     test "system_template defaults template_ref to the role name", %{org: org, ap: ap} do
-      set!(org, :thank_you, %{state: :on, mechanism: :system_template})
+      set!(org, :thank_you, %{state: true, mechanism: :system_template})
       assert %Effective{template_ref: "thank_you"} = TE.effective(:thank_you, ap)
 
       set!(ap, :thank_you, %{template_ref: "special"})
@@ -208,7 +208,7 @@ defmodule Proca.TransactionalEmailTest do
 
     test "external_queue has no template_ref", %{org: org, ap: ap} do
       set!(org, :supporter_confirm, %{
-        state: :on,
+        state: true,
         mechanism: :external_queue,
         template_ref: "ignored"
       })
@@ -220,7 +220,7 @@ defmodule Proca.TransactionalEmailTest do
     end
 
     test "on without a template name is not enabled", %{org: org, ap: ap} do
-      set!(org, :thank_you, %{state: :on})
+      set!(org, :thank_you, %{state: true})
       refute TE.enabled?(:thank_you, ap)
     end
 
@@ -257,13 +257,13 @@ defmodule Proca.TransactionalEmailTest do
     test "off and external_queue", %{org: org, ap: ap} do
       assert :off = TE.template(:supporter_confirm, ap, "en")
 
-      set!(org, :supporter_confirm, %{state: :on, mechanism: :external_queue})
+      set!(org, :supporter_confirm, %{state: true, mechanism: :external_queue})
       assert :external_queue = TE.template(:supporter_confirm, ap, "en")
     end
 
     test "own_template is found in the page's org", %{org: org, ap: ap} do
       insert_template(org, "ty")
-      set!(ap, :thank_you, %{state: :on, template_ref: "ty"})
+      set!(ap, :thank_you, %{state: true, template_ref: "ty"})
 
       assert {:ok, %EmailTemplate{name: "ty"}, %Org{id: org_id}} =
                TE.template(:thank_you, ap, "en")
@@ -279,7 +279,7 @@ defmodule Proca.TransactionalEmailTest do
       partner_ap = Factory.insert(:action_page, org: partner, campaign: campaign)
 
       insert_template(owner, "confirm")
-      set!(campaign, :supporter_confirm, %{state: :on, template_ref: "confirm"})
+      set!(campaign, :supporter_confirm, %{state: true, template_ref: "confirm"})
 
       # the template only exists in the owner's org
       assert :not_found = TE.template(:supporter_confirm, partner_ap, "en")
@@ -295,7 +295,7 @@ defmodule Proca.TransactionalEmailTest do
     test "system_template is looked up in the instance org", %{org: org, ap: ap} do
       instance = Org.one([:instance])
       insert_template(instance, "duplicate")
-      set!(org, :duplicate, %{state: :on, mechanism: :system_template})
+      set!(org, :duplicate, %{state: true, mechanism: :system_template})
 
       assert {:ok, %EmailTemplate{name: "duplicate"}, %Org{id: i_id}} =
                TE.template(:duplicate, ap, "en")
@@ -304,7 +304,7 @@ defmodule Proca.TransactionalEmailTest do
     end
 
     test "on but missing template is :not_found", %{org: org, ap: ap} do
-      set!(org, :thank_you, %{state: :on})
+      set!(org, :thank_you, %{state: true})
       assert :not_found = TE.template(:thank_you, ap, "en")
 
       set!(org, :thank_you, %{template_ref: "does_not_exist"})
@@ -320,7 +320,7 @@ defmodule Proca.TransactionalEmailTest do
     } do
       cs =
         %TE{org_id: org.id, campaign_id: campaign.id, action_page_id: ap.id, role: :thank_you}
-        |> TE.changeset(%{state: :on})
+        |> TE.changeset(%{state: true})
 
       assert {:error, cs} = Repo.insert(cs)
 
@@ -337,7 +337,7 @@ defmodule Proca.TransactionalEmailTest do
           ] do
         insert = fn ->
           struct(TE, Map.put(ids, :role, :thank_you))
-          |> TE.changeset(%{state: :on})
+          |> TE.changeset(%{state: true})
           |> Repo.insert()
         end
 
@@ -348,15 +348,15 @@ defmodule Proca.TransactionalEmailTest do
     end
 
     test "rows are deleted with their scope", %{org: org, campaign: campaign, ap: ap} do
-      set!(ap, :thank_you, %{state: :on})
+      set!(ap, :thank_you, %{state: true})
       Repo.delete!(ap)
       assert TE.get(ap, :thank_you) == nil
 
-      set!(campaign, :thank_you, %{state: :on})
+      set!(campaign, :thank_you, %{state: true})
       Repo.delete!(campaign)
       assert TE.get(campaign, :thank_you) == nil
 
-      assert %TE{} = set!(org, :thank_you, %{state: :on})
+      assert %TE{} = set!(org, :thank_you, %{state: true})
     end
   end
 end

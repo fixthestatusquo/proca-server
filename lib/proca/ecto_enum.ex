@@ -97,7 +97,8 @@ defenum(TransactionalEmailRole,
   thank_you: "thank_you",
   thank_you_doi: "thank_you_doi",
   supporter_confirm: "supporter_confirm",
-  supporter_confirm_reminder: "supporter_confirm_reminder",
+  supporter_confirm_reminder1: "supporter_confirm_reminder1",
+  supporter_confirm_reminder2: "supporter_confirm_reminder2",
   duplicate: "duplicate",
   user_confirm_email: "user_confirm_email",
   user_reset_password: "user_reset_password",
@@ -107,9 +108,6 @@ defenum(TransactionalEmailRole,
   launch_page: "launch_page",
   join_campaign: "join_campaign"
 )
-
-# NULL in the column means INHERIT
-defenum(TransactionalEmailState, on: "on", off: "off")
 
 # NULL in the column means INHERIT
 defenum(TransactionalEmailMechanism,
