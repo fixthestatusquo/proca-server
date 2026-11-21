@@ -223,4 +223,43 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
   end
+
+  describe "ConfirmReminder.resend_unconfirmed/1 and list_unconfirmed/1" do
+    test "resends regardless of reminder.enabled/delay_days gating", %{ap: ap, org: org} do
+      Repo.update!(change(org, config: %{}))
+
+      action = insert_confirming_action(ap)
+
+      {found_org, [found_action]} = ConfirmReminder.list_unconfirmed(org: org.name)
+      assert found_org.id == org.id
+      assert found_action.id == action.id
+
+      {_org, [_action]} = ConfirmReminder.resend_unconfirmed(org: org.name)
+
+      [email] = TestEmailBackend.mailbox(action.supporter.email)
+      assert email.subject == "Please confirm your action"
+    end
+
+    test "filters by campaign", %{org: org, ap: ap, campaign: campaign} do
+      insert_confirming_action(ap)
+
+      other_campaign = Factory.insert(:campaign, org: org, name: "other_campaign_#{System.unique_integer()}", title: "Other")
+      other_ap = Factory.insert(:action_page, org: org, campaign: other_campaign, name: "other_ap_#{System.unique_integer()}/en", locale: "en")
+      insert_confirming_action(other_ap)
+
+      {_org, actions} = ConfirmReminder.list_unconfirmed(org: org.name, campaign: campaign.name)
+      assert length(actions) == 1
+    end
+
+    test "filters by since_days", %{ap: ap, org: org} do
+      action = insert_confirming_action(ap)
+      expire_action(action)
+
+      {_org, actions} = ConfirmReminder.list_unconfirmed(org: org.name, since_days: 30)
+      assert actions == []
+
+      {_org, actions} = ConfirmReminder.list_unconfirmed(org: org.name)
+      assert length(actions) == 1
+    end
+  end
 end
