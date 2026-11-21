@@ -71,7 +71,7 @@ for org_i <- 0..org_cnt-1 do
 
       sources = Enum.map(rand_range.(opts[:max_sources] || 3), fn {source_i, source_cnt} ->
         source_url = Faker.Internet.url()
-        {:ok, source} = Proca.Repo.insert(%Proca.Source{location: source_url, campaign: campaign_name})
+        {:ok, source} = Proca.Repo.insert(%Proca.Source{location: source_url, campaign: campaign_name, org: org})
         IO.puts("====> Created Source #{source_i}/#{source_cnt}: '#{source_url}' -> ID #{source.id}")
         source
       end)
