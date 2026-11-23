@@ -36,7 +36,7 @@ defmodule Proca.Service.HubspotTest do
     assert payload["message"]["to"] == "jo@example.com"
     assert payload["message"]["from"] == "Org <org@example.com>"
     assert payload["message"]["sendId"] == "action:1"
-    assert payload["customProperties"] == %{firstName: "Jo"}
+    assert payload["customProperties"] == %{:firstName => "Jo", "reminder" => ""}
   end
 
   test "build_payload always sends contactProperties empty, never mutating the CRM record" do
@@ -53,7 +53,28 @@ defmodule Proca.Service.HubspotTest do
 
     {:ok, payload} = Hubspot.build_payload(email)
 
-    assert payload["customProperties"] == %{}
+    assert payload["customProperties"] == %{"reminder" => ""}
+  end
+
+  describe "reminder" do
+    defp reminder_prop(assigns) do
+      email = %{email_with_template("123") | assigns: assigns}
+      {:ok, payload} = Hubspot.build_payload(email)
+      payload["customProperties"]["reminder"]
+    end
+
+    test "is the reminder prefix on a confirm reminder" do
+      assert reminder_prop(%{"confirmLink" => "https://api.test/link/s/1/accept/REF?reminder=1"}) ==
+               "Erinnerung: "
+    end
+
+    test "is empty on a first confirm email" do
+      assert reminder_prop(%{"confirmLink" => "https://api.test/link/s/1/accept/REF"}) == ""
+    end
+
+    test "is empty on an email without a confirm link" do
+      assert reminder_prop(%{"firstName" => "Jo"}) == ""
+    end
   end
 
   describe "fullConfirmLink" do
@@ -246,7 +267,7 @@ defmodule Proca.Service.HubspotTest do
 
     assert log =~ "email_id: 123"
     assert log =~ "custom_id=user:[REDACTED]"
-    assert log =~ "custom_properties: [:firstName]"
+    assert log =~ ~s(custom_properties: [:firstName, "reminder"])
     assert log =~ "response=%{\"message\" => \"invalid payload\"}"
     refute log =~ "jo@example.com"
     refute log =~ "Robert"

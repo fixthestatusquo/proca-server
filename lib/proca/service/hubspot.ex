@@ -15,6 +15,10 @@ defmodule Proca.Service.Hubspot do
   skipped). Without a known location it is just the plain confirm link. Use it in a
   template as `{{ custom.fullConfirmLink }}`.
 
+  `customProperties` also always carries `reminder`: `"Erinnerung: "` when the email is a
+  confirm reminder (its `confirmLink` has `reminder=1`), `""` otherwise. Use it as
+  `{{ custom.reminder }}`, e.g. in the subject.
+
   API reference: https://developers.hubspot.com/docs/api-reference/latest/marketing/transactional-emails/guide
 
   No bounce/event webhook is implemented. HubSpot's general webhooks/subscriptions API
@@ -37,6 +41,7 @@ defmodule Proca.Service.Hubspot do
 
   @api_url "https://api.hubapi.com/marketing/transactional/2026-03/single-email/send"
   @confirm_redirect_go "donate_Redirect"
+  @reminder_prefix "Erinnerung: "
 
   @impl true
   def supports_templates?(_org), do: true
@@ -119,7 +124,8 @@ defmodule Proca.Service.Hubspot do
         "message" => build_message(email, to),
         # always sent, always empty: sending must never mutate the recipient's CRM record
         "contactProperties" => %{},
-        "customProperties" => put_full_confirm_link(email.assigns)
+        "customProperties" =>
+          email.assigns |> put_full_confirm_link() |> put_reminder()
       }
 
       {:ok, payload}
@@ -142,6 +148,21 @@ defmodule Proca.Service.Hubspot do
   end
 
   defp put_full_confirm_link(assigns), do: assigns
+
+  # Confirm reminders (Proca.Supporter.ConfirmReminder) reuse the confirm template and
+  # differ only by reminder=1 on their links
+  defp put_reminder(assigns) do
+    Map.put(assigns, "reminder", if(reminder?(assigns), do: @reminder_prefix, else: ""))
+  end
+
+  defp reminder?(%{"confirmLink" => link}) when is_binary(link) do
+    case URI.parse(link).query do
+      nil -> false
+      query -> URI.decode_query(query)["reminder"] == "1"
+    end
+  end
+
+  defp reminder?(_assigns), do: false
 
   defp full_confirm_link(link, assigns) do
     case assigns["trackingLocation"] do
