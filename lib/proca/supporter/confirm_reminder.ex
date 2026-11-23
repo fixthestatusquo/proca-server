@@ -13,6 +13,10 @@ defmodule Proca.Supporter.ConfirmReminder do
   point. The total reminder window is capped at delay_days * max_count days from
   action.inserted_at, so no migration is needed to track reminder count.
   supporter_confirm can be enabled at the org or campaign level.
+
+  Supporters whose email_status is bounce, blocked, spam, unsub or inactive
+  get no reminder, nor do double_opt_in ones: they already clicked the
+  confirm link. Only none and active are sent to.
   """
 
   import Ecto.Query
@@ -25,6 +29,10 @@ defmodule Proca.Supporter.ConfirmReminder do
 
   @default_delay_days 2
   @default_max_count 3
+
+  # Only remind supporters whose email we may still contact. Allowlist, so a
+  # new EmailStatus value is skipped until someone decides it is safe.
+  @sendable_email_statuses [:none, :active]
 
   def run do
     orgs_with_confirm()
@@ -88,6 +96,7 @@ defmodule Proca.Supporter.ConfirmReminder do
         where: ap.org_id == ^org_id,
         where: o.supporter_confirm == true or c.supporter_confirm == true,
         where: s.processing_status == :confirming,
+        where: s.email_status in ^@sendable_email_statuses,
         where: a.with_consent == true,
         where: a.updated_at < ago(^delay_days, "day"),
         where: a.inserted_at > ago(^max_days, "day"),

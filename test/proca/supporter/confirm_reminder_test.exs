@@ -159,6 +159,19 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
 
+    for status <- [:double_opt_in, :bounce, :blocked, :spam, :unsub, :inactive] do
+      test "does not send reminder when supporter email_status is #{status}", %{ap: ap} do
+        action = insert_confirming_action(ap)
+        age_action(action)
+
+        Repo.update!(change(fetch_supporter(action), email_status: unquote(status)))
+
+        ConfirmReminder.run()
+
+        assert TestEmailBackend.mailbox(action.supporter.email) == []
+      end
+    end
+
     test "respects per-org delay_days config", %{ap: ap, org: org} do
       Repo.update!(change(org, config: %{"reminder" => %{"enabled" => true, "delay_days" => 5}}))
 
