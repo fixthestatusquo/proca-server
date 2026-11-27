@@ -35,7 +35,7 @@ defmodule Proca.Target do
     |> validate_flat_map(:fields)
     |> unique_constraint(:external_id)
     |> validate_format(:locale, ~r/^[a-z]{2}(_[A-Z]{2})?$/)
-    |> check_constraint(:fields, name: :max_fields_size)
+    |> check_constraint(:fields, name: :max_fields_size, message: "should be at most 5KB")
   end
 
   def deleteset(target) do
