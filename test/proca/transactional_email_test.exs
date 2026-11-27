@@ -331,6 +331,129 @@ defmodule Proca.TransactionalEmailTest do
     end
   end
 
+  describe "add/3, update/2, delete/1" do
+    test "add creates a row; adding the same role at the same scope again fails", %{
+      campaign: campaign
+    } do
+      assert {:ok, %TE{campaign_id: c_id, state: true}} =
+               TE.add(campaign, :supporter_confirm, %{state: true})
+
+      assert c_id == campaign.id
+
+      assert {:error, cs} = TE.add(campaign, :supporter_confirm, %{state: false})
+      assert {:role, "is already set at this scope"} in errors(cs)
+    end
+
+    test "add checks role, mechanism and instance-only roles like set/3", %{org: org} do
+      assert {:error, cs} = TE.add(org, :newsletter, %{state: true})
+      assert {:role, "is invalid"} in errors(cs)
+
+      assert {:error, _} = TE.add(org, :thank_you, %{mechanism: :external_queue})
+      assert {:error, _} = TE.add(org, :user_reset_password, %{state: true})
+    end
+
+    test "update: missing keys keep their value, nil goes back to inherit", %{ap: ap} do
+      {:ok, te} = TE.add(ap, :thank_you, %{state: true, template_ref: "ty"})
+
+      assert {:ok, %TE{state: false, template_ref: "ty"}} = TE.update(te, %{state: false})
+
+      te = Repo.reload(te)
+      assert {:ok, %TE{state: nil, template_ref: "ty"}} = TE.update(te, %{state: nil})
+    end
+
+    test "delete removes the row", %{org: org} do
+      {:ok, te} = TE.add(org, :thank_you, %{state: true})
+      assert {:ok, _} = TE.delete(te)
+      assert TE.chain(:thank_you, org) == []
+    end
+
+    test "scope_of/1 returns the row's org, campaign or page", %{
+      org: org,
+      campaign: campaign,
+      ap: ap
+    } do
+      for scope <- [org, campaign, ap] do
+        {:ok, te} = TE.add(scope, :duplicate, %{state: true})
+        assert %{__struct__: mod, id: id} = TE.scope_of(te)
+        assert {mod, id} == {scope.__struct__, scope.id}
+      end
+    end
+  end
+
+  describe "template check on add/update" do
+    setup %{org: org} do
+      backend = Factory.insert(:email_backend, org: org)
+      org = Repo.update!(Ecto.Changeset.change(org, email_backend_id: backend.id))
+      %{org: org}
+    end
+
+    test "own_template must exist in the scope's org", %{org: org, ap: ap} do
+      assert {:error, cs} = TE.add(ap, :thank_you, %{state: true, template_ref: "nope"})
+      assert {:template_ref, "template nope not found in this org"} in errors(cs)
+
+      insert_template(org, "ty")
+      assert {:ok, te} = TE.add(ap, :thank_you, %{state: true, template_ref: "ty"})
+
+      assert {:error, cs} = TE.update(te, %{template_ref: "nope"})
+      assert {:template_ref, "template nope not found in this org"} in errors(cs)
+    end
+
+    test "system_template is checked in the instance org, also when inherited", %{
+      org: org,
+      ap: ap
+    } do
+      instance = Org.one([:instance])
+      backend = Factory.insert(:email_backend, org: instance)
+      Repo.update!(Ecto.Changeset.change(instance, email_backend_id: backend.id))
+
+      # system_template defaults the name to the role
+      assert {:error, cs} = TE.add(org, :duplicate, %{state: true, mechanism: :system_template})
+      assert {:template_ref, "template duplicate not found in the instance org"} in errors(cs)
+
+      insert_template(instance, "duplicate")
+      {:ok, _} = TE.add(org, :duplicate, %{state: true, mechanism: :system_template})
+
+      # page sets only the name, the mechanism comes from the org row
+      assert {:error, cs} = TE.add(ap, :duplicate, %{template_ref: "dup"})
+      assert {:template_ref, "template dup not found in the instance org"} in errors(cs)
+
+      insert_template(instance, "dup")
+      assert {:ok, _} = TE.add(ap, :duplicate, %{template_ref: "dup"})
+    end
+
+    test "external_queue has no template to check", %{org: org} do
+      assert {:ok, _} =
+               TE.add(org, :supporter_confirm, %{state: true, mechanism: :external_queue})
+    end
+
+    test "not checked when nothing template-related changes", %{org: org} do
+      # stored before the check existed / template deleted later
+      te = set!(org, :thank_you, %{template_ref: "gone"})
+      assert {:ok, %TE{state: true}} = TE.update(te, %{state: true})
+    end
+  end
+
+  describe "chain_all/1" do
+    test "every role along the chain, grouped by role, most specific first", %{
+      org: org,
+      campaign: campaign,
+      ap: ap
+    } do
+      set!(org, :thank_you, %{state: true})
+      set!(ap, :thank_you, %{template_ref: "ty"})
+      set!(campaign, :supporter_confirm, %{state: true})
+      set!(Factory.insert(:org), :thank_you, %{state: true})
+
+      assert [
+               {:supporter_confirm, :campaign},
+               {:thank_you, :action_page},
+               {:thank_you, :org}
+             ] == Enum.map(TE.chain_all(ap), &{&1.role, TE.level(&1)})
+
+      assert [{:thank_you, :org}] == Enum.map(TE.chain_all(org), &{&1.role, TE.level(&1)})
+    end
+  end
+
   describe "database constraints" do
     test "a row cannot have both a campaign and an action page", %{
       org: org,
@@ -362,7 +485,7 @@ defmodule Proca.TransactionalEmailTest do
 
         assert {:ok, _} = insert.()
         assert {:error, cs} = insert.()
-        assert {:role, "has already been taken"} in errors(cs)
+        assert {:role, "is already set at this scope"} in errors(cs)
       end
     end
 

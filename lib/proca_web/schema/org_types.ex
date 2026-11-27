@@ -107,6 +107,28 @@ defmodule ProcaWeb.Schema.OrgTypes do
       resolve(&Resolvers.Org.org_processing/3)
     end
 
+    @desc """
+    Transactional email settings that apply here, most specific level first
+    (org). Only levels with a stored setting appear.
+    """
+    field :transactional_emails, non_null(list_of(non_null(:transactional_email))) do
+      arg(:select, :select_transactional_email)
+      resolve(&Resolvers.TransactionalEmail.list/3)
+    end
+
+    @desc """
+    One stored transactional email setting of this org (no inheritance),
+    picked by id, or by role on the org, a campaign (campaignName) or an
+    action page (actionPageId).
+    """
+    field :transactional_email, non_null(:transactional_email) do
+      arg(:id, :integer)
+      arg(:role, :transactional_email_role)
+      arg(:campaign_name, :string)
+      arg(:action_page_id, :integer)
+      resolve(&Resolvers.TransactionalEmail.get/3)
+    end
+
     # field :templates, non_null(list_of(non_null(:email_template))) do
     #   resolve(&Resolvers.Org.list_templates/3)
     # end

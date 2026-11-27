@@ -22,6 +22,7 @@ defmodule ProcaWeb.Schema do
   import_types(ProcaWeb.Schema.SubscriptionTypes)
   import_types(ProcaWeb.Schema.TargetTypes)
   import_types(ProcaWeb.Schema.ApplicationTypes)
+  import_types(ProcaWeb.Schema.TransactionalEmailTypes)
 
   query do
     import_fields(:campaign_queries)
@@ -42,6 +43,7 @@ defmodule ProcaWeb.Schema do
     import_fields(:service_mutations)
     import_fields(:confirm_mutations)
     import_fields(:target_mutations)
+    import_fields(:transactional_email_mutations)
   end
 
   subscription do

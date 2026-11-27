@@ -121,7 +121,10 @@ defmodule Proca.TransactionalEmail do
       name: :one_scope,
       message: "a row has either a campaign or an action page, not both"
     )
-    |> unique_constraint(:role, name: :transactional_emails_role_scope_index)
+    |> unique_constraint(:role,
+      name: :transactional_emails_role_scope_index,
+      message: "is already set at this scope"
+    )
   end
 
   defp validate_mechanism(cs) do
@@ -214,6 +217,97 @@ defmodule Proca.TransactionalEmail do
     end
   end
 
+  @doc """
+  Create the row for `role` at `scope`. Fails if that row already exists
+  (use `update/2` then). Also checks that the template the scope ends up
+  with exists (see `validate_template/2`).
+  """
+  @spec add(scope(), atom(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def add(scope, role, attrs) when is_atom(role) and is_map(attrs) do
+    if role in TransactionalEmailRole.__valid_values__() do
+      struct(TransactionalEmail, Map.put(scope_ids(scope), :role, role))
+      |> changeset(attrs)
+      |> validate_scope(scope)
+      |> validate_template(scope)
+      |> Repo.insert()
+    else
+      {:error, change(%TransactionalEmail{}) |> add_error(:role, "is invalid")}
+    end
+  end
+
+  @doc """
+  Change an existing row. Keys missing from `attrs` keep their value, a key
+  with nil goes back to inheriting. Role and scope cannot change.
+  """
+  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def update(%TransactionalEmail{} = te, attrs) when is_map(attrs) do
+    te
+    |> changeset(attrs)
+    |> validate_template(scope_of(te))
+    |> Repo.update()
+  end
+
+  @doc "Delete a row (its scope goes back to inheriting everything for that role)."
+  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def delete(%TransactionalEmail{} = te), do: Repo.delete(te)
+
+  @doc "The org, campaign or action page a row belongs to."
+  @spec scope_of(t()) :: scope()
+  def scope_of(%TransactionalEmail{action_page_id: ap_id}) when not is_nil(ap_id),
+    do: ActionPage.one(id: ap_id)
+
+  def scope_of(%TransactionalEmail{campaign_id: c_id}) when not is_nil(c_id),
+    do: Campaign.one(id: c_id)
+
+  def scope_of(%TransactionalEmail{org_id: org_id}), do: Org.one(id: org_id)
+
+  # When the template name or the mechanism changes, check that the template
+  # this scope resolves to exists in the org it will be looked up in:
+  # the scope's org for own_template, the instance org for system_template.
+  # Like EmailTemplate.validate_exists, skipped when that org has no email
+  # backend (no way to list its templates).
+  defp validate_template(%Ecto.Changeset{valid?: false} = cs, _scope), do: cs
+
+  defp validate_template(cs, scope) do
+    if Map.has_key?(cs.changes, :template_ref) or Map.has_key?(cs.changes, :mechanism) do
+      row = apply_changes(cs)
+      this_level = level(row)
+
+      rows =
+        [row | Enum.reject(chain(row.role, scope), &(level(&1) == this_level))]
+        |> Enum.sort_by(&level_index/1)
+
+      case resolve(row.role, rows) do
+        %Effective{template_ref: nil} ->
+          cs
+
+        %Effective{mechanism: mechanism, template_ref: ref} ->
+          # load fresh: a preloaded org on the scope may be stale
+          org =
+            case mechanism do
+              :system_template -> Org.one([:instance])
+              :own_template -> Org.one(id: scope_ids(scope).org_id)
+            end
+
+          cond do
+            is_nil(org) or is_nil(org.email_backend_id) ->
+              cs
+
+            EmailTemplateDirectory.by_name_reload(org, ref) == :not_found ->
+              where = if mechanism == :system_template, do: "the instance org", else: "this org"
+              add_error(cs, :template_ref, "template #{ref} not found in #{where}")
+
+            true ->
+              cs
+          end
+      end
+    else
+      cs
+    end
+  end
+
+  defp level_index(te), do: Enum.find_index(@levels, &(&1 == level(te)))
+
   @doc "The row stored for `role` at exactly this `scope`, or nil."
   def get(scope, role) do
     ids = scope_ids(scope)
@@ -259,7 +353,18 @@ defmodule Proca.TransactionalEmail do
 
     from(te in TransactionalEmail, where: ^condition)
     |> Repo.all()
-    |> Enum.sort_by(&Enum.find_index(@levels, fn l -> l == level(&1) end))
+    |> Enum.sort_by(&level_index/1)
+  end
+
+  @doc """
+  Like `chain/2`, for every role: the stored rows along the resolution chain
+  of `scope`, ordered by role, then most specific first.
+  """
+  @spec chain_all(scope()) :: [t()]
+  def chain_all(scope) do
+    from(te in TransactionalEmail, where: ^chain_condition(scope))
+    |> Repo.all()
+    |> Enum.sort_by(&{to_string(&1.role), level_index(&1)})
   end
 
   defp chain_condition(%Org{id: org_id}), do: org_row(org_id)

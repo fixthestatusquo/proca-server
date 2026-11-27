@@ -113,6 +113,15 @@ defmodule ProcaWeb.Schema.ActionPageTypes do
     @desc "Email template sent to supporters who sign again (duplicate action)"
     field :duplicate_template, :string
 
+    @desc """
+    Transactional email settings that apply here, most specific level first
+    (action page, campaign, page's org). Only levels with a stored setting appear.
+    """
+    field :transactional_emails, non_null(list_of(non_null(:transactional_email))) do
+      arg(:select, :select_transactional_email)
+      resolve(&Resolvers.TransactionalEmail.list/3)
+    end
+
     @desc "Location of the widget as last seen in HTTP REFERER header"
     field :location, :string do
       resolve(fn page, _, _ ->

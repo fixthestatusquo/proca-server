@@ -655,10 +655,167 @@ type RootMutationType {
     "Action to perform on targets missing in targets list"
     outdatedTargets: OutdatedTargets
   ): [PrivateTarget]!
+
+  """
+  Add a transactional email setting for a role on an org, a campaign
+  (campaignName) or an action page (actionPageId). The campaign or page
+  must belong to the org. Fails if the role is already set there; use
+  updateTransactionalEmail.
+  """
+  addTransactionalEmail(
+    "Org that owns the setting (and the campaign or page)"
+    orgName: String!
+
+    "Set it on this campaign of the org"
+    campaignName: String
+
+    "Set it on this action page of the org"
+    actionPageId: Int
+
+    role: TransactionalEmailRole!
+
+    input: TransactionalEmailInput!
+  ): TransactionalEmail!
+
+  """
+  Update a transactional email setting, picked by id, or by role on the org,
+  a campaign (campaignName) or an action page (actionPageId).
+  """
+  updateTransactionalEmail(
+    "Org that owns the setting"
+    orgName: String!
+
+    "Pick the setting by id..."
+    id: Int
+
+    "...or by role, on the org or on campaignName \/ actionPageId"
+    role: TransactionalEmailRole
+
+    campaignName: String
+
+    actionPageId: Int
+
+    input: TransactionalEmailInput!
+  ): TransactionalEmail!
+
+  """
+  Delete a transactional email setting (its level goes back to inheriting),
+  picked by id, or by role on the org, a campaign or an action page.
+  """
+  deleteTransactionalEmail(
+    "Org that owns the setting"
+    orgName: String!
+
+    "Pick the setting by id..."
+    id: Int
+
+    "...or by role, on the org or on campaignName \/ actionPageId"
+    role: TransactionalEmailRole
+
+    campaignName: String
+
+    actionPageId: Int
+  ): Status!
 }
 
 type RootSubscriptionType {
   actionPageUpserted(orgName: String): ActionPage!
+}
+
+enum TransactionalEmailRole {
+  "Thank you email to every supporter"
+  THANK_YOU
+
+  "Thank you email to opt-ins only (with the double opt-in link)"
+  DOUBLE_OPTIN
+
+  "Asks the supporter to confirm their signature (the action is held until they do)"
+  SUPPORTER_CONFIRM
+
+  "First reminder to confirm"
+  SUPPORTER_CONFIRM_REMINDER1
+
+  "Second reminder to confirm"
+  SUPPORTER_CONFIRM_REMINDER2
+
+  "Sent to supporters who sign again"
+  DUPLICATE
+
+  "Instance org only"
+  USER_CONFIRM_EMAIL
+
+  "Instance org only"
+  USER_RESET_PASSWORD
+
+  "Instance org only"
+  ADD_STAFFER
+
+  "Instance org only"
+  ADD_PARTNER
+
+  "Instance org only"
+  LAUNCH_PAGE
+
+  "Instance org only"
+  JOIN_CAMPAIGN
+}
+
+enum TransactionalEmailMechanism {
+  "Template of the org sending the email"
+  OWN_TEMPLATE
+
+  "Template of the instance org"
+  SYSTEM_TEMPLATE
+
+  "No email, the action goes to the custom queue (supporter_confirm only)"
+  EXTERNAL_QUEUE
+}
+
+enum TransactionalEmailLevel {
+  ACTION_PAGE
+  CAMPAIGN
+  ORG
+}
+
+"""
+A transactional email setting stored at one level. Null fields inherit
+from the next level (action page -> campaign -> org).
+"""
+type TransactionalEmail {
+  id: Int!
+
+  role: TransactionalEmailRole!
+
+  "Where this setting is stored"
+  level: TransactionalEmailLevel!
+
+  "On or off, null = inherit"
+  state: Boolean
+
+  "How the email is sent, null = inherit"
+  mechanism: TransactionalEmailMechanism
+
+  "Template name, null = inherit"
+  templateRef: String
+
+  "Settings for this role (e.g. reminder delay_hours), each key inherited separately"
+  config: Json
+}
+
+"Fields to set. A field left out keeps its value, null means inherit."
+input TransactionalEmailInput {
+  state: Boolean
+
+  mechanism: TransactionalEmailMechanism
+
+  templateRef: String
+
+  "JSON object, e.g. {\"delay_hours\": 48}"
+  config: Json
+}
+
+input SelectTransactionalEmail {
+  role: TransactionalEmailRole
 }
 
 type Application {
@@ -821,6 +978,19 @@ type PrivateOrg implements Org {
 
   "Action processing settings for this org"
   processing: Processing!
+
+  """
+  Transactional email settings that apply here, most specific level first
+  (org). Only levels with a stored setting appear.
+  """
+  transactionalEmails(select: SelectTransactionalEmail): [TransactionalEmail!]!
+
+  """
+  One stored transactional email setting of this org (no inheritance),
+  picked by id, or by role on the org, a campaign (campaignName) or an
+  action page (actionPageId).
+  """
+  transactionalEmail(id: Int, role: TransactionalEmailRole, campaignName: String, actionPageId: Int): TransactionalEmail!
 
   "List campaigns this org is leader or partner of"
   campaigns(select: SelectCampaign): [Campaign!]!
@@ -1599,6 +1769,12 @@ type PrivateActionPage implements ActionPage {
   "Email template sent to supporters who sign again (duplicate action)"
   duplicateTemplate: String
 
+  """
+  Transactional email settings that apply here, most specific level first
+  (action page, campaign, page's org). Only levels with a stored setting appear.
+  """
+  transactionalEmails(select: SelectTransactionalEmail): [TransactionalEmail!]!
+
   "Location of the widget as last seen in HTTP REFERER header"
   location: String
 
@@ -1853,6 +2029,12 @@ type PrivateCampaign implements Campaign {
 
   "MTT configuration"
   mtt: CampaignMtt
+
+  """
+  Transactional email settings that apply here, most specific level first
+  (campaign, org). Only levels with a stored setting appear.
+  """
+  transactionalEmails(select: SelectTransactionalEmail): [TransactionalEmail!]!
 }
 
 type Partnership {
