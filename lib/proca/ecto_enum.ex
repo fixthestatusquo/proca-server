@@ -92,17 +92,16 @@ defenum(ExternalService,
 defenum(MTTDelivery, pacing: "pacing", throttle: "throttle")
 
 # Transactional emails (Proca.TransactionalEmail). Stored as strings.
-# The last seven roles are instance-only (settable only on the instance org).
+# The last six roles are instance-only (settable only on the instance org).
 defenum(TransactionalEmailRole,
   thank_you: "thank_you",
-  thank_you_doi: "thank_you_doi",
+  double_optin: "double_optin",
   supporter_confirm: "supporter_confirm",
   supporter_confirm_reminder1: "supporter_confirm_reminder1",
   supporter_confirm_reminder2: "supporter_confirm_reminder2",
   duplicate: "duplicate",
   user_confirm_email: "user_confirm_email",
   user_reset_password: "user_reset_password",
-  confirm_action: "confirm_action",
   add_staffer: "add_staffer",
   add_partner: "add_partner",
   launch_page: "launch_page",

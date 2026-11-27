@@ -48,7 +48,6 @@ defmodule Proca.TransactionalEmail do
   @instance_roles [
     :user_confirm_email,
     :user_reset_password,
-    :confirm_action,
     :add_staffer,
     :add_partner,
     :launch_page,
