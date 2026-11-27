@@ -147,6 +147,15 @@ defmodule ProcaWeb.Schema.CampaignTypes do
 
     @desc "MTT configuration"
     field :mtt, :campaign_mtt, do: load_assoc()
+
+    @desc """
+    Transactional email settings that apply here, most specific level first
+    (campaign, org). Only levels with a stored setting appear.
+    """
+    field :transactional_emails, non_null(list_of(non_null(:transactional_email))) do
+      arg(:select, :select_transactional_email)
+      resolve(&Resolvers.TransactionalEmail.list/3)
+    end
   end
 
   # Partnership
@@ -187,6 +196,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
     field :supporter_confirm, :boolean
     @desc "Supporter confirmation template name"
     field :supporter_confirm_template, :string
+
     @desc """
     Override the org's action confirmation setting (org.customActionConfirm) for this campaign only.
     null - inherit the org setting, true - force action confirm on, false - force it off.
@@ -247,6 +257,7 @@ defmodule ProcaWeb.Schema.CampaignTypes do
       arg(:supporter_confirm, :boolean)
       @desc "Supporter confirmation template name"
       arg(:supporter_confirm_template, :string)
+
       @desc """
       Override the org's action confirmation setting for this campaign only.
       null - inherit the org setting, true - force action confirm on, false - force it off.
