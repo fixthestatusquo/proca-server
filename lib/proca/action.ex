@@ -64,7 +64,7 @@ defmodule Proca.Action do
     |> put_change(:campaign_id, action_page.campaign_id)
     |> cast_assoc(:donation, with: &Action.Donation.changeset/2)
     |> Action.Message.put_messages(Map.get(attrs, :mtt, nil), action_page)
-    |> check_constraint(:fields, name: :max_fields_size)
+    |> check_constraint(:fields, name: :max_fields_size, message: "should be at most 10KB")
   end
 
   @doc """
