@@ -15,12 +15,17 @@ defmodule Mix.Tasks.Proca.SendConfirmReminders do
 
   ## Options
 
-    --dry-run   Show who would receive reminders without sending anything
+    --dry-run       Show who would receive reminders without sending anything
+    --ignore-delay  Don't wait delay_days: remind every action still inside its
+                    reminder window now, even if it was reminded recently.
+                    Each run with this flag sends again, so don't repeat it.
 
   ## Examples
 
       mix proca.send_confirm_reminders
       mix proca.send_confirm_reminders --dry-run
+      mix proca.send_confirm_reminders --ignore-delay --dry-run
+      mix proca.send_confirm_reminders --ignore-delay
 
   """
 
@@ -28,19 +33,25 @@ defmodule Mix.Tasks.Proca.SendConfirmReminders do
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _, _} = OptionParser.parse(args, strict: [dry_run: :boolean])
+    {opts, _, _} = OptionParser.parse(args, strict: [dry_run: :boolean, ignore_delay: :boolean])
+
+    reminder_opts = [ignore_delay: opts[:ignore_delay] == true]
+
+    if reminder_opts[:ignore_delay] do
+      Mix.shell().info("Ignoring delay_days: every action in its reminder window is due.")
+    end
 
     if opts[:dry_run] do
-      dry_run()
+      dry_run(reminder_opts)
     else
       Mix.shell().info("Sending confirmation reminders...")
-      ConfirmReminder.run()
+      ConfirmReminder.run(reminder_opts)
       Mix.shell().info("Done.")
     end
   end
 
-  defp dry_run do
-    due = ConfirmReminder.list_due()
+  defp dry_run(reminder_opts) do
+    due = ConfirmReminder.list_due(reminder_opts)
 
     if due == [] do
       Mix.shell().info("No reminders due.")

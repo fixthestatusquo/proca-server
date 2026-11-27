@@ -236,4 +236,31 @@ defmodule Proca.Supporter.ConfirmReminderTest do
       assert TestEmailBackend.mailbox(action.supporter.email) == []
     end
   end
+
+  describe "ConfirmReminder.run/1 with ignore_delay" do
+    test "sends reminder for action updated recently", %{ap: ap} do
+      action = insert_confirming_action(ap)
+
+      ConfirmReminder.run(ignore_delay: true)
+
+      assert [_email] = TestEmailBackend.mailbox(action.supporter.email)
+    end
+
+    test "still does not send when action is outside max_count window", %{ap: ap} do
+      action = insert_confirming_action(ap)
+      expire_action(action)
+
+      ConfirmReminder.run(ignore_delay: true)
+
+      assert TestEmailBackend.mailbox(action.supporter.email) == []
+    end
+
+    test "list_due includes recently updated action", %{ap: ap} do
+      action = insert_confirming_action(ap)
+
+      assert ConfirmReminder.list_due() == []
+      assert [{_org, [due]}] = ConfirmReminder.list_due(ignore_delay: true)
+      assert due.id == action.id
+    end
+  end
 end

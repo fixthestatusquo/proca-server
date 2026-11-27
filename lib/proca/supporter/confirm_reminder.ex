@@ -34,22 +34,30 @@ defmodule Proca.Supporter.ConfirmReminder do
   # new EmailStatus value is skipped until someone decides it is safe.
   @sendable_email_statuses [:none, :active]
 
-  def run do
+  @doc """
+  Sends reminders to every due action.
+
+  Options:
+    - `ignore_delay: true` - skip the delay_days wait, so every action still
+      inside its reminder window gets one now, even if it was reminded (or
+      created) a moment ago. For manual runs only; the cron never passes it.
+  """
+  def run(opts \\ []) do
     orgs_with_confirm()
-    |> Enum.each(&process_org/1)
+    |> Enum.each(&process_org(&1, opts))
   end
 
   @doc """
   Returns `{org, [action]}` pairs that would receive reminders on the next run.
-  Used by the mix task dry-run.
+  Used by the mix task dry-run. Takes the same options as `run/1`.
   """
-  def list_due do
+  def list_due(opts \\ []) do
     orgs_with_confirm()
     |> Enum.filter(&reminder_enabled?/1)
     |> Enum.map(fn org ->
       delay_days = org_delay_days(org)
       max_count = org_max_count(org)
-      {org, due_actions(org.id, delay_days, max_count)}
+      {org, due_actions(org.id, delay_days, max_count, opts)}
     end)
     |> Enum.reject(fn {_org, actions} -> actions == [] end)
   end
@@ -66,11 +74,11 @@ defmodule Proca.Supporter.ConfirmReminder do
     |> Repo.all()
   end
 
-  defp process_org(org) do
+  defp process_org(org, opts) do
     if reminder_enabled?(org) do
       delay_days = org_delay_days(org)
       max_count = org_max_count(org)
-      actions = due_actions(org.id, delay_days, max_count)
+      actions = due_actions(org.id, delay_days, max_count, opts)
 
       if actions != [] do
         Logger.info(
@@ -84,10 +92,10 @@ defmodule Proca.Supporter.ConfirmReminder do
     end
   end
 
-  defp due_actions(org_id, delay_days, max_count) do
+  defp due_actions(org_id, delay_days, max_count, opts) do
     max_days = delay_days * max_count
 
-    action_ids =
+    query =
       from(a in Action,
         join: s in assoc(a, :supporter),
         join: ap in assoc(a, :action_page),
@@ -98,11 +106,18 @@ defmodule Proca.Supporter.ConfirmReminder do
         where: s.processing_status == :confirming,
         where: s.email_status in ^@sendable_email_statuses,
         where: a.with_consent == true,
-        where: a.updated_at < ago(^delay_days, "day"),
         where: a.inserted_at > ago(^max_days, "day"),
         select: a.id
       )
-      |> Repo.all()
+
+    query =
+      if Keyword.get(opts, :ignore_delay, false) do
+        query
+      else
+        where(query, [a], a.updated_at < ago(^delay_days, "day"))
+      end
+
+    action_ids = Repo.all(query)
 
     from(a in Action,
       where: a.id in ^action_ids,
